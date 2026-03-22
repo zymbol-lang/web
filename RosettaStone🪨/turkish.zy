@@ -1,0 +1,15 @@
+// FizzBuzz — Türkçe
+// Tanımlayıcılar Türkçe. Operatörler her zaman sembolik.
+
+>> "Merhaba, Türkçe Konuşan Dünya!" ¶
+
+sınıfla(sayı) {
+    ? sayı % 15 == 0 { <~ "CızVız" }
+    _? sayı % 3  == 0 { <~ "Cız" }
+    _? sayı % 5  == 0 { <~ "Vız" }
+    _ { <~ sayı }
+}
+
+@ i:1..15 {
+    >> sınıfla(i) ¶
+}

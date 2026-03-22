@@ -1,0 +1,15 @@
+// FizzBuzz — Kiswahili
+// Vitambulisho kwa Kiswahili. Waendeshaji daima ni ishara.
+
+>> "Habari, Ulimwengu wa Kiswahili!" ¶
+
+ainisha(nambari) {
+    ? nambari % 15 == 0 { <~ "PovuVuu" }
+    _? nambari % 3  == 0 { <~ "Povu" }
+    _? nambari % 5  == 0 { <~ "Vuu" }
+    _ { <~ nambari }
+}
+
+@ i:1..15 {
+    >> ainisha(i) ¶
+}

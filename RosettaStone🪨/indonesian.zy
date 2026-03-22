@@ -1,0 +1,15 @@
+// FizzBuzz — Bahasa Indonesia
+// Pengidentifikasi dalam Bahasa Indonesia. Operator selalu simbolis.
+
+>> "Halo, Dunia Berbahasa Indonesia!" ¶
+
+klasifikasi(angka) {
+    ? angka % 15 == 0 { <~ "DesisDengung" }
+    _? angka % 3  == 0 { <~ "Desis" }
+    _? angka % 5  == 0 { <~ "Dengung" }
+    _ { <~ angka }
+}
+
+@ i:1..15 {
+    >> klasifikasi(i) ¶
+}

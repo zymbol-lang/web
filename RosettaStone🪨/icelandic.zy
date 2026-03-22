@@ -1,0 +1,15 @@
+// FizzBuzz — Íslenska
+// Auðkenni á íslensku. Virkjar eru alltaf táknrænar.
+
+>> "Halló, Íslenskumælandi heimur!" ¶
+
+flokkaðu(tala) {
+    ? tala % 15 == 0 { <~ "FreyðSurr" }
+    _? tala % 3  == 0 { <~ "Freyð" }
+    _? tala % 5  == 0 { <~ "Surr" }
+    _ { <~ tala }
+}
+
+@ i:1..15 {
+    >> flokkaðu(i) ¶
+}

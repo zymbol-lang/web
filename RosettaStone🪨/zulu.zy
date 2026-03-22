@@ -1,0 +1,15 @@
+// FizzBuzz — isiZulu
+// Izinhlobonhlobo zesiZulu. Abasebenzisi basoloku bayizimpawu.
+
+>> "Sawubona, Mhlaba!" ¶
+
+hlukanisa(inombolo) {
+    ? inombolo % 15 == 0 { <~ "IgwebuDuma" }
+    _? inombolo % 3  == 0 { <~ "Igwebu" }
+    _? inombolo % 5  == 0 { <~ "Duma" }
+    _ { <~ inombolo }
+}
+
+@ i:1..15 {
+    >> hlukanisa(i) ¶
+}

@@ -1,0 +1,12 @@
+// FizzBuzz — Fulfulde
+// Haɓɓe Fulfulde. Operatooruuji kala ngoni alluule.
+
+>> "A jarama" ¶
+
+suudude(limorde) {
+    ? limorde % 15 == 0 { <~ "BinndoFizzBinndoBuzz" }
+    _? limorde % 3  == 0 { <~ "BinndoFizz" }
+    _? limorde % 5  == 0 { <~ "BinndoBuzz" }
+    _ { <~ limorde }
+}
+@ i:1..15 { >> suudude(i) ¶ }

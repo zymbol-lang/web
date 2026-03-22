@@ -1,0 +1,15 @@
+// FizzBuzz — Slovenščina
+// Identifikatorji v slovenščini. Operatorji so vedno simbolični.
+
+>> "Pozdravljeni, Svet!" ¶
+
+razvrsti(število) {
+    ? število % 15 == 0 { <~ "MehurčekBrnenje" }
+    _? število % 3  == 0 { <~ "Mehurček" }
+    _? število % 5  == 0 { <~ "Brnenje" }
+    _ { <~ število }
+}
+
+@ i:1..15 {
+    >> razvrsti(i) ¶
+}

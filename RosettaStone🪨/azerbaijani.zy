@@ -1,0 +1,15 @@
+// FizzBuzz — Azərbaycan
+// Azərbaycan dilindəki identifikatorlar. Operatorlar həmişə simvolikdir.
+
+>> "Salam, Dünya!" ¶
+
+təsnif(rəqəm) {
+    ? rəqəm % 15 == 0 { <~ "KöpükVızıltı" }
+    _? rəqəm % 3  == 0 { <~ "Köpük" }
+    _? rəqəm % 5  == 0 { <~ "Vızıltı" }
+    _ { <~ rəqəm }
+}
+
+@ i:1..15 {
+    >> təsnif(i) ¶
+}

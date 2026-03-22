@@ -1,0 +1,15 @@
+// FizzBuzz — Français
+// Identificateurs en français. Opérateurs toujours symboliques.
+
+>> "Bonjour, Monde Francophone!" ¶
+
+classer(nombre) {
+    ? nombre % 15 == 0 { <~ "BulleBzz" }
+    _? nombre % 3  == 0 { <~ "Bulle" }
+    _? nombre % 5  == 0 { <~ "Bzz" }
+    _ { <~ nombre }
+}
+
+@ i:1..15 {
+    >> classer(i) ¶
+}

@@ -1,0 +1,15 @@
+// FizzBuzz — Yorùbá
+// Awọn idanimọ ni Yorùbá. Awọn oniṣẹ jẹ aami nigbagbogbo.
+
+>> "Ẹ káàbọ̀, Àgbáyé tó ń sọ Yorùbá!" ¶
+
+ìpín(iye) {
+    ? iye % 15 == 0 { <~ "FọnGún" }
+    _? iye % 3  == 0 { <~ "Fọn" }
+    _? iye % 5  == 0 { <~ "Gún" }
+    _ { <~ iye }
+}
+
+@ i:1..15 {
+    >> ìpín(i) ¶
+}

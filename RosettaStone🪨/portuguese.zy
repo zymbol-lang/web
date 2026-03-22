@@ -1,0 +1,15 @@
+// FizzBuzz — Português
+// Identificadores em português. Operadores sempre simbólicos.
+
+>> "Olá, Mundo Lusófono!" ¶
+
+classificar(número) {
+    ? número % 15 == 0 { <~ "BorbulhaZumbido" }
+    _? número % 3  == 0 { <~ "Borbulha" }
+    _? número % 5  == 0 { <~ "Zumbido" }
+    _ { <~ número }
+}
+
+@ i:1..15 {
+    >> classificar(i) ¶
+}

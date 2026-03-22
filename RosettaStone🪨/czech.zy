@@ -1,0 +1,15 @@
+// FizzBuzz — Čeština
+// Identifikátory v češtině. Operátory jsou vždy symbolické.
+
+>> "Ahoj, Česky mluvící světe!" ¶
+
+klasifikuj(číslo) {
+    ? číslo % 15 == 0 { <~ "ŠumBzz" }
+    _? číslo % 3  == 0 { <~ "Šum" }
+    _? číslo % 5  == 0 { <~ "Bzz" }
+    _ { <~ číslo }
+}
+
+@ i:1..15 {
+    >> klasifikuj(i) ¶
+}

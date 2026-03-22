@@ -1,0 +1,12 @@
+// FizzBuzz — Soomaali
+// Aqoonsiyeyaasha Soomaali. Hawlgalladu had iyo jeer astaan ah.
+
+>> "Nabad" ¶
+
+kala_sooc(tiro) {
+    ? tiro % 15 == 0 { <~ "FizziBuzzi" }
+    _? tiro % 3  == 0 { <~ "Fizzi" }
+    _? tiro % 5  == 0 { <~ "Buzzi" }
+    _ { <~ tiro }
+}
+@ i:1..15 { >> kala_sooc(i) ¶ }

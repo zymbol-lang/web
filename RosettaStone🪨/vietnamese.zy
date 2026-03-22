@@ -1,0 +1,15 @@
+// FizzBuzz — Tiếng Việt
+// Định danh bằng tiếng Việt. Toán tử luôn mang tính biểu tượng.
+
+>> "Xin chào, Thế giới nói Tiếng Việt!" ¶
+
+phânLoại(số) {
+    ? số % 15 == 0 { <~ "XìVù" }
+    _? số % 3  == 0 { <~ "Xì" }
+    _? số % 5  == 0 { <~ "Vù" }
+    _ { <~ số }
+}
+
+@ i:1..15 {
+    >> phânLoại(i) ¶
+}

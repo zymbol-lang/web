@@ -1,0 +1,12 @@
+// FizzBuzz — toki pona
+// nimi lon toki pona. ilo pi pali mute li sitelen.
+
+>> "toki" ¶
+
+pali(nanpa) {
+    ? nanpa % 15 == 0 { <~ "fizibuzi" }
+    _? nanpa % 3  == 0 { <~ "fizi" }
+    _? nanpa % 5  == 0 { <~ "buzi" }
+    _ { <~ nanpa }
+}
+@ i:1..15 { >> pali(i) ¶ }

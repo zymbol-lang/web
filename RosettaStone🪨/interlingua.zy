@@ -1,0 +1,12 @@
+// FizzBuzz — Interlingua
+// Identificatores in Interlingua. Operatores semper symbolic.
+
+>> "Bon die" ¶
+
+classificar(numero) {
+    ? numero % 15 == 0 { <~ "FizeBuze" }
+    _? numero % 3  == 0 { <~ "Fize" }
+    _? numero % 5  == 0 { <~ "Buze" }
+    _ { <~ numero }
+}
+@ i:1..15 { >> classificar(i) ¶ }

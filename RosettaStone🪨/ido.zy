@@ -1,0 +1,12 @@
+// FizzBuzz — Ido
+// Identigili en Ido. Operatori sempre simbolala.
+
+>> "Saluto" ¶
+
+klasifikar(nombro) {
+    ? nombro % 15 == 0 { <~ "FizetoBuzeto" }
+    _? nombro % 3  == 0 { <~ "Fizeto" }
+    _? nombro % 5  == 0 { <~ "Buzeto" }
+    _ { <~ nombro }
+}
+@ i:1..15 { >> klasifikar(i) ¶ }

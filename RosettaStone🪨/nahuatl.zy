@@ -1,0 +1,15 @@
+// FizzBuzz — Nāhuatl
+// Tōcāitl Nāhuatl. Operator cemīcac mahtōllōtl.
+
+>> "Niltze, Cemānāhuac!" ¶
+
+xelihui(tlapōhualli) {
+    ? tlapōhualli % 15 == 0 { <~ "PopochtliTzatziliztli" }
+    _? tlapōhualli % 3  == 0 { <~ "Popochtli" }
+    _? tlapōhualli % 5  == 0 { <~ "Tzatziliztli" }
+    _ { <~ tlapōhualli }
+}
+
+@ i:1..15 {
+    >> xelihui(i) ¶
+}

@@ -1,0 +1,15 @@
+// FizzBuzz — Català
+// Identificadors en català. Operadors sempre simbòlics.
+
+>> "Hola, Món Catalanoparlant!" ¶
+
+classificar(nombre) {
+    ? nombre % 15 == 0 { <~ "BombollaBrunzit" }
+    _? nombre % 3  == 0 { <~ "Bombolla" }
+    _? nombre % 5  == 0 { <~ "Brunzit" }
+    _ { <~ nombre }
+}
+
+@ i:1..15 {
+    >> classificar(i) ¶
+}

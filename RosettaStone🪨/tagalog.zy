@@ -1,0 +1,15 @@
+// FizzBuzz — Filipino
+// Mga identifier sa Filipino. Palaging simboliko ang mga operator.
+
+>> "Kamusta, Filipino na Mundo!" ¶
+
+uriin(bilang) {
+    ? bilang % 15 == 0 { <~ "BulaUgong" }
+    _? bilang % 3  == 0 { <~ "Bula" }
+    _? bilang % 5  == 0 { <~ "Ugong" }
+    _ { <~ bilang }
+}
+
+@ i:1..15 {
+    >> uriin(i) ¶
+}

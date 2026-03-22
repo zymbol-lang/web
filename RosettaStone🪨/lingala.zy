@@ -1,0 +1,12 @@
+// FizzBuzz — Lingála
+// Banzina na Lingála. Bato ya mosala ntango nyonso ya kɔmɔ.
+
+>> "Mbote" ¶
+
+kotanga(nomboro) {
+    ? nomboro % 15 == 0 { <~ "FiiziBuuzi" }
+    _? nomboro % 3  == 0 { <~ "Fiizi" }
+    _? nomboro % 5  == 0 { <~ "Buuzi" }
+    _ { <~ nomboro }
+}
+@ i:1..15 { >> kotanga(i) ¶ }

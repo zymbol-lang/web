@@ -1,0 +1,15 @@
+// FizzBuzz — isiXhosa
+// Izichazi-magama ngesiXhosa. Abaqhubi basoloko bengamaphawu.
+
+>> "Molo, Hlabathi!" ¶
+
+hlela(inani) {
+    ? inani % 15 == 0 { <~ "IgwebuNgxolo" }
+    _? inani % 3  == 0 { <~ "Igwebu" }
+    _? inani % 5  == 0 { <~ "Ngxolo" }
+    _ { <~ inani }
+}
+
+@ i:1..15 {
+    >> hlela(i) ¶
+}

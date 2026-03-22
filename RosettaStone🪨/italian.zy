@@ -1,0 +1,15 @@
+// FizzBuzz — Italiano
+// Identificatori in italiano. Operatori sempre simbolici.
+
+>> "Ciao, Mondo Italofono!" ¶
+
+classifica(numero) {
+    ? numero % 15 == 0 { <~ "FrizzaRonza" }
+    _? numero % 3  == 0 { <~ "Frizza" }
+    _? numero % 5  == 0 { <~ "Ronza" }
+    _ { <~ numero }
+}
+
+@ i:1..15 {
+    >> classifica(i) ¶
+}

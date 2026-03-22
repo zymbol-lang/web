@@ -1,0 +1,12 @@
+// FizzBuzz — Na'vi
+// Tìtstxolì'u leNa'vi. Tìran sìltseo nìwotx.
+
+>> "Oel ngati kameie" ¶
+
+tìkan(tìfya) {
+    ? tìfya % 15 == 0 { <~ "EywaToruk" }
+    _? tìfya % 3  == 0 { <~ "Eywa" }
+    _? tìfya % 5  == 0 { <~ "Toruk" }
+    _ { <~ tìfya }
+}
+@ i:1..15 { >> tìkan(i) ¶ }

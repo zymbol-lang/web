@@ -1,0 +1,12 @@
+// FizzBuzz — Esperanto
+// Identigaĵoj en Esperanto. Operatoroj ĉiam simbolaj.
+
+>> "Saluton" ¶
+
+klasifiki(nombro) {
+    ? nombro % 15 == 0 { <~ "FizaĵoBuzaĵo" }
+    _? nombro % 3  == 0 { <~ "Fizaĵo" }
+    _? nombro % 5  == 0 { <~ "Buzaĵo" }
+    _ { <~ nombro }
+}
+@ i:1..15 { >> klasifiki(i) ¶ }

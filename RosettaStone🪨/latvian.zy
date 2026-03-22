@@ -1,0 +1,15 @@
+// FizzBuzz — Latviešu
+// Identifikatori latviski. Operatori vienmēr simboliski.
+
+>> "Sveika, Latviski runājošā pasaule!" ¶
+
+klasificē(skaitlis) {
+    ? skaitlis % 15 == 0 { <~ "BurbDūc" }
+    _? skaitlis % 3  == 0 { <~ "Burb" }
+    _? skaitlis % 5  == 0 { <~ "Dūc" }
+    _ { <~ skaitlis }
+}
+
+@ i:1..15 {
+    >> klasificē(i) ¶
+}

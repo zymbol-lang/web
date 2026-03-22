@@ -1,0 +1,12 @@
+// FizzBuzz — Dothraki
+// Adori dothraki. Vorsqoyi shafkea athvísir.
+
+>> "M'athchomaroon" ¶
+
+astat(eveth) {
+    ? eveth % 15 == 0 { <~ "FizzatBuzzat" }
+    _? eveth % 3  == 0 { <~ "Fizzat" }
+    _? eveth % 5  == 0 { <~ "Buzzat" }
+    _ { <~ eveth }
+}
+@ i:1..15 { >> astat(i) ¶ }

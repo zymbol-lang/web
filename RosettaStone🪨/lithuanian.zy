@@ -1,0 +1,15 @@
+// FizzBuzz — Lietuvių
+// Identifikatoriai lietuviškai. Operatoriai visada simboliniai.
+
+>> "Labas, Lietuviškai kalbantis pasauli!" ¶
+
+klasifikuok(skaičius) {
+    ? skaičius % 15 == 0 { <~ "ŠnypšDūz" }
+    _? skaičius % 3  == 0 { <~ "Šnypš" }
+    _? skaičius % 5  == 0 { <~ "Dūz" }
+    _ { <~ skaičius }
+}
+
+@ i:1..15 {
+    >> klasifikuok(i) ¶
+}

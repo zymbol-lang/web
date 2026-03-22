@@ -1,0 +1,15 @@
+// FizzBuzz — Euskera
+// Identifikatzaileak euskaraz. Operadoreak beti sinbolikoak.
+
+>> "Kaixo, Mundu Euskalduna!" ¶
+
+sailkatu(zenbakia) {
+    ? zenbakia % 15 == 0 { <~ "BurbuilaZurrumurru" }
+    _? zenbakia % 3  == 0 { <~ "Burbuila" }
+    _? zenbakia % 5  == 0 { <~ "Zurrumurru" }
+    _ { <~ zenbakia }
+}
+
+@ i:1..15 {
+    >> sailkatu(i) ¶
+}

@@ -1,0 +1,12 @@
+// FizzBuzz — chiShona
+// Mazita muchiShona. Mashandiro nguva dzose achiratidza.
+
+>> "Mhoro" ¶
+
+kuchera(nhamba) {
+    ? nhamba % 15 == 0 { <~ "FizziBuzzi" }
+    _? nhamba % 3  == 0 { <~ "Fizzi" }
+    _? nhamba % 5  == 0 { <~ "Buzzi" }
+    _ { <~ nhamba }
+}
+@ i:1..15 { >> kuchera(i) ¶ }

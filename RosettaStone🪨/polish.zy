@@ -1,0 +1,15 @@
+// FizzBuzz — Polski
+// Identyfikatory po polsku. Operatory zawsze symboliczne.
+
+>> "Witaj, Polskojęzyczny Świecie!" ¶
+
+sklasyfikuj(liczba) {
+    ? liczba % 15 == 0 { <~ "SzumBzy" }
+    _? liczba % 3  == 0 { <~ "Szum" }
+    _? liczba % 5  == 0 { <~ "Bzy" }
+    _ { <~ liczba }
+}
+
+@ i:1..15 {
+    >> sklasyfikuj(i) ¶
+}

@@ -1,0 +1,15 @@
+// FizzBuzz — Igbo
+// Ihe ncheta n'Igbo. Ndị ọrụ bụ mgbe nile akara.
+
+>> "Nnọọ, Ụwa!" ¶
+
+kewaa(ọnụọgụ) {
+    ? ọnụọgụ % 15 == 0 { <~ "NtụpọỌkpọ" }
+    _? ọnụọgụ % 3  == 0 { <~ "Ntụpọ" }
+    _? ọnụọgụ % 5  == 0 { <~ "Ọkpọ" }
+    _ { <~ ọnụọgụ }
+}
+
+@ i:1..15 {
+    >> kewaa(i) ¶
+}

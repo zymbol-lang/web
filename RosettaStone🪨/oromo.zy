@@ -1,0 +1,15 @@
+// FizzBuzz — Oromo
+// Eenyummaa Afaan Oromoo. Oparetaroonni yeroo hunda mallattoo dha.
+
+>> "Akkam, Afaan Oromoo!" ¶
+
+qooduu(lakkoofsa) {
+    ? lakkoofsa % 15 == 0 { <~ "BofoduuWuuwuu" }
+    _? lakkoofsa % 3  == 0 { <~ "Bofoduu" }
+    _? lakkoofsa % 5  == 0 { <~ "Wuuwuu" }
+    _ { <~ lakkoofsa }
+}
+
+@ i:1..15 {
+    >> qooduu(i) ¶
+}

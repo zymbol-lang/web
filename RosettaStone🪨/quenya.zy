@@ -1,0 +1,12 @@
+// FizzBuzz — Quenya
+// Esseli Quenya. Carvalë ilya simboyainen.
+
+>> "Namárië" ¶
+
+carna(nótë) {
+    ? nótë % 15 == 0 { <~ "CalëMorë" }
+    _? nótë % 3  == 0 { <~ "Calë" }
+    _? nótë % 5  == 0 { <~ "Morë" }
+    _ { <~ nótë }
+}
+@ i:1..15 { >> carna(i) ¶ }

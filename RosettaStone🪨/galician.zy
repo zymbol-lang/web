@@ -1,0 +1,15 @@
+// FizzBuzz — Galego
+// Identificadores en galego. Operadores sempre simbólicos.
+
+>> "Ola, Mundo Galegofalante!" ¶
+
+clasificar(número) {
+    ? número % 15 == 0 { <~ "BurbullaZumbido" }
+    _? número % 3  == 0 { <~ "Burbulla" }
+    _? número % 5  == 0 { <~ "Zumbido" }
+    _ { <~ número }
+}
+
+@ i:1..15 {
+    >> clasificar(i) ¶
+}

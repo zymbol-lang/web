@@ -1,0 +1,15 @@
+// FizzBuzz — Norsk
+// Identifikatorer på norsk. Operatorer er alltid symbolske.
+
+>> "Hei, Norsktalende Verden!" ¶
+
+klassifiser(tall) {
+    ? tall % 15 == 0 { <~ "BrusSurr" }
+    _? tall % 3  == 0 { <~ "Brus" }
+    _? tall % 5  == 0 { <~ "Surr" }
+    _ { <~ tall }
+}
+
+@ i:1..15 {
+    >> klassifiser(i) ¶
+}

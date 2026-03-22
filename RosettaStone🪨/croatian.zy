@@ -1,0 +1,15 @@
+// FizzBuzz — Hrvatski
+// Identifikatori na hrvatskom. Operatori su uvijek simbolični.
+
+>> "Zdravo, Hrvatski govoreći Svijete!" ¶
+
+klasificiraj(broj) {
+    ? broj % 15 == 0 { <~ "ŠišZuj" }
+    _? broj % 3  == 0 { <~ "Šiš" }
+    _? broj % 5  == 0 { <~ "Zuj" }
+    _ { <~ broj }
+}
+
+@ i:1..15 {
+    >> klasificiraj(i) ¶
+}

@@ -1,0 +1,12 @@
+// FizzBuzz — Sindarin
+// Anw i Sindarin. I operatoriath ir gwanathol saew.
+
+>> "Mae govannen" ¶
+
+gerio(norn) {
+    ? norn % 15 == 0 { <~ "GaladDûn" }
+    _? norn % 3  == 0 { <~ "Galad" }
+    _? norn % 5  == 0 { <~ "Dûn" }
+    _ { <~ norn }
+}
+@ i:1..15 { >> gerio(i) ¶ }

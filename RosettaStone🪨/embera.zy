@@ -1,0 +1,15 @@
+// FizzBuzz — Embera
+// Embera ome identifiers. Operators porodá simbólico.
+
+>> "Nabi, Embera!" ¶
+
+ewandó(nembi) {
+    ? nembi % 15 == 0 { <~ "BabaráBupurú" }
+    _? nembi % 3  == 0 { <~ "Babará" }
+    _? nembi % 5  == 0 { <~ "Bupurú" }
+    _ { <~ nembi }
+}
+
+@ i:1..15 {
+    >> ewandó(i) ¶
+}

@@ -1,0 +1,15 @@
+// FizzBuzz — 🌍 Universal Emoji
+// Identifiers: emojis. Operators: always symbolic. Output: emojis.
+
+>> "👋🌍✨" ¶
+
+🎯(🔢) {
+    ? 🔢 % 15 == 0 { <~ "🫧🐝" }
+    _? 🔢 % 3  == 0 { <~ "🫧" }
+    _? 🔢 % 5  == 0 { <~ "🐝" }
+    _ { <~ 🔢 }
+}
+
+@ i:1..15 {
+    >> 🎯(i) ¶
+}

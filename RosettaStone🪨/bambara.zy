@@ -1,0 +1,12 @@
+// FizzBuzz — Bamanankan
+// Tɔgɔw Bamanankan la. Ɔpɛrɛtɛrɛw bɛɛ jɛba ye.
+
+>> "I ni ce" ¶
+
+sɛgɛsɛgɛ(jate) {
+    ? jate % 15 == 0 { <~ "FiziFilɛBuzuFilɛ" }
+    _? jate % 3  == 0 { <~ "FiziFilɛ" }
+    _? jate % 5  == 0 { <~ "BuzuFilɛ" }
+    _ { <~ jate }
+}
+@ i:1..15 { >> sɛgɛsɛgɛ(i) ¶ }

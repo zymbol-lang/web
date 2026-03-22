@@ -1,0 +1,15 @@
+// FizzBuzz — Nederlands
+// Identificatoren in het Nederlands. Operatoren altijd symbolisch.
+
+>> "Hallo, Nederlandstalige Wereld!" ¶
+
+indelen(getal) {
+    ? getal % 15 == 0 { <~ "SisZoem" }
+    _? getal % 3  == 0 { <~ "Sis" }
+    _? getal % 5  == 0 { <~ "Zoem" }
+    _ { <~ getal }
+}
+
+@ i:1..15 {
+    >> indelen(i) ¶
+}

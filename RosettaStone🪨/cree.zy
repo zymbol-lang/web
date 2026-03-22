@@ -1,0 +1,15 @@
+// FizzBuzz — Cree
+// Identifiers ᐊᓂᔑᓈᐯᒧᐎᓐ ᐅᐸᐅᐦᐄᓇᓐ. Operators ᑲᑲᔥᑭᐦᒋᑫᓂᑕᑯᓇᓐ.
+
+>> "Tânisi, ᓀᐦᐃᔭᐍᐏᐣ!" ¶
+
+nâtawihoht(akihtâson) {
+    ? akihtâson % 15 == 0 { <~ "PapîwinWîwîhcikan" }
+    _? akihtâson % 3  == 0 { <~ "Papîwin" }
+    _? akihtâson % 5  == 0 { <~ "Wîwîhcikan" }
+    _ { <~ akihtâson }
+}
+
+@ ᐃ:1..15 {
+    >> nâtawihoht(ᐃ) ¶
+}

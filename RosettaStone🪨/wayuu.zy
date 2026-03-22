@@ -1,0 +1,15 @@
+// FizzBuzz — Wayuu
+// Sünainjanaya Wayuunaiki. Operadorka otta simbólico.
+
+>> "Jamaya, Wayuunaiki!" ¶
+
+ayaawataa(nüchukua) {
+    ? nüchukua % 15 == 0 { <~ "PütchiWanüiki" }
+    _? nüchukua % 3  == 0 { <~ "Pütchi" }
+    _? nüchukua % 5  == 0 { <~ "Wanüiki" }
+    _ { <~ nüchukua }
+}
+
+@ i:1..15 {
+    >> ayaawataa(i) ¶
+}

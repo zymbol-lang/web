@@ -1,0 +1,15 @@
+// FizzBuzz — Dansk
+// Identifikatorer på dansk. Operatorer er altid symbolske.
+
+>> "Hej, Dansktalende Verden!" ¶
+
+klassificer(tal) {
+    ? tal % 15 == 0 { <~ "BrusSurr" }
+    _? tal % 3  == 0 { <~ "Brus" }
+    _? tal % 5  == 0 { <~ "Surr" }
+    _ { <~ tal }
+}
+
+@ i:1..15 {
+    >> klassificer(i) ¶
+}

@@ -1,0 +1,15 @@
+// FizzBuzz — Română
+// Identificatori în română. Operatorii sunt întotdeauna simbolici.
+
+>> "Salut, Lume Română!" ¶
+
+clasifică(număr) {
+    ? număr % 15 == 0 { <~ "FizBâz" }
+    _? număr % 3  == 0 { <~ "Fiz" }
+    _? număr % 5  == 0 { <~ "Bâz" }
+    _ { <~ număr }
+}
+
+@ i:1..15 {
+    >> clasifică(i) ¶
+}

@@ -1,0 +1,15 @@
+// FizzBuzz — Wolof
+// Bindkat yi ci Wolof. Operateuryi dafa jëf bu xarnu.
+
+>> "Salaam, Àddina!" ¶
+
+setal(nomer) {
+    ? nomer % 15 == 0 { <~ "BuñDëkk" }
+    _? nomer % 3  == 0 { <~ "Buñ" }
+    _? nomer % 5  == 0 { <~ "Dëkk" }
+    _ { <~ nomer }
+}
+
+@ i:1..15 {
+    >> setal(i) ¶
+}

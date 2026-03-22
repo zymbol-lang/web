@@ -1,0 +1,15 @@
+// FizzBuzz — Runasimi
+// Identificadores Runasimimpi. Operadores siempre simbólicos.
+
+>> "Napaykullayki, Pachamama!" ¶
+
+riqsinchiy(yupay) {
+    ? yupay % 15 == 0 { <~ "PhuyuWaqay" }
+    _? yupay % 3  == 0 { <~ "Phuyu" }
+    _? yupay % 5  == 0 { <~ "Waqay" }
+    _ { <~ yupay }
+}
+
+@ i:1..15 {
+    >> riqsinchiy(i) ¶
+}

@@ -1,0 +1,12 @@
+// FizzBuzz — High Valyrian
+// Identerī High Valyrian issa. Sytilībi iksā jemī.
+
+>> "Rytsas" ¶
+
+tymagon(lentor) {
+    ? lentor % 15 == 0 { <~ "DracarysValar" }
+    _? lentor % 3  == 0 { <~ "Dracarys" }
+    _? lentor % 5  == 0 { <~ "Valar" }
+    _ { <~ lentor }
+}
+@ i:1..15 { >> tymagon(i) ¶ }

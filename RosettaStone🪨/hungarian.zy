@@ -1,0 +1,15 @@
+// FizzBuzz — Magyar
+// Azonosítók magyarul. Az operátorok mindig szimbolikusak.
+
+>> "Szia, Magyar Világ!" ¶
+
+osztályoz(szám) {
+    ? szám % 15 == 0 { <~ "SziszZüm" }
+    _? szám % 3  == 0 { <~ "Szisz" }
+    _? szám % 5  == 0 { <~ "Züm" }
+    _ { <~ szám }
+}
+
+@ i:1..15 {
+    >> osztályoz(i) ¶
+}

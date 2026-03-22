@@ -1,0 +1,15 @@
+// FizzBuzz — Cymraeg
+// Adnabyddwyr yn Gymraeg. Gweithredwyr bob amser yn symbolaidd.
+
+>> "Helo, Byd Cymraeg!" ¶
+
+dosbarthu(rhif) {
+    ? rhif % 15 == 0 { <~ "SwigenBwm" }
+    _? rhif % 3  == 0 { <~ "Swigen" }
+    _? rhif % 5  == 0 { <~ "Bwm" }
+    _ { <~ rhif }
+}
+
+@ i:1..15 {
+    >> dosbarthu(i) ¶
+}

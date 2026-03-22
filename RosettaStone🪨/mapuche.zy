@@ -1,0 +1,15 @@
+// FizzBuzz — Mapudungun
+// Mapudungun mew trokiñ. Operadore rakiñ ñi ayiwin.
+
+>> "Mari mari, Mapu!" ¶
+
+kimeltun(rakizuam) {
+    ? rakizuam % 15 == 0 { <~ "KollongKüzaw" }
+    _? rakizuam % 3  == 0 { <~ "Kollong" }
+    _? rakizuam % 5  == 0 { <~ "Küzaw" }
+    _ { <~ rakizuam }
+}
+
+@ i:1..15 {
+    >> kimeltun(i) ¶
+}

@@ -1,0 +1,15 @@
+// FizzBuzz — English
+// Identifiers in English. Operators always symbolic.
+
+>> "Hello, English-speaking World!" ¶
+
+classify(number) {
+    ? number % 15 == 0 { <~ "FizzBuzz" }
+    _? number % 3  == 0 { <~ "Fizz" }
+    _? number % 5  == 0 { <~ "Buzz" }
+    _ { <~ number }
+}
+
+@ i:1..15 {
+    >> classify(i) ¶
+}

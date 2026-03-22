@@ -1,0 +1,15 @@
+// FizzBuzz — Afrikaans
+// Identifiseerders in Afrikaans. Operateurs altyd simbolies.
+
+>> "Hallo, Wêreld!" ¶
+
+klassifiseer(nommer) {
+    ? nommer % 15 == 0 { <~ "BorrelGonser" }
+    _? nommer % 3  == 0 { <~ "Borrel" }
+    _? nommer % 5  == 0 { <~ "Gonser" }
+    _ { <~ nommer }
+}
+
+@ i:1..15 {
+    >> klassifiseer(i) ¶
+}

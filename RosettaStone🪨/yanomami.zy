@@ -1,0 +1,15 @@
+// FizzBuzz — Yanomami
+// Yanomami ë yama. Operadores napreamo simbólico.
+
+>> "Kë, Yanomami!" ¶
+
+poremai(mahi) {
+    ? mahi % 15 == 0 { <~ "HuuReha" }
+    _? mahi % 3  == 0 { <~ "Huu" }
+    _? mahi % 5  == 0 { <~ "Reha" }
+    _ { <~ mahi }
+}
+
+@ i:1..15 {
+    >> poremai(i) ¶
+}

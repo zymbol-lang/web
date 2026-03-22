@@ -1,0 +1,156 @@
+// RosettaStone🪨 — run.zy
+// Validates all FizzBuzz variants (greeting + FizzBuzz 1..15)
+// Usage: zymbol run RosettaStone🪨/run.zy   (from project root)
+
+// ANSI colors via tput
+GREEN = <\ tput setaf 2 \>
+RED   = <\ tput setaf 1 \>
+CYAN  = <\ tput setaf 6 \>
+BOLD  = <\ tput bold \>
+DIM   = <\ tput dim \>
+RESET = <\ tput sgr0 \>
+
+// Language registry: [display, file, greeting, fizz_word, buzz_word]
+langs = [
+    ["English"                , "RosettaStone🪨/english.zy"                      , "Hello, English-speaking World!", "Fizz", "Buzz"],
+    ["Español (Latino)"       , "RosettaStone🪨/spanish.zy"                      , "¡Hola, Mundo Hispanohablante!", "Burbuja", "Zumbido"],
+    ["Castellano"             , "RosettaStone🪨/castellano.zy"                   , "¡Hola, Mundo Hispanohablante!", "Burbuja", "Zumbido"],
+    ["Français"               , "RosettaStone🪨/french.zy"                       , "Bonjour, Monde Francophone!", "Bulle", "Bzz"],
+    ["Português (BR)"         , "RosettaStone🪨/portuguese.zy"                   , "Olá, Mundo Lusófono!", "Borbulha", "Zumbido"],
+    ["Português (PT)"         , "RosettaStone🪨/portugues_eu.zy"                 , "Olá, Mundo Lusófono!", "Bolha", "Zumbido"],
+    ["Deutsch"                , "RosettaStone🪨/german.zy"                       , "Hallo, deutschsprachige Welt!", "Zisch", "Summ"],
+    ["Italiano"               , "RosettaStone🪨/italian.zy"                      , "Ciao, Mondo Italofono!", "Frizza", "Ronza"],
+    ["Nederlands"             , "RosettaStone🪨/dutch.zy"                        , "Hallo, Nederlandstalige Wereld!", "Sis", "Zoem"],
+    ["Polski"                 , "RosettaStone🪨/polish.zy"                       , "Witaj, Polskojęzyczny Świecie!", "Szum", "Bzy"],
+    ["Русский"                , "RosettaStone🪨/russian.zy"                      , "Привет, русскоязычный мир!", "Шип", "Жуж"],
+    ["Українська"             , "RosettaStone🪨/ukrainian.zy"                    , "Привіт, україномовний світ!", "Шип", "Дзиж"],
+    ["Ελληνικά"               , "RosettaStone🪨/greek.zy"                        , "Γεια σου, ελληνόφωνε κόσμε!", "Αφρός", "Βόμβος"],
+    ["中文（普通话）"                , "RosettaStone🪨/mandarin.zy"                     , "你好，中文世界！", "嘶嘶", "嗡嗡"],
+    ["日本語"                    , "RosettaStone🪨/japanese.zy"                     , "こんにちは、日本語の世界！", "シュワ", "ブーン"],
+    ["한국어"                    , "RosettaStone🪨/korean.zy"                       , "안녕하세요, 한국어 세계!", "쉬익", "붕붕"],
+    ["हिन्दी"                 , "RosettaStone🪨/hindi.zy"                        , "नमस्ते, हिन्दी भाषी दुनिया!", "बुलबुला", "भनभन"],
+    ["العربية"                , "RosettaStone🪨/arabic.zy"                       , "مرحباً، عالم ناطق بالعربية!", "فقاعة", "طنين"],
+    ["فارسی"                  , "RosettaStone🪨/persian.zy"                      , "سلام، دنیای فارسی‌زبان!", "حباب", "وزوز"],
+    ["বাংলা"                  , "RosettaStone🪨/bengali.zy"                      , "হ্যালো, বাংলাভাষী বিশ্ব!", "বুদবুদ", "গুনগুন"],
+    ["Türkçe"                 , "RosettaStone🪨/turkish.zy"                      , "Merhaba, Türkçe Konuşan Dünya!", "Cız", "Vız"],
+    ["Tiếng Việt"             , "RosettaStone🪨/vietnamese.zy"                   , "Xin chào, Thế giới nói Tiếng Việt!", "Xì", "Vù"],
+    ["ภาษาไทย"                , "RosettaStone🪨/thai.zy"                         , "สวัสดี โลกที่พูดภาษาไทย!", "ซ่า", "หึ่ง"],
+    ["Bahasa Indonesia"       , "RosettaStone🪨/indonesian.zy"                   , "Halo, Dunia Berbahasa Indonesia!", "Desis", "Dengung"],
+    ["Bahasa Melayu"          , "RosettaStone🪨/malay.zy"                        , "Helo, Dunia!", "Buih", "Dengung"],
+    ["Kiswahili"              , "RosettaStone🪨/swahili.zy"                      , "Habari, Ulimwengu wa Kiswahili!", "Povu", "Vuu"],
+    ["עברית"                  , "RosettaStone🪨/hebrew.zy"                       , "שלום, עולם דובר עברית!", "בועה", "זמזום"],
+    ["Română"                 , "RosettaStone🪨/romanian.zy"                     , "Salut, Lume Română!", "Fiz", "Bâz"],
+    ["Magyar"                 , "RosettaStone🪨/hungarian.zy"                    , "Szia, Magyar Világ!", "Szisz", "Züm"],
+    ["Čeština"                , "RosettaStone🪨/czech.zy"                        , "Ahoj, Česky mluvící světe!", "Šum", "Bzz"],
+    ["Slovenčina"             , "RosettaStone🪨/slovak.zy"                       , "Ahoj, Slovenský svet!", "Pena", "Bzz"],
+    ["Български"              , "RosettaStone🪨/bulgarian.zy"                    , "Здравей, Български свят!", "Съска", "Бръм"],
+    ["Српски"                 , "RosettaStone🪨/serbian.zy"                      , "Здраво, Српски свете!", "Шиш", "Зуј"],
+    ["Hrvatski"               , "RosettaStone🪨/croatian.zy"                     , "Zdravo, Hrvatski govoreći Svijete!", "Šiš", "Zuj"],
+    ["Македонски"             , "RosettaStone🪨/macedonian.zy"                   , "Здраво, Свет!", "Мевурче", "Ѕвонење"],
+    ["Slovenščina"            , "RosettaStone🪨/slovenian.zy"                    , "Pozdravljeni, Svet!", "Mehurček", "Brnenje"],
+    ["Shqip"                  , "RosettaStone🪨/albanian.zy"                     , "Përshëndetje, Botë!", "Flluskë", "Zhurmë"],
+    ["Беларуская"             , "RosettaStone🪨/belarusian.zy"                   , "Прывітанне, Свет!", "Бурбалка", "Гудзенне"],
+    ["Lietuvių"               , "RosettaStone🪨/lithuanian.zy"                   , "Labas, Lietuviškai kalbantis pasauli!", "Šnypš", "Dūz"],
+    ["Latviešu"               , "RosettaStone🪨/latvian.zy"                      , "Sveika, Latviski runājošā pasaule!", "Burb", "Dūc"],
+    ["Eesti"                  , "RosettaStone🪨/estonian.zy"                     , "Tere, Eestikeelne maailm!", "Siss", "Summ"],
+    ["Svenska"                , "RosettaStone🪨/swedish.zy"                      , "Hej, Svensktalande Värld!", "Fräs", "Surr"],
+    ["Dansk"                  , "RosettaStone🪨/danish.zy"                       , "Hej, Dansktalende Verden!", "Brus", "Surr"],
+    ["Norsk"                  , "RosettaStone🪨/norwegian.zy"                    , "Hei, Norsktalende Verden!", "Brus", "Surr"],
+    ["Suomi"                  , "RosettaStone🪨/finnish.zy"                      , "Hei, Suomenkielinen Maailma!", "Suh", "Pörr"],
+    ["Íslenska"               , "RosettaStone🪨/icelandic.zy"                    , "Halló, Íslenskumælandi heimur!", "Freyð", "Surr"],
+    ["اردو"                   , "RosettaStone🪨/urdu.zy"                         , "ہیلو، اردو بولنے والی دنیا!", "بلبلہ", "بھن"],
+    ["Filipino"               , "RosettaStone🪨/tagalog.zy"                      , "Kamusta, Filipino na Mundo!", "Bula", "Ugong"],
+    ["አማርኛ"                   , "RosettaStone🪨/amharic.zy"                      , "ሰላም፣ አማርኛ ተናጋሪ ዓለም!", "ቡርቡር", "ዝምዝም"],
+    ["Yorùbá"                 , "RosettaStone🪨/yoruba.zy"                       , "Ẹ káàbọ̀, Àgbáyé tó ń sọ Yorùbá!", "Fọn", "Gún"],
+    ["Hausa"                  , "RosettaStone🪨/hausa.zy"                        , "Sannu, Duniyar Magana Hausa!", "Kumfa", "Vuvuu"],
+    ["isiZulu"                , "RosettaStone🪨/zulu.zy"                         , "Sawubona, Mhlaba!", "Igwebu", "Duma"],
+    ["isiXhosa"               , "RosettaStone🪨/xhosa.zy"                        , "Molo, Hlabathi!", "Igwebu", "Ngxolo"],
+    ["Wolof"                  , "RosettaStone🪨/wolof.zy"                        , "Salaam, Àddina!", "Buñ", "Dëkk"],
+    ["Igbo"                   , "RosettaStone🪨/igbo.zy"                         , "Nnọọ, Ụwa!", "Ntụpọ", "Ọkpọ"],
+    ["Afrikaans"              , "RosettaStone🪨/afrikaans.zy"                    , "Hallo, Wêreld!", "Borrel", "Gonser"],
+    ["ਪੰਜਾਬੀ"                 , "RosettaStone🪨/punjabi.zy"                      , "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ, ਪੰਜਾਬੀ ਬੋਲਣ ਵਾਲੀ ਦੁਨੀਆ!", "ਬੁਲਬੁਲਾ", "ਭਿਣਭਿਣ"],
+    ["मराठी"                  , "RosettaStone🪨/marathi.zy"                      , "नमस्कार, मराठी बोलणाऱ्या जगा!", "बुडबुडा", "भुणभुण"],
+    ["ગુજરાતી"                , "RosettaStone🪨/gujarati.zy"                     , "નમસ્તે, દુનિયા!", "પરપોટો", "ગણગણ"],
+    ["नेपाली"                 , "RosettaStone🪨/nepali.zy"                       , "नमस्ते, संसार!", "बुलबुला", "भनभन"],
+    ["தமிழ்"                  , "RosettaStone🪨/tamil.zy"                        , "வணக்கம், உலகம்!", "குமிழ்", "சத்தம்"],
+    ["తెలుగు"                 , "RosettaStone🪨/telugu.zy"                       , "నమస్కారం, ప్రపంచం!", "బుడగ", "గుయ్"],
+    ["ಕನ್ನಡ"                  , "RosettaStone🪨/kannada.zy"                      , "ನಮಸ್ಕಾರ, ಪ್ರಪಂಚ!", "ಗುಳ್ಳೆ", "ಗುಣಗುಣ"],
+    ["Հայերեն"                , "RosettaStone🪨/armenian.zy"                     , "Բարև, Աշխարհ!", "Պղպջակ", "Բզզոց"],
+    ["ქართული"                , "RosettaStone🪨/georgian.zy"                     , "გამარჯობა, სამყარო!", "ბუშტი", "ჟრჟოლა"],
+    ["Azərbaycan"             , "RosettaStone🪨/azerbaijani.zy"                  , "Salam, Dünya!", "Köpük", "Vızıltı"],
+    ["Kurdî"                  , "RosettaStone🪨/kurdish.zy"                      , "Merheba, Cîhan!", "Pijok", "Vıjvıj"],
+    ["မြန်မာ"                 , "RosettaStone🪨/burmese.zy"                      , "မင်္ဂလာပါ, ကမ္ဘာ!", "ဗူး", "ဆူညံ"],
+    ["Català"                 , "RosettaStone🪨/catalan.zy"                      , "Hola, Món Catalanoparlant!", "Bombolla", "Brunzit"],
+    ["Euskera"                , "RosettaStone🪨/basque.zy"                       , "Kaixo, Mundu Euskalduna!", "Burbuila", "Zurrumurru"],
+    ["Galego"                 , "RosettaStone🪨/galician.zy"                     , "Ola, Mundo Galegofalante!", "Burbulla", "Zumbido"],
+    ["Cymraeg"                , "RosettaStone🪨/welsh.zy"                        , "Helo, Byd Cymraeg!", "Swigen", "Bwm"],
+    ["Guaraní"                , "RosettaStone🪨/guarani.zy"                      , "Mba'éichapa, Yvypóra!", "Pororó", "Ñemuhũ"],
+    ["Runasimi"               , "RosettaStone🪨/quechua.zy"                      , "Napaykullayki, Pachamama!", "Phuyu", "Waqay"],
+    ["Nāhuatl"                , "RosettaStone🪨/nahuatl.zy"                      , "Niltze, Cemānāhuac!", "Popochtli", "Tzatziliztli"],
+    ["Màaya T'àan"            , "RosettaStone🪨/maya.zy"                         , "Ba'ax ka wa'alik, Yok'ol kaab!", "Chich", "Ts'oots'"],
+    ["Mapudungun"             , "RosettaStone🪨/mapuche.zy"                      , "Mari mari, Mapu!", "Kollong", "Küzaw"],
+    [" "              , "RosettaStone🪨/Klingon_pIqaD.zy"            , "", "", ""],
+    ["Aymara", "RosettaStone🪨/aymara.zy", "Kamisaraki, Aymara aru!", "Pupuña", "Jaqaña"],
+    ["Bamanankan", "RosettaStone🪨/bambara.zy", "I ni ce", "FiziFilɛ", "BuzuFilɛ"],
+    ["ᏣᎳᎩ (Cherokee)", "RosettaStone🪨/cherokee.zy", "ᎣᏏᏲ, ᏣᎳᎩ ᎦᏬᏂᎯᏍᏗ!", "ᎤᎦᎾᎸ", "ᏄᎾᏍᏛ"],
+    ["ᓀᐦᐃᔭᐍᐏᐣ (Cree)", "RosettaStone🪨/cree.zy", "Tânisi, ᓀᐦᐃᔭᐍᐏᐣ!", "Papîwin", "Wîwîhcikan"],
+    ["Dothraki", "RosettaStone🪨/dothraki.zy", "M'athchomaroon", "Fizzat", "Buzzat"],
+    ["Embera", "RosettaStone🪨/embera.zy", "Nabi, Embera!", "Babará", "Bupurú"],
+    ["Esperanto", "RosettaStone🪨/esperanto.zy", "Saluton", "Fizaĵo", "Buzaĵo"],
+    ["Fulfulde (Fula)", "RosettaStone🪨/fula.zy", "A jarama", "BinndoFizz", "BinndoBuzz"],
+    ["High Valyrian", "RosettaStone🪨/high_valyrian.zy", "Rytsas", "Dracarys", "Valar"],
+    ["Ido", "RosettaStone🪨/ido.zy", "Saluto", "Fizeto", "Buzeto"],
+    ["Interlingua", "RosettaStone🪨/interlingua.zy", "Bon die", "Fize", "Buze"],
+    ["tlhIngan Hol", "RosettaStone🪨/klingon.zy", "nuqneH", "Qapla", "HoH"],
+    ["Lingála", "RosettaStone🪨/lingala.zy", "Mbote", "Fiizi", "Buuzi"],
+    ["la .lojban.", "RosettaStone🪨/lojban.zy", "coi", "fizdi", "buzdi"],
+    ["Mando'a", "RosettaStone🪨/mandoa.zy", "Su'cuy", "Mando", "Vode"],
+    ["Diné bizaad", "RosettaStone🪨/navajo.zy", "Yá'át'ééh, Diné bizaad!", "Dliʼ", "Dizí"],
+    ["Na'vi", "RosettaStone🪨/navi.zy", "Oel ngati kameie", "Eywa", "Toruk"],
+    ["Afaan Oromoo", "RosettaStone🪨/oromo.zy", "Akkam, Afaan Oromoo!", "Bofoduu", "Wuuwuu"],
+    ["Quenya", "RosettaStone🪨/quenya.zy", "Namárië", "Calë", "Morë"],
+    ["chiShona", "RosettaStone🪨/shona.zy", "Mhoro", "Fizzi", "Buzzi"],
+    ["Sindarin", "RosettaStone🪨/sindarin.zy", "Mae govannen", "Galad", "Dûn"],
+    ["Soomaali", "RosettaStone🪨/somali.zy", "Nabad", "Fizzi", "Buzzi"],
+    ["ትግርኛ (Tigrinya)", "RosettaStone🪨/tigrinya.zy", "ሰላም", "ፊዝ", "ቡዝ"],
+    ["toki pona", "RosettaStone🪨/toki_pona.zy", "toki", "fizi", "buzi"],
+    ["Wayuunaiki", "RosettaStone🪨/wayuu.zy", "Jamaya, Wayuunaiki!", "Pütchi", "Wanüiki"],
+    ["Yanomami", "RosettaStone🪨/yanomami.zy", "Kë, Yanomami!", "Huu", "Reha"],
+    ["🌍 Emoji"                , "RosettaStone🪨/emoji.zy"                        , "👋🌍✨", "🫧", "🐝"]
+]
+
+pass = 0
+fail = 0
+total = langs$#
+
+>> ¶
+>> CYAN BOLD "=== Rosetta Stone 🪨 — FizzBuzz in " total " Languages ===" RESET ¶
+>> ¶
+
+@ lang:langs {
+    label    = lang[0]
+    _file    = lang[1]
+    greeting = lang[2]
+    fizzW    = lang[3]
+    buzzW    = lang[4]
+
+    out = <\ zymbol run {_file} \>
+
+    part1    = "1\n2\n", fizzW, "\n4\n", buzzW, "\n", fizzW, "\n7\n8\n"
+    part2    = fizzW, "\n", buzzW, "\n11\n", fizzW, "\n13\n14\n", fizzW, buzzW, "\n"
+    seq      = part1, part2
+    expected = greeting, "\n", seq
+
+    ? out == expected {
+        >> GREEN "  ✓ " RESET BOLD label RESET "  " DIM greeting RESET ¶
+        pass = pass + 1
+    }
+    _ {
+        >> RED "  ✗ " RESET BOLD label RESET ¶
+        fail = fail + 1
+    }
+}
+
+>> ¶
+>> BOLD "  Results: " GREEN pass RESET " passed, " RED fail RESET " failed / " total " total" RESET ¶
+>> ¶

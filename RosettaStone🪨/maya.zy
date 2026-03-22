@@ -1,0 +1,15 @@
+// FizzBuzz — Màaya T'àan
+// U ts'íibil maaya t'àan. Operadores siempre simbólicos.
+
+>> "Ba'ax ka wa'alik, Yok'ol kaab!" ¶
+
+tsibtik(xook) {
+    ? xook % 15 == 0 { <~ "ChichTs'oots'" }
+    _? xook % 3  == 0 { <~ "Chich" }
+    _? xook % 5  == 0 { <~ "Ts'oots'" }
+    _ { <~ xook }
+}
+
+@ i:1..15 {
+    >> tsibtik(i) ¶
+}

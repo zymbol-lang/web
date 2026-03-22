@@ -1,0 +1,15 @@
+// FizzBuzz — Shqip
+// Identifikues në Shqip. Operatorët gjithmonë simbolikë.
+
+>> "Përshëndetje, Botë!" ¶
+
+klasifiko(numër) {
+    ? numër % 15 == 0 { <~ "FlluskëZhurmë" }
+    _? numër % 3  == 0 { <~ "Flluskë" }
+    _? numër % 5  == 0 { <~ "Zhurmë" }
+    _ { <~ numër }
+}
+
+@ i:1..15 {
+    >> klasifiko(i) ¶
+}

@@ -1,0 +1,12 @@
+// FizzBuzz — tlhIngan Hol
+// tlhIngan Hol DIvI' pongmey. tlhIngan Hol cha'logh Hol pongmey.
+
+>> "nuqneH" ¶
+
+buv(mI') {
+    ? mI' % 15 == 0 { <~ "QaplaHoH" }
+    _? mI' % 3  == 0 { <~ "Qapla" }
+    _? mI' % 5  == 0 { <~ "HoH" }
+    _ { <~ mI' }
+}
+@ i:1..15 { >> buv(i) ¶ }

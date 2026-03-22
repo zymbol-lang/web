@@ -1,0 +1,15 @@
+// FizzBuzz — Eesti
+// Identifikaatorid eesti keeles. Operaatorid on alati sümboolsed.
+
+>> "Tere, Eestikeelne maailm!" ¶
+
+klassifitseeri(arv) {
+    ? arv % 15 == 0 { <~ "SissSumm" }
+    _? arv % 3  == 0 { <~ "Siss" }
+    _? arv % 5  == 0 { <~ "Summ" }
+    _ { <~ arv }
+}
+
+@ i:1..15 {
+    >> klassifitseeri(i) ¶
+}

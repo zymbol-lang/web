@@ -1,0 +1,15 @@
+// FizzBuzz — Bahasa Melayu
+// Pengecam dalam Bahasa Melayu. Pengendali sentiasa simbolik.
+
+>> "Helo, Dunia!" ¶
+
+klasifikasi(nombor) {
+    ? nombor % 15 == 0 { <~ "BuihDengung" }
+    _? nombor % 3  == 0 { <~ "Buih" }
+    _? nombor % 5  == 0 { <~ "Dengung" }
+    _ { <~ nombor }
+}
+
+@ i:1..15 {
+    >> klasifikasi(i) ¶
+}

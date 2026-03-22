@@ -1,0 +1,15 @@
+// FizzBuzz — Aymara
+// Yatichawi sutiniwa Aymara ukan. Operadornaka janiw sartasiñkiti.
+
+>> "Kamisaraki, Aymara aru!" ¶
+
+sartaña(jakhu) {
+    ? jakhu % 15 == 0 { <~ "PupuñaJaqaña" }
+    _? jakhu % 3  == 0 { <~ "Pupuña" }
+    _? jakhu % 5  == 0 { <~ "Jaqaña" }
+    _ { <~ jakhu }
+}
+
+@ i:1..15 {
+    >> sartaña(i) ¶
+}

@@ -1,0 +1,15 @@
+// FizzBuzz — Kurdî (Kurmanji)
+// Nasnavên kurdî. Operator her dem sembolk in.
+
+>> "Merheba, Cîhan!" ¶
+
+dabeşkirin(hejmar) {
+    ? hejmar % 15 == 0 { <~ "PijokVıjvıj" }
+    _? hejmar % 3  == 0 { <~ "Pijok" }
+    _? hejmar % 5  == 0 { <~ "Vıjvıj" }
+    _ { <~ hejmar }
+}
+
+@ i:1..15 {
+    >> dabeşkirin(i) ¶
+}

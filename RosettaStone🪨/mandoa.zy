@@ -1,0 +1,12 @@
+// FizzBuzz — Mando'a
+// Acyc'ade Mando'a. Olaror nayc'ade naast.
+
+>> "Su'cuy" ¶
+
+jate(gal) {
+    ? gal % 15 == 0 { <~ "MandoVode" }
+    _? gal % 3  == 0 { <~ "Mando" }
+    _? gal % 5  == 0 { <~ "Vode" }
+    _ { <~ gal }
+}
+@ i:1..15 { >> jate(i) ¶ }

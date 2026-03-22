@@ -1,0 +1,15 @@
+// FizzBuzz — Guaraní
+// Identifikadóra Guaraníme. Operadórkuéra opa ára símbolo.
+
+>> "Mba'éichapa, Yvypóra!" ¶
+
+moñeẽ(papapy) {
+    ? papapy % 15 == 0 { <~ "PororóÑemuhũ" }
+    _? papapy % 3  == 0 { <~ "Pororó" }
+    _? papapy % 5  == 0 { <~ "Ñemuhũ" }
+    _ { <~ papapy }
+}
+
+@ i:1..15 {
+    >> moñeẽ(i) ¶
+}

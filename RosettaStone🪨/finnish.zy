@@ -1,0 +1,15 @@
+// FizzBuzz — Suomi
+// Tunnisteet suomeksi. Operaattorit ovat aina symbolisia.
+
+>> "Hei, Suomenkielinen Maailma!" ¶
+
+luokittele(luku) {
+    ? luku % 15 == 0 { <~ "SuhPörr" }
+    _? luku % 3  == 0 { <~ "Suh" }
+    _? luku % 5  == 0 { <~ "Pörr" }
+    _ { <~ luku }
+}
+
+@ i:1..15 {
+    >> luokittele(i) ¶
+}

@@ -1,0 +1,15 @@
+// FizzBuzz — Navajo
+// Diné bizaad bił haz'ą́ą́gi. Operators t'áá'íiyisíí símbolos.
+
+>> "Yá'át'ééh, Diné bizaad!" ¶
+
+nályééh(namboo) {
+    ? namboo % 15 == 0 { <~ "DliʼDizí" }
+    _? namboo % 3  == 0 { <~ "Dliʼ" }
+    _? namboo % 5  == 0 { <~ "Dizí" }
+    _ { <~ namboo }
+}
+
+@ i:1..15 {
+    >> nályééh(i) ¶
+}

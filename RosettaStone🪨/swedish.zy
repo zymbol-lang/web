@@ -1,0 +1,15 @@
+// FizzBuzz — Svenska
+// Identifierare på svenska. Operatorer är alltid symboliska.
+
+>> "Hej, Svensktalande Värld!" ¶
+
+klassificera(tal) {
+    ? tal % 15 == 0 { <~ "FräsSurr" }
+    _? tal % 3  == 0 { <~ "Fräs" }
+    _? tal % 5  == 0 { <~ "Surr" }
+    _ { <~ tal }
+}
+
+@ i:1..15 {
+    >> klassificera(i) ¶
+}

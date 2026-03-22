@@ -1,0 +1,15 @@
+// FizzBuzz — Castellano
+// Identificadores en castellano. Operadores siempre simbólicos.
+
+>> "¡Hola, Mundo Hispanohablante!" ¶
+
+clasificar(número) {
+    ? número % 15 == 0 { <~ "BurbujaZumbido" }
+    _? número % 3  == 0 { <~ "Burbuja" }
+    _? número % 5  == 0 { <~ "Zumbido" }
+    _ { <~ número }
+}
+
+@ i:1..15 {
+    >> clasificar(i) ¶
+}

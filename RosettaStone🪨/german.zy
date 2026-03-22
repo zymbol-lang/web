@@ -1,0 +1,15 @@
+// FizzBuzz — Deutsch
+// Bezeichner auf Deutsch. Operatoren immer symbolisch.
+
+>> "Hallo, deutschsprachige Welt!" ¶
+
+einordnen(zahl) {
+    ? zahl % 15 == 0 { <~ "ZischSumm" }
+    _? zahl % 3  == 0 { <~ "Zisch" }
+    _? zahl % 5  == 0 { <~ "Summ" }
+    _ { <~ zahl }
+}
+
+@ i:1..15 {
+    >> einordnen(i) ¶
+}

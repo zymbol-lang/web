@@ -1,0 +1,15 @@
+// FizzBuzz — Hausa
+// Masu gano sunayen a Hausa. Masu aiki koyaushe alamu ne.
+
+>> "Sannu, Duniyar Magana Hausa!" ¶
+
+rarrabawa(lamba) {
+    ? lamba % 15 == 0 { <~ "KumfaVuvuu" }
+    _? lamba % 3  == 0 { <~ "Kumfa" }
+    _? lamba % 5  == 0 { <~ "Vuvuu" }
+    _ { <~ lamba }
+}
+
+@ i:1..15 {
+    >> rarrabawa(i) ¶
+}

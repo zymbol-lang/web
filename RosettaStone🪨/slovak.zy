@@ -1,0 +1,15 @@
+// FizzBuzz — Slovenčina
+// Identifikátory po slovensky. Operátory sú vždy symbolické.
+
+>> "Ahoj, Slovenský svet!" ¶
+
+klasifikuj(číslo) {
+    ? číslo % 15 == 0 { <~ "PenaBzz" }
+    _? číslo % 3  == 0 { <~ "Pena" }
+    _? číslo % 5  == 0 { <~ "Bzz" }
+    _ { <~ číslo }
+}
+
+@ i:1..15 {
+    >> klasifikuj(i) ¶
+}

@@ -1,0 +1,12 @@
+// FizzBuzz — la .lojban.
+// cmene la .lojban. cmima. pilno zgike barda.
+
+>> "coi" ¶
+
+fancu(namcu) {
+    ? namcu % 15 == 0 { <~ "fizdibuzdi" }
+    _? namcu % 3  == 0 { <~ "fizdi" }
+    _? namcu % 5  == 0 { <~ "buzdi" }
+    _ { <~ namcu }
+}
+@ i:1..15 { >> fancu(i) ¶ }
