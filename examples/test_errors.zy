@@ -1,0 +1,55 @@
+// test_errors.zy — Manejo de errores
+// Ejecutar: zymbol run test_errors.zy
+
+// ─── Division por cero ───
+!? {
+    x = 10 / 0
+} :! ##Div {
+    >> "division por cero atrapada" ¶    // → division por cero atrapada
+} :> {
+    >> "finally div" ¶                   // → finally div
+}
+
+// ─── Indice fuera de rango ───
+!? {
+    arr = [1, 2, 3]
+    _v = arr[10]    // error ocurre aqui, _v nunca se usa
+} :! ##Index {
+    >> "indice fuera de rango" ¶    // → indice fuera de rango
+}
+
+// ─── Catch generico con _err ───
+!? {
+    x = 5 / 0
+} :! {
+    >> "error generico" ¶    // → error generico
+}
+
+// ─── Try anidado ───
+!? {
+    !? {
+        _y = 10 / 0    // error ocurre aqui antes de que se use _y
+    } :! ##Div {
+        >> "inner: div zero" ¶    // → inner: div zero
+    }
+    >> "continua despues del inner" ¶    // → continua despues del inner
+} :! {
+    >> "outer error (no debe llegar aqui)" ¶
+}
+
+// ─── Verificar con $! ───
+z = 42
+es_error = z$!
+>> es_error ¶    // → #0 (no es error)
+
+// ─── Pipeline funcional (verifica logica sin errores) ───
+notas = [45, 78, 92, 33, 88, 67, 55, 91, 42, 76]
+
+aprobados = notas$| (x -> x >= 60)
+cantidad = aprobados$#
+suma_notas = aprobados$< (0, (acc, x) -> acc + x)
+promedio = suma_notas / cantidad
+
+>> "Total: " (notas$#) ¶           // → Total: 10
+>> "Aprobados: " cantidad ¶        // → Aprobados: 6
+>> "Promedio: " promedio ¶         // → Promedio: 82

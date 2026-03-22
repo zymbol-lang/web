@@ -1,0 +1,55 @@
+// test_basics.zy — Variables, tipos, salida, concatenacion de cadenas
+// Ejecutar: zymbol run test_basics.zy
+
+// ─── Variables y constantes ───
+x = 10
+PI := 3.14159
+nombre = "Ana"
+_activo = #1    // prefijo _ = intencionalmente sin usar
+
+// Asignacion compuesta
+x += 5
+x -= 3
+x *= 2
+x /= 4
+x %= 4
+x++
+x--
+>> "x=" x ¶    // → x=2
+
+// ─── Tipos ───
+entero = 42
+flotante = 3.14
+cadena = "hola"
+caracter = 'A'
+booleano = #1
+
+>> entero ¶      // → 42
+>> flotante ¶    // → 3.14
+>> cadena ¶      // → hola
+>> caracter ¶    // → A
+>> booleano ¶    // → #1
+
+// ─── Salida ───
+a = 5
+b = 7
+>> "a=" a " b=" b ¶            // → a=5 b=7
+>> "PI=" PI ¶                  // → PI=3.14159
+
+// Postfix en >> requiere parentesis
+arr = [10, 20, 30]
+>> (arr$#) ¶    // → 3
+
+// ─── Concatenacion de cadenas ───
+n = 25
+
+// Coma en asignaciones
+msg = "Hola ", nombre, "!"
+>> msg ¶    // → Hola Ana!
+
+// Yuxtaposicion en salida
+>> "Hola " nombre " tienes " n " anos" ¶   // → Hola Ana tienes 25 anos
+
+// Interpolacion
+desc = "Hola {nombre}, tienes {n} anos"
+>> desc ¶    // → Hola Ana, tienes 25 anos

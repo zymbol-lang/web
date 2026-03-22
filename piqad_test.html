@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>pIqaD Font Test</title>
+<style>
+  @font-face {
+    font-family: 'pIqaD-qolqoS';
+    src: url('fonts/pIqaD-qolqoS.woff2') format('woff2'),
+         url('fonts/pIqaD-qolqoS.ttf') format('truetype');
+    font-weight: 100 900;
+    unicode-range: U+F8D0-U+F8FF;
+  }
+  body { font-family: 'pIqaD-qolqoS', 'pIqaD qolqoS', sans-serif; background: #111; color: #eee; padding: 2rem; font-size: 2rem; }
+  pre  { font-family: 'pIqaD-qolqoS', 'pIqaD qolqoS', monospace; font-size: 1.5rem; background: #222; padding: 1rem; }
+  .web  { font-family: 'pIqaD-qolqoS', sans-serif; color: #0f0; }
+  .sys  { font-family: 'pIqaD qolqoS', sans-serif; color: #0ff; }
+  .both { font-family: 'pIqaD-qolqoS', 'pIqaD qolqoS', sans-serif; color: #ff0; }
+</style>
+</head>
+<body>
+<h2>pIqaD Font Test</h2>
+<p>Web font only (green): <span class="web"> </span></p>
+<p>System font only (cyan): <span class="sys"> </span></p>
+<p>Both fonts (yellow): <span class="both"> </span></p>
+<p>Body inheritance:  </p>
+<pre>Code block:  = x + </pre>
+<p>Hex of chars: U+F8E0 U+F8D0 U+F8DE U+F8D9 U+F8D0 U+F8E9</p>
+<p>If you see squares/boxes above = font NOT working</p>
+<p>If you see angular Klingon symbols = font WORKING</p>
+</body>
+</html>

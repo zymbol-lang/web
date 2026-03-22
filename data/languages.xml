@@ -1,0 +1,852 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zymbol-rosetta version="1.0" count="47">
+  <description>Zymbol-Lang RosettaStone — FizzBuzz in 48 languages</description>
+  <languages>
+    <language id="amharic" name="Amharic" native="አማርኛ" dir="ltr">
+      <code><![CDATA[// FizzBuzz — አማርኛ
+// መለያዎች በአማርኛ። ኦፕሬተሮች ሁልጊዜ ምሳሌያዊ።
+
+>> "ሰላም፣ አማርኛ ተናጋሪ ዓለም!" ¶
+
+ምደባ(ቁጥር) {
+    ? ቁጥር % 15 == 0 { <~ "ቡርቡርዝምዝም" }
+    _? ቁጥር % 3  == 0 { <~ "ቡርቡር" }
+    _? ቁጥር % 5  == 0 { <~ "ዝምዝም" }
+    _ { <~ ቁጥር }
+}
+
+@ i:1..15 {
+    >> ምደባ(i) ¶
+}
+]]></code>
+    </language>
+    <language id="arabic" name="Arabic" native="العربية" dir="rtl">
+      <code><![CDATA[// FizzBuzz — العربية
+// المعرّفات بالعربية. المشغّلات دائماً رمزية.
+
+>> "مرحباً، عالم ناطق بالعربية!" ¶
+
+تصنيف(عدد) {
+    ? عدد % 15 == 0 { <~ "فقاعةطنين" }
+    _? عدد % 3  == 0 { <~ "فقاعة" }
+    _? عدد % 5  == 0 { <~ "طنين" }
+    _ { <~ عدد }
+}
+
+@ i:1..15 {
+    >> تصنيف(i) ¶
+}
+]]></code>
+    </language>
+    <language id="bengali" name="Bengali" native="বাংলা" dir="ltr">
+      <code><![CDATA[// FizzBuzz — বাংলা
+// বাংলায় পরিচয়কারক। অপারেটর সর্বদা প্রতীকী।
+
+>> "হ্যালো, বাংলাভাষী বিশ্ব!" ¶
+
+শ্রেণী(সংখ্যা) {
+    ? সংখ্যা % 15 == 0 { <~ "বুদবুদগুনগুন" }
+    _? সংখ্যা % 3  == 0 { <~ "বুদবুদ" }
+    _? সংখ্যা % 5  == 0 { <~ "গুনগুন" }
+    _ { <~ সংখ্যা }
+}
+
+@ i:1..15 {
+    >> শ্রেণী(i) ¶
+}
+]]></code>
+    </language>
+    <language id="bulgarian" name="Bulgarian" native="Български" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Български
+// Идентификатори на Български. Операторите са винаги символни.
+
+>> "Здравей, Български свят!" ¶
+
+класификация(число) {
+    ? число % 15 == 0 { <~ "СъскаБръм" }
+    _? число % 3  == 0 { <~ "Съска" }
+    _? число % 5  == 0 { <~ "Бръм" }
+    _ { <~ число }
+}
+
+@ i:1..15 {
+    >> класификация(i) ¶
+}
+]]></code>
+    </language>
+    <language id="croatian" name="Croatian" native="Hrvatski" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Hrvatski
+// Identifikatori na hrvatskom. Operatori su uvijek simbolični.
+
+>> "Zdravo, Hrvatski govoreći Svijete!" ¶
+
+klasificiraj(broj) {
+    ? broj % 15 == 0 { <~ "ŠišZuj" }
+    _? broj % 3  == 0 { <~ "Šiš" }
+    _? broj % 5  == 0 { <~ "Zuj" }
+    _ { <~ broj }
+}
+
+@ i:1..15 {
+    >> klasificiraj(i) ¶
+}
+]]></code>
+    </language>
+    <language id="czech" name="Czech" native="Čeština" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Čeština
+// Identifikátory v češtině. Operátory jsou vždy symbolické.
+
+>> "Ahoj, Česky mluvící světe!" ¶
+
+klasifikuj(číslo) {
+    ? číslo % 15 == 0 { <~ "ŠumBzz" }
+    _? číslo % 3  == 0 { <~ "Šum" }
+    _? číslo % 5  == 0 { <~ "Bzz" }
+    _ { <~ číslo }
+}
+
+@ i:1..15 {
+    >> klasifikuj(i) ¶
+}
+]]></code>
+    </language>
+    <language id="danish" name="Danish" native="Dansk" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Dansk
+// Identifikatorer på dansk. Operatorer er altid symbolske.
+
+>> "Hej, Dansktalende Verden!" ¶
+
+klassificer(tal) {
+    ? tal % 15 == 0 { <~ "BrusSurr" }
+    _? tal % 3  == 0 { <~ "Brus" }
+    _? tal % 5  == 0 { <~ "Surr" }
+    _ { <~ tal }
+}
+
+@ i:1..15 {
+    >> klassificer(i) ¶
+}
+]]></code>
+    </language>
+    <language id="dutch" name="Dutch" native="Nederlands" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Nederlands
+// Identifiers in het Nederlands. Operatoren altijd symbolisch.
+
+>> "Hallo, Nederlandstalige Wereld!" ¶
+
+indelen(getal) {
+    ? getal % 15 == 0 { <~ "SisZoem" }
+    _? getal % 3  == 0 { <~ "Sis" }
+    _? getal % 5  == 0 { <~ "Zoem" }
+    _ { <~ getal }
+}
+
+@ i:1..15 {
+    >> indelen(i) ¶
+}
+]]></code>
+    </language>
+    <language id="emoji" name="Emoji" native="🌍 Emoji" dir="ltr">
+      <code><![CDATA[// FizzBuzz — 🌍 Universal Emoji
+// Identifiers: emojis. Operators: always symbolic. Output: emojis.
+
+>> "👋🌍✨" ¶
+
+🎯(🔢) {
+    ? 🔢 % 15 == 0 { <~ "🫧🐝" }
+    _? 🔢 % 3  == 0 { <~ "🫧" }
+    _? 🔢 % 5  == 0 { <~ "🐝" }
+    _ { <~ 🔢 }
+}
+
+@ i:1..15 {
+    >> 🎯(i) ¶
+}
+]]></code>
+    </language>
+    <language id="english" name="English" native="English" dir="ltr">
+      <code><![CDATA[// FizzBuzz — English
+// Identifiers in English. Operators always symbolic.
+
+>> "Hello, English-speaking World!" ¶
+
+classify(number) {
+    ? number % 15 == 0 { <~ "FizzBuzz" }
+    _? number % 3  == 0 { <~ "Fizz" }
+    _? number % 5  == 0 { <~ "Buzz" }
+    _ { <~ number }
+}
+
+@ i:1..15 {
+    >> classify(i) ¶
+}
+]]></code>
+    </language>
+    <language id="estonian" name="Estonian" native="Eesti" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Eesti
+// Identifikaatorid eesti keeles. Operaatorid on alati sümboolsed.
+
+>> "Tere, Eestikeelne maailm!" ¶
+
+klassifitseeri(arv) {
+    ? arv % 15 == 0 { <~ "SissSumm" }
+    _? arv % 3  == 0 { <~ "Siss" }
+    _? arv % 5  == 0 { <~ "Summ" }
+    _ { <~ arv }
+}
+
+@ i:1..15 {
+    >> klassifitseeri(i) ¶
+}
+]]></code>
+    </language>
+    <language id="finnish" name="Finnish" native="Suomi" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Suomi
+// Tunnisteet suomeksi. Operaattorit ovat aina symbolisia.
+
+>> "Hei, Suomenkielinen Maailma!" ¶
+
+luokittele(luku) {
+    ? luku % 15 == 0 { <~ "SuhPörr" }
+    _? luku % 3  == 0 { <~ "Suh" }
+    _? luku % 5  == 0 { <~ "Pörr" }
+    _ { <~ luku }
+}
+
+@ i:1..15 {
+    >> luokittele(i) ¶
+}
+]]></code>
+    </language>
+    <language id="french" name="French" native="Français" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Français
+// Identificateurs en français. Opérateurs toujours symboliques.
+
+>> "Bonjour, Monde Francophone!" ¶
+
+classer(nombre) {
+    ? nombre % 15 == 0 { <~ "BulleBzz" }
+    _? nombre % 3  == 0 { <~ "Bulle" }
+    _? nombre % 5  == 0 { <~ "Bzz" }
+    _ { <~ nombre }
+}
+
+@ i:1..15 {
+    >> classer(i) ¶
+}
+]]></code>
+    </language>
+    <language id="german" name="German" native="Deutsch" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Deutsch
+// Bezeichner auf Deutsch. Operatoren immer symbolisch.
+
+>> "Hallo, deutschsprachige Welt!" ¶
+
+einordnen(zahl) {
+    ? zahl % 15 == 0 { <~ "ZischSumm" }
+    _? zahl % 3  == 0 { <~ "Zisch" }
+    _? zahl % 5  == 0 { <~ "Summ" }
+    _ { <~ zahl }
+}
+
+@ i:1..15 {
+    >> einordnen(i) ¶
+}
+]]></code>
+    </language>
+    <language id="greek" name="Greek" native="Ελληνικά" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Ελληνικά
+// Αναγνωριστικά στα ελληνικά. Τελεστές πάντα συμβολικοί.
+
+>> "Γεια σου, ελληνόφωνε κόσμε!" ¶
+
+ταξινόμηση(αριθμός) {
+    ? αριθμός % 15 == 0 { <~ "ΑφρόςΒόμβος" }
+    _? αριθμός % 3  == 0 { <~ "Αφρός" }
+    _? αριθμός % 5  == 0 { <~ "Βόμβος" }
+    _ { <~ αριθμός }
+}
+
+@ i:1..15 {
+    >> ταξινόμηση(i) ¶
+}
+]]></code>
+    </language>
+    <language id="hausa" name="Hausa" native="Hausa" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Hausa
+// Masu gano sunayen a Hausa. Masu aiki koyaushe alamu ne.
+
+>> "Sannu, Duniyar Magana Hausa!" ¶
+
+rarrabawa(lamba) {
+    ? lamba % 15 == 0 { <~ "KumfaVuvuu" }
+    _? lamba % 3  == 0 { <~ "Kumfa" }
+    _? lamba % 5  == 0 { <~ "Vuvuu" }
+    _ { <~ lamba }
+}
+
+@ i:1..15 {
+    >> rarrabawa(i) ¶
+}
+]]></code>
+    </language>
+    <language id="hebrew" name="Hebrew" native="עברית" dir="rtl">
+      <code><![CDATA[// FizzBuzz — עברית
+// מזהים בעברית. אופרטורים תמיד סמליים.
+
+>> "שלום, עולם דובר עברית!" ¶
+
+סיווג(מספר) {
+    ? מספר % 15 == 0 { <~ "בועהזמזום" }
+    _? מספר % 3  == 0 { <~ "בועה" }
+    _? מספר % 5  == 0 { <~ "זמזום" }
+    _ { <~ מספר }
+}
+
+@ i:1..15 {
+    >> סיווג(i) ¶
+}
+]]></code>
+    </language>
+    <language id="hindi" name="Hindi" native="हिन्दी" dir="ltr">
+      <code><![CDATA[// FizzBuzz — हिन्दी
+// पहचानकर्ता हिन्दी में। ऑपरेटर हमेशा प्रतीकात्मक।
+
+>> "नमस्ते, हिन्दी भाषी दुनिया!" ¶
+
+वर्गीकरण(संख्या) {
+    ? संख्या % 15 == 0 { <~ "बुलबुलाभनभन" }
+    _? संख्या % 3  == 0 { <~ "बुलबुला" }
+    _? संख्या % 5  == 0 { <~ "भनभन" }
+    _ { <~ संख्या }
+}
+
+@ i:1..15 {
+    >> वर्गीकरण(i) ¶
+}
+]]></code>
+    </language>
+    <language id="hungarian" name="Hungarian" native="Magyar" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Magyar
+// Azonosítók magyarul. Az operátorok mindig szimbolikusak.
+
+>> "Szia, Magyar Világ!" ¶
+
+osztályoz(szám) {
+    ? szám % 15 == 0 { <~ "SziszZüm" }
+    _? szám % 3  == 0 { <~ "Szisz" }
+    _? szám % 5  == 0 { <~ "Züm" }
+    _ { <~ szám }
+}
+
+@ i:1..15 {
+    >> osztályoz(i) ¶
+}
+]]></code>
+    </language>
+    <language id="icelandic" name="Icelandic" native="Íslenska" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Íslenska
+// Auðkenni á íslensku. Virkjar eru alltaf táknrænar.
+
+>> "Halló, Íslenskumælandi heimur!" ¶
+
+flokkaðu(tala) {
+    ? tala % 15 == 0 { <~ "FreyðSurr" }
+    _? tala % 3  == 0 { <~ "Freyð" }
+    _? tala % 5  == 0 { <~ "Surr" }
+    _ { <~ tala }
+}
+
+@ i:1..15 {
+    >> flokkaðu(i) ¶
+}
+]]></code>
+    </language>
+    <language id="indonesian" name="Indonesian" native="Bahasa Indonesia" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Bahasa Indonesia
+// Pengidentifikasi dalam Bahasa Indonesia. Operator selalu simbolis.
+
+>> "Halo, Dunia Berbahasa Indonesia!" ¶
+
+klasifikasi(angka) {
+    ? angka % 15 == 0 { <~ "DesisDengung" }
+    _? angka % 3  == 0 { <~ "Desis" }
+    _? angka % 5  == 0 { <~ "Dengung" }
+    _ { <~ angka }
+}
+
+@ i:1..15 {
+    >> klasifikasi(i) ¶
+}
+]]></code>
+    </language>
+    <language id="italian" name="Italian" native="Italiano" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Italiano
+// Identificatori in italiano. Operatori sempre simbolici.
+
+>> "Ciao, Mondo Italofono!" ¶
+
+classifica(numero) {
+    ? numero % 15 == 0 { <~ "FrizzaRonza" }
+    _? numero % 3  == 0 { <~ "Frizza" }
+    _? numero % 5  == 0 { <~ "Ronza" }
+    _ { <~ numero }
+}
+
+@ i:1..15 {
+    >> classifica(i) ¶
+}
+]]></code>
+    </language>
+    <language id="japanese" name="Japanese" native="日本語" dir="ltr">
+      <code><![CDATA[// FizzBuzz — 日本語
+// 識別子はひらがなで。演算子は常にシンボル。
+
+>> "こんにちは、日本語の世界！" ¶
+
+ぶんるい(かず) {
+    ? かず % 15 == 0 { <~ "シュワブーン" }
+    _? かず % 3  == 0 { <~ "シュワ" }
+    _? かず % 5  == 0 { <~ "ブーン" }
+    _ { <~ かず }
+}
+
+@ i:1..15 {
+    >> ぶんるい(i) ¶
+}
+]]></code>
+    </language>
+    <language id="korean" name="Korean" native="한국어" dir="ltr">
+      <code><![CDATA[// FizzBuzz — 한국어
+// 식별자는 한국어로. 연산자는 항상 기호.
+
+>> "안녕하세요, 한국어 세계!" ¶
+
+분류(숫자) {
+    ? 숫자 % 15 == 0 { <~ "쉬익붕붕" }
+    _? 숫자 % 3  == 0 { <~ "쉬익" }
+    _? 숫자 % 5  == 0 { <~ "붕붕" }
+    _ { <~ 숫자 }
+}
+
+@ i:1..15 {
+    >> 분류(i) ¶
+}
+]]></code>
+    </language>
+    <language id="latvian" name="Latvian" native="Latviešu" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Latviešu
+// Identifikatori latviski. Operatori vienmēr simboliski.
+
+>> "Sveika, Latviski runājošā pasaule!" ¶
+
+klasificē(skaitlis) {
+    ? skaitlis % 15 == 0 { <~ "BurbDūc" }
+    _? skaitlis % 3  == 0 { <~ "Burb" }
+    _? skaitlis % 5  == 0 { <~ "Dūc" }
+    _ { <~ skaitlis }
+}
+
+@ i:1..15 {
+    >> klasificē(i) ¶
+}
+]]></code>
+    </language>
+    <language id="lithuanian" name="Lithuanian" native="Lietuvių" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Lietuvių
+// Identifikatoriai lietuviškai. Operatoriai visada simboliniai.
+
+>> "Labas, Lietuviškai kalbantis pasauli!" ¶
+
+klasifikuok(skaičius) {
+    ? skaičius % 15 == 0 { <~ "ŠnypšDūz" }
+    _? skaičius % 3  == 0 { <~ "Šnypš" }
+    _? skaičius % 5  == 0 { <~ "Dūz" }
+    _ { <~ skaičius }
+}
+
+@ i:1..15 {
+    >> klasifikuok(i) ¶
+}
+]]></code>
+    </language>
+    <language id="mandarin" name="Mandarin" native="中文" dir="ltr">
+      <code><![CDATA[// FizzBuzz — 中文（普通话）
+// 标识符用中文。运算符始终是符号。
+
+>> "你好，中文世界！" ¶
+
+分类(数字) {
+    ? 数字 % 15 == 0 { <~ "嘶嘶嗡嗡" }
+    _? 数字 % 3  == 0 { <~ "嘶嘶" }
+    _? 数字 % 5  == 0 { <~ "嗡嗡" }
+    _ { <~ 数字 }
+}
+
+@ i:1..15 {
+    >> 分类(i) ¶
+}
+]]></code>
+    </language>
+    <language id="marathi" name="Marathi" native="मराठी" dir="ltr">
+      <code><![CDATA[// FizzBuzz — मराठी
+// ओळखकर्ते मराठीत। ऑपरेटर नेहमी सांकेतिक।
+
+>> "नमस्कार, मराठी बोलणाऱ्या जगा!" ¶
+
+वर्गीकरण(संख्या) {
+    ? संख्या % 15 == 0 { <~ "बुडबुडाभुणभुण" }
+    _? संख्या % 3  == 0 { <~ "बुडबुडा" }
+    _? संख्या % 5  == 0 { <~ "भुणभुण" }
+    _ { <~ संख्या }
+}
+
+@ i:1..15 {
+    >> वर्गीकरण(i) ¶
+}
+]]></code>
+    </language>
+    <language id="norwegian" name="Norwegian" native="Norsk" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Norsk
+// Identifikatorer på norsk. Operatorer er alltid symbolske.
+
+>> "Hei, Norsktalende Verden!" ¶
+
+klassifiser(tall) {
+    ? tall % 15 == 0 { <~ "BrusSurr" }
+    _? tall % 3  == 0 { <~ "Brus" }
+    _? tall % 5  == 0 { <~ "Surr" }
+    _ { <~ tall }
+}
+
+@ i:1..15 {
+    >> klassifiser(i) ¶
+}
+]]></code>
+    </language>
+    <language id="persian" name="Persian" native="فارسی" dir="rtl">
+      <code><![CDATA[// FizzBuzz — فارسی
+// شناسه‌ها به فارسی. عملگرها همیشه نمادین.
+
+>> "سلام، دنیای فارسی‌زبان!" ¶
+
+نوع(عدد) {
+    ? عدد % 15 == 0 { <~ "حبابوزوز" }
+    _? عدد % 3  == 0 { <~ "حباب" }
+    _? عدد % 5  == 0 { <~ "وزوز" }
+    _ { <~ عدد }
+}
+
+@ i:1..15 {
+    >> نوع(i) ¶
+}
+]]></code>
+    </language>
+    <language id="polish" name="Polish" native="Polski" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Polski
+// Identyfikatory po polsku. Operatory zawsze symboliczne.
+
+>> "Witaj, Polskojęzyczny Świecie!" ¶
+
+sklasyfikuj(liczba) {
+    ? liczba % 15 == 0 { <~ "SzumBzy" }
+    _? liczba % 3  == 0 { <~ "Szum" }
+    _? liczba % 5  == 0 { <~ "Bzy" }
+    _ { <~ liczba }
+}
+
+@ i:1..15 {
+    >> sklasyfikuj(i) ¶
+}
+]]></code>
+    </language>
+    <language id="portuguese" name="Portuguese" native="Português" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Português
+// Identificadores em português. Operadores sempre simbólicos.
+
+>> "Olá, Mundo Lusófono!" ¶
+
+classificar(número) {
+    ? número % 15 == 0 { <~ "BorbulhaZumbido" }
+    _? número % 3  == 0 { <~ "Borbulha" }
+    _? número % 5  == 0 { <~ "Zumbido" }
+    _ { <~ número }
+}
+
+@ i:1..15 {
+    >> classificar(i) ¶
+}
+]]></code>
+    </language>
+    <language id="punjabi" name="Punjabi" native="ਪੰਜਾਬੀ" dir="ltr">
+      <code><![CDATA[// FizzBuzz — ਪੰਜਾਬੀ
+// ਪਛਾਣਕਰਤਾ ਪੰਜਾਬੀ ਵਿੱਚ। ਆਪਰੇਟਰ ਹਮੇਸ਼ਾ ਪ੍ਰਤੀਕਾਤਮਕ।
+
+>> "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ, ਪੰਜਾਬੀ ਬੋਲਣ ਵਾਲੀ ਦੁਨੀਆ!" ¶
+
+ਵਰਗੀਕਰਨ(ਸੰਖਿਆ) {
+    ? ਸੰਖਿਆ % 15 == 0 { <~ "ਬੁਲਬੁਲਾਭਿਣਭਿਣ" }
+    _? ਸੰਖਿਆ % 3  == 0 { <~ "ਬੁਲਬੁਲਾ" }
+    _? ਸੰਖਿਆ % 5  == 0 { <~ "ਭਿਣਭਿਣ" }
+    _ { <~ ਸੰਖਿਆ }
+}
+
+@ i:1..15 {
+    >> ਵਰਗੀਕਰਨ(i) ¶
+}
+]]></code>
+    </language>
+    <language id="romanian" name="Romanian" native="Română" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Română
+// Identificatori în română. Operatorii sunt întotdeauna simbolici.
+
+>> "Salut, Lume Română!" ¶
+
+clasifică(număr) {
+    ? număr % 15 == 0 { <~ "FizBâz" }
+    _? număr % 3  == 0 { <~ "Fiz" }
+    _? număr % 5  == 0 { <~ "Bâz" }
+    _ { <~ număr }
+}
+
+@ i:1..15 {
+    >> clasifică(i) ¶
+}
+]]></code>
+    </language>
+    <language id="russian" name="Russian" native="Русский" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Русский
+// Идентификаторы на русском. Операторы всегда символьные.
+
+>> "Привет, русскоязычный мир!" ¶
+
+тип(число) {
+    ? число % 15 == 0 { <~ "ШипЖуж" }
+    _? число % 3  == 0 { <~ "Шип" }
+    _? число % 5  == 0 { <~ "Жуж" }
+    _ { <~ число }
+}
+
+@ i:1..15 {
+    >> тип(i) ¶
+}
+]]></code>
+    </language>
+    <language id="serbian" name="Serbian" native="Српски" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Српски
+// Идентификатори на српском. Оператори су увек симболични.
+
+>> "Здраво, Српски свете!" ¶
+
+класификуј(број) {
+    ? број % 15 == 0 { <~ "ШишЗуј" }
+    _? број % 3  == 0 { <~ "Шиш" }
+    _? број % 5  == 0 { <~ "Зуј" }
+    _ { <~ број }
+}
+
+@ i:1..15 {
+    >> класификуј(i) ¶
+}
+]]></code>
+    </language>
+    <language id="slovak" name="Slovak" native="Slovenčina" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Slovenčina
+// Identifikátory po slovensky. Operátory sú vždy symbolické.
+
+>> "Ahoj, Slovenský svet!" ¶
+
+klasifikuj(číslo) {
+    ? číslo % 15 == 0 { <~ "PenaBzz" }
+    _? číslo % 3  == 0 { <~ "Pena" }
+    _? číslo % 5  == 0 { <~ "Bzz" }
+    _ { <~ číslo }
+}
+
+@ i:1..15 {
+    >> klasifikuj(i) ¶
+}
+]]></code>
+    </language>
+    <language id="spanish" name="Spanish" native="Español" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Español
+// Identificadores en español. Operadores siempre simbólicos.
+
+>> "¡Hola, Mundo Hispanohablante!" ¶
+
+clasificar(número) {
+    ? número % 15 == 0 { <~ "BurbujaZumbido" }
+    _? número % 3  == 0 { <~ "Burbuja" }
+    _? número % 5  == 0 { <~ "Zumbido" }
+    _ { <~ número }
+}
+
+@ i:1..15 {
+    >> clasificar(i) ¶
+}
+]]></code>
+    </language>
+    <language id="swahili" name="Swahili" native="Kiswahili" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Kiswahili
+// Vitambulisho kwa Kiswahili. Waendeshaji daima ni ishara.
+
+>> "Habari, Ulimwengu wa Kiswahili!" ¶
+
+ainisha(nambari) {
+    ? nambari % 15 == 0 { <~ "PovuVuu" }
+    _? nambari % 3  == 0 { <~ "Povu" }
+    _? nambari % 5  == 0 { <~ "Vuu" }
+    _ { <~ nambari }
+}
+
+@ i:1..15 {
+    >> ainisha(i) ¶
+}
+]]></code>
+    </language>
+    <language id="swedish" name="Swedish" native="Svenska" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Svenska
+// Identifierare på svenska. Operatorer är alltid symboliska.
+
+>> "Hej, Svensktalande Värld!" ¶
+
+klassificera(tal) {
+    ? tal % 15 == 0 { <~ "FräsSurr" }
+    _? tal % 3  == 0 { <~ "Fräs" }
+    _? tal % 5  == 0 { <~ "Surr" }
+    _ { <~ tal }
+}
+
+@ i:1..15 {
+    >> klassificera(i) ¶
+}
+]]></code>
+    </language>
+    <language id="tagalog" name="Tagalog" native="Filipino" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Filipino
+// Mga identifier sa Filipino. Palaging simboliko ang mga operator.
+
+>> "Kamusta, Filipino na Mundo!" ¶
+
+uriin(bilang) {
+    ? bilang % 15 == 0 { <~ "BulaUgong" }
+    _? bilang % 3  == 0 { <~ "Bula" }
+    _? bilang % 5  == 0 { <~ "Ugong" }
+    _ { <~ bilang }
+}
+
+@ i:1..15 {
+    >> uriin(i) ¶
+}
+]]></code>
+    </language>
+    <language id="thai" name="Thai" native="ภาษาไทย" dir="ltr">
+      <code><![CDATA[// FizzBuzz — ภาษาไทย
+// ตัวระบุเป็นภาษาไทย ตัวดำเนินการเป็นสัญลักษณ์เสมอ
+
+>> "สวัสดี โลกที่พูดภาษาไทย!" ¶
+
+จำแนก(ตัวเลข) {
+    ? ตัวเลข % 15 == 0 { <~ "ซ่าหึ่ง" }
+    _? ตัวเลข % 3  == 0 { <~ "ซ่า" }
+    _? ตัวเลข % 5  == 0 { <~ "หึ่ง" }
+    _ { <~ ตัวเลข }
+}
+
+@ i:1..15 {
+    >> จำแนก(i) ¶
+}
+]]></code>
+    </language>
+    <language id="turkish" name="Turkish" native="Türkçe" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Türkçe
+// Tanımlayıcılar Türkçe. Operatörler her zaman sembolik.
+
+>> "Merhaba, Türkçe Konuşan Dünya!" ¶
+
+sınıfla(sayı) {
+    ? sayı % 15 == 0 { <~ "CızVız" }
+    _? sayı % 3  == 0 { <~ "Cız" }
+    _? sayı % 5  == 0 { <~ "Vız" }
+    _ { <~ sayı }
+}
+
+@ i:1..15 {
+    >> sınıfla(i) ¶
+}
+]]></code>
+    </language>
+    <language id="ukrainian" name="Ukrainian" native="Українська" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Українська
+// Ідентифікатори українською. Оператори завжди символьні.
+
+>> "Привіт, україномовний світ!" ¶
+
+вид(цифра) {
+    ? цифра % 15 == 0 { <~ "ШипДзиж" }
+    _? цифра % 3  == 0 { <~ "Шип" }
+    _? цифра % 5  == 0 { <~ "Дзиж" }
+    _ { <~ цифра }
+}
+
+@ i:1..15 {
+    >> вид(i) ¶
+}
+]]></code>
+    </language>
+    <language id="urdu" name="Urdu" native="اردو" dir="rtl">
+      <code><![CDATA[// FizzBuzz — اردو
+// شناخت کنندے اردو میں۔ آپریٹر ہمیشہ علامتی۔
+
+>> "ہیلو، اردو بولنے والی دنیا!" ¶
+
+درجہبندی(عدد) {
+    ? عدد % 15 == 0 { <~ "بلبلہبھن" }
+    _? عدد % 3  == 0 { <~ "بلبلہ" }
+    _? عدد % 5  == 0 { <~ "بھن" }
+    _ { <~ عدد }
+}
+
+@ i:1..15 {
+    >> درجہبندی(i) ¶
+}
+]]></code>
+    </language>
+    <language id="vietnamese" name="Vietnamese" native="Tiếng Việt" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Tiếng Việt
+// Định danh bằng tiếng Việt. Toán tử luôn mang tính biểu tượng.
+
+>> "Xin chào, Thế giới nói Tiếng Việt!" ¶
+
+phânLoại(số) {
+    ? số % 15 == 0 { <~ "XìVù" }
+    _? số % 3  == 0 { <~ "Xì" }
+    _? số % 5  == 0 { <~ "Vù" }
+    _ { <~ số }
+}
+
+@ i:1..15 {
+    >> phânLoại(i) ¶
+}
+]]></code>
+    </language>
+    <language id="yoruba" name="Yoruba" native="Yorùbá" dir="ltr">
+      <code><![CDATA[// FizzBuzz — Yorùbá
+// Awọn idanimọ ni Yorùbá. Awọn oniṣẹ jẹ aami nigbagbogbo.
+
+>> "Ẹ káàbọ̀, Àgbáyé tó ń sọ Yorùbá!" ¶
+
+ìpín(iye) {
+    ? iye % 15 == 0 { <~ "FọnGún" }
+    _? iye % 3  == 0 { <~ "Fọn" }
+    _? iye % 5  == 0 { <~ "Gún" }
+    _ { <~ iye }
+}
+
+@ i:1..15 {
+    >> ìpín(i) ¶
+}
+]]></code>
+    </language>
+  </languages>
+</zymbol-rosetta>

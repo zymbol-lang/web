@@ -1,0 +1,10 @@
+# Development scripts
+*.py
+__pycache__/
+
+# Old/replaced assets
+zymbol_logo.png
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,76 @@
+// test_control.zy — Control de flujo, match, bucles
+// Ejecutar: zymbol run test_control.zy
+
+// ─── If / else-if / else ───
+x = 7
+? x > 100 {
+    >> "grande" ¶
+} _? x > 0 {
+    >> "positivo" ¶    // → positivo
+} _? x == 0 {
+    >> "cero" ¶
+} _ {
+    >> "negativo" ¶
+}
+
+// ─── Match con rangos ───
+score = 85
+grade = ?? score {
+    90..100 : 'A'
+    80..89  : 'B'
+    70..79  : 'C'
+    _       : 'F'
+}
+>> "grade=" grade ¶    // → grade=B
+
+// ─── Match con guards ───
+temp = -5
+estado = ?? temp {
+    _? temp < 0  : "hielo"
+    _? temp < 20 : "frio"
+    _? temp < 35 : "calido"
+    _            : "caliente"
+}
+>> estado ¶    // → hielo
+
+// ─── Match con cadenas ───
+color = "rojo"
+codigo = ?? color {
+    "rojo"  : "#FF0000"
+    "verde" : "#00FF00"
+    _       : "#000000"
+}
+>> codigo ¶    // → #FF0000
+
+// ─── Bucle con rango inclusivo ───
+@ i:0..4 { >> i " " }
+>> ¶    // → 0 1 2 3 4
+
+// ─── Rango con step ───
+@ i:1..9:2 { >> i " " }
+>> ¶    // → 1 3 5 7 9
+
+// ─── Rango reverso ───
+@ i:5..0:1 { >> i " " }
+>> ¶    // → 5 4 3 2 1 0
+
+// ─── While ───
+n = 1
+@ n <= 64 { n *= 2 }
+>> n ¶    // → 128
+
+// ─── For-each sobre array ───
+frutas = ["manzana", "pera", "uva"]
+@ f:frutas { >> f ¶ }
+
+// ─── For-each sobre cadena ───
+@ c:"hola" { >> c "-" }
+>> ¶    // → h-o-l-a-
+
+// ─── Break y continue ───
+@ i:1..10 {
+    ? i % 2 == 0 { @> }
+    ? i > 7 { @! }
+    >> i " "
+}
+>> ¶    // → 1 3 5 7

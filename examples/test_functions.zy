@@ -1,0 +1,77 @@
+// test_functions.zy — Funciones, lambdas, closures
+// Ejecutar: zymbol run test_functions.zy
+
+// ─── Funciones basicas ───
+sumar(a, b) { <~ a + b }
+>> sumar(3, 4) ¶    // → 7
+
+factorial(n) {
+    ? n <= 1 { <~ 1 }
+    <~ n * factorial(n - 1)
+}
+>> factorial(5) ¶    // → 120
+
+// Fibonacci iterativo
+fib(n) {
+    ? n <= 1 { <~ n }
+    a = 0
+    b = 1
+    @ _i:2..n {    // _i: variable de control no usada en el cuerpo
+        tmp = a + b
+        a = b
+        b = tmp
+    }
+    <~ b
+}
+>> fib(10) ¶    // → 55
+
+// ─── Scope aislado ───
+_global = 100    // intencionalmente sin usar (demuestra scope aislado)
+test_scope() {
+    local = 42
+    <~ local
+}
+>> test_scope() ¶    // → 42 (no accede a 'global')
+
+// ─── Lambda simple ───
+doble = x -> x * 2
+suma2 = (a, b) -> a + b
+>> doble(5) ¶       // → 10
+>> suma2(3, 7) ¶    // → 10
+
+// ─── Lambda con bloque ───
+clasificar = x -> {
+    ? x > 0 { <~ "positivo" }
+    _? x < 0 { <~ "negativo" }
+    <~ "cero"
+}
+>> clasificar(5) ¶     // → positivo
+>> clasificar(-3) ¶    // → negativo
+>> clasificar(0) ¶     // → cero
+
+// ─── Closures ───
+factor = 3
+triple = x -> x * factor
+>> triple(7) ¶    // → 21
+
+// Factory de funciones
+make_adder(n) { <~ x -> x + n }
+add10 = make_adder(10)
+add20 = make_adder(20)
+>> add10(5) ¶    // → 15
+>> add20(5) ¶    // → 25
+
+// ─── Lambdas como valores ───
+ops = [x -> x+1, x -> x*2, x -> x*x]
+>> ops[0](5) ¶    // → 6
+>> ops[1](5) ¶    // → 10
+>> ops[2](5) ¶    // → 25
+
+// Pasar lambda como argumento
+aplicar(f, x) { <~ f(x) }
+>> aplicar(x -> x * 3, 7) ¶    // → 21
+
+// Wrapper para funciones named (workaround L5)
+doble2(x) { <~ x * 2 }
+fn = x -> doble2(x)
+>> fn(6) ¶    // → 12

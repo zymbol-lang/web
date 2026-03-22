@@ -1,0 +1,105 @@
+// test_collections.zy — Arrays, tuplas, HOF
+// Ejecutar: zymbol run test_collections.zy
+
+// ─── Arrays ───
+arr = [10, 20, 30, 40, 50]
+>> arr[0] ¶    // → 10
+>> arr[2] ¶    // → 30
+
+// Longitud
+n = arr$#
+>> n ¶          // → 5
+>> (arr$#) ¶    // → 5
+
+// Append (genera nuevo array)
+arr = arr$+ 60
+>> (arr$#) ¶    // → 6
+
+// Remove por indice
+arr = arr$- 0
+>> arr[0] ¶    // → 20
+
+// Contains
+tiene = arr$? 30
+>> tiene ¶    // → #1
+
+// Slice [start..end) — end exclusivo
+trozo = arr$[0..2]
+>> trozo ¶    // → [20, 30]
+
+// Update de elemento
+arr[1] = 99
+>> arr ¶    // → [20, 99, 40, 50, 60]
+
+// For-each
+@ x:arr { >> x " " }
+>> ¶
+
+// Matriz 2D
+matrix = [[1,2,3], [4,5,6], [7,8,9]]
+>> matrix[1] ¶       // → [4, 5, 6]
+>> matrix[1][2] ¶    // → 6
+
+// ─── Tuplas ───
+punto = (10, 20)
+>> punto[0] ¶    // → 10
+
+persona = (nombre: "Alice", edad: 25)
+>> persona.nombre ¶    // → Alice
+>> persona.edad ¶      // → 25
+>> persona[0] ¶        // → Alice
+
+// ─── HOF: Map, Filter, Reduce ───
+nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+// Map
+dobles = nums$> (x -> x * 2)
+>> dobles ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+
+// Filter
+pares = nums$| (x -> x % 2 == 0)
+>> pares ¶    // → [2, 4, 6, 8, 10]
+
+// Reduce
+suma = nums$< (0, (acc, x) -> acc + x)
+>> suma ¶    // → 55
+
+// Pipeline con variables intermedias
+paso1 = nums$| (x -> x > 5)
+paso2 = paso1$> (x -> x * x)
+>> paso2 ¶    // → [36, 49, 64, 81, 100]
+
+// HOF con funcion named (wrapper obligatorio)
+double_fn(x) { <~ x * 2 }
+r = nums$> (x -> double_fn(x))
+>> r ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+
+// ─── String como coleccion ───
+s = "Hola Mundo"
+largo = s$#
+>> largo ¶          // → 10
+>> (s$? 'M') ¶      // → #1
+sub = s$[0..4]
+>> sub ¶            // → Hola
+
+// Split
+partes = "a,b,c,d" / ','
+>> partes ¶    // → [a, b, c, d]
+
+// ─── Bubble Sort (verifica arrays y output params) ───
+bsort(datos<~) {
+    n = datos$#
+    @ i:0..(n-2) {
+        @ j:0..(n-i-2) {
+            ? datos[j] > datos[j+1] {
+                tmp = datos[j]
+                datos[j] = datos[j+1]
+                datos[j+1] = tmp
+            }
+        }
+    }
+}
+
+lista = [64, 34, 25, 12, 22, 11, 90]
+bsort(lista)
+>> lista ¶    // → [11, 12, 22, 25, 34, 64, 90]
