@@ -2,17 +2,6 @@
 
 **Zymbol-Lang** ay isang simbolikong wika ng programa. Walang mga keyword — lahat ay simbolo. Gumagana nang pareho sa anumang wikang pantao.
 
-> **Babala:** Ang dokumentasyong ito ay nilikha at isinalin ng artipisyal na katalinuhan (AI).
-> Ang lahat ng pagsisikap ay ginawa upang matiyak ang katumpakan, ngunit ang ilang pagsasalin o halimbawa ay maaaring maglaman ng mga pagkakamali.
-> Ang kanonikong sanggunian ay ang [detalye ng Zymbol-Lang](https://github.com/OscarEEspinozaB/zymbol-lang-web).
->
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-
----
-
-## Pilosopiya
-
 - Walang mga keyword (`kung`, `habang`, `ibalik` ay hindi umiiral — simbolo lamang `?`, `@`, `<~`)
 - Buong Unicode — mga identifier sa anumang wika o emoji 👋
 - Hindi nakasalalay sa wikang pantao — ang code ay magkapareho sa bawat wika
@@ -29,17 +18,16 @@ aktibo = #1      // boolean na totoo
 👋 := "Kamusta"
 ```
 
-### Kumplikadong Pagtatalaga
-
 ```zymbol
-x = 10    // 10
+x = 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %= 4    // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
@@ -57,18 +45,23 @@ x--       // 2
 | Tuple           | `(a, b)`             | `##)`           | Pangkatang posisyon                      |
 | Pinangalanang Tuple | `(x: 1, y: 2)`  | `##)`           | Access sa pangalan o index               |
 
+```zymbol
+// Introspeksyon ng uri — nagbabalik ng (uri, digit, halaga)
+meta = 42#?
+>> meta ¶         // → (###, 2, 42)
+t = meta[0]
+>> t ¶            // → ###
+```
+
 ---
 
 ## Output at Input
 
 ```zymbol
-// Output — HINDI awtomatikong nagdaragdag ng bagong linya
 >> "Kamusta" ¶                         // ¶ o \\ ay nagbibigay ng bagong linya
 >> "a=" a " b=" b ¶                    // maramihang halaga sa pamamagitan ng juxtaposition
->> "kabuuan=" kabuuan(2, 3) ¶          // mga function call sa anumang posisyon
 >> (hanay$#) ¶                         // ang mga postfix operator ay nangangailangan ng panaklong
 
-// Input
 << pangalan                            // walang prompt — nagbabasa sa variable
 << "Ang iyong pangalan? " pangalan     // may prompt
 ```
@@ -77,7 +70,29 @@ x--       // 2
 
 ---
 
-## Pagsasama ng String
+## Mga Operator
+
+```zymbol
+// Aritmetika
+a = 10
+b = 3
+r1 = a + b    // 13     r2 = a - b    // 7
+r3 = a * b    // 30     r4 = a / b    // 3  (integer na dibisyon)
+r5 = a % b    // 1      r6 = a ^ b    // 1000  (exponentiation)
+
+// Paghahambing
+a == b    // #0    a <> b    // #1    a < b    // #0
+a <= b    // #0   a > b     // #1    a >= b   // #1
+
+// Lohikal
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
+```
+
+---
+
+## Mga String
 
 Tatlong wastong paraan — bawat isa para sa kontekstong nito:
 
@@ -87,7 +102,6 @@ n = 25
 
 // 1. Kuwit — sa mga pagtatalaga gamit ang = o :=
 mensahe = "Kamusta ", pangalan, "!"       // → Kamusta Ana!
-TITULO := "Gumagamit: ", pangalan
 
 // 2. Juxtaposition — sa >> output
 >> "Kamusta " pangalan " ikaw ay " n ¶    // → Kamusta Ana ikaw ay 25
@@ -96,7 +110,17 @@ TITULO := "Gumagamit: ", pangalan
 paglalarawan = "Kamusta {pangalan}, ikaw ay {n}"    // → Kamusta Ana, ikaw ay 25
 ```
 
-> **Tala**: `+` ay para sa mga numero lamang. Ang paggamit nito sa mga string ay nagbibigay ng babala.
+```zymbol
+s = "Kamusta Mundo"
+haba = s$#                  // 13
+bahagi = s$[0..7]           // "Kamusta"
+mayroon = s$? "Mundo"       // #1
+hatiin = "a,b,c,d" / ','    // [a, b, c, d]
+palitan = s$~~["a":"e"]      // palitan
+palitan1 = s$~~["a":"e":1]   // N unang
+```
+
+> `+` para sa mga numero lamang. Para sa mga string gamitin ang `,`, juxtaposition, o interpolation.
 
 ---
 
@@ -105,10 +129,8 @@ paglalarawan = "Kamusta {pangalan}, ikaw ay {n}"    // → Kamusta Ana, ikaw ay 
 ```zymbol
 x = 7
 
-// Simpleng if
 ? x > 0 { >> "positibo" ¶ }
 
-// if / else-if / else
 ? x > 100 {
     >> "malaki" ¶
 } _? x > 0 {
@@ -120,7 +142,7 @@ x = 7
 }
 ```
 
-Ang mga bloke `{ }` ay **kinakailangan** kahit para sa isang linya.
+> Ang mga bloke `{ }` ay **kinakailangan** kahit para sa isang linya.
 
 ---
 
@@ -137,7 +159,15 @@ grado = ?? marka {
 }
 >> grado ¶    // → B
 
-// Pagtutugma na may mga bantay (mga di-tiyak na kondisyon)
+// Mga string
+kulay = "pula"
+code = ?? kulay {
+    "pula"   : "#FF0000"
+    "berde"  : "#00FF00"
+    _        : "#000000"
+}
+
+// Mga bantay
 temperatura = -5
 kalagayan = ?? temperatura {
     _? temperatura < 0  : "yelo"
@@ -147,14 +177,12 @@ kalagayan = ?? temperatura {
 }
 >> kalagayan ¶    // → yelo
 
-// Pagtutugma na may mga string
-kulay = "pula"
-code = ?? kulay {
-    "pula"   : "#FF0000"
-    "berde"  : "#00FF00"
-    _        : "#000000"
+// Anyong pahayag (mga blokeng braso)
+?? n {
+    0       : { >> "sero" ¶ }
+    _? n < 0: { >> "negatibo" ¶ }
+    _       : { >> "positibo" ¶ }
 }
->> code ¶
 ```
 
 ---
@@ -162,38 +190,43 @@ code = ?? kulay {
 ## Mga Loop
 
 ```zymbol
-// Inklusibong saklaw: 0..4 ay umuulit 0,1,2,3,4
-@ i:0..4 { >> i " " }
->> ¶    // → 0 1 2 3 4
+@ i:0..4  { >> i " " }        // inklusibong saklaw:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // na may hakbang:       1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // baligtad:             5 4 3 2 1 0
 
-// Saklaw na may hakbang
-@ i:1..9:2 { >> i " " }
->> ¶    // → 1 3 5 7 9
-
-// Baligtad na saklaw
-@ i:5..0:1 { >> i " " }
->> ¶    // → 5 4 3 2 1 0
-
-// While
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶    // → 128
+>> n ¶                        // → 128  (while)
 
-// For-each sa array
 mga_prutas = ["mansanas", "peras", "ubas"]
-@ p:mga_prutas { >> p ¶ }
+@ p:mga_prutas { >> p ¶ }     // for-each array
 
-// Sa mga character ng string
 @ c:"kamusta" { >> c "-" }
->> ¶    // → k-a-m-u-s-t-a-
+>> ¶                          // → k-a-m-u-s-t-a-  (for-each string)
 
-// Break at Continue
 @ i:1..10 {
-    ? i % 2 == 0 { @> }    // @> ituloy
-    ? i > 7 { @! }          // @! ihinto
+    ? i % 2 == 0 { @> }       // @> ituloy
+    ? i > 7 { @! }             // @! ihinto
     >> i " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Walang katapusang loop
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// May label na loop (nested na paghinto)
+count = 0
+@ @labas {
+    count++
+    ? count >= 3 { @! labas }
+}
+>> count ¶                    // → 3
 ```
 
 ---
@@ -201,53 +234,52 @@ mga_prutas = ["mansanas", "peras", "ubas"]
 ## Mga Function
 
 ```zymbol
-// Deklarasyon at tawag
 kabuuan(a, b) { <~ a + b }
 >> kabuuan(3, 4) ¶    // → 7
 
-// Recursion
 factorial(n) {
     ? n <= 1 { <~ 1 }
     <~ n * factorial(n - 1)
 }
 >> factorial(5) ¶    // → 120
-
-// Ang mga function ay may nakahiwalay na saklaw — walang access sa mga panlabas na variable
-_pandaigdig = 100
-subukan() {
-    x = 42    // lokal lamang
-    <~ x
-}
->> subukan() ¶    // → 42
 ```
 
-> **Mahalaga**: Ang mga pinangalanang function na `pangalan(mga_param){ }` ay hindi mga first-class na halaga.
-> Upang ipasa bilang argumento, balutin: `x -> kabuuan(x)`.
+Ang mga function ay may **nakahiwalay na saklaw** — hindi nila mababasa ang mga panlabas na variable. Gamitin ang mga output parameter `<~` upang baguhin ang mga variable ng nagtatawag:
+
+```zymbol
+palitan(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
+}
+x = 10
+y = 20
+palitan(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> Ang mga pinangalanang function ay hindi mga first-class na halaga. Upang ipasa bilang argumento, balutin: `x -> kabuuan(x)`.
 
 ---
 
 ## Lambda at Closure
 
 ```zymbol
-// Simpleng lambda (implicit na pagbabalik)
 doble = x -> x * 2
 kabuuan = (a, b) -> a + b
 >> doble(5) ¶       // → 10
 >> kabuuan(3, 7) ¶  // → 10
 
-// Block lambda (explicit na pagbabalik)
+// Block lambda
 uri_ng_halaga = x -> {
     ? x > 0 { <~ "positibo" }
     _? x < 0 { <~ "negatibo" }
     <~ "sero"
 }
->> uri_ng_halaga(5) ¶     // → positibo
->> uri_ng_halaga(0) ¶     // → sero
->> uri_ng_halaga(-5) ¶    // → negatibo
 
-// Mga Closure — ang mga lambda ay kumukuha ng mga variable mula sa panlabas na saklaw
+// Closure — kumukuha ng panlabas na saklaw
 salik = 3
-tatlong_beses = x -> x * salik    // kumukuha ng 'salik'
+tatlong_beses = x -> x * salik
 >> tatlong_beses(7) ¶    // → 21
 
 // Function factory
@@ -255,9 +287,8 @@ gumawa_ng_tagadagdag(n) { <~ x -> x + n }
 dagdag10 = gumawa_ng_tagadagdag(10)
 >> dagdag10(5) ¶    // → 15
 
-// Mga lambda bilang halaga: iimbak sa mga array
+// Sa mga array
 mga_operasyon = [x -> x+1, x -> x*2, x -> x*x]
->> mga_operasyon[0](5) ¶    // → 6
 >> mga_operasyon[2](5) ¶    // → 25
 ```
 
@@ -266,64 +297,129 @@ mga_operasyon = [x -> x+1, x -> x*2, x -> x*x]
 ## Hanay
 
 ```zymbol
-hanay = [10, 20, 30, 40, 50]
+arr = [1, 2, 3, 4, 5]
 
-// Access (index na nagsisimula sa 0)
->> hanay[0] ¶    // → 10
+arr[0]          // 1 — access (0-indexed)
+arr[-1]         // 5 — negatibong index (huli)
+arr$#           // 5 — haba (gamitin ang (arr$#) sa >>)
 
-// Haba (nangangailangan ng panaklong sa >>)
-n = hanay$#
->> (hanay$#) ¶    // → 5
+arr = arr$+ 6            // idagdag → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // ipasok sa index 2
+arr3 = arr$- 3           // alisin ang unang paglitaw ng halaga
+arr4 = arr$-- 3          // alisin ang lahat ng paglitaw
+arr5 = arr$-[0]          // alisin sa index
+arr6 = arr$-[1..3]       // alisin ang saklaw (eksklusibong katapusan)
 
-// Idagdag, alisin, naglalaman, hiwa
-hanay = hanay$+ 60               // idagdag
-hanay = hanay$- 0                // alisin ang index 0
-mayroon = hanay$? 30             // → #1
-hiwa = hanay$[0..2]              // [20, 30]
+mayroon = arr$? 3        // #1 — naglalaman
+pos = arr$?? 3           // [2] — lahat ng index ng halaga
+sl = arr$[0..3]          // [1,2,3] — hiwa (eksklusibong katapusan)
+sl2 = arr$[0:3]          // [1,2,3] — pareho, syntax na batay sa bilang
 
-// I-update ang elemento
-hanay[1] = 99
+pataas = arr$^+          // inayos pataas  (mga primitibo lamang)
+pababa = arr$^-          // inayos pababa  (mga primitibo lamang)
 
-// For-each
-@ x:hanay { >> x " " }
->> ¶
+// Mga pinangalanang/posisyonal na tuple array — gamitin ang $^ na may comparator lambda
+db = [(pangalan: "Carla", edad: 28), (pangalan: "Ana", edad: 25), (pangalan: "Bob", edad: 30)]
+ayon_sa_edad   = db$^ (a, b -> a.edad < b.edad)     // pataas ayon sa edad  (<)
+ayon_sa_pangalan = db$^ (a, b -> a.pangalan > b.pangalan) // pababa ayon sa pangalan (>)
+>> ayon_sa_edad[0].pangalan ¶     // → Ana
+>> ayon_sa_pangalan[0].pangalan ¶ // → Carla
+
+arr[1] = 99              // i-update sa lugar
+arr = arr[1]$~ 99        // functional na update — nagbabalik ng bagong array
 ```
 
-> `$+`, `$-`, `$[..]` ay nagbabalik ng **bagong array** — italaga ulit: `hanay = hanay$+ 4`.
-> Walang chaining: gumamit ng dalawang hiwalay na pagtatalaga.
+> Lahat ng mga operator ng koleksyon ay nagbabalik ng **bagong array**. Italaga ulit: `arr = arr$+ 4`.
+> Hindi maaaring i-chain ang mga operator — gumamit ng mga intermediate na pagtatalaga.
+> `$^+` / `$^-` nag-uuri ng **mga primitive array** (mga numero, string). Para sa mga tuple array gamitin ang `$^` na may comparator lambda — ang direksyon ay naka-encode sa lambda (`<` = pataas, `>` = pababa).
+
+```zymbol
+// Mga nested array
+matris = [[1,2,3],[4,5,6],[7,8,9]]
+>> matris[1][2] ¶    // → 6
+```
+
+---
+
+## Destructuring
+
+```zymbol
+// Array
+arr = [10, 20, 30, 40, 50]
+[a, b, c] = arr              // a=10  b=20  c=30
+[una, *natira] = arr          // una=10  natira=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ itatapon
+
+// Posisyonal na tuple
+punto = (100, 200)
+(px, py) = punto             // px=100  py=200
+
+// Pinangalanang tuple
+tao = (pangalan: "Ana", edad: 25, lungsod: "Maynila")
+(pangalan: p, edad: e) = tao // p="Ana"  e=25
+```
 
 ---
 
 ## Tuple
 
 ```zymbol
-// Pinangalanang tuple
+// Posisyonal
+punto = (10, 20)
+>> punto[0] ¶    // → 10
+
+// Pinangalanan
 tao = (pangalan: "Alisa", edad: 25)
 >> tao.pangalan ¶    // → Alisa
->> tao.edad ¶        // → 25
->> tao[0] ¶          // → Alisa (gumagana rin ang index)
+>> tao[0] ¶          // → Alisa  (gumagana rin ang index)
+
+// Nested
+pos = (x: 10, y: 20)
+p = (pos: pos, label: "simula")
+>> p.pos.x ¶        // → 10
 ```
 
 ---
 
 ## Mataas na Antas na Mga Function
 
-Ang mga operator ng HOF ay nangangailangan ng **inline lambda** — hindi isang direktang lambda variable.
+> Ang mga operator ng HOF ay nangangailangan ng **inline lambda** — hindi isang direktang lambda variable.
 
 ```zymbol
 mga_bilang = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Map ($>)
-mga_doble = mga_bilang$> (x -> x * 2)
->> mga_doble ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+mga_doble    = mga_bilang$> (x -> x * 2)                   // map  → [2,4,6…20]
+mga_pantay   = mga_bilang$| (x -> x % 2 == 0)              // filter → [2,4,6,8,10]
+kabuuan_lahat = mga_bilang$< (0, (acc, x) -> acc + x)      // reduce → 55
 
-// Filter ($|)
-mga_pantay = mga_bilang$| (x -> x % 2 == 0)
->> mga_pantay ¶    // → [2, 4, 6, 8, 10]
+// Pinagkakadena sa pamamagitan ng mga intermediate
+hakbang1 = mga_bilang$| (x -> x > 3)
+hakbang2 = hakbang1$> (x -> x * x)
+>> hakbang2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Reduce ($<) — (paunang halaga, (acc, elem) -> expr)
-kabuuan_lahat = mga_bilang$< (0, (acc, x) -> acc + x)
->> kabuuan_lahat ¶    // → 55
+// Mga pinangalanang function sa loob ng HOF — balutin sa lambda
+doblehin(x) { <~ x * 2 }
+r = mga_bilang$> (x -> doblehin(x))    // ✅
+```
+
+---
+
+## Pipe Operator
+
+Ang kanang bahagi ay palaging nangangailangan ng `_` bilang placeholder:
+
+```zymbol
+doble = x -> x * 2
+dagdag = (a, b) -> a + b
+dagdag_isa = x -> x + 1
+
+5 |> doble(_)            // → 10
+10 |> dagdag(_, 5)       // → 15
+5 |> dagdag(2, _)        // → 7
+
+// Pinagkakadena
+resulta = 5 |> doble(_) |> dagdag_isa(_) |> doble(_)
+>> resulta ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -335,10 +431,8 @@ kabuuan_lahat = mga_bilang$< (0, (acc, x) -> acc + x)
     x = 10 / 0
 } :! ##Div {
     >> "paghahati sa sero" ¶
-} :! ##IO {
-    >> "error sa IO" ¶
 } :! {
-    >> "ibang error: " _err ¶
+    >> "ibang error: " _err ¶    // _err ay nagtatago ng mensahe ng error
 } :> {
     >> "palaging tumatakbo" ¶
 }
@@ -359,18 +453,18 @@ kabuuan_lahat = mga_bilang$< (0, (acc, x) -> acc + x)
 ## Mga Module
 
 ```zymbol
-// File: lib/calc.zy
+// lib/calc.zy
 # calc
 
 #> { kabuuan, kuha_PI }    // mga export BAGO ang mga kahulugan
 
 _PI := 3.14159
 kabuuan(a, b) { <~ a + b }
-kuha_PI() { <~ _PI }
+kuha_PI() { <~ _PI }   // getter — hindi sinusuportahan ang direktang access sa constant sa pamamagitan ng alias
 ```
 
 ```zymbol
-// File: pangunahin.zy
+// pangunahin.zy
 <# ./lib/calc <= c    // kinakailangan ang alias
 
 >> c::kabuuan(5, 3) ¶     // → 8
@@ -378,9 +472,72 @@ pi = c::kuha_PI()
 >> pi ¶                    // → 3.14159
 ```
 
+```zymbol
+// I-export na may ibang pampublikong pangalan
+# mylib
+#> { _panloob_na_dagdag <= kabuuan }
+
+_panloob_na_dagdag(a, b) { <~ a + b }
+```
+
+```zymbol
+<# ./mylib <= m
+
+>> m::kabuuan(3, 4) ¶    // → 7  (ang pangalang panloob _panloob_na_dagdag ay nakatago)
+```
+
 ---
 
-## FizzBuzz
+## Mga Operator ng Data
+
+```zymbol
+// Pag-parse ng string sa numero
+v1 = #|"42"|      // → 42
+v2 = #|"3.14"|    // → 3.14
+v3 = #|"abc"|     // → "abc"
+
+// Bilugan / putulin
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14
+
+// Format ng numero
+fmt = #,|1234567|       // → 1,234,567
+sains = #^|12345.678|   // → 1.2345678e4
+
+// Mga base literal
+a = 0x41         // → 'A'
+b = 0b01000001   // → 'A'
+c = 0o101        // → 'A'
+
+// Conversion ng base
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
+```
+
+---
+
+## Integrasyon ng Shell
+
+```zymbol
+petsa = <\ date +%Y-%m-%d \>     // kumuha ng stdout
+>> "Ngayon: " petsa
+
+file = "data.txt"
+nilalaman = <\ cat {file} \>     // interpolation sa mga utos
+
+output = </"./subscript.zy"/>    // patakbuhin ang Zymbol script
+>> output
+```
+
+> `><` kumukuha ng mga CLI argument bilang string array (tree-walker lamang).
+
+---
+
+## Kumpletong Halimbawa: FizzBuzz
 
 ```zymbol
 uriin(bilang) {
@@ -393,55 +550,46 @@ uriin(bilang) {
 @ i:1..20 { >> uriin(i) ¶ }
 ```
 
-> Halimbawa ng output: `1 2 Bula 4 Ugong Bula 7 8 Bula Ugong 11 Bula 13 14 BulaUgong ...`
-
----
-
-## Kumpletong Halimbawa: Kamusta, Mundo
-
-```zymbol
-// Pagbati gamit ang interpolasyon
-pangalan = "Filipino na Mundo"
-mensahe = "Kamusta, ", pangalan, "!"
->> mensahe ¶    // → Kamusta, Filipino na Mundo!
-
-// O direkta
->> "Kamusta, Filipino na Mundo!" ¶
-```
-
 ---
 
 ## Sanggunian ng Simbolo
 
-| Simbolo   | Operasyon             | Simbolo      | Operasyon                |
-|-----------|-----------------------|--------------|--------------------------|
-| `=`       | variable              | `$#`         | haba                     |
-| `:=`      | konstante             | `$+`         | idagdag                  |
-| `>>`      | output                | `$-`         | alisin (sa index)        |
-| `<<`      | input                 | `$?`         | naglalaman               |
-| `¶`/`\`   | bagong linya          | `$[s..e]`    | hiwa                     |
-| `?`       | kung (if)             | `$>`         | mapa (map)               |
-| `_?`      | kung hindi (else-if)  | `$\|`        | salain (filter)          |
-| `_`       | iba pa / wildcard     | `$<`         | bawasan (reduce)         |
-| `??`      | tumugma (match)       | `!?`         | subukan (try)            |
-| `@`       | loop                  | `:!`         | hulihin (catch)          |
-| `@!`      | ihinto (break)        | `:>`         | sa wakas (finally)       |
-| `@>`      | ituloy (continue)     | `$!`         | ay error                 |
-| `->`      | lambda                | `$!!`        | ipalaganap ng error      |
-| `<~`      | ibalik (return)       | `#`          | ideklara ang module      |
-| `\|>`     | tubo (pipe)           | `#>`         | i-export                 |
-| `#1`      | totoo (true)          | `<#`         | i-import                 |
-| `#0`      | mali (false)          | `::`         | tawag sa module          |
+| Simbolo   | Operasyon                   | Simbolo      | Operasyon                        |
+|-----------|-----------------------------|--------------|----------------------------------|
+| `=`       | variable                    | `$#`         | haba                             |
+| `:=`      | konstante                   | `$+`         | idagdag                          |
+| `>>`      | output                      | `$+[i]`      | ipasok sa index                  |
+| `<<`      | input                       | `$-`         | alisin ang una ayon sa halaga    |
+| `¶` / `\\` | bagong linya               | `$--`        | alisin lahat ayon sa halaga      |
+| `?`       | kung (if)                   | `$-[i]`      | alisin sa index                  |
+| `_?`      | kung hindi (else-if)        | `$-[i..j]`   | alisin ang saklaw                |
+| `_`       | iba pa / wildcard           | `$?`         | naglalaman                       |
+| `??`      | tumugma (match)             | `$??`        | hanapin lahat ng index           |
+| `@`       | loop                        | `$[s..e]`    | hiwa                             |
+| `@!`      | ihinto (break)              | `$>`         | mapa (map)                       |
+| `@>`      | ituloy (continue)           | `$\|`        | salain (filter)                  |
+| `->`      | lambda                      | `$<`         | bawasan (reduce)                 |
+| `$^+`     | ayusin pataas (primitibo)   | `$^-`        | ayusin pababa (primitibo)        |
+| `$^`      | ayusin na may comparator (tuple) | |                               |
+| `<~`      | ibalik (return)             | `!?`         | subukan (try)                    |
+| `\|>`     | tubo (pipe)                 | `:!`         | hulihin (catch)                  |
+| `#1`      | totoo (true)                | `:>`         | sa wakas (finally)               |
+| `#0`      | mali (false)                | `$!`         | ay error                         |
+| `<#`      | i-import                    | `$!!`        | ipalaganap ng error              |
+| `#`       | ideklara ang module         | `#>`         | i-export                         |
+| `::`      | tawag sa module             | `.`          | pag-access sa field              |
+| `#\|..\|` | mag-parse ng numero         | `#?`         | metadata ng uri                  |
+| `#.N\|..\|` | bilugan                   | `#!N\|..\|`  | putulin                          |
+| `c\|..\|` | format na may kuwit         | `e\|..\|`    | format na siyentipiko            |
+| `<\ ..\>` | pagpapatakbo ng shell       | `>\<`        | mga CLI argument                 |
 
 ---
 
 *Zymbol-Lang — Simboliko. Pandaigdig. Hindi Nagbabago.*
 
----
-
 > **Babala:** Ang dokumentasyong ito ay nilikha at isinalin ng artipisyal na katalinuhan (AI).
 > Ang lahat ng pagsisikap ay ginawa upang matiyak ang katumpakan, ngunit ang ilang pagsasalin o halimbawa ay maaaring maglaman ng mga pagkakamali.
-> Ang kanonikong sanggunian ay ang [detalye ng Zymbol-Lang](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> Ang kanonikong sanggunian ay ang [detalye ng Zymbol-Lang](https://github.com/zymbol-lang/interpreter).
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > While every effort has been made to ensure accuracy, some translations or examples may contain errors.

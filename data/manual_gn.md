@@ -2,10 +2,6 @@
 
 **Zymbol-Lang** peteĩ ñe'ẽ jehaipyre ñe'ẽtee rupi. Ndoipuruséi moñe'ẽrã — peteĩva símbolo. Ojejapo porã ñe'ẽ opaichagua rupi.
 
----
-
-## Mba'éichapa Oñemoñe'ẽ
-
 - Ndaipori moñe'ẽrã (`if`, `while`, `return` ndaiporiséi — añoite símbolo `?`, `@`, `<~`)
 - Unicode opaite — réra opaichagua ñe'ẽme térã emoji 👋
 - Ñe'ẽ ndojeporúi — código peteĩ ñe'ẽ opaichagua rupi
@@ -15,24 +11,23 @@
 ## Mba'eporu ha Mba'e'ỹva
 
 ```zymbol
-x = 10           // mba'eporu (ijykekóva)
-PI := 3.14159    // mba'e'ỹva (ndijykekóiva — mba'e oĩ ramo ojeheka)
+x = 10              // mba'eporu (ijykekóva)
+PI := 3.14159       // mba'e'ỹva (ndijykekóiva — mba'e oĩ ramo ojeheka)
 réra = "Ana"
-ijoja = #1       // porã hete
+ijoja = #1          // porã hete
 👋 := "Maitei"
 ```
 
-### Mba'eporu Mbohypy
-
 ```zymbol
-x = 10    // 10
+x = 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %=  4   // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
@@ -50,46 +45,76 @@ x--       // 2
 | Tupla          | `(a, b)`            | `##)`        | Ñemoĩporã                         |
 | Tupla réra     | `(x: 1, y: 2)`      | `##)`        | Ojeheka réra térã papapy rupi     |
 
+```zymbol
+// Type introspection — returns (type, digits, value)
+meta = 42#?
+>> meta ¶         // → (###, 2, 42)
+t = meta[0]
+>> t ¶            // → ###
+```
+
 ---
 
 ## Moñe'ẽrã ha Mboheryrã
 
 ```zymbol
-// Moñe'ẽrã — NDOIPORUSÉI ñenguerã pehẽngue ipype
 >> "Maitei" ¶                    // ¶ térã \\ ojapo ñenguerã
 >> "a=" a " b=" b ¶              // mba'e hetavéva juntepe
->> "mbohepy=" emboyke(2, 3) ¶    // ojeiporeka función ojapóva
 >> (arr$#) ¶                     // postfix oñeikotevẽ paréntesis
 
-// Mboheryrã
 << réra                          // ndaipori prompt — oike variable rupi
 << "Ne réra? " réra              // prompt ndive
 ```
 
-> `¶` térã `\\` oñeikotevẽ ñenguerã.
+> `¶` (AltGr+R teclado españolpe) térã `\\` oñeikotevẽ ñenguerã.
 
 ---
 
-## Ñe'ẽ Mbohasa
-
-Mbohapy mba'e — opaite peteĩ apopyrã:
+## Ñemoañete
 
 ```zymbol
+// Arithmetic — use assignments; some operators have quirks directly in >>
+a = 10
+b = 3
+r1 = a + b    // 13     r2 = a - b    // 7
+r3 = a * b    // 30     r4 = a / b    // 3  (integer division)
+r5 = a % b    // 1      r6 = a ^ b    // 1000  (exponentiation)
+
+// Comparison
+a == b    // #0    a <> b    // #1    a < b    // #0
+a <= b    // #0   a > b     // #1    a >= b   // #1
+
+// Logical
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
+```
+
+---
+
+## Ñe'ẽ
+
+```zymbol
+// Three concatenation forms
 réra = "Ana"
 n = 25
 
-// 1. Kõma — mba'eporu = térã :=
-moñe'ẽ = "Maitei ", réra, "!"          // → Maitei Ana!
-TÉRA := "Oĩva: ", réra
-
-// 2. Juntepeguaréta — moñe'ẽrã >>
->> "Maitei " réra " nde papapy " n ¶   // → Maitei Ana nde papapy 25
-
-// 3. Mbohapymi — opaite apopyrãpe
-porã = "Maitei {réra}, nde papapy {n}" // → Maitei Ana, nde papapy 25
+moñe'ẽ = "Maitei ", réra, "!"          // kõma — mba'eporu = térã :=
+>> "Maitei " réra " nde papapy " n ¶   // juntepeguaréta — moñe'ẽrã >>
+porã = "Maitei {réra}, nde papapy {n}" // mbohapymi — opaite apopyrãpe
 ```
 
-> **Ñe'ẽporã**: `+` papapy añoite. Ñe'ẽ ndive ojapo jaikuaakuaáva.
+```zymbol
+s = "Maitei Yvy"
+len = s$#                  // 10
+sub = s$[0..6]             // "Maitei"  (tukuy mana)
+has = s$? "Yvy"            // #1
+parts = "a,b,c,d" / ','    // [a, b, c, d]
+rep = s$~~["i":"I"]        // "MaIteI Yvy"
+rep1 = s$~~["i":"I":1]     // "MaItei Yvy"  (ñawpaq N kama)
+```
+
+> `+` papapy añoite. Ñe'ẽ ndive ojapo jaikuaakuaáva `,`, juntepeguaréta, térã mbohapymi.
 
 ---
 
@@ -98,10 +123,8 @@ porã = "Maitei {réra}, nde papapy {n}" // → Maitei Ana, nde papapy 25
 ```zymbol
 x = 7
 
-// Porã añoite
 ? x > 0 { >> "mbatéva" ¶ }
 
-// Porã / mba'e / vai
 ? x > 100 {
     >> "tuicha" ¶
 } _? x > 0 {
@@ -113,7 +136,7 @@ x = 7
 }
 ```
 
-Bloque `{ }` **oñeikotevẽ** peteĩ línea añoite ramo avei.
+> Bloque `{ }` **oñeikotevẽ** peteĩ línea añoite ramo avei.
 
 ---
 
@@ -130,6 +153,14 @@ grado = ?? papapy {
 }
 >> grado ¶    // → B
 
+// Match ñe'ẽ ndive
+sa'y = "pytãvai"
+código = ?? sa'y {
+    "pytãvai" : "#FF0000"
+    "hovyũ"   : "#00FF00"
+    _         : "#000000"
+}
+
 // Match oñemboguata (mba'e opaichagua)
 temp = -5
 estado = ?? temp {
@@ -140,14 +171,12 @@ estado = ?? temp {
 }
 >> estado ¶    // → yhy
 
-// Match ñe'ẽ ndive
-sa'y = "pytãvai"
-código = ?? sa'y {
-    "pytãvai" : "#FF0000"
-    "hovyũ"   : "#00FF00"
-    _         : "#000000"
+// Bloque ukupi
+?? n {
+    0       : { >> "nda'éi" ¶ }
+    _? n < 0: { >> "opáva" ¶ }
+    _       : { >> "mbatéva" ¶ }
 }
->> código ¶
 ```
 
 ---
@@ -155,38 +184,43 @@ código = ?? sa'y {
 ## Ñembojere
 
 ```zymbol
-// Papapy jukuita: 0..4 oguata 0,1,2,3,4
-@ i:0..4 { >> i " " }
->> ¶    // → 0 1 2 3 4
+@ i:0..4  { >> i " " }        // papapy jukuita:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // ñemboheta ndive:  1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // oñemeẽva:         5 4 3 2 1 0
 
-// Papapy ñemboheta ndive
-@ i:1..9:2 { >> i " " }
->> ¶    // → 1 3 5 7 9
-
-// Papapy oñemeẽva
-@ i:5..0:1 { >> i " " }
->> ¶    // → 5 4 3 2 1 0
-
-// Peve (while)
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶    // → 128
+>> n ¶                        // → 128  (while)
 
-// Opaite mba'epe
 yvyra = ["pakuri", "guavira", "yvapurũ"]
-@ f:yvyra { >> f ¶ }
+@ f:yvyra { >> f ¶ }         // opaite mba'epe array
 
-// Ñe'ẽ letra opavave
 @ c:"maitei" { >> c "-" }
->> ¶    // → m-a-i-t-e-i-
+>> ¶                          // → m-a-i-t-e-i-  (ñe'ẽ letra opavave)
 
-// @! ha @>
 @ i:1..10 {
     ? i % 2 == 0 { @> }    // @> oñeguata
     ? i > 7 { @! }          // @! opáva
     >> i " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Tukuy ñembojere
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Réra ñembojere (ukupi opáva)
+count = 0
+@ @outer {
+    count++
+    ? count >= 3 { @! outer }
+}
+>> count ¶                    // → 3
 ```
 
 ---
@@ -194,49 +228,48 @@ yvyra = ["pakuri", "guavira", "yvapurũ"]
 ## Función
 
 ```zymbol
-// Mbohapy ha jeiporeka
 emboyke(a, b) { <~ a + b }
 >> emboyke(3, 4) ¶    // → 7
 
-// Ñembohasa
 mbohapymi(n) {
     ? n <= 1 { <~ 1 }
     <~ n * mbohapymi(n - 1)
 }
 >> mbohapymi(5) ¶    // → 120
-
-// Función oĩva aparte — ndohecháiva variable ipýre
-global = 100
-japoru() {
-    x = 42    // local añoite
-    <~ x
-}
->> japoru() ¶    // → 42
 ```
 
-> **Ñe'ẽporã**: Función `réra(params){ }` ndaha'éi mba'e ñemoĩ.
-> Ojejapokuévo argumento: `x -> réra(x)`.
+Función **oĩva aparte** — ndohecháiva variable ipýre. Salida parámetro `<~` apaykachaña:
+
+```zymbol
+swap(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
+}
+x = 10
+y = 20
+swap(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> Función `réra(params){ }` ndaha'éi mba'e ñemoĩ. Ojejapokuévo argumento: `x -> réra(x)`.
 
 ---
 
 ## Lambda ha Closure
 
 ```zymbol
-// Lambda mbykyvéva (oñemeẽ implícito)
 mokõive = x -> x * 2
 mboyke = (a, b) -> a + b
 >> mokõive(5) ¶    // → 10
 >> mboyke(3, 7) ¶  // → 10
 
-// Lambda bloque ndive (oñemeẽ explícito)
+// Lambda bloque ndive
 ñemoñe = x -> {
     ? x > 0 { <~ "mbatéva" }
     _? x < 0 { <~ "opáva" }
     <~ "nda'éi"
 }
->> ñemoñe(5) ¶     // → mbatéva
->> ñemoñe(0) ¶     // → nda'éi
->> ñemoñe(-5) ¶    // → opáva
 
 // Closure — lambda oñangarekoséi variable ipýre
 factor = 3
@@ -250,7 +283,6 @@ add10 = make_adder(10)
 
 // Lambda mba'e ndive: oñeñotẽ array rupi
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[0](5) ¶    // → 6
 >> ops[2](5) ¶    // → 25
 ```
 
@@ -259,64 +291,129 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 ## Array
 
 ```zymbol
-arr = [10, 20, 30, 40, 50]
+arr = [1, 2, 3, 4, 5]
 
-// Ojeheka (0-based)
->> arr[0] ¶    // → 10
+arr[0]          // 1 — ojeheka (0-based)
+arr[-1]         // 5 — índice vai (qipa)
+arr$#           // 5 — papapy heta (oñeikotevẽ paréntesis >>pe)
 
-// Papapy (oñeikotevẽ paréntesis >>pe)
-n = arr$#
->> (arr$#) ¶    // → 5
+arr = arr$+ 6            // mbojupi → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // índice 2 mbojupi
+arr3 = arr$- 3           // ñawpaq valor mboguete
+arr4 = arr$-- 3          // opaite valor mboguete
+arr5 = arr$-[0]          // índice mboguete
+arr6 = arr$-[1..3]       // jukuita mboguete (tukuy mana)
 
-// Mbojupi, mboguete, jehekauka, slice
-arr = arr$+ 60               // mbojupi
-arr = arr$- 0                // mboguete índice 0
-oĩ = arr$? 30                // → #1
-trozo = arr$[0..2]           // [20, 30]
+oĩ = arr$? 3             // #1 — oĩ
+pos = arr$?? 3           // [2] — opaite índice
+sl = arr$[0..3]          // [1,2,3] — trozo (tukuy mana)
+sl2 = arr$[0:3]          // [1,2,3] — kikillan, papapyniw
 
-// Mboguata elemento
-arr[1] = 99
+asc = arr$^+             // wichay (primitivos kama)
+desc = arr$^-            // oñemeẽva (primitivos kama)
 
-// Opaite mba'epe
-@ x:arr { >> x " " }
->> ¶
+// Réra/papapy tuple array — $^ comparador lambdawan
+db = [(réra: "Carla", ára: 28), (réra: "Ana", ára: 25), (réra: "Bob", ára: 30)]
+áramew  = db$^ (a, b -> a.ára < b.ára)
+réramew = db$^ (a, b -> a.réra > b.réra)
+>> áramew[0].réra ¶     // → Ana
+>> réramew[0].réra ¶    // → Carla
+
+arr[1] = 99              // mboguata elemento
+arr = arr[1]$~ 99        // array pyahu oñemeẽ
 ```
 
-> `$+`, `$-`, `$[..]` oñemeẽ **array pyahu** — oñembojupi: `arr = arr$+ 4`.
+> Opaite colección operador oñemeẽ **array pyahu** — oñembojupi: `arr = arr$+ 4`.
 > Ndojejokóiva: mbohapy peteĩ ndive.
+> `$^+` / `$^-` **primitivo array** (papapynak, ñe'ẽ). Tuple arraype `$^` comparador lambdawan — ñanqa lambdapi churasqa (`<` = wichay, `>` = oñemeẽva).
+
+```zymbol
+// Ukupi array
+matriz = [[1,2,3],[4,5,6],[7,8,9]]
+>> matriz[1][2] ¶    // → 6
+```
+
+---
+
+## Moñe'ẽrã
+
+```zymbol
+// Array
+arr = [10, 20, 30, 40, 50]
+[a, b, c] = arr              // a=10  b=20  c=30
+[first, *rest] = arr         // first=10  rest=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ ndoiporúi
+
+// Papapy tupla
+punto = (100, 200)
+(px, py) = punto             // px=100  py=200
+
+// Réra tupla
+ava = (réra: "Ana", ára: 25, tetã: "Paraguái")
+(réra: r, ára: a) = ava   // r="Ana"  a=25
+```
 
 ---
 
 ## Tupla
 
 ```zymbol
-// Tupla réra ndive
+// Papapy
+punto = (10, 20)
+>> punto[0] ¶    // → 10
+
+// Réra ndive
 ava = (réra: "Alice", ára: 25)
 >> ava.réra ¶    // → Alice
->> ava.ára ¶     // → 25
->> ava[0] ¶      // → Alice (índice avei ojogua)
+>> ava[0] ¶      // → Alice  (índice avei ojogua)
+
+// Ukupi
+pos = (x: 10, y: 20)
+p = (pos: pos, réra: "punta")
+>> p.pos.x ¶        // → 10
 ```
 
 ---
 
 ## Función Tuvicha
 
-HOF operador oñeikotevẽ **lambda inline** — ndaha'éi variable lambda.
+> HOF operador oñeikotevẽ **lambda inline** — ndaha'éi variable lambda.
 
 ```zymbol
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Map ($>)
-mokõivéva = nums$> (x -> x * 2)
->> mokõivéva ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+mokõivéva  = nums$> (x -> x * 2)                // map  → [2,4,6…20]
+pares      = nums$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
+mboyke     = nums$< (0, (acc, x) -> acc + x)     // reduce → 55
 
-// Filter ($|)
-pares = nums$| (x -> x % 2 == 0)
->> pares ¶    // → [2, 4, 6, 8, 10]
+// Mbohapy peteĩ ndive huñiy
+step1 = nums$| (x -> x > 3)
+step2 = step1$> (x -> x * x)
+>> step2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Reduce ($<) — (mba'e heta, (acc, elem) -> expr)
-mboyke = nums$< (0, (acc, x) -> acc + x)
->> mboyke ¶    // → 55
+// Réra función HOF ipype — lambdawan hapiy
+double(x) { <~ x * 2 }
+r = nums$> (x -> double(x))    // ✅
+```
+
+---
+
+## Operador Tuvo
+
+RHS siempre `_` placeholder oñeikotevẽ piped mba'eporu:
+
+```zymbol
+mokõive = x -> x * 2
+emboyke = (a, b) -> a + b
+mbojupi = x -> x + 1
+
+5 |> mokõive(_)          // → 10
+10 |> emboyke(_, 5)      // → 15
+5 |> emboyke(2, _)       // → 7
+
+// Oñembojere
+r = 5 |> mokõive(_) |> mbojupi(_) |> mokõive(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -328,10 +425,8 @@ mboyke = nums$< (0, (acc, x) -> acc + x)
     x = 10 / 0
 } :! ##Div {
     >> "papapy peguarã mbói" ¶
-} :! ##IO {
-    >> "IO mba'e vai" ¶
 } :! {
-    >> "mba'e vai: " _err ¶
+    >> "mba'e vai: " _err ¶    // _err mba'e vai moñe'ẽ waqaychan
 } :> {
     >> "oguata opavave" ¶
 }
@@ -371,6 +466,69 @@ pi = c::get_PI()
 >> pi ¶                // → 3.14159
 ```
 
+```zymbol
+// Réra pyahu moñe'ẽrã
+# mylib
+#> { _internal_add <= sum }
+
+_internal_add(a, b) { <~ a + b }
+```
+
+```zymbol
+<# ./mylib <= m
+
+>> m::sum(3, 4) ¶    // → 7  (réra _internal_add pakasqa)
+```
+
+---
+
+## Operador Mba'ekuaa
+
+```zymbol
+// Ñe'ẽ papapypi tikray
+v1 = #|"42"|      // → 42  (Int)
+v2 = #|"3.14"|    // → 3.14  (Float)
+v3 = #|"abc"|     // → "abc"  (ndaipori mba'e vai)
+
+// Peteĩtĩ / ch'iqtaña
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14  (mokõi decimal)
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14  (ch'iqtaña)
+
+// Papapy formato
+fmt = #,|1234567|      // → 1,234,567  (kõma juntepe)
+sci = #^|12345.678|    // → 1.2345678e4  (científico)
+
+// Base literal
+a = 0x41         // → 'A'  (hex)
+b = 0b01000001   // → 'A'  (binario)
+c = 0o101        // → 'A'  (octal)
+
+// Base tikray moñe'ẽrãpeg
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
+```
+
+---
+
+## Shell Ñemongu'e
+
+```zymbol
+ára = <\ date +%Y-%m-%d \>     // stdout hap'iy (opaite \n hapikun)
+>> "Ko ára: " ára
+
+marandurenda = "data.txt"
+tembiapo = <\ cat {marandurenda} \>      // interpolación comando ipype
+
+lluqsiña = </"./subscript.zy"/>   // huk Zymbol marandurenda ojaporu, moñe'ẽ hap'iy
+>> lluqsiña
+```
+
+> `><` CLI argumentonak ñe'ẽ array hina hap'iy (tree-walker kama).
+
 ---
 
 ## Techapyrã Oikoporã: FizzBuzz
@@ -394,31 +552,38 @@ moñeẽ(papapy) {
 |---------|-------------------|------------|--------------------|
 | `=`     | mba'eporu         | `$#`       | papapy heta        |
 | `:=`    | mba'e'ỹva         | `$+`       | mbojupi            |
-| `>>`    | moñe'ẽrã          | `$-`       | mboguete           |
-| `<<`    | mboheryrã         | `$?`       | oĩ                 |
-| `¶`/`\` | ñenguerã          | `$[s..e]`  | trozo              |
-| `?`     | porã              | `$>`       | map                |
-| `_?`    | mba'e             | `$\|`      | filter             |
-| `_`     | vai / opavave     | `$<`       | reduce             |
-| `??`    | match             | `!?`       | japoru             |
-| `@`     | ñembojere         | `:!`       | ñangarekouka       |
-| `@!`    | opáva             | `:>`       | opavave            |
-| `@>`    | oñeguata          | `$!`       | mba'e vai          |
-| `->`    | lambda            | `$!!`      | mba'e vai mbohasa  |
-| `<~`    | oñemeẽ            | `#`        | módulo             |
-| `\|>`   | pipe              | `#>`       | exportar           |
-| `#1`    | porã              | `<#`       | mbojupi            |
-| `#0`    | vai               | `::`       | ojeiporeka         |
+| `>>`    | moñe'ẽrã          | `$+[i]`    | índicepe mbojupi   |
+| `<<`    | mboheryrã         | `$-`       | ñawpaq mboguete    |
+| `¶`/`\\` | ñenguerã         | `$--`      | opaite mboguete    |
+| `?`     | porã              | `$-[i]`    | índice mboguete    |
+| `_?`    | mba'e             | `$-[i..j]` | jukuita mboguete   |
+| `_`     | vai / opavave     | `$?`       | oĩ                 |
+| `??`    | match             | `$??`      | opaite índice      |
+| `@`     | ñembojere         | `$[s..e]`  | trozo              |
+| `@!`    | opáva             | `$>`       | map                |
+| `@>`    | oñeguata          | `$\|`      | filter             |
+| `->`    | lambda            | `$<`       | reduce             |
+| `$^+`   | wichay (primitivos) | `$^-`    | oñemeẽva (primitivos) |
+| `$^`    | comparador (tuples) | | |
+| `<~`    | oñemeẽ            | `!?`       | japoru             |
+| `\|>`   | pipe              | `:!`       | ñangarekouka       |
+| `#1`    | porã              | `:>`       | opavave            |
+| `#0`    | vai               | `$!`       | mba'e vai          |
+| `<#`    | mbojupi           | `$!!`      | mba'e vai mbohasa  |
+| `#`     | módulo            | `#>`       | exportar           |
+| `::`    | ojeiporeka        | `.`        | campo jeheka       |
+| `#\|..\|` | papapy tikray   | `#?`       | tipo metadata      |
+| `#.N\|..\|` | peteĩtĩ       | `#!N\|..\|` | ch'iqtaña        |
+| `c\|..\|` | kõma formato    | `e\|..\|`  | científico         |
+| `<\ ..\>` | shell ojaporu   | `><`       | CLI argumentonak   |
 
 ---
 
 *Zymbol-Lang — Símbolo. Opavave. Ndijykekóiva.*
 
----
-
 > **Marandu:** Ko mba'eporã ojapo ha omboñe'ẽ inteligencia artificial (IA).
 > Ojejapo ikatupyry peve, upéicha peteĩ ñe'ẽ térã techapyrã ikatu oñembokyje.
-> Referencia real: [Zymbol-Lang](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> Referencia real: [Zymbol-Lang](https://github.com/zymbol-lang/interpreter).
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > While every effort has been made to ensure accuracy, some translations or examples may contain errors.

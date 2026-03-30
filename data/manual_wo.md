@@ -2,10 +2,6 @@
 
 **Zymbol-Lang** dafa ko làmbi ci sa pirogram bu xam xam yu signa. Dañu ko def te amul dem-dem xam-xam — dëkk bu nekk signa la. Dafa liggéey fi ci këlë ëllëk jëm ak koo.
 
----
-
-## Xam-Xam bu Siiw
-
 - Amul dem-dem xam-xam (`if`, `while`, `return` amul fi — signa rekk `?`, `@`, `<~`)
 - Unicode bu xëy — tur ci bëgg-bëgg làkk walla emoji 👋
 - Du làkk bu dëkk — kodu bi dafa nu sa ci bëgg-bëgg làkk
@@ -15,24 +11,23 @@
 ## Jumtukat ak Dëkku Yëgël
 
 ```zymbol
-x = 10           // Jumtukat (mën a yokku)
-PI := 3.14159    // Dëkku yëgël (du mën a yokku — lañu jël sañu bëgg-bëgg)
+x = 10              // Jumtukat (mën a yokku)
+PI := 3.14159       // Dëkku yëgël — lañu jël sañu bëgg-bëgg
 tur = "Ana"
-aktif = #1       // wér bu dëgg
+aktif = #1          // wér bu dëgg
 👋 := "Salaam"
 ```
 
-### Jëfandikoo yu Xëy
-
 ```zymbol
-x = 10    // 10
+x = 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %=  4   // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
@@ -46,22 +41,27 @@ x--       // 2
 | Wolu          | `"salaam"`           | `##"`      | Interpolasion: `"Xam {tur}"`        |
 | Bireew        | `'A'`                | `##'`      | Bireew bu nekk ak Unicode           |
 | Wér           | `#1`, `#0`           | `##?`      | DU nomer 1 ak 0                     |
-| Array         | `[1, 2, 3]`          | `##]`      | Xëtu yi nekk ci kër                 |
+| Wàllu         | `[1, 2, 3]`          | `##]`      | Xëtu yi nekk ci kër                 |
 | Tuple         | `(a, b)`             | `##)`      | Ci nomer                            |
 | Tuple bu tur  | `(x: 1, y: 2)`       | `##)`      | Jëfandikoo tur walla nomer          |
+
+```zymbol
+// Sakantal xëtu — (xëtu, nomer, xëy) may
+meta = 42#?
+>> meta ¶         // → (###, 2, 42)
+t = meta[0]
+>> t ¶            // → ###
+```
 
 ---
 
 ## Dem ak Dugub
 
 ```zymbol
-// Dem — du yokku ci dëkk wëpp auto
 >> "Salaam" ¶                    // ¶ walla \\ dafa dem ci dëkk wëpp
 >> "a=" a " b=" b ¶              // xëy ak yëgël ci këy bi
->> "jumlate=" yokku(2, 3) ¶      // jëf yi nekk ci nopp bu nekk
 >> (deret$#) ¶                   // operatör yu kanam dañu soxor ko ci (...)
 
-// Dugub
 << tur                           // dañu jox — jël ci jumtukat
 << "Sa tur? " tur                // ak baskël
 ```
@@ -70,26 +70,51 @@ x--       // 2
 
 ---
 
-## Jëm Wéy Làmbi
-
-Ñett yëgël yu baax — dëkkëbu nekk ci jëm moo:
+## Jëfandikukaay
 
 ```zymbol
-tur = "Ana"
-n = 25
+// Xam-xam — jëfandikoo ci jëfandikoo; operatör yi am benn benn ci >> bu yëgël
+a = 10
+b = 3
+r1 = a + b    // 13     r2 = a - b    // 7
+r3 = a * b    // 30     r4 = a / b    // 3  (jëfandikoo nomer bu dëkk)
+r5 = a % b    // 1      r6 = a ^ b    // 1000  (puissance)
 
-// 1. Virgul — ci jëfandikoo ak = walla :=
-wolu = "Salaam, ", tur, "!"              // → Salaam, Ana!
-TIITLE := "Jëfandikukat: ", tur
+// Xëy-bu-xëy
+a == b    // #0    a <> b    // #1    a < b    // #0
+a <= b    // #0   a > b     // #1    a >= b   // #1
 
-// 2. Këy bi — ci dem >>
->> "Salaam " tur " nga am " n ¶          // → Salaam Ana nga am 25
-
-// 3. Interpolasion — ci jëm wëpp
-xër = "Salaam {tur}, nga am {n}"         // → Salaam Ana, nga am 25
+// Lojiik
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
 ```
 
-> **Xibaar**: `+` ci nomer rekk. Ci wolu dafa jox xibaaral.
+---
+
+## Xettub-Rab
+
+```zymbol
+// Ñett yëgël wallu wolu
+tur = "Ana"
+n = 42
+
+wolu = "Salaam, ", tur, "!"               // virgul — ci jëfandikoo
+>> "Salaam " tur " nga am " n ¶           // ku-xigeenka — ci dem >>
+xër = "Salaam {tur}, nga am {n}"          // interpolasion — ci jëm wëpp
+```
+
+```zymbol
+s = "Salaam Addinaa"
+len = s$#                  // 14
+sub = s$[0..6]             // "Salaam"  (dëkku dañu ko wàcc)
+has = s$? "Addinaa"        // #1
+parts = "a,b,c,d" / ','    // [a, b, c, d]
+rep = s$~~["a":"A"]        // "SAlAAm AddinAA"
+rep1 = s$~~["a":"A":1]     // "SAlaam Addinaa"  (N bu njëkk rekk)
+```
+
+> `+` ci nomer rekk. Ci wolu jëfandikoo `,`, ku-xigeenka, walla interpolasion.
 
 ---
 
@@ -98,10 +123,8 @@ xër = "Salaam {tur}, nga am {n}"         // → Salaam Ana, nga am 25
 ```zymbol
 x = 7
 
-// Jëm bu yëgël
 ? x > 0 { >> "bu nekkee kanam" ¶ }
 
-// Jëm / walla jëm / walla
 ? x > 100 {
     >> "xëy" ¶
 } _? x > 0 {
@@ -113,14 +136,14 @@ x = 7
 }
 ```
 
-Blok `{ }` **waajuul**, bëgg ci dëkk bu yëgël.
+> Blok `{ }` **waajuul**, bëgg ci dëkk bu yëgël.
 
 ---
 
 ## Match
 
 ```zymbol
-// Match ak rang
+// Rang
 nomer_xëy = 85
 penc = ?? nomer_xëy {
     90..100 : 'A'
@@ -130,7 +153,15 @@ penc = ?? nomer_xëy {
 }
 >> penc ¶    // → B
 
-// Match ak yëgël (jëm yu bëgg-bëgg)
+// Wolu
+rëdd = "xonq"
+kood = ?? rëdd {
+    "xonq"  : "#FF0000"
+    "wert"  : "#00FF00"
+    _       : "#000000"
+}
+
+// Yëgël
 tamp = -5
 dëkk = ?? tamp {
     _? tamp < 0  : "dëgg"
@@ -140,14 +171,12 @@ dëkk = ?? tamp {
 }
 >> dëkk ¶    // → dëgg
 
-// Match ak wolu
-rëdd = "xonq"
-kood = ?? rëdd {
-    "xonq"  : "#FF0000"
-    "wert"  : "#00FF00"
-    _       : "#000000"
+// Qaab xëy (gacce blok)
+?? n {
+    0       : { >> "ñaareel" ¶ }
+    _? n < 0: { >> "bu nekkee kanam du" ¶ }
+    _       : { >> "bu nekkee kanam" ¶ }
 }
->> kood ¶
 ```
 
 ---
@@ -155,38 +184,43 @@ kood = ?? rëdd {
 ## Ànd-ànd
 
 ```zymbol
-// Rang bu dëkk: 0..4 dafa dem 0,1,2,3,4
-@ i:0..4 { >> i " " }
->> ¶    // → 0 1 2 3 4
+@ i:0..4  { >> i " " }        // rang bu dëkk: 0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // ak kanam: 1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // bu wëccëf: 5 4 3 2 1 0
 
-// Rang ak kanam
-@ i:1..9:2 { >> i " " }
->> ¶    // → 1 3 5 7 9
-
-// Rang bu wëccëf
-@ i:5..0:1 { >> i " " }
->> ¶    // → 5 4 3 2 1 0
-
-// Solange (while)
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶    // → 128
+>> n ¶                        // → 128  (solange)
 
-// Ci këy bi nekk
 mbir = ["Mànggo", "Ditax", "Jaxatu"]
 @ b:mbir { >> b ¶ }
 
-// Ci bireew yi wolu bi
 @ c:"salaam" { >> c "-" }
->> ¶    // → s-a-l-a-a-m-
+>> ¶                          // → s-a-l-a-a-m-
 
-// Break ak Continue
 @ i:1..10 {
-    ? i % 2 == 0 { @> }    // @> dem kanam
-    ? i > 7 { @! }          // @! jël dem
+    ? i % 2 == 0 { @> }       // @> dem kanam
+    ? i > 7 { @! }             // @! jël dem
     >> i " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Ànd-ànd bu dëkk
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Ànd-ànd bu tur (jël dem bu xidid)
+count = 0
+@ @outer {
+    count++
+    ? count >= 3 { @! outer }
+}
+>> count ¶                    // → 3
 ```
 
 ---
@@ -194,53 +228,52 @@ mbir = ["Mànggo", "Ditax", "Jaxatu"]
 ## Liggéey
 
 ```zymbol
-// Setal ak jëfal
 yokku(a, b) { <~ a + b }
 >> yokku(3, 4) ¶    // → 7
 
-// Rekursion
 faktorial(n) {
     ? n <= 1 { <~ 1 }
     <~ n * faktorial(n - 1)
 }
 >> faktorial(5) ¶    // → 120
-
-// Liggéey yi am jëm yëgël — du jëfandikoo jumtukat yu kanam
-global = 100
-tëstël() {
-    x = 42    // ci fii rekk
-    <~ x
-}
->> tëstël() ¶    // → 42
 ```
 
-> **Waajuul**: Liggéey yu tur `tur(params){ }` du xëy bu kanam.
-> Ci jox ci xëy: `x -> tur(x)`.
+Liggéey yi am **jëm yëgël** — du jëfandikoo jumtukat yu kanam. Jëfandikoo `<~` ngir soppati jumtukat yu waamkat:
+
+```zymbol
+soppal(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
+}
+x = 10
+y = 20
+soppal(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> Liggéey yu tur du xëy bu kanam. Ci jox ci xëy: `x -> tur(x)`.
 
 ---
 
 ## Lambda ak Fitu
 
 ```zymbol
-// Lambda bu yëgël (màggal implicite)
 ñaareel = x -> x * 2
 yokku = (a, b) -> a + b
 >> ñaareel(5) ¶    // → 10
 >> yokku(3, 7) ¶   // → 10
 
-// Lambda ak blok (màggal explicite)
+// Lambda ak blok
 penc = x -> {
     ? x > 0 { <~ "bu nekkee kanam" }
     _? x < 0 { <~ "bu nekkee kanam du" }
     <~ "ñaareel"
 }
->> penc(5) ¶     // → bu nekkee kanam
->> penc(0) ¶     // → ñaareel
->> penc(-5) ¶    // → bu nekkee kanam du
 
 // Fitu — lambda yi jëfandikoo jumtukat yu kanam
 faktër = 3
-ñett = x -> x * faktër    // jëfandikoo 'faktër'
+ñett = x -> x * faktër
 >> ñett(7) ¶    // → 21
 
 // Fabrik liggéey
@@ -248,9 +281,8 @@ make_yokku(n) { <~ x -> x + n }
 yokk10 = make_yokku(10)
 >> yokk10(5) ¶    // → 15
 
-// Lambda ci xëy: doxal ci array
+// Ci array
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[0](5) ¶    // → 6
 >> ops[2](5) ¶    // → 25
 ```
 
@@ -259,64 +291,129 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 ## Wàllu
 
 ```zymbol
-deret = [10, 20, 30, 40, 50]
+deret = [1, 2, 3, 4, 5]
 
-// Jëfal (index bu tànn ci 0)
->> deret[0] ¶    // → 10
+deret[0]          // 1 — jëfal (index bu tànn ci 0)
+deret[-1]         // 5 — index tasan (dëkkël)
+deret$#           // 5 — paxar (soxor ci (...) ci >>)
 
-// Paxar (soxor ci (...) ci >>)
-n = deret$#
->> (deret$#) ¶    // → 5
+deret = deret$+ 6            // yokku → [1,2,3,4,5,6]
+deret2 = deret$+[2] 99       // jox ci index 2
+deret3 = deret$- 3           // tëj njëkk ci xëy bi
+deret4 = deret$-- 3          // tëj lépp
+deret5 = deret$-[0]          // tëj ci index
+deret6 = deret$-[1..3]       // tëj rang (dëkkël wàccuul)
 
-// Yokku, tëj, am, ànd
-deret = deret$+ 60               // yokku
-deret = deret$- 0                // tëj index 0
-am = deret$? 30                  // → #1
-ànd = deret$[0..2]               // [20, 30]
+am = deret$? 3            // #1 — am
+pos = deret$?? 3          // [2] — index yi lépp
+ànd = deret$[0..3]        // [1,2,3] — ànd (dëkkël wàccuul)
+ànd2 = deret$[0:3]        // [1,2,3] — syntax bu nomer
 
-// Yokku këy bi
-deret[1] = 99
+ol = deret$^+             // tartiib ol (primitives rekk)
+sëf = deret$^-            // tartiib sëf (primitives rekk)
 
-// Ci këy bi nekk
-@ x:deret { >> x " " }
->> ¶
+// Tuple bu tur/nomer — jëfandikoo $^ ak lambda bu xëy-bu-xëy
+db = [(tur: "Carla", at: 28), (tur: "Ana", at: 25), (tur: "Bob", at: 30)]
+ci_at   = db$^ (a, b -> a.at < b.at)
+ci_tur  = db$^ (a, b -> a.tur > b.tur)
+>> ci_at[0].tur ¶     // → Ana
+>> ci_tur[0].tur ¶    // → Carla
+
+deret[1] = 99              // yokku ci biir
+deret = deret[1]$~ 99      // yokku bu liggéey — array bu bees may
 ```
 
-> `$+`, `$-`, `$[..]` dañu jox **array bu bees** — jëfandikoo ci: `deret = deret$+ 4`.
-> Du soxor ñaar: jëfandikoo jëfandikoo ñaar.
+> Operatör uru yi lépp dañu jox **array bu bees**. Jëfandikoo ci: `deret = deret$+ 4`.
+> Du soxor ñaar — jëfandikoo jëfandikoo dhexee.
+> `$^+` / `$^-` dañu tartiib **array yu primitive**. Tuple array jëfandikoo `$^` ak lambda.
+
+```zymbol
+// Array yu xidid
+matriks = [[1,2,3],[4,5,6],[7,8,9]]
+>> matriks[1][2] ¶    // → 6
+```
+
+---
+
+## Décomposition
+
+```zymbol
+// Wàllu
+deret = [10, 20, 30, 40, 50]
+[a, b, c] = deret              // a=10  b=20  c=30
+[njëkk, *dëkkël] = deret       // njëkk=10  dëkkël=[20,30,40,50]
+[x, _, z] = [1, 2, 3]          // _ wàcc ko
+
+// Tuple bu nomer
+dhibic = (100, 200)
+(px, py) = dhibic              // px=100  py=200
+
+// Tuple bu tur
+nit = (tur: "Ana", at: 25, dëkk: "Ndakaaru")
+(tur: t, at: a) = nit          // t="Ana"  a=25
+```
 
 ---
 
 ## Tuple
 
 ```zymbol
-// Tuple bu tur
+// Bu nomer
+dhibic = (10, 20)
+>> dhibic[0] ¶    // → 10
+
+// Bu tur
 nit = (tur: "Alice", at: 25)
 >> nit.tur ¶    // → Alice
->> nit.at ¶     // → 25
 >> nit[0] ¶     // → Alice (index dafa liggéey)
+
+// Xidid
+pos = (x: 10, y: 20)
+p = (pos: pos, summad: "origine")
+>> p.pos.x ¶        // → 10
 ```
 
 ---
 
 ## Liggéey yu Rang bu Kanam
 
-Operatör HOF yi waajuul **lambda bu inline** — du variable lambda ci dëkk.
+> Operatör HOF yi waajuul **lambda bu inline** — du variable lambda ci dëkk.
 
 ```zymbol
 nomeryi = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Map ($>)
-ñaareelyi = nomeryi$> (x -> x * 2)
->> ñaareelyi ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+ñaareelyi  = nomeryi$> (x -> x * 2)                // map  → [2,4,6…20]
+paari      = nomeryi$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
+jàmm       = nomeryi$< (0, (acc, x) -> acc + x)     // reduce → 55
 
-// Filter ($|)
-paari = nomeryi$| (x -> x % 2 == 0)
->> paari ¶    // → [2, 4, 6, 8, 10]
+// Silsilaa dhexee
+etap1 = nomeryi$| (x -> x > 3)
+etap2 = etap1$> (x -> x * x)
+>> etap2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Reduce ($<) — (xëy bu dëkk, (acc, këy) -> xëy)
-jàmm = nomeryi$< (0, (acc, x) -> acc + x)
->> jàmm ¶    // → 55
+// Liggéey yu tur ci HOF — bëgg ci lambda
+ñaareel_l(x) { <~ x * 2 }
+r = nomeryi$> (x -> ñaareel_l(x))    // ✅
+```
+
+---
+
+## Operatër Tuyël
+
+RHS waajuul `_` bu placeholder ci xëy bi darr bi:
+
+```zymbol
+ñaareel = x -> x * 2
+yokku = (a, b) -> a + b
+yokk1 = x -> x + 1
+
+5 |> ñaareel(_)        // → 10
+10 |> yokku(_, 5)      // → 15
+5 |> yokku(2, _)       // → 7
+
+// Silsilaa
+r = 5 |> ñaareel(_) |> yokk1(_) |> ñaareel(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -328,10 +425,8 @@ jàmm = nomeryi$< (0, (acc, x) -> acc + x)
     x = 10 / 0
 } :! ##Div {
     >> "Xam-xam ci ñaareel" ¶
-} :! ##IO {
-    >> "Solu IO" ¶
 } :! {
-    >> "solu bees: " _err ¶
+    >> "solu bees: " _err ¶    // _err am xibaar solu bi
 } :> {
     >> "dafa dem ndaw" ¶
 }
@@ -371,15 +466,78 @@ pi = k::get_PI()
 >> pi ¶                  // → 3.14159
 ```
 
+```zymbol
+// Eksportasion ak tur yëgël
+# mylib
+#> { _internal_add <= yokku_bi }
+
+_internal_add(a, b) { <~ a + b }
+```
+
+```zymbol
+<# ./mylib <= m
+
+>> m::yokku_bi(3, 4) ¶    // → 7  (tur bu biir _internal_add planqe)
+```
+
+---
+
+## Jëfandikukaay Data
+
+```zymbol
+// Soppati wolu nomer
+v1 = #|"42"|      // → 42  (Int)
+v2 = #|"3.14"|    // → 3.14  (Float)
+v3 = #|"abc"|     // → "abc"  (solu-baax)
+
+// Waxtaanal / tëj
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14  (waxtaanal ci 2 ci kanam)
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14  (tëj)
+
+// Qaab nomer
+fmt = #,|1234567|      // → 1,234,567  (comma-separe)
+sci = #^|12345.678|    // → 1.2345678e4  (siyantifik)
+
+// Base literals
+a = 0x41         // → 'A'  (hex)
+b = 0b01000001   // → 'A'  (binary)
+c = 0o101        // → 'A'  (octal)
+
+// Soppati base
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
+```
+
+---
+
+## Danku ak Shell
+
+```zymbol
+bés = <\ date +%Y-%m-%d \>     // dox stdout (ak \n dëkkël)
+>> "Tey: " bés
+
+fisel = "data.txt"
+yëgël = <\ cat {fisel} \>      // interpolasion ci jëfandikoo yi
+
+output = </"./subscript.zy"/>   // dox script Zymbol bees, dox output
+>> output
+```
+
+> `><` dox CLI yi ak array wolu (tree-walker rekk).
+
 ---
 
 ## Tënk bu Xóólóólu: FizzBuzz
 
 ```zymbol
 setal(nomer) {
-    ? nomer % 15 == 0 { <~ "BuñDëkk" }
-    _? nomer % 3  == 0 { <~ "Buñ" }
-    _? nomer % 5  == 0 { <~ "Dëkk" }
+    ? nomer % 15 == 0 { <~ "FizzBuzz" }
+    _? nomer % 3  == 0 { <~ "Fizz" }
+    _? nomer % 5  == 0 { <~ "Buzz" }
     _ { <~ nomer }
 }
 
@@ -390,36 +548,43 @@ setal(nomer) {
 
 ## Taatef Signa
 
-| Signa   | Liggéey             | Signa      | Liggéey                   |
-|---------|---------------------|------------|---------------------------|
-| `=`     | Jumtukat            | `$#`       | Paxar                     |
-| `:=`    | Dëkku yëgël         | `$+`       | Yokku                     |
-| `>>`    | Dem                 | `$-`       | Tëj (ci index)            |
-| `<<`    | Dugub               | `$?`       | Am                        |
-| `¶`/`\` | Dëkk wëpp           | `$[s..e]`  | Ànd                       |
-| `?`     | Jëm (if)            | `$>`       | map                       |
-| `_?`    | Walla jëm (elif)    | `$\|`      | filter                    |
-| `_`     | Walla / yëgël       | `$<`       | reduce                    |
-| `??`    | match               | `!?`       | Solu (try)                |
-| `@`     | Ànd-ànd             | `:!`       | Jëfal (catch)             |
-| `@!`    | Jël dem (break)     | `:>`       | Ndaw (finally)            |
-| `@>`    | Dem kanam (continue)| `$!`       | Solu bi am                |
-| `->`    | Lambda              | `$!!`      | Dem solu bi               |
-| `<~`    | Màggal (return)     | `#`        | Setal modul               |
-| `\|>`   | Pipe                | `#>`       | Eksportasion              |
-| `#1`    | Wér                 | `<#`       | Importasion               |
-| `#0`    | Xam-xam du wér      | `::`       | Jëfal modul               |
+| Signa | Liggéey | Signa | Liggéey |
+|-------|---------|-------|---------|
+| `=` | Jumtukat | `$#` | Paxar |
+| `:=` | Dëkku yëgël | `$+` | Yokku |
+| `>>` | Dem | `$+[i]` | Jox ci index |
+| `<<` | Dugub | `$-` | Tëj njëkk ci xëy |
+| `¶` / `\\` | Dëkk wëpp | `$--` | Tëj lépp ci xëy |
+| `?` | Jëm (if) | `$-[i]` | Tëj ci index |
+| `_?` | Walla jëm (elif) | `$-[i..j]` | Tëj rang |
+| `_` | Walla / yëgël | `$?` | Am |
+| `??` | match | `$??` | Index yi lépp |
+| `@` | Ànd-ànd | `$[s..e]` | Ànd |
+| `@!` | Jël dem (break) | `$>` | map |
+| `@>` | Dem kanam (continue) | `$\|` | filter |
+| `->` | Lambda | `$<` | reduce |
+| `$^+` | Tartiib ol (primitives) | `$^-` | Tartiib sëf (primitives) |
+| `$^` | Tartiib comparator (tuples) | | |
+| `<~` | Màggal (return) | `!?` | Solu (try) |
+| `\|>` | Pipe | `:!` | Jëfal (catch) |
+| `#1` | Wér | `:>` | Ndaw (finally) |
+| `#0` | Xam-xam du wér | `$!` | Solu bi am |
+| `<#` | Importasion | `$!!` | Dem solu bi |
+| `#` | Setal modul | `#>` | Eksportasion |
+| `::` | Jëfal modul | `.` | Jëfal biir |
+| `#\|..\|` | Parse nomer | `#?` | Metadata xëtu |
+| `#.N\|..\|` | Waxtaanal | `#!N\|..\|` | Tëj |
+| `c\|..\|` | Qaab comma | `e\|..\|` | Siyantifik |
+| `<\ ..\>` | shell exec | `>\<` | Doodaa CLI |
 
 ---
 
 *Zymbol-Lang — Signa. Àddina. Du saf.*
 
----
-
 > **Xibaar:** Dokkumantasion bii dañu ko def ak jëfandikoo xam-xam bu otomatik (IA).
 > Dañu wàcc gëm ci xëy bi, waaye ay jëfandikoo walla misaal mën a am solu.
-> Xiibaar bu dëgg moo nekk ci [Zymbol-Lang specification](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> Xiibaar bu dëgg moo nekk ci [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-> The authoritative reference is the [Zymbol-Lang specification](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> The authoritative reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).

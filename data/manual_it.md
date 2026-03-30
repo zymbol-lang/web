@@ -1,13 +1,9 @@
-# Manuale Compatto di Zymbol-Lang
+# Manuale Zymbol-Lang
 
-**Zymbol-Lang** è un linguaggio di programmazione simbolico. Non usa parole chiave — tutto è un simbolo. Funziona allo stesso modo in qualsiasi lingua umana.
+**Zymbol-Lang** è un linguaggio di programmazione simbolico. Nessuna parola chiave — tutto è un simbolo. Funziona allo stesso modo in qualsiasi lingua umana.
 
----
-
-## Filosofia
-
-- Nessuna parola chiave (`if`, `while`, `return` non esistono — solo simboli `?`, `@`, `<~`)
-- Unicode completo — identificatori in qualsiasi lingua o emoji 👋
+- Nessun `if`, `while`, `return` — solo `?`, `@`, `<~`
+- Unicode completo — identificatori in qualsiasi lingua o emoji
 - Agnostico alla lingua umana — il codice è identico in tutte le lingue
 
 ---
@@ -15,81 +11,110 @@
 ## Variabili e Costanti
 
 ```zymbol
-x = 10           // variabile (mutabile)
-PI := 3.14159    // costante (immutabile — errore se riassegnata)
-nome = "Ana"
-attivo = #1      // booleano vero
+x = 10              // variabile mutabile
+PI := 3.14159       // costante — errore alla riassegnazione
+nome = "Alice"
+attivo = #1         // booleano vero
 👋 := "Ciao"
 ```
 
-### Assegnazione Composta
-
 ```zymbol
-x = 10    // 10
+x = 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %=  4   // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
 
 ## Tipi di Dati
 
-| Tipo           | Esempio             | Simbolo `#?` | Note                                |
-|----------------|---------------------|--------------|-------------------------------------|
-| Intero         | `42`, `-7`          | `###`        | 64 bit con segno                    |
-| Virgola mobile | `3.14`, `1.5e10`    | `##.`        | Notazione scientifica OK            |
-| Stringa        | `"ciao"`            | `##"`        | Interpolazione: `"Ciao {nome}"`     |
-| Carattere      | `'A'`               | `##'`        | Un carattere Unicode                |
-| Booleano       | `#1`, `#0`          | `##?`        | NON sono 1 e 0 numerici             |
-| Array          | `[1, 2, 3]`         | `##]`        | Tutti gli elementi dello stesso tipo|
-| Tupla          | `(a, b)`            | `##)`        | Posizionale                         |
-| Tupla nominata | `(x: 1, y: 2)`      | `##)`        | Accesso per nome o indice           |
+| Tipo           | Letterale           | Tag `#?` | Note                               |
+|----------------|---------------------|----------|------------------------------------|
+| Int            | `42`, `-7`          | `###`    | 64 bit con segno                   |
+| Float          | `3.14`, `1.5e10`    | `##.`    | Notazione scientifica OK           |
+| String         | `"testo"`           | `##"`    | Interpolazione: `"Ciao {nome}"`    |
+| Char           | `'A'`               | `##'`    | Un carattere Unicode               |
+| Bool           | `#1`, `#0`          | `##?`    | NON numerico — `#1 ≠ 1`           |
+| Array          | `[1, 2, 3]`         | `##]`    | Elementi omogenei                  |
+| Tupla          | `(a, b)`            | `##)`    | Posizionale                        |
+| Tupla nominata | `(x: 1, y: 2)`      | `##)`    | Campi nominati                     |
+
+```zymbol
+// Introspezione del tipo — restituisce (tipo, cifre, valore)
+meta = 42#?
+>> meta ¶         // → (###, 2, 42)
+t = meta[0]
+>> t ¶            // → ###
+```
 
 ---
 
 ## Uscita e Ingresso
 
 ```zymbol
-// Uscita — NON aggiunge newline automaticamente
->> "Ciao" ¶                      // ¶ o \\ dà una nuova riga esplicita
->> "a=" a " b=" b ¶              // più valori per giustapposizione
->> "somma=" sommare(2, 3) ¶      // chiamate a funzione in qualsiasi posizione
->> (arr$#) ¶                     // gli operatori postfix richiedono parentesi
+>> "Ciao" ¶                        // ¶ o \\ per nuova riga esplicita
+>> "a=" a " b=" b ¶                // giustapposizione — valori multipli
+>> (arr$#) ¶                       // operatori postfix richiedono ( ) in >>
 
-// Ingresso
-<< nome                          // senza prompt — legge nella variabile
-<< "Il tuo nome? " nome          // con prompt
+<< nome                            // leggere nella variabile (senza prompt)
+<< "Inserisci il nome: " nome      // con prompt
 ```
 
-> `¶` o `\\` sono equivalenti come nuova riga.
+> `¶` (AltGr+R sulla tastiera spagnola) e `\\` sono nuove righe equivalenti.
 
 ---
 
-## Concatenazione di Stringhe
-
-Tre forme valide — ciascuna per il suo contesto:
+## Operatori
 
 ```zymbol
-nome = "Ana"
-n = 25
+// Aritmetica
+a = 10
+b = 3
+r1 = a + b    // 13     r2 = a - b    // 7
+r3 = a * b    // 30     r4 = a / b    // 3  (divisione intera)
+r5 = a % b    // 1      r6 = a ^ b    // 1000  (potenza)
 
-// 1. Virgola — nelle assegnazioni con = o :=
-msg = "Ciao ", nome, "!"                 // → Ciao Ana!
-TITOLO := "Utente: ", nome
+// Confronto
+a == b    // #0    a <> b    // #1    a < b    // #0
+a <= b    // #0   a > b     // #1    a >= b   // #1
 
-// 2. Giustapposizione — nell'uscita >>
->> "Ciao " nome " hai " n " anni" ¶      // → Ciao Ana hai 25 anni
-
-// 3. Interpolazione — in qualsiasi contesto
-desc = "Ciao {nome}, hai {n} anni"       // → Ciao Ana, hai 25 anni
+// Logica
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
 ```
 
-> **Nota**: `+` è solo per i numeri. Usarlo con le stringhe genera un avviso.
+---
+
+## Stringhe
+
+```zymbol
+// Tre forme di concatenazione
+nome = "Alice"
+n = 42
+
+msg = "Ciao ", nome, "!"              // virgola — nelle assegnazioni
+>> "Ciao " nome " hai " n ¶          // giustapposizione — in >>
+desc = "Ciao {nome}, hai {n}"        // interpolazione — ovunque
+```
+
+```zymbol
+s = "Hello World"
+len = s$#                  // 11
+sub = s$[0..5]             // "Hello"  (fine esclusiva)
+ha = s$? "World"           // #1
+parti = "a,b,c,d" / ','    // [a, b, c, d]
+rep = s$~~["l":"L"]        // "HeLLo WorLd"
+rep1 = s$~~["l":"L":1]     // "HeLlo World"  (solo i primi N)
+```
+
+> `+` è solo per i numeri. Usare `,`, giustapposizione o interpolazione per le stringhe.
 
 ---
 
@@ -98,10 +123,8 @@ desc = "Ciao {nome}, hai {n} anni"       // → Ciao Ana, hai 25 anni
 ```zymbol
 x = 7
 
-// Se semplice
 ? x > 0 { >> "positivo" ¶ }
 
-// Se / altrimenti se / altrimenti
 ? x > 100 {
     >> "grande" ¶
 } _? x > 0 {
@@ -113,14 +136,14 @@ x = 7
 }
 ```
 
-I blocchi `{ }` sono **obbligatori** anche per una sola riga.
+> I blocchi `{ }` sono **obbligatori** anche per una sola istruzione.
 
 ---
 
 ## Match
 
 ```zymbol
-// Match con intervalli
+// Intervalli
 voto = 85
 giudizio = ?? voto {
     90..100 : 'A'
@@ -130,7 +153,15 @@ giudizio = ?? voto {
 }
 >> giudizio ¶    // → B
 
-// Match con guardie (condizioni arbitrarie)
+// Stringhe
+colore = "rosso"
+codice = ?? colore {
+    "rosso" : "#FF0000"
+    "verde" : "#00FF00"
+    _       : "#000000"
+}
+
+// Guardie
 temp = -5
 stato = ?? temp {
     _? temp < 0  : "ghiaccio"
@@ -140,14 +171,12 @@ stato = ?? temp {
 }
 >> stato ¶    // → ghiaccio
 
-// Match con stringhe
-colore = "rosso"
-codice = ?? colore {
-    "rosso"  : "#FF0000"
-    "verde"  : "#00FF00"
-    _        : "#000000"
+// Forma istruzione (rami a blocco)
+?? n {
+    0        : { >> "zero" ¶ }
+    _? n < 0 : { >> "negativo" ¶ }
+    _        : { >> "positivo" ¶ }
 }
->> codice ¶
 ```
 
 ---
@@ -155,38 +184,43 @@ codice = ?? colore {
 ## Cicli
 
 ```zymbol
-// Intervallo inclusivo: 0..4 itera 0,1,2,3,4
-@ i:0..4 { >> i " " }
->> ¶    // → 0 1 2 3 4
+@ i:0..4  { >> i " " }        // intervallo inclusivo:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // con passo:              1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // inverso:                5 4 3 2 1 0
 
-// Intervallo con passo
-@ i:1..9:2 { >> i " " }
->> ¶    // → 1 3 5 7 9
-
-// Intervallo inverso
-@ i:5..0:1 { >> i " " }
->> ¶    // → 5 4 3 2 1 0
-
-// Mentre (while)
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶    // → 128
+>> n ¶                        // → 128  (while)
 
-// Per ogni elemento
 frutti = ["mela", "pera", "uva"]
-@ f:frutti { >> f ¶ }
+@ f:frutti { >> f ¶ }         // per ogni elemento
 
-// Sui caratteri di una stringa
 @ c:"ciao" { >> c "-" }
->> ¶    // → c-i-a-o-
+>> ¶                          // → c-i-a-o-  (sui caratteri)
 
-// Break e Continue
 @ i:1..10 {
-    ? i % 2 == 0 { @> }    // @> continua
-    ? i > 7 { @! }          // @! interrompi
+    ? i % 2 == 0 { @> }       // @> continua
+    ? i > 7 { @! }             // @! interrompi
     >> i " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Ciclo infinito
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Ciclo etichettato (break annidato)
+conta = 0
+@ @esterno {
+    conta++
+    ? conta >= 3 { @! esterno }
+}
+>> conta ¶                    // → 3
 ```
 
 ---
@@ -194,63 +228,61 @@ frutti = ["mela", "pera", "uva"]
 ## Funzioni
 
 ```zymbol
-// Dichiarazione e chiamata
 sommare(a, b) { <~ a + b }
 >> sommare(3, 4) ¶    // → 7
 
-// Ricorsione
 fattoriale(n) {
     ? n <= 1 { <~ 1 }
     <~ n * fattoriale(n - 1)
 }
 >> fattoriale(5) ¶    // → 120
-
-// Le funzioni hanno portata isolata — nessun accesso a variabili esterne
-globale = 100
-testare() {
-    x = 42    // solo locale
-    <~ x
-}
->> testare() ¶    // → 42
 ```
 
-> **Importante**: Le funzioni dichiarate con `nome(params){ }` non sono valori di prima classe.
-> Per passarle come argomento, avvolgere: `x -> nome(x)`.
+Le funzioni hanno una **portata isolata** — non possono leggere variabili esterne. Usare i parametri di uscita `<~` per modificare le variabili del chiamante:
+
+```zymbol
+scambiare(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
+}
+x = 10
+y = 20
+scambiare(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> Le funzioni nominate non sono valori di prima classe. Per passarle come argomento, avvolgere: `x -> fn(x)`.
 
 ---
 
 ## Lambda e Chiusure
 
 ```zymbol
-// Lambda semplice (ritorno implicito)
 doppio = x -> x * 2
 somma = (a, b) -> a + b
 >> doppio(5) ¶    // → 10
 >> somma(3, 7) ¶  // → 10
 
-// Lambda con blocco (ritorno esplicito)
-classifica = x -> {
+// Lambda con blocco
+classificare = x -> {
     ? x > 0 { <~ "positivo" }
     _? x < 0 { <~ "negativo" }
     <~ "zero"
 }
->> classifica(5) ¶     // → positivo
->> classifica(0) ¶     // → zero
->> classifica(-5) ¶    // → negativo
 
-// Chiusure — le lambda catturano variabili dello scope esterno
+// Chiusura — cattura la portata esterna
 fattore = 3
-triplo = x -> x * fattore    // cattura 'fattore'
+triplo = x -> x * fattore
 >> triplo(7) ¶    // → 21
 
-// Fabbrica di funzioni
+// Fabbrica
 make_adder(n) { <~ x -> x + n }
 add10 = make_adder(10)
 >> add10(5) ¶    // → 15
 
-// Lambda come valori: archiviate in array
+// Negli array
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[0](5) ¶    // → 6
 >> ops[2](5) ¶    // → 25
 ```
 
@@ -259,64 +291,129 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 ## Array
 
 ```zymbol
-arr = [10, 20, 30, 40, 50]
+arr = [1, 2, 3, 4, 5]
 
-// Accesso (indice 0-base)
->> arr[0] ¶    // → 10
+arr[0]          // 1 — accesso (base 0)
+arr[-1]         // 5 — indice negativo (ultimo)
+arr$#           // 5 — lunghezza (usare (arr$#) in >>)
 
-// Lunghezza (parentesi richieste in >>)
-n = arr$#
->> (arr$#) ¶    // → 5
+arr = arr$+ 6            // aggiungere → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // inserire all'indice 2
+arr3 = arr$- 3           // rimuovere la prima occorrenza del valore
+arr4 = arr$-- 3          // rimuovere tutte le occorrenze
+arr5 = arr$-[0]          // rimuovere all'indice
+arr6 = arr$-[1..3]       // rimuovere un intervallo (fine esclusiva)
 
-// Aggiungere, rimuovere, contiene, fetta
-arr = arr$+ 60               // aggiungere
-arr = arr$- 0                // rimuovere indice 0
-contiene = arr$? 30          // → #1
-fetta = arr$[0..2]           // [20, 30]
+ha = arr$? 3             // #1 — contiene
+pos = arr$?? 3           // [2] — tutti gli indici del valore
+sl = arr$[0..3]          // [1,2,3] — fetta (fine esclusiva)
+sl2 = arr$[0:3]          // [1,2,3] — uguale, sintassi per conteggio
 
-// Aggiornare elemento
-arr[1] = 99
+asc = arr$^+             // ordinato crescente  (solo primitivi)
+desc = arr$^-            // ordinato decrescente (solo primitivi)
 
-// Per ogni elemento
-@ x:arr { >> x " " }
->> ¶
+// Array di tuple nominate/posizionali — usare $^ con lambda comparatore
+db = [(nome: "Carla", eta: 28), (nome: "Ana", eta: 25), (nome: "Bob", eta: 30)]
+per_eta  = db$^ (a, b -> a.eta < b.eta)     // crescente per età  (<)
+per_nome = db$^ (a, b -> a.nome > b.nome)   // decrescente per nome (>)
+>> per_eta[0].nome ¶     // → Ana
+>> per_nome[0].nome ¶    // → Carla
+
+arr[1] = 99              // aggiornamento in-place
+arr = arr[1]$~ 99        // aggiornamento funzionale — restituisce nuovo array
 ```
 
-> `$+`, `$-`, `$[..]` restituiscono un **nuovo array** — riassegnare: `arr = arr$+ 4`.
-> Nessun concatenamento: usare due assegnazioni separate.
+> Tutti gli operatori di collezione restituiscono un **nuovo array**. Riassegnare: `arr = arr$+ 4`.
+> Gli operatori non possono essere concatenati — usare assegnazioni intermedie.
+> `$^+` / `$^-` ordinano **array di primitivi** (numeri, stringhe). Per array di tuple, usare `$^` con lambda comparatore — la direzione è codificata nel lambda (`<` = crescente, `>` = decrescente).
+
+```zymbol
+// Array annidati
+matrice = [[1,2,3],[4,5,6],[7,8,9]]
+>> matrice[1][2] ¶    // → 6
+```
+
+---
+
+## Destrutturazione
+
+```zymbol
+// Array
+arr = [10, 20, 30, 40, 50]
+[a, b, c] = arr              // a=10  b=20  c=30
+[primo, *resto] = arr        // primo=10  resto=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ scarta
+
+// Tupla posizionale
+punto = (100, 200)
+(px, py) = punto             // px=100  py=200
+
+// Tupla nominata
+persona = (nome: "Ana", eta: 25, citta: "Roma")
+(nome: n, eta: e) = persona   // n="Ana"  e=25
+```
 
 ---
 
 ## Tuple
 
 ```zymbol
-// Tupla nominata
+// Posizionale
+punto = (10, 20)
+>> punto[0] ¶    // → 10
+
+// Nominata
 persona = (nome: "Alice", eta: 25)
 >> persona.nome ¶    // → Alice
->> persona.eta ¶     // → 25
->> persona[0] ¶      // → Alice (l'indice funziona anche)
+>> persona[0] ¶      // → Alice  (l'indice funziona anche)
+
+// Annidata
+pos = (x: 10, y: 20)
+p = (pos: pos, etichetta: "origine")
+>> p.pos.x ¶        // → 10
 ```
 
 ---
 
 ## Funzioni di Ordine Superiore
 
-Gli operatori HOF richiedono una **lambda inline** — non una variabile lambda diretta.
+> Gli operatori HOF richiedono un **lambda inline** — le variabili lambda non possono essere passate direttamente.
 
 ```zymbol
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Map ($>)
-doppi = nums$> (x -> x * 2)
->> doppi ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+doppi   = nums$> (x -> x * 2)                // map  → [2,4,6…20]
+pari    = nums$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
+totale  = nums$< (0, (acc, x) -> acc + x)     // reduce → 55
 
-// Filter ($|)
-pari = nums$| (x -> x % 2 == 0)
->> pari ¶    // → [2, 4, 6, 8, 10]
+// Catena via intermedi
+passo1 = nums$| (x -> x > 3)
+passo2 = passo1$> (x -> x * x)
+>> passo2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Reduce ($<) — (valore_iniziale, (accumulatore, elemento) -> expr)
-totale = nums$< (0, (acc, x) -> acc + x)
->> totale ¶    // → 55
+// Funzioni nominate in HOF — avvolgere in lambda
+raddoppiare(x) { <~ x * 2 }
+r = nums$> (x -> raddoppiare(x))    // ✅
+```
+
+---
+
+## Operatore Pipe
+
+Il lato destro richiede sempre `_` come segnaposto per il valore trasmesso:
+
+```zymbol
+doppio = x -> x * 2
+sommare = (a, b) -> a + b
+inc = x -> x + 1
+
+5 |> doppio(_)        // → 10
+10 |> sommare(_, 5)   // → 15
+5 |> sommare(2, _)    // → 7
+
+// Concatenato
+r = 5 |> doppio(_) |> inc(_) |> doppio(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -328,10 +425,8 @@ totale = nums$< (0, (acc, x) -> acc + x)
     x = 10 / 0
 } :! ##Div {
     >> "divisione per zero" ¶
-} :! ##IO {
-    >> "errore IO" ¶
 } :! {
-    >> "altro errore: " _err ¶
+    >> "altro errore: " _err ¶    // _err contiene il messaggio di errore
 } :> {
     >> "viene eseguito sempre" ¶
 }
@@ -359,66 +454,134 @@ totale = nums$< (0, (acc, x) -> acc + x)
 
 _PI := 3.14159
 sommare(a, b) { <~ a + b }
-get_PI() { <~ _PI }
+get_PI() { <~ _PI }   // getter — accesso diretto alla costante via alias non supportato
 ```
 
 ```zymbol
 // File: main.zy
 <# ./lib/calc <= c    // alias obbligatorio
 
->> c::sommare(5, 3) ¶  // → 8
+>> c::sommare(5, 3) ¶     // → 8
 pi = c::get_PI()
->> pi ¶                // → 3.14159
+>> pi ¶                   // → 3.14159
 ```
+
+```zymbol
+// Esportare con nome pubblico diverso
+# mialib
+#> { _sommare_interno <= somma }
+
+_sommare_interno(a, b) { <~ a + b }
+```
+
+```zymbol
+<# ./mialib <= m
+
+>> m::somma(3, 4) ¶    // → 7  (nome interno _sommare_interno è nascosto)
+```
+
+---
+
+## Operatori sui Dati
+
+```zymbol
+// Convertire stringa in numero
+v1 = #|"42"|      // → 42  (Int)
+v2 = #|"3.14"|    // → 3.14  (Float)
+v3 = #|"abc"|     // → "abc"  (sicuro, senza errore)
+
+// Arrotondare / troncare
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14  (arrotondare a 2 decimali)
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14  (troncare)
+
+// Formattazione numeri
+fmt = #,|1234567|      // → 1,234,567  (separatore di migliaia)
+sci = #^|12345.678|    // → 1.2345678e4  (scientifico)
+
+// Letterali di base
+a = 0x41         // → 'A'  (esadecimale)
+b = 0b01000001   // → 'A'  (binario)
+c = 0o101        // → 'A'  (ottale)
+
+// Conversione di base
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
+```
+
+---
+
+## Integrazione Shell
+
+```zymbol
+data = <\ date +%Y-%m-%d \>     // cattura stdout (incluso \n finale)
+>> "Oggi: " data
+
+file = "data.txt"
+contenuto = <\ cat {file} \>    // interpolazione nei comandi
+
+uscita = </"./script.zy"/>      // eseguire un altro script Zymbol, catturare l'uscita
+>> uscita
+```
+
+> `><` cattura gli argomenti CLI come array di stringhe (solo tree-walker).
 
 ---
 
 ## Esempio Completo: FizzBuzz
 
 ```zymbol
-classifica(numero) {
-    ? numero % 15 == 0 { <~ "FrizzaRonza" }
-    _? numero % 3  == 0 { <~ "Frizza" }
-    _? numero % 5  == 0 { <~ "Ronza" }
+classificare(numero) {
+    ? numero % 15 == 0 { <~ "FizzBuzz" }
+    _? numero % 3  == 0 { <~ "Fizz" }
+    _? numero % 5  == 0 { <~ "Buzz" }
     _ { <~ numero }
 }
 
-@ i:1..20 { >> classifica(i) ¶ }
+@ i:1..20 { >> classificare(i) ¶ }
 ```
 
 ---
 
 ## Riferimento dei Simboli
 
-| Simbolo | Operazione        | Simbolo    | Operazione          |
-|---------|-------------------|------------|---------------------|
-| `=`     | variabile         | `$#`       | lunghezza           |
-| `:=`    | costante          | `$+`       | aggiungere          |
-| `>>`    | uscita            | `$-`       | rimuovere (per ind.)|
-| `<<`    | ingresso          | `$?`       | contiene            |
-| `¶`/`\` | nuova riga        | `$[s..e]`  | fetta               |
-| `?`     | se (if)           | `$>`       | map                 |
-| `_?`    | altrimenti se     | `$\|`      | filter              |
-| `_`     | altrimenti / jolly| `$<`       | reduce              |
-| `??`    | match             | `!?`       | provare (try)       |
-| `@`     | ciclo             | `:!`       | catturare (catch)   |
-| `@!`    | interrompi (break)| `:>`       | sempre (finally)    |
-| `@>`    | continua          | `$!`       | è errore            |
-| `->`    | lambda            | `$!!`      | propagare errore    |
-| `<~`    | ritornare         | `#`        | dichiarare modulo   |
-| `\|>`   | pipe              | `#>`       | esportare           |
-| `#1`    | vero              | `<#`       | importare           |
-| `#0`    | falso             | `::`       | chiamata modulo     |
-
----
-
-*Zymbol-Lang — Simbolico. Universale. Immutabile.*
+| Simbolo   | Operazione                          | Simbolo       | Operazione                     |
+|-----------|-------------------------------------|---------------|-------------------------------|
+| `=`       | variabile                           | `$#`          | lunghezza                     |
+| `:=`      | costante                            | `$+`          | aggiungere                    |
+| `>>`      | uscita                              | `$+[i]`       | inserire all'indice           |
+| `<<`      | ingresso                            | `$-`          | rimuovere prima occorrenza    |
+| `¶`/`\\`  | nuova riga                          | `$--`         | rimuovere tutte le occorrenze |
+| `?`       | se (if)                             | `$-[i]`       | rimuovere all'indice          |
+| `_?`      | altrimenti se (elif)                | `$-[i..j]`    | rimuovere un intervallo       |
+| `_`       | altrimenti / jolly                  | `$?`          | contiene                      |
+| `??`      | match                               | `$??`         | tutti gli indici del valore   |
+| `@`       | ciclo                               | `$[s..e]`     | fetta                         |
+| `@!`      | interrompi (break)                  | `$>`          | map                           |
+| `@>`      | continua                            | `$\|`         | filter                        |
+| `->`      | lambda                              | `$<`          | reduce                        |
+| `$^+`     | ordinare crescente (primitivi)      | `$^-`         | ordinare decrescente          |
+| `$^`      | ordinare con lambda comparatore     |               |                               |
+| `<~`      | ritornare (return)                  | `!?`          | provare (try)                 |
+| `\|>`     | pipe                                | `:!`          | catturare (catch)             |
+| `#1`      | vero                                | `:>`          | sempre (finally)              |
+| `#0`      | falso                               | `$!`          | è errore                      |
+| `<#`      | importare                           | `$!!`         | propagare errore              |
+| `#`       | dichiarare modulo                   | `#>`          | esportare                     |
+| `::`      | chiamata modulo                     | `.`           | accesso al campo              |
+| `#\|..\|` | convertire in numero               | `#?`          | metadati di tipo              |
+| `#.N\|..\|` | arrotondare                      | `#!N\|..\|`   | troncare                      |
+| `c\|..\|` | formato virgola                    | `e\|..\|`     | scientifico                   |
+| `<\ ..\>` | esecuzione shell                   | `>\<`         | argomenti CLI                 |
 
 ---
 
 > **Avvertenza:** Questa documentazione è stata creata e tradotta dall'intelligenza artificiale (IA).
 > Sono stati compiuti tutti gli sforzi per garantire l'accuratezza, ma alcune traduzioni o esempi potrebbero contenere errori.
-> Il riferimento canonico è la [specifica Zymbol-Lang](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> Il riferimento canonico è la [specifica Zymbol-Lang](https://github.com/zymbol-lang/interpreter).
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > While every effort has been made to ensure accuracy, some translations or examples may contain errors.

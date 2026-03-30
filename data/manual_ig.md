@@ -2,10 +2,6 @@
 
 **Zymbol-Lang** bụ asụsụ mmemme akara. Ọ naghị eji okwu ndị isi — ihe niile bụ akara. Ọ na-arụ ọrụ otu ahụ n'asụsụ mmadụ ọ bụla.
 
----
-
-## Ihe Omume Ọgụgụ
-
 - Enweghị okwu ndị isi (`if`, `while`, `return` adịghị — ọ bụ naanị akara `?`, `@`, `<~`)
 - Unicode zuru oke — atụmatụ n'asụsụ ọ bụla ma ọ bụ emoji 👋
 - Asụsụ-na-asụsụ agaghị emetụta — koodu bụ otu n'asụsụ niile
@@ -15,53 +11,57 @@
 ## Ihe Ọgụgụ na Ihe Mgbagha
 
 ```zymbol
-ọnụọgụ = 10           // Ihe ọgụgụ (nwere ike gbanwee)
-PI := 3.14159          // Ihe mgbagha (enweghị ike gbanwee — ntụpọ na ntụgharia)
+x = 10              // ihe ọgụgụ (nwere ike gbanwee)
+PI := 3.14159       // ihe mgbagha — ntụpọ na ntụgharia
 aha = "Emeka"
-ọnọdụ = #1            // eziokwu boolean
+ọnọdụ = #1         // eziokwu boolean
 👋 := "Nnọọ"
 ```
 
-### Nkwupụta Ngwakọta
-
 ```zymbol
-x = 10    // 10
+x = 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %=  4   // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
 
 ## Ụdị Data
 
-| Ụdị             | Ihe Atụ             | Akara `#?` | Nchọkwa                             |
-|-----------------|---------------------|------------|-------------------------------------|
-| Nọmba Ọkè      | `42`, `-7`          | `###`      | Bit 64 nwere ihe mgbaàmà             |
-| Nọmba Mgbagwọ  | `3.14`, `1.5e10`    | `##.`      | Akara sayensị dị mma                |
-| Eriri           | `"nnọọ"`            | `##"`      | Ntinye: `"Nnọọ {aha}"`              |
-| Mkpụrụedemede  | `'A'`               | `##'`      | Otu mkpụrụedemede Unicode           |
-| Boolean         | `#1`, `#0`          | `##?`      | ABỤGHỊ nọmba 1 na 0                 |
-| Usoro           | `[1, 2, 3]`         | `##]`      | Ihe niile n'ụdị otu                 |
-| Tuple           | `(a, b)`            | `##)`      | Ọnọdụ                               |
-| Tuple Aha       | `(x: 1, y: 2)`      | `##)`      | Enwere ike nweta n'aha ma ọ bụ index |
+| Ụdị | Ihe Atụ | Akara `#?` | Nchọkwa |
+|-----|---------|------------|---------|
+| Nọmba Ọkè | `42`, `-7` | `###` | Bit 64 nwere ihe mgbaàmà |
+| Nọmba Mgbagwọ | `3.14`, `1.5e10` | `##.` | Akara sayensị dị mma |
+| Eriri | `"nnọọ"` | `##"` | Ntinye: `"Nnọọ {aha}"` |
+| Mkpụrụedemede | `'A'` | `##'` | Otu mkpụrụedemede Unicode |
+| Boolean | `#1`, `#0` | `##?` | ABỤGHỊ nọmba 1 na 0 |
+| Usoro | `[1, 2, 3]` | `##]` | Ihe niile n'ụdị otu |
+| Tuple | `(a, b)` | `##)` | Ọnọdụ |
+| Tuple Aha | `(x: 1, y: 2)` | `##)` | Enwere ike nweta n'aha ma ọ bụ index |
+
+```zymbol
+// Nyocha ụdị — na-azaghachi (ụdị, ọnụọgụ, ọnụọgụ_uru)
+meta = 42#?
+>> meta ¶         // → (###, 2, 42)
+t = meta[0]
+>> t ¶            // → ###
+```
 
 ---
 
 ## Ntọhapụ na Ntinye
 
 ```zymbol
-// Ntọhapụ — NAGHỊ etinye ahịrị ọhụrụ n'ozuzu
 >> "Nnọọ" ¶                      // ¶ ma ọ bụ \\ na-eme ahịrị ọhụrụ n'ụzọ doro anya
->> "a=" ọnụọgụ " b=" ọnụọgụ2 ¶  // ọtụtụ ihe site na nkwado
->> "ngụkọta=" tinye(2, 3) ¶      // ọrụ na ọnọdụ ọ bụla
+>> "a=" a " b=" b ¶              // ọtụtụ ihe site na nkwado
 >> (usoro$#) ¶                   // ihe mgbakọ postfix chọrọ akụkọ
 
-// Ntinye
 << aha                           // enweghị ihe ọkwa — gụọ na mgbanwe
 << "Aha gị? " aha                // nwere ihe ọkwa
 ```
@@ -70,26 +70,51 @@ x--       // 2
 
 ---
 
-## Njikọ Eriri
-
-Ụzọ atọ dị mma — nke ọ bụla maka ihe ya:
+## Ndị Arụmọrụ
 
 ```zymbol
-aha = "Emeka"
-afọ = 25
+// Mgbakọ — jiri nkwupụta; ụfọdụ ihe mgbakọ nwere nsogbu ozugbo na >>
+a = 10
+b = 3
+r1 = a + b    // 13     r2 = a - b    // 7
+r3 = a * b    // 30     r4 = a / b    // 3  (ikewa nọmba ọkè)
+r5 = a % b    // 1      r6 = a ^ b    // 1000  (ike)
 
-// 1. Comma — na nkwupụta nwere = ma ọ bụ :=
-ozi = "Nnọọ ", aha, "!"              // → Nnọọ Emeka!
-ISIOKWU := "Onye ọrụ: ", aha
+// Itule
+a == b    // #0    a <> b    // #1    a < b    // #0
+a <= b    // #0   a > b     // #1    a >= b   // #1
 
-// 2. Nkwado — na ntọhapụ >>
->> "Nnọọ " aha " ị nwere " afọ ¶    // → Nnọọ Emeka ị nwere 25
-
-// 3. Ntinye — na ihe ọ bụla
-nkọwa = "Nnọọ {aha}, ị nwere {afọ}" // → Nnọọ Emeka, ị nwere 25
+// Mgbakọ ezigbo
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
 ```
 
-> **Ncheta**: `+` bụ maka nọmba naanị. Maka eriri ọ na-ewepụta ọdọ.
+---
+
+## Eriri
+
+```zymbol
+// Ụzọ atọ nke njikọ
+aha = "Emeka"
+n = 42
+
+ozi = "Nnọọ ", aha, "!"              // comma — na nkwupụta
+>> "Nnọọ " aha " ị nwere " n ¶       // nkwado — na >>
+nkọwa = "Nnọọ {aha}, ị nwere {n}"    // ntinye — ebe ọ bụla
+```
+
+```zymbol
+s = "Nnọọ Ụwa"
+ogologo = s$#                  // 9
+akụkụ = s$[0..4]               // "Nnọọ"  (ọgwụgwụ adịghị)
+nwere = s$? "Ụwa"              // #1
+akụkụ_ndị = "a,b,c,d" / ','    // [a, b, c, d]
+tọgharia = s$~~["ọ":"Ọ"]       // tọgharia niile
+tọgharia1 = s$~~["ọ":"Ọ":1]   // naanị N nke mbụ
+```
+
+> `+` bụ maka nọmba naanị. Jiri `,`, nkwado, ma ọ bụ ntinye maka eriri.
 
 ---
 
@@ -98,10 +123,8 @@ nkọwa = "Nnọọ {aha}, ị nwere {afọ}" // → Nnọọ Emeka, ị nwere 2
 ```zymbol
 x = 7
 
-// Ọ bụrụ naanị
 ? x > 0 { >> "dị mma" ¶ }
 
-// Ọ bụrụ / ọzọ bụrụ / ọzọ
 ? x > 100 {
     >> "nnukwu" ¶
 } _? x > 0 {
@@ -113,14 +136,14 @@ x = 7
 }
 ```
 
-Ngọngọ `{ }` bụ **ihe dị mkpa**, ọbụna maka ahịrị otu.
+> Ngọngọ `{ }` bụ **ihe dị mkpa**, ọbụna maka ahịrị otu.
 
 ---
 
 ## Match
 
 ```zymbol
-// Match nwere ihe ndikọ
+// Ihe ndikọ
 ọnụọgụ = 85
 nkwupụta = ?? ọnụọgụ {
     90..100 : 'A'
@@ -130,7 +153,15 @@ nkwupụta = ?? ọnụọgụ {
 }
 >> nkwupụta ¶    // → B
 
-// Match nwere ndọrọndọrọ (ọnọdụ ọ bụla)
+// Eriri
+agba = "ọbara ọbara"
+koodu = ?? agba {
+    "ọbara ọbara" : "#FF0000"
+    "ọcha"        : "#00FF00"
+    _             : "#000000"
+}
+
+// Ndọrọndọrọ
 okpomọkụ = -5
 ọnọdụ = ?? okpomọkụ {
     _? okpomọkụ < 0  : "oyi oyi"
@@ -140,14 +171,12 @@ okpomọkụ = -5
 }
 >> ọnọdụ ¶    // → oyi oyi
 
-// Match nwere eriri
-agba = "ọbara ọbara"
-koodu = ?? agba {
-    "ọbara ọbara" : "#FF0000"
-    "ọcha"        : "#00FF00"
-    _             : "#000000"
+// Ụdị ọrụ (akụkụ ngọngọ)
+?? n {
+    0       : { >> "efu" ¶ }
+    _? n < 0: { >> "dị mkpa" ¶ }
+    _       : { >> "dị mma" ¶ }
 }
->> koodu ¶
 ```
 
 ---
@@ -155,38 +184,43 @@ koodu = ?? agba {
 ## Mgbagha
 
 ```zymbol
-// Ihe ndikọ nwere ike: 0..4 na-agafe 0,1,2,3,4
-@ i:0..4 { >> i " " }
->> ¶    // → 0 1 2 3 4
+@ i:0..4  { >> i " " }        // ihe ndikọ nwere ike: 0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // nwere ntọhapụ: 1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // tụgharịa: 5 4 3 2 1 0
 
-// Ihe ndikọ nwere ntọhapụ
-@ i:1..9:2 { >> i " " }
->> ¶    // → 1 3 5 7 9
-
-// Ihe ndikọ tụgharịa
-@ i:5..0:1 { >> i " " }
->> ¶    // → 5 4 3 2 1 0
-
-// N'oge (while)
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶    // → 128
+>> n ¶                        // → 128  (n'oge)
 
-// Maka ihe ọ bụla
 mkpụrụ osisi = ["ọsan", "ụdara", "ọgịrịsi"]
-@ f:mkpụrụ osisi { >> f ¶ }
+@ f:mkpụrụ osisi { >> f ¶ }  // maka ihe ọ bụla na usoro
 
-// N'oge mkpụrụedemede eriri
 @ c:"nnọọ" { >> c "-" }
->> ¶    // → n-n-ọ-ọ-
+>> ¶                          // → n-n-ọ-ọ-  (maka mkpụrụedemede ọ bụla)
 
-// Kwụsị na Gaa n'ihu
 @ i:1..10 {
-    ? i % 2 == 0 { @> }    // @> gaa n'ihu
-    ? i > 7 { @! }          // @! kwụsị
+    ? i % 2 == 0 { @> }       // @> gaa n'ihu
+    ? i > 7 { @! }             // @! kwụsị
     >> i " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Mgbagha enweghị njedebe
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Mgbagha nwere akara (kwụsị n'ime)
+ọnụọgụ = 0
+@ @mpụga {
+    ọnụọgụ++
+    ? ọnụọgụ >= 3 { @! mpụga }
+}
+>> ọnụọgụ ¶                   // → 3
 ```
 
 ---
@@ -194,53 +228,52 @@ mkpụrụ osisi = ["ọsan", "ụdara", "ọgịrịsi"]
 ## Ọrụ
 
 ```zymbol
-// Nkwupụta na ọgụgụ
 tinye(a, b) { <~ a + b }
 >> tinye(3, 4) ¶    // → 7
 
-// Ntọghachi
 ọnụọgụ_ikpe(n) {
     ? n <= 1 { <~ 1 }
     <~ n * ọnụọgụ_ikpe(n - 1)
 }
 >> ọnụọgụ_ikpe(5) ¶    // → 120
-
-// Ọrụ nwere ogige ihe ọgụgụ ya — enweghị ike nweta ihe mpụga
-zuru oke = 100
-nwalee() {
-    x = 42    // maka ebe a naanị
-    <~ x
-}
->> nwalee() ¶    // → 42
 ```
 
-> **Ihe dị mkpa**: Ọrụ aha `aha(params){ }` abụghị ihe isi ụkwụ.
-> Maka itinye dị ka arụmọrụ gụnye: `x -> ọrụaha(x)`.
+Ọrụ nwere **ogige ihe ọgụgụ ya** — enweghị ike nweta ihe mpụga. Jiri ihe ngosi ntọhapụ `<~` iji gbanwee mgbanwe nke onye na-akpọ:
+
+```zymbol
+tụgharịa(a<~, b<~) {
+    oge = a
+    a = b
+    b = oge
+}
+x = 10
+y = 20
+tụgharịa(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> Ọrụ aha abụghị ihe isi ụkwụ. Maka itinye dị ka arụmọrụ gụnye: `x -> ọrụaha(x)`.
 
 ---
 
 ## Lambda na Mkpọchi
 
 ```zymbol
-// Lambda dị mfe (ntọghachi kpọmkwem)
 abụọ = x -> x * 2
 ngụkọta = (a, b) -> a + b
 >> abụọ(5) ¶       // → 10
 >> ngụkọta(3, 7) ¶  // → 10
 
-// Lambda nwere ngọngọ (ntọghachi doro anya)
+// Lambda nwere ngọngọ
 kpebie = x -> {
     ? x > 0 { <~ "dị mma" }
     _? x < 0 { <~ "dị mkpa" }
     <~ "efu"
 }
->> kpebie(5) ¶      // → dị mma
->> kpebie(0) ¶      // → efu
->> kpebie(-5) ¶     // → dị mkpa
 
-// Mkpọchi — lambda na-echekwa mgbanwe mpụga
+// Mkpọchi — na-echekwa mgbanwe mpụga
 ihe_mgbakọ = 3
-atọ = x -> x * ihe_mgbakọ    // na-echekwa 'ihe_mgbakọ'
+atọ = x -> x * ihe_mgbakọ
 >> atọ(7) ¶    // → 21
 
 // Ọrụ ọrụ
@@ -248,9 +281,8 @@ mee_ngụkọta(n) { <~ x -> x + n }
 tinye10 = mee_ngụkọta(10)
 >> tinye10(5) ¶    // → 15
 
-// Lambda dị ka ihe: echekwaa na usoro
+// Na usoro
 ọrụ ndị = [x -> x+1, x -> x*2, x -> x*x]
->> ọrụ ndị[0](5) ¶    // → 6
 >> ọrụ ndị[2](5) ¶    // → 25
 ```
 
@@ -259,64 +291,129 @@ tinye10 = mee_ngụkọta(10)
 ## Usoro
 
 ```zymbol
-usoro = [10, 20, 30, 40, 50]
+usoro = [1, 2, 3, 4, 5]
 
-// Nweta (index sitere na 0)
->> usoro[0] ¶    // → 10
+usoro[0]          // 1 — nweta (index sitere na 0)
+usoro[-1]         // 5 — index ọnụọgụ (ọgwụgwụ)
+usoro$#           // 5 — ogologo (jiri (usoro$#) na >>)
 
-// Ogologo (achọrọ akụkọ na >>)
-n = usoro$#
->> (usoro$#) ¶    // → 5
+usoro = usoro$+ 6            // tinye → [1,2,3,4,5,6]
+usoro2 = usoro$+[2] 99       // tinye na index 2
+usoro3 = usoro$- 3           // wepụ ụzọ mbụ nke ọnụọgụ
+usoro4 = usoro$-- 3          // wepụ ihe niile
+usoro5 = usoro$-[0]          // wepụ na index
+usoro6 = usoro$-[1..3]       // wepụ ebe (ọgwụgwụ adịghị)
 
-// Tinye, wepụ, nwee, nkewa
-usoro = usoro$+ 60              // tinye
-usoro = usoro$- 0               // wepụ index 0
-nwere = usoro$? 30              // → #1
-nkewa = usoro$[0..2]            // [20, 30]
+nwere = usoro$? 3             // #1 — nwee
+ọnọdụ_ndị = usoro$?? 3       // [2] — index niile nke ọnụọgụ
+sl = usoro$[0..3]             // [1,2,3] — nkewa (ọgwụgwụ adịghị)
+sl2 = usoro$[0:3]             // [1,2,3] — ụdị ọnụọgụ
 
-// Melite ihe
-usoro[1] = 99
+elu = usoro$^+                // hazie n'elu (primitives naanị)
+ala = usoro$^-                // hazie n'ala (primitives naanị)
 
-// Maka ihe ọ bụla
-@ x:usoro { >> x " " }
->> ¶
+// Usoro tuple — jiri $^ na lambda itule
+nchekwa = [(aha: "Carla", afọ: 28), (aha: "Ada", afọ: 25), (aha: "Bob", afọ: 30)]
+site_afọ  = nchekwa$^ (a, b -> a.afọ < b.afọ)    // n'elu site n'afọ
+site_aha = nchekwa$^ (a, b -> a.aha > b.aha)      // n'ala site n'aha
+>> site_afọ[0].aha ¶     // → Ada
+>> site_aha[0].aha ¶     // → Carla
+
+usoro[1] = 99              // melite ebe ahụ
+usoro = usoro[1]$~ 99      // melite ọrụ — na-azaghachi usoro ọhụrụ
 ```
 
-> `$+`, `$-`, `$[..]` na-azaghachi **usoro ọhụrụ** — tinye ọzọ: `usoro = usoro$+ 4`.
-> Enweghị njikọ: jiri nkwupụta abụọ dị iche iche.
+> Ihe mgbakọ nchịkọta niile na-azaghachi **usoro ọhụrụ**. Tinye ọzọ: `usoro = usoro$+ 4`.
+> Enweghị njikọ — jiri nkwupụta abụọ dị iche iche.
+> `$^+` / `$^-` hazie **usoro primitives** (nọmba, eriri). Maka usoro tuple jiri `$^` na lambda itule — ọnọdụ dị na lambda (`<` = n'elu, `>` = n'ala).
+
+```zymbol
+// Usoro ndị edebere n'ime
+mẹtriks = [[1,2,3],[4,5,6],[7,8,9]]
+>> mẹtriks[1][2] ¶    // → 6
+```
 
 ---
 
-## Tuple
+## Ikewa
 
 ```zymbol
+// Usoro
+usoro = [10, 20, 30, 40, 50]
+[a, b, c] = usoro              // a=10  b=20  c=30
+[nke_mbụ, *ndị_ọzọ] = usoro   // nke_mbụ=10  ndị_ọzọ=[20,30,40,50]
+[x, _, z] = [1, 2, 3]          // _ a tụfuo ya
+
+// Tuple ọnọdụ
+ebe = (100, 200)
+(px, py) = ebe                 // px=100  py=200
+
 // Tuple aha
+mmadụ = (aha: "Ada", afọ: 25, obodo: "Enugu")
+(aha: a, afọ: f) = mmadụ      // a="Ada"  f=25
+```
+
+---
+
+## Tuples
+
+```zymbol
+// Ọnọdụ
+ebe = (10, 20)
+>> ebe[0] ¶    // → 10
+
+// Aha
 mmadụ = (aha: "Adaeze", afọ: 25)
 >> mmadụ.aha ¶    // → Adaeze
->> mmadụ.afọ ¶   // → 25
->> mmadụ[0] ¶     // → Adaeze (index na-arụ ọrụ kwa)
+>> mmadụ[0] ¶     // → Adaeze  (index na-arụ ọrụ kwa)
+
+// Edebere n'ime
+ọnọdụ = (x: 10, y: 20)
+p = (ọnọdụ: ọnọdụ, akara: "mmalite")
+>> p.ọnọdụ.x ¶   // → 10
 ```
 
 ---
 
 ## Ọrụ Ọkwa Elu
 
-Ihe mgbakọ HOF chọrọ **lambda inline** — ọ bụghị mgbanwe lambda ozugbo.
+> Ihe mgbakọ HOF chọrọ **lambda inline** — ọ bụghị mgbanwe lambda ozugbo.
 
 ```zymbol
 nọmba ndị = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Map ($>)
-abụọ ndị = nọmba ndị$> (x -> x * 2)
->> abụọ ndị ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+abụọ ndị  = nọmba ndị$> (x -> x * 2)                // map  → [2,4,6…20]
+ihe abụọ  = nọmba ndị$| (x -> x % 2 == 0)            // filter → [2,4,6,8,10]
+nchịkọta  = nọmba ndị$< (0, (nchekwa, x) -> nchekwa + x)  // reduce → 55
 
-// Filter ($|)
-ihe abụọ = nọmba ndị$| (x -> x % 2 == 0)
->> ihe abụọ ¶    // → [2, 4, 6, 8, 10]
+// Njikọ site na nkwupụta àárọ̀
+nzọụkwụ1 = nọmba ndị$| (x -> x > 3)
+nzọụkwụ2 = nzọụkwụ1$> (x -> x * x)
+>> nzọụkwụ2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Reduce ($<) — (isi ọnụọgụ, (nchekwa, ihe) -> nkejiọgụ)
-nchịkọta = nọmba ndị$< (0, (nchekwa, x) -> nchekwa + x)
->> nchịkọta ¶    // → 55
+// Ọrụ aha n'ime HOF — kpọchie na lambda
+abụọ_f(x) { <~ x * 2 }
+r = nọmba ndị$> (x -> abụọ_f(x))    // ✅
+```
+
+---
+
+## Onye Arụmọrụ Ọwa
+
+Akụkụ aka nri chọrọ `_` dị ka onye ọchọ maka ọnụọgụ e nyefere:
+
+```zymbol
+abụọ = x -> x * 2
+tinye = (a, b) -> a + b
+tinye_otu = x -> x + 1
+
+5 |> abụọ(_)           // → 10
+10 |> tinye(_, 5)      // → 15
+5 |> tinye(2, _)       // → 7
+
+// Njikọ
+r = 5 |> abụọ(_) |> tinye_otu(_) |> abụọ(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -328,31 +425,29 @@ nchịkọta = nọmba ndị$< (0, (nchekwa, x) -> nchekwa + x)
     x = 10 / 0
 } :! ##Div {
     >> "kewaa site na efu" ¶
-} :! ##IO {
-    >> "mperi IO" ¶
 } :! {
-    >> "mperi ọzọ: " _err ¶
+    >> "mperi ọzọ: " _err ¶    // _err nwere ozi mperi
 } :> {
     >> "na-agafe mgbe niile" ¶
 }
 ```
 
-| Ụdị         | Mgbe ọ na-apụta              |
-|-------------|-------------------------------|
-| `##Div`     | Kewaa site na efu             |
-| `##IO`      | Faịlụ / sistemu               |
-| `##Index`   | Index karịa oke               |
-| `##Type`    | Mperi ụdị                     |
-| `##Parse`   | Mperi nkewa                   |
-| `##Network` | Mperi netwọk                  |
-| `##_`       | Mperi ọ bụla (nwee niile)     |
+| Ụdị | Mgbe ọ na-apụta |
+|-----|-----------------|
+| `##Div` | Kewaa site na efu |
+| `##IO` | Faịlụ / sistemu |
+| `##Index` | Index karịa oke |
+| `##Type` | Mperi ụdị |
+| `##Parse` | Mperi nkewa |
+| `##Network` | Mperi netwọk |
+| `##_` | Mperi ọ bụla (nwee niile) |
 
 ---
 
 ## Ọchịchọ
 
 ```zymbol
-// Faịlụ: lib/mgbakọ.zy
+// lib/mgbakọ.zy
 # mgbakọ
 
 #> { tinye, nweta_PI }    // Mbupụ TUPU nkwupụta
@@ -363,7 +458,7 @@ nweta_PI() { <~ _PI }
 ```
 
 ```zymbol
-// Faịlụ: isi.zy
+// isi.zy
 <# ./lib/mgbakọ <= m    // Alias dị mkpa
 
 >> m::tinye(5, 3) ¶   // → 8
@@ -371,15 +466,78 @@ pi = m::nweta_PI()
 >> pi ¶               // → 3.14159
 ```
 
+```zymbol
+// Mbupụ nwere aha ọha dị iche
+# ụlọ_akwụkwọ
+#> { _tinye_ime <= ngụkọta }
+
+_tinye_ime(a, b) { <~ a + b }
+```
+
+```zymbol
+<# ./ụlọ_akwụkwọ <= u
+
+>> u::ngụkọta(3, 4) ¶    // → 7  (aha ime _tinye_ime ezoro ezo)
+```
+
+---
+
+## Ndị Arụmọrụ Data
+
+```zymbol
+// Tụgharịa eriri ka ọ bụrụ nọmba
+v1 = #|"42"|      // → 42  (Int)
+v2 = #|"3.14"|    // → 3.14  (Float)
+v3 = #|"abc"|     // → "abc"  (nchebe, enweghị mperi)
+
+// Tụọ okirikiri / bee
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14  (tụọ okirikiri ruo decimal 2)
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14  (bee)
+
+// Nhazi nọmba
+fmt = #,|1234567|      // → 1,234,567  (kewaa n'ude)
+sci = #^|12345.678|    // → 1.2345678e4  (sayensị)
+
+// Ihe atụ isi
+a = 0x41         // → 'A'  (hex)
+b = 0b01000001   // → 'A'  (binary)
+c = 0o101        // → 'A'  (octal)
+
+// Mmepụta ntụgharị isi
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
+```
+
+---
+
+## Ntinye Shell
+
+```zymbol
+ụbọchị = <\ date +%Y-%m-%d \>     // na-achịkọta stdout (nwere \n ọgwụgwụ)
+>> "Taa: " ụbọchị
+
+faịlụ = "data.txt"
+ọdịnaya = <\ cat {faịlụ} \>       // ntinye na iwu
+
+mmepụta = </"./koodu_nta.zy"/>   // mee skript Zymbol ọzọ, chịkọta mmepụta
+>> mmepụta
+```
+
+> `><` na-achịkọta arụmọrụ CLI dị ka usoro eriri (tree-walker naanị).
+
 ---
 
 ## Ihe Atụ Zuru Oke: FizzBuzz
 
 ```zymbol
 kewaa(nọmba) {
-    ? nọmba % 15 == 0 { <~ "NtụpọỌkpọ" }
-    _? nọmba % 3  == 0 { <~ "Ntụpọ" }
-    _? nọmba % 5  == 0 { <~ "Ọkpọ" }
+    ? nọmba % 15 == 0 { <~ "FizzBuzz" }
+    _? nọmba % 3  == 0 { <~ "Fizz" }
+    _? nọmba % 5  == 0 { <~ "Buzz" }
     _ { <~ nọmba }
 }
 
@@ -390,36 +548,42 @@ kewaa(nọmba) {
 
 ## Ntụaka Akara
 
-| Akara   | Ọrụ                  | Akara      | Ọrụ                   |
-|---------|----------------------|------------|-----------------------|
-| `=`     | Mgbanwe              | `$#`       | Ogologo               |
-| `:=`    | Ihe mgbagha          | `$+`       | Tinye                 |
-| `>>`    | Ntọhapụ              | `$-`       | Wepụ (site n'index)   |
-| `<<`    | Ntinye               | `$?`       | Nwee                  |
-| `¶`/`\` | Ahịrị ọhụrụ          | `$[s..e]`  | Nkewa                 |
-| `?`     | Ọ bụrụ (if)          | `$>`       | map                   |
-| `_?`    | Ọzọ bụrụ (elif)      | `$\|`      | filter                |
-| `_`     | Ọzọ / ihe ọ bụla     | `$<`       | reduce                |
-| `??`    | match                | `!?`       | Nwalee (try)          |
-| `@`     | Mgbagha (loop)       | `:!`       | Nwee (catch)          |
-| `@!`    | Kwụsị (break)        | `:>`       | Mgbe niile (finally)  |
-| `@>`    | Gaa n'ihu (continue) | `$!`       | Bụ mperi              |
-| `->`    | Lambda               | `$!!`      | Gafee mperi           |
-| `<~`    | Azaghachi (return)   | `#`        | Kwupụta ọchịchọ       |
-| `\|>`   | Pipe                 | `#>`       | Mbupụ                 |
-| `#1`    | eziokwu              | `<#`       | Mbatinye              |
-| `#0`    | ụgha                 | `::`       | Ọgụgụ ọchịchọ         |
+| Akara | Ọrụ | Akara | Ọrụ |
+|-------|-----|-------|-----|
+| `=` | mgbanwe | `$#` | ogologo |
+| `:=` | ihe mgbagha | `$+` | tinye |
+| `>>` | ntọhapụ | `$+[i]` | tinye na index |
+| `<<` | ntinye | `$-` | wepụ nke mbụ n'ọnụọgụ |
+| `¶` / `\\` | ahịrị ọhụrụ | `$--` | wepụ niile n'ọnụọgụ |
+| `?` | ọ bụrụ (if) | `$-[i]` | wepụ na index |
+| `_?` | ọzọ bụrụ (elif) | `$-[i..j]` | wepụ ebe |
+| `_` | ọzọ / ihe ọ bụla | `$?` | nwee |
+| `??` | match | `$??` | chọta index niile |
+| `@` | mgbagha (loop) | `$[s..e]` | nkewa |
+| `@!` | kwụsị (break) | `$>` | map |
+| `@>` | gaa n'ihu (continue) | `$\|` | filter |
+| `->` | lambda | `$<` | reduce |
+| `$^+` | hazie n'elu (primitives) | `$^-` | hazie n'ala (primitives) |
+| `$^` | hazie n'itule (tuple) | | |
+| `<~` | azaghachi (return) | `!?` | nwalee (try) |
+| `\|>` | pipe | `:!` | nwee (catch) |
+| `#1` | eziokwu (true) | `:>` | mgbe niile (finally) |
+| `#0` | ụgha (false) | `$!` | bụ mperi |
+| `<#` | mbatinye (import) | `$!!` | gafee mperi |
+| `#` | kwupụta ọchịchọ | `#>` | mbupụ (export) |
+| `::` | ọgụgụ ọchịchọ | `.` | nweta ubi |
+| `#\|..\|` | tụgharịa nọmba | `#?` | metadata ụdị |
+| `#.N\|..\|` | tụọ okirikiri | `#!N\|..\|` | bee |
+| `c\|..\|` | nhazi ude | `e\|..\|` | sayensị |
+| `<\ ..\>` | mee shell | `>\<` | arụmọrụ CLI |
 
 ---
 
 *Zymbol-Lang — Akara. Ụwa nile. Enweghị Mgbanwe.*
 
----
-
 > **Ncheta:** Akwụkwọ a edere ma tụgharịa ya site n'ọrụ ihe ọmụmụ arụpụta (AI).
 > Anyị eme ihe niile ị ga-enwe n'aka, mana ụfọdụ ntụgharị ma ọ bụ ihe atụ nwere ike inwe njehie.
-> Ntụaka bụ isi bụ [nkọwa Zymbol-Lang](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> Ntụaka bụ isi bụ [MANUAL.md](https://github.com/zymbol-lang/interpreter) na ụlọ nchekwa onye ntụgharị.
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-> The authoritative reference is the [Zymbol-Lang specification](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> The canonical reference is [MANUAL.md](https://github.com/zymbol-lang/interpreter) in the interpreter repository.

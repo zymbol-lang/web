@@ -2,10 +2,6 @@
 
 **Zymbol-Lang** lu lì'fya a tsaheyl si. Ke lu tstxo a syaw — fìlì'fya lu Na'vi. Lu fpom fì'u, talun lu Na'vi lì'fya a fkeytok.
 
----
-
-## Tìkangkem
-
 - Ke lu tstxo (`if`, `while`, `return` ke fkeytok — tì'efumì `?`, `@`, `<~`)
 - Unicode sìltseo — tìran teri lì'fya a lefpom, emoji 👋
 - Ke tsun fkol nìNa'vi — lì'fya lu fpom fì'u
@@ -22,17 +18,16 @@ vorn = #1        // srane kem
 👋 := "Oel ngati kameie"
 ```
 
-### Tìng Sìfpxi
-
 ```zymbol
-x = 10    // 10
+x = 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %=  4   // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
@@ -55,13 +50,10 @@ x--       // 2
 ## Pawm ulte Tìpawm
 
 ```zymbol
-// Pawm — ke tsun tìpawm sìltseo
 >> "Oel ngati kameie" ¶            // ¶ ulte \\ tsun tìpawm sìltseo
 >> "a=" a " b=" b ¶                // sìpawm numtseng — tìng
->> "numtseng=" tìkan(2, 3) ¶       // tìkangkem sìpawm tìng
 >> (arr$#) ¶                       // tì'ef tìpawm numtseng poQlu'
 
-// Tìpawm
 << tìfya                           // ke sìltseo — tìpawm tìng
 << "Fyape syaw fko ngar? " tìfya   // ulte sìltseo
 ```
@@ -70,26 +62,51 @@ x--       // 2
 
 ---
 
-## Tìran Boq
-
-Mì tì'efumì — sìpawm tìng:
+## Naaltsoos Bee Hane'
 
 ```zymbol
+// Tìkan numtseng
+a = 10
+b = 3
+r1 = a + b    // 13     r2 = a - b    // 7
+r3 = a * b    // 30     r4 = a / b    // 3  (numtseng tìkan)
+r5 = a % b    // 1      r6 = a ^ b    // 1000  (tìran)
+
+// Sìpawm
+a == b    // #0    a <> b    // #1    a < b    // #0
+a <= b    // #0   a > b     // #1    a >= b   // #1
+
+// Tìkangkem
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
+```
+
+---
+
+## Saad
+
+```zymbol
+// Tìran boq
 tìfya = "Ana"
 n = 25
 
-// 1. Comma — tìng = ulte :=
-sì'efum = "Oel ngati kameie ", tìfya, "!"   // → Oel ngati kameie Ana!
-EYWA := "Tìkan: ", tìfya
-
-// 2. Tìng — pawm >>
->> "Sä'o " tìfya " lu numtseng " n ¶         // → Sä'o Ana lu numtseng 25
-
-// 3. Lì'u — sìpawm tìng
-tìkangkem = "Sä'o {tìfya}, lu numtseng {n}"  // → Sä'o Ana, lu numtseng 25
+msg = "Oel ngati kameie ", tìfya, "!"   // comma — tìng ulte :=
+>> "Oel ngati kameie " tìfya " lu " n ¶  // juxtaposition — pawm >>
+desc = "Oel ngati kameie {tìfya}, lu {n}" // lì'u — sìpawm tìng
 ```
 
-> **Tìkangkem**: `+` numtseng tìran. Tìrantseo — tìkin.
+```zymbol
+s = "Oel ngati kameie"
+len = s$#                  // 17
+sub = s$[0..3]             // "Oel"  (ke tìran)
+has = s$? "ngati"          // #1
+parts = "a,b,c,d" / ','    // [a, b, c, d]
+rep = s$~~["o":"O"]        // "OEl ngati kameie"
+rep1 = s$~~["o":"O":1]     // "Oel ngati kameie"  (nì'aw pxeyä)
+```
+
+> `+` numtseng tìran. Tìrantseo — tìkin.
 
 ---
 
@@ -98,10 +115,8 @@ tìkangkem = "Sä'o {tìfya}, lu numtseng {n}"  // → Sä'o Ana, lu numtseng 25
 ```zymbol
 x = 7
 
-// Hin txo
 ? x > 0 { >> "srane" ¶ }
 
-// Txo / txo-ke / ke
 ? x > 100 {
     >> "txantslusam" ¶
 } _? x > 0 {
@@ -113,7 +128,7 @@ x = 7
 }
 ```
 
-`{ }` — **poQlu'**, hin sìltseo.
+> `{ }` — **poQlu'**, hin sìltseo.
 
 ---
 
@@ -130,7 +145,15 @@ patlh = ?? numtseng2 {
 }
 >> patlh ¶    // → B
 
-// Match sìpawm (sìpawm txo)
+// Match tìran
+tìyawn = "tawsìp"
+kode = ?? tìyawn {
+    "tawsìp"   : "#FF0000"
+    "rìk"      : "#00FF00"
+    _          : "#000000"
+}
+
+// Match sìpawm (guard)
 wutso = -5
 tìsraw = ?? wutso {
     _? wutso < 0  : "rum"
@@ -140,14 +163,12 @@ tìsraw = ?? wutso {
 }
 >> tìsraw ¶    // → rum
 
-// Match tìran
-tìyawn = "tawsìp"
-kode = ?? tìyawn {
-    "tawsìp"   : "#FF0000"
-    "rìk"      : "#00FF00"
-    _          : "#000000"
+// Tìkangkem tìran (block arms)
+?? n {
+    0       : { >> "ke" ¶ }
+    _? n < 0: { >> "txoa" ¶ }
+    _       : { >> "srane" ¶ }
 }
->> kode ¶
 ```
 
 ---
@@ -155,38 +176,43 @@ kode = ?? tìyawn {
 ## Fpxäkìm
 
 ```zymbol
-// Naná: 0..4 — 0,1,2,3,4
-@ i:0..4 { >> i " " }
->> ¶    // → 0 1 2 3 4
+@ i:0..4  { >> i " " }        // naná: 0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // step:  1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // ke:    5 4 3 2 1 0
 
-// Numtseng ulte fpxäkìm
-@ i:1..9:2 { >> i " " }
->> ¶    // → 1 3 5 7 9
-
-// Fpxäkìm ke
-@ i:5..0:1 { >> i " " }
->> ¶    // → 5 4 3 2 1 0
-
-// Txo txo (while)
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶    // → 128
+>> n ¶                        // → 128  (txo txo)
 
-// Sìpawm tskxe
 tskxeyä = ["ioang", "tìsraw", "syulang"]
 @ f:tskxeyä { >> f ¶ }
 
-// Pxel tìran
 @ c:"eywa" { >> c "-" }
->> ¶    // → e-y-w-a-
+>> ¶                          // → e-y-w-a-
 
-// Tìhawnu ulte Fpxäkìm
 @ i:1..10 {
-    ? i % 2 == 0 { @> }    // @> fpxäkìm
-    ? i > 7 { @! }          // @! tìhawnu
+    ? i % 2 == 0 { @> }       // @> fpxäkìm
+    ? i > 7 { @! }             // @! tìhawnu
     >> i " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Tìhawnu ke'u
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Tìhawnu tìfya (naná fpxäkìm)
+count = 0
+@ @outer {
+    count++
+    ? count >= 3 { @! outer }
+}
+>> count ¶                    // → 3
 ```
 
 ---
@@ -194,52 +220,52 @@ tskxeyä = ["ioang", "tìsraw", "syulang"]
 ## Tìkan
 
 ```zymbol
-// Tìng ulte tìkan
 tìkangkem(a, b) { <~ a + b }
 >> tìkangkem(3, 4) ¶    // → 7
 
-// Tìran
 numtseng_tìkan(n) {
     ? n <= 1 { <~ 1 }
     <~ n * numtseng_tìkan(n - 1)
 }
 >> numtseng_tìkan(5) ¶    // → 120
-
-// Tìkan — ke pawm andë numtseng
-_eywa = 100
-tìtxur() {
-    x = 42    // mì kem
-    <~ x
-}
->> tìtxur() ¶    // → 42
 ```
 
-> **Tìkangkem**: Tìfya tìkan `tìfya(params){ }` — ke mì numtseng.
-> Lì'u tìng — tìran: `x -> tìfya(x)`.
+Tìkan lu **isolated scope** — ke tsun tìng outer numtseng. Tìran `<~` munge:
+
+```zymbol
+swap(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
+}
+x = 10
+y = 20
+swap(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> **Tìkangkem**: Tìfya tìkan ke first-class. Lì'u tìng — tìran: `x -> tìfya(x)`.
 
 ---
 
 ## Lambda ulte Karyai
 
 ```zymbol
-// Hin lambda (tìran)
 tatìng = x -> x * 2
 tìkangkem2 = (a, b) -> a + b
->> tatìng(5) ¶       // → 10
+>> tatìng(5) ¶        // → 10
 >> tìkangkem2(3, 7) ¶ // → 10
 
-// Lambda tskxe (naná tìran)
+// Lambda tskxe
 tìfya2 = x -> {
     ? x > 0 { <~ "srane" }
     _? x < 0 { <~ "txoa" }
-    <~ "ke" }
->> tìfya2(5) ¶     // → srane
->> tìfya2(0) ¶     // → ke
->> tìfya2(-5) ¶    // → txoa
+    <~ "ke"
+}
 
 // Karyai — lambda tìng andë numtseng
 tìkan_sì = 3
-tìtxur2 = x -> x * tìkan_sì    // tìng 'tìkan_sì'
+tìtxur2 = x -> x * tìkan_sì
 >> tìtxur2(7) ¶    // → 21
 
 // Tìkangkem tìran
@@ -249,7 +275,6 @@ add10 = make_adder(10)
 
 // Lambda numtseng: tskxeyä
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[0](5) ¶    // → 6
 >> ops[2](5) ¶    // → 25
 ```
 
@@ -258,64 +283,129 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 ## Tskxe
 
 ```zymbol
-arr = [10, 20, 30, 40, 50]
+arr = [1, 2, 3, 4, 5]
 
-// Tìpawm (0 numtseng)
->> arr[0] ¶    // → 10
+arr[0]          // 1 — tìpawm (0 numtseng)
+arr[-1]         // 5 — ke numtseng (tìpawm)
+arr$#           // 5 — sìpawm (poQlu' >> bił)
 
-// Sìpawm (poQlu' >>)
-n = arr$#
->> (arr$#) ¶    // → 5
+arr = arr$+ 6            // tìkangkem → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // tìkangkem mì numtseng 2
+arr3 = arr$- 3           // tìhawnu pxey numtseng
+arr4 = arr$-- 3          // tìhawnu ałtso numtseng
+arr5 = arr$-[0]          // tìhawnu mì numtseng
+arr6 = arr$-[1..3]       // tìhawnu tìran (ke tìran)
 
-// Tìkangkem, tìhawnu, tìng, hin
-arr = arr$+ 60               // tìkangkem
-arr = arr$- 0                // tìhawnu 0
-tìng2 = arr$? 30             // → #1
-hin2 = arr$[0..2]            // [20, 30]
+has = arr$? 3            // #1 — tìng
+pos = arr$?? 3           // [2] — ałtso numtseng
+sl = arr$[0..3]          // [1,2,3] — hin (ke tìran)
+sl2 = arr$[0:3]          // [1,2,3] — count-based syntax
 
-// Tìng numtseng
-arr[1] = 99
+asc = arr$^+             // sorted ascending  (primitives)
+desc = arr$^-            // sorted descending (primitives)
 
-// Sìpawm numtseng
-@ x:arr { >> x " " }
->> ¶
+// Tuple tskxe — $^ ulte comparator lambda
+db = [(name: "Carla", age: 28), (name: "Ana", age: 25), (name: "Bob", age: 30)]
+by_age  = db$^ (a, b -> a.age < b.age)
+by_name = db$^ (a, b -> a.name > b.name)
+>> by_age[0].name ¶     // → Ana
+>> by_name[0].name ¶    // → Carla
+
+arr[1] = 99              // tìng mì
+arr = arr[1]$~ 99        // tìkangkem tìran — naur tskxe
 ```
 
-> `$+`, `$-`, `$[..]` — **naur tskxe** — tìng: `arr = arr$+ 4`.
+> Ałtso tskxe operator **naur tskxe** tìkangkem. Tìng: `arr = arr$+ 4`.
 > Ke tsaheyl: tatìng tìng.
+> `$^+` / `$^-` — primitives (numtseng, tìran). Tuple tskxe — `$^` ulte lambda.
+
+```zymbol
+// Nested tskxe
+matrix = [[1,2,3],[4,5,6],[7,8,9]]
+>> matrix[1][2] ¶    // → 6
+```
+
+---
+
+## Naasgó Áhóót'i'
+
+```zymbol
+// Tskxe
+arr = [10, 20, 30, 40, 50]
+[a, b, c] = arr              // a=10  b=20  c=30
+[first, *rest] = arr         // first=10  rest=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ ke tìng
+
+// Positional tuple
+point = (100, 200)
+(px, py) = point             // px=100  py=200
+
+// Named tuple
+person = (name: "Ana", age: 25, city: "Eywa'eveng")
+(name: n, age: a) = person   // n="Ana"  a=25
+```
 
 ---
 
 ## Tuple
 
 ```zymbol
-// Tìfya tuple
+// Tìng
+point = (10, 20)
+>> point[0] ¶    // → 10
+
+// Tìfya
 sute = (tìfya: "Alice", numtseng: 25)
 >> sute.tìfya ¶      // → Alice
->> sute.numtseng ¶   // → 25
 >> sute[0] ¶         // → Alice (numtseng lo'laH)
+
+// Nested
+pos = (x: 10, y: 20)
+p = (pos: pos, label: "Eywa")
+>> p.pos.x ¶        // → 10
 ```
 
 ---
 
 ## Tìkan Txantslusam
 
-HOF — **hin lambda** — ke lambda numtseng.
+> HOF — **hin lambda** — ke lambda numtseng.
 
 ```zymbol
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Map ($>)
-tatìng2 = nums$> (x -> x * 2)
->> tatìng2 ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+tatìng2 = nums$> (x -> x * 2)             // map  → [2,4,6…20]
+tìkangkem3 = nums$| (x -> x % 2 == 0)     // filter → [2,4,6,8,10]
+tìpawm = nums$< (0, (acc, x) -> acc + x)  // reduce → 55
 
-// Filter ($|)
-tìkangkem3 = nums$| (x -> x % 2 == 0)
->> tìkangkem3 ¶    // → [2, 4, 6, 8, 10]
+// Tatìng intermediates
+step1 = nums$| (x -> x > 3)
+step2 = step1$> (x -> x * x)
+>> step2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Reduce ($<) — (tìran numtseng, (tìkangkem, numtseng) -> moj)
-tìpawm = nums$< (0, (acc, x) -> acc + x)
->> tìpawm ¶    // → 55
+// Tìfya tìkan — lambda mì
+double(x) { <~ x * 2 }
+r = nums$> (x -> double(x))    // ✅
+```
+
+---
+
+## Bee Ná'ádleehí
+
+RHS lu **`_`** placeholder mì piped numtseng:
+
+```zymbol
+double = x -> x * 2
+add = (a, b) -> a + b
+inc = x -> x + 1
+
+5 |> double(_)        // → 10
+10 |> add(_, 5)       // → 15
+5 |> add(2, _)        // → 7
+
+// Tatìng
+r = 5 |> double(_) |> inc(_) |> double(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -327,8 +417,6 @@ tìpawm = nums$< (0, (acc, x) -> acc + x)
     x = 10 / 0
 } :! ##Div {
     >> "ke numtseng" ¶
-} :! ##IO {
-    >> "IO tìhawnu" ¶
 } :! {
     >> "tìhawnu: " _err ¶
 } :> {
@@ -370,6 +458,69 @@ pi = c::get_PI()
 >> pi ¶                    // → 3.14159
 ```
 
+```zymbol
+// Export tìfya pxey
+# mylib
+#> { _internal_add <= sum }
+
+_internal_add(a, b) { <~ a + b }
+```
+
+```zymbol
+<# ./mylib <= m
+
+>> m::sum(3, 4) ¶    // → 7
+```
+
+---
+
+## Naaltsoos Ná'ádleehí
+
+```zymbol
+// Tìkangkem numtseng → akihtâson
+v1 = #|"42"|      // → 42  (Int)
+v2 = #|"3.14"|    // → 3.14  (Float)
+v3 = #|"abc"|     // → "abc"  (ke tìhawnu)
+
+// Round / truncate
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14  (truncate)
+
+// Numtseng tìran
+fmt = #,|1234567|  // → 1,234,567
+sci = #^|12345.678|    // → 1.2345678e4
+
+// Base literals
+a = 0x41         // → 'A'  (hex)
+b = 0b01000001   // → 'A'  (binary)
+c = 0o101        // → 'A'  (octal)
+
+// Base tìkangkem
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
+```
+
+---
+
+## Shell Bee Nahat'á
+
+```zymbol
+date = <\ date +%Y-%m-%d \>     // tìkangkem stdout (tìran \n)
+>> "Tsatseng: " date
+
+file = "data.txt"
+content = <\ cat {file} \>      // lì'u mì tìkan
+
+output = </"./subscript.zy"/>   // tìkangkem Na'vi script, tìpawm output
+>> output
+```
+
+> `><` tìpawm CLI arguments sìpawm tskxe (tree-walker piko).
+
 ---
 
 ## Sìpawm Tìkangkem: FizzBuzz
@@ -393,31 +544,38 @@ tìkan(tìfya) {
 |----------|--------------------|------------|-----------------------|
 | `=`      | tìng               | `$#`       | sìpawm                |
 | `:=`     | tìng ne'           | `$+`       | tìkangkem             |
-| `>>`     | pawm               | `$-`       | tìhawnu (numtseng)    |
-| `<<`     | tìpawm             | `$?`       | tìng                  |
-| `¶`/`\`  | sìltseo sìltseo    | `$[s..e]`  | hin                   |
-| `?`      | txo (if)           | `$>`       | map                   |
-| `_?`     | txo-ke (elif)      | `$\|`      | filter                |
-| `_`      | ke / sìpawm        | `$<`       | reduce                |
-| `??`     | match              | `!?`       | tìtxur (try)          |
-| `@`      | fpxäkìm            | `:!`       | karyai (catch)        |
-| `@!`     | tìhawnu (break)    | `:>`       | sìpawm (finally)      |
-| `@>`     | fpxäkìm daur       | `$!`       | tìhawnu tìng          |
-| `->`     | Lambda             | `$!!`      | tìhawnu pawm          |
-| `<~`     | tìkangkem          | `#`        | tìkangkem tìfya       |
-| `\|>`    | Pipe               | `#>`       | nob                   |
-| `#1`     | srane              | `<#`       | tìpawm                |
-| `#0`     | ke                 | `::`       | tìkangkem tìkan       |
+| `>>`     | pawm               | `$+[i]`    | tìkangkem mì numtseng |
+| `<<`     | tìpawm             | `$-`       | tìhawnu (pxey)        |
+| `¶`/`\\` | sìltseo sìltseo    | `$--`      | tìhawnu ałtso         |
+| `?`      | txo (if)           | `$-[i]`    | tìhawnu mì numtseng   |
+| `_?`     | txo-ke (elif)      | `$-[i..j]` | tìhawnu tìran         |
+| `_`      | ke / sìpawm        | `$?`       | tìng                  |
+| `??`     | match              | `$??`      | ałtso numtseng        |
+| `@`      | fpxäkìm            | `$[s..e]`  | hin                   |
+| `@!`     | tìhawnu (break)    | `$>`       | map                   |
+| `@>`     | fpxäkìm daur       | `$\|`      | filter                |
+| `->`     | Lambda             | `$<`       | reduce                |
+| `$^+`    | sorted ascending   | `$^-`      | sorted descending     |
+| `$^`     | sorted lambda      |            |                       |
+| `<~`     | tìkangkem          | `!?`       | tìtxur (try)          |
+| `\|>`    | Pipe               | `:!`       | karyai (catch)        |
+| `#1`     | srane              | `:>`       | sìpawm (finally)      |
+| `#0`     | ke                 | `$!`       | tìhawnu tìng          |
+| `<#`     | tìpawm             | `$!!`      | tìhawnu pawm          |
+| `#`      | tìkangkem tìfya    | `#>`       | nob                   |
+| `::`     | tìkangkem tìkan    | `.`        | field access          |
+| `#\|..\|` | tìkangkem numtseng | `#?`      | tì'efumì              |
+| `#.N\|..\|` | round           | `#!N\|..\|` | truncate           |
+| `c\|..\|` | comma format      | `e\|..\|`  | scientific            |
+| `<\ ..\>` | shell exec        | `>\<`      | CLI args              |
 
 ---
 
 *Zymbol-Lang — Lì'fya. Sìpawm. Ke tìng.*
 
----
-
 > **Tìkangkem:** Fì'u carna ulte quenta AI (tìran tìkan).
 > Sìpawm carna ná, mal nì'ul tìfya ulte sìltseo tìhawnu.
-> Tìkangkem lì'fya [Zymbol-Lang tìkangkem](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> Tìkangkem lì'fya [Zymbol-Lang tìkangkem](https://github.com/zymbol-lang/interpreter).
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > While every effort has been made to ensure accuracy, some translations or examples may contain errors.

@@ -2,10 +2,6 @@
 
 **Zymbol-Lang** cuyir hut'unn ara'novor be programir. N'eparavu cuun ade — ibac cuyir hut'unn. Cuyir ibac nayc'aran gar tion'ad.
 
----
-
-## Naasade
-
 - N'eparavu cuun ade (`if`, `while`, `return` n'eparavut — hut'unn tebec `?`, `@`, `<~`)
 - Unicode naas — gar tion'ad ra'kure Mando'a, gar nynir emoji 👋
 - Naas'ika — ibac cuyir ibac meg'haat gar
@@ -22,17 +18,16 @@ elek_ = #1       // elek darasuum
 👋 := "Su'cuy"
 ```
 
-### Cuyan borarir
-
 ```zymbol
-x = 10    // 10
+x = 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %=  4   // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
@@ -50,18 +45,23 @@ x--       // 2
 | Tuple           | `(a, b)`          | `##)`        | Tracyn                              |
 | Tuple gar       | `(x: 1, y: 2)`    | `##)`        | Naas'ika gar bal tracyn             |
 
+```zymbol
+// Gai'tayl naas — bora (gai'tayl, gal, tracyn)
+meta = 42#?
+>> meta ¶         // → (###, 2, 42)
+t = meta[0]
+>> t ¶            // → ###
+```
+
 ---
 
 ## Hibira bal Cuyir
 
 ```zymbol
-// Hibira — n'borarir tebec tebec
 >> "Su'cuy" ¶                   // ¶ bal \\ borarir tebec tebec
 >> "a=" a " b=" b ¶             // gaa'tayli'yc mhi'ade — tracyn
->> "ibac=" jate(2, 3) ¶         // ara'novor meg'haat tracyn
 >> (arr$#) ¶                    // naas hut'unn poQlu' poki
 
-// Cuyir
 << gar                          // n'tebec — cuyir gai'tayl
 << "Tion'ad gar? " gar          // bal tebec
 ```
@@ -70,26 +70,51 @@ x--       // 2
 
 ---
 
-## Talyc hut'unn
-
-Ehn gai'tayl — ibac meg'haat tracyn:
+## Operatore
 
 ```zymbol
-gar = "Ana"
-n = 25
+// Borarir gal — hut'unn mhi'ade
+a = 10
+b = 3
+r1 = a + b    // 13     r2 = a - b    // 7
+r3 = a * b    // 30     r4 = a / b    // 3  (gal tracyn)
+r5 = a % b    // 1      r6 = a ^ b    // 1000  (gal naas)
 
-// 1. Kaysh — borarir = bal :=
-tebec2 = "Su'cuy ", gar, "!"            // → Su'cuy Ana!
-ALOR := "Vod: ", gar
+// Tion tracyn
+a == b    // #0    a <> b    // #1    a < b    // #0
+a <= b    // #0   a > b     // #1    a >= b   // #1
 
-// 2. Tracyn — hibira >>
->> "Su'cuy " gar " gar gal " n ¶        // → Su'cuy Ana gar gal 25
-
-// 3. Bora — ibac tracyn
-naas2 = "Su'cuy {gar}, gar gal {n}"    // → Su'cuy Ana, gar gal 25
+// Tracyn'yc
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
 ```
 
-> **Nynir**: `+` gal tebec. Hut'unn tebec — ibac liser.
+---
+
+## Mando'ade Tome
+
+```zymbol
+// Ehn gai'tayl — ibac meg'haat tracyn
+gar = "Ana"
+n = 42
+
+tebec2 = "Su'cuy ", gar, "!"            // kaysh — borarir = bal :=
+>> "Su'cuy " gar " gar gal " n ¶        // tracyn — hibira >>
+naas2 = "Su'cuy {gar}, gar gal {n}"     // bora — ibac tracyn
+```
+
+```zymbol
+s = "Su'cuy Vode"
+len = s$#                  // 11
+sub = s$[0..5]             // "Su'cu"  (nayc tracyn)
+has = s$? "Vode"           // #1
+parts = "a,b,c,d" / ','    // [a, b, c, d]
+rep = s$~~["o":"O"]        // "Su'cuy VOde"
+rep1 = s$~~["o":"O":1]     // "Su'cuy VOde" (tracyn solus)
+```
+
+> `+` gal tebec. Hut'unn tebec — ibac liser.
 
 ---
 
@@ -98,10 +123,8 @@ naas2 = "Su'cuy {gar}, gar gal {n}"    // → Su'cuy Ana, gar gal 25
 ```zymbol
 x = 7
 
-// Solus tion
 ? x > 0 { >> "jate" ¶ }
 
-// Tion / tion'yc / nayc
 ? x > 100 {
     >> "jate naas" ¶
 } _? x > 0 {
@@ -113,7 +136,7 @@ x = 7
 }
 ```
 
-Poki `{ }` — **poQlu'**, ibac solus tebec tebec.
+> Poki `{ }` — **poQlu'**, ibac solus tebec tebec.
 
 ---
 
@@ -130,6 +153,14 @@ patlh2 = ?? gal2 {
 }
 >> patlh2 ¶    // → B
 
+// Match hut'unn
+rItlh = "laamyc"
+kode = ?? rItlh {
+    "laamyc"  : "#FF0000"
+    "yaim"    : "#00FF00"
+    _         : "#000000"
+}
+
 // Match naas (ibac tion)
 temp = -5
 Dotlh = ?? temp {
@@ -140,14 +171,12 @@ Dotlh = ?? temp {
 }
 >> Dotlh ¶    // → kelir
 
-// Match hut'unn
-rItlh = "laamyc"
-kode = ?? rItlh {
-    "laamyc"  : "#FF0000"
-    "yaim"    : "#00FF00"
-    _         : "#000000"
+// Match hut'unn poki
+?? n {
+    0       : { >> "pag" ¶ }
+    _? n < 0: { >> "nayc" ¶ }
+    _       : { >> "jate" ¶ }
 }
->> kode ¶
 ```
 
 ---
@@ -155,38 +184,43 @@ kode = ?? rItlh {
 ## Meh
 
 ```zymbol
-// Naas: 0..4 — 0,1,2,3,4
-@ i:0..4 { >> i " " }
->> ¶    // → 0 1 2 3 4
+@ i:0..4  { >> i " " }        // naas tracyn:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // bal meh:       1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // darasuum bic:  5 4 3 2 1 0
 
-// Gal bal meh
-@ i:1..9:2 { >> i " " }
->> ¶    // → 1 3 5 7 9
-
-// Darasuum bic
-@ i:5..0:1 { >> i " " }
->> ¶    // → 5 4 3 2 1 0
-
-// Akaanir (while)
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶    // → 128
+>> n ¶                        // → 128  (akaanir)
 
-// Ibac mhi'ade
 kir = ["mandokar", "verd'goten", "riduur"]
-@ f:kir { >> f ¶ }
+@ f:kir { >> f ¶ }            // ibac mhi'ade aliit
 
-// Tebec tebec
 @ c:"Vode" { >> c "-" }
->> ¶    // → V-o-d-e-
+>> ¶                          // → V-o-d-e-
 
-// Troch'n bal meh darasuum
 @ i:1..10 {
-    ? i % 2 == 0 { @> }    // @> meh darasuum
-    ? i > 7 { @! }          // @! troch'n
+    ? i % 2 == 0 { @> }       // @> meh darasuum
+    ? i > 7 { @! }             // @! troch'n
     >> i " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Meh darasuum
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Meh gar (darasuum troch'n)
+count = 0
+@ @outer {
+    count++
+    ? count >= 3 { @! outer }
+}
+>> count ¶                    // → 3
 ```
 
 ---
@@ -194,53 +228,52 @@ kir = ["mandokar", "verd'goten", "riduur"]
 ## Ara'novor
 
 ```zymbol
-// Gai'tayl bal lo'
 borarir(a, b) { <~ a + b }
 >> borarir(3, 4) ¶    // → 7
 
-// Darasuum
 kaysh(n) {
     ? n <= 1 { <~ 1 }
     <~ n * kaysh(n - 1)
 }
 >> kaysh(5) ¶    // → 120
-
-// Ara'novor — n'cuyi mhi'ade naas
-_Manda = 100
-troch'n2() {
-    x = 42    // solus pa'
-    <~ x
-}
->> troch'n2() ¶    // → 42
 ```
 
-> **Nynir**: Gar ara'novor `gar(params){ }` — n'ibac gai'tayl solus.
-> Bora nob — borarir: `x -> gar(x)`.
+Ara'novor cuyir **naas ibac** — n'cuyi mhi'ade naas. Hut'unn `<~` mhi'ade tracyn:
+
+```zymbol
+swap(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
+}
+x = 10
+y = 20
+swap(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> Ara'novor n'ibac gai'tayl solus. Bora nob — borarir: `x -> gar(x)`.
 
 ---
 
 ## Lambda bal Karyai
 
 ```zymbol
-// Mhi' lambda (bora)
 t'ad = x -> x * 2
 ibac2 = (a, b) -> a + b
 >> t'ad(5) ¶    // → 10
 >> ibac2(3, 7) ¶  // → 10
 
-// Lambda poki (naas bora)
+// Lambda poki
 jate = x -> {
     ? x > 0 { <~ "jate" }
     _? x < 0 { <~ "nayc" }
     <~ "pag"
 }
->> jate(5) ¶     // → jate
->> jate(0) ¶     // → pag
->> jate(-5) ¶    // → nayc
 
 // Karyai — lambda cuyir mhi'ade naas
 factor = 3
-ehn2 = x -> x * factor    // cuyir 'factor'
+ehn2 = x -> x * factor
 >> ehn2(7) ¶    // → 21
 
 // Ara'novor mhi'ade
@@ -250,7 +283,6 @@ add10 = make_adder(10)
 
 // Lambda gai'tayl: aliit
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[0](5) ¶    // → 6
 >> ops[2](5) ¶    // → 25
 ```
 
@@ -259,64 +291,129 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 ## Trattok'o
 
 ```zymbol
-arr = [10, 20, 30, 40, 50]
+arr = [1, 2, 3, 4, 5]
 
-// Gai'tayl (0 tebec)
->> arr[0] ¶    // → 10
+arr[0]          // 1 — gai'tayl (0 tebec)
+arr[-1]         // 5 — gal nayc (darasuum)
+arr$#           // 5 — gal (poQlu' (arr$#) hibira)
 
-// Gal (poki poQlu' >>)
-n = arr$#
->> (arr$#) ¶    // → 5
+arr = arr$+ 6            // borarir → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // tracyn gal 2
+arr3 = arr$- 3           // teq tracyn solus
+arr4 = arr$-- 3          // teq ibac
+arr5 = arr$-[0]          // teq gal tracyn
+arr6 = arr$-[1..3]       // teq naas (nayc tracyn)
 
-// Borarir, teq, elek, mhi'
-arr = arr$+ 60               // borarir
-arr = arr$- 0                // teq 0
-elek2 = arr$? 30             // → #1
-mhi'2 = arr$[0..2]           // [20, 30]
+has = arr$? 3            // #1 — elek
+pos = arr$?? 3           // [2] — ibac tracyn
+sl = arr$[0..3]          // [1,2,3] — mhi' (nayc tracyn)
+sl2 = arr$[0:3]          // [1,2,3] — tracyn gal
 
-// Bic gai'tayl
-arr[1] = 99
+asc = arr$^+             // gai'tayl jate (naas solus)
+desc = arr$^-            // gai'tayl nayc (naas solus)
 
-// Ibac mhi'ade
-@ x:arr { >> x " " }
->> ¶
+// Tuple aliit — hut'unn $^ bal lambda borarir
+db = [(gar: "Carla", cuir: 28), (gar: "Ana", cuir: 25), (gar: "Bob", cuir: 30)]
+by_cuir  = db$^ (a, b -> a.cuir < b.cuir)
+by_gar   = db$^ (a, b -> a.gar > b.gar)
+>> by_cuir[0].gar ¶     // → Ana
+>> by_gar[0].gar ¶      // → Carla
+
+arr[1] = 99              // borarir pa'
+arr = arr[1]$~ 99        // borarir vaii — bora trattok'o
 ```
 
-> `$+`, `$-`, `$[..]` — **trattok'o vaii** — borarir: `arr = arr$+ 4`.
+> Ibac hut'unn borarir **trattok'o vaii**. Borarir: `arr = arr$+ 4`.
 > N'gai'tayl: t'ad ara'novor mhi'ade.
+> `$^+` / `$^-` gai'tayl **naas solus**. Tuple aliit — hut'unn `$^` bal lambda.
+
+```zymbol
+// Trattok'o naasad
+matrix = [[1,2,3],[4,5,6],[7,8,9]]
+>> matrix[1][2] ¶    // → 6
+```
+
+---
+
+## Tome Ruug'la
+
+```zymbol
+// Aliit
+arr = [10, 20, 30, 40, 50]
+[a, b, c] = arr              // a=10  b=20  c=30
+[first, *rest] = arr         // first=10  rest=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ nayc tracyn
+
+// Tuple tracyn
+point = (100, 200)
+(px, py) = point             // px=100  py=200
+
+// Tuple gar
+person = (gar: "Ana", cuir: 25, city: "Mandalore")
+(gar: n, cuir: a) = person   // n="Ana"  a=25
+```
 
 ---
 
 ## Tuple
 
 ```zymbol
-// Tuple gar
+// Tracyn
+point = (10, 20)
+>> point[0] ¶    // → 10
+
+// Gar
 vod = (gar: "Alice", cuir: 25)
 >> vod.gar ¶    // → Alice
->> vod.cuir ¶   // → 25
->> vod[0] ¶     // → Alice (tracyn lo'laH)
+>> vod[0] ¶     // → Alice  (tracyn lo'laH)
+
+// Naasad
+pos = (x: 10, y: 20)
+p = (pos: pos, label: "Manda")
+>> p.pos.x ¶        // → 10
 ```
 
 ---
 
 ## Ara'novor Alor
 
-HOF — **lambda pa'** poQlu' — n'lambda gai'tayl.
+> HOF — **lambda pa'** poQlu' — n'lambda gai'tayl.
 
 ```zymbol
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Map ($>)
-t'ad2 = nums$> (x -> x * 2)
->> t'ad2 ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+t'ad2 = nums$> (x -> x * 2)                // map  → [2,4,6…20]
+cuir2 = nums$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
+naas3 = nums$< (0, (acc, x) -> acc + x)    // reduce → 55
 
-// Filter ($|)
-cuir2 = nums$| (x -> x % 2 == 0)
->> cuir2 ¶    // → [2, 4, 6, 8, 10]
+// Tracyn mhi'ade
+step1 = nums$| (x -> x > 3)
+step2 = step1$> (x -> x * x)
+>> step2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Reduce ($<) — (bora gal, (borarir, mhi'ade) -> moj)
-naas3 = nums$< (0, (acc, x) -> acc + x)
->> naas3 ¶    // → 55
+// Ara'novor naasad — bora lambda
+borarir2(x) { <~ x * 2 }
+r = nums$> (x -> borarir2(x))    // ✅
+```
+
+---
+
+## Operatore Gar
+
+Ibac tracyn poQlu' `_` meg'haat tracyn:
+
+```zymbol
+t'ad = x -> x * 2
+ibac2 = (a, b) -> a + b
+inc = x -> x + 1
+
+5 |> t'ad(_)        // → 10
+10 |> ibac2(_, 5)   // → 15
+5 |> ibac2(2, _)    // → 7
+
+// Darasuum
+r = 5 |> t'ad(_) |> inc(_) |> t'ad(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -328,10 +425,8 @@ naas3 = nums$< (0, (acc, x) -> acc + x)
     x = 10 / 0
 } :! ##Div {
     >> "pag'yc nayc" ¶
-} :! ##IO {
-    >> "IO nayc" ¶
 } :! {
-    >> "nayc: " _err ¶
+    >> "nayc: " _err ¶    // _err cuyir tebec nayc
 } :> {
     >> "darasuum" ¶
 }
@@ -352,7 +447,7 @@ naas3 = nums$< (0, (acc, x) -> acc + x)
 ## Aliit'verde
 
 ```zymbol
-// Tebec: lib/calc.zy
+// lib/calc.zy
 # calc
 
 #> { borarir, get_PI }    // Nob SOLUS
@@ -363,13 +458,76 @@ get_PI() { <~ _PI }
 ```
 
 ```zymbol
-// Tebec: main.zy
+// main.zy
 <# ./lib/calc <= c    // Gar poQlu'
 
 >> c::borarir(5, 3) ¶  // → 8
 pi = c::get_PI()
 >> pi ¶                // → 3.14159
 ```
+
+```zymbol
+// Nob gar naas
+# mylib
+#> { _ibac_borarir <= ibac }
+
+_ibac_borarir(a, b) { <~ a + b }
+```
+
+```zymbol
+<# ./mylib <= m
+
+>> m::ibac(3, 4) ¶    // → 7
+```
+
+---
+
+## Operatore Naasad
+
+```zymbol
+// Bora gal naas tebec
+v1 = #|"42"|      // → 42  (Gal naas)
+v2 = #|"3.14"|    // → 3.14  (Gal mhi')
+v3 = #|"abc"|     // → "abc"  (nayc nynir)
+
+// Tracyn / teq
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14  (teq)
+
+// Gai'tayl gal
+fmt = #,|1234567|      // → 1,234,567
+sci = #^|12345.678|    // → 1.2345678e4
+
+// Naas gal
+a = 0x41         // → 'A'  (hex)
+b = 0b01000001   // → 'A'  (binary)
+c = 0o101        // → 'A'  (octal)
+
+// Bora naas
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
+```
+
+---
+
+## Shell Naasad
+
+```zymbol
+date = <\ date +%Y-%m-%d \>     // cuyir stdout (bal tebec tebec)
+>> "Tion'ad: " date
+
+tebec = "data.txt"
+content = <\ cat {tebec} \>     // bora hut'unn
+
+output = </"./sub.zy"/>         // hibira zy nynir, cuyir
+>> output
+```
+
+> `><` cuyir CLI gai'tayl ibac tebec (nynir solus).
 
 ---
 
@@ -390,35 +548,42 @@ jate(gal) {
 
 ## Nynir
 
-| Hut'unn  | Moj                | Hut'unn    | Moj                   |
-|----------|--------------------|------------|-----------------------|
-| `=`      | mhi'ade            | `$#`       | gal                   |
-| `:=`     | mhi'ade ne'        | `$+`       | borarir               |
-| `>>`     | hibira             | `$-`       | teq (tracyn)          |
-| `<<`     | cuyir              | `$?`       | elek                  |
-| `¶`/`\`  | tebec tebec        | `$[s..e]`  | mhi'                  |
-| `?`      | tion (if)          | `$>`       | map                   |
-| `_?`     | tion'yc (elif)     | `$\|`      | filter                |
-| `_`      | nayc / ibac        | `$<`       | reduce                |
-| `??`     | match              | `!?`       | troch'n (try)         |
-| `@`      | meh                | `:!`       | karyai (catch)        |
-| `@!`     | troch'n (break)    | `:>`       | darasuum (finally)    |
-| `@>`     | meh darasuum       | `$!`       | nayc cuyir            |
-| `->`     | Lambda             | `$!!`      | nayc hibira           |
-| `<~`     | bora               | `#`        | aliit nynir           |
-| `\|>`    | Pipe               | `#>`       | nob                   |
-| `#1`     | elek               | `<#`       | cuyir                 |
-| `#0`     | nayc               | `::`       | aliit lo'             |
+| Hut'unn  | Moj                | Hut'unn      | Moj                   |
+|----------|--------------------|--------------|------------------------|
+| `=`      | mhi'ade            | `$#`         | gal                   |
+| `:=`     | mhi'ade ne'        | `$+`         | borarir               |
+| `>>`     | hibira             | `$+[i]`      | tracyn gal tracyn     |
+| `<<`     | cuyir              | `$-`         | teq tracyn solus      |
+| `¶`/`\\` | tebec tebec        | `$--`        | teq ibac              |
+| `?`      | tion (if)          | `$-[i]`      | teq gal tracyn        |
+| `_?`     | tion'yc (elif)     | `$-[i..j]`   | teq naas              |
+| `_`      | nayc / ibac        | `$?`         | elek                  |
+| `??`     | match              | `$??`        | ibac tracyn           |
+| `@`      | meh                | `$[s..e]`    | mhi'                  |
+| `@!`     | troch'n (break)    | `$>`         | map                   |
+| `@>`     | meh darasuum       | `$\|`        | filter                |
+| `->`     | Lambda             | `$<`         | reduce                |
+| `$^+`    | jate (naas solus)  | `$^-`        | nayc (naas solus)     |
+| `$^`     | borarir lambda     |              |                       |
+| `<~`     | bora               | `!?`         | troch'n (try)         |
+| `\|>`    | Pipe               | `:!`         | karyai (catch)        |
+| `#1`     | elek               | `:>`         | darasuum (finally)    |
+| `#0`     | nayc               | `$!`         | nayc cuyir            |
+| `<#`     | cuyir              | `$!!`        | nayc hibira           |
+| `#`      | aliit nynir        | `#>`         | nob                   |
+| `::`     | aliit lo'          | `.`          | gai'tayl tracyn       |
+| `#\|..\|`| bora gal           | `#?`         | gai'tayl naas         |
+| `#.N\|..\|` | tracyn         | `#!N\|..\|`  | teq                   |
+| `c\|..\|`| gai'tayl comma     | `e\|..\|`    | naas'ika              |
+| `<\ ..\>`| shell hibira       | `>\<`        | CLI gai'tayl          |
 
 ---
 
 *Zymbol-Lang — Hut'unn. Ibac naas. Darasuum.*
 
----
-
 > **Nynir:** Tebec ni cuyir bal hibira AI (naas'ika ara'novor).
 > Ibac gaa'tayli'yc cuyir troch'n naas, tebec bal borarir li ken nayc.
-> Alor nynir cuyir [Zymbol-Lang nynir](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> Alor nynir cuyir [Zymbol-Lang nynir](https://github.com/zymbol-lang/interpreter).
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > While every effort has been made to ensure accuracy, some translations or examples may contain errors.

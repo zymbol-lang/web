@@ -1,14 +1,6 @@
 # Kompakti Zymbol-Lang-dokumentaatio
 
-**Zymbol-Lang** on symbolinen ohjelmointikieli. Se ei käytä avainsanoja — kaikki on symboleja. Se toimii samalla tavalla kaikilla ihmiskielillä.
-
----
-
-## Filosofia
-
-- Ei avainsanoja (`if`, `while`, `return` eivät ole olemassa — vain symbolit `?`, `@`, `<~`)
-- Täysi Unicode — tunnisteet millä tahansa kielellä tai emojilla 👋
-- Kieliagnostinen — koodi on identtinen kaikilla kielillä
+**Zymbol-Lang** on symbolinen ohjelmointikieli. Se ei käytä avainsanoja — kaikki on symboleja. Se toimii samalla tavalla kaikilla ihmiskielillä. Ei avainsanoja (`if`, `while`, `return` eivät ole olemassa — vain symbolit `?`, `@`, `<~`). Täysi Unicode — tunnisteet millä tahansa kielellä tai emojilla 👋
 
 ---
 
@@ -29,10 +21,11 @@ x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %=  4   // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
@@ -63,14 +56,41 @@ x--       // 2
 
 // Syöte
 << nimi                        // ilman kehotetta — lukee muuttujaan
-<< "Nimi? " nimi               // kehottella
+<< "Nimi? " nimi               // kehotteella
 ```
 
 > `¶` tai `\\` on rivinvaihdon vastaava.
 
 ---
 
-## Merkkijonojen Yhdistäminen
+## Operaattorit
+
+```zymbol
+// Aritmetiikka
+5 + 2    // → 7
+5 - 2    // → 3
+5 * 2    // → 10
+5 / 2    // → 2.5
+5 % 2    // → 1
+5 ^ 2    // → 25   (potenssilasku)
+
+// Vertailu (palauttaa #1 tai #0)
+5 == 5   // → #1
+5 != 4   // → #1
+5 > 4    // → #1
+5 < 4    // → #0
+5 >= 5   // → #1
+5 <= 4   // → #0
+
+// Loogiset
+#1 && #0    // → #0   (ja)
+#1 || #0    // → #1   (tai)
+!#1         // → #0   (ei)
+```
+
+---
+
+## Merkkijonot
 
 Kolme pätevää tapaa — kukin omaan kontekstiinsa:
 
@@ -87,6 +107,13 @@ OTSIKKO := "Käyttäjä: ", nimi
 
 // 3. Interpolaatio — missä tahansa kontekstissa
 desc = "Hei {nimi}, olet {luku} vuotta vanha"    // → Hei Ana, olet 25 vuotta vanha
+```
+
+```zymbol
+// Korvaa — s$~~["vanha":"uusi"]
+s = "hei maailma"
+s = s$~~["maailma":"maa"]       // → "hei maa"
+s = s$~~["i":"I":1]             // → "heI maa"   korvaa ensimmäiset N esiintymät
 ```
 
 > **Huomio**: `+` on vain numeroille. Käyttö merkkijonoilla antaa varoituksen.
@@ -267,6 +294,7 @@ arr = [10, 20, 30, 40, 50]
 // Pääsy (indeksi alkaa 0:sta)
 >> arr[0] ¶    // → 10
 >> arr[2] ¶    // → 30
+>> arr[-1] ¶   // → 50   negatiivinen indeksi
 
 // Pituus (vaatii sulkeet >>:ssä)
 luku = arr$#
@@ -277,11 +305,29 @@ luku = arr$#
 arr = arr$+ 60               // [10, 20, 30, 40, 50, 60]
 arr = arr$- 0                // poistaa indeksin 0: [20, 30, 40, 50, 60]
 sisältää = arr$? 30          // → #1
+idx = arr$?? 30              // → [1]   kaikki indeksit arvolle
 osa = arr$[0..2]             // siivu [0,2): [20, 30]
+määrä = arr$[0:3]            // määräpohjainen: [20, 30, 40]
 
 // Päivitä elementti
 arr[1] = 99
 >> arr ¶    // → [20, 99, 40, 50, 60]
+
+// Toiminnallinen päivitys (palauttaa uuden taulukon)
+arr2 = arr[1]$~ 77           // → [20, 77, 40, 50, 60]
+
+// Lajittele (primitiivit)
+num = [3, 1, 4, 1, 5]
+nouseva  = num$^+            // → [1, 1, 3, 4, 5]
+laskeva  = num$^-            // → [5, 4, 3, 1, 1]
+
+// Lajittele monikot vertailulambdalla
+parit = [(2,"b"), (1,"a"), (3,"c")]
+lajiteltu = parit$^ ((a,b) -> a[0] - b[0])    // lajittele ensimmäisen elementin mukaan
+
+// Sisäkkäiset taulukot
+matriisi = [[1,2],[3,4],[5,6]]
+>> matriisi[1][0] ¶    // → 3
 
 // Jokaiselle elementille
 @ x:arr { >> x " " }
@@ -290,6 +336,30 @@ arr[1] = 99
 
 > `$+`, `$-`, `$[..]` palauttavat **uuden taulukon** — sijoita samaan nimeen: `arr = arr$+ 4`.
 > Älä ketjuta: `arr$+ 4$+ 5` ei toimi — käytä kahta sijoitusta.
+> `arr$??` ja `arr$[s:n]` käyttävät eri syntaksia kuin `arr$[s..e]` — katso Symboliviite.
+
+---
+
+## Purkaminen
+
+```zymbol
+// Taulukon purkaminen
+arr = [10, 20, 30]
+[a, b, c] = arr
+>> a ¶    // → 10
+>> b ¶    // → 20
+
+// Paikallisen monikon purkaminen
+pt = (3, 4)
+(x, y) = pt
+>> x ¶    // → 3
+
+// Nimetyn monikon purkaminen
+henkilö = (nimi: "Alice", ikä: 25)
+(nimi: n, ikä: i) = henkilö
+>> n ¶    // → Alice
+>> i ¶    // → 25
+```
 
 ---
 
@@ -343,6 +413,23 @@ vaihe2 = vaihe1$> (x -> x * x)
 
 ---
 
+## Putki-operaattori
+
+```zymbol
+// |> välittää vasemman arvon _ oikeaan lausekkeeseen
+tulos = 5 |> _ * 2 |> _ + 1
+>> tulos ¶    // → 11
+
+// Ketjutetut muunnokset
+sanat = ["hei", "maailma"]
+ulos = sanat
+    |> _$> (w -> w$#)              // muunna pituuksiksi: [3, 6]
+    |> _$< (0, (a,x) -> a+x)      // summaa: 9
+>> ulos ¶    // → 9
+```
+
+---
+
 ## Virheenkäsittely
 
 ```zymbol
@@ -375,7 +462,7 @@ vaihe2 = vaihe1$> (x -> x * x)
 | `##Div`     | Jako nollalla                 |
 | `##IO`      | Tiedosto / järjestelmä        |
 | `##Index`   | Indeksi alueen ulkopuolella   |
-| `##Type`    | Tyyppivirt                    |
+| `##Type`    | Tyyppivirhe                   |
 | `##Parse`   | Datan jäsennys                |
 | `##Network` | Verkkovirheet                 |
 | `##_`       | Mikä tahansa virhe (kaikki)   |
@@ -412,6 +499,58 @@ pi = c::get_PI()
 
 ---
 
+## Dataoperaattorit
+
+```zymbol
+// Jäsennä merkkijono numeroksi
+x = #|"42"|          // → 42    (kokonaisluku)
+y = #|"3.14"|        // → 3.14  (liukuluku)
+
+// Pyöristä / katkaise
+r = #.2|3.14159|     // → 3.14   pyöristä 2 desimaaliin
+t = #!2|3.14159|     // → 3.14   katkaise 2 desimaaliin
+
+// Muotoile numero
+s = #,|1234567.89|    // → "1,234,567.89"  pilkkumuoto
+e = #^|0.00042|       // → "4.2e-4"        tieteellinen merkintä
+
+// Kantaliteralit
+h = 0xFF             // → 255  heksadesimaalinen
+b = 0b1010           // → 10   binaarinen
+o = 0o17             // → 15   oktaalinen
+
+// Kantamuunnos
+hex = 255$>>"16"     // → "FF"
+bin = 10$>>"2"       // → "1010"
+```
+
+---
+
+## Komentotulkin Integraatio
+
+```zymbol
+// Suorita komentotulkin komento ja kaappaa tuloste
+ulos = <\ ls -la \>
+>> ulos ¶
+
+// Interpolaatio komennoissa
+hakemisto = "/tmp"
+tiedostot = <\ ls {hakemisto} \>
+
+// Moniriviinen komentolohko
+tulos = </
+    echo "hei"
+    pwd
+/>
+
+// Ohjaa tuloste komentotulkkiin (ilman kaappausta)
+>< "echo hei"
+```
+
+> `><` lähettää tulosteen komentotulkkiin ilman kaappausta.
+
+---
+
 ## Täydellinen Esimerkki: FizzBuzz
 
 ```zymbol
@@ -428,25 +567,34 @@ luokittele(luku) {
 
 ## Symboliviite
 
-| Symboli | Operaatio          | Symboli    | Operaatio              |
-|---------|--------------------|------------|------------------------|
-| `=`     | muuttuja           | `$#`       | pituus                 |
-| `:=`    | vakio              | `$+`       | lisää (append)         |
-| `>>`    | tulostus           | `$-`       | poista (indeksillä)    |
-| `<<`    | syöte              | `$?`       | sisältää               |
-| `¶`/`\` | rivinvaihto        | `$[s..e]`  | siivu                  |
-| `?`     | jos (if)           | `$>`       | map                    |
-| `_?`    | muuten jos (elif)  | `$\|`      | filter                 |
-| `_`     | muuten / wildcard  | `$<`       | reduce                 |
-| `??`    | match              | `!?`       | yritä (try)            |
-| `@`     | silmukka           | `:!`       | ota kiinni (catch)     |
-| `@!`    | keskeytä           | `:>`       | aina (finally)         |
-| `@>`    | jatka              | `$!`       | on virhe               |
-| `->`    | lambda             | `$!!`      | propagoi virhe         |
-| `<~`    | palautus           | `#`        | määrittele moduuli     |
-| `\|>`   | pipe               | `#>`       | vie ulos               |
-| `#1`    | tosi               | `<#`       | tuo sisään             |
-| `#0`    | epätosi            | `::`       | moduulikutsu           |
+| Symboli     | Operaatio            | Symboli      | Operaatio                  |
+|-------------|----------------------|--------------|----------------------------|
+| `=`         | muuttuja             | `$#`         | pituus                     |
+| `:=`        | vakio                | `$+`         | lisää (append)             |
+| `>>`        | tulostus             | `$+[i]`      | lisää indeksiin            |
+| `<<`        | syöte                | `$--`        | poista viimeinen           |
+| `¶`/`\`     | rivinvaihto          | `$-[i]`      | poista indeksistä          |
+| `?`         | jos (if)             | `$-[i..j]`   | poista väli                |
+| `_?`        | muuten jos (elif)    | `$?`         | sisältää                   |
+| `_`         | muuten / wildcard    | `$??`        | kaikki indeksit arvolle    |
+| `??`        | match                | `$[s..e]`    | siivu                      |
+| `@`         | silmukka             | `$>`         | map                        |
+| `@!`        | keskeytä             | `$\|`        | filter                     |
+| `@>`        | jatka                | `$<`         | reduce                     |
+| `->`        | lambda               | `$^+`        | lajittele nousevasti       |
+| `<~`        | palautus             | `$^-`        | lajittele laskevasti       |
+| `\|>`       | putki                | `$^`         | lajittele vertailulla      |
+| `#1`        | tosi                 | `$!`         | on virhe                   |
+| `#0`        | epätosi              | `$!!`        | propagoi virhe             |
+| `!?`        | yritä (try)          | `#`          | määrittele moduuli         |
+| `:!`        | ota kiinni (catch)   | `#>`         | vie ulos                   |
+| `:>`        | aina (finally)       | `<#`         | tuo sisään                 |
+| `.`         | kenttäpääsy          | `::`         | moduulikutsu               |
+| `#\|..\|`   | jäsennä (parse)      | `#.N\|..\|`  | pyöristä N desimaalia      |
+| `#!N\|..\|` | katkaise N desimaalia| `c\|..\|`    | pilkkumuoto                |
+| `e\|..\|`   | tieteellinen not.    | `<\ \>`      | komentotulkin komento      |
+| `><`        | komentotulkin tuloste| `$~~[..]`    | korvaa merkkijonossa       |
+| `[a,b]=arr` | purkaminen           | `(x,y)=tup`  | monikon purkaminen         |
 
 ---
 
@@ -454,8 +602,8 @@ luokittele(luku) {
 
 ---
 
-**Vastuuvapauslauseke:** Tämä dokumentaatio on luotu ja käännetty tekoälyllä (AI). Kaikki pyrkimykset on tehty tarkkuuden varmistamiseksi, mutta jotkut käännökset tai esimerkit saattavat sisältää virheitä. Virallinen viite on [Zymbol-Lang-spesifikaatio](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+**Vastuuvapauslauseke:** Tämä dokumentaatio on luotu ja käännetty tekoälyllä (AI). Kaikki pyrkimykset on tehty tarkkuuden varmistamiseksi, mutta jotkut käännökset tai esimerkit saattavat sisältää virheitä. Virallinen viite on [Zymbol-Lang-spesifikaatio](https://github.com/zymbol-lang/interpreter).
 
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-> The authoritative reference is the [Zymbol-Lang specification](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> The authoritative reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).

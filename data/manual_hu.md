@@ -1,14 +1,6 @@
 # Zymbol-Lang Kompakt Kézikönyv
 
-**Zymbol-Lang** egy szimbolikus programozási nyelv. Nem használ kulcsszavakat — minden szimbólum. Ugyanúgy működik bármely emberi nyelven.
-
----
-
-## Filozófia
-
-- Nincsenek kulcsszavak (`ha`, `ciklus`, `visszatérés` nem léteznek — csak szimbólumok: `?`, `@`, `<~`)
-- Teljes Unicode-támogatás — azonosítók bármely nyelven vagy emojival 👋
-- Emberi nyelvtől független — a kód minden nyelven azonos
+**Zymbol-Lang** egy szimbolikus programozási nyelv. Nem használ kulcsszavakat — minden szimbólum. Ugyanúgy működik bármely emberi nyelven. Nincsenek kulcsszavak (`ha`, `ciklus`, `visszatérés` nem léteznek — csak szimbólumok: `?`, `@`, `<~`). Teljes Unicode-támogatás — azonosítók bármely nyelven vagy emojival 👋
 
 ---
 
@@ -19,7 +11,7 @@ x = 10           // változó (módosítható)
 PI := 3.14159    // állandó (nem módosítható — hiba újrahozzárendeléskor)
 név = "Ana"
 aktív = #1       // logikai igaz
-👋 := "Szia, Magyar Világ!"
+👋 := "Szia"
 ```
 
 ### Összetett Hozzárendelés
@@ -29,10 +21,11 @@ x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %=  4   // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
@@ -46,7 +39,7 @@ x--       // 2
 | Karakterlánc  | `"szia"`            | `##"`          | Interpoláció: `"Szia {név}"`        |
 | Karakter      | `'A'`               | `##'`          | Egy Unicode karakter                |
 | Logikai       | `#1`, `#0`          | `##?`          | NEM numerikus 1 és 0                |
-| Tömb          | `[1, 2, 3]`         | `##]`          | Az összes elemnek azonos típusúnak kell lennie |
+| Tömb          | `[1, 2, 3]`         | `##]`          | Az összes elemnek azonos típusúnak kell lennie|
 | Tuple         | `(a, b)`            | `##)`          | Pozicionális                        |
 | Nevesített Tuple | `(x: 1, y: 2)`   | `##)`          | Névvel vagy indexszel érhető el     |
 
@@ -56,9 +49,9 @@ x--       // 2
 
 ```zymbol
 // Kimenet — NEM ad automatikusan sortörést
->> "Szia, Magyar Világ!" ¶              // ¶ vagy \\ explicit sortörést ad
+>> "Szia" ¶                             // ¶ vagy \\ explicit sortörést ad
 >> "a=" a " b=" b ¶                     // több érték egymás mellé írással
->> "összeg=" add(2, 3) ¶                // függvényhívás bármely pozícióban
+>> "összeg=" összeadás(2, 3) ¶          // függvényhívás bármely pozícióban
 >> (arr$#) ¶                            // postfix operátorok zárójeleket igényelnek
 
 // Bemenet
@@ -70,7 +63,34 @@ x--       // 2
 
 ---
 
-## Karakterlánc-összefűzés
+## Operátorok
+
+```zymbol
+// Aritmetika
+5 + 2    // → 7
+5 - 2    // → 3
+5 * 2    // → 10
+5 / 2    // → 2.5
+5 % 2    // → 1
+5 ^ 2    // → 25   (hatványozás)
+
+// Összehasonlítás (#1 vagy #0 értéket ad)
+5 == 5   // → #1
+5 != 4   // → #1
+5 > 4    // → #1
+5 < 4    // → #0
+5 >= 5   // → #1
+5 <= 4   // → #0
+
+// Logikai
+#1 && #0    // → #0   (és)
+#1 || #0    // → #1   (vagy)
+!#1         // → #0   (nem)
+```
+
+---
+
+## Karakterláncok
 
 Három érvényes forma — mindegyik a saját kontextusához:
 
@@ -87,6 +107,13 @@ TITLE := "Felhasználó: ", név
 
 // 3. Interpoláció — bármely kontextusban
 leírás = "Szia {név}, te {szám} éves vagy"   // → Szia Ana, te 25 éves vagy
+```
+
+```zymbol
+// Csere — s$~~["régi":"új"]
+s = "szia világ"
+s = s$~~["világ":"föld"]        // → "szia föld"
+s = s$~~["a":"Á":1]             // → "sziÁ föld"   első N előfordulás cseréje
 ```
 
 > **Megjegyzés**: `+` csak számokhoz való. Karakterláncokkal való használata figyelmeztetést generál.
@@ -206,7 +233,7 @@ tényező(szám) {
 >> tényező(5) ¶    // → 120
 
 // A függvényeknek izolált hatókörük van — nincs hozzáférés külső változókhoz
-_globális = 100
+globális = 100
 tesztelni() {
     x = 42    // csak helyi
     <~ x
@@ -239,18 +266,21 @@ osztályoz = x -> {
 >> osztályoz(-5) ¶    // → negatív
 
 // Lezárások — a lambdák rögzítik a külső hatókör változóit
-háromszorosára = 3
-triple = x -> x * háromszorosára    // rögzíti a 'háromszorosára' változót
->> triple(7) ¶    // → 21
+faktor = 3
+háromszorosára = x -> x * faktor    // rögzíti a 'faktor' változót
+>> háromszorosára(7) ¶    // → 21
 
 // Függvénygyár
 összeadó_készítő(n) { <~ x -> x + n }
 add10 = összeadó_készítő(10)
+add20 = összeadó_készítő(20)
 >> add10(5) ¶    // → 15
+>> add20(5) ¶    // → 25
 
 // Lambdák értékként: tömbben tárolva
 műveletek = [x -> x+1, x -> x*2, x -> x*x]
 >> műveletek[0](5) ¶    // → 6
+>> műveletek[1](5) ¶    // → 10
 >> műveletek[2](5) ¶    // → 25
 ```
 
@@ -263,19 +293,41 @@ arr = [10, 20, 30, 40, 50]
 
 // Hozzáférés (0-alapú index)
 >> arr[0] ¶    // → 10
+>> arr[2] ¶    // → 30
+>> arr[-1] ¶   // → 50   negatív index
 
 // Hossz (zárójeleket igényel >>-ben)
 szám = arr$#
->> (arr$#) ¶    // → 5
+>> szám ¶          // → 5
+>> (arr$#) ¶       // → 5
 
 // Hozzáfűzés, eltávolítás, tartalmaz, szelet
-arr = arr$+ 60               // hozzáfűzés
-arr = arr$- 0                // index 0 eltávolítása
+arr = arr$+ 60               // [10, 20, 30, 40, 50, 60]
+arr = arr$- 0                // index 0 eltávolítása: [20, 30, 40, 50, 60]
 van = arr$? 30               // → #1
-szelet = arr$[0..2]          // [20, 30]
+idx = arr$?? 30              // → [1]   az érték összes indexe
+szelet = arr$[0..2]          // szelet [0,2): [20, 30]
+darab = arr$[0:3]            // darabszám-alapú: [20, 30, 40]
 
 // Elem frissítése
 arr[1] = 99
+>> arr ¶    // → [20, 99, 40, 50, 60]
+
+// Funkcionális frissítés (új tömböt ad vissza)
+arr2 = arr[1]$~ 77           // → [20, 77, 40, 50, 60]
+
+// Rendezés (primitívek)
+num = [3, 1, 4, 1, 5]
+növekvő  = num$^+            // → [1, 1, 3, 4, 5]
+csökkenő = num$^-            // → [5, 4, 3, 1, 1]
+
+// Tuple-ok rendezése komparátor lambdával
+párok = [(2,"b"), (1,"a"), (3,"c")]
+rendezett = párok$^ ((a,b) -> a[0] - b[0])    // rendezés az első elem szerint
+
+// Egymásba ágyazott tömbök
+mátrix = [[1,2],[3,4],[5,6]]
+>> mátrix[1][0] ¶    // → 3
 
 // For-each
 @ x:arr { >> x " " }
@@ -284,17 +336,52 @@ arr[1] = 99
 
 > `$+`, `$-`, `$[..]` **új tömböt** adnak vissza — rendelj vissza: `arr = arr$+ 4`.
 > Láncolás nem lehetséges: használj két külön hozzárendelést.
+> `arr$??` és `arr$[s:n]` más szintaxist használnak, mint `arr$[s..e]` — lásd Szimbólumreferencia.
+
+---
+
+## Destrukturálás
+
+```zymbol
+// Tömb destrukturálása
+arr = [10, 20, 30]
+[a, b, c] = arr
+>> a ¶    // → 10
+>> b ¶    // → 20
+
+// Pozicionális tuple destrukturálása
+pt = (3, 4)
+(x, y) = pt
+>> x ¶    // → 3
+
+// Nevesített tuple destrukturálása
+személy = (név: "Alice", kor: 25)
+(név: n, kor: k) = személy
+>> n ¶    // → Alice
+>> k ¶    // → 25
+```
 
 ---
 
 ## Tuple-ök
 
 ```zymbol
+// Pozicionális tuple
+pont = (10, 20)
+>> pont[0] ¶    // → 10
+>> pont[1] ¶    // → 20
+
 // Nevesített tuple
 személy = (név: "Alice", kor: 25)
 >> személy.név ¶    // → Alice
 >> személy.kor ¶    // → 25
 >> személy[0] ¶     // → Alice (index is működik)
+
+// Egymásba ágyazott
+pos = (x: 3, y: 4)
+p = (pos: pos, cimke: "kezdőpont")
+>> p.cimke ¶    // → kezdőpont
+>> p.pos.x ¶    // → 3
 ```
 
 ---
@@ -317,6 +404,28 @@ páros = számok$| (x -> x % 2 == 0)
 // Redukálás ($<) — (kezdeti érték, (acc, elem) -> kifejezés)
 összesen = számok$< (0, (acc, x) -> acc + x)
 >> összesen ¶    // → 55
+
+// Nincs közvetlen láncolás — közbenső változókat használj
+lépés1 = számok$| (x -> x > 5)
+lépés2 = lépés1$> (x -> x * x)
+>> lépés2 ¶    // → [36, 49, 64, 81, 100]
+```
+
+---
+
+## Csővezeték-operátor
+
+```zymbol
+// |> a bal értéket _ ként adja át a jobb kifejezésnek
+eredmény = 5 |> _ * 2 |> _ + 1
+>> eredmény ¶    // → 11
+
+// Láncolva alkalmazott transzformációk
+szavak = ["szia", "világ"]
+kimenet = szavak
+    |> _$> (w -> w$#)              // leképezés hosszakra: [4, 5]
+    |> _$< (0, (a,x) -> a+x)      // összegzés: 9
+>> kimenet ¶    // → 9
 ```
 
 ---
@@ -324,6 +433,7 @@ páros = számok$| (x -> x % 2 == 0)
 ## Hibakezelés
 
 ```zymbol
+// Próba / Elkapás / Végül
 !? {
     x = 10 / 0
 } :! ##Div {
@@ -331,11 +441,21 @@ páros = számok$| (x -> x % 2 == 0)
 } :! ##IO {
     >> "IO hiba" ¶
 } :! {
-    >> "egyéb hiba: " _err ¶
+    >> "egyéb hiba: " _err ¶    // _err tartalmazza a hibaüzenetet
 } :> {
     >> "mindig lefut" ¶
 }
+
+// Elkapás index típusnál
+!? {
+    arr = [1, 2, 3]
+    v = arr[10]
+} :! ##Index {
+    >> "index határon kívül" ¶
+}
 ```
+
+### Hibatípusok
 
 | Típus       | Mikor következik be        |
 |-------------|----------------------------|
@@ -353,23 +473,81 @@ páros = számok$| (x -> x % 2 == 0)
 
 ```zymbol
 // Fájl: lib/szamitas.zy
-# szamitas
+# szamitas                // deklaráció — mindig fent
 
-#> { összeadás, get_PI }    // exportok DEFINÍCIÓK ELŐTT
+#> {                      // exportok — DEFINÍCIÓK ELŐTT kell lenniük
+    összeadás
+    get_PI
+}
 
 _PI := 3.14159
+
 összeadás(a, b) { <~ a + b }
-get_PI() { <~ _PI }
+get_PI() { <~ _PI }       // getter konstanshoz (szükséges kerülőút)
 ```
 
 ```zymbol
 // Fájl: main.zy
 <# ./lib/szamitas <= sz    // alias kötelező
 
->> sz::összeadás(5, 3) ¶   // → 8
+>> sz::összeadás(5, 3) ¶   // → 8  — hívás ::-vel
 pi = sz::get_PI()
 >> pi ¶                     // → 3.14159
 ```
+
+> **Megjegyzés**: `alias.NÉV` konstansok eléréséhez nem működik — használj getter függvényt.
+
+---
+
+## Adatoperátorok
+
+```zymbol
+// Karakterlánc értelmezése számmá
+x = #|"42"|          // → 42    (egész)
+y = #|"3.14"|        // → 3.14  (lebegőpontos)
+
+// Kerekítés / csonkítás
+r = #.2|3.14159|     // → 3.14   kerekítés 2 tizedesre
+t = #!2|3.14159|     // → 3.14   csonkítás 2 tizedesre
+
+// Szám formázása
+s = #,|1234567.89|    // → "1,234,567.89"  ezreselválasztós formátum
+e = #^|0.00042|       // → "4.2e-4"        tudományos jelölés
+
+// Alap literálok
+h = 0xFF             // → 255  hexadecimális
+b = 0b1010           // → 10   bináris
+o = 0o17             // → 15   oktális
+
+// Alap konverzió
+hex = 255$>>"16"     // → "FF"
+bin = 10$>>"2"       // → "1010"
+```
+
+---
+
+## Parancsértelmező Integráció
+
+```zymbol
+// Parancsértelmező parancs futtatása és kimenet elfogása
+kimenet = <\ ls -la \>
+>> kimenet ¶
+
+// Interpoláció a parancsokban
+könyvtár = "/tmp"
+fájlok = <\ ls {könyvtár} \>
+
+// Többsoros szkriptblokk
+eredmény = </
+    echo "szia"
+    pwd
+/>
+
+// Kimenet átirányítása a parancsértelmezőbe (elfogás nélkül)
+>< "echo szia"
+```
+
+> `><` az elfogás nélkül a parancsértelmezőbe küldi a kimenetet.
 
 ---
 
@@ -382,7 +560,6 @@ osztályoz(szám) {
     _? szám % 5  == 0 { <~ "Züm" }
     _ { <~ szám }
 }
-
 @ i:1..20 { >> osztályoz(i) ¶ }
 ```
 
@@ -390,25 +567,34 @@ osztályoz(szám) {
 
 ## Szimbólumreferencia
 
-| Szimbólum   | Művelet             | Szimbólum   | Művelet               |
-|-------------|---------------------|-------------|-----------------------|
-| `=`         | változó             | `$#`        | hossz                 |
-| `:=`        | állandó             | `$+`        | hozzáfűzés            |
-| `>>`        | kimenet             | `$-`        | eltávolítás (index)   |
-| `<<`        | bemenet             | `$?`        | tartalmaz             |
-| `¶`/`\`     | sortörés            | `$[s..e]`   | szelet                |
-| `?`         | ha                  | `$>`        | leképezés             |
-| `_?`        | ha egyébként        | `$\|`       | szűrés                |
-| `_`         | egyébként / joker   | `$<`        | redukálás             |
-| `??`        | illesztés           | `!?`        | próba                 |
-| `@`         | ciklus              | `:!`        | elkapás               |
-| `@!`        | kilépés             | `:>`        | végül                 |
-| `@>`        | folytatás           | `$!`        | hiba-e                |
-| `->`        | lambda              | `$!!`       | hiba továbbterjesztése|
-| `<~`        | visszatérés         | `#`         | modul deklaráció      |
-| `\|>`       | csővezeték          | `#>`        | export                |
-| `#1`        | igaz                | `<#`        | import                |
-| `#0`        | hamis               | `::`        | modul hívás           |
+| Szimbólum   | Művelet              | Szimbólum    | Művelet                    |
+|-------------|----------------------|--------------|----------------------------|
+| `=`         | változó              | `$#`         | hossz                      |
+| `:=`        | állandó              | `$+`         | hozzáfűzés (append)        |
+| `>>`        | kimenet              | `$+[i]`      | beszúrás indexnél          |
+| `<<`        | bemenet              | `$--`        | utolsó eltávolítása        |
+| `¶`/`\`     | sortörés             | `$-[i]`      | eltávolítás indexnél       |
+| `?`         | ha (if)              | `$-[i..j]`   | tartomány eltávolítása     |
+| `_?`        | ha egyébként (elif)  | `$?`         | tartalmaz                  |
+| `_`         | egyébként / joker    | `$??`        | összes index az értékhez   |
+| `??`        | illesztés            | `$[s..e]`    | szelet                     |
+| `@`         | ciklus               | `$>`         | leképezés                  |
+| `@!`        | kilépés              | `$\|`        | szűrés                     |
+| `@>`        | folytatás            | `$<`         | redukálás                  |
+| `->`        | lambda               | `$^+`        | növekvő rendezés           |
+| `<~`        | visszatérés          | `$^-`        | csökkenő rendezés          |
+| `\|>`       | csővezeték           | `$^`         | rendezés komparátorral     |
+| `#1`        | igaz                 | `$!`         | hiba-e                     |
+| `#0`        | hamis                | `$!!`        | hiba továbbterjesztése     |
+| `!?`        | próba (try)          | `#`          | modul deklaráció           |
+| `:!`        | elkapás (catch)      | `#>`         | export                     |
+| `:>`        | végül (finally)      | `<#`         | import                     |
+| `.`         | mezőhozzáférés       | `::`         | modul hívás                |
+| `#\|..\|`   | értelmezés (parse)   | `#.N\|..\|`  | N tizedesre kerekítés      |
+| `#!N\|..\|` | N tizedesre csonkítás| `c\|..\|`    | ezreselválasztós formátum  |
+| `e\|..\|`   | tudományos jelölés   | `<\ \>`      | parancsértelmező parancs   |
+| `><`        | parancsértelmező kim.| `$~~[..]`    | csere a karakterláncban    |
+| `[a,b]=arr` | destrukturálás       | `(x,y)=tup`  | tuple destrukturálás       |
 
 ---
 
@@ -416,6 +602,6 @@ osztályoz(szám) {
 
 ---
 
-> **Nyilatkozat:** Ezt a dokumentációt mesterséges intelligencia (MI) hozta létre és fordította. Minden erőfeszítést megtettünk a pontosság biztosítása érdekében, de egyes fordítások vagy példák hibákat tartalmazhatnak. A hiteles referencia a [Zymbol-Lang specifikáció](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> **Nyilatkozat:** Ezt a dokumentációt mesterséges intelligencia (MI) hozta létre és fordította. Minden erőfeszítést megtettünk a pontosság biztosítása érdekében, de egyes fordítások vagy példák hibákat tartalmazhatnak. A hiteles referencia a [Zymbol-Lang specifikáció](https://github.com/zymbol-lang/interpreter).
 >
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI). While every effort has been made to ensure accuracy, some translations or examples may contain errors. The canonical reference is the [Zymbol-Lang specification](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI). While every effort has been made to ensure accuracy, some translations or examples may contain errors. The canonical reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).

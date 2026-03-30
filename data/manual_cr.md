@@ -2,10 +2,6 @@
 
 **Zymbol-Lang** pêyak kîskinahamâkêwin pîkiskwêwin masinahikanis ôma — namôya kîkway âpacihiwêwin, masinahikanis piko. Kâ-pêyakwan ispayiw cîki ôma nêhiyaw-pîkiskwêwin.
 
----
-
-## Kistêyimôwin
-
 - Namôya âpacihiwêwina (`if`, `while`, `return` namôya âpatisiw — masinahikanis piko `?`, `@`, `<~`)
 - Kahkiyaw Unicode — pîkiskwêwina kâ-isi-pîkiskwêt ispayiw, mîna emoji 👋
 - Pîkiskwêwin-kâ-kî-osîhtâk — kîkway masinahikanis kâ-pêyakwan ispayiw kahkiyaw pîkiskwêwinihk
@@ -22,17 +18,16 @@ kistêyi = #1         // tâpwêwin kistêyimôwin
 👋 := "Tânisi"
 ```
 
-### Kâ-Wîhtamihk Mâmawi
-
 ```zymbol
-kî = 10    // 10
+kî = 10
 kî += 5    // 15
 kî -= 3    // 12
 kî *= 2    // 24
-kî /= 4    // 6
-kî %= 4    // 2
-kî++       // 3
-kî--       // 2
+kî /= 3    // 8
+kî %= 3    // 2
+kî ^= 2    // 4
+kî++       // 5
+kî--       // 4
 ```
 
 ---
@@ -55,38 +50,60 @@ kî--       // 2
 ## Nâtawihoht mîna Tâpakêw
 
 ```zymbol
-// Nâtawihoht — NAMÔYA kîkway pihtwâwin kîhtwâm
->> "Tânisi" ¶                         // ¶ mîna \ pihtwâwin masinahikanis
+>> "Tânisi" ¶                         // ¶ mîna \\ pihtwâwin masinahikanis
 >> "a=" kî " b=" nî ¶                 // mihcêt kîkwaya mâmawi
->> "mâmawi=" mâmawihoht(2, 3) ¶       // âpacihiwêwina tânispîhk
 >> (masinahikana$#) ¶                  // postfix-masinahikanis wâwis ( ) kihci
 
-// Tâpakêw
 << isiyihkâsowin                       // namôya kakwêcihkêmôwin — isinâkwahk pîkiskwêwin
 << "Kîkisêpâ kiyawâw? " isiyihkâsowin // kakwêcihkêmôwin kâ-wîhtamihk
 ```
 
-> `¶` mîna `\` kâ-pêyakwan — pihtwâwin masinahikanis.
+> `¶` mîna `\\` kâ-pêyakwan — pihtwâwin masinahikanis.
 
 ---
 
-## Masinahikanis Ôhci
-
-Nistam kâ-isi-itôtahk — tânisi kâ-itôtamihk:
+## Mamihcimâtisiwinisa
 
 ```zymbol
+// Akihtâsona
+a = 10
+b = 3
+r1 = a + b    // 13     r2 = a - b    // 7
+r3 = a * b    // 30     r4 = a / b    // 3  (akihtâson sipihkêwin)
+r5 = a % b    // 1      r6 = a ^ b    // 1000  (kâ-ispayik)
+
+// Kâ-nanatohkamihk
+a == b    // #0    a <> b    // #1    a < b    // #0
+a <= b    // #0   a > b     // #1    a >= b   // #1
+
+// Tâpwêwin
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
+```
+
+---
+
+## Masinahikana
+
+```zymbol
+// Nistam kâ-isi-itôtahk — tânisi kâ-itôtamihk
 isiyihkâsowin = "nêhiyaw"
 akihtâson = 25
 
-// 1. Kâ-kîskwêpayik — pîkiskwêwina kâ-wîhtamihk = mîna :=
-wîhtamôwin = "Tânisi ", isiyihkâsowin, "!"       // → Tânisi nêhiyaw!
-KÎHCÎPÎKISKWÊWIN := "Kiyawâw: ", isiyihkâsowin
+wîhtamôwin = "Tânisi ", isiyihkâsowin, "!"       // kâ-kîskwêpayik — = mîna :=
+>> "Tânisi " isiyihkâsowin " kiyawâw " akihtâson ¶  // mâmawi >> kâ-nâtawihohtihk
+kiskinotahwâwin = "Tânisi {isiyihkâsowin}, kiyawâw {akihtâson}"  // wîhtamôwin
+```
 
-// 2. Mâmawi >> kâ-nâtawihohtihk
->> "Tânisi " isiyihkâsowin " kiyawâw " akihtâson ¶   // → Tânisi nêhiyaw kiyawâw 25
-
-// 3. Wîhtamôwin — tânispîhk
-kiskinotahwâwin = "Tânisi {isiyihkâsowin}, kiyawâw {akihtâson}"
+```zymbol
+s = "Tânisi nêhiyaw"
+len = s$#                  // 14
+sub = s$[0..6]             // "Tânisi"  (ke tìran)
+has = s$? "nêhiyaw"        // #1
+parts = "a,b,c,d" / ','    // [a, b, c, d]
+rep = s$~~["â":"Â"]        // "TÂnisi nÊhiyaw"
+rep1 = s$~~["â":"Â":1]     // "TÂnisi nêhiyaw"  (pêyak piko)
 ```
 
 > **Kiskêyihtamowin**: `+` akihtâsona piko. Masinahikanis kâ-wîhtamihk — mayi-ispayiw.
@@ -98,10 +115,8 @@ kiskinotahwâwin = "Tânisi {isiyihkâsowin}, kiyawâw {akihtâson}"
 ```zymbol
 kî = 7
 
-// Pêyak kâ-tâpwêwihk
 ? kî > 0 { >> "kihci-akihtâson" ¶ }
 
-// Kâ-tâpwêwihk / namôya / mâka
 ? kî > 100 {
     >> "mistahi kihci" ¶
 } _? kî > 0 {
@@ -130,7 +145,15 @@ wîhtamôwin = ?? tipahikêwin {
 }
 >> wîhtamôwin ¶    // → B
 
-// Kâ-kîspihtahk kâ-isi-kâkîsimihk (kahkiyaw tâpwêwina)
+// Kâ-kîspihtahk masinahikanis
+wâpikiwan = "mihko"
+kîsikâw = ?? wâpikiwan {
+    "mihko"    : "#FF0000"
+    "askihtaw" : "#00FF00"
+    _          : "#000000"
+}
+
+// Kâ-kîspihtahk kâ-isi-kâkîsimihk (guards)
 kisikâw = -5
 ispayiwin = ?? kisikâw {
     _? kisikâw < 0  : "Kôna"
@@ -140,14 +163,12 @@ ispayiwin = ?? kisikâw {
 }
 >> ispayiwin ¶    // → Kôna
 
-// Kâ-kîspihtahk masinahikanis
-wâpikiwan = "mihko"
-kîsikâw = ?? wâpikiwan {
-    "mihko"    : "#FF0000"
-    "askihtaw" : "#00FF00"
-    _          : "#000000"
+// Kâ-kîspihtahk mihkwâhpitêwin (block arms)
+?? n {
+    0       : { >> "sôskwâc" ¶ }
+    _? n < 0: { >> "namôya kihci" ¶ }
+    _       : { >> "kihci-akihtâson" ¶ }
 }
->> kîsikâw ¶
 ```
 
 ---
@@ -155,38 +176,43 @@ kîsikâw = ?? wâpikiwan {
 ## Kâ-Ispayik
 
 ```zymbol
-// Kâ-isi-akihtâhk mâmawi: 0..4 isinâkwan 0,1,2,3,4
-@ ê:0..4 { >> ê " " }
->> ¶    // → 0 1 2 3 4
+@ ê:0..4  { >> ê " " }        // 0 1 2 3 4  — inclusive
+@ ê:1..9:2 { >> ê " " }       // step:  1 3 5 7 9
+@ ê:5..0:1 { >> ê " " }       // kâ-kîwêhk: 5 4 3 2 1 0
 
-// Kâ-isi-akihtâhk kâ-kêyâpic
-@ ê:1..9:2 { >> ê " " }
->> ¶    // → 1 3 5 7 9
-
-// Kâ-kîwêhk akihtâsona
-@ ê:5..0:1 { >> ê " " }
->> ¶    // → 5 4 3 2 1 0
-
-// Kâ-tâpwêwihk (while)
 nî = 1
 @ nî <= 64 { nî *= 2 }
->> nî ¶    // → 128
+>> nî ¶                       // → 128  (while)
 
-// Kahkiyaw kîkwaya
 mînisa = ["pahkwêsikan", "maskêkominak", "sâsâkisiw"]
 @ mî:mînisa { >> mî ¶ }
 
-// Masinahikanis kâ-isi-pîkiskwêt
 @ sê:"tânisi" { >> sê "-" }
->> ¶    // → t-â-n-i-s-i-
+>> ¶                          // → t-â-n-i-s-i-
 
-// @! mîna @>
 @ ê:1..10 {
-    ? ê % 2 == 0 { @> }    // @> kâ-kîwêhk
-    ? ê > 7 { @! }          // @! kâ-nîpâhahk
+    ? ê % 2 == 0 { @> }       // @> kâ-kîwêhk
+    ? ê > 7 { @! }             // @! kâ-nîpâhahk
     >> ê " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Namôya kâ-kîsistahk
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Labeled loop
+count = 0
+@ @outer {
+    count++
+    ? count >= 3 { @! outer }
+}
+>> count ¶                    // → 3
 ```
 
 ---
@@ -194,24 +220,28 @@ mînisa = ["pahkwêsikan", "maskêkominak", "sâsâkisiw"]
 ## Âpacihiwêwina
 
 ```zymbol
-// Wîhtamôwin mîna âpacihâwin
 mâmawihoht(kî, nî) { <~ kî + nî }
 >> mâmawihoht(3, 4) ¶    // → 7
 
-// Kîhtwâm kâ-nâtawihohk
 akihtâsonâpacihikêwin(nî) {
     ? nî <= 1 { <~ 1 }
     <~ nî * akihtâsonâpacihikêwin(nî - 1)
 }
 >> akihtâsonâpacihikêwin(5) ¶    // → 120
+```
 
-// Âpacihiwêwina pêyakwan kâ-itahpitêwak — namôya kîkway pîtos nâtawihohtêwin
-kihci = 100
-kîskinotahwâwin() {
-    kî = 42    // piko ôta
-    <~ kî
+Âpacihiwêwina **isolated scope** — namôya kîkway pîtos nâtawihohtêwin. Output `<~`:
+
+```zymbol
+swap(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
 }
->> kîskinotahwâwin() ¶    // → 42
+x = 10
+y = 20
+swap(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
 > **Kistêyimôwin**: Wîhcikâtêwa âpacihiwêwina `isiyihkâsowin(akihtâsona){ }` namôya pêyak kîkway.
@@ -222,25 +252,21 @@ kîskinotahwâwin() {
 ## Lamda mîna Kâ-Kîwêhât
 
 ```zymbol
-// Âpacihâwin lamda (namôya pihtwâwin wîhtamâkêwin)
 pêyakosit = kî -> kî * 2
 mâmawi = (kî, nî) -> kî + nî
 >> pêyakosit(5) ¶    // → 10
 >> mâmawi(3, 7) ¶    // → 10
 
-// Lamda mihkwâhpitêwin (kihci-wîhtamôwin)
+// Lamda mihkwâhpitêwin
 kistêyimôwin = kî -> {
     ? kî > 0 { <~ "kihci-akihtâson" }
     _? kî < 0 { <~ "namôya kihci" }
     <~ "sôskwâc"
 }
->> kistêyimôwin(5) ¶     // → kihci-akihtâson
->> kistêyimôwin(0) ¶     // → sôskwâc
->> kistêyimôwin(-5) ¶    // → namôya kihci
 
 // Kâ-Kîwêhâtwak — lamda kâ-kî-wîhtamihk pîtos kîkwaya
 tipahikêwin = 3
-nistomâpacihikêwin = kî -> kî * tipahikêwin    // kâ-kî-wîhtamihk 'tipahikêwin'
+nistomâpacihikêwin = kî -> kî * tipahikêwin
 >> nistomâpacihikêwin(7) ¶    // → 21
 
 // Âpacihiwêwin kâ-osîhtâhk
@@ -250,7 +276,6 @@ mitahtêwkî = osîhtâkê(10)
 
 // Lamda kîkwaya: masinahikanisihk
 âpacihiwêwina = [kî -> kî+1, kî -> kî*2, kî -> kî*kî]
->> âpacihiwêwina[0](5) ¶    // → 6
 >> âpacihiwêwina[2](5) ¶    // → 25
 ```
 
@@ -259,64 +284,127 @@ mitahtêwkî = osîhtâkê(10)
 ## Masinahikanisa
 
 ```zymbol
-masinahikana = [10, 20, 30, 40, 50]
+masinahikana = [1, 2, 3, 4, 5]
 
-// Âpacihâwin (sôskwâc akihtâson)
->> masinahikana[0] ¶    // → 10
+masinahikana[0]          // 1 — âpacihâwin (sôskwâc akihtâson)
+masinahikana[-1]         // 5 — ke akihtâson (tìpawm)
+masinahikana$#           // 5 — tipahikêwin
 
-// Tipahikêwin (wâwis ( ) kâ-nâtawihohtihk >>)
-nî = masinahikana$#
->> (masinahikana$#) ¶    // → 5
+masinahikana = masinahikana$+ 6            // append
+masinahikana2 = masinahikana$+[2] 99       // insert at index 2
+masinahikana3 = masinahikana$- 3           // remove first value
+masinahikana4 = masinahikana$-- 3          // remove all
+masinahikana5 = masinahikana$-[0]          // remove at index
+masinahikana6 = masinahikana$-[1..3]       // remove range (ke tìran)
 
-// $+ wîhtamôwin, $- kâ-wâhpamihk, $? kâ-itohtatihk, $[..] kâ-kîskihk
-masinahikana = masinahikana$+ 60              // $+ wîhtamôwin
-masinahikana = masinahikana$- 0               // akihtâson 0 kâ-wîhtamihk
-ayâwin = masinahikana$? 30           // → #1
-kîskihwin = masinahikana$[0..2]      // [20, 30]
+ayâwin = masinahikana$? 3            // #1 — contains
+pos = masinahikana$?? 3              // [2] — all indices
+kîskihwin = masinahikana$[0..3]      // [1,2,3] — slice (ke tìran)
+sl2 = masinahikana$[0:3]             // [1,2,3] — count-based syntax
 
-// Kîkway kâ-wîhtamihk
-masinahikana[1] = 99
+asc = masinahikana$^+               // sorted ascending  (primitives)
+desc = masinahikana$^-              // sorted descending (primitives)
 
-// Kahkiyaw kîkwaya
-@ kî:masinahikana { >> kî " " }
->> ¶
+// Wîhcikâtêw tupêl — $^ mîna comparator lamda
+db = [(isiyihkâsowin: "Carla", akihtâson: 28), (isiyihkâsowin: "Ana", akihtâson: 25)]
+by_akihtâson = db$^ (a, b -> a.akihtâson < b.akihtâson)
+>> by_akihtâson[0].isiyihkâsowin ¶     // → Ana
+
+masinahikana[1] = 99              // update in-place
+masinahikana = masinahikana[1]$~ 99   // functional update
 ```
 
-> `$+`, `$-`, `$[..]` **pîtos masinahikanisa** — kîhtwâm wîhtamôwin: `masinahikana = masinahikana$+ 4`.
+> T'áá ałtso **pîtos masinahikanisa** — kîhtwâm wîhtamôwin: `masinahikana = masinahikana$+ 4`.
 > Namôya kâ-mâmawi-pimipayihcikâtêk: niswaw wîhtamôwin kâ-isi-pimipayihcikâtêk.
+> `$^+` / `$^-` — primitives. Wîhcikâtêw tupêl — `$^` mîna lamda.
+
+```zymbol
+// Nested masinahikanisa
+matrix = [[1,2,3],[4,5,6],[7,8,9]]
+>> matrix[1][2] ¶    // → 6
+```
+
+---
+
+## Sêhcipayiwin
+
+```zymbol
+// Masinahikanisa
+masinahikana = [10, 20, 30, 40, 50]
+[a, b, c] = masinahikana              // a=10  b=20  c=30
+[first, *rest] = masinahikana         // first=10  rest=[20,30,40,50]
+[x, _, z] = [1, 2, 3]                 // _ namôya wîhtamôwin
+
+// Positional tupêl
+point = (100, 200)
+(px, py) = point                      // px=100  py=200
+
+// Wîhcikâtêw tupêl
+iyinîw = (isiyihkâsowin: "Ana", akihtâson: 25, pîkiskwêwin: "nêhiyaw")
+(isiyihkâsowin: n, akihtâson: a) = iyinîw   // n="Ana"  a=25
+```
 
 ---
 
 ## Tupêl
 
 ```zymbol
+// Positional
+point = (10, 20)
+>> point[0] ¶    // → 10
+
 // Wîhcikâtêw tupêl
 iyinîw = (isiyihkâsowin: "Alice", akihtâson: 25)
 >> iyinîw.isiyihkâsowin ¶    // → Alice
->> iyinîw.akihtâson ¶        // → 25
 >> iyinîw[0] ¶               // → Alice (akihtâson mîna âpacihiwêwin)
+
+// Nested
+pos = (x: 10, y: 20)
+p = (pos: pos, label: "nêhiyaw")
+>> p.pos.x ¶        // → 10
 ```
 
 ---
 
 ## Nîpawistamâkêwina
 
-HOF-masinahikanisa **lamda kâ-pimipayihcikâtêk** kihci — namôya lamda-pîkiskwêwin kiyâpic.
+> HOF-masinahikanisa **lamda kâ-pimipayihcikâtêk** kihci — namôya lamda-pîkiskwêwin kiyâpic.
 
 ```zymbol
 akihtâsona = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Map ($>)
-pêyakositwa = akihtâsona$> (kî -> kî * 2)
->> pêyakositwa ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+pêyakositwa = akihtâsona$> (kî -> kî * 2)                // map  → [2,4,6…20]
+nisto = akihtâsona$| (kî -> kî % 2 == 0)                 // filter → [2,4,6,8,10]
+mâmawi = akihtâsona$< (0, (mâmawi, kî) -> mâmawi + kî)  // reduce → 55
 
-// Filter ($|)
-nisto = akihtâsona$| (kî -> kî % 2 == 0)
->> nisto ¶    // → [2, 4, 6, 8, 10]
+// Tatìng intermediates
+step1 = akihtâsona$| (kî -> kî > 3)
+step2 = step1$> (kî -> kî * kî)
+>> step2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Reduce ($<) — (nâtamowin, (kâ-mâmawi-wîhtamihk, kîkway) -> kâ-ispayik)
-mâmawi = akihtâsona$< (0, (mâmawi, kî) -> mâmawi + kî)
->> mâmawi ¶    // → 55
+// Named function bił lamda
+double(kî) { <~ kî * 2 }
+r = akihtâsona$> (kî -> double(kî))    // ✅
+```
+
+---
+
+## Pipe Mamihcimâtisiwin
+
+RHS t'áá ákót'é **`_`** placeholder mì piped kîkway:
+
+```zymbol
+double = kî -> kî * 2
+add = (a, b) -> a + b
+inc = kî -> kî + 1
+
+5 |> double(_)        // → 10
+10 |> add(_, 5)       // → 15
+5 |> add(2, _)        // → 7
+
+// Kâ-mâmawi-pimipayihcikâtêk
+r = 5 |> double(_) |> inc(_) |> double(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -328,8 +416,6 @@ mâmawi = akihtâsona$< (0, (mâmawi, kî) -> mâmawi + kî)
     kî = 10 / 0
 } :! ##Div {
     >> "Namôya akihtâson kâ-sipihkêhk" ¶
-} :! ##IO {
-    >> "IO kâ-mâyipayik" ¶
 } :! {
     >> "pîtos kâ-mâyipayik: " _err ¶
 } :> {
@@ -371,6 +457,69 @@ pâyi = sê::get_pâyi()
 >> pâyi ¶                    // → 3.14159
 ```
 
+```zymbol
+// Export bił pîtos isiyihkâsowin
+# mylib
+#> { _internal_add <= mâmawi }
+
+_internal_add(a, b) { <~ a + b }
+```
+
+```zymbol
+<# ./mylib <= m
+
+>> m::mâmawi(3, 4) ¶    // → 7
+```
+
+---
+
+## Tipahamâkêwina
+
+```zymbol
+// Akihtâson kâ-osîhtâhk
+v1 = #|"42"|      // → 42  (Int)
+v2 = #|"3.14"|    // → 3.14  (Float)
+v3 = #|"abc"|     // → "abc"  (namôya kâ-mâyipayik)
+
+// Round / truncate
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14  (truncate)
+
+// Akihtâson tìran
+fmt = #,|1234567|  // → 1,234,567
+sci = #^|12345.678|    // → 1.2345678e4
+
+// Base literals
+a = 0x41         // → 'A'  (hex)
+b = 0b01000001   // → 'A'  (binary)
+c = 0o101        // → 'A'  (octal)
+
+// Base tìkangkem
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
+```
+
+---
+
+## Shell Mâmawêwin
+
+```zymbol
+date = <\ date +%Y-%m-%d \>     // stdout (tìran \n)
+>> "Anohc: " date
+
+file = "data.txt"
+content = <\ cat {file} \>      // wîhtamôwin mì tìkan
+
+output = </"./subscript.zy"/>   // Zymbol script, tâpakêw output
+>> output
+```
+
+> `><` CLI arguments pîtos masinahikanisa (tree-walker piko).
+
 ---
 
 ## Mâmawôhkatôwin: FizzBuzz
@@ -390,36 +539,43 @@ mâmawihoht(akihtâson) {
 
 ## Masinahikanis Ôhci Kâ-Nâtawihoht
 
-| Masinahikanis | Âpacihâwin          | Masinahikanis  | Âpacihâwin                 |
-|---------------|---------------------|----------------|----------------------------|
-| `=`           | Pîkiskwêwin         | `$#`           | Tipahikêwin                |
-| `:=`          | Namôya Pâstâhôw     | `$+`           | Wîhtamôwin                 |
-| `>>`          | Nâtawihoht          | `$-`           | Kâ-wîhtamihk (akihtâson)  |
-| `<<`          | Tâpakêw             | `$?`           | Kâ-itohtatihk              |
-| `¶`/`\`      | Pihtwâwin           | `$[s..e]`      | Kîskihwin                  |
-| `?`           | ? (if)              | `$>`           | map                        |
-| `_?`          | _? (elif)           | `$\|`         | filter                     |
-| `_`           | _ / kâ-pîkiskwêhk  | `$<`           | reduce                     |
-| `??`          | match               | `!?`           | kâ-kîskinotahwâhk (try)    |
-| `@`           | Kâ-Ispayik          | `:!`           | kâ-kîsihtâhk (catch)       |
-| `@!`          | @! (break)          | `:>`           | kahkiyaw (finally)         |
-| `@>`          | @> (continue)       | `$!`           | kâ-mâyipayik               |
-| `->`          | lamda               | `$!!`          | kâ-wîhtamihk mâyipayiwin   |
-| `<~`          | Kîhtwâm (return)    | `#`            | Masinahikan wîhtamôwin     |
-| `\|>`        | Pipe                | `#>`           | Nâtawihoht                 |
-| `#1`          | tâpwêwin            | `<#`           | Pê-isi-nâtawihoht          |
-| `#0`          | namôya tâpwêwin     | `::`           | Masinahikan âpacihâwin     |
+| Masinahikanis | Âpacihâwin          | Masinahikanis   | Âpacihâwin                  |
+|---------------|---------------------|-----------------|------------------------------|
+| `=`           | Pîkiskwêwin         | `$#`            | Tipahikêwin                  |
+| `:=`          | Namôya Pâstâhôw     | `$+`            | Wîhtamôwin                   |
+| `>>`          | Nâtawihoht          | `$+[i]`         | Insert at index               |
+| `<<`          | Tâpakêw             | `$-`            | Remove first value            |
+| `¶`/`\\`     | Pihtwâwin           | `$--`           | Remove all value              |
+| `?`           | ? (if)              | `$-[i]`         | Remove at index               |
+| `_?`          | _? (elif)           | `$-[i..j]`      | Remove range                  |
+| `_`           | _ / kâ-pîkiskwêhk  | `$?`            | Kâ-itohtatihk                 |
+| `??`          | match               | `$??`           | All indices                   |
+| `@`           | Kâ-Ispayik          | `$[s..e]`       | Kîskihwin                     |
+| `@!`          | @! (break)          | `$>`            | map                           |
+| `@>`          | @> (continue)       | `$\|`           | filter                        |
+| `->`          | lamda               | `$<`            | reduce                        |
+| `$^+`         | Sort ascending      | `$^-`           | Sort descending               |
+| `$^`          | Sort lamda          |                 |                               |
+| `<~`          | Kîhtwâm (return)    | `!?`            | kâ-kîskinotahwâhk (try)       |
+| `\|>`        | Pipe                | `:!`            | kâ-kîsihtâhk (catch)          |
+| `#1`          | tâpwêwin            | `:>`            | kahkiyaw (finally)            |
+| `#0`          | namôya tâpwêwin     | `$!`            | kâ-mâyipayik                  |
+| `<#`          | Pê-isi-nâtawihoht   | `$!!`           | kâ-wîhtamihk mâyipayiwin      |
+| `#`           | Masinahikan wîhtamôwin | `#>`         | Nâtawihoht                    |
+| `::`          | Masinahikan âpacihâwin | `.`          | Field access                  |
+| `#\|..\|`    | Parse number        | `#?`            | Type metadata                 |
+| `#.N\|..\|`  | Round               | `#!N\|..\|`     | Truncate                      |
+| `c\|..\|`    | Comma format        | `e\|..\|`       | Scientific                    |
+| `<\ ..\>`    | Shell exec          | `>\<`           | CLI args                      |
 
 ---
 
 *Zymbol-Lang — Masinahikanis. Pêyak. Namôya Pâstâhôw.*
 
----
-
 > **Kiskêyihtamowin:** Ôma masinahikanis kistêyimôwin-âpacihikêwin (AI) kâ-osîhtâhk mîna kâ-pîkiskwêwihcikêhk. Pîkiskwêwina itwêwina (altlab.ualberta.ca) kâ-nâtawihohtamihk — Wolvengrey mîna Maskwacîs masinahikana.
 > Kahkiyaw kâ-isi-itôtamihk mâka mâskôc pîtos pîkiskwêwina mîna tipahikêwina mâyitôtamwak.
-> Nistam âpacihâwin: [Zymbol-Lang kîskinahamâkêwin](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> Nistam âpacihâwin: [Zymbol-Lang kîskinahamâkêwin](https://github.com/zymbol-lang/interpreter).
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-> The authoritative reference is the [Zymbol-Lang specification](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> The authoritative reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).

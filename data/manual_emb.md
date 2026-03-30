@@ -2,10 +2,6 @@
 
 **Zymbol-Lang** embera ome wẽra kira pari. Jã dachi nezarã — kira pari dachi nezarã. Embera ome wẽra dachi nezara.
 
----
-
-## Dachi Ome
-
 - Jã nezara (`if`, `while`, `return` jã dachi — kira pari `?`, `@`, `<~`)
 - Unicode wẽra — dachi ome wẽra kira pari 👋
 - Ome jãni — kira pari dachi ome wẽra nezara
@@ -22,17 +18,16 @@ ome = #1            // wẽra pari
 👋 := "Nabi, Embera!"
 ```
 
-### Kira Wẽra Jãni
-
 ```zymbol
-kira = 10    // 10
+kira = 10
 kira += 5    // 15
 kira -= 3    // 12
 kira *= 2    // 24
-kira /= 4    // 6
-kira %= 4    // 2
-kira++       // 3
-kira--       // 2
+kira /= 3    // 8
+kira %= 3    // 2
+kira ^= 2    // 4
+kira++       // 5
+kira--       // 4
 ```
 
 ---
@@ -50,18 +45,23 @@ kira--       // 2
 | Tuple           | `(a, b)`            | `##)`        | Kira pari                           |
 | Nabi Tuple      | `(x: 1, y: 2)`      | `##)`        | Kira nabi mîna jãni                 |
 
+```zymbol
+// Kira ome — dachi (kira, jãni, wẽra)
+meta = 42#?
+>> meta ¶         // → (###, 2, 42)
+t = meta[0]
+>> t ¶            // → ###
+```
+
 ---
 
 ## Ewandó mîna Peda
 
 ```zymbol
-// Ewandó — jã ome wẽra kira pari
 >> "Nabi" ¶                      // ¶ mîna \\ ome wẽra
 >> "a=" kira " b=" peda ¶        // ome kira wẽra jãni
->> "dachi=" ewandó(2, 3) ¶       // ewandó kira pari
 >> (dachi$#) ¶                   // kira pari ewandó wẽra
 
-// Peda
 << nabi                          // jã ome — kira peda
 << "Nabi ome? " nabi             // ome peda
 ```
@@ -70,23 +70,48 @@ kira--       // 2
 
 ---
 
-## Kira Ome
-
-Nezara wẽra pari — dachi kira ome:
+## ⚙️🔢
 
 ```zymbol
+// Jãni kira — wẽra mîna
+a = 10
+b = 3
+r1 = a + b    // 13     r2 = a - b    // 7
+r3 = a * b    // 30     r4 = a / b    // 3  (jãni kira)
+r5 = a % b    // 1      r6 = a ^ b    // 1000  (kira wẽra)
+
+// Pari ome
+a == b    // #0    a <> b    // #1    a < b    // #0
+a <= b    // #0   a > b     // #1    a >= b   // #1
+
+// Wẽra pari
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
+```
+
+---
+
+## 💬🔤
+
+```zymbol
+// Nezara wẽra pari — dachi kira ome
 nabi = "Ana"
-kira = 25
+kira = 42
 
-// 1. Ome — kira = mîna :=
-ome = "Nabi ", nabi, "!"               // → Nabi Ana!
-DACHI := "Kira: ", nabi
+ome = "Nabi ", nabi, "!"               // ome — kira = mîna :=
+>> "Nabi " nabi " kira " kira ¶        // wẽra — ewandó >>
+peda = "Nabi {nabi}, kira {kira}"      // wẽra ome — dachi nezara
+```
 
-// 2. Wẽra — ewandó >>
->> "Nabi " nabi " kira " kira ¶        // → Nabi Ana kira 25
-
-// 3. Wẽra Ome — dachi nezara
-peda = "Nabi {nabi}, kira {kira}"      // → Nabi Ana, kira 25
+```zymbol
+s = "Nabi Embera"
+len = s$#                  // 11
+sub = s$[0..4]             // "Nabi"  (jã wẽra)
+has = s$? "Embera"         // #1
+parts = "a,b,c,d" / ','    // [a, b, c, d]
+rep = s$~~["a":"A"]        // "NAbi EmberA"
+rep1 = s$~~["a":"A":1]     // "NAbi Embera"
 ```
 
 > **Dachi**: `+` jã kira wẽra pari. Ome kira wẽra nezara.
@@ -98,10 +123,8 @@ peda = "Nabi {nabi}, kira {kira}"      // → Nabi Ana, kira 25
 ```zymbol
 kira = 7
 
-// Jãni ome
 ? kira > 0 { >> "wẽra pari" ¶ }
 
-// Jãni / ome jãni / ome
 ? kira > 100 {
     >> "dachi" ¶
 } _? kira > 0 {
@@ -113,7 +136,7 @@ kira = 7
 }
 ```
 
-Kira pari `{ }` **dachi nezara**, ome kira wẽra.
+> Kira pari `{ }` **dachi nezara**, ome kira wẽra.
 
 ---
 
@@ -130,6 +153,14 @@ nezara = ?? ome {
 }
 >> nezara ¶    // → B
 
+// Match ome kira
+nabi = "babará"
+kira = ?? nabi {
+    "babará"  : "#FF0000"
+    "bupurú"  : "#00FF00"
+    _         : "#000000"
+}
+
 // Match kira wẽra
 peda = -5
 dachi = ?? peda {
@@ -140,14 +171,12 @@ dachi = ?? peda {
 }
 >> dachi ¶    // → wẽra
 
-// Match ome kira
-nabi = "babará"
-kira = ?? nabi {
-    "babará"  : "#FF0000"
-    "bupurú"  : "#00FF00"
-    _         : "#000000"
+// Match pari (kira wẽra)
+?? n {
+    0       : { >> "jã" ¶ }
+    _? n < 0: { >> "jã wẽra" ¶ }
+    _       : { >> "wẽra pari" ¶ }
 }
->> kira ¶
 ```
 
 ---
@@ -155,38 +184,43 @@ kira = ?? nabi {
 ## Naweda
 
 ```zymbol
-// Kira wẽra: 0..4 → 0,1,2,3,4
-@ i:0..4 { >> i " " }
->> ¶    // → 0 1 2 3 4
+@ i:0..4  { >> i " " }        // kira wẽra:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // kira ome:   1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // kira jã:    5 4 3 2 1 0
 
-// Kira ome wẽra
-@ i:1..9:2 { >> i " " }
->> ¶    // → 1 3 5 7 9
-
-// Kira jã ome
-@ i:5..0:1 { >> i " " }
->> ¶    // → 5 4 3 2 1 0
-
-// Wẽra ome
 kira = 1
 @ kira <= 64 { kira *= 2 }
->> kira ¶    // → 128
+>> kira ¶                     // → 128  (wẽra ome)
 
-// Kira dachi
 nabi = ["Embera", "Dachi", "Wẽra"]
-@ ome:nabi { >> ome ¶ }
+@ ome:nabi { >> ome ¶ }       // kira dachi
 
-// Ome kira wẽra
 @ c:"nabi" { >> c "-" }
->> ¶    // → n-a-b-i-
+>> ¶                          // → n-a-b-i-
 
-// Dachi mîna Wẽra
 @ i:1..10 {
-    ? i % 2 == 0 { @> }    // @> wẽra
-    ? i > 7 { @! }          // @! dachi
+    ? i % 2 == 0 { @> }       // @> wẽra
+    ? i > 7 { @! }             // @! dachi
     >> i " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Naweda jãni
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Naweda nabi (dachi mîna)
+count = 0
+@ @outer {
+    count++
+    ? count >= 3 { @! outer }
+}
+>> count ¶                    // → 3
 ```
 
 ---
@@ -194,24 +228,28 @@ nabi = ["Embera", "Dachi", "Wẽra"]
 ## Dachi Nezara
 
 ```zymbol
-// Ewandó mîna kira
 ewandó(a, b) { <~ a + b }
 >> ewandó(3, 4) ¶    // → 7
 
-// Kira ome
 dachi(kira) {
     ? kira <= 1 { <~ 1 }
     <~ kira * dachi(kira - 1)
 }
 >> dachi(5) ¶    // → 120
+```
 
-// Dachi nezara — jã kira ome wẽra
-ome = 100
-nezara() {
-    kira = 42    // ome kira
-    <~ kira
+Dachi nezara **jã kira ome wẽra** — jã wẽra pari kira. Hut'unn `<~` kira wẽra:
+
+```zymbol
+swap(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
 }
->> nezara() ¶    // → 42
+x = 10
+y = 20
+swap(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
 > **Dachi**: Ewandó nabi `ome(nembi){ }` jã kira wẽra pari.
@@ -222,26 +260,22 @@ nezara() {
 ## Lambda mîna Kira
 
 ```zymbol
-// Ome lambda (wẽra kira)
 peda = x -> x * 2
 dachi = (a, b) -> a + b
 >> peda(5) ¶     // → 10
 >> dachi(3, 7) ¶ // → 10
 
-// Lambda kira ome (wẽra kira pari)
+// Lambda kira ome
 nezara = x -> {
     ? x > 0 { <~ "wẽra pari" }
     _? x < 0 { <~ "jã wẽra" }
     <~ "jã"
 }
->> nezara(5) ¶      // → wẽra pari
->> nezara(0) ¶      // → jã
->> nezara(-5) ¶     // → jã wẽra
 
 // Kira — lambda ome wẽra pari
 kira = 3
-dachi = x -> x * kira    // kira wẽra 'kira'
->> dachi(7) ¶    // → 21
+dachi2 = x -> x * kira
+>> dachi2(7) ¶    // → 21
 
 // Ewandó kira ome
 make_adder(kira) { <~ x -> x + kira }
@@ -250,7 +284,6 @@ add10 = make_adder(10)
 
 // Lambda kira: dachi wẽra
 ome = [x -> x+1, x -> x*2, x -> x*x]
->> ome[0](5) ¶    // → 6
 >> ome[2](5) ¶    // → 25
 ```
 
@@ -259,64 +292,129 @@ ome = [x -> x+1, x -> x*2, x -> x*x]
 ## Nembira
 
 ```zymbol
-dachi = [10, 20, 30, 40, 50]
+dachi = [1, 2, 3, 4, 5]
 
-// Kira (0 ome wẽra)
->> dachi[0] ¶    // → 10
+dachi[0]          // 1 — kira (0 ome wẽra)
+dachi[-1]         // 5 — jãni kira (pari)
+dachi$#           // 5 — ome wẽra (kira wẽra >> dachi)
 
-// Ome wẽra (kira wẽra >> dachi)
-kira = dachi$#
->> (dachi$#) ¶    // → 5
+dachi = dachi$+ 6            // ewandó → [1,2,3,4,5,6]
+dachi2 = dachi$+[2] 99       // kira 2
+dachi3 = dachi$- 3           // kira jãni wẽra
+dachi4 = dachi$-- 3          // kira ibac
+dachi5 = dachi$-[0]          // kira ome
+dachi6 = dachi$-[1..3]       // kira pari (jã wẽra)
 
-// Ewandó, kira, wẽra, pari
-dachi = dachi$+ 60              // ewandó
-dachi = dachi$- 0               // kira 0
-ome = dachi$? 30                // → #1
-pari = dachi$[0..2]             // [20, 30]
+has = dachi$? 3              // #1 — wẽra ome
+pos = dachi$?? 3             // [2] — ibac ome
+sl = dachi$[0..3]            // [1,2,3] — pari (jã wẽra)
+sl2 = dachi$[0:3]            // [1,2,3] — jãni kira
 
-// Kira wẽra
-dachi[1] = 99
+asc = dachi$^+               // kira jate (naas solus)
+desc = dachi$^-              // kira nayc (naas solus)
 
-// Kira dachi
-@ x:dachi { >> x " " }
->> ¶
+// Nabi Tuple — hut'unn $^ mîna lambda
+db = [(nabi: "Carla", kira: 28), (nabi: "Ana", kira: 25), (nabi: "Bob", kira: 30)]
+by_kira = db$^ (a, b -> a.kira < b.kira)
+by_nabi = db$^ (a, b -> a.nabi > b.nabi)
+>> by_kira[0].nabi ¶     // → Ana
+>> by_nabi[0].nabi ¶     // → Carla
+
+dachi[1] = 99              // kira wẽra
+dachi = dachi[1]$~ 99      // wẽra kira — bora nembira
 ```
 
 > `$+`, `$-`, `$[..]` **kira wẽra** dachi — wẽra: `dachi = dachi$+ 4`.
 > Jã kira: peda wẽra kira ome.
+> `$^+` / `$^-` kira **naas solus**. Nabi Tuple — hut'unn `$^` mîna lambda.
+
+```zymbol
+// Nembira naasad
+matrix = [[1,2,3],[4,5,6],[7,8,9]]
+>> matrix[1][2] ¶    // → 6
+```
+
+---
+
+## 🔓📦
+
+```zymbol
+// Nembira
+dachi = [10, 20, 30, 40, 50]
+[a, b, c] = dachi              // a=10  b=20  c=30
+[first, *rest] = dachi         // first=10  rest=[20,30,40,50]
+[x, _, z] = [1, 2, 3]          // _ jã nezara
+
+// Tuple kira
+point = (100, 200)
+(px, py) = point               // px=100  py=200
+
+// Nabi Tuple
+person = (nabi: "Ana", kira: 25, city: "Babará")
+(nabi: n, kira: a) = person    // n="Ana"  a=25
+```
 
 ---
 
 ## Tuple
 
 ```zymbol
-// Nabi Tuple
+// Kira pari
+point = (10, 20)
+>> point[0] ¶    // → 10
+
+// Nabi
 nabi = (ome: "Alice", kira: 25)
 >> nabi.ome ¶     // → Alice
->> nabi.kira ¶    // → 25
->> nabi[0] ¶      // → Alice (kira ome)
+>> nabi[0] ¶      // → Alice  (kira ome)
+
+// Naasad
+pos = (x: 10, y: 20)
+p = (pos: pos, label: "embera")
+>> p.pos.x ¶        // → 10
 ```
 
 ---
 
 ## Wẽra Kira
 
-Kira ome wẽra **lambda inline** — jã lambda kira wẽra.
+> Kira ome wẽra **lambda inline** — jã lambda kira wẽra.
 
 ```zymbol
 kira = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Map ($>)
-peda = kira$> (x -> x * 2)
->> peda ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+peda = kira$> (x -> x * 2)                // map → [2,4,6…20]
+dachi = kira$| (x -> x % 2 == 0)          // filter → [2,4,6,8,10]
+nezara = kira$< (0, (ome, x) -> ome + x)  // reduce → 55
 
-// Filter ($|)
-dachi = kira$| (x -> x % 2 == 0)
->> dachi ¶    // → [2, 4, 6, 8, 10]
+// Kira wẽra
+step1 = kira$| (x -> x > 3)
+step2 = step1$> (x -> x * x)
+>> step2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Reduce ($<) — (ome kira, (ome, kira) -> wẽra)
-nezara = kira$< (0, (ome, x) -> ome + x)
->> nezara ¶    // → 55
+// Dachi naasad — peda lambda
+ewandó2(x) { <~ x * 2 }
+r = kira$> (x -> ewandó2(x))    // ✅
+```
+
+---
+
+## 🔗➡️
+
+Ibac kira wẽra `_` dachi nezara:
+
+```zymbol
+peda = x -> x * 2
+dachi = (a, b) -> a + b
+inc = x -> x + 1
+
+5 |> peda(_)        // → 10
+10 |> dachi(_, 5)   // → 15
+5 |> dachi(2, _)    // → 7
+
+// Naasad
+r = 5 |> peda(_) |> inc(_) |> peda(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -328,10 +426,8 @@ nezara = kira$< (0, (ome, x) -> ome + x)
     x = 10 / 0
 } :! ##Div {
     >> "Kira jã wẽra" ¶
-} :! ##IO {
-    >> "IO kira" ¶
 } :! {
-    >> "ome kira: " _err ¶
+    >> "ome kira: " _err ¶    // _err kira ome wẽra
 } :> {
     >> "dachi wẽra" ¶
 }
@@ -352,7 +448,7 @@ nezara = kira$< (0, (ome, x) -> ome + x)
 ## Ome Wẽra
 
 ```zymbol
-// Kira: lib/dachi.zy
+// lib/dachi.zy
 # dachi
 
 #> { ewandó, get_DACHI }    // Kira wẽra DACHI nezara
@@ -363,13 +459,76 @@ get_DACHI() { <~ _DACHI }
 ```
 
 ```zymbol
-// Kira: main.zy
+// main.zy
 <# ./lib/dachi <= d    // Kira wẽra dachi
 
 >> d::ewandó(5, 3) ¶   // → 8
 pari = d::get_DACHI()
 >> pari ¶              // → 3.14159
 ```
+
+```zymbol
+// Nabi kira ome
+# mylib
+#> { _ibac_ewandó <= ibac }
+
+_ibac_ewandó(a, b) { <~ a + b }
+```
+
+```zymbol
+<# ./mylib <= m
+
+>> m::ibac(3, 4) ¶    // → 7
+```
+
+---
+
+## 📊⚙️
+
+```zymbol
+// Kira jãni ome wẽra
+v1 = #|"42"|      // → 42  (Jãni Kira)
+v2 = #|"3.14"|    // → 3.14  (Wẽra Kira)
+v3 = #|"abc"|     // → "abc"  (jã wẽra)
+
+// Pari / kira
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14  (kira)
+
+// Ome kira
+fmt = #,|1234567|      // → 1,234,567
+sci = #^|12345.678|    // → 1.2345678e4
+
+// Naas kira
+a = 0x41         // → 'A'  (hex)
+b = 0b01000001   // → 'A'  (binary)
+c = 0o101        // → 'A'  (octal)
+
+// Wẽra naas
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
+```
+
+---
+
+## 🐚🔌
+
+```zymbol
+date = <\ date +%Y-%m-%d \>     // kira stdout (mîna ome wẽra)
+>> "Kira: " date
+
+tebec = "data.txt"
+content = <\ cat {tebec} \>     // wẽra ome kira
+
+output = </"./sub.zy"/>         // ewandó zy kira, peda
+>> output
+```
+
+> `><` kira CLI jãni ome wẽra pari (jãni solus).
 
 ---
 
@@ -390,34 +549,41 @@ ewandó(nembi) {
 
 ## Kira Pari
 
-| Symbol  | Kira Ome           | Symbol     | Kira Ome              |
-|---------|--------------------|------------|-----------------------|
-| `=`     | Kira               | `$#`       | Ome wẽra              |
-| `:=`    | Jãni Pari          | `$+`       | Ewandó                |
-| `>>`    | Dachi              | `$-`       | Kira (jãni)           |
-| `<<`    | Peda               | `$?`       | Wẽra ome              |
-| `¶`/`\` | Ome wẽra           | `$[s..e]`  | Kira pari             |
-| `?`     | Jaida (if)         | `$>`       | map                   |
-| `_?`    | Ome jaida (elif)   | `$\|`      | filter                |
-| `_`     | Ome / kira pari    | `$<`       | reduce                |
-| `??`    | match              | `!?`       | Jãni (try)            |
-| `@`     | Naweda             | `:!`       | Kira (catch)          |
-| `@!`    | Dachi (break)      | `:>`       | Dachi wẽra (finally)  |
-| `@>`    | Wẽra (continue)    | `$!`       | Kira wẽra             |
-| `->`    | Lambda             | `$!!`      | Kira pari             |
-| `<~`    | Nezara (return)    | `#`        | Ome wẽra dachi        |
-| `\|>`   | Pipe               | `#>`       | Dachi kira            |
-| `#1`    | Wẽra (#1)          | `<#`       | Peda kira             |
-| `#0`    | Jã (#0)            | `::`       | Ome kira              |
+| Symbol  | Kira Ome           | Symbol       | Kira Ome              |
+|---------|--------------------|--------------|------------------------|
+| `=`     | Kira               | `$#`         | Ome wẽra              |
+| `:=`    | Jãni Pari          | `$+`         | Ewandó                |
+| `>>`    | Dachi              | `$+[i]`      | Kira ome              |
+| `<<`    | Peda               | `$-`         | Kira jãni             |
+| `¶`/`\\`| Ome wẽra           | `$--`        | Kira ibac             |
+| `?`     | Jaida (if)         | `$-[i]`      | Kira ome              |
+| `_?`    | Ome jaida (elif)   | `$-[i..j]`   | Kira pari             |
+| `_`     | Ome / kira pari    | `$?`         | Wẽra ome              |
+| `??`    | match              | `$??`        | Ibac ome              |
+| `@`     | Naweda             | `$[s..e]`    | Kira pari             |
+| `@!`    | Dachi (break)      | `$>`         | map                   |
+| `@>`    | Wẽra (continue)    | `$\|`        | filter                |
+| `->`    | Lambda             | `$<`         | reduce                |
+| `$^+`   | Kira jate          | `$^-`        | Kira nayc             |
+| `$^`    | Kira lambda        |              |                       |
+| `<~`    | Nezara (return)    | `!?`         | Jãni (try)            |
+| `\|>`   | Pipe               | `:!`         | Kira (catch)          |
+| `#1`    | Wẽra (#1)          | `:>`         | Dachi wẽra (finally)  |
+| `#0`    | Jã (#0)            | `$!`         | Kira wẽra             |
+| `<#`    | Peda kira          | `$!!`        | Kira pari             |
+| `#`     | Ome wẽra dachi     | `#>`         | Dachi kira            |
+| `::`    | Ome kira           | `.`          | Kira ome              |
+| `#\|..\|`| Kira jãni        | `#?`         | Kira ome naas         |
+| `#.N\|..\|`| Pari           | `#!N\|..\|`  | Kira                  |
+| `c\|..\|`| Ome kira comma   | `e\|..\|`    | Naas'ika              |
+| `<\ ..\>`| Shell ewandó     | `>\<`        | CLI kira              |
 
 ---
 
 *Zymbol-Lang — Kira. Dachi. Jãni Pari.*
 
----
-
-> **Dachi Nezara:** Ome wẽra kira pari dachi nezara ome kira wẽra. Kira ome wẽra pari dachi nezara kira ome. Kira pari wẽra: [Zymbol-Lang](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> **Dachi Nezara:** Ome wẽra kira pari dachi nezara ome kira wẽra. Kira ome wẽra pari dachi nezara kira ome. Kira pari wẽra: [Zymbol-Lang](https://github.com/zymbol-lang/interpreter).
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-> The authoritative reference is the [Zymbol-Lang specification](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> The authoritative reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).

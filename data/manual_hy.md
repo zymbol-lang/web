@@ -1,126 +1,149 @@
-# Zymbol-Lang-ի Կոմpaktт Ուghеtsuytс
+# Zymbol-Lang-ի Կոմպակտ Ուղեցույց
 
-**Zymbol-Lang**-ы mek khоrhrhdanshakaн ծragramavorman lezvu e — arants himnabarerer, miayн khоrhrhdanishner. Ayn havasarapes ashkhatum e tsankatsad mardkayan lezuov.
+**Zymbol-Lang**-ը խորհրդանշական ծրագրավորման լեզու է — առանց հիմնաբառերի, միայն խորհրդանիշներ. Այն հավասարապես աշխատում է ցանկացած մարդկային լեզվով:
 
----
-
-## Փilisofayutyun
-
-- Chkan himnabarerer (`if`, `while`, `return` goyutyun chunen — miayн `?`, `@`, `<~` khоrhrhdanishner)
-- Unicode-i liarzhek ajaktsutyun — nuynatstsutsichner tsankatsad lezuov kam emoji 👋
-- Lezvu-ankakh — kody nuynn e barjor lezunerum
+- Չկան հիմնաբառեր (`if`, `while`, `return` գոյություն չունեն — միայն `?`, `@`, `<~` խորհրդանիշներ)
+- Unicode-ի լիարժեք աջակցություն — նույնացուցիչներ ցանկացած լեզվով կամ emoji 👋
+- Լեզու-անկախ — կոդը նույնն է բարձր լեզուներում
 
 ---
 
-## Փohohkhanner ev Hastatunner
+## Փոփոխականներ և Հաստատուններ
 
 ```zymbol
-բ = 10              // Pohokvor (karogh e pohohvel)
-ՊԻ := 3.14159       // Hastatun (ankerokh — krknakin veragortsadume sgal e)
-anun = "Անи"
-ակտ = #1          // bulyаn chshmarе
-👋 := "Barrev"
+բ = 10              // Փոփոխական (կարող է փոփոխվել)
+ՊԻ := 3.14159       // Հաստատուն (անփոփոխ — կրկնակի վերագործածումը սխալ է)
+anun = "Անի"
+akt = #1            // բուլյան ճշմարե
+👋 := "Բարև"
 ```
 
-### Bаrd Veragortsadum
-
 ```zymbol
-բ = 10    // 10
+բ = 10
 բ += 5    // 15
 բ -= 3    // 12
 բ *= 2    // 24
-բ /= 4    // 6
-բ %= 4    // 2
-բ++       // 3
-բ--       // 2
+բ /= 3    // 8
+բ %= 3    // 2
+բ ^= 2    // 4
+բ++       // 5
+բ--       // 4
 ```
 
 ---
 
-## Tvyalneri Tesakner
+## Տվյալների Տեսակներ
 
-| Tesak                | Orinak              | `#?` Nishan | Tsanotutyunner                           |
+| Տեսակ                | Օրինակ              | `#?` Նիշ    | Ծանոթություններ                          |
 |----------------------|---------------------|-------------|------------------------------------------|
-| Amboghdj t'iv        | `42`, `-7`          | `###`       | 64-bit nshanоv                           |
-| Loghatsak t'iv       | `3.14`, `1.5e10`    | `##.`       | Gitakan nshum ajaktsvum e                |
-| Togh                 | `"barrev"`          | `##"`       | Interpolatsia: `"Barrev {anun}"`         |
-| Nish                 | `'Ա'`               | `##'`       | Unicode-i mek nish                       |
-| Bulyаn               | `#1`, `#0`          | `##?`       | CHEN t'ver 1 ev 0                        |
-| Zandzvadd            | `[1, 2, 3]`         | `##]`       | Bolor tarrery nuynn tesaki               |
-| Kortej               | `(ա, բ)`            | `##)`       | Dirakanayin                              |
-| Anvanakir kortej     | `(x: 1, y: 2)`      | `##)`       | Hasaneliyutyun anvamb kam indeksov       |
-
----
-
-## Yelk ev Muutk
+| Ամբողջ թիվ           | `42`, `-7`          | `###`       | 64-bit նշանով                           |
+| Լողացող թիվ          | `3.14`, `1.5e10`    | `##.`       | Գիտական նշում ընդունվում է              |
+| Տող                  | `"barrev"`          | `##"`       | Ինտերպոլացիա: `"Բարև {anun}"`          |
+| Նիշ                  | `'Ա'`               | `##'`       | Unicode-ի մեկ նիշ                       |
+| Բուլյան              | `#1`, `#0`          | `##?`       | ՉԵՆ թվեր 1 և 0                         |
+| Զանգված              | `[1, 2, 3]`         | `##]`       | Բոլոր տարրերը նույն տեսակի              |
+| Կորտեժ               | `(ա, բ)`            | `##)`       | Դիրքային                                |
+| Անվանակիր կորտեժ     | `(x: 1, y: 2)`      | `##)`       | Հասանելիություն անվամբ կամ ինդեքսով    |
 
 ```zymbol
-// Yelk — CHEN avelatsnuм toghi yndmijum аvtomatik
->> "Բarrev, Аshkharh!" ¶             // ¶ kam \\ — batsahayt toghi yndmijum
->> "a=" ա " b=" բ ¶                  // bazmatip arzhekner juxtaposition-ov
->> "gumar=" gumar(2, 3) ¶            // funksioner tsankatsad dirkum
->> (zandzvadd$#) ¶                   // postfix oper-ner partezner en pahanjum
-
-// Muutk
-<< arzhek                            // arants artakhatsutyan — kardaghum e zhanghov
-<< "Zer anunny? " anun               // artakhatsutyan het
+// Տիպի ինտրոսպեկցիա — վերադարձնում է (տիպ, թվանշաններ, արժեք)
+meta = 42#?
+>> meta ¶         // → (###, 2, 42)
+t = meta[0]
+>> t ¶            // → ###
 ```
-
-> `¶` ev `\\` havasarek en orpes toghi yndmijum.
 
 ---
 
-## Togherі Ktsum
-
-Yerek t'uylatreli dzev — inkuruyn irakanshnutyan hamar:
+## Ելք և Մուտք
 
 ```zymbol
-anun = "Ani"
-ն = 25
+>> "Բարև, Աշխարհ!" ¶             // ¶ կամ \\ — բացահայտ տողի ընդմիջում
+>> "a=" ա " b=" բ ¶               // բազմատիպ արժեքներ juxtaposition-ով
+>> (zandzvadd$#) ¶                // postfix օператորները փակագծեր են պահանջում
 
-// 1. Shtaputyl (,) — = kam := veragortsadum
-haghordakum = "Barrev ", anun, "!"          // → Barrev Ani!
-VUJERAGRAM := "Vodzogh: ", anun
-
-// 2. Juxtaposition — >> yelkum
->> "Barrev " anun " kez " ն ¶              // → Barrev Ani kez 25
-
-// 3. Interpolatsia — tsankatsad kontekstum
-nkarutyun = "Barrev {anun}, kez {n}"       // → Barrev Ani, kez 25
+<< arzhek                         // առանց հուշման — կարդում է փոփոխականի մեջ
+<< "Ձեր անունը? " anun            // հուշումով
 ```
 
-> **Nkatagrutyun**: `+` miayn t'veri hamar. Togheri hamar zgushagrutyun e arajanatsnum.
+> `¶` և `\\` համարժեք են որպես տողի ընդմիջում:
 
 ---
 
-## Hosmi Karavarum
+## Գործողություններ
+
+```zymbol
+// Թվաբանություն
+ա = 10
+բ = 3
+ա1 = ա + բ    // 13     ա2 = ա - բ    // 7
+ա3 = ա * բ    // 30     ա4 = ա / բ    // 3  (ամբողջ բաժանում)
+ա5 = ա % բ    // 1      ա6 = ա ^ բ    // 1000  (աստիճան)
+
+// Համեմատություն
+ա == բ    // #0    ա <> բ    // #1    ա < բ    // #0
+ա <= բ    // #0   ա > բ     // #1    ա >= բ   // #1
+
+// Տրամաբանություն
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
+```
+
+---
+
+## Տողեր
+
+```zymbol
+// Երեք կոնկատենացիայի ձև
+anun = "Անի"
+n = 42
+
+haghordakum = "Բարև ", anun, "!"           // ստորակետ — վերագործածումներում
+>> "Բարև " anun " կեզ " n ¶               // juxtaposition — >> ելքում
+nkarutyun = "Բարև {anun}, կեզ {n}"        // ինտերպոլացիա — ամենուր
+```
+
+```zymbol
+s = "Hello World"
+yerkartutyun = s$#              // 11
+qvetex = s$[0..5]               // "Hello"  (վերջը բացառված)
+ka = s$? "World"                // #1
+maser = "a,b,c,d" / ','         // [a, b, c, d]
+poxar = s$~~["l":"L"]           // "HeLLo WorLd"
+poxar1 = s$~~["l":"L":1]        // "HeLlo World"  (առաջին N)
+```
+
+> `+` միայն թվերի համար է: Տողերի համար օգտագործեք `,`, juxtaposition կամ ինտերպոլացիա:
+
+---
+
+## Հոսքի Կառավարում
 
 ```zymbol
 բ = 7
 
-// Phart punj
-? բ > 0 { >> "dartakan" ¶ }
+? բ > 0 { >> "դրական" ¶ }
 
-// Etye / aylapes etye / aylapes
 ? բ > 100 {
-    >> "mets" ¶
+    >> "մեծ" ¶
 } _? բ > 0 {
-    >> "dartakan" ¶
+    >> "դրական" ¶
 } _? բ == 0 {
-    >> "zero" ¶
+    >> "զրո" ¶
 } _ {
-    >> "batsasasats" ¶
+    >> "բացասական" ¶
 }
 ```
 
-`{ }` bloknery **pambatokan** en, anham mek tarriqi hamar.
+> `{ }` բլոկները **պարտադիր** են, անգամ մեկ տողի համար:
 
 ---
 
-## Hamaynknum (Match)
+## Համընկնում (Match)
 
 ```zymbol
-// Hamaynknum diapazoneri het
+// Տիրույթներ
 gnahatakan = 85
 ardyunq = ?? gnahatakan {
     90..100 : 'Ա'
@@ -130,7 +153,15 @@ ardyunq = ?? gnahatakan {
 }
 >> ardyunq ¶    // → Բ
 
-// Hamaynknum pahanjnerov (kamovor punjer)
+// Տողեր
+guyn = "kantach"
+kod = ?? guyn {
+    "kantach"  : "#FF0000"
+    "kanach"   : "#00FF00"
+    _          : "#000000"
+}
+
+// Պահապաններ
 jermastikan = -5
 vichak = ?? jermastikan {
     _? jermastikan < 0  : "saruyts"
@@ -140,291 +171,420 @@ vichak = ?? jermastikan {
 }
 >> vichak ¶    // → saruyts
 
-// Hamaynknum togherі het
-guyn = "kantach"
-kod = ?? guyn {
-    "kantach"  : "#FF0000"
-    "kanach"   : "#00FF00"
-    _          : "#000000"
+// Հայտարարության ձև (բլոկ-ճյուղեր)
+?? n {
+    0       : { >> "զրո" ¶ }
+    _? n < 0: { >> "բացասական" ¶ }
+    _       : { >> "դրական" ¶ }
 }
->> kod ¶
 ```
 
 ---
 
-## Vikler (Loops)
+## Ցիկլեր (Loops)
 
 ```zymbol
-// Yndgreli diapazon: 0..4 iteratsionem 0,1,2,3,4
-@ ի:0..4 { >> ի " " }
->> ¶    // → 0 1 2 3 4
+@ ի:0..4  { >> ի " " }        // ներառական տիրույթ: 0 1 2 3 4
+@ ի:1..9:2 { >> ի " " }       // քայլով: 1 3 5 7 9
+@ ի:5..0:1 { >> ի " " }       // հակառակ: 5 4 3 2 1 0
 
-// Diapazon qaуlumov
-@ ի:1..9:2 { >> ի " " }
->> ¶    // → 1 3 5 7 9
+n = 1
+@ n <= 64 { n *= 2 }
+>> n ¶                        // → 128  (while)
 
-// Heros diapazon
-@ ի:5..0:1 { >> ի " " }
->> ¶    // → 5 4 3 2 1 0
-
-// Minchdev (while)
-ն = 1
-@ ն <= 64 { ն *= 2 }
->> ն ¶    // → 128
-
-// Yuraqanchyur tarrerі hamar
 meyvaner = ["khntsor", "tandzeni", "khaghogh"]
-@ m:meyvaner { >> m ¶ }
+@ m:meyvaner { >> m ¶ }       // for-each զանգվածի վրա
 
-// Toghi nishnerov
 @ s:"barrev" { >> s "-" }
->> ¶    // → b-a-r-r-e-v-
+>> ¶                          // → b-a-r-r-e-v-  (for-each տող)
 
-// Break ev Continue
 @ ի:1..10 {
-    ? ի % 2 == 0 { @> }    // @> sharunakel
-    ? ի > 7 { @! }          // @! kangangel
+    ? ի % 2 == 0 { @> }       // @> շարունակել
+    ? ի > 7 { @! }             // @! կանգնեցնել
     >> ի " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Անվերջ ցիկլ
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Պիտակավորված ցիկլ (ներդրված կանգ)
+count = 0
+@ @outer {
+    count++
+    ? count >= 3 { @! outer }
+}
+>> count ¶                    // → 3
 ```
 
 ---
 
-## Funksioner (Functions)
+## Ֆունկցիաներ (Functions)
 
 ```zymbol
-// Hasatakum ev kanchoum
-գumár(ա, բ) { <~ ա + բ }
->> գumár(3, 4) ¶    // → 7
+gumar(ա, բ) { <~ ա + բ }
+>> gumar(3, 4) ¶    // → 7
 
-// Rekursia
-արtadriyal(ն) {
+factorial(ն) {
     ? ն <= 1 { <~ 1 }
-    <~ ն * արtadriyal(ն - 1)
+    <~ ն * factorial(ն - 1)
 }
->> արtadriyal(5) ¶    // → 120
-
-// Funksioner-n unin skopy — chka artakin perakneri hasaneliyutyun
-globalayin = 100
-փorz() {
-    բ = 42    // miayn tegayin
-    <~ բ
-}
->> փorz() ¶    // → 42
+>> factorial(5) ¶    // → 120
 ```
 
-> **Karevov**: Anvanakir funksioner `anun(paramner){ }` artakin dasayi tarkeri chi linum.
-> Argument pes heretarum — pokhum: `x -> anun(x)`.
+Ֆունկցիաները ունեն **մեկուսացված շրջանակ** — չեն կարող կարդալ արտաքին փոփոխականներ: Օգտագործեք `<~` ելքային պարամետրեր կանչողի փոփոխականները փոփոխելու համար:
+
+```zymbol
+togh(ա<~, բ<~) {
+    tmp = ա
+    ա = բ
+    բ = tmp
+}
+x = 10
+y = 20
+togh(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> Անվանակիր ֆունկցիաները առաջին կարգի չեն: Փաստարկ փոխանցելու համար փաթաթեք. `x -> gumar(x)`:
 
 ---
 
-## Lamβdaner ev Amraphner
+## Լամբդաներ և Ամրափներ
 
 ```zymbol
-// Phart Lamβda (anbashtakar veradardz)
-կrknakim = բ -> բ * 2
-գumár = (ա, բ) -> ա + բ
->> կrknakim(5) ¶    // → 10
->> գumár(3, 7) ¶    // → 10
+krknakim = բ -> բ * 2
+gumar = (ա, բ) -> ա + բ
+>> krknakim(5) ¶    // → 10
+>> gumar(3, 7) ¶    // → 10
 
-// Lamβda blokov (baschaytakar veradardz)
-dasакargeл_arj = բ -> {
-    ? բ > 0 { <~ "dartakan" }
-    _? բ < 0 { <~ "batsasasats" }
-    <~ "zero"
+// Բլոկ-լամբդա
+dasakargel = բ -> {
+    ? բ > 0 { <~ "դրական" }
+    _? բ < 0 { <~ "բացասական" }
+    <~ "զրո"
 }
->> dasакargeл_arj(5) ¶     // → dartakan
->> dasакargeл_arj(0) ¶     // → zero
->> dasакargeл_arj(-5) ¶    // → batsasasats
 
-// Amraphner — Lamβdaner gravum en artakin perakkneri
-գործ = 3
-eraki = բ -> բ * գործ    // gravum e 'gorcakits'
+// Ամրափ — լամբդան գրավում է արտաքին շրջանակը
+gorts = 3
+eraki = բ -> բ * gorts
 >> eraki(7) ¶    // → 21
 
-// Funksioner gorcanich
-կազմ(ն) { <~ բ -> բ + ն }
-տաս = կազմ(10)
->> տաս(5) ¶    // → 15
+// Ֆաբրիկ
+kazm(ն) { <~ բ -> բ + ն }
+tas = kazm(10)
+>> tas(5) ¶    // → 15
 
-// Lamβdaner ors arzheknerov: petakvum en zandzvadd-nerum
+// Զանգվածում
 gortsoghutyunner = [բ -> բ+1, բ -> բ*2, բ -> բ*բ]
->> gortsoghutyunner[0](5) ¶    // → 6
 >> gortsoghutyunner[2](5) ¶    // → 25
 ```
 
 ---
 
-## Zandzvadder (Arrays)
+## Զանգվածներ (Arrays)
 
 ```zymbol
-zandzvadd = [10, 20, 30, 40, 50]
+zandzvadd = [1, 2, 3, 4, 5]
 
-// Hasaneliyutyun (indeks zerojic)
->> zandzvadd[0] ¶    // → 10
+zandzvadd[0]          // 1 — հասանելիություն (0-ից ինդեքս)
+zandzvadd[-1]         // 5 — բացասական ինդեքս (վերջին)
+zandzvadd$#           // 5 — երկարություն (>> -ում (zandzvadd$#) օգտագործեք)
 
-// Yerkartutyun (partezner pambatokan >> -um)
-ն = zandzvadd$#
->> (zandzvadd$#) ¶    // → 5
+zandzvadd = zandzvadd$+ 6            // ավելացնել → [1,2,3,4,5,6]
+z2 = zandzvadd$+[2] 99               // ներդնել ինդեքս 2-ում
+z3 = zandzvadd$- 3                   // հեռացնել արժեքի առաջին հանդիպումը
+z4 = zandzvadd$-- 3                  // հեռացնել բոլոր հանդիպումները
+z5 = zandzvadd$-[0]                  // հեռացնել ինդեքսով
+z6 = zandzvadd$-[1..3]               // հեռացնել տիրույթ (վերջը բացառված)
 
-// Avelaсnel, hatanel, petakum, ktom
-zandzvadd = zandzvadd$+ 60              // avelaсnel
-zandzvadd = zandzvadd$- 0               // hatanel tarri indeksov 0
-ka = zandzvadd$? 30                     // → #1
-ktom = zandzvadd$[0..2]                 // [20, 30]
+ka = zandzvadd$? 3                   // #1 — պարունակում է
+pos = zandzvadd$?? 3                 // [2] — բոլոր ինդեքսները
+qvetex = zandzvadd$[0..3]            // [1,2,3] — հատված (վերջը բացառված)
+qvetex2 = zandzvadd$[0:3]            // [1,2,3] — նույնը, հաշվի վրա հիմնված
 
-// Tarri tangelem
-zandzvadd[1] = 99
+asc = zandzvadd$^+                   // աճման դասավորություն  (միայն պրիմիտիվներ)
+desc = zandzvadd$^-                  // նվազման դասավորություն (միայն պրիմիտիվներ)
 
-// Yuraqanchyur zandzvadd-ov
-@ բ:zandzvadd { >> բ " " }
->> ¶
+// Անվանակիր/դիրքային կորտեժ զանգվածներ — $^ կոմparat-ov lambda-ov
+db = [(anun: "Carla", hasak: 28), (anun: "Ani", hasak: 25), (anun: "Bob", hasak: 30)]
+by_age  = db$^ (a, b -> a.hasak < b.hasak)    // աճման ըստ տարիք  (<)
+by_name = db$^ (a, b -> a.anun > b.anun)      // նվազման ըստ անուն (>)
+>> by_age[0].anun ¶     // → Ani
+>> by_name[0].anun ¶    // → Carla
+
+zandzvadd[1] = 99              // թարմացնել տեղում
+zandzvadd = zandzvadd[1]$~ 99  // ֆունկցիոնալ թարմացում — վերադարձնում է նոր զանգված
 ```
 
-> `$+`, `$-`, `$[..]` veradardznume **nor zandzvadd** — veragortsadrel: `zandzvadd = zandzvadd$+ 4`.
-> Chi khachvum shancherov: oranel yerku ank'akh veragortsadutyun.
+> Բոլոր կոլեկցիա-օператորները **նոր զանգված** են վերադարձնում: Վերագործածեք. `zandzvadd = zandzvadd$+ 4`:
+> Օператորները չեն կարող շղթայվել — օգտագործեք ժամանակավոր փոփոխականներ:
+> `$^+` / `$^-` դասավորում են **պրիմիտիվ զանգվածներ** (թվեր, տողեր): Կորտեժ զանգվածների համար օգտագործեք `$^` կոմparatorovlambda-ով:
+
+```zymbol
+// Ներդրված զանգվածներ
+matrix = [[1,2,3],[4,5,6],[7,8,9]]
+>> matrix[1][2] ¶    // → 6
+```
 
 ---
 
-## Kortejer (Թupelner)
+## Ապակառուցում
 
 ```zymbol
-// Anvanakir kortej
+// Զանգված
+zandzvadd = [10, 20, 30, 40, 50]
+[a, b, c] = zandzvadd              // a=10  b=20  c=30
+[first, *rest] = zandzvadd         // first=10  rest=[20,30,40,50]
+[x, _, z] = [1, 2, 3]              // _ բաց է թողնում
+
+// Դիրքային կորտեժ
+point = (100, 200)
+(px, py) = point                   // px=100  py=200
+
+// Անվանակիր կորտեժ
+person = (anun: "Անի", hasak: 25, kaghak: "Երևան")
+(anun: n, hasak: a) = person       // n="Անի"  a=25
+```
+
+---
+
+## Կորտեժներ (Թupelner)
+
+```zymbol
+// Դիրքային
+point = (10, 20)
+>> point[0] ¶    // → 10
+
+// Անվանակիր
 անձ = (anun: "Alisa", hasak: 25)
 >> անձ.anun ¶     // → Alisa
->> անձ.hasak ¶    // → 25
->> անձ[0] ¶       // → Alisa (indeksov el ashkhatum e)
+>> անձ[0] ¶       // → Alisa  (ինդեքսն էլ է աշխատում)
+
+// Ներդրված
+pos = (x: 10, y: 20)
+p = (pos: pos, label: "origin")
+>> p.pos.x ¶        // → 10
 ```
 
 ---
 
-## Bardzr Karqi Funksioner (HOF)
+## Բարձր Կարգի Ֆունկցիաներ (HOF)
 
-HOF оperatornery pahanjum en **enkamats Lamβda** — vocch ugrakan Lamβda-perakner:
+> HOF-ի օператորները **ներդրված լամբդա** են պահանջում — ոչ ուղղակի լամբդա-փոփոխական:
 
 ```zymbol
-թvner = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+tvner = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Map ($>)
-կrknakinert = թvner$> (բ -> բ * 2)
->> կrknakinert ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+krknakinert  = tvner$> (բ -> բ * 2)                // map  → [2,4,6…20]
+zuig         = tvner$| (բ -> բ % 2 == 0)           // filter → [2,4,6,8,10]
+yndameny     = tvner$< (0, (akk, բ) -> akk + բ)    // reduce → 55
 
-// Filter ($|)
-zuig = թvner$| (բ -> բ % 2 == 0)
->> zuig ¶    // → [2, 4, 6, 8, 10]
+// Շղթա ժամանակավոր փոփոխականներով
+step1 = tvner$| (բ -> բ > 3)
+step2 = step1$> (բ -> բ * բ)
+>> step2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Reduce ($<) — (skzbnakan arzhek, (akkumulyator, tarr) -> artatahaytutyun)
-yndameny = թvner$< (0, (akk, բ) -> akk + բ)
->> yndameny ¶    // → 55
+// Անվանակիր ֆունկցիաներ HOF-ում — փաթաթեք lambda-ի մեջ
+double(x) { <~ x * 2 }
+r = tvner$> (x -> double(x))    // ✅
 ```
 
 ---
 
-## Sgalneri Mshakutyun (Error Handling)
+## Խողովակի Գործողություն
+
+Աջ կողմը միշտ պահանջում է `_` որպես տեղապահ:
+
+```zymbol
+double = x -> x * 2
+add = (a, b) -> a + b
+inc = x -> x + 1
+
+5 |> double(_)        // → 10
+10 |> add(_, 5)       // → 15
+5 |> add(2, _)        // → 7
+
+// Շղթայված
+r = 5 |> double(_) |> inc(_) |> double(_)
+>> r ¶    // → 22  (5→10→11→22)
+```
+
+---
+
+## Սխալների Մշակում (Error Handling)
 
 ```zymbol
 !? {
     բ = 10 / 0
 } :! ##Div {
-    >> "bazhanоumn zero-ov" ¶
-} :! ##IO {
-    >> "mutk-yelk sgal" ¶
+    >> "բաժանումն զրոյով" ¶
 } :! {
-    >> "ayl sgal: " _err ¶
+    >> "այլ սխալ: " _err ¶    // _err-ը պահում է սխալի հաղորդագրությունը
 } :> {
-    >> "misht gortsvum e" ¶
+    >> "միշտ գործվում է" ¶
 }
 ```
 
-| Tesakavor    | Yerp e arajanatsnum                       |
-|--------------|-------------------------------------------|
-| `##Div`      | Bazhanоumn zeroy vra                      |
-| `##IO`       | Fail / hamakarg                           |
-| `##Index`    | Indeksn diapazonits durs                  |
-| `##Type`     | Tesakayin sgal                            |
-| `##Parse`    | Verclutsmayin sgal                        |
-| `##Network`  | Tsarkayayin sgal                          |
-| `##_`        | Tsankatsad sgal (universaland catch)      |
+| Տեսակ        | Երբ է առաջանում                       |
+|--------------|---------------------------------------|
+| `##Div`      | Բաժանումն զրոյի վրա                   |
+| `##IO`       | Ֆայл / համակարգ                       |
+| `##Index`    | Ինդեքսն տիրույթից դուրս               |
+| `##Type`     | Տեսակային սխալ                        |
+| `##Parse`    | Վերծուծماbյան սխալ                    |
+| `##Network`  | Ցանցային սխալ                         |
+| `##_`        | Ցանկացած սխալ (universand catch)      |
 
 ---
 
-## Modulner (Modules)
+## Մոդուլներ (Modules)
 
 ```zymbol
-// Fail: lib/hisvabl.zy
+// Ֆայլ: lib/hisvabl.zy
 # hisvabl
 
-#> { գumár, get_PI }    // Eksportel SKZBNAKIN sarhmanutyunnery
+#> { gumar, get_PI }    // Արտadրվածությունները ՍԿԶԲՆԱԿԱՆ սահমանումներից առաջ
 
 _PI := 3.14159
-գumár(ա, բ) { <~ ա + բ }
+gumar(ա, բ) { <~ ա + բ }
 get_PI() { <~ _PI }
 ```
 
 ```zymbol
-// Fail: main.zy
-<# ./lib/hisvabl <= h    // Klanumy pambatokan e
+// Ֆայլ: main.zy
+<# ./lib/hisvabl <= h    // Կlanumy պarտadіran e
 
->> h::գumár(5, 3) ¶  // → 8
+>> h::gumar(5, 3) ¶  // → 8
 pi = h::get_PI()
 >> pi ¶              // → 3.14159
 ```
 
----
+```zymbol
+// Արտadրել այլ հանրային անվամب
+# mylib
+#> { _internal_add <= sum }
 
-## Amboghj Оrinakn: FizzBuzz
+_internal_add(a, b) { <~ a + b }
+```
 
 ```zymbol
-// FizzBuzz — Հayererеn
-// Հayererеn nuynatstsutsichner. Оperatornery misht khоrhrhdanshakanner en.
+<# ./mylib <= m
 
->> "Բarrev, Аshkharh!" ¶
-
-դасакарgeл(թиv) {
-    ? թиv % 15 == 0 { <~ "ՊghpjakԲzzots" }
-    _? թиv % 3  == 0 { <~ "Պghpjak" }
-    _? թиv % 5  == 0 { <~ "Բzzots" }
-    _ { <~ թиv }
-}
-
-@ ի:1..20 { >> դасакарgeл(ի) ¶ }
+>> m::sum(3, 4) ¶    // → 7  (ներքին անուն _internal_add թաquyt e)
 ```
 
 ---
 
-## Nishanneri Teghanuts (Symbols Reference)
+## Տվյալների Գործողություններ
+
+```zymbol
+// Տողը թվի վերածում
+v1 = #|"42"|      // → 42  (Int)
+v2 = #|"3.14"|    // → 3.14  (Float)
+v3 = #|"abc"|     // → "abc"  (անվտանg)
+
+// Կlort / կtrunc
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14
+
+// Թvayi ձevavorutyun
+fmt = #,|1234567|      // → 1,234,567
+sci = #^|12345.678|    // → 1.2345678e4
+
+// Baze-i literal
+a = 0x41         // → 'A'
+b = 0b01000001   // → 'A'
+c = 0o101        // → 'A'
+
+// Baze-i konvertsia
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
+```
+
+---
+
+## Shell ինտեգրում
+
+```zymbol
+date = <\ date +%Y-%m-%d \>     // stdout-ի ֆixum
+>> "Aysor: " date
+
+file = "data.txt"
+content = <\ cat {file} \>      // ինterpoliatsia-yvstovneri mej
+
+output = </"./subscript.zy"/>   // Zymbol script-i gortsardkum
+>> output
+```
+
+> `><` ֆixum e CLI argumenny vorpes togheri zandzvadd (miayн tree-walker):
+
+---
+
+## Ամboghdj Оrinakn: FizzBuzz
+
+```zymbol
+dasakargel(tiv) {
+    ? tiv % 15 == 0 { <~ "ՊgpjakBzzots" }
+    _? tiv % 3  == 0 { <~ "Պgpjak" }
+    _? tiv % 5  == 0 { <~ "Bzzots" }
+    _ { <~ tiv }
+}
+
+@ ի:1..20 { >> dasakargel(ի) ¶ }
+```
+
+---
+
+## Նիշanneri Teghanuts (Symbol Reference)
 
 | Nishan       | Gortsoghutyun               | Nishan      | Gortsoghutyun                   |
 |--------------|-----------------------------|-------------|----------------------------------|
-| `=`          | Pohokvor                    | `$#`        | Yerkartutyun                     |
-| `:=`         | Hastatum                    | `$+`        | Avelaсnel                        |
-| `>>`         | Yelk                        | `$-`        | Hatanel (indeksov)               |
-| `<<`         | Muutk                       | `$?`        | Petakum                          |
-| `¶`/`\`      | Toghi yndmijum              | `$[n..k]`   | Ktom                             |
-| `?`          | etye (if)                   | `$>`        | map                              |
-| `_?`         | aylapes etye (elif)         | `$\|`       | filter                           |
-| `_`          | aylapes / takhavar          | `$<`        | reduce                           |
-| `??`         | hamaynknum (match)          | `!?`        | karoghakanum (try)               |
-| `@`          | vikl (loop)                 | `:!`        | bkhosum (catch)                  |
-| `@!`         | kangangel (break)           | `:>`        | misht (finally)                  |
-| `@>`         | sharunakel (continue)       | `$!`        | sgal e                           |
-| `->`         | Lamβda                      | `$!!`       | sgaly tararachel                 |
-| `<~`         | veradardzel (return)        | `#`         | modul hasatarel                  |
-| `\|>`        | khoughakvarum (pipe)        | `#>`        | eksportel                        |
-| `#1`         | chshmare (true)             | `<#`        | importel                         |
-| `#0`         | kegh (false)                | `::`        | moduli kanchoum                  |
+| `=`          | Փոփokhakan                  | `$#`        | Yerkartutyun                     |
+| `:=`         | Hastatun                    | `$+`        | Avelaсnel                        |
+| `>>`         | Yelk                        | `$+[i]`     | Nerdrel index-um                 |
+| `<<`         | Muutk                       | `$-`        | Hatanel arjeqi arach handipmamb  |
+| `¶`/`\\`     | Toghi yndmijum              | `$--`       | Hatanel bolor handipmamby        |
+| `?`          | Etye (if)                   | `$-[i]`     | Hatanel index-ov                 |
+| `_?`         | Aylapes etye (elif)         | `$-[i..j]`  | Hatanel tirauyth                 |
+| `_`          | Aylapes / takhavar           | `$?`        | Petakum                          |
+| `??`         | Hamaynknum (match)          | `$??`       | Gorcel bolor indexnery           |
+| `@`          | Vikl (loop)                 | `$[s..e]`   | Ktom                             |
+| `@!`         | Kangangel (break)           | `$>`        | map                              |
+| `@>`         | Sharunakel (continue)       | `$\|`       | filter                           |
+| `->`         | Lambda                      | `$<`        | reduce                           |
+| `$^+`        | Dasavarorel aetsayin (prim.) | `$^-`      | Dasavarorel nvatsayin (prim.)    |
+| `$^`         | Dasavarorel komparator-ov   |             |                                  |
+| `<~`         | Veradardzel (return)        | `!?`        | Karoghakanum (try)               |
+| `\|>`        | Khoughakvarum (pipe)        | `:!`        | Bkhosum (catch)                  |
+| `#1`         | Chshmare (true)             | `:>`        | Misht (finally)                  |
+| `#0`         | Kegh (false)                | `$!`        | Sgal e                           |
+| `<#`         | Importel                    | `$!!`       | Sgaly tararachel                 |
+| `#`          | Modul hasatarel             | `#>`        | Eksportel                        |
+| `::`         | Moduli kanchoum             | `.`         | Vel hasaneliyutyun               |
+| `#\|..\|`    | Parse t'iv                  | `#?`        | Tipи metadata                    |
+| `#.N\|..\|`  | Klorutyun                   | `#!N\|..\|` | Ktrukum                         |
+| `c\|..\|`    | Shtaput format              | `e\|..\|`   | Gitakan format                   |
+| `<\ ..\>`    | Shell gortsardkum           | `><`        | CLI argumenny                    |
 
 ---
 
-*Zymbol-Lang — Khоrhrhdanshakayin. Hamashkharhayin. Ankerpeli.*
-
----
+*Zymbol-Lang — Խоrhrhdanshakayin. Hamashkharhayin. Ankerpeli.*
 
 > **Zgushatruyun:** Sa vavagragutyunn steghtsvats ev t'argmanyel e arhakayin intelekti (AI) karoghutyamb.
 > Chshmarutyany apahоvelu hamar karatsvel en bolor hoghadzery, sakayn orosh t'argmanutyunner kam orinaknеr kan petakum sgalnеr.
-> Kanonakan hghorzoumov е [Zymbol-Lang specifikatsian](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> Kanonakan hghorzoumov е [Zymbol-Lang specifikatsian](https://github.com/zymbol-lang/interpreter).
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-> For authoritative reference, consult the [Zymbol-Lang specification](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> For authoritative reference, consult the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).

@@ -2,10 +2,6 @@
 
 **Zymbol-Lang** issa ānogar glaeson hen tymptir. Bē udra kostilus — iemnon issa ānogar. Issa sȳz hen bantis udra ēngos.
 
----
-
-## Sȳrys
-
 - Daor udra (`if`, `while`, `return` kostus daor — ānogar `?`, `@`, `<~`)
 - Unicode sȳz — zȳha ēngos iemnon, emoji 👋
 - Ēngos-daor — glaeson idh issa bantis ēngo
@@ -15,24 +11,23 @@
 ## Issa bal Morghūlis
 
 ```zymbol
-x = 10           // issa (gaomagon)
-PI := 3.14159    // morghūlis (daor gaomagon — sȳz lo gaomagon)
+x = 10              // issa (gaomagon)
+PI := 3.14159       // morghūlis (daor gaomagon — sȳz lo gaomagon)
 brōzi = "Ana"
-elek_ = #1       // iksan vala
+elek_ = #1          // iksan vala
 👋 := "Rytsas"
 ```
 
-### Tymagon Issa
-
 ```zymbol
-x = 10    // 10
+x = 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %=  4   // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
@@ -50,18 +45,23 @@ x--       // 2
 | Tuple        | `(a, b)`          | `##)`       | Gaomagon                            |
 | Brōzi Tuple  | `(x: 1, y: 2)`    | `##)`       | Brōzi iemnon lentor                 |
 
+```zymbol
+// Type introspection — returns (type, digits, value)
+meta = 42#?
+>> meta ¶         // → (###, 2, 42)
+t = meta[0]
+>> t ¶            // → ###
+```
+
 ---
 
 ## Gevives bal Ūndegon
 
 ```zymbol
-// Gevives — daor borarir tebec
 >> "Rytsas" ¶                   // ¶ bal \\ borarir tebec
 >> "a=" a " b=" b ¶             // sȳrys lentor — gaomagon
->> "lentor=" tymagon(2, 3) ¶    // ānogar iemnon gaomagon
 >> (arr$#) ¶                    // ānogar lentor poQlu'
 
-// Ūndegon
 << brōzi                        // daor tebec — ūndegon issa
 << "Ñuha brōzi? " brōzi         // bal tebec
 ```
@@ -70,23 +70,48 @@ x--       // 2
 
 ---
 
-## Udra Boq
-
-Tȳni bantis — iemnon gaomagon:
+## Vali Bartosi
 
 ```zymbol
+// Arithmetic — use assignments
+a = 10
+b = 3
+r1 = a + b    // 13     r2 = a - b    // 7
+r3 = a * b    // 30     r4 = a / b    // 3  (integer division)
+r5 = a % b    // 1      r6 = a ^ b    // 1000  (exponentiation)
+
+// Comparison
+a == b    // #0    a <> b    // #1    a < b    // #0
+a <= b    // #0   a > b     // #1    a >= b   // #1
+
+// Logical
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
+```
+
+---
+
+## Kostilus
+
+```zymbol
+// Tȳni bantis — iemnon gaomagon
 brōzi = "Ana"
-n = 25
+n = 42
 
-// 1. Comma — issa = bal :=
-tebec2 = "Rytsas ", brōzi, "!"          // → Rytsas Ana!
-ZALDRĪZES := "Vala: ", brōzi
+tebec2 = "Rytsas ", brōzi, "!"           // comma — in assignments
+>> "Rytsas " brōzi " issa lentor " n ¶   // juxtaposition — in >>
+naas2 = "Rytsas {brōzi}, issa lentor {n}" // interpolation — anywhere
+```
 
-// 2. Gaomagon — gevives >>
->> "Rytsas " brōzi " issa lentor " n ¶  // → Rytsas Ana issa lentor 25
-
-// 3. Bora — iemnon gaomagon
-naas2 = "Rytsas {brōzi}, issa lentor {n}" // → Rytsas Ana, issa lentor 25
+```zymbol
+s = "Valar Morghulis"
+len = s$#                  // 15
+sub = s$[0..5]             // "Valar"  (end exclusive)
+has = s$? "Morghulis"      // #1
+parts = "a,b,c,d" / ','    // [a, b, c, d]
+rep = s$~~["a":"A"]        // "VAlAr MorghuliS"
+rep1 = s$~~["a":"A":1]     // "VAlAr Morghulis"  (first N only)
 ```
 
 > **Nynir**: `+` lentor tebec. Udra — sȳz.
@@ -98,10 +123,8 @@ naas2 = "Rytsas {brōzi}, issa lentor {n}" // → Rytsas Ana, issa lentor 25
 ```zymbol
 x = 7
 
-// Mēre lo
 ? x > 0 { >> "iksan" ¶ }
 
-// Lo / lo-daor / daor
 ? x > 100 {
     >> "bantis" ¶
 } _? x > 0 {
@@ -113,7 +136,7 @@ x = 7
 }
 ```
 
-`{ }` — **poQlu'**, mēre tebec.
+> `{ }` — **poQlu'**, mēre tebec.
 
 ---
 
@@ -130,7 +153,15 @@ patlh = ?? lentor2 {
 }
 >> patlh ¶    // → B
 
-// Match sōnar (iemnon lo)
+// Match udra
+perzys = "sētebagon"
+kode = ?? perzys {
+    "sētebagon" : "#FF0000"
+    "vēttir"    : "#00FF00"
+    _           : "#000000"
+}
+
+// Match sōnar (guards)
 temp = -5
 ind = ?? temp {
     _? temp < 0  : "jēdar"
@@ -140,14 +171,12 @@ ind = ?? temp {
 }
 >> ind ¶    // → jēdar
 
-// Match udra
-perzys = "sētebagon"
-kode = ?? perzys {
-    "sētebagon" : "#FF0000"
-    "vēttir"    : "#00FF00"
-    _           : "#000000"
+// Statement form
+?? n {
+    0        : { >> "daor" ¶ }
+    _? n < 0 : { >> "dōna" ¶ }
+    _        : { >> "iksan" ¶ }
 }
->> kode ¶
 ```
 
 ---
@@ -155,38 +184,43 @@ kode = ?? perzys {
 ## Kostagon
 
 ```zymbol
-// Naná: 0..4 — 0,1,2,3,4
-@ i:0..4 { >> i " " }
->> ¶    // → 0 1 2 3 4
+@ i:0..4  { >> i " " }        // range inclusive:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // with step:         1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // reverse:           5 4 3 2 1 0
 
-// Lentor bal kostagon
-@ i:1..9:2 { >> i " " }
->> ¶    // → 1 3 5 7 9
-
-// Bic kostagon
-@ i:5..0:1 { >> i " " }
->> ¶    // → 5 4 3 2 1 0
-
-// Sōvēs (while)
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶    // → 128
+>> n ¶                        // → 128  (while)
 
-// Iemnon glaeson
 zaldrīzes = ["zaldrizoti", "dōnior", "perzys"]
-@ f:zaldrīzes { >> f ¶ }
+@ f:zaldrīzes { >> f ¶ }      // for-each array
 
-// Tebec tebec
 @ c:"valar" { >> c "-" }
->> ¶    // → v-a-l-a-r-
+>> ¶                          // → v-a-l-a-r-
 
-// Ūbagon bal Kostagon
 @ i:1..10 {
-    ? i % 2 == 0 { @> }    // @> kostagon
-    ? i > 7 { @! }          // @! ūbagon
+    ? i % 2 == 0 { @> }       // @> kostagon daur (continue)
+    ? i > 7 { @! }             // @! ūbagon (break)
     >> i " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Infinite loop
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Labeled loop
+count = 0
+@ @outer {
+    count++
+    ? count >= 3 { @! outer }
+}
+>> count ¶                    // → 3
 ```
 
 ---
@@ -194,24 +228,28 @@ zaldrīzes = ["zaldrizoti", "dōnior", "perzys"]
 ## Ānogar
 
 ```zymbol
-// Gaomagon bal ānogar
 tubagon(a, b) { <~ a + b }
 >> tubagon(3, 4) ¶    // → 7
 
-// Sȳndror
 lentoraānogar(n) {
     ? n <= 1 { <~ 1 }
     <~ n * lentoraānogar(n - 1)
 }
 >> lentoraānogar(5) ¶    // → 120
+```
 
-// Ānogar — daor ūndegon andë issa
-_Valyria = 100
-ȳdrassagon() {
-    x = 42    // mēre
-    <~ x
+Functions have **isolated scope** — they cannot read outer variables. Use output parameters `<~` to modify caller variables:
+
+```zymbol
+māzigon(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
 }
->> ȳdrassagon() ¶    // → 42
+x = 10
+y = 20
+māzigon(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
 > **Sȳz**: Brōzi ānogar `brōzi(params){ }` — daor mēre lentor.
@@ -222,34 +260,30 @@ _Valyria = 100
 ## Lambda bal Karyai
 
 ```zymbol
-// Mēre lambda (bora)
 lanta = x -> x * 2
 tubagon2 = (a, b) -> a + b
 >> lanta(5) ¶     // → 10
 >> tubagon2(3, 7) ¶ // → 10
 
-// Lambda glaeson (naná bora)
+// Block lambda
 tymagon2 = x -> {
     ? x > 0 { <~ "iksan" }
     _? x < 0 { <~ "dōna" }
-    <~ "daor" }
->> tymagon2(5) ¶     // → iksan
->> tymagon2(0) ¶     // → daor
->> tymagon2(-5) ¶    // → dōna
+    <~ "daor"
+}
 
-// Karyai — lambda issa andë lentor
+// Closure — captures outer scope
 factor = 3
-tȳni = x -> x * factor    // issa 'factor'
+tȳni = x -> x * factor
 >> tȳni(7) ¶    // → 21
 
-// Ānogar gaomagon
+// Factory
 make_adder(n) { <~ x -> x + n }
 add10 = make_adder(10)
 >> add10(5) ¶    // → 15
 
-// Lambda lentor: glaeson
+// In arrays
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[0](5) ¶    // → 6
 >> ops[2](5) ¶    // → 25
 ```
 
@@ -258,64 +292,129 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 ## Glaeson
 
 ```zymbol
-arr = [10, 20, 30, 40, 50]
+arr = [1, 2, 3, 4, 5]
 
-// Ūndegon (0 lentor)
->> arr[0] ¶    // → 10
+arr[0]          // 1 — access (0-indexed)
+arr[-1]         // 5 — negative index (last)
+arr$#           // 5 — length (use (arr$#) in >>)
 
-// Bantis (poQlu' >>)
-n = arr$#
->> (arr$#) ¶    // → 5
+arr = arr$+ 6            // append → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // insert at index 2
+arr3 = arr$- 3           // remove first occurrence of value
+arr4 = arr$-- 3          // remove all occurrences
+arr5 = arr$-[0]          // remove at index
+arr6 = arr$-[1..3]       // remove range (end exclusive)
 
-// Tubagon, teq, issa, mēre
-arr = arr$+ 60               // tubagon
-arr = arr$- 0                // teq 0
-issa2 = arr$? 30             // → #1
-mēre2 = arr$[0..2]           // [20, 30]
+has = arr$? 3            // #1 — contains
+pos = arr$?? 3           // [2] — all indices of value
+sl = arr$[0..3]          // [1,2,3] — slice (end exclusive)
+sl2 = arr$[0:3]          // [1,2,3] — same, count-based syntax
 
-// Gaomagon lentor
-arr[1] = 99
+asc = arr$^+             // sorted ascending  (primitives only)
+desc = arr$^-            // sorted descending (primitives only)
 
-// Iemnon lentor
-@ x:arr { >> x " " }
->> ¶
+// Brōzi tuple arrays — use $^ with comparator lambda
+db = [(brōzi: "Carla", ābre: 28), (brōzi: "Ana", ābre: 25), (brōzi: "Bob", ābre: 30)]
+by_ābre  = db$^ (a, b -> a.ābre < b.ābre)
+by_brōzi = db$^ (a, b -> a.brōzi > b.brōzi)
+>> by_ābre[0].brōzi ¶     // → Ana
+>> by_brōzi[0].brōzi ¶    // → Carla
+
+arr[1] = 99              // update in-place
+arr = arr[1]$~ 99        // functional update — returns new array
 ```
 
-> `$+`, `$-`, `$[..]` — **naur glaeson** — issa: `arr = arr$+ 4`.
+> Iemnon collection ta' — **naur glaeson** — issa: `arr = arr$+ 4`.
 > Daor tanc: lanta issa.
+> `$^+` / `$^-` sort **primitive arrays**. For tuple arrays use `$^` with a comparator lambda.
+
+```zymbol
+// Nested arrays
+matrix = [[1,2,3],[4,5,6],[7,8,9]]
+>> matrix[1][2] ¶    // → 6
+```
+
+---
+
+## Rughes
+
+```zymbol
+// Array
+arr = [10, 20, 30, 40, 50]
+[a, b, c] = arr              // a=10  b=20  c=30
+[first, *rest] = arr         // first=10  rest=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ discards
+
+// Positional tuple
+point = (100, 200)
+(px, py) = point             // px=100  py=200
+
+// Named tuple
+vala = (brōzi: "Ana", ābre: 25, ēngos: "Valyria")
+(brōzi: n, ābre: a) = vala   // n="Ana"  a=25
+```
 
 ---
 
 ## Tuple
 
 ```zymbol
-// Brōzi tuple
+// Positional
+point = (10, 20)
+>> point[0] ¶    // → 10
+
+// Named
 vala = (brōzi: "Alice", ābre: 25)
 >> vala.brōzi ¶    // → Alice
->> vala.ābre ¶     // → 25
->> vala[0] ¶       // → Alice (lentor issa)
+>> vala[0] ¶       // → Alice  (index also works)
+
+// Nested
+pos = (x: 10, y: 20)
+p = (pos: pos, brōzi: "Valyria")
+>> p.pos.x ¶        // → 10
 ```
 
 ---
 
 ## Ānogar Bantis
 
-HOF — **mēre lambda** — daor lambda lentor.
+> HOF — **mēre lambda** — daor lambda lentor.
 
 ```zymbol
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Map ($>)
-lanta2 = nums$> (x -> x * 2)
->> lanta2 ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+lanta2 = nums$> (x -> x * 2)                // map  → [2,4,6…20]
+tȳni2  = nums$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
+naas3  = nums$< (0, (acc, x) -> acc + x)    // reduce → 55
 
-// Filter ($|)
-tȳni2 = nums$| (x -> x % 2 == 0)
->> tȳni2 ¶    // → [2, 4, 6, 8, 10]
+// Chain via intermediates
+step1 = nums$| (x -> x > 3)
+step2 = step1$> (x -> x * x)
+>> step2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Reduce ($<) — (bora lentor, (tubagon, lentor) -> moj)
-naas3 = nums$< (0, (acc, x) -> acc + x)
->> naas3 ¶    // → 55
+// Named functions inside HOF — wrap in lambda
+double(x) { <~ x * 2 }
+r = nums$> (x -> double(x))    // ✅
+```
+
+---
+
+## Ābre Vali
+
+The RHS always requires `_` as a placeholder for the piped value:
+
+```zymbol
+double = x -> x * 2
+add = (a, b) -> a + b
+inc = x -> x + 1
+
+5 |> double(_)        // → 10
+10 |> add(_, 5)       // → 15
+5 |> add(2, _)        // → 7
+
+// Chained
+r = 5 |> double(_) |> inc(_) |> double(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -327,10 +426,8 @@ naas3 = nums$< (0, (acc, x) -> acc + x)
     x = 10 / 0
 } :! ##Div {
     >> "daor lentor" ¶
-} :! ##IO {
-    >> "IO sōvēs" ¶
 } :! {
-    >> "sōvēs: " _err ¶
+    >> "sōvēs: " _err ¶    // _err holds the error message
 } :> {
     >> "iemnon lúm" ¶
 }
@@ -354,7 +451,7 @@ naas3 = nums$< (0, (acc, x) -> acc + x)
 // Udra: lib/calc.zy
 # calc
 
-#> { tubagon, get_PI }    // Nob MĒRE
+#> { tubagon, get_PI }    // Nob MĒRE — definitions vo' qaSpa'
 
 _PI := 3.14159
 tubagon(a, b) { <~ a + b }
@@ -369,6 +466,69 @@ get_PI() { <~ _PI }
 pi = c::get_PI()
 >> pi ¶                 // → 3.14159
 ```
+
+```zymbol
+// Export with a different public name
+# mylib
+#> { _internal_tubagon <= tubagon }
+
+_internal_tubagon(a, b) { <~ a + b }
+```
+
+```zymbol
+<# ./mylib <= m
+
+>> m::tubagon(3, 4) ¶    // → 7
+```
+
+---
+
+## Ābre Bartosi
+
+```zymbol
+// Parse string to number
+v1 = #|"42"|      // → 42  (Int)
+v2 = #|"3.14"|    // → 3.14  (Float)
+v3 = #|"abc"|     // → "abc"  (fail-safe, no error)
+
+// Round / truncate
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14  (round to 2 decimal places)
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14  (truncate)
+
+// Number formatting
+fmt = #,|1234567|      // → 1,234,567  (comma-separated)
+sci = #^|12345.678|    // → 1.2345678e4  (scientific)
+
+// Base literals
+a = 0x41         // → 'A'  (hex)
+b = 0b01000001   // → 'A'  (binary)
+c = 0o101        // → 'A'  (octal)
+
+// Base conversion output
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
+```
+
+---
+
+## Shell Syt
+
+```zymbol
+ēlie = <\ date +%Y-%m-%d \>    // captures stdout (includes trailing \n)
+>> "Sīr: " ēlie
+
+udra = "data.txt"
+glaes = <\ cat {udra} \>       // interpolation in commands
+
+nob = </"./subscript.zy"/>     // execute another Zymbol script, capture output
+>> nob
+```
+
+> `><` captures CLI arguments as a string array (tree-walker only).
 
 ---
 
@@ -393,31 +553,38 @@ tymagon(lentor) {
 |----------|--------------------|------------|-----------------------|
 | `=`      | issa               | `$#`       | bantis                |
 | `:=`     | morghūlis          | `$+`       | tubagon               |
-| `>>`     | gevives            | `$-`       | teq (lentor)          |
-| `<<`     | ūndegon            | `$?`       | issa                  |
-| `¶`/`\`  | tebec tebec        | `$[s..e]`  | mēre                  |
-| `?`      | lo (if)            | `$>`       | map                   |
-| `_?`     | lo-daor (elif)     | `$\|`      | filter                |
-| `_`      | daor / iemnon      | `$<`       | reduce                |
-| `??`     | match              | `!?`       | ȳdrassagon (try)      |
-| `@`      | kostagon           | `:!`       | karyai (catch)        |
-| `@!`     | ūbagon (break)     | `:>`       | iemnon (finally)      |
-| `@>`     | kostagon daur      | `$!`       | sōvēs issa            |
-| `->`     | Lambda             | `$!!`      | sōvēs gevives         |
-| `<~`     | tubagon            | `#`        | valyria brōzi         |
-| `\|>`    | Pipe               | `#>`       | nob                   |
-| `#1`     | iksan              | `<#`       | ūndegon               |
-| `#0`     | daor               | `::`       | valyria ānogar        |
+| `>>`     | gevives            | `$+[i]`    | insert                |
+| `<<`     | ūndegon            | `$-`       | teq (lentor)          |
+| `¶`/`\`  | tebec tebec        | `$--`      | teq iemnon            |
+| `?`      | lo (if)            | `$-[i]`    | teq Daq               |
+| `_?`     | lo-daor (elif)     | `$-[i..j]` | teq Dara'             |
+| `_`      | daor / iemnon      | `$?`       | issa                  |
+| `??`     | match              | `$??`      | Hoch Daq tu'          |
+| `@`      | kostagon           | `$[s..e]`  | mēre                  |
+| `@!`     | ūbagon (break)     | `$>`       | map                   |
+| `@>`     | kostagon daur      | `$\|`      | filter                |
+| `->`     | Lambda             | `$<`       | reduce                |
+| `$^+`    | sort ascending     | `$^-`      | sort descending       |
+| `$^`     | sort comparator    |            |                       |
+| `<~`     | tubagon            | `!?`       | ȳdrassagon (try)      |
+| `\|>`    | Pipe               | `:!`       | karyai (catch)        |
+| `#1`     | iksan              | `:>`       | iemnon (finally)      |
+| `#0`     | daor               | `$!`       | sōvēs issa            |
+| `<#`     | ūndegon (import)   | `$!!`      | sōvēs gevives         |
+| `#`      | valyria brōzi      | `#>`       | nob (export)          |
+| `::`     | valyria ānogar     | `.`        | field access          |
+| `#\|..\|` | parse number      | `#?`       | type metadata         |
+| `#.N\|..\|` | round           | `#!N\|..\|` | truncate            |
+| `c\|..\|` | comma format      | `e\|..\|`  | scientific            |
+| `<\ ..\>` | shell exec        | `>\<`      | CLI args              |
 
 ---
 
 *Zymbol-Lang — Ānogar. Bantis. Daor gaomagon.*
 
----
-
 > **Nynir:** Dovaogēdy issa carna bal gevives AI (sȳz ānogar).
 > Iemnon carna issa, mēpsa tȳni udra bal ānogar sōvēs.
-> Kēlio dovaogēdy [Zymbol-Lang bantis](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> Kēlio dovaogēdy [Zymbol-Lang bantis](https://github.com/zymbol-lang/interpreter).
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > While every effort has been made to ensure accuracy, some translations or examples may contain errors.

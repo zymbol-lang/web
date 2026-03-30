@@ -1,14 +1,6 @@
 # Dokumentatsioon | Kompaktne Zymbol-Lang käsiraamat
 
-**Zymbol-Lang** on sümboolne programmeerimiskeel. See ei kasuta märksõnu — kõik on sümbol. See toimib ühtmoodi igas inimkeeles.
-
----
-
-## Filosoofia
-
-- Märksõnu pole (`kui`, `tsükkel`, `tagastus` ei eksisteeri — ainult sümbolid `?`, `@`, `<~`)
-- Täielik Unicode tugi — identifikaatorid igas keeles või emojis 👋
-- Inimkeelest sõltumatu — kood on identne igas keeles
+**Zymbol-Lang** on sümboolne programmeerimiskeel. See ei kasuta märksõnu — kõik on sümbol. See toimib ühtmoodi igas inimkeeles. Märksõnu pole (`kui`, `tsükkel`, `tagastus` ei eksisteeri — ainult sümbolid `?`, `@`, `<~`). Täielik Unicode tugi — identifikaatorid igas keeles või emojis 👋
 
 ---
 
@@ -29,10 +21,11 @@ x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %=  4   // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
@@ -46,7 +39,7 @@ x--       // 2
 | String         | `"tere"`            | `##"`       | Interpolatsioon: `"Tere {nimi}"`      |
 | Märk           | `'A'`               | `##'`       | Üks Unicode märk                      |
 | Tõeväärtus     | `#1`, `#0`          | `##?`       | EI ole arvuline 1 ja 0                |
-| Massiiv        | `[1, 2, 3]`         | `##]`       | Kõik elemendid peavad olema sama tüüpi |
+| Massiiv        | `[1, 2, 3]`         | `##]`       | Kõik elemendid peavad olema sama tüüpi|
 | Tuple          | `(a, b)`            | `##)`       | Positsioonipõhine                     |
 | Nimega Tuple   | `(x: 1, y: 2)`      | `##)`       | Ligipääs nime või indeksi järgi       |
 
@@ -56,10 +49,10 @@ x--       // 2
 
 ```zymbol
 // Väljund — EI lisa automaatselt reavahetust
->> "Tere, Eestikeelne maailm!" ¶     // ¶ või \\ annab selgesõnalise reavahetuse
+>> "Tere" ¶                          // ¶ või \\ annab selgesõnalise reavahetuse
 >> "a=" a " b=" b ¶                  // mitu väärtust juxtapositsiooni abil
->> "summa=" klassifitseeri(2, 3) ¶   // funktsioonikutsed mis tahes positsioonis
->> (puuvili$#) ¶                     // postfiks-operaatorid vajavad sulge
+>> "summa=" liida(2, 3) ¶            // funktsioonikutsed mis tahes positsioonis
+>> (arr$#) ¶                         // postfiks-operaatorid vajavad sulge
 
 // Sisend
 << nimi                              // ilma viipata — loeb muutujasse
@@ -70,7 +63,34 @@ x--       // 2
 
 ---
 
-## Stringide Ühendamine
+## Operaatorid
+
+```zymbol
+// Aritmeetika
+5 + 2    // → 7
+5 - 2    // → 3
+5 * 2    // → 10
+5 / 2    // → 2.5
+5 % 2    // → 1
+5 ^ 2    // → 25   (astendamine)
+
+// Võrdlus (tagastab #1 või #0)
+5 == 5   // → #1
+5 != 4   // → #1
+5 > 4    // → #1
+5 < 4    // → #0
+5 >= 5   // → #1
+5 <= 4   // → #0
+
+// Loogilised
+#1 && #0    // → #0   (ja)
+#1 || #0    // → #1   (või)
+!#1         // → #0   (mitte)
+```
+
+---
+
+## Stringid
 
 Kolm kehtivat vormi — igaüks oma konteksti jaoks:
 
@@ -87,6 +107,13 @@ PEALKIRI := "Kasutaja: ", nimi
 
 // 3. Interpolatsioon — mis tahes kontekstis
 kirjeldus = "Tere {nimi}, sul on {arv}" // → Tere Ana, sul on 25
+```
+
+```zymbol
+// Asenda — s$~~["vana":"uus"]
+s = "tere maailm"
+s = s$~~["maailm":"maa"]        // → "tere maa"
+s = s$~~["e":"E":1]             // → "tErE maa"   asenda esimesed N esinemist
 ```
 
 > **Märkus**: `+` on ainult arvude jaoks. Kasutamine stringidega genereerib hoiatuse.
@@ -143,9 +170,9 @@ seisund = ?? temperatuur {
 // Vastavus stringidega
 värv = "punane"
 kood = ?? värv {
-    "punane" : "#FF0000"
+    "punane"   : "#FF0000"
     "roheline" : "#00FF00"
-    _        : "#000000"
+    _          : "#000000"
 }
 >> kood ¶
 ```
@@ -246,11 +273,14 @@ kolmekordne = x -> x * tegur    // hõivab 'tegur'
 // Funktsioonide tehas
 tee_liitja(n) { <~ x -> x + n }
 lisa10 = tee_liitja(10)
+lisa20 = tee_liitja(20)
 >> lisa10(5) ¶    // → 15
+>> lisa20(5) ¶    // → 25
 
 // Lambdad väärtustena: salvestatakse massiividesse
 toimingud = [x -> x+1, x -> x*2, x -> x*x]
 >> toimingud[0](5) ¶    // → 6
+>> toimingud[1](5) ¶    // → 10
 >> toimingud[2](5) ¶    // → 25
 ```
 
@@ -263,19 +293,41 @@ arr = [10, 20, 30, 40, 50]
 
 // Juurdepääs (0-põhine indeks)
 >> arr[0] ¶    // → 10
+>> arr[2] ¶    // → 30
+>> arr[-1] ¶   // → 50   negatiivne indeks
 
 // Pikkus (vajab sulge >>-s)
 arv = arr$#
->> (arr$#) ¶    // → 5
+>> arv ¶           // → 5
+>> (arr$#) ¶       // → 5
 
 // Lisa, eemalda, sisaldab, lõige
-arr = arr$+ 60               // lisamine
-arr = arr$- 0                // indeks 0 eemaldamine
+arr = arr$+ 60               // [10, 20, 30, 40, 50, 60]
+arr = arr$- 0                // indeks 0 eemaldamine: [20, 30, 40, 50, 60]
 on_olemas = arr$? 30         // → #1
-lõige = arr$[0..2]           // [20, 30]
+idx = arr$?? 30              // → [1]   kõik indeksid väärtusele
+lõige = arr$[0..2]           // lõige [0,2): [20, 30]
+arv_põhine = arr$[0:3]       // arvupõhine: [20, 30, 40]
 
 // Elemendi uuendamine
 arr[1] = 99
+>> arr ¶    // → [20, 99, 40, 50, 60]
+
+// Funktsionaalne uuendamine (tagastab uue massiivi)
+arr2 = arr[1]$~ 77           // → [20, 77, 40, 50, 60]
+
+// Sorteeri (primitiivid)
+num = [3, 1, 4, 1, 5]
+kasvav   = num$^+            // → [1, 1, 3, 4, 5]
+kahanev  = num$^-            // → [5, 4, 3, 1, 1]
+
+// Sorteeri tupleid komparaator-lambdaga
+paarid = [(2,"b"), (1,"a"), (3,"c")]
+sorditud = paarid$^ ((a,b) -> a[0] - b[0])    // sorteeri esimese elemendi järgi
+
+// Pesastatud massiivid
+maatriks = [[1,2],[3,4],[5,6]]
+>> maatriks[1][0] ¶    // → 3
 
 // Iga elemendi jaoks
 @ x:arr { >> x " " }
@@ -284,17 +336,52 @@ arr[1] = 99
 
 > `$+`, `$-`, `$[..]` tagastavad **uue massiivi** — omistage tagasi: `arr = arr$+ 4`.
 > Ei saa ahelada: kasutage kahte eraldi omistamist.
+> `arr$??` ja `arr$[s:n]` kasutavad teist süntaksit kui `arr$[s..e]` — vt Sümbolite Viide.
+
+---
+
+## Destruktureerimine
+
+```zymbol
+// Massiivi destruktureerimine
+arr = [10, 20, 30]
+[a, b, c] = arr
+>> a ¶    // → 10
+>> b ¶    // → 20
+
+// Positsioonilise tuple destruktureerimine
+pt = (3, 4)
+(x, y) = pt
+>> x ¶    // → 3
+
+// Nimega tuple destruktureerimine
+isik = (nimi: "Alice", vanus: 25)
+(nimi: n, vanus: v) = isik
+>> n ¶    // → Alice
+>> v ¶    // → 25
+```
 
 ---
 
 ## Tuplid
 
 ```zymbol
+// Positsioonipõhine tuple
+punkt = (10, 20)
+>> punkt[0] ¶    // → 10
+>> punkt[1] ¶    // → 20
+
 // Nimega tuple
-isik = (nimi: "Liina", vanus: 25)
->> isik.nimi ¶     // → Liina
+isik = (nimi: "Alice", vanus: 25)
+>> isik.nimi ¶     // → Alice
 >> isik.vanus ¶    // → 25
->> isik[0] ¶       // → Liina (indeks töötab ka)
+>> isik[0] ¶       // → Alice (indeks töötab ka)
+
+// Pesastatud
+pos = (x: 3, y: 4)
+p = (pos: pos, silt: "alguspunkt")
+>> p.silt ¶    // → alguspunkt
+>> p.pos.x ¶   // → 3
 ```
 
 ---
@@ -317,6 +404,28 @@ paaris = numbrid$| (x -> x % 2 == 0)
 // Vähendamine ($<) — (algväärtus, (acc, elem) -> avaldis)
 kokku = numbrid$< (0, (acc, x) -> acc + x)
 >> kokku ¶    // → 55
+
+// Ei saa otseselt ahelada — kasutage vaheväärtusi
+samm1 = numbrid$| (x -> x > 5)
+samm2 = samm1$> (x -> x * x)
+>> samm2 ¶    // → [36, 49, 64, 81, 100]
+```
+
+---
+
+## Toru-operaator
+
+```zymbol
+// |> edastab vasaku väärtuse _ paremas avaldises
+tulemus = 5 |> _ * 2 |> _ + 1
+>> tulemus ¶    // → 11
+
+// Ahelatud teisendused
+sõnad = ["tere", "maailm"]
+väljund = sõnad
+    |> _$> (w -> w$#)              // kaardista pikkusteks: [4, 6]
+    |> _$< (0, (a,x) -> a+x)      // summeeri: 10
+>> väljund ¶    // → 10
 ```
 
 ---
@@ -324,6 +433,7 @@ kokku = numbrid$< (0, (acc, x) -> acc + x)
 ## Vigade Käsitlemine
 
 ```zymbol
+// Proovi / Püüa / Lõpuks
 !? {
     x = 10 / 0
 } :! ##Div {
@@ -331,11 +441,21 @@ kokku = numbrid$< (0, (acc, x) -> acc + x)
 } :! ##IO {
     >> "I/O viga" ¶
 } :! {
-    >> "muu viga: " _err ¶
+    >> "muu viga: " _err ¶    // _err sisaldab veateadet
 } :> {
     >> "käivitub alati" ¶
 }
+
+// Püüdmine indeksitüübil
+!? {
+    arr = [1, 2, 3]
+    v = arr[10]
+} :! ##Index {
+    >> "indeks väljaspool piire" ¶
+}
 ```
+
+### Vealiigid
 
 | Tüüp        | Millal tekib             |
 |-------------|--------------------------|
@@ -353,23 +473,81 @@ kokku = numbrid$< (0, (acc, x) -> acc + x)
 
 ```zymbol
 // Fail: lib/calc.zy
-# calc
+# calc                    // deklaratsioon — alati üleval
 
-#> { liida, get_PI }    // ekspordi ENNE definitsioone
+#> {                      // eksportid — PEAB olema enne definitsioone
+    liida
+    get_PI
+}
 
 _PI := 3.14159
+
 liida(a, b) { <~ a + b }
-get_PI() { <~ _PI }
+get_PI() { <~ _PI }       // konstandi getter (vajalik kõrvalekalle)
 ```
 
 ```zymbol
 // Fail: main.zy
-<# ./lib/calc <= c    // alias on kohustuslik
+<# ./lib/calc <= c         // alias on kohustuslik
 
->> c::liida(5, 3) ¶   // → 8
+>> c::liida(5, 3) ¶        // → 8  — kutsumine ::
 pi = c::get_PI()
->> pi ¶               // → 3.14159
+>> pi ¶                    // → 3.14159
 ```
+
+> **Märkus**: `alias.NIMI` konstantidele ei tööta — kasutage getter-funktsiooni.
+
+---
+
+## Andmeoperaatorid
+
+```zymbol
+// Parsi string arvuks
+x = #|"42"|          // → 42    (täisarv)
+y = #|"3.14"|        // → 3.14  (ujukoma)
+
+// Ümarda / kärbi
+r = #.2|3.14159|     // → 3.14   ümarda 2 komakohani
+t = #!2|3.14159|     // → 3.14   kärbi 2 komakohani
+
+// Vorminda arv
+s = #,|1234567.89|    // → "1,234,567.89"  komavormingus
+e = #^|0.00042|       // → "4.2e-4"        teaduslik notatsioon
+
+// Alusliteraalid
+h = 0xFF             // → 255  heksadetsimaalne
+b = 0b1010           // → 10   binaarne
+o = 0o17             // → 15   oktaalne
+
+// Aluse teisendus
+hex = 255$>>"16"     // → "FF"
+bin = 10$>>"2"       // → "1010"
+```
+
+---
+
+## Kestaintegrering
+
+```zymbol
+// Käivita kesta käsk ja püüa väljund
+väljund = <\ ls -la \>
+>> väljund ¶
+
+// Interpolatsioon käskudes
+kaust = "/tmp"
+failid = <\ ls {kaust} \>
+
+// Mitmerealine skriptiplokk
+tulemus = </
+    echo "tere"
+    pwd
+/>
+
+// Suuna väljund kesta (ilma püüdmata)
+>< "echo tere"
+```
+
+> `><` saadab väljundi kesta ilma seda püüdmata.
 
 ---
 
@@ -382,7 +560,6 @@ klassifitseeri(arv) {
     _? arv % 5  == 0 { <~ "Summ" }
     _ { <~ arv }
 }
-
 @ i:1..20 { >> klassifitseeri(i) ¶ }
 ```
 
@@ -390,25 +567,34 @@ klassifitseeri(arv) {
 
 ## Sümbolite Viide
 
-| Sümbol   | Toiming             | Sümbol     | Toiming              |
-|----------|---------------------|------------|----------------------|
-| `=`      | muutuja             | `$#`       | pikkus               |
-| `:=`     | konstant            | `$+`       | lisamine             |
-| `>>`     | väljund             | `$-`       | eemaldamine (ind.)   |
-| `<<`     | sisend              | `$?`       | sisaldab             |
-| `¶`/`\`  | reavahetus          | `$[s..e]`  | lõige                |
-| `?`      | kui                 | `$>`       | kaardistamine        |
-| `_?`     | muidu-kui           | `$\|`      | filtreerimine        |
-| `_`      | muidu / universaalne| `$<`       | vähendamine          |
-| `??`     | vastavus            | `!?`       | proovi               |
-| `@`      | tsükkel             | `:!`       | püüa viga            |
-| `@!`     | katkesta            | `:>`       | lõpuks               |
-| `@>`     | jätka               | `$!`       | on viga              |
-| `->`     | lambda              | `$!!`      | levi viga            |
-| `<~`     | tagasta             | `#`        | deklareeri moodul    |
-| `\|>`    | toru                | `#>`       | ekspordi             |
-| `#1`     | tõene               | `<#`       | impordi              |
-| `#0`     | väär                | `::`       | mooduli kutse        |
+| Sümbol      | Toiming              | Sümbol       | Toiming                    |
+|-------------|----------------------|--------------|----------------------------|
+| `=`         | muutuja              | `$#`         | pikkus                     |
+| `:=`        | konstant             | `$+`         | lisamine (append)          |
+| `>>`        | väljund              | `$+[i]`      | lisamine indeksile         |
+| `<<`        | sisend               | `$--`        | viimase eemaldamine        |
+| `¶`/`\`     | reavahetus           | `$-[i]`      | eemaldamine indeksil       |
+| `?`         | kui (if)             | `$-[i..j]`   | vahemiku eemaldamine       |
+| `_?`        | muidu-kui (elif)     | `$?`         | sisaldab                   |
+| `_`         | muidu / universaalne | `$??`        | kõik indeksid väärtusele   |
+| `??`        | vastavus             | `$[s..e]`    | lõige                      |
+| `@`         | tsükkel              | `$>`         | kaardistamine              |
+| `@!`        | katkesta             | `$\|`        | filtreerimine              |
+| `@>`        | jätka                | `$<`         | vähendamine                |
+| `->`        | lambda               | `$^+`        | sorteeri kasvavalt         |
+| `<~`        | tagasta              | `$^-`        | sorteeri kahanevalt        |
+| `\|>`       | toru                 | `$^`         | sorteeri komparaatoriga    |
+| `#1`        | tõene                | `$!`         | on viga                    |
+| `#0`        | väär                 | `$!!`        | levi viga                  |
+| `!?`        | proovi (try)         | `#`          | deklareeri moodul          |
+| `:!`        | püüa (catch)         | `#>`         | ekspordi                   |
+| `:>`        | lõpuks (finally)     | `<#`         | impordi                    |
+| `.`         | väljapääs            | `::`         | mooduli kutse              |
+| `#\|..\|`   | parsi (parse)        | `#.N\|..\|`  | ümarda N kohani            |
+| `#!N\|..\|` | kärbi N kohani       | `c\|..\|`    | komavormingus              |
+| `e\|..\|`   | teaduslik not.       | `<\ \>`      | kesta käsk                 |
+| `><`        | kesta väljund        | `$~~[..]`    | asenda stringis            |
+| `[a,b]=arr` | destruktureerimine   | `(x,y)=tup`  | tuple destruktureerimine   |
 
 ---
 
@@ -416,8 +602,8 @@ klassifitseeri(arv) {
 
 ---
 
-**Märkus:** See dokumentatsioon loodi ja tõlgiti tehisintellekti (TI) abil. On tehtud kõik jõupingutused täpsuse tagamiseks, kuid mõned tõlked või näited võivad sisaldada vigu. Autoriteetne viide on [Zymbol-Lang spetsifikatsioon](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+**Märkus:** See dokumentatsioon loodi ja tõlgiti tehisintellekti (TI) abil. On tehtud kõik jõupingutused täpsuse tagamiseks, kuid mõned tõlked või näited võivad sisaldada vigu. Autoriteetne viide on [Zymbol-Lang spetsifikatsioon](https://github.com/zymbol-lang/interpreter).
 
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-> The canonical reference is the [Zymbol-Lang specification](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> The canonical reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).

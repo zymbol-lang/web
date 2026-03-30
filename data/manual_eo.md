@@ -2,10 +2,6 @@
 
 **Zymbol-Lang** estas simbola programlingvo. Ĝi ne uzas ŝlosilvortojn — ĉio estas simbolo. Ĝi funkcias same en ĉiu homa lingvo.
 
----
-
-## Filozofio
-
 - Neniaj ŝlosilvortoj (`se`, `buklo`, `redonu` ne ekzistas — nur simboloj `?`, `@`, `<~`)
 - Plena Unicode — identigiloj en ĉiu lingvo aŭ emoji 👋
 - Homa-lingvo-agnostika — la kodo estas identa en ĉiu lingvo
@@ -15,24 +11,23 @@
 ## Variabloj kaj Konstantoj
 
 ```zymbol
-x = 10           // variablo (ŝanĝebla)
-PI := 3.14159    // konstanto (neŝanĝebla — eraro se retransdona)
+x = 10              // variablo (ŝanĝebla)
+PI := 3.14159       // konstanto (neŝanĝebla — eraro se retransdona)
 nomo = "Ana"
-aktiva = #1      // bulea vera
+aktiva = #1         // bulea vera
 👋 := "Saluton"
 ```
 
-### Kunmetita Atribuo
-
 ```zymbol
-x = 10    // 10
+x = 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %=  4   // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
@@ -50,46 +45,76 @@ x--       // 2
 | Oplo           | `(a, b)`            | `##)`        | Pozicia                             |
 | Nomita Oplo    | `(x: 1, y: 2)`      | `##)`        | Aliro per nomo aŭ indekso           |
 
+```zymbol
+// Tipintrospekto — redonas (tipo, ciferoj, valoro)
+meta = 42#?
+>> meta ¶         // → (###, 2, 42)
+t = meta[0]
+>> t ¶            // → ###
+```
+
 ---
 
 ## Eligo kaj Enigo
 
 ```zymbol
-// Eligo — NE aŭtomate aldonas novlinion
 >> "Saluton, Esperanta Mondo!" ¶        // ¶ aŭ \\ donas eksplicitan novlinion
 >> "a=" a " b=" b ¶                     // multaj valoroj per apudmeto
->> "sumo=" add(2, 3) ¶                  // funkciovokoj en iu ajn pozicio
 >> (frukto$#) ¶                         // postfiks-operatoroj bezonas krampojn
 
-// Enigo
 << nomo                                 // sen promptilo — legas en variablon
 << "Via nomo? " nomo                    // kun promptilo
 ```
 
-> `¶` aŭ `\\` estas ekvivalentaj kiel novlinio.
+> `¶` (AltGr+R en hispana klavaro) kaj `\\` estas ekvivalentaj kiel novlinio.
 
 ---
 
-## Kunigo de Ĉenoj
-
-Tri validaj formoj — ĉiu por sia kunteksto:
+## Operatoroj
 
 ```zymbol
-nomo = "Ana"
-nombro = 25
+// Aritmetiko — uzu atribuojn; iuj operatoroj havas kverojn rekte en >>
+a = 10
+b = 3
+r1 = a + b    // 13     r2 = a - b    // 7
+r3 = a * b    // 30     r4 = a / b    // 3  (entjera divido)
+r5 = a % b    // 1      r6 = a ^ b    // 1000  (potenco)
 
-// 1. Komo — en atribuoj kun = aŭ :=
-mesaĝo = "Saluton ", nomo, "!"              // → Saluton Ana!
-TITOLO := "Uzanto: ", nomo
+// Komparo
+a == b    // #0    a <> b    // #1    a < b    // #0
+a <= b    // #0   a > b     // #1    a >= b   // #1
 
-// 2. Apudmeto — en >> eligo
->> "Saluton " nomo " vi estas " nombro ¶    // → Saluton Ana vi estas 25
-
-// 3. Interpolado — en iu ajn kunteksto
-priskribo = "Saluton {nomo}, vi estas {nombro}"  // → Saluton Ana, vi estas 25
+// Logiko
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
 ```
 
-> **Noto**: `+` estas nur por nombroj. Uzado kun ĉenoj generas averton.
+---
+
+## Ĉenoj
+
+```zymbol
+// Tri konkatenaj formoj
+nomo = "Ana"
+n = 42
+
+mesaĝo = "Saluton ", nomo, "!"              // komo — en atribuoj
+>> "Saluton " nomo " vi estas " n ¶         // apudmeto — en >>
+priskribo = "Saluton {nomo}, vi estas {n}"  // interpolado — ĉie
+```
+
+```zymbol
+s = "Saluton Mondo"
+longo = s$#                  // 13
+sub = s$[0..7]               // "Saluton"  (fino ekskluziva)
+havas = s$? "Mondo"          // #1
+partoj = "a,b,c,d" / ','    // [a, b, c, d]
+anst = s$~~["o":"0"]         // "Salut0n M0nd0"
+anst1 = s$~~["o":"0":1]      // "Salut0n Mondo"  (nur unua N)
+```
+
+> `+` estas nur por nombroj. Uzu `,`, apudmeton, aŭ interpoladon por ĉenoj.
 
 ---
 
@@ -98,10 +123,8 @@ priskribo = "Saluton {nomo}, vi estas {nombro}"  // → Saluton Ana, vi estas 25
 ```zymbol
 x = 7
 
-// Simpla se
 ? x > 0 { >> "pozitiva" ¶ }
 
-// se / alie-se / alie
 ? x > 100 {
     >> "granda" ¶
 } _? x > 0 {
@@ -113,14 +136,14 @@ x = 7
 }
 ```
 
-Blokoj `{ }` estas **devigaj** eĉ por unu linio.
+> Blokoj `{ }` estas **devigaj** eĉ por unu frazo.
 
 ---
 
 ## Kongruado
 
 ```zymbol
-// Kongruado kun intervaloj
+// Intervaloj
 poentoj = 85
 takso = ?? poentoj {
     90..100 : 'A'
@@ -130,7 +153,15 @@ takso = ?? poentoj {
 }
 >> takso ¶    // → B
 
-// Kongruado kun gardistoj (arbitraj kondiĉoj)
+// Ĉenoj
+koloro = "ruĝa"
+kodo = ?? koloro {
+    "ruĝa"   : "#FF0000"
+    "verda"  : "#00FF00"
+    _        : "#000000"
+}
+
+// Gardistoj
 temperaturo = -5
 stato = ?? temperaturo {
     _? temperaturo < 0  : "glacio"
@@ -140,14 +171,12 @@ stato = ?? temperaturo {
 }
 >> stato ¶    // → glacio
 
-// Kongruado kun ĉenoj
-koloro = "ruĝa"
-kodo = ?? koloro {
-    "ruĝa"   : "#FF0000"
-    "verda"  : "#00FF00"
-    _        : "#000000"
+// Bloka formo
+?? n {
+    0        : { >> "nulo" ¶ }
+    _? n < 0 : { >> "negativa" ¶ }
+    _        : { >> "pozitiva" ¶ }
 }
->> kodo ¶
 ```
 
 ---
@@ -155,38 +184,43 @@ kodo = ?? koloro {
 ## Bukloj
 
 ```zymbol
-// Inkluziva intervalo: 0..4 iteras 0,1,2,3,4
-@ i:0..4 { >> i " " }
->> ¶    // → 0 1 2 3 4
+@ i:0..4  { >> i " " }        // inkluziva intervalo:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // kun paŝo:             1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // inversa:              5 4 3 2 1 0
 
-// Intervalo kun paŝo
-@ i:1..9:2 { >> i " " }
->> ¶    // → 1 3 5 7 9
-
-// Inversa intervalo
-@ i:5..0:1 { >> i " " }
->> ¶    // → 5 4 3 2 1 0
-
-// Dum
 nombro = 1
 @ nombro <= 64 { nombro *= 2 }
->> nombro ¶    // → 128
+>> nombro ¶                   // → 128  (dum)
 
-// Por-ĉiu super tabelo
 frukto = ["pomo", "piro", "vinbero"]
-@ f:frukto { >> f ¶ }
+@ f:frukto { >> f ¶ }         // por-ĉiu tabelo
 
-// Super signoj de ĉeno
 @ c:"saluton" { >> c "-" }
->> ¶    // → s-a-l-u-t-o-n-
+>> ¶                          // → s-a-l-u-t-o-n-  (por-ĉiu ĉeno)
 
-// Haltu kaj Daŭrigu
 @ i:1..10 {
-    ? i % 2 == 0 { @> }    // @> daŭrigu
-    ? i > 7 { @! }          // @! haltu
+    ? i % 2 == 0 { @> }       // @> daŭrigu
+    ? i > 7 { @! }             // @! haltu
     >> i " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Senfina buklo
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Etikedita buklo (nestitaj haltoj)
+kalkulo = 0
+@ @ekstera {
+    kalkulo++
+    ? kalkulo >= 3 { @! ekstera }
+}
+>> kalkulo ¶                  // → 3
 ```
 
 ---
@@ -194,63 +228,61 @@ frukto = ["pomo", "piro", "vinbero"]
 ## Funkcioj
 
 ```zymbol
-// Deklaro kaj voko
-add(a, b) { <~ a + b }
->> add(3, 4) ¶    // → 7
+aldoni(a, b) { <~ a + b }
+>> aldoni(3, 4) ¶    // → 7
 
-// Rekursio
-duobligita(n) {
+faktorialo(n) {
     ? n <= 1 { <~ 1 }
-    <~ n * duobligita(n - 1)
+    <~ n * faktorialo(n - 1)
 }
->> duobligita(5) ¶    // → 120
-
-// Funkcioj havas izolitan amplekson — neniu aliro al eksteraj variabloj
-tutmonda = 100
-testi() {
-    x = 42    // nur loka
-    <~ x
-}
->> testi() ¶    // → 42
+>> faktorialo(5) ¶    // → 120
 ```
 
-> **Grave**: Nomitaj funkcioj `nomo(params){ }` ne estas unua-klasa valoroj.
-> Por pasi kiel argumento, envolvu: `x -> nomo(x)`.
+Funkcioj havas **izolitan amplekson** — ili ne povas legi eksterajn variablojn. Uzu elirajn parametrojn `<~` por modifi variablojn de la vokanto:
+
+```zymbol
+interŝanĝi(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
+}
+x = 10
+y = 20
+interŝanĝi(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> Nomitaj funkcioj ne estas unua-klasaj. Por pasi kiel argumento, envolvu: `x -> fn(x)`.
 
 ---
 
 ## Lambdoj kaj Fermoj
 
 ```zymbol
-// Simpla lambdo (implicita reveno)
 duobligita = x -> x * 2
 sumo = (a, b) -> a + b
 >> duobligita(5) ¶    // → 10
 >> sumo(3, 7) ¶       // → 10
 
-// Bloka lambdo (eksplicita reveno)
+// Bloka lambdo
 klasifiki = x -> {
     ? x > 0 { <~ "pozitiva" }
     _? x < 0 { <~ "negativa" }
     <~ "nulo"
 }
->> klasifiki(5) ¶     // → pozitiva
->> klasifiki(0) ¶     // → nulo
->> klasifiki(-5) ¶    // → negativa
 
-// Fermoj — lambdoj kaptas variablojn de ekstera amplekso
+// Fermo — kaptas eksteran amplekson
 faktoro = 3
-triobligita = x -> x * faktoro    // kaptas 'faktoro'
+triobligita = x -> x * faktoro
 >> triobligita(7) ¶    // → 21
 
-// Funkcifabriko
+// Fabriko
 make_adder(n) { <~ x -> x + n }
 add10 = make_adder(10)
 >> add10(5) ¶    // → 15
 
-// Lambdoj kiel valoroj: konservitaj en tabeloj
+// En tabeloj
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[0](5) ¶    // → 6
 >> ops[2](5) ¶    // → 25
 ```
 
@@ -259,64 +291,129 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 ## Aroj
 
 ```zymbol
-arr = [10, 20, 30, 40, 50]
+arr = [1, 2, 3, 4, 5]
 
-// Aliro (0-baza indekso)
->> arr[0] ¶    // → 10
+arr[0]          // 1 — aliro (0-baza)
+arr[-1]         // 5 — negativa indekso (lasta)
+arr$#           // 5 — longo (uzu (arr$#) en >>)
 
-// Longo (bezonas krampojn en >>)
-nombro = arr$#
->> (arr$#) ¶    // → 5
+arr = arr$+ 6            // aldonu → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // enmetu ĉe indekso 2
+arr3 = arr$- 3           // forigu unuan aperon de valoro
+arr4 = arr$-- 3          // forigu ĉiujn aperojn
+arr5 = arr$-[0]          // forigu ĉe indekso
+arr6 = arr$-[1..3]       // forigu intervalon (fino ekskluziva)
 
-// Aldonu, forigu, enhavas, tranĉo
-arr = arr$+ 60               // aldonu
-arr = arr$- 0                // forigu indekson 0
-havas = arr$? 30             // → #1
-tranĉo = arr$[0..2]          // [20, 30]
+havas = arr$? 3          // #1 — enhavas
+poz = arr$?? 3           // [2] — ĉiuj indeksoj de valoro
+tr = arr$[0..3]          // [1,2,3] — tranĉo (fino ekskluziva)
+tr2 = arr$[0:3]          // [1,2,3] — sama, laŭ-kvanta sintakso
 
-// Ĝisdatigu eron
-arr[1] = 99
+supren = arr$^+          // ordigita kreskanta  (nur primitivoj)
+malsupren = arr$^-       // ordigita malkres.   (nur primitivoj)
 
-// Por-ĉiu
-@ x:arr { >> x " " }
->> ¶
+// Nomitaj/poziciaj tabeloj de oploj — uzu $^ kun kompara lambdo
+db = [(nomo: "Karla", aĝo: 28), (nomo: "Ana", aĝo: 25), (nomo: "Bob", aĝo: 30)]
+laŭ_aĝo  = db$^ (a, b -> a.aĝo < b.aĝo)     // kreskanta laŭ aĝo  (<)
+laŭ_nomo = db$^ (a, b -> a.nomo > b.nomo)   // malkres. laŭ nomo (>)
+>> laŭ_aĝo[0].nomo ¶     // → Ana
+>> laŭ_nomo[0].nomo ¶    // → Karla
+
+arr[1] = 99              // ĝisdatigo enloke
+arr = arr[1]$~ 99        // funkcia ĝisdatigo — redonas novan tabelon
 ```
 
-> `$+`, `$-`, `$[..]` redonas **novan tabelon** — reattributu: `arr = arr$+ 4`.
-> Neniu ĉenado: uzu du apartajn atribuojn.
+> Ĉiuj kolektaj operatoroj redonas **novan tabelon**. Reattributu: `arr = arr$+ 4`.
+> Operatoroj ne povas esti ĉenataj — uzu mezajn atribuojn.
+> `$^+` / `$^-` ordigas **primitivajn tabelojn** (nombroj, ĉenoj). Por oplaj tabeloj uzu `$^` kun kompara lambdo — la direkto estas kodita en la lambdo (`<` = kreskanta, `>` = malkreskanta).
+
+```zymbol
+// Nestitaj tabeloj
+matrico = [[1,2,3],[4,5,6],[7,8,9]]
+>> matrico[1][2] ¶    // → 6
+```
+
+---
+
+## Malkunstrukturado
+
+```zymbol
+// Tabelo
+arr = [10, 20, 30, 40, 50]
+[a, b, c] = arr              // a=10  b=20  c=30
+[unua, *resto] = arr         // unua=10  resto=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ forĵetas
+
+// Pozicia oplo
+punkto = (100, 200)
+(px, py) = punkto            // px=100  py=200
+
+// Nomita oplo
+persono = (nomo: "Ana", aĝo: 25, urbo: "Madrido")
+(nomo: n, aĝo: a) = persono  // n="Ana"  a=25
+```
 
 ---
 
 ## Tuploj
 
 ```zymbol
-// Nomita oplo
-persono = (name: "Alice", age: 25)
->> persono.name ¶    // → Alice
->> persono.age ¶     // → 25
->> persono[0] ¶      // → Alice (indekso ankaŭ funkcias)
+// Pozicia
+punkto = (10, 20)
+>> punkto[0] ¶    // → 10
+
+// Nomita
+persono = (nomo: "Alice", aĝo: 25)
+>> persono.nomo ¶    // → Alice
+>> persono[0] ¶      // → Alice  (indekso ankaŭ funkcias)
+
+// Nestita
+poz = (x: 10, y: 20)
+p = (poz: poz, etikedo: "origino")
+>> p.poz.x ¶        // → 10
 ```
 
 ---
 
 ## Higher-Ordaj Funkcioj
 
-HOF-operatoroj bezonas **enlinian lambdon** — ne rektan lambdan variablon.
+> HOF-operatoroj bezonas **enlinian lambdon** — lambdaj variabloj rekte pasitaj ne funkcias.
 
 ```zymbol
 nombroj = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Mapo ($>)
-duobligitaj = nombroj$> (x -> x * 2)
->> duobligitaj ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+duobligitaj = nombroj$> (x -> x * 2)              // mapo  → [2,4,6…20]
+paroj       = nombroj$| (x -> x % 2 == 0)         // filtro → [2,4,6,8,10]
+entute      = nombroj$< (0, (acc, x) -> acc + x)  // redukto → 55
 
-// Filtrilo ($|)
-paroj = nombroj$| (x -> x % 2 == 0)
->> paroj ¶    // → [2, 4, 6, 8, 10]
+// Ĉenado per mezaĵoj
+paŝo1 = nombroj$| (x -> x > 3)
+paŝo2 = paŝo1$> (x -> x * x)
+>> paŝo2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Redukto ($<) — (komenca, (akumulilo, ero) -> esprimo)
-entute = nombroj$< (0, (acc, x) -> acc + x)
->> entute ¶    // → 55
+// Nomitaj funkcioj ene de HOF — envolvu en lambdo
+duobligita(x) { <~ x * 2 }
+r = nombroj$> (x -> duobligita(x))    // ✅
+```
+
+---
+
+## Pipa Operatoro
+
+La dekstra flanko ĉiam bezonas `_` kiel anstataŭilon por la pipita valoro:
+
+```zymbol
+duobligita = x -> x * 2
+aldoni = (a, b) -> a + b
+pliigi = x -> x + 1
+
+5 |> duobligita(_)        // → 10
+10 |> aldoni(_, 5)        // → 15
+5 |> aldoni(2, _)         // → 7
+
+// Ĉenita
+r = 5 |> duobligita(_) |> pliigi(_) |> duobligita(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -328,23 +425,21 @@ entute = nombroj$< (0, (acc, x) -> acc + x)
     x = 10 / 0
 } :! ##Div {
     >> "divido per nulo" ¶
-} :! ##IO {
-    >> "IO-eraro" ¶
 } :! {
-    >> "alia eraro: " _err ¶
+    >> "alia eraro: " _err ¶    // _err tenas la erarmesaĝon
 } :> {
     >> "ĉiam kuras" ¶
 }
 ```
 
-| Tipo        | Kiam okazas             |
-|-------------|-------------------------|
-| `##Div`     | Divido per nulo         |
-| `##IO`      | Dosiero / sistemo       |
-| `##Index`   | Indekso ekster limoj    |
-| `##Type`    | Tiperaro                |
-| `##Parse`   | Datuma analizado        |
-| `##Network` | Retaj eraroj            |
+| Tipo        | Kiam okazas               |
+|-------------|---------------------------|
+| `##Div`     | Divido per nulo           |
+| `##IO`      | Dosiero / sistemo         |
+| `##Index`   | Indekso ekster limoj      |
+| `##Type`    | Tiperaro                  |
+| `##Parse`   | Datuma analizado          |
+| `##Network` | Retaj eraroj              |
 | `##_`       | Iu ajn eraro (kaptu-ĉion) |
 
 ---
@@ -352,24 +447,87 @@ entute = nombroj$< (0, (acc, x) -> acc + x)
 ## Moduloj
 
 ```zymbol
-// Dosiero: lib/calc.zy
+// lib/calc.zy
 # calc
 
-#> { add, get_PI }    // eksportoj ANTAŬ difinoj
+#> { aldoni, get_PI }    // eksportoj ANTAŬ difinoj
 
 _PI := 3.14159
-add(a, b) { <~ a + b }
-get_PI() { <~ _PI }
+aldoni(a, b) { <~ a + b }
+get_PI() { <~ _PI }      // alirilo — rekta konstanta aliro per kaŝnomo ne subtenata
 ```
 
 ```zymbol
-// Dosiero: main.zy
+// main.zy
 <# ./lib/calc <= c    // alias deviga
 
->> c::add(5, 3) ¶     // → 8
+>> c::aldoni(5, 3) ¶  // → 8
 pi = c::get_PI()
 >> pi ¶               // → 3.14159
 ```
+
+```zymbol
+// Eksporto kun malsama publika nomo
+# mibiblioteko
+#> { _interna_aldoni <= sumo }
+
+_interna_aldoni(a, b) { <~ a + b }
+```
+
+```zymbol
+<# ./mibiblioteko <= m
+
+>> m::sumo(3, 4) ¶    // → 7  (interna nomo _interna_aldoni estas kaŝita)
+```
+
+---
+
+## Datumaj Operatoroj
+
+```zymbol
+// Analizi ĉenon al nombro
+v1 = #|"42"|      // → 42  (Entjero)
+v2 = #|"3.14"|    // → 3.14  (Glitpunkto)
+v3 = #|"abc"|     // → "abc"  (malsukceso-sekura, sen eraro)
+
+// Rondigi / trunki
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14  (rondigi al 2 decimaloj)
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14  (trunki)
+
+// Nombra formatado
+fmt = #,|1234567|      // → 1,234,567  (kun komoj)
+sci = #^|12345.678|    // → 1.2345678e4  (scienca)
+
+// Bazaj literaloj
+a = 0x41         // → 'A'  (heksa)
+b = 0b01000001   // → 'A'  (binara)
+c = 0o101        // → 'A'  (okta)
+
+// Baza konverta eligo
+heks = 0x|255|    // → "0x00FF"
+bin  = 0b|65|     // → "0b1000001"
+okt  = 0o|8|      // → "0o10"
+dec  = 0d|255|    // → "0d0255"
+```
+
+---
+
+## Ŝela Integriĝo
+
+```zymbol
+dato = <\ date +%Y-%m-%d \>     // kaptas stdout (inkluzive fina \n)
+>> "Hodiaŭ: " dato
+
+dosiero = "datumoj.txt"
+enhavo = <\ cat {dosiero} \>    // interpolado en komandoj
+
+eligo = </"./subskripto.zy"/>   // ekzekuti alian Zymbol-skripton, kapti eliron
+>> eligo
+```
+
+> `><` kaptas CLI-argumentojn kiel ĉenan tabelon (nur arba-piedisto).
 
 ---
 
@@ -377,9 +535,9 @@ pi = c::get_PI()
 
 ```zymbol
 klasifiki(nombro) {
-    ? nombro % 15 == 0 { <~ "FissBz" }
-    _? nombro % 3  == 0 { <~ "Fiss" }
-    _? nombro % 5  == 0 { <~ "Bz" }
+    ? nombro % 15 == 0 { <~ "FizzBuzz" }
+    _? nombro % 3  == 0 { <~ "Fizz" }
+    _? nombro % 5  == 0 { <~ "Buzz" }
     _ { <~ nombro }
 }
 
@@ -390,32 +548,41 @@ klasifiki(nombro) {
 
 ## Referenca Tabelo de Simboloj
 
-| Simbolo  | Operacio           | Simbolo    | Operacio            |
-|----------|--------------------|------------|---------------------|
-| `=`      | variablo           | `$#`       | longo               |
-| `:=`     | konstanto          | `$+`       | aldonu              |
-| `>>`     | eligo              | `$-`       | forigu (indekso)    |
-| `<<`     | enigo              | `$?`       | enhavas             |
-| `¶`/`\`  | novlinio           | `$[s..e]`  | tranĉo              |
-| `?`      | se                 | `$>`       | mapu                |
-| `_?`     | alie-se            | `$\|`      | filtru              |
-| `_`      | alie / ĵokero      | `$<`       | reduktu             |
-| `??`     | kongruado          | `!?`       | provu               |
-| `@`      | buklo              | `:!`       | kaptu               |
-| `@!`     | haltu              | `:>`       | fine                |
-| `@>`     | daŭrigu            | `$!`       | estas eraro         |
-| `->`     | lambdo             | `$!!`      | disvastigu eraron   |
-| `<~`     | redonu             | `#`        | deklaru modulon     |
-| `\|>`    | tubo               | `#>`       | eksportu            |
-| `#1`     | vera               | `<#`       | importu             |
-| `#0`     | malvera            | `::`       | modulovoko          |
+| Simbolo  | Operacio           | Simbolo      | Operacio              |
+|----------|--------------------|--------------|-----------------------|
+| `=`      | variablo           | `$#`         | longo                 |
+| `:=`     | konstanto          | `$+`         | aldonu                |
+| `>>`     | eligo              | `$+[i]`      | enmetu ĉe indekso     |
+| `<<`     | enigo              | `$-`         | forigu unuan per val. |
+| `¶` / `\\` | novlinio         | `$--`        | forigu ĉiujn per val. |
+| `?`      | se                 | `$-[i]`      | forigu ĉe indekso     |
+| `_?`     | alie-se            | `$-[i..j]`   | forigu intervalon     |
+| `_`      | alie / ĵokero      | `$?`         | enhavas               |
+| `??`     | kongruado          | `$??`        | trovas ĉiujn indeksojn|
+| `@`      | buklo              | `$[s..e]`    | tranĉo                |
+| `@!`     | haltu              | `$>`         | mapu                  |
+| `@>`     | daŭrigu            | `$\|`        | filtru                |
+| `->`     | lambdo             | `$<`         | reduktu               |
+| `$^+`    | ordigu kreskanta   | `$^-`        | ordigu malkreskanta   |
+| `$^`     | ordigu kun komparo | `$~`         | funkcia ĝisdatigo     |
+| `<~`     | redonu             | `!?`         | provu                 |
+| `\|>`    | tubo               | `:!`         | kaptu                 |
+| `#1`     | vera               | `:>`         | fine                  |
+| `#0`     | malvera            | `$!`         | estas eraro           |
+| `<#`     | importu            | `$!!`        | disvastigu eraron     |
+| `#`      | deklaru modulon    | `#>`         | eksportu              |
+| `::`     | modulovoko         | `.`          | aliro al kampo        |
+| `#\|..\|` | analizu nombron  | `#?`         | tiaj metadatenoj      |
+| `#.N\|..\|` | rondigi        | `#!N\|..\|`  | trunki                |
+| `c\|..\|` | komforma         | `e\|..\|`    | scienca               |
+| `<\ ..\>` | ŝela ekz.        | `><`         | CLI-argumentoj        |
 
 ---
 
 *Zymbol-Lang — Simbola. Universala. Neŝanĝebla.*
 
----
+> **Rimarko:** Ĉi tiu dokumentaro estis kreita kaj tradukita de artefarita inteligenteco (AI).
+> La autoritata referenco estas la [Zymbol-Lang specifiko](https://github.com/zymbol-lang/interpreter).
 
-> **Rimarko:** Ĉi tiu dokumentaro estis kreita kaj tradukita de artefarita inteligenteco (AI). Ĉiuj penoj estis faritaj por certigi precizecon, sed iuj tradukoj aŭ ekzemploj povas enhavi erarojn. La autoritata referenco estas la [Zymbol-Lang specifiko](https://github.com/OscarEEspinozaB/zymbol-lang-web).
-
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI). While every effort has been made to ensure accuracy, some translations or examples may contain errors. The canonical reference is the [Zymbol-Lang specification](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+> While every effort has been made to ensure accuracy, some translations or examples may contain errors. The canonical reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).

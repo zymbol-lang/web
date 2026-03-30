@@ -1,14 +1,6 @@
 # Dokumentācija | Kompakts Zymbol-Lang rokasgrāmata
 
-**Zymbol-Lang** ir simboliska programmēšanas valoda. Tā neizmanto atslēgvārdus — viss ir simbols. Tā darbojas vienādi jebkurā cilvēku valodā.
-
----
-
-## Filozofija
-
-- Nav atslēgvārdu (`ja`, `cilpa`, `atgriešana` nepastāv — tikai simboli `?`, `@`, `<~`)
-- Pilns Unicode atbalsts — identifikatori jebkurā valodā vai emoji 👋
-- Neatkarīgs no cilvēku valodas — kods ir identisks katrā valodā
+**Zymbol-Lang** ir simboliska programmēšanas valoda. Tā neizmanto atslēgvārdus — viss ir simbols. Tā darbojas vienādi jebkurā cilvēku valodā. Nav atslēgvārdu (`ja`, `cilpa`, `atgriešana` nepastāv — tikai simboli `?`, `@`, `<~`). Pilns Unicode atbalsts — identifikatori jebkurā valodā vai emoji 👋
 
 ---
 
@@ -29,10 +21,11 @@ x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %=  4   // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
@@ -56,21 +49,48 @@ x--       // 2
 
 ```zymbol
 // Izvade — NAV automātiskas jaunas rindas
->> "Sveika, Latviski runājošā pasaule!" ¶  // ¶ vai \\ dod skaidru jaunu rindu
->> "a=" a " b=" b ¶                        // vairākas vērtības ar juxtapozīciju
->> "summa=" klasificē(2, 3) ¶              // funkciju izsaukumi jebkurā pozīcijā
->> (auglis$#) ¶                            // postfiksa operatori prasa iekavas
+>> "Sveika" ¶                          // ¶ vai \\ dod skaidru jaunu rindu
+>> "a=" a " b=" b ¶                    // vairākas vērtības ar juxtapozīciju
+>> "summa=" saskaitīt(2, 3) ¶          // funkciju izsaukumi jebkurā pozīcijā
+>> (arr$#) ¶                           // postfiksa operatori prasa iekavas
 
 // Ievade
-<< vārds                                   // bez uzvednes — lasa mainīgajā
-<< "Jūsu vārds? " vārds                    // ar uzvedni
+<< vārds                               // bez uzvednes — lasa mainīgajā
+<< "Jūsu vārds? " vārds               // ar uzvedni
 ```
 
 > `¶` vai `\\` ir ekvivalenti kā jaunā rinda.
 
 ---
 
-## Virkņu Savienošana
+## Operatori
+
+```zymbol
+// Aritmētika
+5 + 2    // → 7
+5 - 2    // → 3
+5 * 2    // → 10
+5 / 2    // → 2.5
+5 % 2    // → 1
+5 ^ 2    // → 25   (kāpināšana)
+
+// Salīdzinājums (atgriež #1 vai #0)
+5 == 5   // → #1
+5 != 4   // → #1
+5 > 4    // → #1
+5 < 4    // → #0
+5 >= 5   // → #1
+5 <= 4   // → #0
+
+// Loģiskie
+#1 && #0    // → #0   (un)
+#1 || #0    // → #1   (vai)
+!#1         // → #0   (nē)
+```
+
+---
+
+## Virknes
 
 Trīs derīgas formas — katra savam kontekstam:
 
@@ -87,6 +107,13 @@ NOSAUKUMS := "Lietotājs: ", vārds
 
 // 3. Interpolācija — jebkurā kontekstā
 apraksts = "Sveika {vārds}, tev ir {skaitlis}" // → Sveika Ana, tev ir 25
+```
+
+```zymbol
+// Aizstāšana — s$~~["vecs":"jauns"]
+s = "sveika pasaule"
+s = s$~~["pasaule":"zeme"]      // → "sveika zeme"
+s = s$~~["a":"A":1]             // → "sveikA zeme"   aizstāt pirmos N gadījumus
 ```
 
 > **Piezīme**: `+` ir tikai skaitļiem. Izmantošana ar virknēm ģenerē brīdinājumu.
@@ -246,11 +273,14 @@ trīskāršots = x -> x * faktors    // tver 'faktors'
 // Funkciju rūpnīca
 izveidot_saskaitītāju(n) { <~ x -> x + n }
 pievienot10 = izveidot_saskaitītāju(10)
+pievienot20 = izveidot_saskaitītāju(20)
 >> pievienot10(5) ¶    // → 15
+>> pievienot20(5) ¶    // → 25
 
 // Lambdas kā vērtības: glabātas masīvos
 darbības = [x -> x+1, x -> x*2, x -> x*x]
 >> darbības[0](5) ¶    // → 6
+>> darbības[1](5) ¶    // → 10
 >> darbības[2](5) ¶    // → 25
 ```
 
@@ -263,19 +293,41 @@ arr = [10, 20, 30, 40, 50]
 
 // Piekļuve (0 balstīts indekss)
 >> arr[0] ¶    // → 10
+>> arr[2] ¶    // → 30
+>> arr[-1] ¶   // → 50   negatīvs indekss
 
 // Garums (prasa iekavas >>)
 skaitlis = arr$#
->> (arr$#) ¶    // → 5
+>> skaitlis ¶      // → 5
+>> (arr$#) ¶       // → 5
 
 // Pievienot, noņemt, satur, šķēle
-arr = arr$+ 60               // pievienošana
-arr = arr$- 0                // indeksa 0 noņemšana
+arr = arr$+ 60               // [10, 20, 30, 40, 50, 60]
+arr = arr$- 0                // indeksa 0 noņemšana: [20, 30, 40, 50, 60]
 ir = arr$? 30                // → #1
-šķēle = arr$[0..2]           // [20, 30]
+idx = arr$?? 30              // → [1]   visi indeksi vērtībai
+šķēle = arr$[0..2]           // šķēle [0,2): [20, 30]
+skaits = arr$[0:3]           // skaita bāzes: [20, 30, 40]
 
 // Elementa atjaunināšana
 arr[1] = 99
+>> arr ¶    // → [20, 99, 40, 50, 60]
+
+// Funkcionāla atjaunināšana (atgriež jaunu masīvu)
+arr2 = arr[1]$~ 77           // → [20, 77, 40, 50, 60]
+
+// Kārtot (primitīvi)
+num = [3, 1, 4, 1, 5]
+augošs   = num$^+            // → [1, 1, 3, 4, 5]
+dilstošs = num$^-            // → [5, 4, 3, 1, 1]
+
+// Kārtot tuples ar komparatora lambdu
+pāri = [(2,"b"), (1,"a"), (3,"c")]
+sakārtots = pāri$^ ((a,b) -> a[0] - b[0])    // kārtot pēc pirmā elementa
+
+// Ligzdoti masīvi
+matrica = [[1,2],[3,4],[5,6]]
+>> matrica[1][0] ¶    // → 3
 
 // Par katru elementu
 @ x:arr { >> x " " }
@@ -284,17 +336,52 @@ arr[1] = 99
 
 > `$+`, `$-`, `$[..]` atgriež **jaunu masīvu** — piešķiriet atpakaļ: `arr = arr$+ 4`.
 > Nav ķēdēšanas: izmantojiet divas atsevišķas piešķiršanas.
+> `arr$??` un `arr$[s:n]` izmanto citu sintaksi nekā `arr$[s..e]` — skatiet Simbolu Atsauce.
+
+---
+
+## Destrukturēšana
+
+```zymbol
+// Masīva destrukturēšana
+arr = [10, 20, 30]
+[a, b, c] = arr
+>> a ¶    // → 10
+>> b ¶    // → 20
+
+// Pozicionāla tuple destrukturēšana
+pt = (3, 4)
+(x, y) = pt
+>> x ¶    // → 3
+
+// Nosaukta tuple destrukturēšana
+persona = (vārds: "Alice", vecums: 25)
+(vārds: v, vecums: ve) = persona
+>> v ¶     // → Alice
+>> ve ¶    // → 25
+```
 
 ---
 
 ## Tuplās
 
 ```zymbol
+// Pozicionāla tuple
+punkts = (10, 20)
+>> punkts[0] ¶    // → 10
+>> punkts[1] ¶    // → 20
+
 // Nosaukta tuple
-persona = (vārds: "Laima", vecums: 25)
->> persona.vārds ¶    // → Laima
+persona = (vārds: "Alice", vecums: 25)
+>> persona.vārds ¶    // → Alice
 >> persona.vecums ¶   // → 25
->> persona[0] ¶       // → Laima (indekss arī darbojas)
+>> persona[0] ¶       // → Alice (indekss arī darbojas)
+
+// Ligzdota
+pos = (x: 3, y: 4)
+p = (pos: pos, etiķete: "sākumpunkts")
+>> p.etiķete ¶    // → sākumpunkts
+>> p.pos.x ¶      // → 3
 ```
 
 ---
@@ -317,6 +404,28 @@ pāra = skaitļi$| (x -> x % 2 == 0)
 // Samazināšana ($<) — (sākuma vērtība, (acc, elem) -> izteiksme)
 kopā = skaitļi$< (0, (acc, x) -> acc + x)
 >> kopā ¶    // → 55
+
+// Nav tiešas ķēdēšanas — izmantojiet starpposma mainīgos
+solis1 = skaitļi$| (x -> x > 5)
+solis2 = solis1$> (x -> x * x)
+>> solis2 ¶    // → [36, 49, 64, 81, 100]
+```
+
+---
+
+## Caurules Operators
+
+```zymbol
+// |> nodod kreiso vērtību kā _ labajā izteiksmē
+rezultāts = 5 |> _ * 2 |> _ + 1
+>> rezultāts ¶    // → 11
+
+// Ķēdētas transformācijas
+vārdi = ["sveika", "pasaule"]
+izeja = vārdi
+    |> _$> (w -> w$#)              // kartēt uz garumiem: [6, 6]
+    |> _$< (0, (a,x) -> a+x)      // summēt: 12
+>> izeja ¶    // → 12
 ```
 
 ---
@@ -324,6 +433,7 @@ kopā = skaitļi$< (0, (acc, x) -> acc + x)
 ## Kļūdu Apstrāde
 
 ```zymbol
+// Mēģiniet / Noķeriet / Beidzot
 !? {
     x = 10 / 0
 } :! ##Div {
@@ -331,11 +441,21 @@ kopā = skaitļi$< (0, (acc, x) -> acc + x)
 } :! ##IO {
     >> "I/A kļūda" ¶
 } :! {
-    >> "cita kļūda: " _err ¶
+    >> "cita kļūda: " _err ¶    // _err satur kļūdas ziņojumu
 } :> {
     >> "vienmēr izpildās" ¶
 }
+
+// Noķeršana pēc indeksa tipa
+!? {
+    arr = [1, 2, 3]
+    v = arr[10]
+} :! ##Index {
+    >> "indekss ārpus robežām" ¶
+}
 ```
+
+### Kļūdu Tipi
 
 | Tips        | Kad rodas                  |
 |-------------|----------------------------|
@@ -353,23 +473,81 @@ kopā = skaitļi$< (0, (acc, x) -> acc + x)
 
 ```zymbol
 // Fails: lib/calc.zy
-# calc
+# calc                    // deklarācija — vienmēr augšā
 
-#> { saskaitīt, get_PI }    // eksportēt PIRMS definīcijām
+#> {                      // eksportēšana — JĀBŪT pirms definīcijām
+    saskaitīt
+    get_PI
+}
 
 _PI := 3.14159
+
 saskaitīt(a, b) { <~ a + b }
-get_PI() { <~ _PI }
+get_PI() { <~ _PI }       // getter konstantei (nepieciešamais apvedceļš)
 ```
 
 ```zymbol
 // Fails: main.zy
-<# ./lib/calc <= c    // aizstājvārds ir obligāts
+<# ./lib/calc <= c         // aizstājvārds ir obligāts
 
->> c::saskaitīt(5, 3) ¶  // → 8
+>> c::saskaitīt(5, 3) ¶    // → 8  — izsaukums ar ::
 pi = c::get_PI()
->> pi ¶                  // → 3.14159
+>> pi ¶                    // → 3.14159
 ```
+
+> **Piezīme**: `alias.NOSAUKUMS` konstantēm nedarbosies — izmantojiet getter funkciju.
+
+---
+
+## Datu Operatori
+
+```zymbol
+// Parsēt virkni par skaitli
+x = #|"42"|          // → 42    (vesels skaitlis)
+y = #|"3.14"|        // → 3.14  (peldošais komats)
+
+// Noapaļot / saīsināt
+r = #.2|3.14159|     // → 3.14   noapaļot līdz 2 decimāļiem
+t = #!2|3.14159|     // → 3.14   saīsināt līdz 2 decimāļiem
+
+// Formatēt skaitli
+s = #,|1234567.89|    // → "1,234,567.89"  komata formāts
+e = #^|0.00042|       // → "4.2e-4"        zinātniskā notācija
+
+// Bāzes literāļi
+h = 0xFF             // → 255  heksadecimāls
+b = 0b1010           // → 10   binārais
+o = 0o17             // → 15   oktāls
+
+// Bāzes konversija
+hex = 255$>>"16"     // → "FF"
+bin = 10$>>"2"       // → "1010"
+```
+
+---
+
+## Čaulas Integrācija
+
+```zymbol
+// Palaist čaulas komandu un tvert izvadi
+izeja = <\ ls -la \>
+>> izeja ¶
+
+// Interpolācija komandās
+mape = "/tmp"
+faili = <\ ls {mape} \>
+
+// Daudzrindu skripta bloks
+rezultāts = </
+    echo "sveika"
+    pwd
+/>
+
+// Novirzīt izvadi uz čaulu (bez tvēršanas)
+>< "echo sveika"
+```
+
+> `><` nosūta izvadi uz čaulu bez tvēršanas.
 
 ---
 
@@ -382,7 +560,6 @@ klasificē(skaitlis) {
     _? skaitlis % 5  == 0 { <~ "Dūc" }
     _ { <~ skaitlis }
 }
-
 @ i:1..20 { >> klasificē(i) ¶ }
 ```
 
@@ -390,25 +567,34 @@ klasificē(skaitlis) {
 
 ## Simbolu Atsauce
 
-| Simbols  | Darbība             | Simbols    | Darbība              |
-|----------|---------------------|------------|----------------------|
-| `=`      | mainīgais           | `$#`       | garums               |
-| `:=`     | konstante           | `$+`       | pievienošana         |
-| `>>`     | izvade              | `$-`       | noņemšana (pēc ind.) |
-| `<<`     | ievade              | `$?`       | satur                |
-| `¶`/`\`  | jaunā rinda         | `$[s..e]`  | šķēle                |
-| `?`      | ja                  | `$>`       | kartēšana            |
-| `_?`     | citādi-ja           | `$\|`      | filtrēšana           |
-| `_`      | citādi / universāls | `$<`       | samazināšana         |
-| `??`     | atbilstība          | `!?`       | mēģināt              |
-| `@`      | cilpa               | `:!`       | noķert kļūdu         |
-| `@!`     | pārtraukt           | `:>`       | beidzot              |
-| `@>`     | turpināt            | `$!`       | ir kļūda             |
-| `->`     | lambda              | `$!!`      | izplatīt kļūdu       |
-| `<~`     | atgriezt            | `#`        | deklarēt moduli      |
-| `\|>`    | caurule             | `#>`       | eksportēt            |
-| `#1`     | patiess             | `<#`       | importēt             |
-| `#0`     | aplams              | `::`       | moduļa izsaukums     |
+| Simbols     | Darbība              | Simbols      | Darbība                    |
+|-------------|----------------------|--------------|----------------------------|
+| `=`         | mainīgais            | `$#`         | garums                     |
+| `:=`        | konstante            | `$+`         | pievienošana (append)      |
+| `>>`        | izvade               | `$+[i]`      | ievietošana indeksā        |
+| `<<`        | ievade               | `$--`        | pēdējā noņemšana           |
+| `¶`/`\`     | jaunā rinda          | `$-[i]`      | noņemšana indeksā          |
+| `?`         | ja (if)              | `$-[i..j]`   | diapazona noņemšana        |
+| `_?`        | citādi-ja (elif)     | `$?`         | satur                      |
+| `_`         | citādi / universāls  | `$??`        | visi indeksi vērtībai      |
+| `??`        | atbilstība           | `$[s..e]`    | šķēle                      |
+| `@`         | cilpa                | `$>`         | kartēšana                  |
+| `@!`        | pārtraukt            | `$\|`        | filtrēšana                 |
+| `@>`        | turpināt             | `$<`         | samazināšana               |
+| `->`        | lambda               | `$^+`        | kārtot augošā              |
+| `<~`        | atgriezt             | `$^-`        | kārtot dilstošā            |
+| `\|>`       | caurule              | `$^`         | kārtot ar komparatoru      |
+| `#1`        | patiess              | `$!`         | ir kļūda                   |
+| `#0`        | aplams               | `$!!`        | izplatīt kļūdu             |
+| `!?`        | mēģināt (try)        | `#`          | deklarēt moduli            |
+| `:!`        | noķert (catch)       | `#>`         | eksportēt                  |
+| `:>`        | beidzot (finally)    | `<#`         | importēt                   |
+| `.`         | lauka piekļuve       | `::`         | moduļa izsaukums           |
+| `#\|..\|`   | parsēt (parse)       | `#.N\|..\|`  | noapaļot N decimāļus       |
+| `#!N\|..\|` | saīsināt N decimāļus | `c\|..\|`    | komata formāts             |
+| `e\|..\|`   | zinātniskā not.      | `<\ \>`      | čaulas komanda             |
+| `><`        | čaulas izvade        | `$~~[..]`    | aizstāt virknē             |
+| `[a,b]=arr` | destrukturēšana      | `(x,y)=tup`  | tuple destrukturēšana      |
 
 ---
 
@@ -416,8 +602,8 @@ klasificē(skaitlis) {
 
 ---
 
-**Piezīme:** Šī dokumentācija tika izveidota un tulkota ar mākslīgo intelektu (MI). Ir veikti visi centieni, lai nodrošinātu precizitāti, taču daži tulkojumi vai piemēri var saturēt kļūdas. Autoritatīvā atsauce ir [Zymbol-Lang specifikācija](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+**Piezīme:** Šī dokumentācija tika izveidota un tulkota ar mākslīgo intelektu (MI). Ir veikti visi centieni, lai nodrošinātu precizitāti, taču daži tulkojumi vai piemēri var saturēt kļūdas. Autoritatīvā atsauce ir [Zymbol-Lang specifikācija](https://github.com/zymbol-lang/interpreter).
 
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-> The canonical reference is the [Zymbol-Lang specification](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> The canonical reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).

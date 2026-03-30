@@ -1,14 +1,6 @@
 # Kompakt Zymbol-Lang-dokumentation
 
-**Zymbol-Lang** er et symbolsk programmeringssprog. Det bruger ingen nøgleord — alt er symboler. Det fungerer ens på alle menneskelige sprog.
-
----
-
-## Filosofi
-
-- Ingen nøgleord (`if`, `while`, `return` eksisterer ikke — kun symboler `?`, `@`, `<~`)
-- Fuld Unicode — identifikatorer på ethvert sprog eller emoji 👋
-- Sproguafhængig — koden er identisk på alle sprog
+**Zymbol-Lang** er et symbolsk programmeringssprog. Det bruger ingen nøgleord — alt er symboler. Det fungerer ens på alle menneskelige sprog. Ingen nøgleord (`if`, `while`, `return` eksisterer ikke — kun symboler `?`, `@`, `<~`). Fuld Unicode — identifikatorer på ethvert sprog eller emoji 👋
 
 ---
 
@@ -29,10 +21,11 @@ x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %=  4   // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
@@ -70,7 +63,34 @@ x--       // 2
 
 ---
 
-## Strengsammensætning
+## Operatorer
+
+```zymbol
+// Aritmetik
+5 + 2    // → 7
+5 - 2    // → 3
+5 * 2    // → 10
+5 / 2    // → 2.5
+5 % 2    // → 1
+5 ^ 2    // → 25   (eksponentiering)
+
+// Sammenligning (returnerer #1 eller #0)
+5 == 5   // → #1
+5 != 4   // → #1
+5 > 4    // → #1
+5 < 4    // → #0
+5 >= 5   // → #1
+5 <= 4   // → #0
+
+// Logisk
+#1 && #0    // → #0   (og)
+#1 || #0    // → #1   (eller)
+!#1         // → #0   (ikke)
+```
+
+---
+
+## Strenge
 
 Tre gyldige metoder — hver til sit formål:
 
@@ -87,6 +107,13 @@ TITEL := "Bruger: ", navn
 
 // 3. Interpolation — i enhver kontekst
 desc = "Hej {navn}, du er {tal} år gammel"    // → Hej Ana, du er 25 år gammel
+```
+
+```zymbol
+// Erstat — s$~~["gammel":"ny"]
+s = "hej verden"
+s = s$~~["verden":"jord"]       // → "hej jord"
+s = s$~~["l":"L":1]             // → "hej jord"   erstat første N forekomster
 ```
 
 > **Bemærk**: `+` er kun til tal. Brug med strenge giver en advarsel.
@@ -267,6 +294,7 @@ arr = [10, 20, 30, 40, 50]
 // Adgang (indeks starter ved 0)
 >> arr[0] ¶    // → 10
 >> arr[2] ¶    // → 30
+>> arr[-1] ¶   // → 50   negativt indeks
 
 // Længde (kræver parenteser i >>)
 tal = arr$#
@@ -277,11 +305,29 @@ tal = arr$#
 arr = arr$+ 60               // [10, 20, 30, 40, 50, 60]
 arr = arr$- 0                // fjerner indeks 0: [20, 30, 40, 50, 60]
 har = arr$? 30               // → #1
+idx = arr$?? 30              // → [1]   alle indekser for værdi
 del = arr$[0..2]             // slice [0,2): [20, 30]
+antal = arr$[0:3]            // antalbaseret: [20, 30, 40]
 
 // Opdater element
 arr[1] = 99
 >> arr ¶    // → [20, 99, 40, 50, 60]
+
+// Funktionel opdatering (returnerer nyt array)
+arr2 = arr[1]$~ 77           // → [20, 77, 40, 50, 60]
+
+// Sorter (primitiver)
+num = [3, 1, 4, 1, 5]
+stigende  = num$^+           // → [1, 1, 3, 4, 5]
+faldende  = num$^-           // → [5, 4, 3, 1, 1]
+
+// Sorter tupler med komparator-lambda
+par = [(2,"b"), (1,"a"), (3,"c")]
+sorteret = par$^ ((a,b) -> a[0] - b[0])    // sorter efter første element
+
+// Indlejrede arrays
+matrix = [[1,2],[3,4],[5,6]]
+>> matrix[1][0] ¶    // → 3
 
 // For hvert element
 @ x:arr { >> x " " }
@@ -290,6 +336,30 @@ arr[1] = 99
 
 > `$+`, `$-`, `$[..]` returnerer et **nyt array** — tildel til samme navn: `arr = arr$+ 4`.
 > Kæd ikke: `arr$+ 4$+ 5` virker ikke — brug to tildelinger.
+> `arr$??` og `arr$[s:n]` bruger anden syntaks end `arr$[s..e]` — se Symbolreference.
+
+---
+
+## Destrukturering
+
+```zymbol
+// Array-destrukturering
+arr = [10, 20, 30]
+[a, b, c] = arr
+>> a ¶    // → 10
+>> b ¶    // → 20
+
+// Positionel tupel-destrukturering
+pt = (3, 4)
+(x, y) = pt
+>> x ¶    // → 3
+
+// Navngivet tupel-destrukturering
+person = (navn: "Alice", alder: 25)
+(navn: n, alder: a) = person
+>> n ¶    // → Alice
+>> a ¶    // → 25
+```
 
 ---
 
@@ -339,6 +409,23 @@ total = tal_liste$< (0, (acc, x) -> acc + x)
 trin1 = tal_liste$| (x -> x > 5)
 trin2 = trin1$> (x -> x * x)
 >> trin2 ¶    // → [36, 49, 64, 81, 100]
+```
+
+---
+
+## Røroperator
+
+```zymbol
+// |> sender venstre værdi som _ i højre udtryk
+resultat = 5 |> _ * 2 |> _ + 1
+>> resultat ¶    // → 11
+
+// Kædede transformationer
+ord = ["hej", "verden"]
+ud = ord
+    |> _$> (w -> w$#)              // map til længder: [3, 5]
+    |> _$< (0, (a,x) -> a+x)      // summer: 8
+>> ud ¶    // → 8
 ```
 
 ---
@@ -412,6 +499,58 @@ pi = c::get_PI()
 
 ---
 
+## Dataoperatorer
+
+```zymbol
+// Fortolk streng til tal
+x = #|"42"|          // → 42    (heltal)
+y = #|"3.14"|        // → 3.14  (kommatal)
+
+// Afrund / afkort
+r = #.2|3.14159|     // → 3.14   afrund til 2 decimaler
+t = #!2|3.14159|     // → 3.14   afkort til 2 decimaler
+
+// Formater tal
+s = #,|1234567.89|    // → "1,234,567.89"  kommaformat
+e = #^|0.00042|       // → "4.2e-4"        videnskabelig notation
+
+// Basliteraler
+h = 0xFF             // → 255  hexadecimalt
+b = 0b1010           // → 10   binært
+o = 0o17             // → 15   oktalt
+
+// Baskonvertering
+hex = 255$>>"16"     // → "FF"
+bin = 10$>>"2"       // → "1010"
+```
+
+---
+
+## Skalintegration
+
+```zymbol
+// Kør skalkommando og fang uddata
+ud = <\ ls -la \>
+>> ud ¶
+
+// Interpolation i kommandoer
+mappe = "/tmp"
+filer = <\ ls {mappe} \>
+
+// Flerlinjet skriptblok
+resultat = </
+    echo "hej"
+    pwd
+/>
+
+// Omdirigér uddata til skal (uden fangst)
+>< "echo hej"
+```
+
+> `><` sender uddata til skallen uden at fange det.
+
+---
+
 ## Komplet Eksempel: FizzBuzz
 
 ```zymbol
@@ -428,25 +567,34 @@ klassificer(tal) {
 
 ## Symbolreference
 
-| Symbol  | Operation          | Symbol     | Operation              |
-|---------|--------------------|------------|------------------------|
-| `=`     | variabel           | `$#`       | længde                 |
-| `:=`    | konstant           | `$+`       | tilføj (append)        |
-| `>>`    | uddata             | `$-`       | fjern (per indeks)     |
-| `<<`    | inddata            | `$?`       | indeholder             |
-| `¶`/`\` | linjeskift         | `$[s..e]`  | slice                  |
-| `?`     | hvis (if)          | `$>`       | map                    |
-| `_?`    | ellers hvis (elif) | `$\|`      | filter                 |
-| `_`     | ellers / wildcard  | `$<`       | reduce                 |
-| `??`    | match              | `!?`       | prøv (try)             |
-| `@`     | løkke              | `:!`       | fang (catch)           |
-| `@!`    | afbryd             | `:>`       | altid (finally)        |
-| `@>`    | fortsæt            | `$!`       | er fejl                |
-| `->`    | lambda             | `$!!`      | propagér fejl          |
-| `<~`    | retur              | `#`        | deklarer modul         |
-| `\|>`   | pipe               | `#>`       | eksportér              |
-| `#1`    | sand               | `<#`       | importér               |
-| `#0`    | falsk              | `::`       | modulkald              |
+| Symbol      | Operation            | Symbol       | Operation                  |
+|-------------|----------------------|--------------|----------------------------|
+| `=`         | variabel             | `$#`         | længde                     |
+| `:=`        | konstant             | `$+`         | tilføj (append)            |
+| `>>`        | uddata               | `$+[i]`      | indsæt ved indeks          |
+| `<<`        | inddata              | `$--`        | fjern sidste               |
+| `¶`/`\`     | linjeskift           | `$-[i]`      | fjern ved indeks           |
+| `?`         | hvis (if)            | `$-[i..j]`   | fjern interval             |
+| `_?`        | ellers hvis (elif)   | `$?`         | indeholder                 |
+| `_`         | ellers / wildcard    | `$??`        | alle indekser for værdi    |
+| `??`        | match                | `$[s..e]`    | slice                      |
+| `@`         | løkke                | `$>`         | map                        |
+| `@!`        | afbryd               | `$\|`        | filter                     |
+| `@>`        | fortsæt              | `$<`         | reduce                     |
+| `->`        | lambda               | `$^+`        | sorter stigende            |
+| `<~`        | retur                | `$^-`        | sorter faldende            |
+| `\|>`       | rør                  | `$^`         | sorter med komparator      |
+| `#1`        | sand                 | `$!`         | er fejl                    |
+| `#0`        | falsk                | `$!!`        | propagér fejl              |
+| `!?`        | prøv (try)           | `#`          | deklarer modul             |
+| `:!`        | fang (catch)         | `#>`         | eksportér                  |
+| `:>`        | altid (finally)      | `<#`         | importér                   |
+| `.`         | feltadgang           | `::`         | modulkald                  |
+| `#\|..\|`   | fortolk (parse)      | `#.N\|..\|`  | afrund N decimaler         |
+| `#!N\|..\|` | afkort N decimaler   | `c\|..\|`    | kommaformat                |
+| `e\|..\|`   | videnskabelig not.   | `<\ \>`      | skalkommando               |
+| `><`        | skaluddata           | `$~~[..]`    | erstat i streng            |
+| `[a,b]=arr` | destrukturering      | `(x,y)=tup`  | tupel-destrukturering      |
 
 ---
 
@@ -454,8 +602,8 @@ klassificer(tal) {
 
 ---
 
-**Ansvarsfraskrivelse:** Denne dokumentation blev oprettet og oversat af kunstig intelligens (KI). Der er gjort alle bestræbelser for at sikre nøjagtighed, men nogle oversættelser eller eksempler kan indeholde fejl. Den autoritative reference er [Zymbol-Lang-specifikationen](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+**Ansvarsfraskrivelse:** Denne dokumentation blev oprettet og oversat af kunstig intelligens (KI). Der er gjort alle bestræbelser for at sikre nøjagtighed, men nogle oversættelser eller eksempler kan indeholde fejl. Den autoritative reference er [Zymbol-Lang-specifikationen](https://github.com/zymbol-lang/interpreter).
 
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-> The authoritative reference is the [Zymbol-Lang specification](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> The authoritative reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).

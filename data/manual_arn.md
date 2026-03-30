@@ -2,10 +2,6 @@
 
 **Zymbol-Lang** kiñe kimün zungu. Ngäy tañi kimün zugun — fentren wixal. Feley kiñechi feyta mapuzugun mew.
 
----
-
-## Kimün Rakizuam
-
 - Ngäy tañi kimün zugun (`if`, `while`, `return` ngächi — wixal ñi `?`, `@`, `<~`)
 - Unicode fentren — sutikuna mapuzugun mew icha emoji 👋
 - Zugun ngächi — código kiñechi zugun mew
@@ -15,24 +11,23 @@
 ## Wixal Dungukelu ha Kümeke Amulelu
 
 ```zymbol
-x = 10           // wixal (püleley)
-PI := 3.14159    // kümeke (ngäy pülel — wingka reke)
+x = 10              // wixal (püleley)
+PI := 3.14159       // kümeke (ngäy pülel — wingka reke)
 iñche = "Ana"
-nüküley = #1     // küme
+nüküley = #1        // küme
 👋 := "Mari mari"
 ```
 
-### Wixal Fentren Amulkey
-
 ```zymbol
-x = 10    // 10
+x = 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %=  4   // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
@@ -50,46 +45,76 @@ x--       // 2
 | Tupla          | `(a, b)`              | `##)`        | Wixal                                |
 | Sutiyuq tupla  | `(x: 1, y: 2)`        | `##)`        | Suti icha xokiñ mew taripan          |
 
+```zymbol
+// Type introspection — returns (type, digits, value)
+meta = 42#?
+>> meta ¶         // → (###, 2, 42)
+t = meta[0]
+>> t ¶            // → ###
+```
+
 ---
 
 ## Dungukelu ha Küpalekey
 
 ```zymbol
-// Dungukelu — NGÄY küme mew
 >> "Mari mari" ¶                    // ¶ icha \\ küme mew
 >> "a=" a " b=" b ¶                 // fentren wixal huñisqa
->> "xokiñ=" kimeltun(2, 3) ¶        // función feley mew
 >> (arr$#) ¶                        // postfix paréntesis itrofilu
 
-// Küpalekey
 << iñche                            // ngäy prompt — küpalen wixal
 << "¿Iney tami suti? " iñche        // prompt yéetel
 ```
 
-> `¶` icha `\\` küme mew dungukelu.
+> `¶` (AltGr+R teclado españolpe) icha `\\` küme mew dungukelu.
 
 ---
 
-## Zugun Huñiy
-
-Küla kimün — kiñechi mew:
+## Ñiduamün
 
 ```zymbol
+// Arithmetic — use assignments; some operators have quirks directly in >>
+a = 10
+b = 3
+r1 = a + b    // 13     r2 = a - b    // 7
+r3 = a * b    // 30     r4 = a / b    // 3  (integer division)
+r5 = a % b    // 1      r6 = a ^ b    // 1000  (exponentiation)
+
+// Comparison
+a == b    // #0    a <> b    // #1    a < b    // #0
+a <= b    // #0   a > b     // #1    a >= b   // #1
+
+// Logical
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
+```
+
+---
+
+## Dungun
+
+```zymbol
+// Three concatenation forms
 iñche = "Ana"
 n = 25
 
-// 1. Koma — wixal = icha :=
-zugun = "Mari mari ", iñche, "!"          // → Mari mari Ana!
-SUTI := "Ñi pu: ", iñche
-
-// 2. Fentren — >>
->> "Mari mari " iñche " ñi xokiñ " n ¶   // → Mari mari Ana ñi xokiñ 25
-
-// 3. Ukupi — imaymana mew
-rimay = "Mari mari {iñche}, ñi xokiñ {n}" // → Mari mari Ana, ñi xokiñ 25
+zugun = "Mari mari ", iñche, "!"           // koma — wixal = icha :=
+>> "Mari mari " iñche " ñi xokiñ " n ¶    // fentren — >>
+rimay = "Mari mari {iñche}, ñi xokiñ {n}" // ukupi — imaymana mew
 ```
 
-> **Kimün**: `+` xokiñ ñi. Zugun mew wingka kimün.
+```zymbol
+s = "Mari mari Mapu"
+len = s$#                  // 15
+sub = s$[0..9]             // "Mari mari"  (tukuy mana)
+has = s$? "Mapu"           // #1
+parts = "a,b,c,d" / ','    // [a, b, c, d]
+rep = s$~~["a":"A"]        // "MAri mAri MApu"
+rep1 = s$~~["a":"A":1]     // "MAri mari Mapu"  (ñawpaq N kama)
+```
+
+> `+` xokiñ ñi. Zugun mew wingka kimün `,`, fentren, icha ukupi.
 
 ---
 
@@ -98,10 +123,8 @@ rimay = "Mari mari {iñche}, ñi xokiñ {n}" // → Mari mari Ana, ñi xokiñ 25
 ```zymbol
 x = 7
 
-// Küme añoite
 ? x > 0 { >> "nochilechi" ¶ }
 
-// Küme / icha küme / wingka
 ? x > 100 {
     >> "fütake" ¶
 } _? x > 0 {
@@ -113,7 +136,7 @@ x = 7
 }
 ```
 
-Bloque `{ }` **itrofilu** kiñe línea ñi feley.
+> Bloque `{ }` **itrofilu** kiñe línea ñi feley.
 
 ---
 
@@ -130,6 +153,14 @@ grado = ?? xokiñ {
 }
 >> grado ¶    // → B
 
+// Match zugun
+kuluri = "kelü"
+código = ?? kuluri {
+    "kelü"  : "#FF0000"
+    "karü"  : "#00FF00"
+    _       : "#000000"
+}
+
 // Match waqaychay (fentren kimün)
 külliñ = -5
 kaqnin = ?? külliñ {
@@ -140,14 +171,12 @@ kaqnin = ?? külliñ {
 }
 >> kaqnin ¶    // → anüf
 
-// Match zugun
-kuluri = "kelü"
-código = ?? kuluri {
-    "kelü"  : "#FF0000"
-    "karü"  : "#00FF00"
-    _       : "#000000"
+// Bloque ukupi
+?? n {
+    0       : { >> "ngächi" ¶ }
+    _? n < 0: { >> "minche" ¶ }
+    _       : { >> "nochilechi" ¶ }
 }
->> código ¶
 ```
 
 ---
@@ -155,38 +184,43 @@ código = ?? kuluri {
 ## Muyuy
 
 ```zymbol
-// Xokiñ küla: 0..4 amun 0,1,2,3,4
-@ i:0..4 { >> i " " }
->> ¶    // → 0 1 2 3 4
+@ i:0..4  { >> i " " }        // xokiñ küla:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // xokiñ mew:   1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // xokiñ uray:  5 4 3 2 1 0
 
-// Xokiñ xokiñ mew
-@ i:1..9:2 { >> i " " }
->> ¶    // → 1 3 5 7 9
-
-// Xokiñ uray
-@ i:5..0:1 { >> i " " }
->> ¶    // → 5 4 3 2 1 0
-
-// Welu (while)
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶    // → 128
+>> n ¶                        // → 128  (while)
 
-// Fentren ba'al
 küpalwe = ["manzana", "pera", "uva"]
-@ f:küpalwe { >> f ¶ }
+@ f:küpalwe { >> f ¶ }       // fentren ba'al array
 
-// Zugun letra
 @ c:"mapu" { >> c "-" }
->> ¶    // → m-a-p-u-
+>> ¶                          // → m-a-p-u-  (zugun letra)
 
-// @! ha @>
 @ i:1..10 {
     ? i % 2 == 0 { @> }    // @> amun
     ? i > 7 { @! }          // @! fütra
     >> i " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Tukuy muyuy
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Suti muyuy (ukupi fütra)
+count = 0
+@ @outer {
+    count++
+    ? count >= 3 { @! outer }
+}
+>> count ¶                    // → 3
 ```
 
 ---
@@ -194,49 +228,48 @@ küpalwe = ["manzana", "pera", "uva"]
 ## Kimeltun
 
 ```zymbol
-// Dungukelu ha wixal
 kimeltun(a, b) { <~ a + b }
 >> kimeltun(3, 4) ¶    // → 7
 
-// Küpalwe
 factorial(n) {
     ? n <= 1 { <~ 1 }
     <~ n * factorial(n - 1)
 }
 >> factorial(5) ¶    // → 120
-
-// Kimeltun ngäy wixal mew
-global = 100
-amulkey() {
-    x = 42    // wayye' cha'an
-    <~ x
-}
->> amulkey() ¶    // → 42
 ```
 
-> **Fütake kimün**: Kimeltun `iñche(params){ }` ngäy wixal.
-> Argumento mew: `x -> iñche(x)`.
+Kimeltun **ngäy wixal mew** — ngäy küpalwe wixal. Salida parámetro `<~` apaykachaña:
+
+```zymbol
+swap(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
+}
+x = 10
+y = 20
+swap(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> Fütake kimün: Kimeltun `iñche(params){ }` ngäy wixal. Argumento mew: `x -> iñche(x)`.
 
 ---
 
 ## Lambda ha Closure
 
 ```zymbol
-// Lambda (ngäy dungukelu)
 epuñiy = x -> x * 2
 yapuy = (a, b) -> a + b
 >> epuñiy(5) ¶    // → 10
 >> yapuy(3, 7) ¶  // → 10
 
-// Lambda bloque (dungukelu)
+// Lambda bloque
 kimeltun2 = x -> {
     ? x > 0 { <~ "nochilechi" }
     _? x < 0 { <~ "minche" }
     <~ "ngächi"
 }
->> kimeltun2(5) ¶     // → nochilechi
->> kimeltun2(0) ¶     // → ngächi
->> kimeltun2(-5) ¶    // → minche
 
 // Closure — lambda küpalwe wixal
 factor = 3
@@ -250,7 +283,6 @@ add10 = make_adder(10)
 
 // Lambda wixal: küpalwe mew
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[0](5) ¶    // → 6
 >> ops[2](5) ¶    // → 25
 ```
 
@@ -259,64 +291,129 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 ## Küpalwe
 
 ```zymbol
-arr = [10, 20, 30, 40, 50]
+arr = [1, 2, 3, 4, 5]
 
-// Amulew (0-base)
->> arr[0] ¶    // → 10
+arr[0]          // 1 — amulew (0-base)
+arr[-1]         // 5 — xokiñ ngäy (qipa)
+arr$#           // 5 — xokiñ (paréntesis itrofilu >>)
 
-// Xokiñ (paréntesis itrofilu >>)
-n = arr$#
->> (arr$#) ¶    // → 5
+arr = arr$+ 6            // ts'aak → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // xokiñ 2 ts'aak
+arr3 = arr$- 3           // ñawpaq valor quichihua
+arr4 = arr$-- 3          // fentren valor quichihua
+arr5 = arr$-[0]          // xokiñ quichihua
+arr6 = arr$-[1..3]       // küla quichihua (tukuy mana)
 
-// Ts'aak, quichihua, wáalik, chuuyil
-arr = arr$+ 60               // ts'aak
-arr = arr$- 0                // quichihua índice 0
-yaan = arr$? 30              // → #1
-chuuyil = arr$[0..2]         // [20, 30]
+yaan = arr$? 3           // #1 — yaan
+pos = arr$?? 3           // [2] — fentren xokiñnak
+sl = arr$[0..3]          // [1,2,3] — chuuyil (tukuy mana)
+sl2 = arr$[0:3]          // [1,2,3] — kikillan, xokiñniw
 
-// Wixal patla
-arr[1] = 99
+asc = arr$^+             // wichay (primitivos kama)
+desc = arr$^-            // uray (primitivos kama)
 
-// Fentren ba'al
-@ x:arr { >> x " " }
->> ¶
+// Suti/xokiñ tuple küpalwe — $^ comparador lambdawan
+db = [(suti: "Carla", xipan: 28), (suti: "Ana", xipan: 25), (suti: "Bob", xipan: 30)]
+xipanmew  = db$^ (a, b -> a.xipan < b.xipan)
+sutimew   = db$^ (a, b -> a.suti > b.suti)
+>> xipanmew[0].suti ¶     // → Ana
+>> sutimew[0].suti ¶      // → Carla
+
+arr[1] = 99              // wixal patla
+arr = arr[1]$~ 99        // küpalwe yáanal kutitaña
 ```
 
-> `$+`, `$-`, `$[..]` **küpalwe yáanal** — ts'aak: `arr = arr$+ 4`.
+> Tukuy colección wixal **küpalwe yáanal** kutitaña. Ts'aak: `arr = arr$+ 4`.
 > Ngäy huñi — epu tz'iibil.
+> `$^+` / `$^-` **primitivo küpalwe** (xokiñnak, zugun). Tuple küpalwemew `$^` comparador lambdawan — ñanqa lambdapi churasqa (`<` = wichay, `>` = uray).
+
+```zymbol
+// Ukupi küpalwe
+matriz = [[1,2,3],[4,5,6],[7,8,9]]
+>> matriz[1][2] ¶    // → 6
+```
+
+---
+
+## Keluwün
+
+```zymbol
+// Küpalwe
+arr = [10, 20, 30, 40, 50]
+[a, b, c] = arr              // a=10  b=20  c=30
+[first, *rest] = arr         // first=10  rest=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ ngäy itrofilu
+
+// Xokiñ tupla
+punto = (100, 200)
+(px, py) = punto             // px=100  py=200
+
+// Suti tupla
+che = (suti: "Ana", xipan: 25, mapu: "Wallmapu")
+(suti: s, xipan: x) = che   // s="Ana"  x=25
+```
 
 ---
 
 ## Tupla
 
 ```zymbol
-// Tupla suti mew
+// Xokiñ
+punto = (10, 20)
+>> punto[0] ¶    // → 10
+
+// Suti mew
 che = (suti: "Alice", xipan: 25)
 >> che.suti ¶    // → Alice
->> che.xipan ¶   // → 25
->> che[0] ¶      // → Alice (xokiñ feley)
+>> che[0] ¶      // → Alice  (xokiñ feley)
+
+// Ukupi
+pos = (x: 10, y: 20)
+p = (pos: pos, suti: "punta")
+>> p.pos.x ¶        // → 10
 ```
 
 ---
 
 ## Fütake Kimeltun
 
-HOF señal itrofilu **lambda inline** — ngäy variable lambda.
+> HOF señal itrofilu **lambda inline** — ngäy variable lambda.
 
 ```zymbol
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Map ($>)
-epuñiysqa = nums$> (x -> x * 2)
->> epuñiysqa ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+epuñiysqa  = nums$> (x -> x * 2)                // map  → [2,4,6…20]
+epuñiy kuti = nums$| (x -> x % 2 == 0)          // filter → [2,4,6,8,10]
+fentren    = nums$< (0, (acc, x) -> acc + x)     // reduce → 55
 
-// Filter ($|)
-epuñiy kuti = nums$| (x -> x % 2 == 0)
->> epuñiy kuti ¶    // → [2, 4, 6, 8, 10]
+// Epu tz'iibil huñiy
+step1 = nums$| (x -> x > 3)
+step2 = step1$> (x -> x * x)
+>> step2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Reduce ($<) — (ñi wixal, (acc, elem) -> expr)
-fentren = nums$< (0, (acc, x) -> acc + x)
->> fentren ¶    // → 55
+// Suti kimeltun HOF ukupi — lambdawan hapiy
+double(x) { <~ x * 2 }
+r = nums$> (x -> double(x))    // ✅
+```
+
+---
+
+## Ñidua Pipe
+
+RHS siempre `_` placeholder itrofilu piped wixal:
+
+```zymbol
+epuñiy = x -> x * 2
+yapuy = (a, b) -> a + b
+yapxtaña = x -> x + 1
+
+5 |> epuñiy(_)           // → 10
+10 |> yapuy(_, 5)        // → 15
+5 |> yapuy(2, _)         // → 7
+
+// Huñisqa
+r = 5 |> epuñiy(_) |> yapxtaña(_) |> epuñiy(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -328,10 +425,8 @@ fentren = nums$< (0, (acc, x) -> acc + x)
     x = 10 / 0
 } :! ##Div {
     >> "xokiñ fütake wingka" ¶
-} :! ##IO {
-    >> "IO wingka" ¶
 } :! {
-    >> "hool wingka: " _err ¶
+    >> "hool wingka: " _err ¶    // _err wingka dungukelu waqaychan
 } :> {
     >> "fentren amun" ¶
 }
@@ -371,6 +466,69 @@ pi = c::get_PI()
 >> pi ¶                 // → 3.14159
 ```
 
+```zymbol
+// Suti yancuic dungukelu
+# mylib
+#> { _internal_add <= sum }
+
+_internal_add(a, b) { <~ a + b }
+```
+
+```zymbol
+<# ./mylib <= m
+
+>> m::sum(3, 4) ¶    // → 7  (suti _internal_add pakasqa)
+```
+
+---
+
+## Ngünechen Data
+
+```zymbol
+// Zugun xokiñpi tikray
+v1 = #|"42"|      // → 42  (Int)
+v2 = #|"3.14"|    // → 3.14  (Float)
+v3 = #|"abc"|     // → "abc"  (ngäy wingka)
+
+// Xokiñ / ch'iqtaña
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14  (epu decimal)
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14  (ch'iqtaña)
+
+// Xokiñ formato
+fmt = #,|1234567|      // → 1,234,567  (coma huñisqa)
+sci = #^|12345.678|    // → 1.2345678e4  (científico)
+
+// Base literal
+a = 0x41         // → 'A'  (hex)
+b = 0b01000001   // → 'A'  (binario)
+c = 0o101        // → 'A'  (octal)
+
+// Base tikraña dungukelu mew
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
+```
+
+---
+
+## Shell Eluñmapu
+
+```zymbol
+antü = <\ date +%Y-%m-%d \>     // stdout hap'iy (tukuy \n hapikun)
+>> "Kümelu: " antü
+
+marandurenda = "data.txt"
+tañi = <\ cat {marandurenda} \>      // interpolación comando ukupi
+
+lluqsiña = </"./subscript.zy"/>   // huk Zymbol qillqa kimeltun, dungukelu hap'iy
+>> lluqsiña
+```
+
+> `><` CLI argumentonak zugun küpalwe hina hap'iy (tree-walker kama).
+
 ---
 
 ## Fentren Techapyrã: FizzBuzz
@@ -394,31 +552,38 @@ kimeltun(rakizuam) {
 |---------|-------------------|------------|--------------------|
 | `=`     | wixal             | `$#`       | xokiñ              |
 | `:=`    | ngäy pülel        | `$+`       | ts'aak             |
-| `>>`    | dungukelu         | `$-`       | quichihua          |
-| `<<`    | küpalekey         | `$?`       | yaan               |
-| `¶`/`\` | küme mew          | `$[s..e]`  | chuuyil            |
-| `?`     | küme              | `$>`       | map                |
-| `_?`    | icha              | `$\|`      | filter             |
-| `_`     | wingka / fentren  | `$<`       | reduce             |
-| `??`    | match             | `!?`       | itrofilu           |
-| `@`     | muyuy             | `:!`       | k'aak'al           |
-| `@!`    | fütra             | `:>`       | fentren            |
-| `@>`    | amun              | `$!`       | wingka             |
-| `->`    | lambda            | `$!!`      | wingka cachay      |
-| `<~`    | küme mew          | `#`        | módulo             |
-| `\|>`   | pipe              | `#>`       | dungukelu          |
-| `#1`    | küme              | `<#`       | küpalekey          |
-| `#0`    | wingka            | `::`       | módulo kimeltun    |
+| `>>`    | dungukelu         | `$+[i]`    | xokiñpi ts'aak     |
+| `<<`    | küpalekey         | `$-`       | ñawpaq quichihua   |
+| `¶`/`\\` | küme mew         | `$--`      | fentren quichihua  |
+| `?`     | küme              | `$-[i]`    | xokiñ quichihua    |
+| `_?`    | icha              | `$-[i..j]` | küla quichihua     |
+| `_`     | wingka / fentren  | `$?`       | yaan               |
+| `??`    | match             | `$??`      | fentren xokiñnak   |
+| `@`     | muyuy             | `$[s..e]`  | chuuyil            |
+| `@!`    | fütra             | `$>`       | map                |
+| `@>`    | amun              | `$\|`      | filter             |
+| `->`    | lambda            | `$<`       | reduce             |
+| `$^+`   | wichay (primitivos) | `$^-`    | uray (primitivos)  |
+| `$^`    | comparador (tuples) | | |
+| `<~`    | küme mew          | `!?`       | itrofilu           |
+| `\|>`   | pipe              | `:!`       | k'aak'al           |
+| `#1`    | küme              | `:>`       | fentren            |
+| `#0`    | wingka            | `$!`       | wingka             |
+| `<#`    | küpalekey         | `$!!`      | wingka cachay      |
+| `#`     | módulo            | `#>`       | dungukelu          |
+| `::`    | módulo kimeltun   | `.`        | campo taripay      |
+| `#\|..\|` | xokiñ tikraña   | `#?`       | tipo metadata      |
+| `#.N\|..\|` | xokiñ          | `#!N\|..\|` | ch'iqtaña        |
+| `c\|..\|` | coma formato    | `e\|..\|`  | científico         |
+| `<\ ..\>` | shell luraña    | `><`       | CLI argumentonak   |
 
 ---
 
 *Zymbol-Lang — Wixal. Fentren. Ngäy Pülel.*
 
----
-
 > **Dungukelu:** Kay kimün amukey rurasqa ka t'ikrasqa inteligencia artificial (IA) mew.
 > Llapan llamk'ay rurasqa küme kaptin, wakin zugun icha techapyrã pantay kapun.
-> Küme referencia: [Zymbol-Lang](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> Küme referencia: [Zymbol-Lang](https://github.com/zymbol-lang/interpreter).
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > While every effort has been made to ensure accuracy, some translations or examples may contain errors.

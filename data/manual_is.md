@@ -2,10 +2,6 @@
 
 **Zymbol-Lang** er táknrænt forritunarmál. Það notar engin lykilorð — allt er tákn. Það virkar eins í öllum mannlegum tungumálum.
 
----
-
-## Heimspeki
-
 - Engin lykilorð (`ef`, `lykkja`, `skilað` eru ekki til — aðeins tákn `?`, `@`, `<~`)
 - Fullt Unicode — auðkenni á hvaða tungumáli eða emoji 👋
 - Tungumálahlutlægt — kóðinn er eins á öllum tungumálum
@@ -22,17 +18,16 @@ virkt = #1       // bool satt
 👋 := "Halló"
 ```
 
-### Samsettar Úthlutanir
-
 ```zymbol
-x = 10    // 10
+x = 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %=  4   // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
@@ -50,18 +45,23 @@ x--       // 2
 | Tuple         | `(a, b)`            | `##)`       | Staðsetningarlægt                 |
 | Nafngreint Tuple | `(x: 1, y: 2)`   | `##)`       | Aðgangur með nafni eða númer      |
 
+```zymbol
+// Gerðarskoðun — skilar (gerð, tölustafir, gildi)
+meta = 42#?
+>> meta ¶         // → (###, 2, 42)
+t = meta[0]
+>> t ¶            // → ###
+```
+
 ---
 
 ## Úttak og Inntök
 
 ```zymbol
-// Úttak — bætir EKKI við línuskipti sjálfkrafa
 >> "Halló, Íslenskumælandi heimur!" ¶    // ¶ eða \\ gefur bein línuskipti
 >> "a=" a " b=" b ¶                       // mörg gildi með hlið við hlið
->> "summa=" add(2, 3) ¶                   // fallakall í hvaða stöðu sem er
 >> (ávöxtur$#) ¶                          // viðskeytisaðgerðir krefjast sviga
 
-// Inntök
 << nafn                                   // engin kvaðning — les í breytu
 << "Nafnið þitt? " nafn                   // með kvaðningu
 ```
@@ -70,26 +70,51 @@ x--       // 2
 
 ---
 
-## Strengjatenging
-
-Þrjár gildar myndir — hvert fyrir sitt samhengi:
+## Virkjar
 
 ```zymbol
-nafn = "Ana"
-tala = 25
+// Reikningur
+a = 10
+b = 3
+n1 = a + b    // 13     n2 = a - b    // 7
+n3 = a * b    // 30     n4 = a / b    // 3  (heiltöludeiling)
+n5 = a % b    // 1      n6 = a ^ b    // 1000  (veldi)
 
-// 1. Komma — í úthlutun með = eða :=
-skilaboð = "Halló ", nafn, "!"              // → Halló Ana!
-TITILL := "Notandi: ", nafn
+// Samanburður
+a == b    // #0    a <> b    // #1    a < b    // #0
+a <= b    // #0   a > b     // #1    a >= b   // #1
 
-// 2. Hlið við hlið — í >> úttak
->> "Halló " nafn " þú ert " tala ¶          // → Halló Ana þú ert 25
-
-// 3. Breytuinnsetning — í hvaða samhengi sem er
-lýsing = "Halló {nafn}, þú ert {tala}"     // → Halló Ana, þú ert 25
+// Rökfræði
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
 ```
 
-> **Athugið**: `+` er aðeins fyrir tölur. Að nota það með strengjum gefur viðvörun.
+---
+
+## Strengir
+
+```zymbol
+// Þrjár tengingarmyndir
+nafn = "Ana"
+tala = 42
+
+skilaboð = "Halló ", nafn, "!"              // komma — í úthlutun
+>> "Halló " nafn " þú ert " tala ¶          // hlið við hlið — í >>
+lýsing = "Halló {nafn}, þú ert {tala}"     // innsetning — hvar sem er
+```
+
+```zymbol
+s = "Halló Heimur"
+len = s$#                  // 12
+sub = s$[0..5]             // "Halló"  (lok ekki innifalið)
+has = s$? "Heimur"         // #1
+split = "a,b,c,d" / ','   // [a, b, c, d]
+repl = s$~~["á":"a"]        // skipta út
+repl1 = s$~~["á":"a":1]     // fyrstu N
+```
+
+> `+` er eingöngu fyrir tölur. Notaðu `,`, samhliðasetningu eða innfellingu fyrir strengi.
 
 ---
 
@@ -98,10 +123,8 @@ lýsing = "Halló {nafn}, þú ert {tala}"     // → Halló Ana, þú ert 25
 ```zymbol
 x = 7
 
-// Einfalt ef
 ? x > 0 { >> "jákvætt" ¶ }
 
-// ef / ef-annars / annars
 ? x > 100 {
     >> "stórt" ¶
 } _? x > 0 {
@@ -113,14 +136,14 @@ x = 7
 }
 ```
 
-Blokkir `{ }` eru **nauðsynlegar** jafnvel fyrir eina línu.
+> Blokkir `{ }` eru **nauðsynlegar** jafnvel fyrir eina yfirlýsingu.
 
 ---
 
 ## Passa
 
 ```zymbol
-// Passa með bil
+// Bil
 stig = 85
 einkunn = ?? stig {
     90..100 : 'A'
@@ -130,7 +153,15 @@ einkunn = ?? stig {
 }
 >> einkunn ¶    // → B
 
-// Passa með gæsluþingum (handvaldar skilyrðar)
+// Strengir
+litur = "rauður"
+kóði = ?? litur {
+    "rauður"  : "#FF0000"
+    "grænn"   : "#00FF00"
+    _         : "#000000"
+}
+
+// Gæslur
 hitastig = -5
 ástand = ?? hitastig {
     _? hitastig < 0  : "ís"
@@ -140,14 +171,12 @@ hitastig = -5
 }
 >> ástand ¶    // → ís
 
-// Passa með strengjum
-litur = "rauður"
-kóði = ?? litur {
-    "rauður"  : "#FF0000"
-    "grænn"   : "#00FF00"
-    _         : "#000000"
+// Yfirlýsingarform (blokkahermur)
+?? n {
+    0       : { >> "núll" ¶ }
+    _? n < 0: { >> "neikvætt" ¶ }
+    _       : { >> "jákvætt" ¶ }
 }
->> kóði ¶
 ```
 
 ---
@@ -155,38 +184,43 @@ kóði = ?? litur {
 ## Lykkjur
 
 ```zymbol
-// Innifalið bil: 0..4 ítrar 0,1,2,3,4
-@ i:0..4 { >> i " " }
->> ¶    // → 0 1 2 3 4
+@ i:0..4  { >> i " " }        // innifalið bil:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // með skrefi:      1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // öfugt:           5 4 3 2 1 0
 
-// Bil með skrefi
-@ i:1..9:2 { >> i " " }
->> ¶    // → 1 3 5 7 9
-
-// Öfugt bil
-@ i:5..0:1 { >> i " " }
->> ¶    // → 5 4 3 2 1 0
-
-// Meðan
 tala = 1
 @ tala <= 64 { tala *= 2 }
->> tala ¶    // → 128
+>> tala ¶                      // → 128  (meðan)
 
-// Fyrir-hvert yfir fylki
 ávöxtur = ["epli", "pera", "þrúga"]
-@ f:ávöxtur { >> f ¶ }
+@ f:ávöxtur { >> f ¶ }         // fyrir-hvert yfir fylki
 
-// Yfir strengstafi
 @ c:"halló" { >> c "-" }
->> ¶    // → h-a-l-l-ó-
+>> ¶                           // → h-a-l-l-ó-  (fyrir-hvert yfir streng)
 
-// Break og Continue
 @ i:1..10 {
-    ? i % 2 == 0 { @> }    // @> halda áfram
-    ? i > 7 { @! }          // @! brjóta
+    ? i % 2 == 0 { @> }        // @> halda áfram
+    ? i > 7 { @! }              // @! brjóta
     >> i " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                           // → 1 3 5 7
+
+// Óendanleg lykkja
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                           // → 1 2 3 4
+
+// Merkt lykkja (hreiður brot)
+fjöldi = 0
+@ @ytri {
+    fjöldi++
+    ? fjöldi >= 3 { @! ytri }
+}
+>> fjöldi ¶                    // → 3
 ```
 
 ---
@@ -194,63 +228,61 @@ tala = 1
 ## Föll
 
 ```zymbol
-// Yfirlýsing og kall
 add(a, b) { <~ a + b }
 >> add(3, 4) ¶    // → 7
 
-// Endurkvæmni
-tvöfaldur(n) {
+factorial(n) {
     ? n <= 1 { <~ 1 }
-    <~ n * tvöfaldur(n - 1)
+    <~ n * factorial(n - 1)
 }
->> tvöfaldur(5) ¶    // → 120
-
-// Föll hafa einangrað umfang — engin aðgangur að ytri breytum
-altækt = 100
-prófa() {
-    x = 42    // aðeins staðbundið
-    <~ x
-}
->> prófa() ¶    // → 42
+>> factorial(5) ¶    // → 120
 ```
 
-> **Mikilvægt**: Nafngreind föll `nafn(breytur){ }` eru ekki fyrstur flokks gildi.
-> Til að senda sem rök, vefja: `x -> nafn(x)`.
+Föll hafa **einangrað umfang** — þau geta ekki lesið ytri breytur. Notaðu úttaksbreytur `<~` til að breyta breytum kallara:
+
+```zymbol
+skipta(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
+}
+x = 10
+y = 20
+skipta(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> Nafngreind föll eru ekki fyrstur flokks gildi. Til að senda sem rök, vefja: `x -> nafn(x)`.
 
 ---
 
 ## Lambdaföll og Lokanir
 
 ```zymbol
-// Einfalt lambda (óbein skilagildi)
 tvöfaldur = x -> x * 2
 summa = (a, b) -> a + b
 >> tvöfaldur(5) ¶    // → 10
 >> summa(3, 7) ¶     // → 10
 
-// Blokklamda (bein skilagildi)
+// Blokklamda
 flokkaðu = x -> {
     ? x > 0 { <~ "jákvætt" }
     _? x < 0 { <~ "neikvætt" }
     <~ "núll"
 }
->> flokkaðu(5) ¶     // → jákvætt
->> flokkaðu(0) ¶     // → núll
->> flokkaðu(-5) ¶    // → neikvætt
 
-// Lokanir — lambdaföll fanga ytri umfangsbreytur
+// Lokun — fangar ytri umfang
 stuðull = 3
-þreföldur = x -> x * stuðull    // fangar 'stuðull'
+þreföldur = x -> x * stuðull
 >> þreföldur(7) ¶    // → 21
 
-// Fallsverksmiðja
+// Verksmiðja
 make_adder(n) { <~ x -> x + n }
 add10 = make_adder(10)
 >> add10(5) ¶    // → 15
 
-// Lambdaföll sem gildi: geymd í fylkjum
+// Í fylkjum
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[0](5) ¶    // → 6
 >> ops[2](5) ¶    // → 25
 ```
 
@@ -259,64 +291,129 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 ## Fylki
 
 ```zymbol
-arr = [10, 20, 30, 40, 50]
+arr = [1, 2, 3, 4, 5]
 
-// Aðgangur (0-byggt númer)
->> arr[0] ¶    // → 10
+arr[0]          // 1 — aðgangur (0-byggt númer)
+arr[-1]         // 5 — neikvætt númer (síðasta)
+arr$#           // 5 — lengd (nota (arr$#) í >>)
 
-// Lengd (krefst sviga í >>)
-tala = arr$#
->> (arr$#) ¶    // → 5
+arr = arr$+ 6            // bæta við → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // setja inn á númer 2
+arr3 = arr$- 3           // fjarlægja fyrsta tilvik af gildi
+arr4 = arr$-- 3          // fjarlægja öll tilvik
+arr5 = arr$-[0]          // fjarlægja eftir númer
+arr6 = arr$-[1..3]       // fjarlægja svið (lok ekki innifalið)
 
-// Bæta við, fjarlægja, inniheldur, sneiðing
-arr = arr$+ 60               // bæta við
-arr = arr$- 0                // fjarlægja númer 0
-hefur = arr$? 30             // → #1
-sneiðing = arr$[0..2]        // [20, 30]
+hefur = arr$? 3          // #1 — inniheldur
+staðir = arr$?? 3        // [2] — öll númer gildis
+sl = arr$[0..3]          // [1,2,3] — sneiðing (lok ekki innifalið)
+sl2 = arr$[0:3]          // [1,2,3] — sama, talningarsetningafræði
 
-// Uppfæra stak
-arr[1] = 99
+hækkandi = arr$^+        // raðað hækkandi  (frumstæðar eingöngu)
+lækkandi = arr$^-        // raðað lækkandi (frumstæðar eingöngu)
 
-// Fyrir-hvert
-@ x:arr { >> x " " }
->> ¶
+// Nafngreint/staðsett tuple fylki — nota $^ með samanburðarlambda
+db = [(name: "Carla", age: 28), (name: "Ana", age: 25), (name: "Bob", age: 30)]
+eftir_aldri  = db$^ (a, b -> a.age < b.age)    // hækkandi eftir aldri  (<)
+eftir_nafni = db$^ (a, b -> a.name > b.name)  // lækkandi eftir nafni (>)
+>> eftir_aldri[0].name ¶     // → Ana
+>> eftir_nafni[0].name ¶    // → Carla
+
+arr[1] = 99              // uppfæra á stað
+arr = arr[1]$~ 99        // virknilegar uppfærsla — skilar nýju fylki
 ```
 
-> `$+`, `$-`, `$[..]` skila **nýju fylki** — úthluta aftur: `arr = arr$+ 4`.
-> Engin keðjun: nota tvær aðskildar úthlutanir.
+> Allar safnaðaraðgerðir skila **nýju fylki**. Úthluta aftur: `arr = arr$+ 4`.
+> Ekki er hægt að keðja aðgerðir — notaðu millistig úthlutanir.
+> `$^+` / `$^-` raða **frumstæðum fylkjum** (tölur, strengir). Fyrir tuple fylki notaðu `$^` með samanburðarlambda — stefnan er kóðuð í lambdanu (`<` = hækkandi, `>` = lækkandi).
+
+```zymbol
+// Hreiður fylki
+fylki = [[1,2,3],[4,5,6],[7,8,9]]
+>> fylki[1][2] ¶    // → 6
+```
+
+---
+
+## Niðurbrot
+
+```zymbol
+// Fylki
+arr = [10, 20, 30, 40, 50]
+[a, b, c] = arr              // a=10  b=20  c=30
+[fyrst, *rest] = arr          // fyrst=10  rest=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ hunsar
+
+// Staðsett tuple
+punktur = (100, 200)
+(px, py) = punktur           // px=100  py=200
+
+// Nafngreint tuple
+einstaklingur = (nafn: "Ana", aldur: 25, borg: "Reykjavík")
+(nafn: n, aldur: a) = einstaklingur  // n="Ana"  a=25
+```
 
 ---
 
 ## Tuples
 
 ```zymbol
-// Nafngreint tuple
-einstaklingur = (name: "Alice", age: 25)
->> einstaklingur.name ¶    // → Alice
->> einstaklingur.age ¶     // → 25
->> einstaklingur[0] ¶      // → Alice (númer virkar líka)
+// Staðsetningarlægt
+punktur = (10, 20)
+>> punktur[0] ¶    // → 10
+
+// Nafngreint
+einstaklingur = (nafn: "Alice", aldur: 25)
+>> einstaklingur.nafn ¶    // → Alice
+>> einstaklingur[0] ¶      // → Alice  (númer virkar líka)
+
+// Hreiður
+staðsetning = (x: 10, y: 20)
+p = (staðsetning: staðsetning, merki: "uppruni")
+>> p.staðsetning.x ¶        // → 10
 ```
 
 ---
 
 ## Hærri Stigs Föll
 
-Hærri stigs aðgerðir krefjast **innbyggðs lambda** — ekki beint lambdabreyta.
+> Hærri stigs aðgerðir krefjast **innbyggðs lambda** — ekki beint lambdabreyta.
 
 ```zymbol
 tölur = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Kortleggja ($>)
-tvöfaldar = tölur$> (x -> x * 2)
->> tvöfaldar ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+tvöfaldar  = tölur$> (x -> x * 2)                // kortleggja  → [2,4,6…20]
+jafntölur    = tölur$| (x -> x % 2 == 0)           // sía → [2,4,6,8,10]
+samtals    = tölur$< (0, (acc, x) -> acc + x)     // minnka → 55
 
-// Sía ($|)
-jafntala = tölur$| (x -> x % 2 == 0)
->> jafntala ¶    // → [2, 4, 6, 8, 10]
+// Keðja með millistigum
+skref1 = tölur$| (x -> x > 3)
+skref2 = skref1$> (x -> x * x)
+>> skref2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Minnka ($<) — (upphafsgildi, (safn, stak) -> segð)
-samtals = tölur$< (0, (acc, x) -> acc + x)
->> samtals ¶    // → 55
+// Nafngreind föll í HOF — vefja í lambda
+tvöfaldur(x) { <~ x * 2 }
+r = tölur$> (x -> tvöfaldur(x))    // ✅
+```
+
+---
+
+## Pípu-virkji
+
+Hægri hlið þarfnast alltaf `_` sem frátakssæti:
+
+```zymbol
+tvöfalt = x -> x * 2
+leggja = (a, b) -> a + b
+auka = x -> x + 1
+
+5 |> tvöfalt(_)      // → 10
+10 |> leggja(_, 5)   // → 15
+5 |> leggja(2, _)    // → 7
+
+// Keðja
+n = 5 |> tvöfalt(_) |> auka(_) |> tvöfalt(_)
+>> n ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -328,10 +425,8 @@ samtals = tölur$< (0, (acc, x) -> acc + x)
     x = 10 / 0
 } :! ##Div {
     >> "deiling með núll" ¶
-} :! ##IO {
-    >> "IO villa" ¶
 } :! {
-    >> "önnur villa: " _err ¶
+    >> "önnur: " _err ¶    // _err geymir villuboðið
 } :> {
     >> "keyrir alltaf" ¶
 }
@@ -352,24 +447,87 @@ samtals = tölur$< (0, (acc, x) -> acc + x)
 ## Einingar
 
 ```zymbol
-// Skrá: lib/calc.zy
+// lib/calc.zy
 # calc
 
 #> { add, get_PI }    // útflutningur ÁÐUR EN skilgreiningar
 
 _PI := 3.14159
 add(a, b) { <~ a + b }
-get_PI() { <~ _PI }
+get_PI() { <~ _PI }   // getter — beinn fastaaðgangur með gælunafni er ekki studdur
 ```
 
 ```zymbol
-// Skrá: main.zy
+// main.zy
 <# ./lib/calc <= c    // gælunafn nauðsynlegt
 
 >> c::add(5, 3) ¶     // → 8
 pi = c::get_PI()
 >> pi ¶               // → 3.14159
 ```
+
+```zymbol
+// Útflutningur með öðru opinberu nafni
+# minlib
+#> { _innri_add <= summa }
+
+_innri_add(a, b) { <~ a + b }
+```
+
+```zymbol
+<# ./minlib <= m
+
+>> m::summa(3, 4) ¶    // → 7  (innra nafnið _innri_add er falið)
+```
+
+---
+
+## Gagnagirðar
+
+```zymbol
+// Breyta streng í tölu
+v1 = #|"42"|      // → 42
+v2 = #|"3.14"|    // → 3.14
+v3 = #|"abc"|     // → "abc"
+
+// Námunda / Stytta
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14
+
+// Tölumót
+fmt = #,|1234567|      // → 1,234,567
+sci = #^|12345.678|    // → 1.2345678e4
+
+// Grunntölur
+a = 0x41         // → 'A'
+b = 0b01000001   // → 'A'
+c = 0o101        // → 'A'
+
+// Grunnumreikningur
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
+```
+
+---
+
+## Shell-samþætting
+
+```zymbol
+dagsetning = <\ date +%Y-%m-%d \>     // fanga stdout
+>> "Í dag: " dagsetning
+
+skrá = "data.txt"
+innihald = <\ cat {skrá} \>           // innskot í skipun
+
+úttak = </"./subscript.zy"/>          // keyra Zymbol skrift
+>> úttak
+```
+
+> `><` fangar CLI-frumbreytur sem strengfylki (eingöngu tréfara).
 
 ---
 
@@ -390,32 +548,39 @@ flokkaðu(tala) {
 
 ## Táknaviðmið
 
-| Tákn    | Aðgerð             | Tákn       | Aðgerð              |
-|---------|--------------------|------------|---------------------|
-| `=`     | breyta             | `$#`       | lengd               |
-| `:=`    | fasti              | `$+`       | bæta við            |
-| `>>`    | úttak              | `$-`       | fjarlægja (númer)   |
-| `<<`    | inntök             | `$?`       | inniheldur          |
-| `¶`/`\` | línuskipti         | `$[s..e]`  | sneiðing            |
-| `?`     | ef                 | `$>`       | kortleggja          |
-| `_?`    | ef-annars          | `$\|`      | sía                 |
-| `_`     | annars / algildi   | `$<`       | minnka              |
-| `??`    | passa              | `!?`       | reyna               |
-| `@`     | lykkja             | `:!`       | grípa               |
-| `@!`    | brjóta             | `:>`       | að lokum            |
-| `@>`    | halda áfram        | `$!`       | er villa            |
-| `->`    | lambda             | `$!!`      | dreifa villu        |
-| `<~`    | skila              | `#`        | lýsa einingu        |
-| `\|>`   | pípa               | `#>`       | útflutningur        |
-| `#1`    | satt               | `<#`       | innflutningur       |
-| `#0`    | ósatt              | `::`       | eininga kall        |
+| Tákn | Aðgerð | Tákn | Aðgerð |
+|------|--------|------|--------|
+| `=` | breyta | `$#` | lengd |
+| `:=` | fasti | `$+` | bæta við |
+| `>>` | úttak | `$+[i]` | setja inn eftir númer |
+| `<<` | inntök | `$-` | fjarlægja fyrsta eftir gildi |
+| `¶` / `\\` | línuskipti | `$--` | fjarlægja öll eftir gildi |
+| `?` | ef | `$-[i]` | fjarlægja eftir númer |
+| `_?` | ef-annars | `$-[i..j]` | fjarlægja svið |
+| `_` | annars / algildi | `$?` | inniheldur |
+| `??` | passa | `$??` | finna öll númer |
+| `@` | lykkja | `$[s..e]` | sneiðing |
+| `@!` | brjóta | `$>` | kortleggja |
+| `@>` | halda áfram | `$\|` | sía |
+| `->` | lambda | `$<` | minnka |
+| `$^+` | raða hækkandi (frumstæðar) | `$^-` | raða lækkandi (frumstæðar) |
+| `$^` | raða með samanburði (tuples) | | |
+| `<~` | skila | `!?` | reyna |
+| `\|>` | pípa | `:!` | grípa |
+| `#1` | satt | `:>` | að lokum |
+| `#0` | ósatt | `$!` | er villa |
+| `<#` | innflutningur | `$!!` | dreifa villu |
+| `#` | lýsa einingu | `#>` | útflutningur |
+| `::` | eininga kall | `.` | svæðis aðgangur |
+| `#\|..\|` | þátta tölu | `#?` | gerðarflokkar |
+| `#.N\|..\|` | námunda | `#!N\|..\|` | stytta |
+| `c\|..\|` | kommusnið | `e\|..\|` | vísindalegt |
+| `<\ ..\>` | keyra shell | `>\<` | CLI-frumbreytur |
 
 ---
 
 *Zymbol-Lang — Táknrænt. Alheimslegt. Óbreytanlegt.*
 
----
+> **Fyrirvari:** Þessi skjölun var búin til og þýdd af gervigreind (GG). Allt hefur verið gert til að tryggja nákvæmni, en sumar þýðingar eða dæmi geta innihaldið villur. Heimildarvísunin er [Zymbol-Lang forskrift](https://github.com/zymbol-lang/interpreter).
 
-> **Fyrirvari:** Þessi skjölun var búin til og þýdd af gervigreind (GG). Allt hefur verið gert til að tryggja nákvæmni, en sumar þýðingar eða dæmi geta innihaldið villur. Heimildarvísunin er [Zymbol-Lang forskrift](https://github.com/OscarEEspinozaB/zymbol-lang-web).
-
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI). While every effort has been made to ensure accuracy, some translations or examples may contain errors. The canonical reference is the [Zymbol-Lang specification](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI). While every effort has been made to ensure accuracy, some translations or examples may contain errors. The canonical reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).

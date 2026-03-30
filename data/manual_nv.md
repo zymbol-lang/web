@@ -2,10 +2,6 @@
 
 **Zymbol-Lang** łahgo saad olta' nahalinígíí. Doo ła' bizaad da — ła'í nahalin. Diné bizaad nídaaz dóó łahgo saad bee olta'.
 
----
-
-## Baa Hane'
-
 - Doo ła' bizaad da (`if`, `while`, `return` — doo hólǫ́ da — ła'í nahalin: `?`, `@`, `<~`)
 - Unicode nízaad — saad olta' Diné bizaad góne' dóó emoji 👋
 - Łah bił nahalin — saad olta' t'áá ałtso saad bee hane'ígíí bił nahalin
@@ -22,17 +18,16 @@ naaltsoos = "Ana"
 👋 := "Yá'át'ééh"
 ```
 
-### Nályééh Łahgo
-
 ```zymbol
-x = 10    // 10
+x = 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %= 4    // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
@@ -55,13 +50,10 @@ x--       // 2
 ## Bił Haz'á dóó Bił Ninídá
 
 ```zymbol
-// Bił haz'á — doo ¶ bił ninídá da t'áá ákót'é
 >> "Yá'át'ééh" ¶                    // ¶ dóó \\ — ła'í nahalin
 >> "a=" a " b=" b ¶                  // łah siłtsooí juxtaposition bił
->> "łah=" nályééh(2, 3) ¶           // olta' bił nahalin ła' bił
 >> (łah$#) ¶                        // postfix — ánóołt'e bił bił
 
-// Bił ninídá
 << saad                              // doo bizhi' da — saad bił ninídá
 << "Nízhi' dínídzaa? " saad         // bizhi' bił
 ```
@@ -70,23 +62,48 @@ x--       // 2
 
 ---
 
-## Saad Ła' Ályaaígíí
-
-Táá' nahalinígíí — t'áá ałtso bił nahalin:
+## Naaltsoos Bee Hane'
 
 ```zymbol
+// Tìkan namboo
+a = 10
+b = 3
+r1 = a + b    // 13     r2 = a - b    // 7
+r3 = a * b    // 30     r4 = a / b    // 3  (namboo tìkan)
+r5 = a % b    // 1      r6 = a ^ b    // 1000  (tìran)
+
+// Sìpawm
+a == b    // #0    a <> b    // #1    a < b    // #0
+a <= b    // #0   a > b     // #1    a >= b   // #1
+
+// Tìkangkem
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
+```
+
+---
+
+## Saad
+
+```zymbol
+// Táá' nahalinígíí — t'áá ałtso bił nahalin
 saad = "Ana"
 namboo = 25
 
-// 1. Dah — = dóó := bił
-hane' = "Yá'át'ééh ", saad, "!"             // → Yá'át'ééh Ana!
-BIZHI' := "Diné: ", saad
+msg = "Yá'át'ééh ", saad, "!"             // dah — = dóó := bił
+>> "Yá'át'ééh " saad " namboo " namboo ¶  // juxtaposition — >> bił
+bizhi' = "Yá'át'ééh {saad}, namboo {namboo}"  // bił nahalin — ła' bił
+```
 
-// 2. Juxtaposition — >> bił
->> "Yá'át'ééh " saad " namboo " namboo ¶    // → Yá'át'ééh Ana namboo 25
-
-// 3. Bił nahalin — ła' bił bił
-bizhi' = "Yá'át'ééh {saad}, namboo {namboo}"    // → Yá'át'ééh Ana, namboo 25
+```zymbol
+s = "Yá'át'ééh"
+len = s$#                  // 9
+sub = s$[0..3]             // "Yá'" (ke tìran)
+has = s$? "át"             // #1
+parts = "a,b,c,d" / ','    // [a, b, c, d]
+rep = s$~~["á":"Á"]        // "YÁ'Át'ééh"
+rep1 = s$~~["á":"Á":1]     // "YÁ'át'ééh"  (nì'aw pxey)
 ```
 
 > **Baa hane'**: `+` namboo bił nahalin. Naaltsoos bił warning bił nahalin.
@@ -98,10 +115,8 @@ bizhi' = "Yá'át'ééh {saad}, namboo {namboo}"    // → Yá'át'ééh Ana, na
 ```zymbol
 x = 7
 
-// Ła' nahalin
 ? x > 0 { >> "nídaaz" ¶ }
 
-// ? / _? / _
 ? x > 100 {
     >> "nízaad" ¶
 } _? x > 0 {
@@ -130,6 +145,14 @@ namboo = 85
 }
 >> ánółt'e ¶    // → B
 
+// Match naaltsoos bił
+dah = "łichíʼí"
+code = ?? dah {
+    "łichíʼí"   : "#FF0000"
+    "dootłʼizh" : "#00FF00"
+    _           : "#000000"
+}
+
 // Match bił guard
 atiin = -5
 hózhó = ?? atiin {
@@ -140,14 +163,12 @@ hózhó = ?? atiin {
 }
 >> hózhó ¶    // → hózhó doo
 
-// Match naaltsoos bił
-dah = "łizhin"
-code = ?? dah {
-    "łichíʼí" : "#FF0000"
-    "dootłʼizh" : "#00FF00"
-    _           : "#000000"
+// Tìkangkem tìran (block arms)
+?? n {
+    0       : { >> "t'áá áłtsé" ¶ }
+    _? n < 0: { >> "doo nídaaz da" ¶ }
+    _       : { >> "nídaaz" ¶ }
 }
->> code ¶
 ```
 
 ---
@@ -155,38 +176,43 @@ code = ?? dah {
 ## Naalyéhé
 
 ```zymbol
-// 0..4 itera 0,1,2,3,4 — inclusive
-@ i:0..4 { >> i " " }
->> ¶    // → 0 1 2 3 4
+@ i:0..4  { >> i " " }        // 0 1 2 3 4  — inclusive
+@ i:1..9:2 { >> i " " }       // step:  1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // nánísdzá: 5 4 3 2 1 0
 
-// Step bił
-@ i:1..9:2 { >> i " " }
->> ¶    // → 1 3 5 7 9
-
-// Nánísdzá
-@ i:5..0:1 { >> i " " }
->> ¶    // → 5 4 3 2 1 0
-
-// @ condition bił (while)
 namboo = 1
 @ namboo <= 64 { namboo *= 2 }
->> namboo ¶    // → 128
+>> namboo ¶                   // → 128  (while)
 
-// @ item:łah bił
 ch'iyáán = ["na'ahóóhai", "łóóʼ", "dibé"]
 @ c:ch'iyáán { >> c ¶ }
 
-// Naaltsoos bił
 @ s:"yá'át'ééh" { >> s "-" }
->> ¶    // → y-á-'-á-t-'-é-é-h-
+>> ¶                          // → y-á-'-á-t-'-é-é-h-
 
-// @! dóó @>
 @ i:1..10 {
-    ? i % 2 == 0 { @> }    // @> — t'áá naalyéhé
-    ? i > 7 { @! }          // @! — doo naalyéhé
+    ? i % 2 == 0 { @> }       // @> — t'áá naalyéhé
+    ? i > 7 { @! }             // @! — doo naalyéhé
     >> i " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Doo naalyéhé
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Labeled loop
+count = 0
+@ @outer {
+    count++
+    ? count >= 3 { @! outer }
+}
+>> count ¶                    // → 3
 ```
 
 ---
@@ -194,53 +220,52 @@ ch'iyáán = ["na'ahóóhai", "łóóʼ", "dibé"]
 ## Olta'í
 
 ```zymbol
-// Bił hane' dóó bił nahalin
 nályééh(a, b) { <~ a + b }
 >> nályééh(3, 4) ¶    // → 7
 
-// Bił nahalin nízaad
 olta'í(namboo) {
     ? namboo <= 1 { <~ 1 }
     <~ namboo * olta'í(namboo - 1)
 }
 >> olta'í(5) ¶    // → 120
-
-// Olta'í — isolated scope — doo łah bił da
-nízaad = 100
-hózhó() {
-    x = 42    // ła' bił nahalin
-    <~ x
-}
->> hózhó() ¶    // → 42
 ```
 
-> **Baa hane'**: Olta'í `name(params){ }` doo first-class da.
-> Bił nahalin: `x -> name(x)`.
+Olta'í lu **isolated scope** — doo łah bił da. Output `<~` munge:
+
+```zymbol
+swap(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
+}
+x = 10
+y = 20
+swap(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> **Baa hane'**: Olta'í `name(params){ }` doo first-class da. Bił nahalin: `x -> name(x)`.
 
 ---
 
 ## Lambda dóó Olta'í
 
 ```zymbol
-// Lambda ła' (implicit return)
 nízaad = x -> x * 2
 łah = (a, b) -> a + b
 >> nízaad(5) ¶    // → 10
 >> łah(3, 7) ¶    // → 10
 
-// Lambda bił { } (explicit return)
+// Lambda bił { }
 ánółt'e = x -> {
     ? x > 0 { <~ "nídaaz" }
     _? x < 0 { <~ "doo nídaaz da" }
     <~ "t'áá áłtsé"
 }
->> ánółt'e(5) ¶     // → nídaaz
->> ánółt'e(0) ¶     // → t'áá áłtsé
->> ánółt'e(-5) ¶    // → doo nídaaz da
 
 // Closure — lambda bił nahalin outer vars
 ádaat'éhígíí = 3
-táá' = x -> x * ádaat'éhígíí    // captures 'ádaat'éhígíí'
+táá' = x -> x * ádaat'éhígíí
 >> táá'(7) ¶    // → 21
 
 // Olta'í bił lambda
@@ -250,7 +275,6 @@ nályééh10 = make_nályééh(10)
 
 // Lambda łah siłtsooí bił
 olta' = [x -> x+1, x -> x*2, x -> x*x]
->> olta'[0](5) ¶    // → 6
 >> olta'[2](5) ¶    // → 25
 ```
 
@@ -259,64 +283,130 @@ olta' = [x -> x+1, x -> x*2, x -> x*x]
 ## Łah Siłtsooí
 
 ```zymbol
-łah = [10, 20, 30, 40, 50]
+łah = [1, 2, 3, 4, 5]
 
-// Index (0 bił nahalin)
->> łah[0] ¶    // → 10
+łah[0]          // 1 — index (0 bił nahalin)
+łah[-1]         // 5 — ke index (tìpawm)
+łah$#           // 5 — namboo (parens bił >> bił)
 
-// Namboo (parens bił >> bił)
-namboo = łah$#
->> (łah$#) ¶    // → 5
+łah = łah$+ 6            // append → [1,2,3,4,5,6]
+łah2 = łah$+[2] 99       // insert at index 2
+łah3 = łah$- 3           // remove first value
+łah4 = łah$-- 3          // remove all
+łah5 = łah$-[0]          // remove at index
+łah6 = łah$-[1..3]       // remove range (ke tìran)
 
-// $+ $- $? $[..]
-łah = łah$+ 60              // append
-łah = łah$- 0               // index 0 remove
-hólǫ́ = łah$? 30             // → #1
-nahalin = łah$[0..2]        // [20, 30]
+hólǫ́ = łah$? 3            // #1 — contains
+pos = łah$?? 3             // [2] — all indices
+nahalin = łah$[0..3]       // [1,2,3] — slice (ke tìran)
+sl2 = łah$[0:3]            // [1,2,3] — count-based syntax
 
-// Update
-łah[1] = 99
+asc = łah$^+              // sorted ascending  (primitives)
+desc = łah$^-             // sorted descending (primitives)
 
-// @ bił
-@ x:łah { >> x " " }
->> ¶
+// Tuple łah siłtsooí — $^ bił comparator lambda
+db = [(bizhi': "Carla", namboo: 28), (bizhi': "Ana", namboo: 25), (bizhi': "Bob", namboo: 30)]
+by_namboo = db$^ (a, b -> a.namboo < b.namboo)
+by_bizhi' = db$^ (a, b -> a.bizhi' > b.bizhi')
+>> by_namboo[0].bizhi' ¶     // → Ana
+>> by_bizhi'[0].bizhi' ¶     // → Carla
+
+łah[1] = 99              // update in-place
+łah = łah[1]$~ 99        // functional update
 ```
 
-> `$+`, `$-`, `$[..]` **naaltsoos nályééh** — bił ninídá: `łah = łah$+ 4`.
+> T'áá ałtso **naaltsoos nályééh** — bił ninídá: `łah = łah$+ 4`.
 > Doo chaining da: łah nahalin bił bił.
+> `$^+` / `$^-` — primitives. Tuple łah — `$^` bił lambda.
+
+```zymbol
+// Nested łah siłtsooí
+matrix = [[1,2,3],[4,5,6],[7,8,9]]
+>> matrix[1][2] ¶    // → 6
+```
+
+---
+
+## Naasgó Áhóót'i'
+
+```zymbol
+// Łah siłtsooí
+łah = [10, 20, 30, 40, 50]
+[a, b, c] = łah              // a=10  b=20  c=30
+[first, *rest] = łah         // first=10  rest=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ ke tìng
+
+// Positional tuple
+point = (100, 200)
+(px, py) = point             // px=100  py=200
+
+// Named tuple
+diné = (bizhi': "Ana", namboo: 25, nahalin: "Dinétah")
+(bizhi': n, namboo: a) = diné   // n="Ana"  a=25
+```
 
 ---
 
 ## Tuple
 
 ```zymbol
+// Positional
+point = (10, 20)
+>> point[0] ¶    // → 10
+
 // Named tuple
 diné = (bizhi': "Shizhe'é", namboo: 25)
 >> diné.bizhi' ¶    // → Shizhe'é
 >> diné.namboo ¶    // → 25
 >> diné[0] ¶        // → Shizhe'é (index bił nahalin)
+
+// Nested
+pos = (x: 10, y: 20)
+p = (pos: pos, label: "Diné Bikéyah")
+>> p.pos.x ¶        // → 10
 ```
 
 ---
 
 ## Olta'í Nízaadígíí
 
-HOF — **inline lambda** — doo lambda variable da.
+> HOF — **inline lambda** — doo lambda variable da.
 
 ```zymbol
 nambooí = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Map ($>)
-nízaad = nambooí$> (x -> x * 2)
->> nízaad ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+nízaad = nambooí$> (x -> x * 2)                // map  → [2,4,6…20]
+łahgo = nambooí$| (x -> x % 2 == 0)            // filter → [2,4,6,8,10]
+ałtso = nambooí$< (0, (acc, x) -> acc + x)     // reduce → 55
 
-// Filter ($|)
-łahgo = nambooí$| (x -> x % 2 == 0)
->> łahgo ¶    // → [2, 4, 6, 8, 10]
+// Tatìng intermediates
+step1 = nambooí$| (x -> x > 3)
+step2 = step1$> (x -> x * x)
+>> step2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Reduce ($<) — (t'áá áłtsé, (acc, x) -> bił)
-ałtso = nambooí$< (0, (acc, x) -> acc + x)
->> ałtso ¶    // → 55
+// Named function bił lambda
+double(x) { <~ x * 2 }
+r = nambooí$> (x -> double(x))    // ✅
+```
+
+---
+
+## Bee Ná'ádleehí
+
+RHS t'áá ákót'é **`_`** placeholder mì piped namboo:
+
+```zymbol
+double = x -> x * 2
+add = (a, b) -> a + b
+inc = x -> x + 1
+
+5 |> double(_)        // → 10
+10 |> add(_, 5)       // → 15
+5 |> add(2, _)        // → 7
+
+// Tatìng
+r = 5 |> double(_) |> inc(_) |> double(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -328,8 +418,6 @@ ałtso = nambooí$< (0, (acc, x) -> acc + x)
     x = 10 / 0
 } :! ##Div {
     >> "Namboo bił doo nahalin da" ¶
-} :! ##IO {
-    >> "IO bił nahalin" ¶
 } :! {
     >> "łahgo: " _err ¶
 } :> {
@@ -371,6 +459,69 @@ pi = n::get_PI()
 >> pi ¶              // → 3.14159
 ```
 
+```zymbol
+// Export bił pxey bizhi'
+# mylib
+#> { _internal_add <= sum }
+
+_internal_add(a, b) { <~ a + b }
+```
+
+```zymbol
+<# ./mylib <= m
+
+>> m::sum(3, 4) ¶    // → 7
+```
+
+---
+
+## Naaltsoos Ná'ádleehí
+
+```zymbol
+// Namboo bił nahalin
+v1 = #|"42"|      // → 42  (Int)
+v2 = #|"3.14"|    // → 3.14  (Float)
+v3 = #|"abc"|     // → "abc"  (doo tìhawnu da)
+
+// Round / truncate
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14  (truncate)
+
+// Namboo tìran
+fmt = #,|1234567|  // → 1,234,567
+sci = #^|12345.678|    // → 1.2345678e4
+
+// Base literals
+a = 0x41         // → 'A'  (hex)
+b = 0b01000001   // → 'A'  (binary)
+c = 0o101        // → 'A'  (octal)
+
+// Base tìkangkem
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
+```
+
+---
+
+## Shell Bee Nahat'á
+
+```zymbol
+date = <\ date +%Y-%m-%d \>     // stdout (tìran \n)
+>> "Díí jį': " date
+
+file = "data.txt"
+content = <\ cat {file} \>      // bił nahalin mì tìkan
+
+output = </"./subscript.zy"/>   // Zymbol script, tìpawm output
+>> output
+```
+
+> `><` CLI arguments sìpawm łah siłtsooí (tree-walker piko).
+
 ---
 
 ## Olta' Bił Hóló: FizzBuzz
@@ -390,35 +541,42 @@ nályééh(namboo) {
 
 ## Nahalinígíí Ła'
 
-| Symbol  | Olta'              | Symbol     | Olta'                  |
-|---------|--------------------|------------|------------------------|
-| `=`     | Saad               | `$#`       | Namboo                 |
-| `:=`    | Doo nahalin da     | `$+`       | Append                 |
-| `>>`    | Bił haz'á          | `$-`       | Remove (index bił)     |
-| `<<`    | Bił ninídá         | `$?`       | Hólǫ́                   |
-| `¶`/`\` | Nahalin            | `$[s..e]`  | Slice                  |
-| `?`     | ? (if)             | `$>`       | Map                    |
-| `_?`    | _? (else if)       | `$\|`      | Filter                 |
-| `_`     | _ (else/wildcard)  | `$<`       | Reduce                 |
-| `??`    | Match              | `!?`       | Try                    |
-| `@`     | Naalyéhé           | `:!`       | Catch                  |
-| `@!`    | @! (break)         | `:>`       | Finally                |
-| `@>`    | @> (continue)      | `$!`       | Baa ntsídíkees         |
-| `->`    | Lambda             | `$!!`      | Propagate              |
-| `<~`    | Return             | `#`        | Module declare         |
-| `\|>`   | Pipe               | `#>`       | Export                 |
-| `#1`    | #1 (nídaaz)        | `<#`       | Import                 |
-| `#0`    | #0 (doo nídaaz da) | `::`       | Module call            |
+| Symbol  | Olta'              | Symbol      | Olta'                  |
+|---------|--------------------|-------------|------------------------|
+| `=`     | Saad               | `$#`        | Namboo                 |
+| `:=`    | Doo nahalin da     | `$+`        | Append                 |
+| `>>`    | Bił haz'á          | `$+[i]`     | Insert at index        |
+| `<<`    | Bił ninídá         | `$-`        | Remove first value     |
+| `¶`/`\\` | Nahalin           | `$--`       | Remove all value       |
+| `?`     | ? (if)             | `$-[i]`     | Remove at index        |
+| `_?`    | _? (else if)       | `$-[i..j]`  | Remove range           |
+| `_`     | _ (else/wildcard)  | `$?`        | Hólǫ́                   |
+| `??`    | Match              | `$??`       | All indices            |
+| `@`     | Naalyéhé           | `$[s..e]`   | Slice                  |
+| `@!`    | @! (break)         | `$>`        | Map                    |
+| `@>`    | @> (continue)      | `$\|`       | Filter                 |
+| `->`    | Lambda             | `$<`        | Reduce                 |
+| `$^+`   | Sort ascending     | `$^-`       | Sort descending        |
+| `$^`    | Sort lambda        |             |                        |
+| `<~`    | Return             | `!?`        | Try                    |
+| `\|>`   | Pipe               | `:!`        | Catch                  |
+| `#1`    | #1 (nídaaz)        | `:>`        | Finally                |
+| `#0`    | #0 (doo nídaaz da) | `$!`        | Baa ntsídíkees         |
+| `<#`    | Import             | `$!!`       | Propagate              |
+| `#`     | Module declare     | `#>`        | Export                 |
+| `::`    | Module call        | `.`         | Field access           |
+| `#\|..\|` | Parse number    | `#?`        | Type metadata          |
+| `#.N\|..\|` | Round         | `#!N\|..\|` | Truncate              |
+| `c\|..\|` | Comma format    | `e\|..\|`   | Scientific             |
+| `<\ ..\>` | Shell exec      | `>\<`       | CLI args               |
 
 ---
 
 *Zymbol-Lang — Nahalinígíí. Ła'. Doo Nahalin.*
 
----
-
 > **Baa hane':** Naaltsoos éí AI yee ályaa dóó naaltsoos bee hane'. T'áá ákót'é nahalin hólǫ́ lá, nídí ła' nahalin dóó nahalinígíí doo t'áá ákót'é da.
-> Bił nahalin: [Zymbol-Lang Specification](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> Bił nahalin: [Zymbol-Lang Specification](https://github.com/zymbol-lang/interpreter).
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-> The authoritative reference is the [Zymbol-Lang specification](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> The authoritative reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).

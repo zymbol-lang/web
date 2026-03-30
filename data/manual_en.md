@@ -1,95 +1,120 @@
-# Zymbol-Lang Compact Manual
+# Zymbol-Lang Manual
 
-**Zymbol-Lang** is a symbolic programming language. It uses no keywords — everything is a symbol. It works the same in any human language.
+**Zymbol-Lang** is a symbolic programming language. No keywords — everything is a symbol. Works identically in any human language.
 
----
-
-## Philosophy
-
-- No keywords (`if`, `while`, `return` don't exist — only symbols `?`, `@`, `<~`)
-- Full Unicode — identifiers in any language or emoji 👋
-- Human-language agnostic — the code is identical in every language
+- No `if`, `while`, `return` — only `?`, `@`, `<~`
+- Full Unicode — identifiers in any language or emoji
+- Human-language agnostic — the code is the same everywhere
 
 ---
 
-## Variables and Constants
+## Variables & Constants
 
 ```zymbol
-x = 10           // variable (mutable)
-PI := 3.14159    // constant (immutable — error if reassigned)
-name = "Ana"
-active = #1      // boolean true
+x = 10              // mutable variable
+PI := 3.14159       // constant — reassignment is a runtime error
+name = "Alice"
+active = #1         // boolean true
 👋 := "Hello"
 ```
 
-### Compound Assignment
-
 ```zymbol
-x = 10    // 10
+x = 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %=  4   // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
 
 ## Data Types
 
-| Type         | Example             | `#?` Symbol | Notes                             |
-|--------------|---------------------|-------------|-----------------------------------|
-| Integer      | `42`, `-7`          | `###`       | 64-bit signed                     |
-| Float        | `3.14`, `1.5e10`    | `##.`       | Scientific notation OK            |
-| String       | `"hello"`           | `##"`       | Interpolation: `"Hello {name}"`   |
-| Char         | `'A'`               | `##'`       | One Unicode character             |
-| Boolean      | `#1`, `#0`          | `##?`       | NOT numeric 1 and 0               |
-| Array        | `[1, 2, 3]`         | `##]`       | All elements must be same type    |
-| Tuple        | `(a, b)`            | `##)`       | Positional                        |
-| Named Tuple  | `(x: 1, y: 2)`      | `##)`       | Access by name or index           |
+| Type | Literal | `#?` tag | Notes |
+|------|---------|----------|-------|
+| Int | `42`, `-7` | `###` | 64-bit signed |
+| Float | `3.14`, `1.5e10` | `##.` | Scientific notation OK |
+| String | `"text"` | `##"` | Interpolation: `"Hello {name}"` |
+| Char | `'A'` | `##'` | Single Unicode character |
+| Bool | `#1`, `#0` | `##?` | NOT numeric — `#1 ≠ 1` |
+| Array | `[1, 2, 3]` | `##]` | Homogeneous elements |
+| Tuple | `(a, b)` | `##)` | Positional |
+| Named Tuple | `(x: 1, y: 2)` | `##)` | Named fields |
+
+```zymbol
+// Type introspection — returns (type, digits, value)
+meta = 42#?
+>> meta ¶         // → (###, 2, 42)
+t = meta[0]
+>> t ¶            // → ###
+```
 
 ---
 
-## Output and Input
+## Output & Input
 
 ```zymbol
-// Output — does NOT add newline automatically
->> "Hello" ¶                    // ¶ or \\ gives explicit newline
->> "a=" a " b=" b ¶             // multiple values by juxtaposition
->> "sum=" add(2, 3) ¶           // function calls in any position
->> (arr$#) ¶                    // postfix operators require parentheses
+>> "Hello" ¶                      // ¶ or \\ for explicit newline
+>> "a=" a " b=" b ¶               // juxtaposition — multiple values
+>> (arr$#) ¶                      // postfix operators require ( ) in >>
 
-// Input
-<< name                         // no prompt — reads into variable
-<< "Your name? " name           // with prompt
+<< name                           // read into variable (no prompt)
+<< "Enter name: " name            // with prompt
 ```
 
-> `¶` or `\\` are equivalent as newline.
+> `¶` (AltGr+R on Spanish keyboard) and `\\` are equivalent newlines.
 
 ---
 
-## String Concatenation
-
-Three valid forms — each for its context:
+## Operators
 
 ```zymbol
-name = "Ana"
-n = 25
+// Arithmetic — use assignments; some operators have quirks directly in >>
+a = 10
+b = 3
+r1 = a + b    // 13     r2 = a - b    // 7
+r3 = a * b    // 30     r4 = a / b    // 3  (integer division)
+r5 = a % b    // 1      r6 = a ^ b    // 1000  (exponentiation)
 
-// 1. Comma — in assignments with = or :=
-msg = "Hello ", name, "!"              // → Hello Ana!
-TITLE := "User: ", name
+// Comparison
+a == b    // #0    a <> b    // #1    a < b    // #0
+a <= b    // #0   a > b     // #1    a >= b   // #1
 
-// 2. Juxtaposition — in >> output
->> "Hello " name " you are " n ¶       // → Hello Ana you are 25
-
-// 3. Interpolation — in any context
-desc = "Hello {name}, you are {n}"     // → Hello Ana, you are 25
+// Logical
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
 ```
 
-> **Note**: `+` is for numbers only. Using it with strings generates a warning.
+---
+
+## Strings
+
+```zymbol
+// Three concatenation forms
+name = "Alice"
+n = 42
+
+msg = "Hello ", name, "!"            // comma — in assignments
+>> "Hello " name " you have " n ¶    // juxtaposition — in >>
+desc = "Hello {name}, you have {n}"  // interpolation — anywhere
+```
+
+```zymbol
+s = "Hello World"
+len = s$#                  // 11
+sub = s$[0..5]             // "Hello"  (end exclusive)
+has = s$? "World"          // #1
+parts = "a,b,c,d" / ','    // [a, b, c, d]
+rep = s$~~["l":"L"]        // "HeLLo WorLd"
+rep1 = s$~~["l":"L":1]     // "HeLlo World"  (first N only)
+```
+
+> `+` is for numbers only. Use `,`, juxtaposition, or interpolation for strings.
 
 ---
 
@@ -98,10 +123,8 @@ desc = "Hello {name}, you are {n}"     // → Hello Ana, you are 25
 ```zymbol
 x = 7
 
-// Simple if
 ? x > 0 { >> "positive" ¶ }
 
-// if / else-if / else
 ? x > 100 {
     >> "large" ¶
 } _? x > 0 {
@@ -113,14 +136,14 @@ x = 7
 }
 ```
 
-Blocks `{ }` are **required** even for a single line.
+> `{ }` braces are **required** even for a single statement.
 
 ---
 
 ## Match
 
 ```zymbol
-// Match with ranges
+// Ranges
 score = 85
 grade = ?? score {
     90..100 : 'A'
@@ -130,7 +153,15 @@ grade = ?? score {
 }
 >> grade ¶    // → B
 
-// Match with guards (arbitrary conditions)
+// Strings
+color = "red"
+code = ?? color {
+    "red"   : "#FF0000"
+    "green" : "#00FF00"
+    _       : "#000000"
+}
+
+// Guards
 temp = -5
 state = ?? temp {
     _? temp < 0  : "ice"
@@ -140,14 +171,12 @@ state = ?? temp {
 }
 >> state ¶    // → ice
 
-// Match with strings
-color = "red"
-code = ?? color {
-    "red"   : "#FF0000"
-    "green" : "#00FF00"
-    _       : "#000000"
+// Statement form (block arms)
+?? n {
+    0       : { >> "zero" ¶ }
+    _? n < 0: { >> "negative" ¶ }
+    _       : { >> "positive" ¶ }
 }
->> code ¶
 ```
 
 ---
@@ -155,38 +184,43 @@ code = ?? color {
 ## Loops
 
 ```zymbol
-// Inclusive range: 0..4 iterates 0,1,2,3,4
-@ i:0..4 { >> i " " }
->> ¶    // → 0 1 2 3 4
+@ i:0..4  { >> i " " }        // range inclusive:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // with step:         1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // reverse:           5 4 3 2 1 0
 
-// Range with step
-@ i:1..9:2 { >> i " " }
->> ¶    // → 1 3 5 7 9
-
-// Reverse range
-@ i:5..0:1 { >> i " " }
->> ¶    // → 5 4 3 2 1 0
-
-// While
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶    // → 128
+>> n ¶                        // → 128  (while)
 
-// For-each over array
 fruits = ["apple", "pear", "grape"]
-@ f:fruits { >> f ¶ }
+@ f:fruits { >> f ¶ }         // for-each array
 
-// Over string characters
 @ c:"hello" { >> c "-" }
->> ¶    // → h-e-l-l-o-
+>> ¶                          // → h-e-l-l-o-  (for-each string)
 
-// Break and Continue
 @ i:1..10 {
-    ? i % 2 == 0 { @> }    // @> continue
-    ? i > 7 { @! }          // @! break
+    ? i % 2 == 0 { @> }       // @> continue
+    ? i > 7 { @! }             // @! break
     >> i " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Infinite loop
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Labeled loop (nested break)
+count = 0
+@ @outer {
+    count++
+    ? count >= 3 { @! outer }
+}
+>> count ¶                    // → 3
 ```
 
 ---
@@ -194,63 +228,61 @@ fruits = ["apple", "pear", "grape"]
 ## Functions
 
 ```zymbol
-// Declaration and call
 add(a, b) { <~ a + b }
 >> add(3, 4) ¶    // → 7
 
-// Recursion
 factorial(n) {
     ? n <= 1 { <~ 1 }
     <~ n * factorial(n - 1)
 }
 >> factorial(5) ¶    // → 120
-
-// Functions have isolated scope — no access to outer variables
-_global = 100
-test() {
-    x = 42    // local only
-    <~ x
-}
->> test() ¶    // → 42
 ```
 
-> **Important**: Named functions `name(params){ }` are not first-class values.
-> To pass as argument, wrap: `x -> name(x)`.
+Functions have **isolated scope** — they cannot read outer variables. Use output parameters `<~` to modify caller variables:
+
+```zymbol
+swap(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
+}
+x = 10
+y = 20
+swap(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> Named functions are not first-class. To pass as argument, wrap: `x -> fn(x)`.
 
 ---
 
-## Lambdas and Closures
+## Lambdas & Closures
 
 ```zymbol
-// Simple lambda (implicit return)
 double = x -> x * 2
 sum = (a, b) -> a + b
 >> double(5) ¶    // → 10
 >> sum(3, 7) ¶    // → 10
 
-// Block lambda (explicit return)
+// Block lambda
 classify = x -> {
     ? x > 0 { <~ "positive" }
     _? x < 0 { <~ "negative" }
     <~ "zero"
 }
->> classify(5) ¶     // → positive
->> classify(0) ¶     // → zero
->> classify(-5) ¶    // → negative
 
-// Closures — lambdas capture outer scope variables
+// Closure — captures outer scope
 factor = 3
-triple = x -> x * factor    // captures 'factor'
+triple = x -> x * factor
 >> triple(7) ¶    // → 21
 
-// Function factory
+// Factory
 make_adder(n) { <~ x -> x + n }
 add10 = make_adder(10)
 >> add10(5) ¶    // → 15
 
-// Lambdas as values: store in arrays
+// In arrays
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[0](5) ¶    // → 6
 >> ops[2](5) ¶    // → 25
 ```
 
@@ -259,64 +291,129 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 ## Arrays
 
 ```zymbol
-arr = [10, 20, 30, 40, 50]
+arr = [1, 2, 3, 4, 5]
 
-// Access (0-based index)
->> arr[0] ¶    // → 10
+arr[0]          // 1 — access (0-indexed)
+arr[-1]         // 5 — negative index (last)
+arr$#           // 5 — length (use (arr$#) in >>)
 
-// Length (requires parentheses in >>)
-n = arr$#
->> (arr$#) ¶    // → 5
+arr = arr$+ 6            // append → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // insert at index 2
+arr3 = arr$- 3           // remove first occurrence of value
+arr4 = arr$-- 3          // remove all occurrences
+arr5 = arr$-[0]          // remove at index
+arr6 = arr$-[1..3]       // remove range (end exclusive)
 
-// Append, remove, contains, slice
-arr = arr$+ 60               // append
-arr = arr$- 0                // remove index 0
-has = arr$? 30               // → #1
-slice = arr$[0..2]           // [20, 30]
+has = arr$? 3            // #1 — contains
+pos = arr$?? 3           // [2] — all indices of value
+sl = arr$[0..3]          // [1,2,3] — slice (end exclusive)
+sl2 = arr$[0:3]          // [1,2,3] — same, count-based syntax
 
-// Update element
-arr[1] = 99
+asc = arr$^+             // sorted ascending  (primitives only)
+desc = arr$^-            // sorted descending (primitives only)
 
-// For-each
-@ x:arr { >> x " " }
->> ¶
+// Named/positional tuple arrays — use $^ with comparator lambda
+db = [(name: "Carla", age: 28), (name: "Ana", age: 25), (name: "Bob", age: 30)]
+by_age  = db$^ (a, b -> a.age < b.age)    // ascending by age  (<)
+by_name = db$^ (a, b -> a.name > b.name)  // descending by name (>)
+>> by_age[0].name ¶     // → Ana
+>> by_name[0].name ¶    // → Carla
+
+arr[1] = 99              // update in-place
+arr = arr[1]$~ 99        // functional update — returns new array
 ```
 
-> `$+`, `$-`, `$[..]` return a **new array** — assign back: `arr = arr$+ 4`.
-> No chaining: use two separate assignments.
+> All collection operators return a **new array**. Assign back: `arr = arr$+ 4`.
+> Operators cannot be chained — use intermediate assignments.
+> `$^+` / `$^-` sort **primitive arrays** (numbers, strings). For tuple arrays use `$^` with a comparator lambda — direction is encoded in the lambda (`<` = ascending, `>` = descending).
+
+```zymbol
+// Nested arrays
+matrix = [[1,2,3],[4,5,6],[7,8,9]]
+>> matrix[1][2] ¶    // → 6
+```
+
+---
+
+## Destructuring
+
+```zymbol
+// Array
+arr = [10, 20, 30, 40, 50]
+[a, b, c] = arr              // a=10  b=20  c=30
+[first, *rest] = arr         // first=10  rest=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ discards
+
+// Positional tuple
+point = (100, 200)
+(px, py) = point             // px=100  py=200
+
+// Named tuple
+person = (name: "Ana", age: 25, city: "Madrid")
+(name: n, age: a) = person   // n="Ana"  a=25
+```
 
 ---
 
 ## Tuples
 
 ```zymbol
-// Named tuple
+// Positional
+point = (10, 20)
+>> point[0] ¶    // → 10
+
+// Named
 person = (name: "Alice", age: 25)
 >> person.name ¶    // → Alice
->> person.age ¶     // → 25
->> person[0] ¶      // → Alice (index also works)
+>> person[0] ¶      // → Alice  (index also works)
+
+// Nested
+pos = (x: 10, y: 20)
+p = (pos: pos, label: "origin")
+>> p.pos.x ¶        // → 10
 ```
 
 ---
 
 ## Higher-Order Functions
 
-HOF operators require **inline lambda** — not a direct lambda variable.
+> HOF operators require **inline lambda** — lambda variables passed directly do not work.
 
 ```zymbol
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Map ($>)
-doubles = nums$> (x -> x * 2)
->> doubles ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+doubled  = nums$> (x -> x * 2)                // map  → [2,4,6…20]
+evens    = nums$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
+total    = nums$< (0, (acc, x) -> acc + x)     // reduce → 55
 
-// Filter ($|)
-evens = nums$| (x -> x % 2 == 0)
->> evens ¶    // → [2, 4, 6, 8, 10]
+// Chain via intermediates
+step1 = nums$| (x -> x > 3)
+step2 = step1$> (x -> x * x)
+>> step2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Reduce ($<) — (initial, (acc, elem) -> expr)
-total = nums$< (0, (acc, x) -> acc + x)
->> total ¶    // → 55
+// Named functions inside HOF — wrap in lambda
+double(x) { <~ x * 2 }
+r = nums$> (x -> double(x))    // ✅
+```
+
+---
+
+## Pipe Operator
+
+The RHS always requires `_` as a placeholder for the piped value:
+
+```zymbol
+double = x -> x * 2
+add = (a, b) -> a + b
+inc = x -> x + 1
+
+5 |> double(_)        // → 10
+10 |> add(_, 5)       // → 15
+5 |> add(2, _)        // → 7
+
+// Chained
+r = 5 |> double(_) |> inc(_) |> double(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -328,48 +425,109 @@ total = nums$< (0, (acc, x) -> acc + x)
     x = 10 / 0
 } :! ##Div {
     >> "division by zero" ¶
-} :! ##IO {
-    >> "IO error" ¶
 } :! {
-    >> "other error: " _err ¶
+    >> "other: " _err ¶    // _err holds the error message
 } :> {
     >> "always runs" ¶
 }
 ```
 
-| Type        | When it occurs         |
-|-------------|------------------------|
-| `##Div`     | Division by zero       |
-| `##IO`      | File / system          |
-| `##Index`   | Index out of bounds    |
-| `##Type`    | Type error             |
-| `##Parse`   | Data parsing           |
-| `##Network` | Network errors         |
-| `##_`       | Any error (catch-all)  |
+| Type | When |
+|------|------|
+| `##Div` | Division by zero |
+| `##IO` | File / system |
+| `##Index` | Index out of bounds |
+| `##Type` | Type mismatch |
+| `##Parse` | Data parsing |
+| `##Network` | Network errors |
+| `##_` | Any error (catch-all) |
 
 ---
 
 ## Modules
 
 ```zymbol
-// File: lib/calc.zy
+// lib/calc.zy
 # calc
 
-#> { add, get_PI }    // exports BEFORE definitions
+#> { add, get_PI }    // exports MUST come before definitions
 
 _PI := 3.14159
 add(a, b) { <~ a + b }
-get_PI() { <~ _PI }
+get_PI() { <~ _PI }   // getter — direct constant access via alias not supported
 ```
 
 ```zymbol
-// File: main.zy
+// main.zy
 <# ./lib/calc <= c    // alias required
 
 >> c::add(5, 3) ¶     // → 8
 pi = c::get_PI()
 >> pi ¶               // → 3.14159
 ```
+
+```zymbol
+// Export with a different public name
+# mylib
+#> { _internal_add <= sum }
+
+_internal_add(a, b) { <~ a + b }
+```
+
+```zymbol
+<# ./mylib <= m
+
+>> m::sum(3, 4) ¶    // → 7  (internal name _internal_add is hidden)
+```
+
+---
+
+## Data Operators
+
+```zymbol
+// Parse string to number
+v1 = #|"42"|      // → 42  (Int)
+v2 = #|"3.14"|    // → 3.14  (Float)
+v3 = #|"abc"|     // → "abc"  (fail-safe, no error)
+
+// Round / truncate
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14  (round to 2 decimal places)
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14  (truncate)
+
+// Number formatting
+fmt = #,|1234567|  // → 1,234,567  (comma-separated)
+sci = #^|12345.678|    // → 1.2345678e4  (scientific)
+
+// Base literals
+a = 0x41         // → 'A'  (hex)
+b = 0b01000001   // → 'A'  (binary)
+c = 0o101        // → 'A'  (octal)
+
+// Base conversion output
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
+```
+
+---
+
+## Shell Integration
+
+```zymbol
+date = <\ date +%Y-%m-%d \>     // captures stdout (includes trailing \n)
+>> "Today: " date
+
+file = "data.txt"
+content = <\ cat {file} \>      // interpolation in commands
+
+output = </"./subscript.zy"/>   // execute another Zymbol script, capture output
+>> output
+```
+
+> `><` captures CLI arguments as a string array (tree-walker only).
 
 ---
 
@@ -390,32 +548,38 @@ classify(number) {
 
 ## Symbol Reference
 
-| Symbol  | Operation         | Symbol     | Operation          |
-|---------|-------------------|------------|--------------------|
-| `=`     | variable          | `$#`       | length             |
-| `:=`    | constant          | `$+`       | append             |
-| `>>`    | output            | `$-`       | remove (by index)  |
-| `<<`    | input             | `$?`       | contains           |
-| `¶`/`\` | newline           | `$[s..e]`  | slice              |
-| `?`     | if                | `$>`       | map                |
-| `_?`    | else-if           | `$\|`      | filter             |
-| `_`     | else / wildcard   | `$<`       | reduce             |
-| `??`    | match             | `!?`       | try                |
-| `@`     | loop              | `:!`       | catch              |
-| `@!`    | break             | `:>`       | finally            |
-| `@>`    | continue          | `$!`       | is error           |
-| `->`    | lambda            | `$!!`      | propagate error    |
-| `<~`    | return            | `#`        | declare module     |
-| `\|>`   | pipe              | `#>`       | export             |
-| `#1`    | true              | `<#`       | import             |
-| `#0`    | false             | `::`       | module call        |
+| Symbol | Operation | Symbol | Operation |
+|--------|-----------|--------|-----------|
+| `=` | variable | `$#` | length |
+| `:=` | constant | `$+` | append |
+| `>>` | output | `$+[i]` | insert at index |
+| `<<` | input | `$-` | remove first by value |
+| `¶` / `\\` | newline | `$--` | remove all by value |
+| `?` | if | `$-[i]` | remove at index |
+| `_?` | else-if | `$-[i..j]` | remove range |
+| `_` | else / wildcard | `$?` | contains |
+| `??` | match | `$??` | find all indices |
+| `@` | loop | `$[s..e]` | slice |
+| `@!` | break | `$>` | map |
+| `@>` | continue | `$\|` | filter |
+| `->` | lambda | `$<` | reduce |
+| `$^+` | sort ascending (primitives) | `$^-` | sort descending (primitives) |
+| `$^` | sort with comparator (tuples) | | |
+| `<~` | return | `!?` | try |
+| `\|>` | pipe | `:!` | catch |
+| `#1` | true | `:>` | finally |
+| `#0` | false | `$!` | is error |
+| `<#` | import | `$!!` | propagate error |
+| `#` | declare module | `#>` | export |
+| `::` | module call | `.` | field access |
+| `#\|..\|` | parse number | `#?` | type metadata |
+| `#.N\|..\|` | round | `#!N\|..\|` | truncate |
+| `c\|..\|` | comma format | `e\|..\|` | scientific |
+| `<\ ..\>` | shell exec | `>\<` | CLI args |
 
 ---
 
 *Zymbol-Lang — Symbolic. Universal. Immutable.*
 
----
-
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-> The canonical reference is the [Zymbol-Lang specification](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> The canonical reference is [MANUAL.md](https://github.com/zymbol-lang/interpreter) in the interpreter repository.

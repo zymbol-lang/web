@@ -2,10 +2,6 @@
 
 **Zymbol-Lang** 'oH porghQeD Hol'e' Dalo'bogh. mu'mey lo'be' — Hoch 'oH ta''e'. Hoch Hol lo'laH.
 
----
-
-## patlh
-
 - mu'mey lo'be' (`if`, `while`, `return` tu'be'lu' — ta' neH `?`, `@`, `<~`)
 - Unicode Hoch — Hoch Hol pong Dalo'laH, qoj emoji 👋
 - Hol-qar — Hoch Hol, wa' mu'tlhegh law'
@@ -15,24 +11,23 @@
 ## ghaj je mab
 
 ```zymbol
-x = 10           // ghaj (choHlaH)
-PI := 3.14159    // mab (choHlaHbe' — Qagh choHchugh)
+x = 10              // ghaj (choHlaH)
+PI := 3.14159       // mab (choHlaHbe' — Qagh choHchugh)
 pong = "Ana"
-Dun = #1         // 'Iv teH
+Dun = #1            // 'Iv teH
 👋 := "nuqneH"
 ```
 
-### boqHa' ghaj
-
 ```zymbol
-x = 10    // 10
+x = 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
-x /= 4    // 6
-x %=  4   // 2
-x++       // 3
-x--       // 2
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++       // 5
+x--       // 4
 ```
 
 ---
@@ -41,8 +36,8 @@ x--       // 2
 
 | Segh         | mu'tlhegh         | ta' `#?` | QInmey                             |
 |--------------|-------------------|----------|------------------------------------|
-| mI' naQ      | `42`, `-7`        | `###`    | 64-bit署名付き                      |
-| mI' tIn      | `3.14`, `1.5e10`  | `##.`    | pagh Segh OK                       |
+| mI' naQ      | `42`, `-7`        | `###`    | 64-bit signed                      |
+| mI' tIn      | `3.14`, `1.5e10`  | `##.`    | Scientific notation OK             |
 | mu'mey       | `"nuqneH"`        | `##"`    | Hap: `"nuqneH {pong}"`             |
 | mu'           | `'A'`             | `##'`    | wa' Unicode mu'                    |
 | teH/ngeb     | `#1`, `#0`        | `##?`    | mI' wa' pagh je DAHO'be'           |
@@ -50,18 +45,23 @@ x--       // 2
 | tuple        | `(a, b)`          | `##)`    | mI' Dara'                          |
 | pong tuple   | `(x: 1, y: 2)`    | `##)`    | pong qoj mI' Dalo'laH              |
 
+```zymbol
+// Type introspection — returns (type, digits, value)
+meta = 42#?
+>> meta ¶         // → (###, 2, 42)
+t = meta[0]
+>> t ¶            // → ###
+```
+
 ---
 
 ## jatlh je Qoy
 
 ```zymbol
-// jatlh — chu' ghoS DAHO'be'
 >> "nuqneH" ¶                   // ¶ qoj \\ chu' ghoS nob
 >> "a=" a " b=" b ¶             // law' De' — Dara'
->> "mI'=" buv(2, 3) ¶           // Qu' vItu' Hoch Dara'
 >> (arr$#) ¶                    // bIng ta' mI'mey poQlu'
 
-// Qoy
 << pong                         // mu' Hutlh — nob yIgho'
 << "nuq 'oH ponglIj'e'? " pong  // mu' ghaj
 ```
@@ -70,26 +70,51 @@ x--       // 2
 
 ---
 
-## mu' boq
-
-wej moj — Hoch Dalo':
+## Muvmeywi'
 
 ```zymbol
-pong = "Ana"
-n = 25
+// Arithmetic — use assignments
+a = 10
+b = 3
+r1 = a + b    // 13     r2 = a - b    // 7
+r3 = a * b    // 30     r4 = a / b    // 3  (integer division)
+r5 = a % b    // 1      r6 = a ^ b    // 1000  (exponentiation)
 
-// 1. comma — ghaj = qoj :=
-QIn = "nuqneH ", pong, "!"             // → nuqneH Ana!
-pong2 := "SuvwI': ", pong
+// Comparison
+a == b    // #0    a <> b    // #1    a < b    // #0
+a <= b    // #0   a > b     // #1    a >= b   // #1
 
-// 2. Dara' — jatlh >>
->> "nuqneH " pong " bIHoS " n ¶        // → nuqneH Ana bIHoS 25
-
-// 3. Hap — Hoch Dara'
-Qorwagh = "nuqneH {pong}, bIHoS {n}"  // → nuqneH Ana, bIHoS 25
+// Logical
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
 ```
 
-> **QIn**: `+` mI' neH. mu'mey — lut.
+---
+
+## mu'mey
+
+```zymbol
+// Three concatenation forms
+pong = "Ana"
+n = 42
+
+QIn = "nuqneH ", pong, "!"            // comma — in assignments
+>> "nuqneH " pong " bIHoS " n ¶       // juxtaposition — in >>
+Qorwagh = "nuqneH {pong}, bIHoS {n}" // interpolation — anywhere
+```
+
+```zymbol
+s = "nuqneH qo'"
+len = s$#                  // 10
+sub = s$[0..6]             // "nuqneH"  (end exclusive)
+has = s$? "qo'"            // #1
+parts = "a,b,c,d" / ','    // [a, b, c, d]
+rep = s$~~["q":"Q"]        // "nuqneH Qo'"
+rep1 = s$~~["q":"Q":1]     // "nuQneH qo'"  (first N only)
+```
+
+> `+` mI' neH. mu'mey — lut.
 
 ---
 
@@ -98,10 +123,8 @@ Qorwagh = "nuqneH {pong}, bIHoS {n}"  // → nuqneH Ana, bIHoS 25
 ```zymbol
 x = 7
 
-// mach HIja'
 ? x > 0 { >> "HoS" ¶ }
 
-// HIja' / ghobe'taH / ghobe'
 ? x > 100 {
     >> "tIn law'" ¶
 } _? x > 0 {
@@ -113,7 +136,7 @@ x = 7
 }
 ```
 
-Hoch `{ }` **poQlu'**, wa' mu'tlhegh je.
+> Hoch `{ }` **poQlu'**, wa' mu'tlhegh je.
 
 ---
 
@@ -130,7 +153,15 @@ patlh2 = ?? mI'2 {
 }
 >> patlh2 ¶    // → B
 
-// Match nuH (Hoch mojaq)
+// Match mu'mey
+rItlh = "Doq"
+HaSta = ?? rItlh {
+    "Doq"  : "#FF0000"
+    "SuD"  : "#00FF00"
+    _      : "#000000"
+}
+
+// Match nuH (guards)
 SuD = -5
 Dotlh = ?? SuD {
     _? SuD < 0  : "chuch"
@@ -140,14 +171,12 @@ Dotlh = ?? SuD {
 }
 >> Dotlh ¶    // → chuch
 
-// Match mu'mey
-rItlh = "Doq"
-HaSta = ?? rItlh {
-    "Doq"  : "#FF0000"
-    "SuD"  : "#00FF00"
-    _      : "#000000"
+// Statement form
+?? n {
+    0        : { >> "pagh" ¶ }
+    _? n < 0 : { >> "Dor" ¶ }
+    _        : { >> "HoS" ¶ }
 }
->> HaSta ¶
 ```
 
 ---
@@ -155,38 +184,43 @@ HaSta = ?? rItlh {
 ## ngeb
 
 ```zymbol
-// naQ: 0..4 — 0,1,2,3,4
-@ i:0..4 { >> i " " }
->> ¶    // → 0 1 2 3 4
+@ i:0..4  { >> i " " }        // range inclusive:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // with step:         1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // reverse:           5 4 3 2 1 0
 
-// Dochvam pa'
-@ i:1..9:2 { >> i " " }
->> ¶    // → 1 3 5 7 9
-
-// bIng
-@ i:5..0:1 { >> i " " }
->> ¶    // → 5 4 3 2 1 0
-
-// qaStaHvIS (while)
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶    // → 128
+>> n ¶                        // → 128  (while)
 
-// Hoch De' je
 naH = ["tI", "moQ", "'USqa'"]
-@ f:naH { >> f ¶ }
+@ f:naH { >> f ¶ }            // for-each array
 
-// mu' mu'
 @ c:"Qapla'" { >> c "-" }
->> ¶    // → Q-a-p-l-a-'-
+>> ¶                          // → Q-a-p-l-a-'-
 
-// pItlh je HaD
 @ i:1..10 {
-    ? i % 2 == 0 { @> }    // @> HaD
-    ? i > 7 { @! }          // @! pItlh
+    ? i % 2 == 0 { @> }       // @> HaD (continue)
+    ? i > 7 { @! }             // @! pItlh (break)
     >> i " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Infinite loop
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Labeled loop
+count = 0
+@ @outer {
+    count++
+    ? count >= 3 { @! outer }
+}
+>> count ¶                    // → 3
 ```
 
 ---
@@ -194,63 +228,61 @@ naH = ["tI", "moQ", "'USqa'"]
 ## Qu'
 
 ```zymbol
-// chergh je lo'
 boq(a, b) { <~ a + b }
 >> boq(3, 4) ¶    // → 7
 
-// tagh
 mI'ghaH(n) {
     ? n <= 1 { <~ 1 }
     <~ n * mI'ghaH(n - 1)
 }
 >> mI'ghaH(5) ¶    // → 120
-
-// Qu' Hutlh — Dech De' tu'be'lu'
-_naQ = 100
-yIQorgh() {
-    x = 42    // pa' neH
-    <~ x
-}
->> yIQorgh() ¶    // → 42
 ```
 
-> **Qov**: pong Qu' `pong(params){ }` — wa' De' 'oHbe'.
-> nob vIneH — yIjom: `x -> pong(x)`.
+Functions have **isolated scope** — they cannot read outer variables. Use output parameters `<~` to modify caller variables:
+
+```zymbol
+choH(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
+}
+x = 10
+y = 20
+choH(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> **Qov**: pong Qu' — wa' De' 'oHbe'. nob vIneH — yIjom: `x -> pong(x)`.
 
 ---
 
 ## Lambda je qorDu'
 
 ```zymbol
-// mach lambda (tagh)
 cha' = x -> x * 2
 boq2 = (a, b) -> a + b
 >> cha'(5) ¶    // → 10
 >> boq2(3, 7) ¶  // → 10
 
-// lambda Dara' (naQ tagh)
+// Block lambda
 buv = x -> {
     ? x > 0 { <~ "HoS" }
     _? x < 0 { <~ "Dor" }
     <~ "pagh"
 }
->> buv(5) ¶     // → HoS
->> buv(0) ¶     // → pagh
->> buv(-5) ¶    // → Dor
 
-// qorDu' — lambda DaHar De'
+// Closure — captures outer scope
 Dop = 3
-wej = x -> x * Dop    // DaHar 'Dop'
+wej = x -> x * Dop
 >> wej(7) ¶    // → 21
 
-// Qu' moj
+// Factory
 make_adder(n) { <~ x -> x + n }
 add10 = make_adder(10)
 >> add10(5) ¶    // → 15
 
-// lambda De': ghom
+// In arrays
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[0](5) ¶    // → 6
 >> ops[2](5) ¶    // → 25
 ```
 
@@ -259,64 +291,129 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 ## ghom
 
 ```zymbol
-arr = [10, 20, 30, 40, 50]
+arr = [1, 2, 3, 4, 5]
 
-// tu' (0 tagh)
->> arr[0] ¶    // → 10
+arr[0]          // 1 — access (0-indexed)
+arr[-1]         // 5 — negative index (last)
+arr$#           // 5 — length (use (arr$#) in >>)
 
-// mI' (mI'mey poQlu' >>)
-n = arr$#
->> (arr$#) ¶    // → 5
+arr = arr$+ 6            // append → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // insert at index 2
+arr3 = arr$- 3           // remove first occurrence of value
+arr4 = arr$-- 3          // remove all occurrences
+arr5 = arr$-[0]          // remove at index
+arr6 = arr$-[1..3]       // remove range (end exclusive)
 
-// boq, teqlu', ghaj, mach
-arr = arr$+ 60               // boq
-arr = arr$- 0                // teq 0
-ghaj = arr$? 30              // → #1
-mach = arr$[0..2]            // [20, 30]
+has = arr$? 3            // #1 — contains
+pos = arr$?? 3           // [2] — all indices of value
+sl = arr$[0..3]          // [1,2,3] — slice (end exclusive)
+sl2 = arr$[0:3]          // [1,2,3] — same, count-based syntax
 
-// choH De'
-arr[1] = 99
+asc = arr$^+             // sorted ascending  (primitives only)
+desc = arr$^-            // sorted descending (primitives only)
 
-// Hoch De'
-@ x:arr { >> x " " }
->> ¶
+// pong tuple arrays — use $^ with comparator lambda
+db = [(pong: "Carla", DIS: 28), (pong: "Ana", DIS: 25), (pong: "Bob", DIS: 30)]
+by_DIS  = db$^ (a, b -> a.DIS < b.DIS)
+by_pong = db$^ (a, b -> a.pong > b.pong)
+>> by_DIS[0].pong ¶     // → Ana
+>> by_pong[0].pong ¶    // → Carla
+
+arr[1] = 99              // update in-place
+arr = arr[1]$~ 99        // functional update — returns new array
 ```
 
-> `$+`, `$-`, `$[..]` — **chu' ghom** — ghaH: `arr = arr$+ 4`.
+> Hoch collection ta' — **chu' ghom** — ghaH: `arr = arr$+ 4`.
 > boqHa'be': cha' ghaj Dalo'.
+> `$^+` / `$^-` — primitive arrays neH. tuple arrays — `$^` lambda Dalo'.
+
+```zymbol
+// Nested arrays
+matrix = [[1,2,3],[4,5,6],[7,8,9]]
+>> matrix[1][2] ¶    // → 6
+```
+
+---
+
+## naQHom
+
+```zymbol
+// Array
+arr = [10, 20, 30, 40, 50]
+[a, b, c] = arr              // a=10  b=20  c=30
+[first, *rest] = arr         // first=10  rest=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ discards
+
+// Positional tuple
+point = (100, 200)
+(px, py) = point             // px=100  py=200
+
+// Named tuple
+SuvwI' = (pong: "Ana", DIS: 25, qach: "Qo'noS")
+(pong: n, DIS: a) = SuvwI'   // n="Ana"  a=25
+```
 
 ---
 
 ## Tuple
 
 ```zymbol
-// pong tuple
+// Positional
+point = (10, 20)
+>> point[0] ¶    // → 10
+
+// Named
 SuvwI' = (pong: "Alice", DIS: 25)
 >> SuvwI'.pong ¶    // → Alice
->> SuvwI'.DIS ¶     // → 25
->> SuvwI'[0] ¶      // → Alice (mI' lo'laH je)
+>> SuvwI'[0] ¶      // → Alice  (index also works)
+
+// Nested
+pos = (x: 10, y: 20)
+p = (pos: pos, pong: "tlhIngan")
+>> p.pos.x ¶        // → 10
 ```
 
 ---
 
 ## Qu' ghaj
 
-HOF — **pa' lambda** poQlu' — lambda De' Hutlh.
+> HOF ta' — **pa' lambda** poQlu' — lambda De' Hutlh.
 
 ```zymbol
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Map ($>)
-cha'2 = nums$> (x -> x * 2)
->> cha'2 ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+cha'2  = nums$> (x -> x * 2)                // map  → [2,4,6…20]
+mI'rap = nums$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
+Hoch2  = nums$< (0, (acc, x) -> acc + x)    // reduce → 55
 
-// Filter ($|)
-mI'rap = nums$| (x -> x % 2 == 0)
->> mI'rap ¶    // → [2, 4, 6, 8, 10]
+// Chain via intermediates
+step1 = nums$| (x -> x > 3)
+step2 = step1$> (x -> x * x)
+>> step2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Reduce ($<) — (tagh mI', (boq, De') -> moj)
-Hoch2 = nums$< (0, (acc, x) -> acc + x)
->> Hoch2 ¶    // → 55
+// Named functions inside HOF — wrap in lambda
+double(x) { <~ x * 2 }
+r = nums$> (x -> double(x))    // ✅
+```
+
+---
+
+## bIQ jatlh muvwI'
+
+The RHS always requires `_` as a placeholder for the piped value:
+
+```zymbol
+double = x -> x * 2
+add = (a, b) -> a + b
+inc = x -> x + 1
+
+5 |> double(_)        // → 10
+10 |> add(_, 5)       // → 15
+5 |> add(2, _)        // → 7
+
+// Chained
+r = 5 |> double(_) |> inc(_) |> double(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -328,10 +425,8 @@ Hoch2 = nums$< (0, (acc, x) -> acc + x)
     x = 10 / 0
 } :! ##Div {
     >> "pagh HoS Dor" ¶
-} :! ##IO {
-    >> "IO Qagh" ¶
 } :! {
-    >> "Qagh: " _err ¶
+    >> "Qagh: " _err ¶    // _err holds the error message
 } :> {
     >> "reH qaStaH" ¶
 }
@@ -355,7 +450,7 @@ Hoch2 = nums$< (0, (acc, x) -> acc + x)
 // De': lib/calc.zy
 # calc
 
-#> { boq, get_PI }    // nob QACH
+#> { boq, get_PI }    // nob QACH — definitions vo' qaSpa'
 
 _PI := 3.14159
 boq(a, b) { <~ a + b }
@@ -370,6 +465,69 @@ get_PI() { <~ _PI }
 pi = c::get_PI()
 >> pi ¶              // → 3.14159
 ```
+
+```zymbol
+// Export with a different public name
+# mylib
+#> { _internal_boq <= boq }
+
+_internal_boq(a, b) { <~ a + b }
+```
+
+```zymbol
+<# ./mylib <= m
+
+>> m::boq(3, 4) ¶    // → 7
+```
+
+---
+
+## De' muvmeywi'
+
+```zymbol
+// Parse string to number
+v1 = #|"42"|      // → 42  (Int)
+v2 = #|"3.14"|    // → 3.14  (Float)
+v3 = #|"abc"|     // → "abc"  (fail-safe, no error)
+
+// Round / truncate
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14  (round to 2 decimal places)
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14  (truncate)
+
+// Number formatting
+fmt = #,|1234567|      // → 1,234,567  (comma-separated)
+sci = #^|12345.678|    // → 1.2345678e4  (scientific)
+
+// Base literals
+a = 0x41         // → 'A'  (hex)
+b = 0b01000001   // → 'A'  (binary)
+c = 0o101        // → 'A'  (octal)
+
+// Base conversion output
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
+```
+
+---
+
+## Shell lucherghlu'
+
+```zymbol
+jaj = <\ date +%Y-%m-%d \>     // captures stdout (includes trailing \n)
+>> "DaHjaj: " jaj
+
+De' = "data.txt"
+tetlh = <\ cat {De'} \>        // interpolation in commands
+
+nob = </"./subscript.zy"/>     // execute another Zymbol script, capture output
+>> nob
+```
+
+> `><` captures CLI arguments as a string array (tree-walker only).
 
 ---
 
@@ -394,31 +552,38 @@ buv(mI') {
 |---------|-------------------|------------|-----------------------|
 | `=`     | ghaj              | `$#`       | mI'                   |
 | `:=`    | mab               | `$+`       | boq                   |
-| `>>`    | jatlh             | `$-`       | teq (mI')             |
-| `<<`    | Qoy               | `$?`       | ghaj                  |
-| `¶`/`\` | chu' ghoS         | `$[s..e]`  | mach                  |
-| `?`     | HIja'             | `$>`       | map                   |
-| `_?`    | ghobe'taH         | `$\|`      | filter                |
-| `_`     | ghobe' / Hoch     | `$<`       | reduce                |
-| `??`    | match             | `!?`       | tIv (try)             |
-| `@`     | tagh              | `:!`       | Hap (catch)           |
-| `@!`    | pItlh (break)     | `:>`       | reH (finally)         |
-| `@>`    | HaD (continue)    | `$!`       | Qagh 'oH              |
-| `->`    | Lambda            | `$!!`      | Qagh nob              |
-| `<~`    | nob               | `#`        | HoD chergh            |
-| `\|>`   | Pipe              | `#>`       | nob                   |
-| `#1`    | teH               | `<#`       | Hap                   |
-| `#0`    | ngeb              | `::`       | HoD lo'               |
+| `>>`    | jatlh             | `$+[i]`    | chelwI' (insert)      |
+| `<<`    | Qoy               | `$-`       | teq (mI')             |
+| `¶`/`\` | chu' ghoS        | `$--`      | Hoch teq              |
+| `?`     | HIja'             | `$-[i]`    | teq mI' Daq           |
+| `_?`    | ghobe'taH         | `$-[i..j]` | teq Dara'             |
+| `_`     | ghobe' / Hoch     | `$?`       | ghaj                  |
+| `??`    | match             | `$??`      | Hoch Daq tu'          |
+| `@`     | tagh              | `$[s..e]`  | mach                  |
+| `@!`    | pItlh (break)     | `$>`       | map                   |
+| `@>`    | HaD (continue)    | `$\|`      | filter                |
+| `->`    | Lambda            | `$<`       | reduce                |
+| `$^+`   | sort ascending    | `$^-`      | sort descending       |
+| `$^`    | sort comparator   |            |                       |
+| `<~`    | nob               | `!?`       | tIv (try)             |
+| `\|>`   | Pipe              | `:!`       | Hap (catch)           |
+| `#1`    | teH               | `:>`       | reH (finally)         |
+| `#0`    | ngeb              | `$!`       | Qagh 'oH              |
+| `<#`    | Hap (import)      | `$!!`      | Qagh nob              |
+| `#`     | HoD chergh        | `#>`       | nob (export)          |
+| `::`    | HoD lo'           | `.`        | De' tu'               |
+| `#\|..\|` | parse number   | `#?`       | type metadata         |
+| `#.N\|..\|` | round        | `#!N\|..\|` | truncate            |
+| `c\|..\|` | comma format   | `e\|..\|`  | scientific            |
+| `<\ ..\>` | shell exec     | `>\<`      | CLI args              |
 
 ---
 
 *Zymbol-Lang — ta'. Hoch. choHlaHbe'.*
 
----
-
 > **QIn:** De'vam 'oH porghQeD vay' (AI) chenmoHta' je mughta'.
 > Hoch DIv ta'lu', 'ach 'op mu' qoj mu'tlhegh Qagh tu'laH.
-> chaq De' [Zymbol-Lang specifiko](https://github.com/OscarEEspinozaB/zymbol-lang-web).
+> chaq De' [Zymbol-Lang specifiko](https://github.com/zymbol-lang/interpreter).
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > While every effort has been made to ensure accuracy, some translations or examples may contain errors.
