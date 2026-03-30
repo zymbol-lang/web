@@ -2,11 +2,11 @@
 |name = Zymbol-Lang
 |paradigms = [[Imperative]], [[Functional]], [[Procedural]]
 |author = [[User:Zymbol-Lang|Zymbol-Lang]]
-|year = 2025
+|year = 2026
 |typesystem = [[Dynamic typing|Dynamic]]
 |memsystem = Automatic (Rust-managed)
 |class = [[Turing complete]]
-|reference implementation = [https://github.com/Zenith-Lang-Org/zymbol-lang Zymbol-Lang interpreter (Rust)]
+|reference implementation = [https://github.com/zymbol-lang/interpreter Zymbol-Lang interpreter (Rust)]
 |dialects =
 |influenced by = [[Haskell]], [[Ruby]], [[Rust (programming language)|Rust]]
 |files = .zy
@@ -347,9 +347,9 @@ zymbol run --vm program.zy     # register VM (experimental)
 
 == External Links ==
 
-* [https://github.com/Zenith-Lang-Org/zymbol-lang Source code (GitHub)]
+* [https://github.com/zymbol-lang/interpreter Source code (GitHub)]
 * [https://zenith-lang-org.github.io/zymbol-lang-web/ Interactive documentation (105 languages)]
-* [https://github.com/Zenith-Lang-Org/zymbol-lang/blob/main/zymbol.ebnf Formal EBNF grammar (v1.7.0)]
+* [https://github.com/zymbol-lang/interpreter/blob/main/zymbol.ebnf Formal EBNF grammar (v1.7.0)]
 
 [[Category:Languages]]
 [[Category:2025]]
