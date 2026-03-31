@@ -92,7 +92,8 @@
         "americas": "north_america",
         "europe": "germanic"
       },
-      "subregion": "north_america"
+      "subregion": "north_america",
+      "nav_try_online": "Try Online"
     },
     "spanish": {
       "rtl": false,
@@ -173,7 +174,8 @@
       "nav_manual": "Documentación",
       "manual_title": "Documentación",
       "manual_sub": "Manual compacto de Zymbol-Lang",
-      "subregion": "mesoamerica"
+      "subregion": "mesoamerica",
+      "nav_try_online": "Probar Online"
     },
     "portuguese": {
       "rtl": false,
@@ -254,7 +256,8 @@
       "nav_manual": "Documentação",
       "manual_title": "Documentação",
       "manual_sub": "Manual compacto do Zymbol-Lang",
-      "subregion": "south_america"
+      "subregion": "south_america",
+      "nav_try_online": "Experimentar Online"
     },
     "french": {
       "rtl": false,
@@ -340,7 +343,8 @@
         "europe": "romance",
         "americas": "north_america"
       },
-      "subregion": "western_europe"
+      "subregion": "western_europe",
+      "nav_try_online": "Essayer en Ligne"
     },
     "german": {
       "rtl": false,
@@ -421,7 +425,8 @@
       "nav_manual": "Dokumentation",
       "manual_title": "Dokumentation",
       "manual_sub": "Kompaktes Zymbol-Lang Handbuch",
-      "subregion": "germanic"
+      "subregion": "germanic",
+      "nav_try_online": "Online Testen"
     },
     "italian": {
       "rtl": false,
@@ -502,7 +507,8 @@
       "nav_manual": "Documentazione",
       "manual_title": "Documentazione",
       "manual_sub": "Manuale compatto di Zymbol-Lang",
-      "subregion": "romance"
+      "subregion": "romance",
+      "nav_try_online": "Prova Online"
     },
     "dutch": {
       "rtl": false,
@@ -583,7 +589,8 @@
       "nav_manual": "Documentatie",
       "manual_title": "Documentatie",
       "manual_sub": "Compact Zymbol-Lang handboek",
-      "subregion": "germanic"
+      "subregion": "germanic",
+      "nav_try_online": "Online Proberen"
     },
     "polish": {
       "rtl": false,
@@ -664,7 +671,8 @@
       "nav_manual": "Dokumentacja",
       "manual_title": "Dokumentacja",
       "manual_sub": "Kompaktowy podręcznik Zymbol-Lang",
-      "subregion": "slavic"
+      "subregion": "slavic",
+      "nav_try_online": "Wypróbuj Online"
     },
     "russian": {
       "rtl": false,
@@ -745,7 +753,8 @@
       "nav_manual": "Документация",
       "manual_title": "Документация",
       "manual_sub": "Краткое руководство по Zymbol-Lang",
-      "subregion": "slavic"
+      "subregion": "slavic",
+      "nav_try_online": "Попробовать Online"
     },
     "ukrainian": {
       "rtl": false,
@@ -826,7 +835,8 @@
       "nav_manual": "Документація",
       "manual_title": "Документація",
       "manual_sub": "Компактний посібник з Zymbol-Lang",
-      "subregion": "slavic"
+      "subregion": "slavic",
+      "nav_try_online": "Спробуй Online"
     },
     "bulgarian": {
       "rtl": false,
@@ -907,7 +917,8 @@
       "nav_manual": "Документация",
       "manual_title": "Документация",
       "manual_sub": "Компактно ръководство за Zymbol-Lang",
-      "subregion": "slavic"
+      "subregion": "slavic",
+      "nav_try_online": "Изпробвай Online"
     },
     "croatian": {
       "rtl": false,
@@ -988,7 +999,8 @@
       "nav_manual": "Dokumentacija",
       "manual_title": "Dokumentacija",
       "manual_sub": "Kompaktni priručnik za Zymbol-Lang",
-      "subregion": "slavic"
+      "subregion": "slavic",
+      "nav_try_online": "Isprobajte Online"
     },
     "czech": {
       "rtl": false,
@@ -1069,7 +1081,8 @@
       "nav_manual": "Dokumentace",
       "manual_title": "Dokumentace",
       "manual_sub": "Kompaktní příručka Zymbol-Lang",
-      "subregion": "slavic"
+      "subregion": "slavic",
+      "nav_try_online": "Vyzkoušet Online"
     },
     "slovak": {
       "rtl": false,
@@ -1150,7 +1163,8 @@
       "nav_manual": "Dokumentácia",
       "manual_title": "Dokumentácia",
       "manual_sub": "Kompaktná príručka Zymbol-Lang",
-      "subregion": "slavic"
+      "subregion": "slavic",
+      "nav_try_online": "Vyskúšať Online"
     },
     "romanian": {
       "rtl": false,
@@ -1231,7 +1245,8 @@
       "nav_manual": "Documentație",
       "manual_title": "Documentație",
       "manual_sub": "Manual compact Zymbol-Lang",
-      "subregion": "romance"
+      "subregion": "romance",
+      "nav_try_online": "Încearcă Online"
     },
     "hungarian": {
       "rtl": false,
@@ -1312,7 +1327,8 @@
       "nav_manual": "Dokumentáció",
       "manual_title": "Dokumentáció",
       "manual_sub": "Kompakt Zymbol-Lang kézikönyv",
-      "subregion": "finno_ugric"
+      "subregion": "finno_ugric",
+      "nav_try_online": "Próbáld ki Online"
     },
     "finnish": {
       "rtl": false,
@@ -1393,7 +1409,8 @@
       "nav_manual": "Dokumentaatio",
       "manual_title": "Dokumentaatio",
       "manual_sub": "Kompakti Zymbol-Lang-opas",
-      "subregion": "finno_ugric"
+      "subregion": "finno_ugric",
+      "nav_try_online": "Kokeile Verkossa"
     },
     "estonian": {
       "rtl": false,
@@ -1474,7 +1491,8 @@
       "nav_manual": "Dokumentatsioon",
       "manual_title": "Dokumentatsioon",
       "manual_sub": "Kompaktne Zymbol-Lang käsiraamat",
-      "subregion": "finno_ugric"
+      "subregion": "finno_ugric",
+      "nav_try_online": "Proovi Võrgus"
     },
     "latvian": {
       "rtl": false,
@@ -1555,7 +1573,8 @@
       "nav_manual": "Dokumentācija",
       "manual_title": "Dokumentācija",
       "manual_sub": "Kompakts Zymbol-Lang rokasgrāmata",
-      "subregion": "baltic"
+      "subregion": "baltic",
+      "nav_try_online": "Izmēģini Tiešsaistē"
     },
     "lithuanian": {
       "rtl": false,
@@ -1636,7 +1655,8 @@
       "nav_manual": "Dokumentacija",
       "manual_title": "Dokumentacija",
       "manual_sub": "Kompaktiška Zymbol-Lang vadovėlis",
-      "subregion": "baltic"
+      "subregion": "baltic",
+      "nav_try_online": "Išbandyti Internete"
     },
     "norwegian": {
       "rtl": false,
@@ -1717,7 +1737,8 @@
       "nav_manual": "Dokumentasjon",
       "manual_title": "Dokumentasjon",
       "manual_sub": "Kompakt Zymbol-Lang-manual",
-      "subregion": "germanic"
+      "subregion": "germanic",
+      "nav_try_online": "Prøv Online"
     },
     "danish": {
       "rtl": false,
@@ -1798,7 +1819,8 @@
       "nav_manual": "Dokumentation",
       "manual_title": "Dokumentation",
       "manual_sub": "Kompakt Zymbol-Lang-manual",
-      "subregion": "germanic"
+      "subregion": "germanic",
+      "nav_try_online": "Prøv Online"
     },
     "swedish": {
       "rtl": false,
@@ -1879,7 +1901,8 @@
       "nav_manual": "Dokumentation",
       "manual_title": "Dokumentation",
       "manual_sub": "Kompakt Zymbol-Lang-manual",
-      "subregion": "germanic"
+      "subregion": "germanic",
+      "nav_try_online": "Prova Online"
     },
     "icelandic": {
       "rtl": false,
@@ -1960,7 +1983,8 @@
       "nav_manual": "Skjölun",
       "manual_title": "Skjölun",
       "manual_sub": "Þétt Zymbol-Lang handbók",
-      "subregion": "germanic"
+      "subregion": "germanic",
+      "nav_try_online": "Prófaðu Online"
     },
     "greek": {
       "rtl": false,
@@ -2041,7 +2065,8 @@
       "nav_manual": "Τεκμηρίωση",
       "manual_title": "Τεκμηρίωση",
       "manual_sub": "Συμπαγής Οδηγός Zymbol-Lang",
-      "subregion": "other_europe"
+      "subregion": "other_europe",
+      "nav_try_online": "Δοκιμάστε Online"
     },
     "serbian": {
       "rtl": false,
@@ -2122,7 +2147,8 @@
       "nav_manual": "Документација",
       "manual_title": "Документација",
       "manual_sub": "Компактни приручник за Zymbol-Lang",
-      "subregion": "slavic"
+      "subregion": "slavic",
+      "nav_try_online": "Испробај Online"
     },
     "arabic": {
       "rtl": true,
@@ -2208,7 +2234,8 @@
         "mideast": "semitic",
         "africa": "north_africa"
       },
-      "subregion": "middle_east"
+      "subregion": "middle_east",
+      "nav_try_online": "جرّب مباشرةً"
     },
     "hebrew": {
       "rtl": true,
@@ -2289,7 +2316,8 @@
       "nav_manual": "תיעוד",
       "manual_title": "תיעוד",
       "manual_sub": "המדריך הקומפקטי של Zymbol-Lang",
-      "subregion": "semitic"
+      "subregion": "semitic",
+      "nav_try_online": "נסה מקוון"
     },
     "persian": {
       "rtl": true,
@@ -2370,7 +2398,8 @@
       "nav_manual": "مستندات",
       "manual_title": "مستندات",
       "manual_sub": "راهنمای فشرده Zymbol-Lang",
-      "subregion": "iranian"
+      "subregion": "iranian",
+      "nav_try_online": "آنلاین امتحان کن"
     },
     "urdu": {
       "rtl": true,
@@ -2451,7 +2480,8 @@
       "nav_manual": "دستاویز",
       "manual_title": "دستاویز",
       "manual_sub": "Zymbol-Lang کی مختصر راہنما",
-      "subregion": "south_asian_mid"
+      "subregion": "south_asian_mid",
+      "nav_try_online": "آن لائن آزمائیں"
     },
     "hindi": {
       "rtl": false,
@@ -2532,7 +2562,8 @@
       "nav_manual": "प्रलेखन",
       "manual_title": "प्रलेखन",
       "manual_sub": "Zymbol-Lang की संक्षिप्त मार्गदर्शिका",
-      "subregion": "indo_aryan"
+      "subregion": "indo_aryan",
+      "nav_try_online": "ऑनलाइन आज़माएं"
     },
     "bengali": {
       "rtl": false,
@@ -2613,7 +2644,8 @@
       "nav_manual": "নথিপত্র",
       "manual_title": "নথিপত্র",
       "manual_sub": "Zymbol-Lang-এর সংক্ষিপ্ত নির্দেশিকা",
-      "subregion": "indo_aryan"
+      "subregion": "indo_aryan",
+      "nav_try_online": "অনলাইনে চেষ্টা করুন"
     },
     "marathi": {
       "rtl": false,
@@ -2694,7 +2726,8 @@
       "nav_manual": "दस्तऐवज",
       "manual_title": "दस्तऐवज",
       "manual_sub": "Zymbol-Lang ची संक्षिप्त मार्गदर्शिका",
-      "subregion": "indo_aryan"
+      "subregion": "indo_aryan",
+      "nav_try_online": "ऑनलाइन वापरून पहा"
     },
     "punjabi": {
       "rtl": false,
@@ -2775,7 +2808,8 @@
       "nav_manual": "ਦਸਤਾਵੇਜ਼",
       "manual_title": "ਦਸਤਾਵੇਜ਼",
       "manual_sub": "Zymbol-Lang ਦੀ ਸੰਖੇਪ ਗਾਈਡ",
-      "subregion": "indo_aryan"
+      "subregion": "indo_aryan",
+      "nav_try_online": "ਆਨਲਾਈਨ ਅਜ਼ਮਾਓ"
     },
     "mandarin": {
       "rtl": false,
@@ -2856,7 +2890,8 @@
       "nav_manual": "文档",
       "manual_title": "文档",
       "manual_sub": "Zymbol-Lang 简明指南",
-      "subregion": "east_asia"
+      "subregion": "east_asia",
+      "nav_try_online": "在线试用"
     },
     "japanese": {
       "rtl": false,
@@ -2937,7 +2972,8 @@
       "nav_manual": "ドキュメント",
       "manual_title": "ドキュメント",
       "manual_sub": "Zymbol-Lang コンパクトガイド",
-      "subregion": "east_asia"
+      "subregion": "east_asia",
+      "nav_try_online": "オンラインで試す"
     },
     "korean": {
       "rtl": false,
@@ -3018,7 +3054,8 @@
       "nav_manual": "문서",
       "manual_title": "문서",
       "manual_sub": "Zymbol-Lang 간편 가이드",
-      "subregion": "east_asia"
+      "subregion": "east_asia",
+      "nav_try_online": "온라인으로 체험"
     },
     "indonesian": {
       "rtl": false,
@@ -3099,7 +3136,8 @@
       "nav_manual": "Dokumentasi",
       "manual_title": "Dokumentasi",
       "manual_sub": "Panduan Ringkas Zymbol-Lang",
-      "subregion": "southeast_asia"
+      "subregion": "southeast_asia",
+      "nav_try_online": "Coba Online"
     },
     "vietnamese": {
       "rtl": false,
@@ -3180,7 +3218,8 @@
       "nav_manual": "Tài liệu",
       "manual_title": "Tài liệu",
       "manual_sub": "Hướng Dẫn Nhỏ Gọn Zymbol-Lang",
-      "subregion": "southeast_asia"
+      "subregion": "southeast_asia",
+      "nav_try_online": "Dùng Thử Online"
     },
     "thai": {
       "rtl": false,
@@ -3261,7 +3300,8 @@
       "nav_manual": "เอกสาร",
       "manual_title": "เอกสาร",
       "manual_sub": "คู่มือ Zymbol-Lang ฉบับย่อ",
-      "subregion": "southeast_asia"
+      "subregion": "southeast_asia",
+      "nav_try_online": "ทดลองออนไลน์"
     },
     "tagalog": {
       "rtl": false,
@@ -3342,7 +3382,8 @@
       "nav_manual": "Dokumentasyon",
       "manual_title": "Dokumentasyon",
       "manual_sub": "Maikling Gabay sa Zymbol-Lang",
-      "subregion": "southeast_asia"
+      "subregion": "southeast_asia",
+      "nav_try_online": "Subukan Online"
     },
     "swahili": {
       "rtl": false,
@@ -3423,7 +3464,8 @@
       "nav_manual": "Nyaraka",
       "manual_title": "Nyaraka",
       "manual_sub": "Mwongozo Mfupi wa Zymbol-Lang",
-      "subregion": "east_africa"
+      "subregion": "east_africa",
+      "nav_try_online": "Jaribu Mtandaoni"
     },
     "hausa": {
       "rtl": false,
@@ -3504,7 +3546,8 @@
       "nav_manual": "Takardun",
       "manual_title": "Takardun",
       "manual_sub": "Taƙaitaccen Jagoran Zymbol-Lang",
-      "subregion": "west_africa"
+      "subregion": "west_africa",
+      "nav_try_online": "Gwada Online"
     },
     "yoruba": {
       "rtl": false,
@@ -3585,7 +3628,8 @@
       "nav_manual": "Àkọsílẹ̀",
       "manual_title": "Àkọsílẹ̀",
       "manual_sub": "Ìtọ́sọ́nà Kúkúrú Zymbol-Lang",
-      "subregion": "west_africa"
+      "subregion": "west_africa",
+      "nav_try_online": "Gbiyanju Online"
     },
     "amharic": {
       "rtl": false,
@@ -3666,7 +3710,8 @@
       "subregion": "east_africa",
       "nav_manual": "ሰነድ",
       "manual_title": "ሰነድ",
-      "manual_sub": "Zymbol-Lang አጭር መጽሐፍ"
+      "manual_sub": "Zymbol-Lang አጭር መጽሐፍ",
+      "nav_try_online": "በመስመር ላይ ይሞክሩ"
     },
     "emoji": {
       "rtl": false,
@@ -3747,7 +3792,8 @@
       "subregion": "emoji",
       "nav_manual": "📖 Docs",
       "manual_title": "📖 Docs",
-      "manual_sub": "📋 Zymbol-Lang ⚡ Guide"
+      "manual_sub": "📋 Zymbol-Lang ⚡ Guide",
+      "nav_try_online": "🌐✨ Try Online"
     },
     "turkish": {
       "rtl": false,
@@ -3828,7 +3874,8 @@
       "nav_manual": "Belgeleme",
       "manual_title": "Belgeleme",
       "manual_sub": "Zymbol-Lang Kompakt Kılavuzu",
-      "subregion": "turkic"
+      "subregion": "turkic",
+      "nav_try_online": "Çevrimiçi Dene"
     },
     "castellano": {
       "rtl": false,
@@ -3910,7 +3957,8 @@
       "nav_manual": "Documentación",
       "manual_title": "Documentación",
       "manual_sub": "Manual compacto de Zymbol-Lang",
-      "subregion": "romance"
+      "subregion": "romance",
+      "nav_try_online": "Probar Online"
     },
     "portugues_eu": {
       "rtl": false,
@@ -3991,7 +4039,8 @@
       "nav_manual": "Documentação",
       "manual_title": "Documentação",
       "manual_sub": "Manual compacto de Zymbol-Lang",
-      "subregion": "romance"
+      "subregion": "romance",
+      "nav_try_online": "Experimentar Online"
     },
     "tamil": {
       "rtl": false,
@@ -4072,7 +4121,8 @@
       "nav_manual": "ஆவணம்",
       "manual_title": "ஆவணம்",
       "manual_sub": "Zymbol-Lang இன் சுருக்கமான வழிகாட்டி",
-      "subregion": "dravidian"
+      "subregion": "dravidian",
+      "nav_try_online": "ஆன்லைன் முயற்சி"
     },
     "catalan": {
       "rtl": false,
@@ -4153,7 +4203,8 @@
       "nav_manual": "Documentació",
       "manual_title": "Documentació",
       "manual_sub": "Manual compacte de Zymbol-Lang",
-      "subregion": "romance"
+      "subregion": "romance",
+      "nav_try_online": "Prova en línia"
     },
     "basque": {
       "rtl": false,
@@ -4234,7 +4285,8 @@
       "nav_manual": "Dokumentazioa",
       "manual_title": "Dokumentazioa",
       "manual_sub": "Zymbol-Lang eskuliburu trinkoa",
-      "subregion": "other_europe"
+      "subregion": "other_europe",
+      "nav_try_online": "Probatu sarean"
     },
     "telugu": {
       "rtl": false,
@@ -4315,7 +4367,8 @@
       "nav_manual": "డాక్యుమెంటేషన్",
       "manual_title": "డాక్యుమెంటేషన్",
       "manual_sub": "Zymbol-Lang యొక్క సంక్షిప్త మార్గదర్శి",
-      "subregion": "dravidian"
+      "subregion": "dravidian",
+      "nav_try_online": "ఆన్‌లైన్‌లో ప్రయత్నించండి"
     },
     "kannada": {
       "rtl": false,
@@ -4396,7 +4449,8 @@
       "nav_manual": "ದಾಖಲಾತಿ",
       "manual_title": "ದಾಖಲಾತಿ",
       "manual_sub": "Zymbol-Lang ನ ಸಂಕ್ಷಿಪ್ತ ಮಾರ್ಗದರ್ಶಿ",
-      "subregion": "dravidian"
+      "subregion": "dravidian",
+      "nav_try_online": "ಆನ್‌ಲೈನ್‌ನಲ್ಲಿ ಪ್ರಯತ್ನಿಸಿ"
     },
     "georgian": {
       "rtl": false,
@@ -4477,7 +4531,8 @@
       "nav_manual": "დოკუმენტაცია",
       "manual_title": "დოკუმენტაცია",
       "manual_sub": "Zymbol-Lang-ის კომპაქტური სახელმძღვანელო",
-      "subregion": "caucasus"
+      "subregion": "caucasus",
+      "nav_try_online": "სცადე ონლაინ"
     },
     "welsh": {
       "rtl": false,
@@ -4558,7 +4613,8 @@
       "nav_manual": "Dogfennaeth",
       "manual_title": "Dogfennaeth",
       "manual_sub": "Llawlyfr cryno Zymbol-Lang",
-      "subregion": "other_europe"
+      "subregion": "other_europe",
+      "nav_try_online": "Rhowch Gynnig Ar-lein"
     },
     "zulu": {
       "rtl": false,
@@ -4639,7 +4695,8 @@
       "nav_manual": "Imibhalo",
       "manual_title": "Imibhalo",
       "manual_sub": "Umhlahlandlela Omfushane we-Zymbol-Lang",
-      "subregion": "southern_africa"
+      "subregion": "southern_africa",
+      "nav_try_online": "Zama Online"
     },
     "armenian": {
       "rtl": false,
@@ -4720,7 +4777,8 @@
       "nav_manual": "Փastataghuthyun",
       "manual_title": "Փastataghuthyun",
       "manual_sub": "Zymbol-Lang-ի Կompakt Ուghetsuyts",
-      "subregion": "caucasus"
+      "subregion": "caucasus",
+      "nav_try_online": "Փորձիր առցանց"
     },
     "quechua": {
       "rtl": false,
@@ -4801,7 +4859,8 @@
       "nav_manual": "Qillqa",
       "manual_title": "Hatun Qillqa",
       "manual_sub": "Zymbol-Lang pisilla yachaq qillqa",
-      "subregion": "south_america"
+      "subregion": "south_america",
+      "nav_try_online": "Qespi Internetpi"
     },
     "galician": {
       "regions": [
@@ -4882,7 +4941,8 @@
       "nav_manual": "Documentación",
       "manual_title": "Documentación",
       "manual_sub": "Manual compacto de Zymbol-Lang",
-      "subregion": "romance"
+      "subregion": "romance",
+      "nav_try_online": "Proba en liña"
     },
     "slovenian": {
       "regions": [
@@ -4963,7 +5023,8 @@
       "nav_manual": "Dokumentacija",
       "manual_title": "Dokumentacija",
       "manual_sub": "Kompakten priročnik za Zymbol-Lang",
-      "subregion": "slavic"
+      "subregion": "slavic",
+      "nav_try_online": "Preizkusi Online"
     },
     "albanian": {
       "regions": [
@@ -5044,7 +5105,8 @@
       "nav_manual": "Dokumentacion",
       "manual_title": "Dokumentacion",
       "manual_sub": "Manual kompakt i Zymbol-Lang",
-      "subregion": "other_europe"
+      "subregion": "other_europe",
+      "nav_try_online": "Provo Online"
     },
     "belarusian": {
       "regions": [
@@ -5125,7 +5187,8 @@
       "nav_manual": "Дакументацыя",
       "manual_title": "Дакументацыя",
       "manual_sub": "Кампактны даведнік па Zymbol-Lang",
-      "subregion": "slavic"
+      "subregion": "slavic",
+      "nav_try_online": "Паспрабуй Online"
     },
     "gujarati": {
       "regions": [
@@ -5206,7 +5269,8 @@
       "nav_manual": "દસ્તાવેજ",
       "manual_title": "દસ્તાવેજ",
       "manual_sub": "Zymbol-Lang ની સંક્ષિપ્ત માર્ગદર્શિકા",
-      "subregion": "indo_aryan"
+      "subregion": "indo_aryan",
+      "nav_try_online": "ઓનલાઈન અજમાવો"
     },
     "malay": {
       "regions": [
@@ -5287,7 +5351,8 @@
       "nav_manual": "Dokumentasi",
       "manual_title": "Dokumentasi",
       "manual_sub": "Panduan Ringkas Zymbol-Lang",
-      "subregion": "southeast_asia"
+      "subregion": "southeast_asia",
+      "nav_try_online": "Cuba Dalam Talian"
     },
     "burmese": {
       "regions": [
@@ -5368,7 +5433,8 @@
       "nav_manual": "စာရွက်စာတမ်း",
       "manual_title": "စာရွက်စာတမ်း",
       "manual_sub": "Zymbol-Lang အကျဉ်းချုပ် လမ်းညွှန်",
-      "subregion": "southeast_asia"
+      "subregion": "southeast_asia",
+      "nav_try_online": "အွန်လိုင်းတွင် စမ်းကြည့်ပါ"
     },
     "nepali": {
       "regions": [
@@ -5449,7 +5515,8 @@
       "nav_manual": "कागजात",
       "manual_title": "कागजात",
       "manual_sub": "Zymbol-Lang को संक्षिप्त मार्गदर्शिका",
-      "subregion": "indo_aryan"
+      "subregion": "indo_aryan",
+      "nav_try_online": "अनलाइनमा प्रयास गर्नुहोस्"
     },
     "azerbaijani": {
       "regions": [
@@ -5530,7 +5597,8 @@
       "nav_manual": "Sənədləşmə",
       "manual_title": "Sənədləşmə",
       "manual_sub": "Zymbol-Lang Kompakt Bələdçisi",
-      "subregion": "turkic"
+      "subregion": "turkic",
+      "nav_try_online": "Onlayn Sınayın"
     },
     "kurdish": {
       "regions": [
@@ -5611,7 +5679,8 @@
       "nav_manual": "Belgeya Pêşkêş",
       "manual_title": "Belgeya Pêşkêş",
       "manual_sub": "Rêbera Kompakt a Zymbol-Lang",
-      "subregion": "iranian"
+      "subregion": "iranian",
+      "nav_try_online": "Bi Înternetê Biceribîne"
     },
     "guarani": {
       "regions": [
@@ -5692,7 +5761,8 @@
       "nav_manual": "Mba'eporã",
       "manual_title": "Mba'eporã Ñe'ẽ",
       "manual_sub": "Zymbol-Lang mba'e tekotevẽva",
-      "subregion": "south_america"
+      "subregion": "south_america",
+      "nav_try_online": "Emo'ã Internetpe"
     },
     "igbo": {
       "regions": [
@@ -5773,7 +5843,8 @@
       "nav_manual": "Akwụkwọ ozi",
       "manual_title": "Akwụkwọ ozi",
       "manual_sub": "Nduuzi Mkpịsị Zymbol-Lang",
-      "subregion": "west_africa"
+      "subregion": "west_africa",
+      "nav_try_online": "Nwaa Online"
     },
     "afrikaans": {
       "regions": [
@@ -5854,7 +5925,8 @@
       "nav_manual": "Dokumentasie",
       "manual_title": "Dokumentasie",
       "manual_sub": "Kompakte Zymbol-Lang handleiding",
-      "subregion": "southern_africa"
+      "subregion": "southern_africa",
+      "nav_try_online": "Probeer Aanlyn"
     },
     "wolof": {
       "regions": [
@@ -5935,7 +6007,8 @@
       "nav_manual": "Dëkk-dëkk",
       "manual_title": "Dëkk-dëkk",
       "manual_sub": "Jëfandikukat yu Woyof Zymbol-Lang",
-      "subregion": "west_africa"
+      "subregion": "west_africa",
+      "nav_try_online": "Jëfandikoo ci Internet"
     },
     "xhosa": {
       "regions": [
@@ -6016,7 +6089,8 @@
       "nav_manual": "Amaxwebhu",
       "manual_title": "Amaxwebhu",
       "manual_sub": "Ingcaciso Emfutshane ye-Zymbol-Lang",
-      "subregion": "southern_africa"
+      "subregion": "southern_africa",
+      "nav_try_online": "Zama Ku-Intanethi"
     },
     "macedonian": {
       "regions": [
@@ -6097,7 +6171,8 @@
       "nav_manual": "Документација",
       "manual_title": "Документација",
       "manual_sub": "Компактен прирачник за Zymbol-Lang",
-      "subregion": "slavic"
+      "subregion": "slavic",
+      "nav_try_online": "Испробај Online"
     },
     "nahuatl": {
       "rtl": false,
@@ -6178,7 +6253,8 @@
       "nav_manual": "Amatl",
       "manual_title": "Tlahtoa Amatl",
       "manual_sub": "Zymbol-Lang u yóol tlahtoa amatl",
-      "subregion": "mesoamerica"
+      "subregion": "mesoamerica",
+      "nav_try_online": "Mochihua internet-pan"
     },
     "maya": {
       "rtl": false,
@@ -6259,7 +6335,8 @@
       "nav_manual": "Tzíibil",
       "manual_title": "U Tzíibil Nojoch",
       "manual_sub": "Zymbol-Lang u tzíibil nojoch kaaj",
-      "subregion": "mesoamerica"
+      "subregion": "mesoamerica",
+      "nav_try_online": "Ti' internet"
     },
     "mapuche": {
       "rtl": false,
@@ -6340,7 +6417,8 @@
       "nav_manual": "Kimün",
       "manual_title": "Kimün Amukey",
       "manual_sub": "Zymbol-Lang kimün zugun",
-      "subregion": "south_america"
+      "subregion": "south_america",
+      "nav_try_online": "Nütranmawün internet mew"
     },
     "navajo": {
       "rtl": false,
@@ -6421,7 +6499,8 @@
       "sc_expr": "namboo",
       "nav_manual": "Olta'",
       "manual_title": "Olta' Naaltsoos",
-      "manual_sub": "Zymbol-Lang Diné bizaad bee"
+      "manual_sub": "Zymbol-Lang Diné bizaad bee",
+      "nav_try_online": "Níłch'i naalkidí bine'dę́ę́' Bił Naaghá"
     },
     "cherokee": {
       "rtl": false,
@@ -6502,7 +6581,8 @@
       "sc_expr": "ᎯᏃᎮᎵ",
       "nav_manual": "ᎧᏃᎮᎵ",
       "manual_title": "ᎧᏃᎮᎵ ᎦᏅᎯᏓ",
-      "manual_sub": "Zymbol-Lang ᏣᎳᎩ ᎦᏬᏂᎯᏍᏗ"
+      "manual_sub": "Zymbol-Lang ᏣᎳᎩ ᎦᏬᏂᎯᏍᏗ",
+      "nav_try_online": "ᎠᏂᏗᏢᎬᎢ ᎤᏍᏲᎯᎭ"
     },
     "cree": {
       "rtl": false,
@@ -6583,7 +6663,8 @@
       "sc_expr": "akihtâson",
       "nav_manual": "Kîskinahamâkêwin",
       "manual_title": "Kîskinahamâkêwin",
-      "manual_sub": "Zymbol-Lang nêhiyawêwin (SRO)"
+      "manual_sub": "Zymbol-Lang nêhiyawêwin (SRO)",
+      "nav_try_online": "Kicimisowin Online"
     },
     "aymara": {
       "rtl": false,
@@ -6664,7 +6745,8 @@
       "sc_expr": "jakhu",
       "nav_manual": "Yatiqawi",
       "manual_title": "Yatiqawi",
-      "manual_sub": "Zymbol-Lang Aymara aru"
+      "manual_sub": "Zymbol-Lang Aymara aru",
+      "nav_try_online": "Arnakatax Internetjïpana"
     },
     "wayuu": {
       "rtl": false,
@@ -6745,7 +6827,8 @@
       "sc_expr": "nüchukua",
       "nav_manual": "Aküjawaa",
       "manual_title": "Aküjawaa",
-      "manual_sub": "Zymbol-Lang Wayuunaiki"
+      "manual_sub": "Zymbol-Lang Wayuunaiki",
+      "nav_try_online": "Aapüin Online"
     },
     "embera": {
       "rtl": false,
@@ -6826,7 +6909,8 @@
       "sc_expr": "nembi",
       "nav_manual": "Ome Wẽra",
       "manual_title": "Ome Wẽra",
-      "manual_sub": "Zymbol-Lang Embera"
+      "manual_sub": "Zymbol-Lang Embera",
+      "nav_try_online": "Biari Onlainba"
     },
     "yanomami": {
       "rtl": false,
@@ -6907,7 +6991,8 @@
       "sc_expr": "mahi",
       "nav_manual": "Yama Pë",
       "manual_title": "Yama Pë",
-      "manual_sub": "Zymbol-Lang Yanomami"
+      "manual_sub": "Zymbol-Lang Yanomami",
+      "nav_try_online": "Pata online-pe"
     },
     "oromo": {
       "rtl": false,
@@ -6988,7 +7073,8 @@
       "sc_expr": "lakkoofsa",
       "nav_manual": "Barnoota",
       "manual_title": "Barnoota",
-      "manual_sub": "Zymbol-Lang Afaan Oromoo"
+      "manual_sub": "Zymbol-Lang Afaan Oromoo",
+      "nav_try_online": "Onlaayinii Yaali"
     },
     "bambara": {
       "rtl": false,
@@ -7069,7 +7155,8 @@
         "input": "<< \"dɔnni\" x",
         "rem": "arr$- val",
         "try": "!?{ } :!{ }"
-      }
+      },
+      "nav_try_online": "Jɛbila Interinɛti la"
     },
     "fula": {
       "rtl": false,
@@ -7150,7 +7237,8 @@
         "input": "<< \"naatinde\" x",
         "rem": "arr$- val",
         "try": "!?{ } :!{ }"
-      }
+      },
+      "nav_try_online": "Heɓa Online"
     },
     "lingala": {
       "rtl": false,
@@ -7231,7 +7319,8 @@
         "input": "<< \"kozwa\" x",
         "rem": "arr$- val",
         "try": "!?{ } :!{ }"
-      }
+      },
+      "nav_try_online": "Leka Online"
     },
     "somali": {
       "rtl": false,
@@ -7312,7 +7401,8 @@
         "input": "<< \"gali\" x",
         "rem": "arr$- val",
         "try": "!?{ } :!{ }"
-      }
+      },
+      "nav_try_online": "Ku Tijaabi Online"
     },
     "tigrinya": {
       "rtl": false,
@@ -7393,7 +7483,8 @@
         "input": "<< \"ምእታው\" x",
         "rem": "arr$- val",
         "try": "!?{ } :!{ }"
-      }
+      },
+      "nav_try_online": "ኦንላይን ሞኸር"
     },
     "shona": {
       "rtl": false,
@@ -7474,7 +7565,8 @@
         "input": "<< \"pinda\" x",
         "rem": "arr$- val",
         "try": "!?{ } :!{ }"
-      }
+      },
+      "nav_try_online": "Edza Online"
     },
     "esperanto": {
       "rtl": false,
@@ -7555,7 +7647,8 @@
       "subregion": "planned",
       "nav_manual": "Dokumentaro",
       "manual_title": "Dokumentaro",
-      "manual_sub": "Mallonga manlibro de Zymbol-Lang"
+      "manual_sub": "Mallonga manlibro de Zymbol-Lang",
+      "nav_try_online": "Provu Rete"
     },
     "lojban": {
       "rtl": false,
@@ -7636,7 +7729,8 @@
       "subregion": "planned",
       "nav_manual": "ciksi",
       "manual_title": "ciksi",
-      "manual_sub": "cmalu ciksi zymbol-lang"
+      "manual_sub": "cmalu ciksi zymbol-lang",
+      "nav_try_online": "ko pilno lo skami bende"
     },
     "toki_pona": {
       "rtl": false,
@@ -7717,7 +7811,8 @@
       "subregion": "planned",
       "nav_manual": "lipu sona",
       "manual_title": "lipu sona",
-      "manual_sub": "lipu sona lili pi zymbol-lang"
+      "manual_sub": "lipu sona lili pi zymbol-lang",
+      "nav_try_online": "o kepeken lon ilo"
     },
     "ido": {
       "rtl": false,
@@ -7798,7 +7893,8 @@
       "subregion": "planned",
       "nav_manual": "Dokumentaro",
       "manual_title": "Dokumentaro",
-      "manual_sub": "Mallonga manlibro di Zymbol-Lang"
+      "manual_sub": "Mallonga manlibro di Zymbol-Lang",
+      "nav_try_online": "Provu Online"
     },
     "interlingua": {
       "rtl": false,
@@ -7879,7 +7975,8 @@
       "subregion": "planned",
       "nav_manual": "Documentation",
       "manual_title": "Documentation",
-      "manual_sub": "Manual compacto de Zymbol-Lang"
+      "manual_sub": "Manual compacto de Zymbol-Lang",
+      "nav_try_online": "Proba Online"
     },
     "klingon": {
       "rtl": false,
@@ -7960,7 +8057,8 @@
       "subregion": "scifi",
       "nav_manual": "HaDlu'meH",
       "manual_title": "HaDlu'meH",
-      "manual_sub": "mach HaDlu'meH zymbol-lang"
+      "manual_sub": "mach HaDlu'meH zymbol-lang",
+      "nav_try_online": "yIlo' 'Internet"
     },
     "mandoa": {
       "rtl": false,
@@ -8041,7 +8139,8 @@
       "subregion": "scifi",
       "nav_manual": "Tome",
       "manual_title": "Tome",
-      "manual_sub": "Kaysh tome zymbol-lang"
+      "manual_sub": "Kaysh tome zymbol-lang",
+      "nav_try_online": "Muun Online"
     },
     "quenya": {
       "rtl": false,
@@ -8122,7 +8221,8 @@
       "subregion": "fantasy",
       "nav_manual": "Parma",
       "manual_title": "Parma",
-      "manual_sub": "Pitya Parma Zymbol-Lang"
+      "manual_sub": "Pitya Parma Zymbol-Lang",
+      "nav_try_online": "Cesta mir i Vorondë"
     },
     "sindarin": {
       "rtl": false,
@@ -8203,7 +8303,8 @@
       "subregion": "fantasy",
       "nav_manual": "Sarch",
       "manual_title": "Sarch",
-      "manual_sub": "Pitya Sarch Zymbol-Lang"
+      "manual_sub": "Pitya Sarch Zymbol-Lang",
+      "nav_try_online": "Cesto an Lín"
     },
     "dothraki": {
       "rtl": false,
@@ -8284,7 +8385,8 @@
       "subregion": "fantasy",
       "nav_manual": "Alegra",
       "manual_title": "Alegra",
-      "manual_sub": "Alegra Dothrak Zymbol-Lang"
+      "manual_sub": "Alegra Dothrak Zymbol-Lang",
+      "nav_try_online": "Azho Online"
     },
     "high_valyrian": {
       "rtl": false,
@@ -8365,7 +8467,8 @@
       "subregion": "fantasy",
       "nav_manual": "Dovaogēdy",
       "manual_title": "Dovaogēdy",
-      "manual_sub": "Dovaogēdy Sȳrior Zymbol-Lang"
+      "manual_sub": "Dovaogēdy Sȳrior Zymbol-Lang",
+      "nav_try_online": "Ipradis Lenton"
     },
     "navi": {
       "rtl": false,
@@ -8446,7 +8549,8 @@
       "subregion": "cinema",
       "nav_manual": "Lì'fya",
       "manual_title": "Lì'fya",
-      "manual_sub": "Lì'fya hin Zymbol-Lang"
+      "manual_sub": "Lì'fya hin Zymbol-Lang",
+      "nav_try_online": "Tivìng si"
     },
     "klingon_piqad": {
       "rtl": false,
@@ -8527,7 +8631,8 @@
       "regions": [
         "universal"
       ],
-      "subregion": "scifi"
+      "subregion": "scifi",
+      "nav_try_online": " "
     },
     "cree_syl": {
       "rtl": false,
@@ -8608,7 +8713,8 @@
       "sc_expr": "ᐊᑭᐦᑖᓱᐣ",
       "nav_manual": "ᑮᐢᑭᓇᐦᐊᒫᑫᐏᐣ",
       "manual_title": "ᑮᐢᑭᓇᐦᐊᒫᑫᐏᐣ",
-      "manual_sub": "Zymbol-Lang ᓀᐦᐃᔭᐍᐏᐣ (ᐊᓯᓂᑿᐣ)"
+      "manual_sub": "Zymbol-Lang ᓀᐦᐃᔭᐍᐏᐣ (ᐊᓯᓂᑿᐣ)",
+      "nav_try_online": "ᑐᑦᑕᕐᓂᖅ ᐅᕙᓂ"
     }
   },
   "subregion_labels": {

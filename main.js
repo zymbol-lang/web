@@ -284,12 +284,20 @@
 
   // ─── Fade transition helper ───
   function fadeUpdate(fn) {
-    const targets = document.querySelectorAll('.fade-target');
-    targets.forEach(el => el.classList.add('fading'));
+    const targets = [...document.querySelectorAll('.fade-target')];
+    // Fade out
+    targets.forEach(el => {
+      el.style.transition = 'opacity 0.18s ease';
+      el.style.opacity = '0';
+    });
     setTimeout(() => {
-      fn();
-      targets.forEach(el => el.classList.remove('fading'));
-    }, 180);
+      try { fn(); } catch(e) { console.error('[fadeUpdate]', e); }
+      // Fade in
+      targets.forEach(el => { el.style.opacity = '1'; });
+      setTimeout(() => {
+        targets.forEach(el => { el.style.transition = ''; el.style.opacity = ''; });
+      }, 220);
+    }, 190);
   }
 
   // ─── Operators grid ───
@@ -395,6 +403,7 @@
 
       // Hero buttons + stats
       document.getElementById('btn-examples').textContent  = i18nEntry.btn_examples  || 'See Examples';
+      document.getElementById('btn-try-online').textContent  = i18nEntry.nav_try_online  || 'Try Online';
       document.getElementById('btn-ops-ref').textContent   = i18nEntry.btn_ops_ref   || 'Operator Ref';
       document.getElementById('stat-keywords').textContent  = i18nEntry.stat_keywords  || 'Keywords';
       document.getElementById('stat-unicode').textContent   = i18nEntry.stat_unicode   || 'Unicode';
@@ -403,7 +412,7 @@
       document.getElementById('nav-showcase').textContent    = i18nEntry.nav_showcase    || 'Showcase';
       document.getElementById('nav-operators').textContent   = i18nEntry.nav_operators   || 'Operators';
       document.getElementById('nav-features').textContent    = i18nEntry.nav_features    || 'Features';
-      document.getElementById('nav-get-started').textContent = i18nEntry.nav_get_started || 'Get Started';
+      document.getElementById('nav-try-online').textContent  = i18nEntry.nav_try_online  || 'Try Online';
       document.getElementById('nav-manual').textContent      = i18nEntry.nav_manual      || 'Documentation';
       document.getElementById('manual-title').textContent    = i18nEntry.manual_title    || i18nEntry.nav_manual || 'Documentation';
       document.getElementById('manual-sub').textContent      = i18nEntry.manual_sub      || 'Compact Zymbol-Lang manual';

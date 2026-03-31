@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zymbol Playground</title>
+  <meta name="description" content="Interactive Zymbol playground — try the language in your browser.">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+  <script>
+    (function(){
+      var s = localStorage.getItem('zy-theme');
+      var light = s ? s === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+      if (light) document.documentElement.classList.add('light');
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    @font-face {
+      font-family: 'pIqaD-qolqoS';
+      src: url('fonts/pIqaD-qolqoS.woff2') format('woff2'),
+           url('fonts/pIqaD-qolqoS.ttf') format('truetype');
+      font-weight: 100 900;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0c0c0c;
+      --bg2:       #111111;
+      --bg3:       #161616;
+      --bg4:       #1a1a1a;
+      --line:      #1e1e1e;
+      --muted:     #2a2a2a;
+      --dim:       #444;
+      --mid:       #666;
+      --text:      #aaa;
+      --hi:        #ddd;
+      --white:     #f0f0f0;
+      --green:     #00e87a;
+      --green2:    #00c468;
+      --green-dim: #00e87a22;
+      --green-mid: #00e87a44;
+      --str:       #c89a6e;
+      --num:       #6aadce;
+      --cmt:       #3a3a3a;
+      --op:        #9ecbff;
+      --kw:        #00e87a;
+      --fn-color:  #c792ea;
+      --id-color:  #aaa;
+      --err:       #f97070;
+      --header-h:  52px;
+      --examples-h: 240px;
+      --mono: 'pIqaD-qolqoS','JetBrains Mono','Courier New',monospace;
+      --ui:   'pIqaD-qolqoS','Inter',system-ui,sans-serif;
+      --radius: 6px;
+    }
+
+    html.light {
+      --bg:        #f8f8f8;
+      --bg2:       #f0f0f0;
+      --bg3:       #e8e8e8;
+      --bg4:       #e0e0e0;
+      --line:      #d0d0d0;
+      --muted:     #c8c8c8;
+      --dim:       #888;
+      --mid:       #555;
+      --text:      #333;
+      --hi:        #111;
+      --white:     #111;
+      --green:     #008a48;
+      --green2:    #006a38;
+      --green-dim: #008a4815;
+      --green-mid: #008a4830;
+      --str:       #a0522d;
+      --num:       #1a6a99;
+      --cmt:       #aaa;
+      --op:        #3a6fa8;
+      --kw:        #008a48;
+      --fn-color:  #7c3aed;
+      --id-color:  #333;
+      --err:       #cc2222;
+      --header-bg: rgba(248,248,248,0.95);
+    }
+
+    html { font-size: 15px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--ui);
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 3px; }
+
+    /* ─── Header ─── */
+    header {
+      height: var(--header-h);
+      min-height: var(--header-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--line);
+      gap: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--hi);
+    }
+    .logo img { height: 1.8rem; }
+    .logo-code {
+      font-family: var(--mono);
+      font-size: 0.92rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .logo-sym { color: var(--green); }
+    .logo-op  { color: var(--green); margin: 0 0.1em; }
+    .logo-str { color: var(--str); }
+
+    .header-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--mid);
+      padding: 0.2rem 0.6rem;
+      background: var(--green-dim);
+      border: 1px solid var(--green-mid);
+      border-radius: var(--radius);
+      color: var(--green);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .back-link {
+      font-size: 0.75rem;
+      color: var(--mid);
+      padding: 0.3rem 0.65rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .back-link:hover { color: var(--hi); border-color: var(--dim); }
+
+    #theme-toggle {
+      background: none;
+      border: 1px solid var(--line);
+      color: var(--mid);
+      cursor: pointer;
+      border-radius: var(--radius);
+      padding: 0.28rem 0.5rem;
+      font-size: 0.9rem;
+      line-height: 1;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    #theme-toggle:hover { border-color: var(--dim); color: var(--hi); }
+
+    /* ─── Playground layout: editor | output ─── */
+    #playground {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* ─── Panel shared ─── */
+    .panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.45rem 0.75rem;
+      background: var(--bg3);
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+
+    .panel-header span {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--mid);
+    }
+
+    .panel-actions {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    /* ─── Buttons ─── */
+    .btn {
+      font-family: var(--ui);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.28rem 0.7rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      cursor: pointer;
+      background: var(--bg4);
+      color: var(--text);
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+    }
+    .btn:hover { background: var(--muted); border-color: var(--dim); color: var(--hi); }
+
+    .btn-run {
+      background: var(--green-dim);
+      border-color: var(--green-mid);
+      color: var(--green);
+    }
+    .btn-run:hover { background: var(--green-mid); }
+
+    .btn-active {
+      background: var(--green-dim);
+      border-color: var(--green-mid);
+      color: var(--green);
+    }
+
+    /* ─── Editor panel ─── */
+    #editor-panel { border-right: 1px solid var(--line); }
+
+    #editor-wrapper {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #editor-highlight {
+      position: absolute;
+      inset: 0;
+      overflow: auto;
+      padding: 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      color: var(--text);
+      white-space: pre;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    #editor {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      resize: none;
+      background: transparent;
+      color: transparent;
+      caret-color: var(--green);
+      border: none;
+      outline: none;
+      padding: 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      z-index: 2;
+      overflow: auto;
+      white-space: pre;
+      tab-size: 4;
+    }
+
+    /* ─── Stdin panel ─── */
+    #stdin-wrap {
+      flex-shrink: 0;
+      border-top: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+    }
+
+    #stdin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.3rem 0.75rem;
+      background: var(--bg3);
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--mid);
+    }
+
+    #stdin {
+      resize: none;
+      background: var(--bg2);
+      color: var(--text);
+      border: none;
+      outline: none;
+      padding: 0.5rem 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      line-height: 1.55;
+      height: 70px;
+    }
+
+    /* ─── Output panel ─── */
+    #output-content {
+      flex: 1;
+      overflow: auto;
+      padding: 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .out-text  { color: var(--hi); }
+    .out-error { color: var(--err); }
+    .out-meta  { color: var(--mid); font-style: italic; font-size: 0.75rem; }
+
+    /* ─── Examples panel ─── */
+    #examples-panel {
+      height: var(--examples-h);
+      min-height: var(--examples-h);
+      max-height: var(--examples-h);
+      display: flex;
+      flex-direction: column;
+      border-top: 1px solid var(--line);
+      flex-shrink: 0;
+      background: var(--bg2);
+    }
+
+    #examples-tabs {
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+
+    .ex-tab {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.45rem 0.9rem;
+      color: var(--mid);
+      border-right: 1px solid var(--line);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.12s, background 0.12s;
+      flex-shrink: 0;
+    }
+    .ex-tab:hover { color: var(--hi); background: var(--bg3); }
+    .ex-tab.active { color: var(--green); background: var(--bg3); border-bottom: 2px solid var(--green); }
+
+    #examples-grid {
+      flex: 1;
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      align-items: stretch;
+    }
+
+    .ex-card {
+      flex-shrink: 0;
+      width: 220px;
+      background: var(--bg3);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      cursor: pointer;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.15s;
+    }
+    .ex-card:hover { border-color: var(--green-mid); }
+
+    .ex-card-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--green);
+      padding: 0.35rem 0.6rem 0.2rem;
+      flex-shrink: 0;
+    }
+
+    .ex-card-code {
+      flex: 1;
+      overflow: hidden;
+      padding: 0 0.6rem 0.4rem;
+      font-family: var(--mono);
+      font-size: 0.71rem;
+      line-height: 1.5;
+      color: var(--text);
+    }
+
+    /* ─── Syntax colors ─── */
+    .t-kw  { color: var(--kw); }
+    .t-op  { color: var(--op); }
+    .t-str { color: var(--str); }
+    .t-num { color: var(--num); }
+    .t-cmt { color: var(--cmt); }
+    .t-fn  { color: var(--fn-color); }
+    .t-id  { color: var(--id-color); }
+
+    /* ─── Mobile ─── */
+    @media (max-width: 700px) {
+      #playground { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+      #editor-panel { border-right: none; border-bottom: 1px solid var(--line); }
+      --examples-h: 200px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header>
+  <a href="index.html" class="logo">
+    <img src="logo.png" alt="Zymbol">
+    <span class="logo-code">
+      <span class="logo-sym">@{</span>
+      <span class="logo-op">&gt;&gt;</span><span class="logo-str">" Zymbol-lang "</span>
+      <span class="logo-sym">}</span>
+    </span>
+  </a>
+  <span class="header-title">Playground</span>
+  <div class="header-right">
+    <a href="index.html" class="back-link">← Home</a>
+    <button id="theme-toggle" title="Toggle theme">🌙</button>
+  </div>
+</header>
+
+<!-- ═══ PLAYGROUND ═══ -->
+<div id="playground">
+
+  <!-- Editor -->
+  <div class="panel" id="editor-panel">
+    <div class="panel-header">
+      <span>Editor</span>
+      <div class="panel-actions">
+        <button class="btn btn-run" id="run-btn" title="Run (Ctrl+Enter)">▶ Run</button>
+        <button class="btn" id="clear-code-btn">Clear</button>
+        <button class="btn" id="stdin-toggle-btn">stdin</button>
+      </div>
+    </div>
+
+    <div id="editor-wrapper">
+      <pre id="editor-highlight" aria-hidden="true"></pre>
+      <textarea id="editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
+                placeholder='>> "Hello, World!" ¶'></textarea>
+    </div>
+
+    <div id="stdin-wrap" style="display:none">
+      <div id="stdin-header">
+        <span>stdin — one value per line (for &lt;&lt;)</span>
+        <button class="btn" id="stdin-close-btn" style="font-size:0.65rem;padding:0.15rem 0.45rem">✕</button>
+      </div>
+      <textarea id="stdin" placeholder="Alice&#10;42&#10;..."></textarea>
+    </div>
+  </div>
+
+  <!-- Output -->
+  <div class="panel" id="output-panel">
+    <div class="panel-header">
+      <span>Output</span>
+      <div class="panel-actions">
+        <button class="btn" id="clear-output-btn">Clear</button>
+      </div>
+    </div>
+    <div id="output-content"><span class="out-meta">Press ▶ Run or Ctrl+Enter to execute.</span></div>
+  </div>
+
+</div>
+
+<!-- ═══ EXAMPLES ═══ -->
+<div id="examples-panel">
+  <div id="examples-tabs"></div>
+  <div id="examples-grid"></div>
+</div>
+
+<!-- ═══ INTERPRETER ═══ -->
+<script type="module">
+import { runZymbol } from './zymbol.js';
+
+// ─── Examples data ────────────────────────────────────────────────────────────
+const EXAMPLES = {
+  'Output >>': [
+    { title: 'Hello World',   code: '>> "Hello, World!" ¶' },
+    { title: 'Multi-value',   code: 'name = "Alice"\n>> "Hello, " name "!" ¶' },
+    { title: 'Numbers',       code: 'x = 10\ny = 3\n>> x " + " y " = " x + y ¶' },
+    { title: 'Blank line',    code: '>> "line 1" ¶\n>> ¶\n>> "line 3" ¶' },
+  ],
+  'Input <<': [
+    { title: 'Read input',    code: '<< "Your name: " name\n>> "Hi, " name "!" ¶', stdin: 'Alice' },
+    { title: 'Two inputs',    code: '<< "First: " a\n<< "Second: " b\n>> a " and " b ¶', stdin: 'hello\nworld' },
+  ],
+  'Variables': [
+    { title: 'Types',         code: 'n = 123\nf = 123.45\nactive = #1\noff = #0\n>> n ¶\n>> f ¶\n>> active ¶\n>> off ¶' },
+    { title: 'Constant',      code: 'PI := 3.14159\nradius = 5\n>> "area = " PI * radius ^ 2 ¶' },
+    { title: 'Interpolation', code: 'name = "Zymbol"\nversion = 2\n>> "Welcome to {name} v{version}!" ¶' },
+    { title: 'Compound ops',  code: 'x = 10\nx += 5\nx *= 2\nx--\n>> x ¶' },
+  ],
+  'Collections': [
+    { title: 'Array',         code: 'arr = [10, 20, 30]\n>> arr ¶\n>> arr[0] ¶\n>> arr[-1] ¶' },
+    { title: 'Tuple',         code: 't = (1, 2, 3)\n>> t ¶\n>> t[0] ¶' },
+    { title: 'Named tuple',   code: 'pt = (x: 3, y: 7)\n>> pt ¶\n>> pt[0] " " pt[1] ¶' },
+    { title: 'String tuple',  code: 'words = ("hello", "world", "!")\n>> words ¶' },
+    { title: '$# length',     code: 'arr = [10, 20, 30]\n>> arr$# ¶\n>> "hello"$# ¶\n>> (1,2,3,4)$# ¶' },
+    { title: '$+ append',     code: 'arr = [1, 2, 3]\narr = arr$+ 4\narr = arr$+ 5\n>> arr ¶' },
+    { title: '$+[i] insert',  code: 'arr = [10, 20, 30]\narr = arr$+[1] 99\n>> arr ¶' },
+    { title: '$- remove',     code: 'arr = [10, 20, 30, 20, 40]\narr = arr$- 20\n>> arr ¶\narr = arr$-- 10\n>> arr ¶' },
+    { title: '$-[i] remove at',code:'arr = [10, 20, 30, 40]\narr = arr$-[0]\n>> arr ¶\narr = arr$-[1..2]\n>> arr ¶' },
+    { title: '$? contains',   code: 'arr = [1, 2, 3, 4, 5]\n>> arr$? 3 ¶\n>> arr$? 9 ¶\n>> "hello"$? \'l\' ¶' },
+    { title: '$?? find all',  code: 'arr = [20, 10, 20, 30, 20]\n>> arr$?? 20 ¶\n>> "hello"$?? \'l\' ¶' },
+    { title: '$~ update',     code: 'arr = [10, 20, 30]\narr = arr$~[1] 99\n>> arr ¶' },
+    { title: '$[i..j] slice', code: 'arr = [10, 20, 30, 40, 50]\n>> arr$[1..3] ¶\n>> "hello world"$[6..10] ¶' },
+    { title: '$^+ sort',      code: 'nums = [3, 1, 4, 1, 5, 9, 2, 6]\n>> nums$^+ ¶\n>> nums$^- ¶' },
+    { title: '$> map',        code: 'double(x) { <~ x * 2 }\narr = [1, 2, 3, 4, 5]\n>> arr$> double ¶' },
+    { title: '$| filter',     code: 'even(x) { <~ x % 2 == 0 }\narr = [1, 2, 3, 4, 5, 6]\n>> arr$| even ¶' },
+    { title: '$< reduce',     code: 'add(a, b) { <~ a + b }\narr = [1, 2, 3, 4, 5]\n>> arr$< (0, add) ¶' },
+  ],
+  'Control ?': [
+    { title: 'If / else',     code: 'x = 7\n? x > 0 {\n    >> "positive" ¶\n} _ {\n    >> "not positive" ¶\n}' },
+    { title: 'If / _? / _',  code: 'x = 0\n? x > 0 {\n    >> "positive" ¶\n} _? x == 0 {\n    >> "zero" ¶\n} _ {\n    >> "negative" ¶\n}' },
+    { title: 'Nested',        code: 'a = 5\nb = 3\n? a > b {\n    ? a > 10 {\n        >> "big" ¶\n    } _ {\n        >> "a wins" ¶\n    }\n} _ {\n    >> "b wins" ¶\n}' },
+  ],
+  'Match ??': [
+    { title: 'Ranges',        code: 'score = 85\ngrade = ?? score {\n    90..100 : "A"\n    80..89  : "B"\n    70..79  : "C"\n    60..69  : "D"\n    _       : "F"\n}\n>> "grade: " grade ¶' },
+    { title: 'Strings',       code: 'color = "red"\ncode = ?? color {\n    "red"   : "#FF0000"\n    "green" : "#00FF00"\n    "blue"  : "#0000FF"\n    _       : "#000000"\n}\n>> code ¶' },
+    { title: 'Guard _?',      code: 'temp = -5\nstate = ?? temp {\n    _? temp < 0  : "ice"\n    _? temp < 20 : "cold"\n    _? temp < 35 : "warm"\n    _            : "hot"\n}\n>> state ¶' },
+  ],
+  'Loops @': [
+    { title: 'Range 1..5',    code: '@ i:1..5 {\n    >> i " "\n}\n>> ¶' },
+    { title: 'Range + step',  code: '@ i:1..9:2 {\n    >> i " "\n}\n>> ¶' },
+    { title: 'While',         code: 'n = 1\n@ n <= 100 {\n    n *= 2\n}\n>> n ¶' },
+    { title: 'Foreach array', code: 'fruits = ["apple", "pear", "grape"]\n@ fruit:fruits {\n    >> "- " fruit ¶\n}' },
+    { title: 'Foreach string',code: '@ c:"hello" {\n    >> c "-"\n}\n>> ¶' },
+    { title: 'Break @!',      code: 'i = 0\n@ {\n    i++\n    ? i >= 5 { @! }\n    >> i " "\n}\n>> ¶' },
+    { title: 'Infinite (safe)',code: '// @ without a break → hits the 50k-step limit\n// The interpreter stops it automatically.\n@ {\n    >> "Zymbol-lang " ¶\n}' },
+    { title: 'Continue @>',  code: '@ i:1..10 {\n    ? i % 2 == 0 { @> }\n    ? i > 7 { @! }\n    >> i " "\n}\n>> ¶' },
+  ],
+  'Functions': [
+    { title: 'Basic',         code: 'add(a, b) { <~ a + b }\n>> add(3, 4) ¶' },
+    { title: 'Factorial',     code: 'factorial(n) {\n    ? n <= 1 { <~ 1 }\n    <~ n * factorial(n - 1)\n}\n>> factorial(5) ¶\n>> factorial(10) ¶' },
+    { title: 'Greet',         code: 'greet(name) {\n    >> "Hello, " name "!" ¶\n}\ngreet("World")\ngreet("Zymbol")' },
+    { title: 'Max',           code: 'max(a, b) {\n    ? a >= b { <~ a }\n    <~ b\n}\n>> max(7, 3) ¶\n>> max(2, 9) ¶' },
+    { title: 'Fibonacci',     code: 'fib(n) {\n    ? n <= 1 { <~ n }\n    <~ fib(n - 1) + fib(n - 2)\n}\n@ i:0..9 {\n    >> fib(i) " "\n}\n>> ¶' },
+  ],
+};
+
+// ─── Syntax highlighter ───────────────────────────────────────────────────────
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function highlightLine(line) {
+  if (/^\s*\/\//.test(line)) return `<span class="t-cmt">${esc(line)}</span>`;
+
+  let out = '', i = 0;
+  const s = line, len = s.length;
+
+  while (i < len) {
+    if (s[i] === '/' && s[i+1] === '/') { out += `<span class="t-cmt">${esc(s.slice(i))}</span>`; break; }
+
+    if (s[i] === '"') {
+      let j = i+1;
+      while (j < len && s[j] !== '"') { if (s[j]==='\\') j++; j++; }
+      out += `<span class="t-str">${esc(s.slice(i, j+1))}</span>`;
+      i = j+1; continue;
+    }
+    if (s[i] === "'") {
+      let j = i+1;
+      while (j < len && s[j] !== "'") { if (s[j]==='\\') j++; j++; }
+      out += `<span class="t-str">${esc(s.slice(i, j+1))}</span>`;
+      i = j+1; continue;
+    }
+
+    if (/\d/.test(s[i]) && (i===0 || !/\w/.test(s[i-1]))) {
+      let j = i;
+      while (j < len && /[\d.]/.test(s[j])) j++;
+      out += `<span class="t-num">${esc(s.slice(i,j))}</span>`;
+      i = j; continue;
+    }
+
+    const two = s.slice(i, i+2);
+    if (two === '>>') { out += `<span class="t-op">&gt;&gt;</span>`; i+=2; continue; }
+    if (two === '<<') { out += `<span class="t-op">&lt;&lt;</span>`; i+=2; continue; }
+    if (two === '<~') { out += `<span class="t-kw">&lt;~</span>`;   i+=2; continue; }
+    if (two === '_?') { out += `<span class="t-kw">_?</span>`;      i+=2; continue; }
+    if (two === '??') { out += `<span class="t-kw">??</span>`;      i+=2; continue; }
+    if (two === ':=') { out += `<span class="t-op">:=</span>`;      i+=2; continue; }
+    if (two === '..') { out += `<span class="t-op">..</span>`;      i+=2; continue; }
+    if (two === '==') { out += `<span class="t-op">==</span>`;      i+=2; continue; }
+    if (two === '<>') { out += `<span class="t-op">&lt;&gt;</span>`; i+=2; continue; }
+    if (two === '<=') { out += `<span class="t-op">&lt;=</span>`;   i+=2; continue; }
+    if (two === '>=') { out += `<span class="t-op">&gt;=</span>`;   i+=2; continue; }
+    if (two === '&&') { out += `<span class="t-op">&amp;&amp;</span>`; i+=2; continue; }
+    if (two === '@!') { out += `<span class="t-kw">@!</span>`;      i+=2; continue; }
+    if (two === '@>') { out += `<span class="t-kw">@&gt;</span>`;   i+=2; continue; }
+    if (two === '#0') { out += `<span class="t-num">#0</span>`;     i+=2; continue; }
+    if (two === '#1') { out += `<span class="t-num">#1</span>`;     i+=2; continue; }
+    if (two === '++') { out += `<span class="t-op">++</span>`;      i+=2; continue; }
+    if (two === '--') { out += `<span class="t-op">--</span>`;      i+=2; continue; }
+
+    const one = s[i];
+    if (one === '?') { out += `<span class="t-kw">?</span>`;  i++; continue; }
+    if (one === '@') { out += `<span class="t-kw">@</span>`;  i++; continue; }
+    if (one === '¶') { out += `<span class="t-kw">¶</span>`;  i++; continue; }
+    if (one === '_' && (i+1>=len || !/\w/.test(s[i+1]))) {
+      out += `<span class="t-kw">_</span>`; i++; continue;
+    }
+    if (one === '<') { out += '&lt;'; i++; continue; }
+    if (one === '>') { out += '&gt;'; i++; continue; }
+    if (one === '&') { out += '&amp;'; i++; continue; }
+    if (one === '+' || one === '-' || one === '*' || one === '/' ||
+        one === '%' || one === '^' || one === ':' || one === '=') {
+      out += `<span class="t-op">${esc(one)}</span>`; i++; continue;
+    }
+
+    if (/[\p{L}_$]/u.test(one)) {
+      let j = i;
+      while (j < len && /[\p{L}\p{N}_$]/u.test(s[j])) j++;
+      const word = s.slice(i, j);
+      const isFn = j < len && s[j] === '(';
+      out += isFn
+        ? `<span class="t-fn">${esc(word)}</span>`
+        : `<span class="t-id">${esc(word)}</span>`;
+      i = j; continue;
+    }
+
+    out += esc(one); i++;
+  }
+  return out;
+}
+
+function highlightCode(code) {
+  return code.split('\n').map(highlightLine).join('\n');
+}
+
+// ─── Editor sync ──────────────────────────────────────────────────────────────
+const editor    = document.getElementById('editor');
+const highlight = document.getElementById('editor-highlight');
+
+function syncHighlight() {
+  const code = editor.value;
+  highlight.innerHTML = highlightCode(code) + '\n'; // trailing \n keeps heights in sync
+  syncScroll();
+}
+function syncScroll() {
+  highlight.scrollTop  = editor.scrollTop;
+  highlight.scrollLeft = editor.scrollLeft;
+}
+
+editor.addEventListener('input',  syncHighlight);
+editor.addEventListener('scroll', syncScroll);
+
+// Tab → 4 spaces
+editor.addEventListener('keydown', e => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = editor.selectionStart, end = editor.selectionEnd;
+    editor.value = editor.value.slice(0, s) + '    ' + editor.value.slice(end);
+    editor.selectionStart = editor.selectionEnd = s + 4;
+    syncHighlight();
+  }
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    runCode();
+  }
+});
+
+// ─── Output ───────────────────────────────────────────────────────────────────
+const outputEl = document.getElementById('output-content');
+
+function appendOutput(text, cls = 'out-text') {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = text;
+  outputEl.appendChild(span);
+  outputEl.scrollTop = outputEl.scrollHeight;
+}
+
+function clearOutput() {
+  outputEl.innerHTML = '';
+}
+
+// ─── Run ──────────────────────────────────────────────────────────────────────
+function runCode() {
+  clearOutput();
+  const src   = editor.value.trim();
+  if (!src) { appendOutput('(empty program)', 'out-meta'); return; }
+
+  const stdinRaw  = document.getElementById('stdin').value;
+  const inputLines = stdinRaw ? stdinRaw.split('\n') : [];
+
+  try {
+    runZymbol(src, inputLines, text => appendOutput(text));
+    appendOutput('\n— done —', 'out-meta');
+  } catch (err) {
+    appendOutput('\n' + (err.message ?? String(err)), 'out-error');
+  }
+}
+
+document.getElementById('run-btn').addEventListener('click', runCode);
+document.getElementById('clear-code-btn').addEventListener('click', () => {
+  editor.value = '';
+  syncHighlight();
+});
+document.getElementById('clear-output-btn').addEventListener('click', clearOutput);
+
+// ─── Stdin toggle ─────────────────────────────────────────────────────────────
+const stdinWrap = document.getElementById('stdin-wrap');
+document.getElementById('stdin-toggle-btn').addEventListener('click', () => {
+  const open = stdinWrap.style.display === 'none' || stdinWrap.style.display === '';
+  stdinWrap.style.display = open ? 'flex' : 'none';
+  stdinWrap.style.flexDirection = open ? 'column' : '';
+  document.getElementById('stdin-toggle-btn').classList.toggle('btn-active', open);
+});
+document.getElementById('stdin-close-btn').addEventListener('click', () => {
+  stdinWrap.style.display = 'none';
+  document.getElementById('stdin-toggle-btn').classList.remove('btn-active');
+});
+
+// ─── Examples ─────────────────────────────────────────────────────────────────
+const tabsEl = document.getElementById('examples-tabs');
+const gridEl = document.getElementById('examples-grid');
+
+let activeTab = Object.keys(EXAMPLES)[0];
+
+function renderTabs() {
+  tabsEl.innerHTML = '';
+  for (const cat of Object.keys(EXAMPLES)) {
+    const btn = document.createElement('div');
+    btn.className = 'ex-tab' + (cat === activeTab ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', () => { activeTab = cat; renderTabs(); renderGrid(); });
+    tabsEl.appendChild(btn);
+  }
+}
+
+function renderGrid() {
+  gridEl.innerHTML = '';
+  for (const ex of EXAMPLES[activeTab]) {
+    const card = document.createElement('div');
+    card.className = 'ex-card';
+    card.innerHTML = `
+      <div class="ex-card-title">${esc(ex.title)}</div>
+      <div class="ex-card-code">${highlightCode(ex.code)}</div>
+    `;
+    card.addEventListener('click', () => {
+      editor.value = ex.code;
+      syncHighlight();
+      if (ex.stdin !== undefined) {
+        document.getElementById('stdin').value = ex.stdin;
+        stdinWrap.style.display = 'flex';
+        stdinWrap.style.flexDirection = 'column';
+        document.getElementById('stdin-toggle-btn').classList.add('btn-active');
+      }
+      clearOutput();
+    });
+    gridEl.appendChild(card);
+  }
+}
+
+renderTabs();
+renderGrid();
+
+// ─── Theme toggle ─────────────────────────────────────────────────────────────
+const themeBtn  = document.getElementById('theme-toggle');
+const themeIcon = themeBtn;
+
+function applyTheme(light) {
+  document.documentElement.classList.toggle('light', light);
+  themeIcon.textContent = light ? '🌙' : '☀️';
+  localStorage.setItem('zy-theme', light ? 'light' : 'dark');
+}
+
+themeBtn.addEventListener('click', () => {
+  applyTheme(!document.documentElement.classList.contains('light'));
+});
+applyTheme(document.documentElement.classList.contains('light'));
+
+// ─── Initial code ─────────────────────────────────────────────────────────────
+editor.value = `// Zymbol Playground
+// Click any example below, or write your own.
+
+factorial(n) {
+    ? n <= 1 { <~ 1 }
+    <~ n * factorial(n - 1)
+}
+
+@ i:1..7 {
+    >> i "! = " factorial(i) ¶
+}`;
+syncHighlight();
+
+</script>
+</body>
+</html>
