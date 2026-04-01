@@ -58,6 +58,19 @@
   <div class="lang-chips" id="lang-chips"></div>
 </div>
 
+<!-- ═══ APRIL FOOLS BANNER ═══ -->
+<div id="april-banner" class="visible">
+  <div class="april-inner">
+    <span class="april-rocket">🖖</span>
+    <div class="april-msg">
+      <strong id="april-welcome">Welcome Zymbol-Lang</strong>
+      <span id="april-sub" class="april-sub">We renamed all operators to emojis. JK. Maybe. 😈</span>
+    </div>
+    <span class="april-rocket">🚀</span>
+    <button id="april-dismiss" aria-label="Dismiss banner">✕</button>
+  </div>
+</div>
+
 <!-- ═══ HERO ═══ -->
 <section id="hero">
   <div class="hero-left">
@@ -246,5 +259,28 @@
 </footer>
 
 <script src="main.js"></script>
+
+<script>
+(function () {
+  var STORAGE_KEY = 'zy-april-dismissed-2026';
+  var now = new Date();
+  // Show from April 1 UTC through April 7 UTC
+  var utcNow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  var start   = new Date(Date.UTC(2026, 3, 1));
+  var end     = new Date(Date.UTC(2026, 3, 8)); // exclusive (April 8)
+  var isActive = utcNow >= start && utcNow < end;
+  var banner = document.getElementById('april-banner');
+
+  if (!isActive || localStorage.getItem(STORAGE_KEY)) {
+    banner.classList.remove('visible');
+    return;
+  }
+
+  document.getElementById('april-dismiss').addEventListener('click', function () {
+    banner.classList.remove('visible');
+    localStorage.setItem(STORAGE_KEY, '1');
+  });
+}());
+</script>
 </body>
 </html>

@@ -93,7 +93,9 @@
         "europe": "germanic"
       },
       "subregion": "north_america",
-      "nav_try_online": "Try Online"
+      "nav_try_online": "Try Online",
+      "april_sub": "We renamed all operators to emojis. JK. Maybe. 😈",
+      "april_welcome": "Welcome Zymbol-Lang"
     },
     "spanish": {
       "rtl": false,
@@ -175,7 +177,9 @@
       "manual_title": "Documentación",
       "manual_sub": "Manual compacto de Zymbol-Lang",
       "subregion": "mesoamerica",
-      "nav_try_online": "Probar Online"
+      "nav_try_online": "Probar Online",
+      "april_sub": "Renombramos todos los operadores con emojis. Es broma. O quizás no. 😈",
+      "april_welcome": "Bienvenido Zymbol-Lang"
     },
     "portuguese": {
       "rtl": false,
@@ -257,7 +261,9 @@
       "manual_title": "Documentação",
       "manual_sub": "Manual compacto do Zymbol-Lang",
       "subregion": "south_america",
-      "nav_try_online": "Experimentar Online"
+      "nav_try_online": "Experimentar Online",
+      "april_sub": "Renomeamos todos os operadores para emojis. É brincadeira. Talvez. 😈",
+      "april_welcome": "Bem-vindo Zymbol-Lang"
     },
     "french": {
       "rtl": false,
@@ -344,7 +350,9 @@
         "americas": "north_america"
       },
       "subregion": "western_europe",
-      "nav_try_online": "Essayer en Ligne"
+      "nav_try_online": "Essayer en Ligne",
+      "april_sub": "On a remplacé tous les opérateurs par des emojis. Blague. Enfin, presque. 😈",
+      "april_welcome": "Bienvenue Zymbol-Lang"
     },
     "german": {
       "rtl": false,
@@ -426,7 +434,9 @@
       "manual_title": "Dokumentation",
       "manual_sub": "Kompaktes Zymbol-Lang Handbuch",
       "subregion": "germanic",
-      "nav_try_online": "Online Testen"
+      "nav_try_online": "Online Testen",
+      "april_sub": "Wir haben alle Operatoren durch Emojis ersetzt. Ein Scherz. Vielleicht. 😈",
+      "april_welcome": "Willkommen Zymbol-Lang"
     },
     "italian": {
       "rtl": false,
@@ -508,7 +518,9 @@
       "manual_title": "Documentazione",
       "manual_sub": "Manuale compatto di Zymbol-Lang",
       "subregion": "romance",
-      "nav_try_online": "Prova Online"
+      "nav_try_online": "Prova Online",
+      "april_sub": "Abbiamo rinominato tutti gli operatori con emoji. Scherzo. Forse. 😈",
+      "april_welcome": "Benvenuto Zymbol-Lang"
     },
     "dutch": {
       "rtl": false,
@@ -590,7 +602,9 @@
       "manual_title": "Documentatie",
       "manual_sub": "Compact Zymbol-Lang handboek",
       "subregion": "germanic",
-      "nav_try_online": "Online Proberen"
+      "nav_try_online": "Online Proberen",
+      "april_sub": "We vervingen alle operatoren door emoji's. Grapje. Misschien. 😈",
+      "april_welcome": "Welkom Zymbol-Lang"
     },
     "polish": {
       "rtl": false,
@@ -672,7 +686,9 @@
       "manual_title": "Dokumentacja",
       "manual_sub": "Kompaktowy podręcznik Zymbol-Lang",
       "subregion": "slavic",
-      "nav_try_online": "Wypróbuj Online"
+      "nav_try_online": "Wypróbuj Online",
+      "april_sub": "Zmieniliśmy nazwy wszystkich operatorów na emoji. Żart. Może. 😈",
+      "april_welcome": "Witaj Zymbol-Lang"
     },
     "russian": {
       "rtl": false,
@@ -754,7 +770,9 @@
       "manual_title": "Документация",
       "manual_sub": "Краткое руководство по Zymbol-Lang",
       "subregion": "slavic",
-      "nav_try_online": "Попробовать Online"
+      "nav_try_online": "Попробовать Online",
+      "april_sub": "Мы переименовали все операторы в эмодзи. Шутка. Может быть. 😈",
+      "april_welcome": "Добро пожаловать Zymbol-Lang"
     },
     "ukrainian": {
       "rtl": false,
@@ -836,7 +854,9 @@
       "manual_title": "Документація",
       "manual_sub": "Компактний посібник з Zymbol-Lang",
       "subregion": "slavic",
-      "nav_try_online": "Спробуй Online"
+      "nav_try_online": "Спробуй Online",
+      "april_sub": "Ми перейменували всі оператори на емодзі. Жарт. Можливо. 😈",
+      "april_welcome": "Ласкаво просимо Zymbol-Lang"
     },
     "bulgarian": {
       "rtl": false,
@@ -918,7 +938,9 @@
       "manual_title": "Документация",
       "manual_sub": "Компактно ръководство за Zymbol-Lang",
       "subregion": "slavic",
-      "nav_try_online": "Изпробвай Online"
+      "nav_try_online": "Изпробвай Online",
+      "april_sub": "Преименувахме всички оператори с емоджи. Шега. Може би. 😈",
+      "april_welcome": "Добре дошли Zymbol-Lang"
     },
     "croatian": {
       "rtl": false,
@@ -1000,7 +1022,9 @@
       "manual_title": "Dokumentacija",
       "manual_sub": "Kompaktni priručnik za Zymbol-Lang",
       "subregion": "slavic",
-      "nav_try_online": "Isprobajte Online"
+      "nav_try_online": "Isprobajte Online",
+      "april_sub": "Preimenovali smo sve operatore u emoji. Šala. Možda. 😈",
+      "april_welcome": "Dobrodošli Zymbol-Lang"
     },
     "czech": {
       "rtl": false,
@@ -1082,7 +1106,9 @@
       "manual_title": "Dokumentace",
       "manual_sub": "Kompaktní příručka Zymbol-Lang",
       "subregion": "slavic",
-      "nav_try_online": "Vyzkoušet Online"
+      "nav_try_online": "Vyzkoušet Online",
+      "april_sub": "Přejmenovali jsme všechny operátory na emoji. Vtip. Možná. 😈",
+      "april_welcome": "Vítejte Zymbol-Lang"
     },
     "slovak": {
       "rtl": false,
@@ -1164,7 +1190,9 @@
       "manual_title": "Dokumentácia",
       "manual_sub": "Kompaktná príručka Zymbol-Lang",
       "subregion": "slavic",
-      "nav_try_online": "Vyskúšať Online"
+      "nav_try_online": "Vyskúšať Online",
+      "april_sub": "Premenovali sme všetky operátory na emoji. Vtip. Možno. 😈",
+      "april_welcome": "Vitajte Zymbol-Lang"
     },
     "romanian": {
       "rtl": false,
@@ -1246,7 +1274,9 @@
       "manual_title": "Documentație",
       "manual_sub": "Manual compact Zymbol-Lang",
       "subregion": "romance",
-      "nav_try_online": "Încearcă Online"
+      "nav_try_online": "Încearcă Online",
+      "april_sub": "Am redenumit toți operatorii cu emoji. Glumă. Poate. 😈",
+      "april_welcome": "Bun venit Zymbol-Lang"
     },
     "hungarian": {
       "rtl": false,
@@ -1328,7 +1358,9 @@
       "manual_title": "Dokumentáció",
       "manual_sub": "Kompakt Zymbol-Lang kézikönyv",
       "subregion": "finno_ugric",
-      "nav_try_online": "Próbáld ki Online"
+      "nav_try_online": "Próbáld ki Online",
+      "april_sub": "Átneveztük az összes operátort emojira. Vicc. Talán. 😈",
+      "april_welcome": "Üdvözöljük Zymbol-Lang"
     },
     "finnish": {
       "rtl": false,
@@ -1410,7 +1442,9 @@
       "manual_title": "Dokumentaatio",
       "manual_sub": "Kompakti Zymbol-Lang-opas",
       "subregion": "finno_ugric",
-      "nav_try_online": "Kokeile Verkossa"
+      "nav_try_online": "Kokeile Verkossa",
+      "april_sub": "Nimesimme kaikki operaattorit emojeiksi. Vitsi. Ehkä. 😈",
+      "april_welcome": "Tervetuloa Zymbol-Lang"
     },
     "estonian": {
       "rtl": false,
@@ -1492,7 +1526,9 @@
       "manual_title": "Dokumentatsioon",
       "manual_sub": "Kompaktne Zymbol-Lang käsiraamat",
       "subregion": "finno_ugric",
-      "nav_try_online": "Proovi Võrgus"
+      "nav_try_online": "Proovi Võrgus",
+      "april_sub": "Nimetasime kõik operaatorid emojideks ümber. Nali. Võib-olla. 😈",
+      "april_welcome": "Tere tulemast Zymbol-Lang"
     },
     "latvian": {
       "rtl": false,
@@ -1574,7 +1610,9 @@
       "manual_title": "Dokumentācija",
       "manual_sub": "Kompakts Zymbol-Lang rokasgrāmata",
       "subregion": "baltic",
-      "nav_try_online": "Izmēģini Tiešsaistē"
+      "nav_try_online": "Izmēģini Tiešsaistē",
+      "april_sub": "Mēs pārdēvējām visus operatorus par emodzijiem. Joks. Varbūt. 😈",
+      "april_welcome": "Laipni lūdzam Zymbol-Lang"
     },
     "lithuanian": {
       "rtl": false,
@@ -1656,7 +1694,9 @@
       "manual_title": "Dokumentacija",
       "manual_sub": "Kompaktiška Zymbol-Lang vadovėlis",
       "subregion": "baltic",
-      "nav_try_online": "Išbandyti Internete"
+      "nav_try_online": "Išbandyti Internete",
+      "april_sub": "Pervardijome visus operatorius emojiais. Juokas. Gal. 😈",
+      "april_welcome": "Sveiki atvykę Zymbol-Lang"
     },
     "norwegian": {
       "rtl": false,
@@ -1738,7 +1778,9 @@
       "manual_title": "Dokumentasjon",
       "manual_sub": "Kompakt Zymbol-Lang-manual",
       "subregion": "germanic",
-      "nav_try_online": "Prøv Online"
+      "nav_try_online": "Prøv Online",
+      "april_sub": "Vi byttet alle operatorer til emojis. Bare tull. Kanskje. 😈",
+      "april_welcome": "Velkommen Zymbol-Lang"
     },
     "danish": {
       "rtl": false,
@@ -1820,7 +1862,9 @@
       "manual_title": "Dokumentation",
       "manual_sub": "Kompakt Zymbol-Lang-manual",
       "subregion": "germanic",
-      "nav_try_online": "Prøv Online"
+      "nav_try_online": "Prøv Online",
+      "april_sub": "Vi omdøbte alle operatorer til emojis. Sjov. Måske. 😈",
+      "april_welcome": "Velkommen Zymbol-Lang"
     },
     "swedish": {
       "rtl": false,
@@ -1902,7 +1946,9 @@
       "manual_title": "Dokumentation",
       "manual_sub": "Kompakt Zymbol-Lang-manual",
       "subregion": "germanic",
-      "nav_try_online": "Prova Online"
+      "nav_try_online": "Prova Online",
+      "april_sub": "Vi döpte om alla operatorer till emojis. Skämt. Kanske. 😈",
+      "april_welcome": "Välkommen Zymbol-Lang"
     },
     "icelandic": {
       "rtl": false,
@@ -1984,7 +2030,9 @@
       "manual_title": "Skjölun",
       "manual_sub": "Þétt Zymbol-Lang handbók",
       "subregion": "germanic",
-      "nav_try_online": "Prófaðu Online"
+      "nav_try_online": "Prófaðu Online",
+      "april_sub": "Við endurnefndum alla virkja í emojis. Brandarinn. Kannski. 😈",
+      "april_welcome": "Velkomin Zymbol-Lang"
     },
     "greek": {
       "rtl": false,
@@ -2066,7 +2114,9 @@
       "manual_title": "Τεκμηρίωση",
       "manual_sub": "Συμπαγής Οδηγός Zymbol-Lang",
       "subregion": "other_europe",
-      "nav_try_online": "Δοκιμάστε Online"
+      "nav_try_online": "Δοκιμάστε Online",
+      "april_sub": "Μετονομάσαμε όλους τους τελεστές σε emoji. Αστείο. Ίσως. 😈",
+      "april_welcome": "Καλώς ήρθατε Zymbol-Lang"
     },
     "serbian": {
       "rtl": false,
@@ -2148,7 +2198,9 @@
       "manual_title": "Документација",
       "manual_sub": "Компактни приручник за Zymbol-Lang",
       "subregion": "slavic",
-      "nav_try_online": "Испробај Online"
+      "nav_try_online": "Испробај Online",
+      "april_sub": "Преименовали смо све операторе у емоџије. Шала. Можда. 😈",
+      "april_welcome": "Добродошли Zymbol-Lang"
     },
     "arabic": {
       "rtl": true,
@@ -2235,7 +2287,9 @@
         "africa": "north_africa"
       },
       "subregion": "middle_east",
-      "nav_try_online": "جرّب مباشرةً"
+      "nav_try_online": "جرّب مباشرةً",
+      "april_sub": "غيّرنا جميع المعاملات إلى رموز تعبيرية. مزحة. ربما. 😈",
+      "april_welcome": "أهلاً وسهلاً Zymbol-Lang"
     },
     "hebrew": {
       "rtl": true,
@@ -2317,7 +2371,9 @@
       "manual_title": "תיעוד",
       "manual_sub": "המדריך הקומפקטי של Zymbol-Lang",
       "subregion": "semitic",
-      "nav_try_online": "נסה מקוון"
+      "nav_try_online": "נסה מקוון",
+      "april_sub": "שינינו את כל האופרטורים לאמוג'י. בדיחה. אולי. 😈",
+      "april_welcome": "ברוכים הבאים Zymbol-Lang"
     },
     "persian": {
       "rtl": true,
@@ -2399,7 +2455,9 @@
       "manual_title": "مستندات",
       "manual_sub": "راهنمای فشرده Zymbol-Lang",
       "subregion": "iranian",
-      "nav_try_online": "آنلاین امتحان کن"
+      "nav_try_online": "آنلاین امتحان کن",
+      "april_sub": "همه عملگرها را به ایموجی تبدیل کردیم. شوخی بود. شاید. 😈",
+      "april_welcome": "خوش آمدید Zymbol-Lang"
     },
     "urdu": {
       "rtl": true,
@@ -2481,7 +2539,9 @@
       "manual_title": "دستاویز",
       "manual_sub": "Zymbol-Lang کی مختصر راہنما",
       "subregion": "south_asian_mid",
-      "nav_try_online": "آن لائن آزمائیں"
+      "nav_try_online": "آن لائن آزمائیں",
+      "april_sub": "ہم نے سارے آپریٹرز کو ایموجی سے بدل دیا۔ مذاق ہے۔ شاید۔ 😈",
+      "april_welcome": "خوش آمدید Zymbol-Lang"
     },
     "hindi": {
       "rtl": false,
@@ -2563,7 +2623,9 @@
       "manual_title": "प्रलेखन",
       "manual_sub": "Zymbol-Lang की संक्षिप्त मार्गदर्शिका",
       "subregion": "indo_aryan",
-      "nav_try_online": "ऑनलाइन आज़माएं"
+      "nav_try_online": "ऑनलाइन आज़माएं",
+      "april_sub": "हमने सभी ऑपरेटरों को इमोजी से बदल दिया। मज़ाक था। शायद। 😈",
+      "april_welcome": "स्वागत है Zymbol-Lang"
     },
     "bengali": {
       "rtl": false,
@@ -2645,7 +2707,9 @@
       "manual_title": "নথিপত্র",
       "manual_sub": "Zymbol-Lang-এর সংক্ষিপ্ত নির্দেশিকা",
       "subregion": "indo_aryan",
-      "nav_try_online": "অনলাইনে চেষ্টা করুন"
+      "nav_try_online": "অনলাইনে চেষ্টা করুন",
+      "april_sub": "আমরা সব অপারেটর ইমোজি দিয়ে বদলেছি। মজা করছি। হয়তো। 😈",
+      "april_welcome": "স্বাগতম Zymbol-Lang"
     },
     "marathi": {
       "rtl": false,
@@ -2727,7 +2791,9 @@
       "manual_title": "दस्तऐवज",
       "manual_sub": "Zymbol-Lang ची संक्षिप्त मार्गदर्शिका",
       "subregion": "indo_aryan",
-      "nav_try_online": "ऑनलाइन वापरून पहा"
+      "nav_try_online": "ऑनलाइन वापरून पहा",
+      "april_sub": "आम्ही सर्व ऑपरेटर इमोजीने बदलले. विनोद होता. कदाचित. 😈",
+      "april_welcome": "स्वागत आहे Zymbol-Lang"
     },
     "punjabi": {
       "rtl": false,
@@ -2809,7 +2875,9 @@
       "manual_title": "ਦਸਤਾਵੇਜ਼",
       "manual_sub": "Zymbol-Lang ਦੀ ਸੰਖੇਪ ਗਾਈਡ",
       "subregion": "indo_aryan",
-      "nav_try_online": "ਆਨਲਾਈਨ ਅਜ਼ਮਾਓ"
+      "nav_try_online": "ਆਨਲਾਈਨ ਅਜ਼ਮਾਓ",
+      "april_sub": "ਅਸੀਂ ਸਾਰੇ ਓਪਰੇਟਰਾਂ ਨੂੰ ਇਮੋਜੀ ਨਾਲ ਬਦਲ ਦਿੱਤਾ। ਮਜ਼ਾਕ ਸੀ। ਸ਼ਾਇਦ। 😈",
+      "april_welcome": "ਜੀ ਆਇਆਂ ਨੂੰ Zymbol-Lang"
     },
     "mandarin": {
       "rtl": false,
@@ -2891,7 +2959,9 @@
       "manual_title": "文档",
       "manual_sub": "Zymbol-Lang 简明指南",
       "subregion": "east_asia",
-      "nav_try_online": "在线试用"
+      "nav_try_online": "在线试用",
+      "april_sub": "我们把所有运算符换成了表情包。开玩笑的。也许。😈",
+      "april_welcome": "欢迎 Zymbol-Lang"
     },
     "japanese": {
       "rtl": false,
@@ -2973,7 +3043,9 @@
       "manual_title": "ドキュメント",
       "manual_sub": "Zymbol-Lang コンパクトガイド",
       "subregion": "east_asia",
-      "nav_try_online": "オンラインで試す"
+      "nav_try_online": "オンラインで試す",
+      "april_sub": "全ての演算子を絵文字に変えました。冗談です。たぶん。😈",
+      "april_welcome": "ようこそ Zymbol-Lang"
     },
     "korean": {
       "rtl": false,
@@ -3055,7 +3127,9 @@
       "manual_title": "문서",
       "manual_sub": "Zymbol-Lang 간편 가이드",
       "subregion": "east_asia",
-      "nav_try_online": "온라인으로 체험"
+      "nav_try_online": "온라인으로 체험",
+      "april_sub": "모든 연산자를 이모지로 바꿨어요. 농담이에요. 아마도. 😈",
+      "april_welcome": "환영합니다 Zymbol-Lang"
     },
     "indonesian": {
       "rtl": false,
@@ -3137,7 +3211,9 @@
       "manual_title": "Dokumentasi",
       "manual_sub": "Panduan Ringkas Zymbol-Lang",
       "subregion": "southeast_asia",
-      "nav_try_online": "Coba Online"
+      "nav_try_online": "Coba Online",
+      "april_sub": "Kami mengganti semua operator dengan emoji. Bercanda. Mungkin. 😈",
+      "april_welcome": "Selamat datang Zymbol-Lang"
     },
     "vietnamese": {
       "rtl": false,
@@ -3219,7 +3295,9 @@
       "manual_title": "Tài liệu",
       "manual_sub": "Hướng Dẫn Nhỏ Gọn Zymbol-Lang",
       "subregion": "southeast_asia",
-      "nav_try_online": "Dùng Thử Online"
+      "nav_try_online": "Dùng Thử Online",
+      "april_sub": "Chúng tôi đã đổi tất cả toán tử thành emoji. Đùa thôi. Có thể. 😈",
+      "april_welcome": "Chào mừng Zymbol-Lang"
     },
     "thai": {
       "rtl": false,
@@ -3301,7 +3379,9 @@
       "manual_title": "เอกสาร",
       "manual_sub": "คู่มือ Zymbol-Lang ฉบับย่อ",
       "subregion": "southeast_asia",
-      "nav_try_online": "ทดลองออนไลน์"
+      "nav_try_online": "ทดลองออนไลน์",
+      "april_sub": "เราเปลี่ยนตัวดำเนินการทั้งหมดเป็นอีโมจิ ไม่จริงหรอก บางที 😈",
+      "april_welcome": "ยินดีต้อนรับ Zymbol-Lang"
     },
     "tagalog": {
       "rtl": false,
@@ -3383,7 +3463,9 @@
       "manual_title": "Dokumentasyon",
       "manual_sub": "Maikling Gabay sa Zymbol-Lang",
       "subregion": "southeast_asia",
-      "nav_try_online": "Subukan Online"
+      "nav_try_online": "Subukan Online",
+      "april_sub": "Pinalitan namin ang lahat ng operator ng emoji. Biro lang. Siguro. 😈",
+      "april_welcome": "Maligayang pagdating Zymbol-Lang"
     },
     "swahili": {
       "rtl": false,
@@ -3465,7 +3547,9 @@
       "manual_title": "Nyaraka",
       "manual_sub": "Mwongozo Mfupi wa Zymbol-Lang",
       "subregion": "east_africa",
-      "nav_try_online": "Jaribu Mtandaoni"
+      "nav_try_online": "Jaribu Mtandaoni",
+      "april_sub": "Tulibadilisha waendeshaji wote na emoji. Mzaha tu. Labda. 😈",
+      "april_welcome": "Karibu Zymbol-Lang"
     },
     "hausa": {
       "rtl": false,
@@ -3547,7 +3631,9 @@
       "manual_title": "Takardun",
       "manual_sub": "Taƙaitaccen Jagoran Zymbol-Lang",
       "subregion": "west_africa",
-      "nav_try_online": "Gwada Online"
+      "nav_try_online": "Gwada Online",
+      "april_sub": "Mun canza dukkan masu aiki zuwa emoji. Wasa ne. Watakila. 😈",
+      "april_welcome": "Maraba Zymbol-Lang"
     },
     "yoruba": {
       "rtl": false,
@@ -3629,7 +3715,9 @@
       "manual_title": "Àkọsílẹ̀",
       "manual_sub": "Ìtọ́sọ́nà Kúkúrú Zymbol-Lang",
       "subregion": "west_africa",
-      "nav_try_online": "Gbiyanju Online"
+      "nav_try_online": "Gbiyanju Online",
+      "april_sub": "A yipada gbogbo awọn oṣiṣẹ si emoji. Ere ni. Boya. 😈",
+      "april_welcome": "Ẹ káàbọ̀ Zymbol-Lang"
     },
     "amharic": {
       "rtl": false,
@@ -3711,7 +3799,9 @@
       "nav_manual": "ሰነድ",
       "manual_title": "ሰነድ",
       "manual_sub": "Zymbol-Lang አጭር መጽሐፍ",
-      "nav_try_online": "በመስመር ላይ ይሞክሩ"
+      "nav_try_online": "በመስመር ላይ ይሞክሩ",
+      "april_sub": "ሁሉም ኦፕሬተሮቻችንን ኢሞጂ አደረግናቸው። ቀልድ ነበር። ምናልባት። 😈",
+      "april_welcome": "እንኳን ደህና መጡ Zymbol-Lang"
     },
     "emoji": {
       "rtl": false,
@@ -3793,7 +3883,9 @@
       "nav_manual": "📖 Docs",
       "manual_title": "📖 Docs",
       "manual_sub": "📋 Zymbol-Lang ⚡ Guide",
-      "nav_try_online": "🌐✨ Try Online"
+      "nav_try_online": "🌐✨ Try Online",
+      "april_sub": "🔣 ➡️ 😂 ❌🧠 🤷😈",
+      "april_welcome": "👋🎉 Zymbol-Lang"
     },
     "turkish": {
       "rtl": false,
@@ -3875,7 +3967,9 @@
       "manual_title": "Belgeleme",
       "manual_sub": "Zymbol-Lang Kompakt Kılavuzu",
       "subregion": "turkic",
-      "nav_try_online": "Çevrimiçi Dene"
+      "nav_try_online": "Çevrimiçi Dene",
+      "april_sub": "Tüm operatörleri emojilerle değiştirdik. Şaka. Belki. 😈",
+      "april_welcome": "Hoş geldiniz Zymbol-Lang"
     },
     "castellano": {
       "rtl": false,
@@ -3958,7 +4052,9 @@
       "manual_title": "Documentación",
       "manual_sub": "Manual compacto de Zymbol-Lang",
       "subregion": "romance",
-      "nav_try_online": "Probar Online"
+      "nav_try_online": "Probar Online",
+      "april_sub": "Renombramos todos los operadores con emojis. Es broma. O quizás no. 😈",
+      "april_welcome": "Bienvenido Zymbol-Lang"
     },
     "portugues_eu": {
       "rtl": false,
@@ -4040,7 +4136,9 @@
       "manual_title": "Documentação",
       "manual_sub": "Manual compacto de Zymbol-Lang",
       "subregion": "romance",
-      "nav_try_online": "Experimentar Online"
+      "nav_try_online": "Experimentar Online",
+      "april_sub": "Renomeámos todos os operadores para emojis. É piada. Talvez. 😈",
+      "april_welcome": "Bem-vindo Zymbol-Lang"
     },
     "tamil": {
       "rtl": false,
@@ -4122,7 +4220,9 @@
       "manual_title": "ஆவணம்",
       "manual_sub": "Zymbol-Lang இன் சுருக்கமான வழிகாட்டி",
       "subregion": "dravidian",
-      "nav_try_online": "ஆன்லைன் முயற்சி"
+      "nav_try_online": "ஆன்லைன் முயற்சி",
+      "april_sub": "அனைத்து ஆபரேட்டர்களையும் எமோஜியாக மாற்றினோம். நகைச்சுவை. ஒருவேளை. 😈",
+      "april_welcome": "வரவேற்கிறோம் Zymbol-Lang"
     },
     "catalan": {
       "rtl": false,
@@ -4204,7 +4304,9 @@
       "manual_title": "Documentació",
       "manual_sub": "Manual compacte de Zymbol-Lang",
       "subregion": "romance",
-      "nav_try_online": "Prova en línia"
+      "nav_try_online": "Prova en línia",
+      "april_sub": "Hem canviat tots els operadors per emojis. És broma. Potser. 😈",
+      "april_welcome": "Benvingut Zymbol-Lang"
     },
     "basque": {
       "rtl": false,
@@ -4286,7 +4388,9 @@
       "manual_title": "Dokumentazioa",
       "manual_sub": "Zymbol-Lang eskuliburu trinkoa",
       "subregion": "other_europe",
-      "nav_try_online": "Probatu sarean"
+      "nav_try_online": "Probatu sarean",
+      "april_sub": "Operadore guztiak emojiekin aldatu ditugu. Txantxa. Agian. 😈",
+      "april_welcome": "Ongi etorri Zymbol-Lang"
     },
     "telugu": {
       "rtl": false,
@@ -4368,7 +4472,9 @@
       "manual_title": "డాక్యుమెంటేషన్",
       "manual_sub": "Zymbol-Lang యొక్క సంక్షిప్త మార్గదర్శి",
       "subregion": "dravidian",
-      "nav_try_online": "ఆన్‌లైన్‌లో ప్రయత్నించండి"
+      "nav_try_online": "ఆన్‌లైన్‌లో ప్రయత్నించండి",
+      "april_sub": "మేము అన్ని ఆపరేటర్లను ఎమోజీలతో మార్చాము. జోక్. బహుశా. 😈",
+      "april_welcome": "స్వాగతం Zymbol-Lang"
     },
     "kannada": {
       "rtl": false,
@@ -4450,7 +4556,9 @@
       "manual_title": "ದಾಖಲಾತಿ",
       "manual_sub": "Zymbol-Lang ನ ಸಂಕ್ಷಿಪ್ತ ಮಾರ್ಗದರ್ಶಿ",
       "subregion": "dravidian",
-      "nav_try_online": "ಆನ್‌ಲೈನ್‌ನಲ್ಲಿ ಪ್ರಯತ್ನಿಸಿ"
+      "nav_try_online": "ಆನ್‌ಲೈನ್‌ನಲ್ಲಿ ಪ್ರಯತ್ನಿಸಿ",
+      "april_sub": "ನಾವು ಎಲ್ಲಾ ಆಪರೇಟರ್‌ಗಳನ್ನು ಎಮೋಜಿಗಳಿಂದ ಬದಲಿಸಿದ್ದೇವೆ. ತಮಾಷೆ. ಬಹುಶಃ. 😈",
+      "april_welcome": "ಸ್ವಾಗತ Zymbol-Lang"
     },
     "georgian": {
       "rtl": false,
@@ -4532,7 +4640,9 @@
       "manual_title": "დოკუმენტაცია",
       "manual_sub": "Zymbol-Lang-ის კომპაქტური სახელმძღვანელო",
       "subregion": "caucasus",
-      "nav_try_online": "სცადე ონლაინ"
+      "nav_try_online": "სცადე ონლაინ",
+      "april_sub": "ყველა ოპერატორი ემოჯიდ გადავარქვით. ხუმრობა. შეიძლება. 😈",
+      "april_welcome": "მოგესალმებით Zymbol-Lang"
     },
     "welsh": {
       "rtl": false,
@@ -4614,7 +4724,9 @@
       "manual_title": "Dogfennaeth",
       "manual_sub": "Llawlyfr cryno Zymbol-Lang",
       "subregion": "other_europe",
-      "nav_try_online": "Rhowch Gynnig Ar-lein"
+      "nav_try_online": "Rhowch Gynnig Ar-lein",
+      "april_sub": "Fe ailenwom yr holl weithredwyr yn emoji. Jôc. Efallai. 😈",
+      "april_welcome": "Croeso Zymbol-Lang"
     },
     "zulu": {
       "rtl": false,
@@ -4696,7 +4808,9 @@
       "manual_title": "Imibhalo",
       "manual_sub": "Umhlahlandlela Omfushane we-Zymbol-Lang",
       "subregion": "southern_africa",
-      "nav_try_online": "Zama Online"
+      "nav_try_online": "Zama Online",
+      "april_sub": "Sishintshile bonke abashayeli nge-emoji. Amahlaya. Mhlawumbe. 😈",
+      "april_welcome": "Wamukelekile Zymbol-Lang"
     },
     "armenian": {
       "rtl": false,
@@ -4778,7 +4892,9 @@
       "manual_title": "Փastataghuthyun",
       "manual_sub": "Zymbol-Lang-ի Կompakt Ուghetsuyts",
       "subregion": "caucasus",
-      "nav_try_online": "Փորձիր առցանց"
+      "nav_try_online": "Փորձիր առցանց",
+      "april_sub": "Բոլոր օператորները վերանվանեցինք էմոջիի. Կատակ. Թերևս. 😈",
+      "april_welcome": "Բարի գալուստ Zymbol-Lang"
     },
     "quechua": {
       "rtl": false,
@@ -4860,7 +4976,9 @@
       "manual_title": "Hatun Qillqa",
       "manual_sub": "Zymbol-Lang pisilla yachaq qillqa",
       "subregion": "south_america",
-      "nav_try_online": "Qespi Internetpi"
+      "nav_try_online": "Qespi Internetpi",
+      "april_sub": "Llapan operadorchakunata emojiman tikrarchirqanchis. Asikuy. Imallapas. 😈",
+      "april_welcome": "Allin hamunaykipi Zymbol-Lang"
     },
     "galician": {
       "regions": [
@@ -4942,7 +5060,9 @@
       "manual_title": "Documentación",
       "manual_sub": "Manual compacto de Zymbol-Lang",
       "subregion": "romance",
-      "nav_try_online": "Proba en liña"
+      "nav_try_online": "Proba en liña",
+      "april_sub": "Cambiamos todos os operadores por emojis. É broma. Quizais. 😈",
+      "april_welcome": "Benvido Zymbol-Lang"
     },
     "slovenian": {
       "regions": [
@@ -5024,7 +5144,9 @@
       "manual_title": "Dokumentacija",
       "manual_sub": "Kompakten priročnik za Zymbol-Lang",
       "subregion": "slavic",
-      "nav_try_online": "Preizkusi Online"
+      "nav_try_online": "Preizkusi Online",
+      "april_sub": "Preimenovali smo vse operatorje v emoji. Šala. Mogoče. 😈",
+      "april_welcome": "Dobrodošli Zymbol-Lang"
     },
     "albanian": {
       "regions": [
@@ -5106,7 +5228,9 @@
       "manual_title": "Dokumentacion",
       "manual_sub": "Manual kompakt i Zymbol-Lang",
       "subregion": "other_europe",
-      "nav_try_online": "Provo Online"
+      "nav_try_online": "Provo Online",
+      "april_sub": "Riemërtuam të gjithë operatorët me emoji. Shaka. Ndoshta. 😈",
+      "april_welcome": "Mirësevini Zymbol-Lang"
     },
     "belarusian": {
       "regions": [
@@ -5188,7 +5312,9 @@
       "manual_title": "Дакументацыя",
       "manual_sub": "Кампактны даведнік па Zymbol-Lang",
       "subregion": "slavic",
-      "nav_try_online": "Паспрабуй Online"
+      "nav_try_online": "Паспрабуй Online",
+      "april_sub": "Мы перайменавалі ўсе аператары ў эмодзі. Жарт. Магчыма. 😈",
+      "april_welcome": "Сардэчна запрашаем Zymbol-Lang"
     },
     "gujarati": {
       "regions": [
@@ -5270,7 +5396,9 @@
       "manual_title": "દસ્તાવેજ",
       "manual_sub": "Zymbol-Lang ની સંક્ષિપ્ત માર્ગદર્શિકા",
       "subregion": "indo_aryan",
-      "nav_try_online": "ઓનલાઈન અજમાવો"
+      "nav_try_online": "ઓનલાઈન અજમાવો",
+      "april_sub": "અમે બધા ઓપરેટરો ઇમોજીથી બદલ્યા. મજાક. કદાચ. 😈",
+      "april_welcome": "સ્વાગત છે Zymbol-Lang"
     },
     "malay": {
       "regions": [
@@ -5352,7 +5480,9 @@
       "manual_title": "Dokumentasi",
       "manual_sub": "Panduan Ringkas Zymbol-Lang",
       "subregion": "southeast_asia",
-      "nav_try_online": "Cuba Dalam Talian"
+      "nav_try_online": "Cuba Dalam Talian",
+      "april_sub": "Kami menukar semua operator dengan emoji. Gurau je. Mungkin. 😈",
+      "april_welcome": "Selamat datang Zymbol-Lang"
     },
     "burmese": {
       "regions": [
@@ -5434,7 +5564,9 @@
       "manual_title": "စာရွက်စာတမ်း",
       "manual_sub": "Zymbol-Lang အကျဉ်းချုပ် လမ်းညွှန်",
       "subregion": "southeast_asia",
-      "nav_try_online": "အွန်လိုင်းတွင် စမ်းကြည့်ပါ"
+      "nav_try_online": "အွန်လိုင်းတွင် စမ်းကြည့်ပါ",
+      "april_sub": "Operator တွေအားလုံးကို emoji နဲ့ပြောင်းလိုက်တယ်. နှော်တာ. ဖြစ်နိုင်. 😈",
+      "april_welcome": "ကြိုဆိုပါတယ် Zymbol-Lang"
     },
     "nepali": {
       "regions": [
@@ -5516,7 +5648,9 @@
       "manual_title": "कागजात",
       "manual_sub": "Zymbol-Lang को संक्षिप्त मार्गदर्शिका",
       "subregion": "indo_aryan",
-      "nav_try_online": "अनलाइनमा प्रयास गर्नुहोस्"
+      "nav_try_online": "अनलाइनमा प्रयास गर्नुहोस्",
+      "april_sub": "हामीले सबै अपरेटरहरू इमोजीले बदल्यौं। मजाक। सायद। 😈",
+      "april_welcome": "स्वागत छ Zymbol-Lang"
     },
     "azerbaijani": {
       "regions": [
@@ -5598,7 +5732,9 @@
       "manual_title": "Sənədləşmə",
       "manual_sub": "Zymbol-Lang Kompakt Bələdçisi",
       "subregion": "turkic",
-      "nav_try_online": "Onlayn Sınayın"
+      "nav_try_online": "Onlayn Sınayın",
+      "april_sub": "Bütün operatorları emojilərə dəyişdirdik. Zarafat. Bəlkə. 😈",
+      "april_welcome": "Xoş gəlmisiniz Zymbol-Lang"
     },
     "kurdish": {
       "regions": [
@@ -5680,7 +5816,9 @@
       "manual_title": "Belgeya Pêşkêş",
       "manual_sub": "Rêbera Kompakt a Zymbol-Lang",
       "subregion": "iranian",
-      "nav_try_online": "Bi Înternetê Biceribîne"
+      "nav_try_online": "Bi Înternetê Biceribîne",
+      "april_sub": "Me hemû operatorên emoji guhertin. Henekê. Belkî. 😈",
+      "april_welcome": "Xêr hatî Zymbol-Lang"
     },
     "guarani": {
       "regions": [
@@ -5762,7 +5900,9 @@
       "manual_title": "Mba'eporã Ñe'ẽ",
       "manual_sub": "Zymbol-Lang mba'e tekotevẽva",
       "subregion": "south_america",
-      "nav_try_online": "Emo'ã Internetpe"
+      "nav_try_online": "Emo'ã Internetpe",
+      "april_sub": "Rombopuku operador mba'ekuaáva emoji ndive. Jasajey. Umíva. 😈",
+      "april_welcome": "Eguahé porã Zymbol-Lang"
     },
     "igbo": {
       "regions": [
@@ -5844,7 +5984,9 @@
       "manual_title": "Akwụkwọ ozi",
       "manual_sub": "Nduuzi Mkpịsị Zymbol-Lang",
       "subregion": "west_africa",
-      "nav_try_online": "Nwaa Online"
+      "nav_try_online": "Nwaa Online",
+      "april_sub": "Anyị gbanwere ndị ọrụ niile na emoji. Ihe nzere. Ikekwe. 😈",
+      "april_welcome": "Nnọọ Zymbol-Lang"
     },
     "afrikaans": {
       "regions": [
@@ -5926,7 +6068,9 @@
       "manual_title": "Dokumentasie",
       "manual_sub": "Kompakte Zymbol-Lang handleiding",
       "subregion": "southern_africa",
-      "nav_try_online": "Probeer Aanlyn"
+      "nav_try_online": "Probeer Aanlyn",
+      "april_sub": "Ons het al die operateurs met emojis vervang. Grap. Miskien. 😈",
+      "april_welcome": "Welkom Zymbol-Lang"
     },
     "wolof": {
       "regions": [
@@ -6008,7 +6152,9 @@
       "manual_title": "Dëkk-dëkk",
       "manual_sub": "Jëfandikukat yu Woyof Zymbol-Lang",
       "subregion": "west_africa",
-      "nav_try_online": "Jëfandikoo ci Internet"
+      "nav_try_online": "Jëfandikoo ci Internet",
+      "april_sub": "Dananu soppi operateur yi ak emoji. Biir moo tax. Waaw-waaw. 😈",
+      "april_welcome": "Dalal ak jàmm Zymbol-Lang"
     },
     "xhosa": {
       "regions": [
@@ -6090,7 +6236,9 @@
       "manual_title": "Amaxwebhu",
       "manual_sub": "Ingcaciso Emfutshane ye-Zymbol-Lang",
       "subregion": "southern_africa",
-      "nav_try_online": "Zama Ku-Intanethi"
+      "nav_try_online": "Zama Ku-Intanethi",
+      "april_sub": "Sibashintshe bonke abasebenzisi nge-emoji. Siyahleka. Mhlawumbi. 😈",
+      "april_welcome": "Wamkelekile Zymbol-Lang"
     },
     "macedonian": {
       "regions": [
@@ -6172,7 +6320,9 @@
       "manual_title": "Документација",
       "manual_sub": "Компактен прирачник за Zymbol-Lang",
       "subregion": "slavic",
-      "nav_try_online": "Испробај Online"
+      "nav_try_online": "Испробај Online",
+      "april_sub": "Ги преименувавме сите оператори во емоџи. Шега. Можеби. 😈",
+      "april_welcome": "Добредојдовте Zymbol-Lang"
     },
     "nahuatl": {
       "rtl": false,
@@ -6254,7 +6404,9 @@
       "manual_title": "Tlahtoa Amatl",
       "manual_sub": "Zymbol-Lang u yóol tlahtoa amatl",
       "subregion": "mesoamerica",
-      "nav_try_online": "Mochihua internet-pan"
+      "nav_try_online": "Mochihua internet-pan",
+      "april_sub": "Timopatlahque operator mochi emoji ipan. Chikole. Yece. 😈",
+      "april_welcome": "Ximohualli Zymbol-Lang"
     },
     "maya": {
       "rtl": false,
@@ -6336,7 +6488,9 @@
       "manual_title": "U Tzíibil Nojoch",
       "manual_sub": "Zymbol-Lang u tzíibil nojoch kaaj",
       "subregion": "mesoamerica",
-      "nav_try_online": "Ti' internet"
+      "nav_try_online": "Ti' internet",
+      "april_sub": "Ti' k'am u beel tuláakal operadoorob emoji. Chicho'. Ken. 😈",
+      "april_welcome": "Ko'oten Zymbol-Lang"
     },
     "mapuche": {
       "rtl": false,
@@ -6418,7 +6572,9 @@
       "manual_title": "Kimün Amukey",
       "manual_sub": "Zymbol-Lang kimün zugun",
       "subregion": "south_america",
-      "nav_try_online": "Nütranmawün internet mew"
+      "nav_try_online": "Nütranmawün internet mew",
+      "april_sub": "Tüfachi operator emoji mew küdawün. Küpay. Kudawkülelay. 😈",
+      "april_welcome": "Akuymi Zymbol-Lang"
     },
     "navajo": {
       "rtl": false,
@@ -6500,7 +6656,9 @@
       "nav_manual": "Olta'",
       "manual_title": "Olta' Naaltsoos",
       "manual_sub": "Zymbol-Lang Diné bizaad bee",
-      "nav_try_online": "Níłch'i naalkidí bine'dę́ę́' Bił Naaghá"
+      "nav_try_online": "Níłch'i naalkidí bine'dę́ę́' Bił Naaghá",
+      "april_sub": "Operator t'áá'altso emoji bił naaltsoos ádaalyaa. Ats'ą́ą́. 😈",
+      "april_welcome": "Yá'át'ééh Zymbol-Lang"
     },
     "cherokee": {
       "rtl": false,
@@ -6582,7 +6740,9 @@
       "nav_manual": "ᎧᏃᎮᎵ",
       "manual_title": "ᎧᏃᎮᎵ ᎦᏅᎯᏓ",
       "manual_sub": "Zymbol-Lang ᏣᎳᎩ ᎦᏬᏂᎯᏍᏗ",
-      "nav_try_online": "ᎠᏂᏗᏢᎬᎢ ᎤᏍᏲᎯᎭ"
+      "nav_try_online": "ᎠᏂᏗᏢᎬᎢ ᎤᏍᏲᎯᎭ",
+      "april_sub": "ᎤᏂᎳ ᎧᏄᎭ emoji ᏴᏩᏁᏗᏱ. ᏯᏓᎭᏍᎪᎢ. ᎠᎴᏒᎲ. 😈",
+      "april_welcome": "ᎣᏏᏲ Zymbol-Lang"
     },
     "cree": {
       "rtl": false,
@@ -6664,7 +6824,9 @@
       "nav_manual": "Kîskinahamâkêwin",
       "manual_title": "Kîskinahamâkêwin",
       "manual_sub": "Zymbol-Lang nêhiyawêwin (SRO)",
-      "nav_try_online": "Kicimisowin Online"
+      "nav_try_online": "Kicimisowin Online",
+      "april_sub": "ᐊᓂᔑᓇᐯ ᐅᑆᕇᑕᐧᐁ emoji ᐋ ᑲᐸᔑᑲᑌᒃ. ᒫᒪᐢᑲᑦ. ᐊᐧᐃᓇ. 😈",
+      "april_welcome": "ᑕᓂᓯ Zymbol-Lang"
     },
     "aymara": {
       "rtl": false,
@@ -6746,7 +6908,9 @@
       "nav_manual": "Yatiqawi",
       "manual_title": "Yatiqawi",
       "manual_sub": "Zymbol-Lang Aymara aru",
-      "nav_try_online": "Arnakatax Internetjïpana"
+      "nav_try_online": "Arnakatax Internetjïpana",
+      "april_sub": "Operatoornaka emojiru yatiyapxatayna. Iyawsañ. Amuyañäni. 😈",
+      "april_welcome": "Waliki jutamaw Zymbol-Lang"
     },
     "wayuu": {
       "rtl": false,
@@ -6828,7 +6992,9 @@
       "nav_manual": "Aküjawaa",
       "manual_title": "Aküjawaa",
       "manual_sub": "Zymbol-Lang Wayuunaiki",
-      "nav_try_online": "Aapüin Online"
+      "nav_try_online": "Aapüin Online",
+      "april_sub": "Akaliia operator wayaapajala emoji rüpü. Waraitia. Talataka. 😈",
+      "april_welcome": "Jamaya Zymbol-Lang"
     },
     "embera": {
       "rtl": false,
@@ -6910,7 +7076,9 @@
       "nav_manual": "Ome Wẽra",
       "manual_title": "Ome Wẽra",
       "manual_sub": "Zymbol-Lang Embera",
-      "nav_try_online": "Biari Onlainba"
+      "nav_try_online": "Biari Onlainba",
+      "april_sub": "Erria operator emojia kachipurruá. Jõtunũma. Jãpí. 😈",
+      "april_welcome": "Bia Zymbol-Lang"
     },
     "yanomami": {
       "rtl": false,
@@ -6992,7 +7160,9 @@
       "nav_manual": "Yama Pë",
       "manual_title": "Yama Pë",
       "manual_sub": "Zymbol-Lang Yanomami",
-      "nav_try_online": "Pata online-pe"
+      "nav_try_online": "Pata online-pe",
+      "april_sub": "Opereradori emojia watupë yama. Warë. 😈",
+      "april_welcome": "Awei Zymbol-Lang"
     },
     "oromo": {
       "rtl": false,
@@ -7074,7 +7244,9 @@
       "nav_manual": "Barnoota",
       "manual_title": "Barnoota",
       "manual_sub": "Zymbol-Lang Afaan Oromoo",
-      "nav_try_online": "Onlaayinii Yaali"
+      "nav_try_online": "Onlaayinii Yaali",
+      "april_sub": "Hojjettoota hunda emoji goone. Goolii dha. Lafa tokko. 😈",
+      "april_welcome": "Baga nagaan dhuftan Zymbol-Lang"
     },
     "bambara": {
       "rtl": false,
@@ -7156,7 +7328,9 @@
         "rem": "arr$- val",
         "try": "!?{ } :!{ }"
       },
-      "nav_try_online": "Jɛbila Interinɛti la"
+      "nav_try_online": "Jɛbila Interinɛti la",
+      "april_sub": "An ye operator bɛɛ emoji la sigi. A ye ɲɛnajɛ. Sébén tɛ. 😈",
+      "april_welcome": "Aw bisimila Zymbol-Lang"
     },
     "fula": {
       "rtl": false,
@@ -7238,7 +7412,9 @@
         "rem": "arr$- val",
         "try": "!?{ } :!{ }"
       },
-      "nav_try_online": "Heɓa Online"
+      "nav_try_online": "Heɓa Online",
+      "april_sub": "Min neli hukkunooɗe fof emoji. Ko nguurndam. Teeŋti. 😈",
+      "april_welcome": "Jam tan Zymbol-Lang"
     },
     "lingala": {
       "rtl": false,
@@ -7320,7 +7496,9 @@
         "rem": "arr$- val",
         "try": "!?{ } :!{ }"
       },
-      "nav_try_online": "Leka Online"
+      "nav_try_online": "Leka Online",
+      "april_sub": "Tobongoli baoperateur nyonso na emoji. Blague. Lisusu. 😈",
+      "april_welcome": "Boyei malamu Zymbol-Lang"
     },
     "somali": {
       "rtl": false,
@@ -7402,7 +7580,9 @@
         "rem": "arr$- val",
         "try": "!?{ } :!{ }"
       },
-      "nav_try_online": "Ku Tijaabi Online"
+      "nav_try_online": "Ku Tijaabi Online",
+      "april_sub": "Waxaan beddellay dhammaan hawlwadeennada emoji. Kaftan. Laga yaab. 😈",
+      "april_welcome": "Soo dhawoow Zymbol-Lang"
     },
     "tigrinya": {
       "rtl": false,
@@ -7484,7 +7664,9 @@
         "rem": "arr$- val",
         "try": "!?{ } :!{ }"
       },
-      "nav_try_online": "ኦንላይን ሞኸር"
+      "nav_try_online": "ኦንላይን ሞኸር",
+      "april_sub": "ኩሎም ኣፐሬተርታት ናብ ኢሞጂ ቀይርናዮም። ቀልዲ። ምናልባት። 😈",
+      "april_welcome": "ብደሓን መጻኹም Zymbol-Lang"
     },
     "shona": {
       "rtl": false,
@@ -7566,7 +7748,9 @@
         "rem": "arr$- val",
         "try": "!?{ } :!{ }"
       },
-      "nav_try_online": "Edza Online"
+      "nav_try_online": "Edza Online",
+      "april_sub": "Takachiinja maoperator ese kuita emoji. Chinonyevedzera. Zvimwe. 😈",
+      "april_welcome": "Mauya Zymbol-Lang"
     },
     "esperanto": {
       "rtl": false,
@@ -7648,7 +7832,9 @@
       "nav_manual": "Dokumentaro",
       "manual_title": "Dokumentaro",
       "manual_sub": "Mallonga manlibro de Zymbol-Lang",
-      "nav_try_online": "Provu Rete"
+      "nav_try_online": "Provu Rete",
+      "april_sub": "Ni renomis ĉiujn operatorojn al emoĝioj. Ŝerco. Eble. 😈",
+      "april_welcome": "Bonvenon Zymbol-Lang"
     },
     "lojban": {
       "rtl": false,
@@ -7730,7 +7916,9 @@
       "nav_manual": "ciksi",
       "manual_title": "ciksi",
       "manual_sub": "cmalu ciksi zymbol-lang",
-      "nav_try_online": "ko pilno lo skami bende"
+      "nav_try_online": "ko pilno lo skami bende",
+      "april_sub": "mi ba'e galfi ro fancu srana le emoji. gleki fasnu. ca'e. 😈",
+      "april_welcome": "coi Zymbol-Lang"
     },
     "toki_pona": {
       "rtl": false,
@@ -7812,7 +8000,9 @@
       "nav_manual": "lipu sona",
       "manual_title": "lipu sona",
       "manual_sub": "lipu sona lili pi zymbol-lang",
-      "nav_try_online": "o kepeken lon ilo"
+      "nav_try_online": "o kepeken lon ilo",
+      "april_sub": "mi ante e nimi pi ilo mute kepeken sitelen musi. ala. ken la. 😈",
+      "april_welcome": "kama pona Zymbol-Lang"
     },
     "ido": {
       "rtl": false,
@@ -7894,7 +8084,9 @@
       "nav_manual": "Dokumentaro",
       "manual_title": "Dokumentaro",
       "manual_sub": "Mallonga manlibro di Zymbol-Lang",
-      "nav_try_online": "Provu Online"
+      "nav_try_online": "Provu Online",
+      "april_sub": "Ni renomizis oli operatori kun emoji. Blogo. Forsan. 😈",
+      "april_welcome": "Bonvenu Zymbol-Lang"
     },
     "interlingua": {
       "rtl": false,
@@ -7976,7 +8168,9 @@
       "nav_manual": "Documentation",
       "manual_title": "Documentation",
       "manual_sub": "Manual compacto de Zymbol-Lang",
-      "nav_try_online": "Proba Online"
+      "nav_try_online": "Proba Online",
+      "april_sub": "Nos renominate tote le operatores con emoji. Joke. Forsan. 😈",
+      "april_welcome": "Benvenite Zymbol-Lang"
     },
     "klingon": {
       "rtl": false,
@@ -8058,7 +8252,9 @@
       "nav_manual": "HaDlu'meH",
       "manual_title": "HaDlu'meH",
       "manual_sub": "mach HaDlu'meH zymbol-lang",
-      "nav_try_online": "yIlo' 'Internet"
+      "nav_try_online": "yIlo' 'Internet",
+      "april_sub": "maH Hoch operator emoji DIboqmoH. bIHeghbe'. chaq. 😈",
+      "april_welcome": "nuqneH Zymbol-Lang"
     },
     "mandoa": {
       "rtl": false,
@@ -8140,7 +8336,9 @@
       "nav_manual": "Tome",
       "manual_title": "Tome",
       "manual_sub": "Kaysh tome zymbol-lang",
-      "nav_try_online": "Muun Online"
+      "nav_try_online": "Muun Online",
+      "april_sub": "Bid'gar draar operatore miit emodji. K'uur. Mhi vencuyanir. 😈",
+      "april_welcome": "Oya'karir Zymbol-Lang"
     },
     "quenya": {
       "rtl": false,
@@ -8222,7 +8420,9 @@
       "nav_manual": "Parma",
       "manual_title": "Parma",
       "manual_sub": "Pitya Parma Zymbol-Lang",
-      "nav_try_online": "Cesta mir i Vorondë"
+      "nav_try_online": "Cesta mir i Vorondë",
+      "april_sub": "Úmë nótë ilye operatáreli emoji-nen. Naicel! Lé. 😈",
+      "april_welcome": "Á tula Zymbol-Lang"
     },
     "sindarin": {
       "rtl": false,
@@ -8304,7 +8504,9 @@
       "nav_manual": "Sarch",
       "manual_title": "Sarch",
       "manual_sub": "Pitya Sarch Zymbol-Lang",
-      "nav_try_online": "Cesto an Lín"
+      "nav_try_online": "Cesto an Lín",
+      "april_sub": "Sín chennem i ôl operedhrim na emoji. Nan. Boe. 😈",
+      "april_welcome": "Mae govannen Zymbol-Lang"
     },
     "dothraki": {
       "rtl": false,
@@ -8386,7 +8588,9 @@
       "nav_manual": "Alegra",
       "manual_title": "Alegra",
       "manual_sub": "Alegra Dothrak Zymbol-Lang",
-      "nav_try_online": "Azho Online"
+      "nav_try_online": "Azho Online",
+      "april_sub": "Kisha adakhat hrazef yomme emoji. Yer anni athjahakaroon. 😈",
+      "april_welcome": "M'athchomaroon Zymbol-Lang"
     },
     "high_valyrian": {
       "rtl": false,
@@ -8468,7 +8672,9 @@
       "nav_manual": "Dovaogēdy",
       "manual_title": "Dovaogēdy",
       "manual_sub": "Dovaogēdy Sȳrior Zymbol-Lang",
-      "nav_try_online": "Ipradis Lenton"
+      "nav_try_online": "Ipradis Lenton",
+      "april_sub": "Iksā emojis eman vali ēngoso. Daor. Kessa. 😈",
+      "april_welcome": "Rytsas Zymbol-Lang"
     },
     "navi": {
       "rtl": false,
@@ -8550,7 +8756,9 @@
       "nav_manual": "Lì'fya",
       "manual_title": "Lì'fya",
       "manual_sub": "Lì'fya hin Zymbol-Lang",
-      "nav_try_online": "Tivìng si"
+      "nav_try_online": "Tivìng si",
+      "april_sub": "Fìopelatort nì'aw emoji seri. Kehe. Srak? 😈",
+      "april_welcome": "Kaltxì Zymbol-Lang"
     },
     "klingon_piqad": {
       "rtl": false,
@@ -8632,7 +8840,9 @@
         "universal"
       ],
       "subregion": "scifi",
-      "nav_try_online": " "
+      "nav_try_online": " ",
+      "april_sub": "maH Hoch operator emoji DIboqmoH. bIHeghbe'. chaq. 😈",
+      "april_welcome": "nuqneH Zymbol-Lang"
     },
     "cree_syl": {
       "rtl": false,
@@ -8714,7 +8924,9 @@
       "nav_manual": "ᑮᐢᑭᓇᐦᐊᒫᑫᐏᐣ",
       "manual_title": "ᑮᐢᑭᓇᐦᐊᒫᑫᐏᐣ",
       "manual_sub": "Zymbol-Lang ᓀᐦᐃᔭᐍᐏᐣ (ᐊᓯᓂᑿᐣ)",
-      "nav_try_online": "ᑐᑦᑕᕐᓂᖅ ᐅᕙᓂ"
+      "nav_try_online": "ᑐᑦᑕᕐᓂᖅ ᐅᕙᓂ",
+      "april_sub": "ᐊᓂᔑᓇᐯ ᐅᑆᕇᑕᐧᐁ emoji ᐋ ᑲᐸᔑᑲᑌᒃ. ᒫᒪᐢᑲᑦ. ᐊᐧᐃᓇ. 😈",
+      "april_welcome": "ᑕᓂᓯ Zymbol-Lang"
     }
   },
   "subregion_labels": {

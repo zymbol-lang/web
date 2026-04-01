@@ -34,9 +34,26 @@
     'th':'thai', 'tl':'tagalog', 'sw':'swahili', 'ha':'hausa',
     'yo':'yoruba', 'am':'amharic', 'tr':'turkish',
   };
+  const LANG_STORAGE_KEY = 'zy-lang';
+
   function detectBrowserLang() {
-    const nav = (navigator.language || 'en').toLowerCase();
-    return BROWSER_LANG_MAP[nav] || BROWSER_LANG_MAP[nav.split('-')[0]] || 'english';
+    // Walk the full preferred-languages list for the best match
+    const langs = navigator.languages && navigator.languages.length
+      ? navigator.languages
+      : [navigator.language || 'en'];
+    for (const l of langs) {
+      const lc = l.toLowerCase();
+      const match = BROWSER_LANG_MAP[lc] || BROWSER_LANG_MAP[lc.split('-')[0]];
+      if (match) return match;
+    }
+    return 'english';
+  }
+
+  function resolveInitialLang() {
+    const saved = localStorage.getItem(LANG_STORAGE_KEY);
+    // Only trust saved value if it exists in i18n data
+    if (saved && i18n[saved]) return saved;
+    return detectBrowserLang();
   }
 
   // ─── Syntax highlight a zymbol code string ───
@@ -341,8 +358,9 @@
   }
 
   // ─── Select language ───
-  function selectLang(langId) {
+  function selectLang(langId, persist = true) {
     currentLang = langId;
+    if (persist) localStorage.setItem(LANG_STORAGE_KEY, langId);
     collapseChips();
     loadManual(langId);
 
@@ -356,6 +374,12 @@
     if (!langMeta || !i18nEntry) return;
 
     fadeUpdate(() => {
+      // April banner
+      const aprilWelcomeEl = document.getElementById('april-welcome');
+      if (aprilWelcomeEl) aprilWelcomeEl.textContent = i18nEntry.april_welcome || "Welcome Zymbol-Lang";
+      const aprilSubEl = document.getElementById('april-sub');
+      if (aprilSubEl) aprilSubEl.textContent = i18nEntry.april_sub || "We renamed all operators to emojis. JK. Maybe. 😈";
+
       // Hero
       document.getElementById('hero-why-tag').textContent  = i18nEntry.why_tag || 'why zymbol';
       document.getElementById('hero-t1').textContent       = i18nEntry.t1;
@@ -664,6 +688,6 @@
   });
 
   // ─── Init ───
-  selectLang(detectBrowserLang());
+  selectLang(resolveInitialLang(), false);
 
 })();

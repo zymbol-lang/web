@@ -1022,3 +1022,100 @@
     .fade-target, .mascot, #theme-icon {
       transition: opacity 0.18s ease;
     }
+
+    /* ═══ APRIL FOOLS BANNER ═══ */
+    #april-banner {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.4s ease;
+      background: linear-gradient(90deg, #0a0f1e 0%, #130a22 50%, #081a0f 100%);
+      border-bottom: 1px solid #7c3aed44;
+    }
+
+    #april-banner.visible {
+      max-height: 52px;
+    }
+
+    .april-inner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      height: 44px;
+      padding: 0 3rem;
+      position: relative;
+    }
+
+    .april-rocket {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      animation: april-float 2.4s ease-in-out infinite;
+    }
+
+    @keyframes april-float {
+      0%, 100% { transform: translateY(0) rotate(-45deg); }
+      50%       { transform: translateY(-5px) rotate(-45deg); }
+    }
+
+    .april-msg {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .april-msg strong {
+      color: #e8e8e8;
+      font-weight: 700;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .april-sub {
+      color: #666;
+      font-size: 0.78rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+
+    #april-dismiss {
+      background: none;
+      border: 1px solid #2a2a2a;
+      color: #444;
+      font-size: 0.72rem;
+      cursor: pointer;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      line-height: 1;
+      position: absolute;
+      right: 1rem;
+    }
+
+    #april-dismiss:hover {
+      color: #aaa;
+      border-color: #555;
+    }
+
+    /* Light mode overrides */
+    html.light #april-banner {
+      background: linear-gradient(90deg, #f0f4ff 0%, #f5f0ff 50%, #f0fff5 100%);
+      border-bottom-color: #7c3aed33;
+    }
+
+    html.light .april-msg strong { color: #111; }
+    html.light .april-sub        { color: #777; }
+
+    html.light #april-dismiss {
+      border-color: #ddd;
+      color: #bbb;
+    }
+
+    html.light #april-dismiss:hover {
+      color: #555;
+      border-color: #aaa;
+    }
+
+    @media (max-width: 640px) {
+      .april-sub { display: none; }
+    }
