@@ -351,6 +351,14 @@
       border-top: 1px solid var(--line);
       flex-shrink: 0;
       background: var(--bg2);
+      transition: height 0.2s ease, min-height 0.2s ease;
+    }
+    #examples-panel.collapsed {
+      height: 32px !important;
+      min-height: 32px !important;
+    }
+    #examples-panel.collapsed #examples-grid {
+      display: none;
     }
 
     #examples-tabs {
@@ -360,6 +368,26 @@
       border-bottom: 1px solid var(--line);
       flex-shrink: 0;
     }
+
+    #examples-toggle {
+      margin-left: auto;
+      padding: 0 0.75rem;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--green);
+      border-left: 1px solid var(--line);
+      cursor: pointer;
+      flex-shrink: 0;
+      user-select: none;
+      transition: background 0.12s;
+    }
+    #examples-toggle:hover { background: var(--bg3); }
 
     .ex-tab {
       font-size: 0.7rem;
@@ -501,7 +529,10 @@
 
 <!-- ═══ EXAMPLES ═══ -->
 <div id="examples-panel">
-  <div id="examples-tabs"></div>
+  <div id="examples-tabs">
+    <div id="examples-toggle">examples ▼</div>
+    <!-- arrow updated by JS: ▼ open · ▲ collapsed -->
+  </div>
   <div id="examples-grid"></div>
 </div>
 
@@ -512,6 +543,7 @@ import { runZymbol } from './zymbol.js';
 // ─── Examples data ────────────────────────────────────────────────────────────
 const EXAMPLES = {
   'Output >>': [
+    { title: 'Hello, Zymbol-Lang!', code: '>> "Hello, Zymbol-Lang!" ¶' },
     { title: 'Hello World',   code: '>> "Hello, World!" ¶' },
     { title: 'Multi-value',   code: 'name = "Alice"\n>> "Hello, " name "!" ¶' },
     { title: 'Numbers',       code: 'x = 10\ny = 3\n>> x " + " y " = " x + y ¶' },
@@ -572,6 +604,25 @@ const EXAMPLES = {
     { title: 'Greet',         code: 'greet(name) {\n    >> "Hello, " name "!" ¶\n}\ngreet("World")\ngreet("Zymbol")' },
     { title: 'Max',           code: 'max(a, b) {\n    ? a >= b { <~ a }\n    <~ b\n}\n>> max(7, 3) ¶\n>> max(2, 9) ¶' },
     { title: 'Fibonacci',     code: 'fib(n) {\n    ? n <= 1 { <~ n }\n    <~ fib(n - 1) + fib(n - 2)\n}\n@ i:0..9 {\n    >> fib(i) " "\n}\n>> ¶' },
+  ],
+  'RosettaStone 🪨': [
+    { title: '🌍 Emoji',  code: '// FizzBuzz — 🌍 Universal Emoji\n// Identifiers: emojis. Operators: always symbolic. Output: emojis.\n\n>> "👋🌍✨" ¶\n\n🎯(🔢) {\n    ? 🔢 % 15 == 0 { <~ "🫧🐝" }\n    _? 🔢 % 3  == 0 { <~ "🫧" }\n    _? 🔢 % 5  == 0 { <~ "🐝" }\n    _ { <~ 🔢 }\n}\n\n@ i:1..15 {\n    >> 🎯(i) ¶\n}' },
+    { title: 'English',   code: '// FizzBuzz — English\n// Identifiers in English. Operators always symbolic.\n\n>> "Hello, English-speaking World!" ¶\n\nclassify(number) {\n    ? number % 15 == 0 { <~ "FizzBuzz" }\n    _? number % 3  == 0 { <~ "Fizz" }\n    _? number % 5  == 0 { <~ "Buzz" }\n    _ { <~ number }\n}\n\n@ i:1..15 {\n    >> classify(i) ¶\n}' },
+    { title: 'Español',   code: '// FizzBuzz — Español\n// Identificadores en español. Operadores siempre simbólicos.\n\n>> "¡Hola, Mundo Hispanohablante!" ¶\n\nclasificar(número) {\n    ? número % 15 == 0 { <~ "BurbujaZumbido" }\n    _? número % 3  == 0 { <~ "Burbuja" }\n    _? número % 5  == 0 { <~ "Zumbido" }\n    _ { <~ número }\n}\n\n@ i:1..15 {\n    >> clasificar(i) ¶\n}' },
+    { title: '한국어',     code: '// FizzBuzz — 한국어\n// 식별자는 한국어로. 연산자는 항상 기호.\n\n>> "안녕하세요, 한국어 세계!" ¶\n\n분류(숫자) {\n    ? 숫자 % 15 == 0 { <~ "쉬익붕붕" }\n    _? 숫자 % 3  == 0 { <~ "쉬익" }\n    _? 숫자 % 5  == 0 { <~ "붕붕" }\n    _ { <~ 숫자 }\n}\n\n@ 이:1..15 {\n    >> 분류(이) ¶\n}' },
+    { title: 'Ελληνικά', code: '// FizzBuzz — Ελληνικά\n// Αναγνωριστικά στα ελληνικά. Τελεστές πάντα συμβολικοί.\n\n>> "Γεια σου, ελληνόφωνε κόσμε!" ¶\n\nταξινόμηση(αριθμός) {\n    ? αριθμός % 15 == 0 { <~ "ΑφρόςΒόμβος" }\n    _? αριθμός % 3  == 0 { <~ "Αφρός" }\n    _? αριθμός % 5  == 0 { <~ "Βόμβος" }\n    _ { <~ αριθμός }\n}\n\n@ ι:1..15 {\n    >> ταξινόμηση(ι) ¶\n}' },
+    { title: 'العربية',  code: '// FizzBuzz — العربية\n// المعرّفات بالعربية. المشغّلات دائماً رمزية.\n\n>> "مرحباً، عالم ناطق بالعربية!" ¶\n\nتصنيف(عدد) {\n    ? عدد % 15 == 0 { <~ "فقاعةطنين" }\n    _? عدد % 3  == 0 { <~ "فقاعة" }\n    _? عدد % 5  == 0 { <~ "طنين" }\n    _ { <~ عدد }\n}\n\n@ ن:1..15 {\n    >> تصنيف(ن) ¶\n}' },
+    { title: '中文',     code: '// FizzBuzz — 中文（普通话）\n// 标识符用中文。运算符始终是符号。\n\n>> "你好，中文世界！" ¶\n\n分类(数字) {\n    ? 数字 % 15 == 0 { <~ "嘶嘶嗡嗡" }\n    _? 数字 % 3  == 0 { <~ "嘶嘶" }\n    _? 数字 % 5  == 0 { <~ "嗡嗡" }\n    _ { <~ 数字 }\n}\n\n@ 数:1..15 {\n    >> 分类(数) ¶\n}' },
+    { title: 'हिन्दी',  code: '// FizzBuzz — हिन्दी\n// पहचानकर्ता हिन्दी में। ऑपरेटर हमेशा प्रतीकात्मक।\n\n>> "नमस्ते, हिन्दी भाषी दुनिया!" ¶\n\nवर्गीकरण(संख्या) {\n    ? संख्या % 15 == 0 { <~ "बुलबुलाभनभन" }\n    _? संख्या % 3  == 0 { <~ "बुलबुला" }\n    _? संख्या % 5  == 0 { <~ "भनभन" }\n    _ { <~ संख्या }\n}\n\n@ न:1..15 {\n    >> वर्गीकरण(न) ¶\n}' },
+    { title: '日本語',   code: '// FizzBuzz — 日本語\n// 識別子はひらがなで。演算子は常にシンボル。\n\n>> "こんにちは、日本語の世界！" ¶\n\nぶんるい(かず) {\n    ? かず % 15 == 0 { <~ "シュワブーン" }\n    _? かず % 3  == 0 { <~ "シュワ" }\n    _? かず % 5  == 0 { <~ "ブーン" }\n    _ { <~ かず }\n}\n\n@ い:1..15 {\n    >> ぶんるい(い) ¶\n}' },
+    { title: 'Русский', code: '// FizzBuzz — Русский\n// Идентификаторы на русском. Операторы всегда символьные.\n\n>> "Привет, русскоязычный мир!" ¶\n\nтип(число) {\n    ? число % 15 == 0 { <~ "ШипЖуж" }\n    _? число % 3  == 0 { <~ "Шип" }\n    _? число % 5  == 0 { <~ "Жуж" }\n    _ { <~ число }\n}\n\n@ и:1..15 {\n    >> тип(и) ¶\n}' },
+    { title: 'עברית',   code: '// FizzBuzz — עברית\n// מזהים בעברית. אופרטורים תמיד סמליים.\n\n>> "שלום, עולם דובר עברית!" ¶\n\nסיווג(מספר) {\n    ? מספר % 15 == 0 { <~ "בועהזמזום" }\n    _? מספר % 3  == 0 { <~ "בועה" }\n    _? מספר % 5  == 0 { <~ "זמזום" }\n    _ { <~ מספר }\n}\n\n@ נ:1..15 {\n    >> סיווג(נ) ¶\n}' },
+    { title: 'ภาษาไทย', code: '// FizzBuzz — ภาษาไทย\n// ตัวระบุเป็นภาษาไทย ตัวดำเนินการเป็นสัญลักษณ์เสมอ\n\n>> "สวัสดี โลกที่พูดภาษาไทย!" ¶\n\nจำแนก(ตัวเลข) {\n    ? ตัวเลข % 15 == 0 { <~ "ซ่าหึ่ง" }\n    _? ตัวเลข % 3  == 0 { <~ "ซ่า" }\n    _? ตัวเลข % 5  == 0 { <~ "หึ่ง" }\n    _ { <~ ตัวเลข }\n}\n\n@ น:1..15 {\n    >> จำแนก(น) ¶\n}' },
+    { title: 'ქართული', code: '// FizzBuzz — ქართული\n// იდენტიფიკატორები ქართულად. ოპერატორები ყოველთვის სიმბოლური.\n\n>> "გამარჯობა, სამყარო!" ¶\n\nდახარისხება(რიცხვი) {\n    ? რიცხვი % 15 == 0 { <~ "ბუშტიჟრჟოლა" }\n    _? რიცხვი % 3  == 0 { <~ "ბუშტი" }\n    _? რიცხვი % 5  == 0 { <~ "ჟრჟოლა" }\n    _ { <~ რიცხვი }\n}\n\n@ ი:1..15 {\n    >> დახარისხება(ი) ¶\n}' },
+    { title: 'Հայերեն', code: '// FizzBuzz — Հայերեն\n// Նույնացուցիչներ հայերենով։ Օպերատորները միշտ խորհրդանշական։\n\n>> "Բարև, Աշխարհ!" ¶\n\nդասակարգել(թիվ) {\n    ? թիվ % 15 == 0 { <~ "ՊղպջակԲզզոց" }\n    _? թիվ % 3  == 0 { <~ "Պղպջակ" }\n    _? թիվ % 5  == 0 { <~ "Բզզոց" }\n    _ { <~ թիվ }\n}\n\n@ ն:1..15 {\n    >> դասակարգել(ն) ¶\n}' },
+    { title: 'বাংলা',   code: '// FizzBuzz — বাংলা\n// বাংলায় পরিচয়কারক। অপারেটর সর্বদা প্রতীকী।\n\n>> "হ্যালো, বাংলাভাষী বিশ্ব!" ¶\n\nশ্রেণী(সংখ্যা) {\n    ? সংখ্যা % 15 == 0 { <~ "বুদবুদগুনগুন" }\n    _? সংখ্যা % 3  == 0 { <~ "বুদবুদ" }\n    _? সংখ্যা % 5  == 0 { <~ "গুনগুন" }\n    _ { <~ সংখ্যা }\n}\n\n@ ন:1..15 {\n    >> শ্রেণী(ন) ¶\n}' },
+    { title: 'தமிழ்',  code: '// FizzBuzz — தமிழ்\n// தமிழில் அடையாளங்காட்டிகள். இயக்கிகள் எப்போதும் குறியீட்டு.\n\n>> "வணக்கம், உலகம்!" ¶\n\nவகைப்படுத்து(எண்) {\n    ? எண் % 15 == 0 { <~ "குமிழ்சத்தம்" }\n    _? எண் % 3  == 0 { <~ "குமிழ்" }\n    _? எண் % 5  == 0 { <~ "சத்தம்" }\n    _ { <~ எண் }\n}\n\n@ ந:1..15 {\n    >> வகைப்படுத்து(ந) ¶\n}' },
+    { title: 'አማርኛ',  code: '// FizzBuzz — አማርኛ\n// መለያዎች በአማርኛ። ኦፕሬተሮች ሁልጊዜ ምሳሌያዊ።\n\n>> "ሰላም፣ አማርኛ ተናጋሪ ዓለም!" ¶\n\nምደባ(ቁጥር) {\n    ? ቁጥር % 15 == 0 { <~ "ቡርቡርዝምዝም" }\n    _? ቁጥር % 3  == 0 { <~ "ቡርቡር" }\n    _? ቁጥር % 5  == 0 { <~ "ዝምዝም" }\n    _ { <~ ቁጥር }\n}\n\n@ ን:1..15 {\n    >> ምደባ(ን) ¶\n}' },
   ],
 };
 
@@ -747,10 +798,21 @@ document.getElementById('stdin-close-btn').addEventListener('click', () => {
 });
 
 // ─── Examples ─────────────────────────────────────────────────────────────────
-const tabsEl = document.getElementById('examples-tabs');
-const gridEl = document.getElementById('examples-grid');
+const tabsEl  = document.getElementById('examples-tabs');
+const gridEl  = document.getElementById('examples-grid');
+const panelEl = document.getElementById('examples-panel');
+const toggleEl = document.getElementById('examples-toggle');
 
 let activeTab = Object.keys(EXAMPLES)[0];
+let examplesOpen = true;
+
+function setExamplesOpen(open) {
+  examplesOpen = open;
+  panelEl.classList.toggle('collapsed', !open);
+  toggleEl.textContent = open ? 'examples ▼' : 'examples ▲';
+}
+
+toggleEl.addEventListener('click', () => setExamplesOpen(!examplesOpen));
 
 function renderTabs() {
   tabsEl.innerHTML = '';
@@ -758,9 +820,15 @@ function renderTabs() {
     const btn = document.createElement('div');
     btn.className = 'ex-tab' + (cat === activeTab ? ' active' : '');
     btn.textContent = cat;
-    btn.addEventListener('click', () => { activeTab = cat; renderTabs(); renderGrid(); });
+    btn.addEventListener('click', () => {
+      activeTab = cat;
+      if (!examplesOpen) setExamplesOpen(true);
+      renderTabs();
+      renderGrid();
+    });
     tabsEl.appendChild(btn);
   }
+  tabsEl.appendChild(toggleEl);
 }
 
 function renderGrid() {
@@ -806,17 +874,7 @@ themeBtn.addEventListener('click', () => {
 applyTheme(document.documentElement.classList.contains('light'));
 
 // ─── Initial code ─────────────────────────────────────────────────────────────
-editor.value = `// Zymbol Playground
-// Click any example below, or write your own.
-
-factorial(n) {
-    ? n <= 1 { <~ 1 }
-    <~ n * factorial(n - 1)
-}
-
-@ i:1..7 {
-    >> i "! = " factorial(i) ¶
-}`;
+editor.value = `>> "Hello, Zymbol-Lang!" ¶`;
 syncHighlight();
 
 </script>

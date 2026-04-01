@@ -82,7 +82,7 @@ export class Lexer {
 
       // _ — ELSE or start of identifier
       if (c === '_') {
-        if (/[a-zA-Z0-9_]/.test(this.ch(1))) { this.readIdent(toks); }
+        if (/[\p{L}0-9_]/u.test(this.ch(1))) { this.readIdent(toks); }
         else { this.consume(); tok('ELSE', '_'); }
         continue;
       }
@@ -120,8 +120,8 @@ export class Lexer {
       // char literals 'A'
       if (c === "'") { this.readChar(toks); continue; }
 
-      // identifiers (Latin + common Unicode ranges)
-      if (/[a-zA-Z\u00C0-\u024F\u0400-\u04FF\u4E00-\u9FFF]/.test(c)) {
+      // identifiers (all Unicode letters + emoji via surrogate pairs)
+      if (/\p{L}/u.test(c) || (c.charCodeAt(0) >= 0xD800 && c.charCodeAt(0) <= 0xDBFF)) {
         this.readIdent(toks); continue;
       }
 
@@ -200,8 +200,11 @@ export class Lexer {
 
   readIdent(toks) {
     let s = '';
-    while (/[a-zA-Z0-9_\u00C0-\u024F\u0400-\u04FF\u4E00-\u9FFF]/.test(this.ch())) {
-      s += this.consume();
+    while (true) {
+      const code = this.src.charCodeAt(this.pos);
+      if (code >= 0xD800 && code <= 0xDBFF) { s += this.consume(); s += this.consume(); continue; }
+      if (/[\p{L}\p{M}0-9_]/u.test(this.ch())) { s += this.consume(); continue; }
+      break;
     }
     toks.push({ type: 'IDENT', value: s, line: this.line });
   }
