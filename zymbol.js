@@ -273,10 +273,11 @@ export class Parser {
   }
 
   parseOutput() {
-    this.adv(); // >>
+    const opLine = this.adv().line; // >> — capture its line number
     const items = [];
     while (!this.check('PILCROW') && !this.check('NEWLINE_ESC') &&
            !this.check('RBRACE') && !this.check('EOF')) {
+      if (this.peek().line > opLine) break; // next token is on a new line → new statement
       items.push(this.parseExpr());
     }
     const nl = this.match('PILCROW', 'NEWLINE_ESC');
