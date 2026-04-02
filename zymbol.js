@@ -717,23 +717,32 @@ const mkUnit  = () => ({ type: 'unit' });
 
 export class Interpreter {
   /**
-   * @param {(text:string)=>void} outputFn  — called for each output chunk
-   * @param {string[]}            inputLines — pre-filled stdin lines
+   * @param {(text:string)=>void}      outputFn — called for each output chunk
+   * @param {()=>Promise<string>}      inputFn  — async callback for each << read
    */
-  constructor(outputFn, inputLines = []) {
+  constructor(outputFn, inputFn = async () => '') {
     this.outputFn    = outputFn;
-    this.inputLines  = [...inputLines];
-    this.inputIdx    = 0;
+    this.inputFn     = inputFn;
     this.steps       = 0;
     this.maxSteps        = 50_000;  // ~50k AST nodes evaluated
     this.maxInfiniteIter = 1_024;   // bare @ { } iteration cap
     this.outputBytes     = 0;
     this.maxBytes        = 8_000;   // 8 KB output cap
+    this.lastYield       = performance.now();
   }
 
   tick() {
     if (++this.steps > this.maxSteps)
       throw new ZyError('Execution limit reached (50 000 steps) — infinite loop?');
+  }
+
+  // Yields to the browser every ~16 ms so the DOM can repaint between loop iterations.
+  maybeYield() {
+    const now = performance.now();
+    if (now - this.lastYield > 16) {
+      this.lastYield = now;
+      return new Promise(r => setTimeout(r, 0));
+    }
   }
 
   emit(text) {
@@ -743,57 +752,55 @@ export class Interpreter {
     this.outputFn(text);
   }
 
-  run(program) {
+  async run(program) {
     const env = new Env();
     this.globalEnv = env;   // functions see top-level definitions (for recursion + cross-calls)
-    this.execBlock(program.body, env);
+    await this.execBlock(program.body, env);
   }
 
-  execBlock(stmts, env) {
+  async execBlock(stmts, env) {
     for (const stmt of stmts) {
-      const sig = this.exec(stmt, env);
+      const sig = await this.exec(stmt, env);
       if (sig instanceof ZyReturn || sig instanceof ZyBreak || sig instanceof ZyContinue)
         return sig;
     }
   }
 
-  exec(stmt, env) {
+  async exec(stmt, env) {
     this.tick();
 
     switch (stmt.type) {
       case 'Output': {
         let out = '';
-        for (const item of stmt.items) out += this.display(this.eval(item, env));
+        for (const item of stmt.items) out += this.display(await this.eval(item, env));
         if (stmt.newline) out += '\n';
         this.emit(out);
         return;
       }
 
       case 'Input': {
-        if (stmt.prompt) this.emit(this.display(this.eval(stmt.prompt, env)));
-        const line = this.inputIdx < this.inputLines.length
-          ? this.inputLines[this.inputIdx++]
-          : '';
+        if (stmt.prompt) this.emit(this.display(await this.eval(stmt.prompt, env)));
+        const line = await this.inputFn();
         const val = mkStr(line.trim());
         if (!env.set(stmt.varName, val)) env.def(stmt.varName, val);
         return;
       }
 
       case 'VarAssign': {
-        const val = this.eval(stmt.value, env);
+        const val = await this.eval(stmt.value, env);
         if (!env.set(stmt.name, val)) env.def(stmt.name, val);
         return;
       }
 
       case 'ConstAssign': {
-        const val = this.eval(stmt.value, env);
+        const val = await this.eval(stmt.value, env);
         env.def(stmt.name, val, true);
         return;
       }
 
       case 'CompoundAssign': {
         const cur = env.get(stmt.name);
-        const rhs = this.eval(stmt.value, env);
+        const rhs = await this.eval(stmt.value, env);
         env.set(stmt.name, this.applyOp(stmt.op, cur, rhs));
         return;
       }
@@ -811,7 +818,7 @@ export class Interpreter {
       }
 
       case 'Return': {
-        const val = stmt.value ? this.eval(stmt.value, env) : mkUnit();
+        const val = stmt.value ? await this.eval(stmt.value, env) : mkUnit();
         return new ZyReturn(val);
       }
 
@@ -819,31 +826,31 @@ export class Interpreter {
       case 'Continue': return new ZyContinue();
 
       case 'If': {
-        if (this.truthy(this.eval(stmt.cond, env))) return this.execBlock(stmt.then, env);
+        if (this.truthy(await this.eval(stmt.cond, env))) return await this.execBlock(stmt.then, new Env(env));
         for (const ei of stmt.elseifs)
-          if (this.truthy(this.eval(ei.cond, env))) return this.execBlock(ei.body, env);
-        if (stmt.else) return this.execBlock(stmt.else, env);
+          if (this.truthy(await this.eval(ei.cond, env))) return await this.execBlock(ei.body, new Env(env));
+        if (stmt.else) return await this.execBlock(stmt.else, new Env(env));
         return;
       }
 
-      case 'Loop': return this.execLoop(stmt, env);
+      case 'Loop': return await this.execLoop(stmt, env);
 
       case 'ExprStmt': {
-        this.eval(stmt.expr, env);
+        await this.eval(stmt.expr, env);
         return;
       }
 
       case 'IndexAssign': {
         const arr = env.get(stmt.obj);
         if (arr.type !== 'arr') throw new ZyError('Not an array');
-        const idx = this.eval(stmt.index, env).v;
-        arr.v[idx < 0 ? arr.v.length + idx : idx] = this.eval(stmt.value, env);
+        const idx = (await this.eval(stmt.index, env)).v;
+        arr.v[idx < 0 ? arr.v.length + idx : idx] = await this.eval(stmt.value, env);
         return;
       }
     }
   }
 
-  execLoop(loop, env) {
+  async execLoop(loop, env) {
     const outer = new Env(env);
 
     if (loop.kind === 'infinite') {
@@ -852,42 +859,45 @@ export class Interpreter {
         if (++iter > this.maxInfiniteIter)
           throw new ZyError(`Infinite loop limit reached (${this.maxInfiniteIter} iterations) — add @! to break`);
         this.tick();
-        const sig = this.execBlock(loop.body, new Env(outer));
+        const sig = await this.execBlock(loop.body, new Env(outer));
         if (sig instanceof ZyBreak)  break;
         if (sig instanceof ZyReturn) return sig;
+        await this.maybeYield();
       }
       return;
     }
 
     if (loop.kind === 'while') {
-      while (this.truthy(this.eval(loop.cond, env))) {
+      while (this.truthy(await this.eval(loop.cond, env))) {
         this.tick();
-        const sig = this.execBlock(loop.body, new Env(outer));
+        const sig = await this.execBlock(loop.body, new Env(outer));
         if (sig instanceof ZyBreak)  break;
         if (sig instanceof ZyReturn) return sig;
+        await this.maybeYield();
       }
       return;
     }
 
     if (loop.kind === 'range') {
-      const from = this.eval(loop.from, env).v;
-      const to   = this.eval(loop.to,   env).v;
-      const step = loop.step ? this.eval(loop.step, env).v : (from <= to ? 1 : -1);
+      const from = (await this.eval(loop.from, env)).v;
+      const to   = (await this.eval(loop.to,   env)).v;
+      const step = loop.step ? (await this.eval(loop.step, env)).v : (from <= to ? 1 : -1);
       if (step === 0) throw new ZyError('Loop step cannot be zero');
       for (let i = from; step > 0 ? i <= to : i >= to; i += step) {
         this.tick();
         const iter = new Env(outer);
         iter.def(loop.var, mkInt(i));
-        const sig = this.execBlock(loop.body, iter);
+        const sig = await this.execBlock(loop.body, iter);
         if (sig instanceof ZyBreak)    break;
         if (sig instanceof ZyContinue) continue;
         if (sig instanceof ZyReturn)   return sig;
+        await this.maybeYield();
       }
       return;
     }
 
     if (loop.kind === 'foreach') {
-      const it = this.eval(loop.iterable, env);
+      const it = await this.eval(loop.iterable, env);
       let items;
       if      (it.type === 'arr')   items = it.v;
       else if (it.type === 'str')   items = [...it.v].map(mkChar);
@@ -898,16 +908,17 @@ export class Interpreter {
         this.tick();
         const iter = new Env(outer);
         iter.def(loop.var, item);
-        const sig = this.execBlock(loop.body, iter);
+        const sig = await this.execBlock(loop.body, iter);
         if (sig instanceof ZyBreak)    break;
         if (sig instanceof ZyContinue) continue;
         if (sig instanceof ZyReturn)   return sig;
+        await this.maybeYield();
       }
       return;
     }
   }
 
-  eval(expr, env) {
+  async eval(expr, env) {
     this.tick();
 
     switch (expr.type) {
@@ -917,7 +928,7 @@ export class Interpreter {
           case 'float': return mkFloat(expr.value);
           case 'bool':  return mkBool(expr.value);
           case 'char':  return mkChar(expr.value);
-          case 'str':   return this.evalStr(expr.value, env);
+          case 'str':   return await this.evalStr(expr.value, env);
           case 'unit':  return mkUnit();
         }
         break;
@@ -925,31 +936,33 @@ export class Interpreter {
       case 'Ident': return env.get(expr.name);
 
       case 'Array':
-        return mkArr(expr.items.map(i => this.eval(i, env)));
+        return mkArr(await Promise.all(expr.items.map(i => this.eval(i, env))));
 
       case 'Tuple': {
-        const items = expr.items.map(i => this.eval(i, env));
+        const items = await Promise.all(expr.items.map(i => this.eval(i, env)));
         return { type: 'tuple', v: items, keys: expr.keys ?? null };
       }
 
-      case 'CommaJoin':
-        return mkStr(expr.items.map(i => this.display(this.eval(i, env))).join(''));
+      case 'CommaJoin': {
+        const vals = await Promise.all(expr.items.map(i => this.eval(i, env)));
+        return mkStr(vals.map(v => this.display(v)).join(''));
+      }
 
       case 'BinOp': {
         // short-circuit
         if (expr.op === '&&') {
-          return mkBool(this.truthy(this.eval(expr.left, env)) &&
-                        this.truthy(this.eval(expr.right, env)));
+          return mkBool(this.truthy(await this.eval(expr.left, env)) &&
+                        this.truthy(await this.eval(expr.right, env)));
         }
         if (expr.op === '||') {
-          return mkBool(this.truthy(this.eval(expr.left, env)) ||
-                        this.truthy(this.eval(expr.right, env)));
+          return mkBool(this.truthy(await this.eval(expr.left, env)) ||
+                        this.truthy(await this.eval(expr.right, env)));
         }
-        return this.applyOp(expr.op, this.eval(expr.left, env), this.eval(expr.right, env));
+        return this.applyOp(expr.op, await this.eval(expr.left, env), await this.eval(expr.right, env));
       }
 
       case 'UnaryOp': {
-        const val = this.eval(expr.operand, env);
+        const val = await this.eval(expr.operand, env);
         if (expr.op === '-')
           return val.type === 'float' ? mkFloat(-val.v) : mkInt(-val.v);
         if (expr.op === '!')
@@ -961,13 +974,13 @@ export class Interpreter {
         const fn = env.get(expr.callee);
         if (!fn || fn.type !== 'func')
           throw new ZyError(`'${expr.callee}' is not a function`);
-        const args = expr.args.map(a => this.eval(a, env));
-        return this.callFunc(fn, args);
+        const args = await Promise.all(expr.args.map(a => this.eval(a, env)));
+        return await this.callFunc(fn, args);
       }
 
       case 'Subscript': {
-        const obj = this.eval(expr.obj, env);
-        const idx = this.eval(expr.index, env).v;
+        const obj = await this.eval(expr.obj, env);
+        const idx = (await this.eval(expr.index, env)).v;
         if (obj.type === 'arr') {
           const i = idx < 0 ? obj.v.length + idx : idx;
           if (i < 0 || i >= obj.v.length) throw new ZyError(`Index out of bounds: ${idx}`);
@@ -986,18 +999,18 @@ export class Interpreter {
       }
 
       case 'CollectionOp': {
-        return this.evalCollectionOp(expr, env);
+        return await this.evalCollectionOp(expr, env);
       }
 
       case 'Match': {
-        const val = this.eval(expr.expr, env);
+        const val = await this.eval(expr.expr, env);
         for (const arm of expr.arms) {
-          if (this.matchPattern(arm.pattern, val, env)) {
+          if (await this.matchPattern(arm.pattern, val, env)) {
             if (arm.body.type === 'block') {
-              const sig = this.execBlock(arm.body.stmts, new Env(env));
+              const sig = await this.execBlock(arm.body.stmts, new Env(env));
               return sig instanceof ZyReturn ? sig.value : mkUnit();
             }
-            return this.eval(arm.body.value, env);
+            return await this.eval(arm.body.value, env);
           }
         }
         return mkUnit();
@@ -1007,10 +1020,10 @@ export class Interpreter {
     return mkUnit();
   }
 
-  evalCollectionOp(expr, env) {
-    const col = this.eval(expr.obj, env);
+  async evalCollectionOp(expr, env) {
+    const col = await this.eval(expr.obj, env);
     const arg = () => this.eval(expr.arg, env);
-    const idx = () => { let i = this.eval(expr.index, env).v; return i < 0 ? col.v.length + i : i; };
+    const idx = async () => { let i = (await this.eval(expr.index, env)).v; return i < 0 ? col.v.length + i : i; };
 
     // helpers
     const notSupported = op => { throw new ZyError(`${op} not supported on ${col.type}`); };
@@ -1037,14 +1050,14 @@ export class Interpreter {
 
       // ── append / insert ──────────────────────────────────────────────────
       case '$+': {
-        const v = arg();
+        const v = await arg();
         if (col.type === 'arr')   return mkArr([...col.v, v]);
         if (col.type === 'str')   return mkStr(col.v + this.display(v));
         if (col.type === 'tuple') return { type:'tuple', v:[...col.v,v], keys: col.keys ? [...col.keys,null] : null };
         notSupported('$+');
       }
       case '$+[i]': {
-        const i = idx(), v = arg();
+        const i = await idx(), v = await arg();
         if (col.type === 'arr') { const r=[...col.v]; r.splice(i,0,v); return mkArr(r); }
         if (col.type === 'str') { const r=[...col.v]; r.splice(i,0,this.display(v)); return mkStr(r.join('')); }
         notSupported('$+[i]');
@@ -1052,7 +1065,7 @@ export class Interpreter {
 
       // ── remove ──────────────────────────────────────────────────────────
       case '$-': {
-        const v = arg();
+        const v = await arg();
         if (col.type === 'arr') {
           const i = col.v.findIndex(el => this.equals(el, v));
           if (i < 0) return col;
@@ -1070,7 +1083,7 @@ export class Interpreter {
         notSupported('$-');
       }
       case '$--': {
-        const v = arg();
+        const v = await arg();
         if (col.type === 'arr')   return mkArr(col.v.filter(el => !this.equals(el,v)));
         if (col.type === 'str') {
           const c = this.display(v); return mkStr(col.v.split(c).join(''));
@@ -1082,7 +1095,7 @@ export class Interpreter {
         notSupported('$--');
       }
       case '$-[i]': {
-        const i = idx();
+        const i = await idx();
         if (col.type === 'arr')   { const r=[...col.v]; r.splice(i,1); return mkArr(r); }
         if (col.type === 'str')   { const r=[...col.v]; r.splice(i,1); return mkStr(r.join('')); }
         if (col.type === 'tuple') {
@@ -1092,7 +1105,7 @@ export class Interpreter {
         notSupported('$-[i]');
       }
       case '$-[i..j]': {
-        const from=this.eval(expr.range.from,env).v, to=this.eval(expr.range.to,env).v;
+        const from=(await this.eval(expr.range.from,env)).v, to=(await this.eval(expr.range.to,env)).v;
         const count = to - from + 1;
         if (col.type === 'arr')   { const r=[...col.v]; r.splice(from,count); return mkArr(r); }
         if (col.type === 'str')   { const r=[...col.v]; r.splice(from,count); return mkStr(r.join('')); }
@@ -1101,14 +1114,14 @@ export class Interpreter {
 
       // ── search ──────────────────────────────────────────────────────────
       case '$?': {
-        const v = arg();
+        const v = await arg();
         if (col.type === 'arr')   return mkBool(col.v.some(el=>this.equals(el,v)));
         if (col.type === 'str')   return mkBool(col.v.includes(this.display(v)));
         if (col.type === 'tuple') return mkBool(col.v.some(el=>this.equals(el,v)));
         notSupported('$?');
       }
       case '$??': {
-        const v = arg(), target = this.display(v);
+        const v = await arg(), target = this.display(v);
         const result = [];
         if (col.type === 'arr' || col.type === 'tuple') {
           col.v.forEach((el,i) => { if (this.equals(el,v)) result.push(mkInt(i)); });
@@ -1123,7 +1136,7 @@ export class Interpreter {
 
       // ── update ──────────────────────────────────────────────────────────
       case '$~': {
-        const i=idx(), v=arg();
+        const i=await idx(), v=await arg();
         if (col.type === 'arr')   { const r=[...col.v]; r[i]=v; return mkArr(r); }
         if (col.type === 'str')   { const r=[...col.v]; r[i]=this.display(v); return mkStr(r.join('')); }
         if (col.type === 'tuple') { const nv=[...col.v]; nv[i]=v; return {type:'tuple',v:nv,keys:col.keys}; }
@@ -1132,7 +1145,7 @@ export class Interpreter {
 
       // ── slice ────────────────────────────────────────────────────────────
       case '$[i..j]': {
-        const from=this.eval(expr.range.from,env).v, to=this.eval(expr.range.to,env).v;
+        const from=(await this.eval(expr.range.from,env)).v, to=(await this.eval(expr.range.to,env)).v;
         if (col.type === 'arr')   return mkArr(col.v.slice(from, to+1));
         if (col.type === 'str')   return mkStr([...col.v].slice(from,to+1).join(''));
         if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(from,to+1), keys:col.keys?col.keys.slice(from,to+1):null };
@@ -1151,60 +1164,63 @@ export class Interpreter {
 
       // ── higher-order (require named function) ────────────────────────────
       case '$>': {
-        const fn = this.evalCallable(expr.arg, env);
+        const fn = await this.evalCallable(expr.arg, env);
         const items = colItems();
-        const mapped = items.map(el => this.callFunc(fn,[el]));
+        const mapped = await Promise.all(items.map(el => this.callFunc(fn,[el])));
         return fromStr(mapped);
       }
       case '$|': {
-        const fn = this.evalCallable(expr.arg, env);
+        const fn = await this.evalCallable(expr.arg, env);
         const items = colItems();
-        const kept = items.filter(el => this.truthy(this.callFunc(fn,[el])));
+        const kept = [];
+        for (const el of items) {
+          if (this.truthy(await this.callFunc(fn,[el]))) kept.push(el);
+        }
         return fromStr(kept);
       }
       case '$<': {
-        const fn = this.evalCallable(expr.arg, env);
-        let acc = this.eval(expr.init, env);
-        for (const el of colItems()) acc = this.callFunc(fn,[acc,el]);
+        const fn = await this.evalCallable(expr.arg, env);
+        let acc = await this.eval(expr.init, env);
+        for (const el of colItems()) acc = await this.callFunc(fn,[acc,el]);
         return acc;
       }
     }
     throw new ZyError(`Unknown collection operator: ${expr.op}`);
   }
 
-  evalCallable(argExpr, env) {
-    const v = this.eval(argExpr, env);
+  async evalCallable(argExpr, env) {
+    const v = await this.eval(argExpr, env);
     if (v && v.type === 'func') return v;
     throw new ZyError(`Expected a function for collection operator`);
   }
 
-  matchPattern(pattern, val, env) {
+  async matchPattern(pattern, val, env) {
     switch (pattern.type) {
       case 'wildcard': return true;
-      case 'guard':    return this.truthy(this.eval(pattern.cond, env));
+      case 'guard':    return this.truthy(await this.eval(pattern.cond, env));
       case 'range': {
-        const from = this.eval(pattern.from, env).v;
-        const to   = this.eval(pattern.to,   env).v;
+        const from = (await this.eval(pattern.from, env)).v;
+        const to   = (await this.eval(pattern.to,   env)).v;
         return val.v >= from && val.v <= to;
       }
       case 'literal':
-        return this.equals(val, this.eval(pattern.value, env));
+        return this.equals(val, await this.eval(pattern.value, env));
     }
     return false;
   }
 
-  callFunc(fn, args) {
+  async callFunc(fn, args) {
     // Parent = global env so functions can call each other and recurse,
     // but cannot access local variables of the caller (Zymbol isolation rule).
     const funcEnv = new Env(this.globalEnv);
     for (let i = 0; i < fn.params.length; i++)
       funcEnv.def(fn.params[i].name, args[i] ?? mkUnit());
-    const sig = this.execBlock(fn.body, funcEnv);
+    const sig = await this.execBlock(fn.body, funcEnv);
     if (sig instanceof ZyReturn) return sig.value;
     return mkUnit();
   }
 
-  evalStr(parts, env) {
+  async evalStr(parts, env) {
     let s = '';
     for (const part of parts) {
       if (part.t === 'lit') {
@@ -1213,7 +1229,7 @@ export class Interpreter {
         try {
           const toks = new Lexer(part.v).tokenize();
           const expr = new Parser(toks).parseExpr();
-          s += this.display(this.eval(expr, env));
+          s += this.display(await this.eval(expr, env));
         } catch {
           s += `{${part.v}}`;
         }
@@ -1288,12 +1304,13 @@ export class Interpreter {
 
 /**
  * Run Zymbol source code.
- * @param {string}   src        — source code
- * @param {string[]} inputLines — pre-filled stdin values (one per line)
- * @param {(text:string)=>void} onOutput — callback for each output chunk
+ * @param {string}                  src      — source code
+ * @param {()=>Promise<string>}     inputFn  — async callback invoked on each << read
+ * @param {(text:string)=>void}     onOutput — callback for each output chunk
+ * @returns {Promise<void>}
  */
-export function runZymbol(src, inputLines, onOutput) {
+export async function runZymbol(src, inputFn, onOutput) {
   const tokens = new Lexer(src).tokenize();
   const ast    = new Parser(tokens).parse();
-  new Interpreter(onOutput, inputLines).run(ast);
+  await new Interpreter(onOutput, inputFn).run(ast);
 }

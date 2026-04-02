@@ -291,40 +291,6 @@
       tab-size: 4;
     }
 
-    /* ─── Stdin panel ─── */
-    #stdin-wrap {
-      flex-shrink: 0;
-      border-top: 1px solid var(--line);
-      display: flex;
-      flex-direction: column;
-    }
-
-    #stdin-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.3rem 0.75rem;
-      background: var(--bg3);
-      font-size: 0.68rem;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--mid);
-    }
-
-    #stdin {
-      resize: none;
-      background: var(--bg2);
-      color: var(--text);
-      border: none;
-      outline: none;
-      padding: 0.5rem 0.75rem;
-      font-family: var(--mono);
-      font-size: 0.78rem;
-      line-height: 1.55;
-      height: 70px;
-    }
-
     /* ─── Output panel ─── */
     #output-content {
       flex: 1;
@@ -340,6 +306,29 @@
     .out-text  { color: var(--hi); }
     .out-error { color: var(--err); }
     .out-meta  { color: var(--mid); font-style: italic; font-size: 0.75rem; }
+
+    /* ─── Interactive input line ─── */
+    .out-input-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .out-input-prompt { color: var(--green); }
+    .out-input-field {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--green-mid);
+      color: var(--hi);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      outline: none;
+      min-width: 12ch;
+      width: 22ch;
+      padding: 0;
+    }
+    .out-input-field:focus { border-bottom-color: var(--green); }
+    .out-input-value { color: var(--green2); }
 
     /* ─── Examples panel ─── */
     #examples-panel {
@@ -495,7 +484,6 @@
       <div class="panel-actions">
         <button class="btn btn-run" id="run-btn" title="Run (Ctrl+Enter)">▶ Run</button>
         <button class="btn" id="clear-code-btn">Clear</button>
-        <button class="btn" id="stdin-toggle-btn">stdin</button>
       </div>
     </div>
 
@@ -503,14 +491,6 @@
       <pre id="editor-highlight" aria-hidden="true"></pre>
       <textarea id="editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
                 placeholder='>> "Hello, World!" ¶'></textarea>
-    </div>
-
-    <div id="stdin-wrap" style="display:none">
-      <div id="stdin-header">
-        <span>stdin — one value per line (for &lt;&lt;)</span>
-        <button class="btn" id="stdin-close-btn" style="font-size:0.65rem;padding:0.15rem 0.45rem">✕</button>
-      </div>
-      <textarea id="stdin" placeholder="Alice&#10;42&#10;..."></textarea>
     </div>
   </div>
 
@@ -550,8 +530,8 @@ const EXAMPLES = {
     { title: 'Blank line',    code: '>> "line 1" ¶\n>> ¶\n>> "line 3" ¶' },
   ],
   'Input <<': [
-    { title: 'Read input',    code: '<< "Your name: " name\n>> "Hi, " name "!" ¶', stdin: 'Alice' },
-    { title: 'Two inputs',    code: '<< "First: " a\n<< "Second: " b\n>> a " and " b ¶', stdin: 'hello\nworld' },
+    { title: 'Read input',    code: '<< "Your name: " name\n>> "Hi, " name "!" ¶' },
+    { title: 'Two inputs',    code: '<< "First: " a\n<< "Second: " b\n>> a " and " b ¶' },
   ],
   'Variables': [
     { title: 'Types',         code: 'n = 123\nf = 123.45\nactive = #1\noff = #0\n>> n ¶\n>> f ¶\n>> active ¶\n>> off ¶' },
@@ -760,17 +740,51 @@ function clearOutput() {
   outputEl.innerHTML = '';
 }
 
+// ─── Interactive input ────────────────────────────────────────────────────────
+function inputFn() {
+  return new Promise(resolve => {
+    const line = document.createElement('div');
+    line.className = 'out-input-line';
+
+    const caret = document.createElement('span');
+    caret.className = 'out-input-prompt';
+    caret.textContent = '❮❮ ';
+
+    const inp = document.createElement('input');
+    inp.className = 'out-input-field';
+    inp.type = 'text';
+    inp.setAttribute('autocomplete', 'off');
+    inp.setAttribute('spellcheck', 'false');
+
+    line.appendChild(caret);
+    line.appendChild(inp);
+    outputEl.appendChild(line);
+    outputEl.scrollTop = outputEl.scrollHeight;
+    inp.focus();
+
+    inp.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      const value = inp.value;
+      inp.remove();
+      const val = document.createElement('span');
+      val.className = 'out-input-value';
+      val.textContent = value;
+      line.appendChild(val);
+      outputEl.appendChild(document.createTextNode('\n'));
+      outputEl.scrollTop = outputEl.scrollHeight;
+      resolve(value);
+    });
+  });
+}
+
 // ─── Run ──────────────────────────────────────────────────────────────────────
-function runCode() {
+async function runCode() {
   clearOutput();
-  const src   = editor.value.trim();
+  const src = editor.value.trim();
   if (!src) { appendOutput('(empty program)', 'out-meta'); return; }
 
-  const stdinRaw  = document.getElementById('stdin').value;
-  const inputLines = stdinRaw ? stdinRaw.split('\n') : [];
-
   try {
-    runZymbol(src, inputLines, text => appendOutput(text));
+    await runZymbol(src, inputFn, text => appendOutput(text));
     appendOutput('\n— done —', 'out-meta');
   } catch (err) {
     appendOutput('\n' + (err.message ?? String(err)), 'out-error');
@@ -783,19 +797,6 @@ document.getElementById('clear-code-btn').addEventListener('click', () => {
   syncHighlight();
 });
 document.getElementById('clear-output-btn').addEventListener('click', clearOutput);
-
-// ─── Stdin toggle ─────────────────────────────────────────────────────────────
-const stdinWrap = document.getElementById('stdin-wrap');
-document.getElementById('stdin-toggle-btn').addEventListener('click', () => {
-  const open = stdinWrap.style.display === 'none' || stdinWrap.style.display === '';
-  stdinWrap.style.display = open ? 'flex' : 'none';
-  stdinWrap.style.flexDirection = open ? 'column' : '';
-  document.getElementById('stdin-toggle-btn').classList.toggle('btn-active', open);
-});
-document.getElementById('stdin-close-btn').addEventListener('click', () => {
-  stdinWrap.style.display = 'none';
-  document.getElementById('stdin-toggle-btn').classList.remove('btn-active');
-});
 
 // ─── Examples ─────────────────────────────────────────────────────────────────
 const tabsEl  = document.getElementById('examples-tabs');
@@ -843,12 +844,6 @@ function renderGrid() {
     card.addEventListener('click', () => {
       editor.value = ex.code;
       syncHighlight();
-      if (ex.stdin !== undefined) {
-        document.getElementById('stdin').value = ex.stdin;
-        stdinWrap.style.display = 'flex';
-        stdinWrap.style.flexDirection = 'column';
-        document.getElementById('stdin-toggle-btn').classList.add('btn-active');
-      }
       clearOutput();
     });
     gridEl.appendChild(card);
