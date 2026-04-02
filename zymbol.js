@@ -20,6 +20,13 @@ class ZyError extends Error {
   }
 }
 
+class ZyRuntimeError extends ZyError {
+  constructor(msg, errType = '##_', line) {
+    super(msg, line);
+    this.errType = errType;
+  }
+}
+
 // ─── Lexer ────────────────────────────────────────────────────────────────────
 
 export class Lexer {
@@ -51,10 +58,16 @@ export class Lexer {
         continue;
       }
 
-      // booleans #0 #1
+      // booleans #0 #1 and error types ##xxx
       if (this.ch() === '#') {
         if (this.ch(1) === '0') { this.consume(); this.consume(); tok('BOOL', false); continue; }
         if (this.ch(1) === '1') { this.consume(); this.consume(); tok('BOOL', true);  continue; }
+        if (this.ch(1) === '#') {
+          this.consume(); this.consume(); // consume ##
+          let name = '##';
+          while (/[A-Za-z0-9_]/.test(this.ch())) { name += this.ch(); this.consume(); }
+          tok('IDENT', name); continue;
+        }
         // unknown # sequence — skip
         this.consume(); continue;
       }
@@ -70,6 +83,8 @@ export class Lexer {
         '||': 'OR',     '++': 'INC',    '--': 'DEC',
         '+=': 'PLUS_EQ',  '-=': 'MINUS_EQ', '*=': 'TIMES_EQ',
         '/=': 'DIV_EQ',   '%=': 'MOD_EQ',   '^=': 'POW_EQ',
+        '->': 'ARROW',  '|>': 'PIPE',
+        '!?': 'TRY',    ':!': 'CATCH',  ':>': 'FINALLY',
         '\\\\': 'NEWLINE_ESC',
       };
       if (twoMap[two]) {
@@ -108,6 +123,8 @@ export class Lexer {
         if (a === '<')                      { this.consume(); this.consume();            tok('DREDUCE',    '$<');  continue; }
         if (a === '~')                      { this.consume(); this.consume();            tok('DUPDATE',    '$~');  continue; }
         if (a === '[')                      { this.consume();                            tok('DSLICE',     '$[');  continue; }
+        if (a === '!' && b === '!')         { this.consume(); this.consume(); this.consume(); tok('DERRORPROP', '$!!'); continue; }
+        if (a === '!')                      { this.consume(); this.consume();            tok('DERROR',     '$!');  continue; }
         this.consume(); continue; // unknown $
       }
 
@@ -265,8 +282,12 @@ export class Parser {
     if (t.type === 'IF')       return this.parseIf();
     if (t.type === 'MATCH')    return { type: 'ExprStmt', expr: this.parseMatchExpr() };
     if (t.type === 'AT')       { this.adv(); return this.parseLoop(); }
+    if (t.type === 'TRY')       return this.parseTryCatch();
+    if (t.type === 'LBRACKET' && this.isDestructuring()) return this.parseArrayDestruct();
+    if (t.type === 'LPAREN'   && this.isDestructuring()) return this.parseTupleDestruct();
     if (t.type === 'IDENT')    return this.parseIdentStmt();
     if (t.type === 'SEMI')     { this.adv(); return null; }
+    if (t.type === 'PILCROW')  { this.adv(); return { type: 'Output', items: [], newline: true }; }
 
     // fall-through: expression statement
     return { type: 'ExprStmt', expr: this.parseExpr() };
@@ -300,6 +321,93 @@ export class Parser {
     if (this.check('RBRACE') || this.check('EOF'))
       return { type: 'Return', value: null };
     return { type: 'Return', value: this.parseExpr() };
+  }
+
+  parseTryCatch() {
+    this.adv(); // !?
+    const tryBody = this.parseBlock();
+    const catches = [];
+    while (this.check('CATCH')) {
+      this.adv(); // :!
+      // Optional error type: identifier starting with ##
+      const errType = (this.check('IDENT') && this.peek().value.startsWith('##'))
+        ? this.adv().value : null;
+      catches.push({ errType, body: this.parseBlock() });
+    }
+    let finallyBody = null;
+    if (this.check('FINALLY')) {
+      this.adv(); // :>
+      finallyBody = this.parseBlock();
+    }
+    return { type: 'TryCatch', tryBody, catches, finallyBody };
+  }
+
+  // Lookahead: returns true if current [ or ( starts a destructuring pattern (= without :=)
+  isDestructuring() {
+    let i = 0, depth = 0;
+    const start = this.peek(0).type;
+    const close = start === 'LBRACKET' ? 'RBRACKET' : 'RPAREN';
+    while (this.pos + i < this.toks.length) {
+      const t = this.toks[this.pos + i++];
+      if (t.type === start) depth++;
+      else if (t.type === close) { depth--; if (depth === 0) break; }
+    }
+    // After the closing bracket/paren must be ASSIGN (=) but not CONST_ASSIGN (:=)
+    return this.peek(i).type === 'ASSIGN';
+  }
+
+  parseArrayDestruct() {
+    this.adv(); // [
+    const targets = [];
+    while (!this.check('RBRACKET') && !this.check('EOF')) {
+      if (this.check('TIMES')) {
+        this.adv();
+        targets.push({ name: this.eat('IDENT').value, rest: true });
+      } else if (this.check('ELSE')) {
+        this.adv(); // _ discard
+        targets.push({ name: '_', rest: false });
+      } else {
+        targets.push({ name: this.eat('IDENT').value, rest: false });
+      }
+      this.match('COMMA');
+    }
+    this.eat('RBRACKET');
+    this.eat('ASSIGN');
+    return { type: 'ArrayDestruct', targets, value: this.parseExpr() };
+  }
+
+  parseTupleDestruct() {
+    // Distinguish named destructuring (x: a, y: b) = tup  vs  positional (a, b) = tup
+    // Peek inside to detect "IDENT COLON IDENT" pattern
+    const isNamed = this.peek(1).type === 'IDENT' && this.peek(2).type === 'COLON';
+    this.adv(); // (
+    if (isNamed) {
+      const targets = [];
+      while (!this.check('RPAREN') && !this.check('EOF')) {
+        const field = this.eat('IDENT').value;
+        this.eat('COLON');
+        const name  = this.eat('IDENT').value;
+        targets.push({ field, name });
+        this.match('COMMA');
+      }
+      this.eat('RPAREN');
+      this.eat('ASSIGN');
+      return { type: 'NamedDestruct', targets, value: this.parseExpr() };
+    } else {
+      const targets = [];
+      while (!this.check('RPAREN') && !this.check('EOF')) {
+        if (this.check('TIMES')) {
+          this.adv();
+          targets.push({ name: this.eat('IDENT').value, rest: true });
+        } else {
+          targets.push({ name: this.eat('IDENT').value, rest: false });
+        }
+        this.match('COMMA');
+      }
+      this.eat('RPAREN');
+      this.eat('ASSIGN');
+      return { type: 'TupleDestruct', targets, value: this.parseExpr() };
+    }
   }
 
   parseIf() {
@@ -462,7 +570,55 @@ export class Parser {
   }
 
   // ─── Expression grammar ──────────────────────────────────────────────────
-  parseExpr()           { return this.parseOr(); }
+  parseExpr() {
+    if (this.isLambdaStart()) return this.parseLambda();
+    return this.parsePipe();
+  }
+
+  isLambdaStart() {
+    // x -> ...
+    if (this.peek(0).type === 'IDENT' && this.peek(1).type === 'ARROW') return true;
+    // (a, b) -> ...  — scan past LPAREN...RPAREN then check for ARROW
+    if (this.peek(0).type !== 'LPAREN') return false;
+    let i = 1, depth = 1;
+    while (depth > 0 && this.pos + i < this.toks.length) {
+      const t = this.toks[this.pos + i++];
+      if (t.type === 'LPAREN') depth++;
+      else if (t.type === 'RPAREN') depth--;
+    }
+    return this.peek(i).type === 'ARROW';
+  }
+
+  parseLambda() {
+    const params = [];
+    if (this.check('LPAREN')) {
+      this.adv();
+      while (!this.check('RPAREN') && !this.check('EOF')) {
+        params.push(this.eat('IDENT').value);
+        this.match('COMMA');
+      }
+      this.eat('RPAREN');
+    } else {
+      params.push(this.adv().value); // single param without parens
+    }
+    this.eat('ARROW');
+    const body = this.check('LBRACE')
+      ? { type: 'block', stmts: this.parseBlock() }
+      : { type: 'expr',  value: this.parseExpr() };
+    return { type: 'Lambda', params, body };
+  }
+
+  parsePipe() {
+    let left = this.parseOr();
+    while (this.match('PIPE')) {
+      // rhs is a full expression: fn(_), lambda(_), or bare fn reference.
+      // _ is bound to the left value at eval time via a child env.
+      const rhs = this.parseOr();
+      left = { type: 'Pipe', value: left, rhs };
+    }
+    return left;
+  }
+
   parseOr()             { return this.parseBinLeft(['OR'],  () => this.parseAnd()); }
   parseAnd()            { return this.parseBinLeft(['AND'], () => this.parseComparison()); }
   parseComparison() {
@@ -503,7 +659,7 @@ export class Parser {
   parsePostfixRest(left) {
     const COL_TOKENS = new Set(['DLEN','DAPPEND','DREMOVEALL','DREMOVE',
       'DFINDALL','DCONTAINS','DUPDATE','DSORTASC','DSORTDESC','DSORT',
-      'DMAP','DFILTER','DREDUCE','DSLICE']);
+      'DMAP','DFILTER','DREDUCE','DSLICE','DERROR','DERRORPROP']);
 
     while (true) {
       if (this.check('LBRACKET')) {
@@ -512,11 +668,23 @@ export class Parser {
         this.eat('RBRACKET');
         left = { type: 'Subscript', obj: left, index: idx };
 
+      } else if (this.check('DOT')) {
+        this.adv();
+        const field = this.eat('IDENT').value;
+        left = { type: 'FieldAccess', obj: left, field };
+
       } else if (this.check('LPAREN') && left.type === 'Ident') {
         this.adv();
         const args = this.parseArgList();
         this.eat('RPAREN');
         left = { type: 'Call', callee: left.name, args };
+
+      } else if (this.check('LPAREN') && left.type !== 'Ident') {
+        // Chained call: expr(args) — e.g. make_adder(5)(3), (lambda)(args)
+        this.adv();
+        const args = this.parseArgList();
+        this.eat('RPAREN');
+        left = { type: 'CallExpr', callee: left, args };
 
       } else if (COL_TOKENS.has(this.peek().type)) {
         left = this.parseCollectionOp(left);
@@ -589,6 +757,12 @@ export class Parser {
           const to   = this.parseExpr(); this.eat('RBRACKET');
           return { type: 'CollectionOp', op: '$[i..j]', obj: left, range: { from, to } }; }
 
+      case 'DERROR':     // expr$!  — check if expression errored
+        return { type: 'CollectionOp', op: '$!', obj: left };
+
+      case 'DERRORPROP': // expr$!! — propagate error
+        return { type: 'CollectionOp', op: '$!!', obj: left };
+
       default:
         return left;
     }
@@ -612,6 +786,7 @@ export class Parser {
     if (t.type === 'CHAR')  { this.adv(); return { type: 'Literal', kind: 'char',  value: t.value }; }
     if (t.type === 'STR')   { this.adv(); return { type: 'Literal', kind: 'str',   value: t.value }; }
     if (t.type === 'IDENT') { this.adv(); return { type: 'Ident',   name: t.value }; }
+    if (t.type === 'ELSE')  { this.adv(); return { type: 'Ident',   name: '_'      }; }
     if (t.type === 'MATCH') { return this.parseMatchExpr(); }
 
     // Array: [1, 2, 3]
@@ -671,16 +846,36 @@ export class Parser {
 // ─── Environment ──────────────────────────────────────────────────────────────
 
 class Env {
-  constructor(parent = null) {
-    this.vars   = new Map();
-    this.consts = new Set();
-    this.parent = parent;
+  // funcBoundary=true: this env is isolated (traditional function call).
+  // - get() walks parent chain only for func-type values (enables fn-to-fn calls).
+  // - set() never propagates to parent (variables stay local).
+  constructor(parent = null, funcBoundary = false) {
+    this.vars        = new Map();
+    this.consts      = new Set();
+    this.parent      = parent;
+    this.funcBoundary = funcBoundary;
   }
 
   get(name) {
     if (this.vars.has(name)) return this.vars.get(name);
-    if (this.parent) return this.parent.get(name);
-    throw new ZyError(`Undefined variable '${name}'`);
+    if (!this.parent) throw new ZyError(`Undefined variable '${name}'`);
+    if (this.funcBoundary) {
+      // Only allow reading function definitions across the boundary
+      const v = this.parent._getFuncOnly(name);
+      if (v !== undefined) return v;
+      throw new ZyError(`Undefined variable '${name}'`);
+    }
+    return this.parent.get(name);
+  }
+
+  // Walk upward returning only func-type values (used by funcBoundary get)
+  _getFuncOnly(name) {
+    if (this.vars.has(name)) {
+      const v = this.vars.get(name);
+      return v.type === 'func' ? v : undefined;
+    }
+    if (this.parent) return this.parent._getFuncOnly(name);
+    return undefined;
   }
 
   set(name, value) {
@@ -689,6 +884,8 @@ class Env {
       this.vars.set(name, value);
       return true;
     }
+    // funcBoundary: never propagate assignments to outer scope
+    if (this.funcBoundary) return false;
     if (this.parent && this.parent.set(name, value)) return true;
     return false; // not found
   }
@@ -847,6 +1044,79 @@ export class Interpreter {
         arr.v[idx < 0 ? arr.v.length + idx : idx] = await this.eval(stmt.value, env);
         return;
       }
+
+      case 'ArrayDestruct': {
+        const arr = await this.eval(stmt.value, env);
+        if (arr.type !== 'arr') throw new ZyError('Array destructuring requires an array');
+        let i = 0;
+        for (const t of stmt.targets) {
+          if (t.rest) {
+            const val = mkArr(arr.v.slice(i));
+            if (!env.set(t.name, val)) env.def(t.name, val);
+          } else if (t.name === '_') {
+            i++;
+          } else {
+            const val = arr.v[i] ?? mkUnit();
+            if (!env.set(t.name, val)) env.def(t.name, val);
+            i++;
+          }
+        }
+        return;
+      }
+
+      case 'TupleDestruct': {
+        const tup = await this.eval(stmt.value, env);
+        if (tup.type !== 'tuple' && tup.type !== 'arr')
+          throw new ZyError('Tuple destructuring requires a tuple or array');
+        const items = tup.v;
+        let i = 0;
+        for (const t of stmt.targets) {
+          if (t.rest) {
+            const val = mkArr(items.slice(i));
+            if (!env.set(t.name, val)) env.def(t.name, val);
+          } else {
+            const val = items[i] ?? mkUnit();
+            if (!env.set(t.name, val)) env.def(t.name, val);
+            i++;
+          }
+        }
+        return;
+      }
+
+      case 'NamedDestruct': {
+        const tup = await this.eval(stmt.value, env);
+        if (tup.type !== 'tuple' || !tup.keys)
+          throw new ZyError('Named destructuring requires a named tuple');
+        for (const { field, name } of stmt.targets) {
+          const i = tup.keys.indexOf(field);
+          if (i < 0) throw new ZyError(`Unknown field '${field}'`);
+          const val = tup.v[i];
+          if (!env.set(name, val)) env.def(name, val);
+        }
+        return;
+      }
+
+      case 'TryCatch': {
+        let result;
+        try {
+          result = await this.execBlock(stmt.tryBody, new Env(env));
+        } catch (err) {
+          const errType = err.errType ?? '##_';
+          const matched = stmt.catches.find(
+            c => !c.errType || c.errType === errType || c.errType === '##_'
+          );
+          if (matched) {
+            const catchEnv = new Env(env);
+            catchEnv.def('_err', mkStr(err.message ?? String(err)));
+            result = await this.execBlock(matched.body, catchEnv);
+          } else {
+            throw err; // no matching catch — re-throw
+          }
+        } finally {
+          if (stmt.finallyBody) await this.execBlock(stmt.finallyBody, new Env(env));
+        }
+        return result;
+      }
     }
   }
 
@@ -978,12 +1248,21 @@ export class Interpreter {
         return await this.callFunc(fn, args);
       }
 
+      case 'CallExpr': {
+        // Chained / higher-order call: expr(args)
+        const fn = await this.eval(expr.callee, env);
+        if (!fn || fn.type !== 'func')
+          throw new ZyError(`Expression is not a function`);
+        const args = await Promise.all(expr.args.map(a => this.eval(a, env)));
+        return await this.callFunc(fn, args);
+      }
+
       case 'Subscript': {
         const obj = await this.eval(expr.obj, env);
         const idx = (await this.eval(expr.index, env)).v;
         if (obj.type === 'arr') {
           const i = idx < 0 ? obj.v.length + idx : idx;
-          if (i < 0 || i >= obj.v.length) throw new ZyError(`Index out of bounds: ${idx}`);
+          if (i < 0 || i >= obj.v.length) throw new ZyRuntimeError(`Index out of bounds: ${idx}`, '##Index');
           return obj.v[i];
         }
         if (obj.type === 'str') {
@@ -996,6 +1275,37 @@ export class Interpreter {
           return obj.v[i] ?? mkUnit();
         }
         throw new ZyError(`Cannot subscript ${obj.type}`);
+      }
+
+      case 'Lambda': {
+        return {
+          type: 'func', name: '<lambda>',
+          params: expr.params.map(p => ({ name: p })),
+          body: expr.body.type === 'block'
+            ? expr.body.stmts
+            : [{ type: 'Return', value: expr.body.value }],
+          closureEnv: env,
+        };
+      }
+
+      case 'Pipe': {
+        const val = await this.eval(expr.value, env);
+        // Bind _ = val in a child env so rhs can reference it as a placeholder.
+        const pipeEnv = new Env(env);
+        pipeEnv.def('_', val);
+        const result = await this.eval(expr.rhs, pipeEnv);
+        // Bare function reference (no call): call it with val directly.
+        if (result && result.type === 'func') return await this.callFunc(result, [val]);
+        return result;
+      }
+
+      case 'FieldAccess': {
+        const obj = await this.eval(expr.obj, env);
+        if (obj.type !== 'tuple' || !obj.keys)
+          throw new ZyError(`'.${expr.field}' requires a named tuple`);
+        const i = obj.keys.indexOf(expr.field);
+        if (i < 0) throw new ZyError(`Unknown field '${expr.field}'`);
+        return obj.v[i];
       }
 
       case 'CollectionOp': {
@@ -1184,6 +1494,16 @@ export class Interpreter {
         for (const el of colItems()) acc = await this.callFunc(fn,[acc,el]);
         return acc;
       }
+      case '$!': {
+        // Returns #1 if the value is an error type, #0 otherwise
+        return mkBool(col.type === 'error');
+      }
+      case '$!!': {
+        // Propagates error: if the value is an error type, re-throw it; otherwise pass through
+        if (col.type === 'error')
+          throw new ZyRuntimeError(col.v ?? 'error', col.errType ?? '##_');
+        return col;
+      }
     }
     throw new ZyError(`Unknown collection operator: ${expr.op}`);
   }
@@ -1210,9 +1530,12 @@ export class Interpreter {
   }
 
   async callFunc(fn, args) {
-    // Parent = global env so functions can call each other and recurse,
-    // but cannot access local variables of the caller (Zymbol isolation rule).
-    const funcEnv = new Env(this.globalEnv);
+    // Lambdas (closures): parent = closureEnv, no boundary (they capture their scope).
+    // Named functions: parent = globalEnv with funcBoundary=true — only func lookups
+    //   pass the boundary, variable reads/writes stay local (Zymbol isolation rule).
+    const isClosure = fn.closureEnv != null;
+    const parent    = isClosure ? fn.closureEnv : this.globalEnv;
+    const funcEnv   = new Env(parent, !isClosure);
     for (let i = 0; i < fn.params.length; i++)
       funcEnv.def(fn.params[i].name, args[i] ?? mkUnit());
     const sig = await this.execBlock(fn.body, funcEnv);
@@ -1239,6 +1562,10 @@ export class Interpreter {
   }
 
   applyOp(op, l, r) {
+    // String concatenation: str + anything → str
+    if (op === '+' && (l.type === 'str' || r.type === 'str')) {
+      return mkStr(this.display(l) + this.display(r));
+    }
     const isFloat = l.type === 'float' || r.type === 'float';
     const mk = isFloat ? mkFloat : mkInt;
     const lv = l.v, rv = r.v;
@@ -1246,9 +1573,9 @@ export class Interpreter {
       case '+':  return mk(lv + rv);
       case '-':  return mk(lv - rv);
       case '*':  return mk(lv * rv);
-      case '/':  if (rv === 0) throw new ZyError('Division by zero');
+      case '/':  if (rv === 0) throw new ZyRuntimeError('Division by zero', '##Div');
                  return isFloat ? mkFloat(lv / rv) : mkInt(Math.trunc(lv / rv));
-      case '%':  if (rv === 0) throw new ZyError('Modulo by zero');
+      case '%':  if (rv === 0) throw new ZyRuntimeError('Modulo by zero', '##Div');
                  return mk(lv % rv);
       case '^':  return mk(Math.pow(lv, rv));
       case '==': return mkBool(this.equals(l, r));
@@ -1284,7 +1611,8 @@ export class Interpreter {
     if (val.type === 'int')   return String(val.v);
     if (val.type === 'float') {
       const s = String(val.v);
-      return s.includes('.') || s.includes('e') ? s : s + '.0';
+      // Match Rust display: whole floats show without .0 (e.g. 7, not 7.0)
+      return s;
     }
     if (val.type === 'str')  return val.v;
     if (val.type === 'char') return val.v;
