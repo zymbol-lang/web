@@ -102,11 +102,11 @@
       </table>
     </div>
 
-    <div style="padding:0.85rem 1.1rem; background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); font-family:var(--mono); font-size:0.78rem; color:var(--mid); line-height:1.9;">
-      <span style="color:var(--dim)"># Install from the .vsix file:</span><br>
-      <span style="color:var(--green)">code</span> --install-extension zymbol-lang-0.1.0.vsix<br>
+    <div class="code-block">
+      <span class="cmt"># Install from the .vsix file:</span><br>
+      <span class="kw">code</span> --install-extension zymbol-lang-0.1.0.vsix<br>
       <br>
-      <span style="color:var(--dim)"># Or in VS Code: Extensions (Ctrl+Shift+X) → ··· → Install from VSIX…</span>
+      <span class="cmt"># Or in VS Code: Extensions (Ctrl+Shift+X) → ··· → Install from VSIX…</span>
     </div>
   </div>
 </div>
@@ -161,17 +161,17 @@
       </table>
     </div>
 
-    <div style="margin-top:1rem; padding:0.85rem 1.1rem; background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); font-family:var(--mono); font-size:0.78rem; color:var(--mid); line-height:1.9;">
-      <span style="color:var(--dim)"># Make it executable and run</span><br>
-      <span style="color:var(--green)">chmod</span> +x zymbol_lang_v0.0.2_aarch64_macos<br>
+    <div class="code-block" style="margin-top:1rem">
+      <span class="cmt"># Make it executable and run</span><br>
+      <span class="kw">chmod</span> +x zymbol_lang_v0.0.2_aarch64_macos<br>
       ./zymbol_lang_v0.0.2_aarch64_macos run hello.zy<br>
       <br>
-      <span style="color:var(--dim)"># (Optional) Install system-wide</span><br>
-      <span style="color:var(--green)">sudo install</span> -m755 zymbol_lang_v0.0.2_aarch64_macos /usr/local/bin/zymbol
+      <span class="cmt"># (Optional) Install system-wide</span><br>
+      <span class="kw">sudo install</span> -m755 zymbol_lang_v0.0.2_aarch64_macos /usr/local/bin/zymbol
     </div>
 
-    <div style="margin-top:0.75rem; padding:0.75rem 1rem; background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); font-size:0.78rem; color:var(--mid);">
-      <strong style="color:var(--hi)">First launch warning:</strong> macOS may show "unidentified developer". Right-click → Open → Open to bypass. Code signing coming soon.
+    <div class="info-block" style="margin-top:0.75rem">
+      <strong>First launch warning:</strong> macOS may show "unidentified developer". Right-click → Open → Open to bypass. Code signing coming soon.
     </div>
   </div>
 </div>
@@ -291,24 +291,24 @@
     </div>
 
     <!-- Verify instructions -->
-    <div style="margin-top:1rem; padding:0.85rem 1.1rem; background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); font-family:var(--mono); font-size:0.78rem; color:var(--mid); line-height:1.7;">
-      <span style="color:var(--dim)"># Download SHA256SUMS into the same folder as the package, then:</span><br>
-      <span style="color:var(--green)">sha256sum</span> --ignore-missing -c SHA256SUMS
+    <div class="code-block" style="margin-top:1rem">
+      <span class="cmt"># Download SHA256SUMS into the same folder as the package, then:</span><br>
+      <span class="kw">sha256sum</span> --ignore-missing -c SHA256SUMS
     </div>
 
     <!-- Static binary usage -->
     <div style="margin-top:1.25rem;">
       <h2 style="margin-bottom:0.4rem">Using the static binary (x86_64)</h2>
       <p class="section-sub" style="margin-bottom:0.75rem">No installation needed — download, make executable, run.</p>
-      <div style="padding:0.85rem 1.1rem; background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); font-family:var(--mono); font-size:0.78rem; color:var(--mid); line-height:1.9;">
-        <span style="color:var(--dim)"># Make it executable</span><br>
-        <span style="color:var(--green)">chmod</span> +x zymbol_lang_v0.0.2_x86_64_linux<br>
+      <div class="code-block">
+        <span class="cmt"># Make it executable</span><br>
+        <span class="kw">chmod</span> +x zymbol_lang_v0.0.2_x86_64_linux<br>
         <br>
-        <span style="color:var(--dim)"># Run a file</span><br>
+        <span class="cmt"># Run a file</span><br>
         ./zymbol_lang_v0.0.2_x86_64_linux run hello.zy<br>
         <br>
-        <span style="color:var(--dim)"># (Optional) Install system-wide</span><br>
-        <span style="color:var(--green)">sudo install</span> -m755 zymbol_lang_v0.0.2_x86_64_linux /usr/local/bin/zymbol
+        <span class="cmt"># (Optional) Install system-wide</span><br>
+        <span class="kw">sudo install</span> -m755 zymbol_lang_v0.0.2_x86_64_linux /usr/local/bin/zymbol
       </div>
     </div>
   </div>

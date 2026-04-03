@@ -1367,6 +1367,38 @@
 
     .source-step pre .cmt { color: var(--mid); }
 
+    /* Inline code/command blocks */
+    .code-block {
+      padding: 0.85rem 1.1rem;
+      background: var(--bg3);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--mid);
+      line-height: 1.9;
+      overflow-x: auto;
+    }
+
+    .code-block .cmt { color: var(--dim); }
+    .code-block .kw  { color: var(--green); }
+
+    .info-block {
+      padding: 0.75rem 1rem;
+      background: var(--bg3);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      font-size: 0.78rem;
+      color: var(--mid);
+    }
+
+    .info-block strong { color: var(--hi); }
+
+    @media (max-width: 768px) {
+      .code-block { font-size: 0.72rem; padding: 0.65rem 0.85rem; overflow-x: auto; }
+      .info-block  { font-size: 0.75rem; }
+    }
+
     /* Coming soon card */
     .coming-soon-card {
       display: flex;
@@ -1411,8 +1443,57 @@
       color: var(--dim);
     }
 
-    @media (max-width: 640px) {
-      .install-hero { padding: 4rem 1rem 2rem; }
-      .dl-table th, .dl-table td { padding: 0.5rem 0.65rem; }
+    @media (max-width: 768px) {
+      /* Section containers */
+      .install-section .container { padding: 0 1rem; }
+      .install-section { padding: 2rem 0; }
+
+      /* Hero */
+      .install-hero { padding: 4.5rem 1rem 2rem; }
+      .install-hero h1 { font-size: clamp(1.6rem, 6vw, 2.2rem); }
+      .install-hero p { font-size: 0.88rem; }
+      .install-hero .hero-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .install-hero .hero-actions .btn-primary,
+      .install-hero .hero-actions .btn-ghost {
+        text-align: center;
+        justify-content: center;
+      }
+
+      /* Download table: allow wrapping, scroll as fallback */
+      .dl-table th { font-size: 0.68rem; padding: 0.45rem 0.6rem; }
+      .dl-table td { padding: 0.5rem 0.6rem; white-space: normal; }
+      .dl-link {
+        white-space: normal;
+        word-break: break-all;
+        font-size: 0.7rem;
+        padding: 0.3rem 0.5rem;
+        line-height: 1.4;
+      }
+      .dl-arch-badge { font-size: 0.68rem; }
+      .dl-table td:nth-child(1) { min-width: 5rem; }
+
+      /* Hash cell: stack vertically */
       .dl-hash-cell { flex-direction: column; align-items: flex-start; gap: 0.2rem; }
+      .dl-hash-val { font-size: 0.68rem; }
+
+      /* Coming soon card: stack icon + content */
+      .coming-soon-card { flex-direction: column; gap: 0.75rem; padding: 1rem; align-items: flex-start; }
+      .cs-icon { font-size: 1.5rem; }
+
+      /* Source steps */
+      .source-step { flex-direction: column; gap: 0.5rem; }
+      .step-num { align-self: flex-start; }
+      .source-step pre { font-size: 0.72rem; padding: 0.65rem 0.85rem; }
+    }
+
+    @media (max-width: 480px) {
+      /* On very small screens hide the SHA256 column header text, keep the cell */
+      .dl-table th:last-child { font-size: 0; letter-spacing: 0; }
+      .dl-table th:last-child::after { content: "SHA"; font-size: 0.65rem; letter-spacing: 0; }
+
+      /* Tighten hero actions to full-width pills */
+      .install-hero .hero-actions { gap: 0.5rem; }
     }
