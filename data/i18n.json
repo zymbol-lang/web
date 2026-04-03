@@ -874,7 +874,9 @@
       "subregion": "slavic",
       "nav_try_online": "Спробуй Online",
       "april_sub": "Ми перейменували всі оператори на емодзі. Жарт. Можливо. 😈",
-      "april_welcome": "Ласкаво просимо Zymbol-Lang"
+      "april_welcome": "Ласкаво просимо Zymbol-Lang",
+      "alpha_msg": "Zymbol активно розробляється — цей реліз перевіряє концепцію дизайну мови. API, синтаксис і функції можуть змінюватися.",
+      "alpha_link": "Стежити за прогресом на GitHub →"
     },
     "bulgarian": {
       "rtl": false,
@@ -958,7 +960,9 @@
       "subregion": "slavic",
       "nav_try_online": "Изпробвай Online",
       "april_sub": "Преименувахме всички оператори с емоджи. Шега. Може би. 😈",
-      "april_welcome": "Добре дошли Zymbol-Lang"
+      "april_welcome": "Добре дошли Zymbol-Lang",
+      "alpha_msg": "Zymbol е в активна разработка — това издание валидира концепцията на езиковия дизайн. API, синтаксис и функции могат да се променят.",
+      "alpha_link": "Следете напредъка в GitHub →"
     },
     "croatian": {
       "rtl": false,
@@ -1042,7 +1046,9 @@
       "subregion": "slavic",
       "nav_try_online": "Isprobajte Online",
       "april_sub": "Preimenovali smo sve operatore u emoji. Šala. Možda. 😈",
-      "april_welcome": "Dobrodošli Zymbol-Lang"
+      "april_welcome": "Dobrodošli Zymbol-Lang",
+      "alpha_msg": "Zymbol je u aktivnom razvoju — ovo izdanje potvrđuje konceptualni dizajn jezika. API-ji, sintaksa i funkcije mogu se promijeniti.",
+      "alpha_link": "Pratite napredak na GitHubu →"
     },
     "czech": {
       "rtl": false,
@@ -1126,7 +1132,9 @@
       "subregion": "slavic",
       "nav_try_online": "Vyzkoušet Online",
       "april_sub": "Přejmenovali jsme všechny operátory na emoji. Vtip. Možná. 😈",
-      "april_welcome": "Vítejte Zymbol-Lang"
+      "april_welcome": "Vítejte Zymbol-Lang",
+      "alpha_msg": "Zymbol je v aktivním vývoji — toto vydání ověřuje konceptuální návrh jazyka. API, syntaxe a funkce se mohou měnit.",
+      "alpha_link": "Sledovat vývoj na GitHubu →"
     },
     "slovak": {
       "rtl": false,
@@ -1210,7 +1218,9 @@
       "subregion": "slavic",
       "nav_try_online": "Vyskúšať Online",
       "april_sub": "Premenovali sme všetky operátory na emoji. Vtip. Možno. 😈",
-      "april_welcome": "Vitajte Zymbol-Lang"
+      "april_welcome": "Vitajte Zymbol-Lang",
+      "alpha_msg": "Zymbol je v aktívnom vývoji — toto vydanie overuje konceptuálny návrh jazyka. API, syntax a funkcie sa môžu meniť.",
+      "alpha_link": "Sledovať pokrok na GitHube →"
     },
     "romanian": {
       "rtl": false,
@@ -1294,7 +1304,9 @@
       "subregion": "romance",
       "nav_try_online": "Încearcă Online",
       "april_sub": "Am redenumit toți operatorii cu emoji. Glumă. Poate. 😈",
-      "april_welcome": "Bun venit Zymbol-Lang"
+      "april_welcome": "Bun venit Zymbol-Lang",
+      "alpha_msg": "Zymbol este în dezvoltare activă — această versiune validează conceptul de design al limbajului. API-urile, sintaxa și funcțiile se pot schimba.",
+      "alpha_link": "Urmărește progresul pe GitHub →"
     },
     "hungarian": {
       "rtl": false,
@@ -1378,7 +1390,9 @@
       "subregion": "finno_ugric",
       "nav_try_online": "Próbáld ki Online",
       "april_sub": "Átneveztük az összes operátort emojira. Vicc. Talán. 😈",
-      "april_welcome": "Üdvözöljük Zymbol-Lang"
+      "april_welcome": "Üdvözöljük Zymbol-Lang",
+      "alpha_msg": "A Zymbol aktív fejlesztés alatt áll — ez a kiadás a nyelv tervezési koncepcióját ellenőrzi. Az API-k, a szintaxis és a funkciók változhatnak.",
+      "alpha_link": "Kövesd a fejlesztést a GitHubon →"
     },
     "finnish": {
       "rtl": false,
@@ -1462,7 +1476,9 @@
       "subregion": "finno_ugric",
       "nav_try_online": "Kokeile Verkossa",
       "april_sub": "Nimesimme kaikki operaattorit emojeiksi. Vitsi. Ehkä. 😈",
-      "april_welcome": "Tervetuloa Zymbol-Lang"
+      "april_welcome": "Tervetuloa Zymbol-Lang",
+      "alpha_msg": "Zymbol on aktiivisessa kehityksessä — tämä julkaisu on kielen suunnittelukonseptin validointi. API:t, syntaksi ja ominaisuudet voivat muuttua.",
+      "alpha_link": "Seuraa edistymistä GitHubissa →"
     },
     "estonian": {
       "rtl": false,
@@ -1546,7 +1562,9 @@
       "subregion": "finno_ugric",
       "nav_try_online": "Proovi Võrgus",
       "april_sub": "Nimetasime kõik operaatorid emojideks ümber. Nali. Võib-olla. 😈",
-      "april_welcome": "Tere tulemast Zymbol-Lang"
+      "april_welcome": "Tere tulemast Zymbol-Lang",
+      "alpha_msg": "Zymbol on aktiivses arenduses — see väljaanne kinnitab keele disainikontseptsiooni. API-d, süntaks ja funktsioonid võivad muutuda.",
+      "alpha_link": "Jälgi edusamme GitHubis →"
     },
     "latvian": {
       "rtl": false,
@@ -1630,7 +1648,9 @@
       "subregion": "baltic",
       "nav_try_online": "Izmēģini Tiešsaistē",
       "april_sub": "Mēs pārdēvējām visus operatorus par emodzijiem. Joks. Varbūt. 😈",
-      "april_welcome": "Laipni lūdzam Zymbol-Lang"
+      "april_welcome": "Laipni lūdzam Zymbol-Lang",
+      "alpha_msg": "Zymbol ir aktīvā izstrādē — šis laidiens apstiprina valodas dizaina koncepciju. API, sintakse un funkcijas var mainīties.",
+      "alpha_link": "Sekojiet progresam GitHub →"
     },
     "lithuanian": {
       "rtl": false,
@@ -1714,7 +1734,9 @@
       "subregion": "baltic",
       "nav_try_online": "Išbandyti Internete",
       "april_sub": "Pervardijome visus operatorius emojiais. Juokas. Gal. 😈",
-      "april_welcome": "Sveiki atvykę Zymbol-Lang"
+      "april_welcome": "Sveiki atvykę Zymbol-Lang",
+      "alpha_msg": "Zymbol yra aktyviai kuriamas — šis leidimas patvirtina kalbos dizaino koncepciją. API, sintaksė ir funkcijos gali keistis.",
+      "alpha_link": "Sekite pažangą GitHub →"
     },
     "norwegian": {
       "rtl": false,
@@ -1798,7 +1820,9 @@
       "subregion": "germanic",
       "nav_try_online": "Prøv Online",
       "april_sub": "Vi byttet alle operatorer til emojis. Bare tull. Kanskje. 😈",
-      "april_welcome": "Velkommen Zymbol-Lang"
+      "april_welcome": "Velkommen Zymbol-Lang",
+      "alpha_msg": "Zymbol er under aktiv utvikling — denne utgivelsen validerer konseptet for språkdesignet. API-er, syntaks og funksjoner kan endres.",
+      "alpha_link": "Følg fremgangen på GitHub →"
     },
     "danish": {
       "rtl": false,
@@ -1882,7 +1906,9 @@
       "subregion": "germanic",
       "nav_try_online": "Prøv Online",
       "april_sub": "Vi omdøbte alle operatorer til emojis. Sjov. Måske. 😈",
-      "april_welcome": "Velkommen Zymbol-Lang"
+      "april_welcome": "Velkommen Zymbol-Lang",
+      "alpha_msg": "Zymbol er under aktiv udvikling — denne udgivelse validerer sprogets designkoncept. API'er, syntaks og funktioner kan ændre sig.",
+      "alpha_link": "Følg fremgangen på GitHub →"
     },
     "swedish": {
       "rtl": false,
@@ -1966,7 +1992,9 @@
       "subregion": "germanic",
       "nav_try_online": "Prova Online",
       "april_sub": "Vi döpte om alla operatorer till emojis. Skämt. Kanske. 😈",
-      "april_welcome": "Välkommen Zymbol-Lang"
+      "april_welcome": "Välkommen Zymbol-Lang",
+      "alpha_msg": "Zymbol är under aktiv utveckling — denna utgåva validerar konceptet för språkdesignen. API:er, syntax och funktioner kan ändras.",
+      "alpha_link": "Följ framstegen på GitHub →"
     },
     "icelandic": {
       "rtl": false,
@@ -2050,7 +2078,9 @@
       "subregion": "germanic",
       "nav_try_online": "Prófaðu Online",
       "april_sub": "Við endurnefndum alla virkja í emojis. Brandarinn. Kannski. 😈",
-      "april_welcome": "Velkomin Zymbol-Lang"
+      "april_welcome": "Velkomin Zymbol-Lang",
+      "alpha_msg": "Zymbol er í virkri þróun — þessi útgáfa staðfestir hugmyndina að málhönnuninni. API, setningafræði og eiginleikar geta breyst.",
+      "alpha_link": "Fylgstu með framgangi á GitHub →"
     },
     "greek": {
       "rtl": false,
@@ -2134,7 +2164,9 @@
       "subregion": "other_europe",
       "nav_try_online": "Δοκιμάστε Online",
       "april_sub": "Μετονομάσαμε όλους τους τελεστές σε emoji. Αστείο. Ίσως. 😈",
-      "april_welcome": "Καλώς ήρθατε Zymbol-Lang"
+      "april_welcome": "Καλώς ήρθατε Zymbol-Lang",
+      "alpha_msg": "Το Zymbol βρίσκεται σε ενεργή ανάπτυξη — αυτή η έκδοση επικυρώνει την έννοια του σχεδιασμού της γλώσσας. Τα API, η σύνταξη και οι λειτουργίες ενδέχεται να αλλάξουν.",
+      "alpha_link": "Παρακολουθήστε την πρόοδο στο GitHub →"
     },
     "serbian": {
       "rtl": false,
@@ -2218,7 +2250,9 @@
       "subregion": "slavic",
       "nav_try_online": "Испробај Online",
       "april_sub": "Преименовали смо све операторе у емоџије. Шала. Можда. 😈",
-      "april_welcome": "Добродошли Zymbol-Lang"
+      "april_welcome": "Добродошли Zymbol-Lang",
+      "alpha_msg": "Zymbol је у активном развоју — ово издање потврђује концепт дизајна језика. API-ји, синтакса и функције могу се мењати.",
+      "alpha_link": "Пратите напредак на GitHub-у →"
     },
     "arabic": {
       "rtl": true,
@@ -2393,7 +2427,9 @@
       "subregion": "semitic",
       "nav_try_online": "נסה מקוון",
       "april_sub": "שינינו את כל האופרטורים לאמוג'י. בדיחה. אולי. 😈",
-      "april_welcome": "ברוכים הבאים Zymbol-Lang"
+      "april_welcome": "ברוכים הבאים Zymbol-Lang",
+      "alpha_msg": "Zymbol נמצא בפיתוח פעיל — גרסה זו מאמתת את הרעיון של עיצוב השפה. ממשקי API, תחביר ותכונות עשויים להשתנות.",
+      "alpha_link": "עקוב אחר ההתקדמות ב-GitHub →"
     },
     "persian": {
       "rtl": true,
@@ -2477,7 +2513,9 @@
       "subregion": "iranian",
       "nav_try_online": "آنلاین امتحان کن",
       "april_sub": "همه عملگرها را به ایموجی تبدیل کردیم. شوخی بود. شاید. 😈",
-      "april_welcome": "خوش آمدید Zymbol-Lang"
+      "april_welcome": "خوش آمدید Zymbol-Lang",
+      "alpha_msg": "Zymbol در حال توسعه فعال است — این نسخه، مفهوم طراحی زبان را اعتبارسنجی می‌کند. API‌ها، نحو و ویژگی‌ها ممکن است تغییر کنند.",
+      "alpha_link": "پیشرفت را در GitHub دنبال کنید →"
     },
     "urdu": {
       "rtl": true,
@@ -2561,7 +2599,9 @@
       "subregion": "south_asian_mid",
       "nav_try_online": "آن لائن آزمائیں",
       "april_sub": "ہم نے سارے آپریٹرز کو ایموجی سے بدل دیا۔ مذاق ہے۔ شاید۔ 😈",
-      "april_welcome": "خوش آمدید Zymbol-Lang"
+      "april_welcome": "خوش آمدید Zymbol-Lang",
+      "alpha_msg": "Zymbol فعال ترقی میں ہے — یہ ریلیز زبان کے ڈیزائن کے تصور کی توثیق ہے۔ API، نحو اور خصوصیات تبدیل ہو سکتے ہیں۔",
+      "alpha_link": "GitHub پر پیشرفت فالو کریں →"
     },
     "hindi": {
       "rtl": false,
@@ -2731,7 +2771,9 @@
       "subregion": "indo_aryan",
       "nav_try_online": "অনলাইনে চেষ্টা করুন",
       "april_sub": "আমরা সব অপারেটর ইমোজি দিয়ে বদলেছি। মজা করছি। হয়তো। 😈",
-      "april_welcome": "স্বাগতম Zymbol-Lang"
+      "april_welcome": "স্বাগতম Zymbol-Lang",
+      "alpha_msg": "Zymbol সক্রিয় উন্নয়নে রয়েছে — এই রিলিজটি ভাষা ডিজাইনের ধারণার যাচাইকরণ। API, সিনট্যাক্স এবং ফিচার পরিবর্তন হতে পারে।",
+      "alpha_link": "GitHub-এ অগ্রগতি অনুসরণ করুন →"
     },
     "marathi": {
       "rtl": false,
@@ -2815,7 +2857,9 @@
       "subregion": "indo_aryan",
       "nav_try_online": "ऑनलाइन वापरून पहा",
       "april_sub": "आम्ही सर्व ऑपरेटर इमोजीने बदलले. विनोद होता. कदाचित. 😈",
-      "april_welcome": "स्वागत आहे Zymbol-Lang"
+      "april_welcome": "स्वागत आहे Zymbol-Lang",
+      "alpha_msg": "Zymbol सक्रिय विकासात आहे — हे रिलीज भाषेच्या डिझाइन संकल्पनेची पडताळणी आहे. API, सिंटॅक्स आणि वैशिष्ट्ये बदलू शकतात.",
+      "alpha_link": "GitHub वर प्रगती फॉलो करा →"
     },
     "punjabi": {
       "rtl": false,
@@ -2899,7 +2943,9 @@
       "subregion": "indo_aryan",
       "nav_try_online": "ਆਨਲਾਈਨ ਅਜ਼ਮਾਓ",
       "april_sub": "ਅਸੀਂ ਸਾਰੇ ਓਪਰੇਟਰਾਂ ਨੂੰ ਇਮੋਜੀ ਨਾਲ ਬਦਲ ਦਿੱਤਾ। ਮਜ਼ਾਕ ਸੀ। ਸ਼ਾਇਦ। 😈",
-      "april_welcome": "ਜੀ ਆਇਆਂ ਨੂੰ Zymbol-Lang"
+      "april_welcome": "ਜੀ ਆਇਆਂ ਨੂੰ Zymbol-Lang",
+      "alpha_msg": "Zymbol ਸਰਗਰਮ ਵਿਕਾਸ ਵਿੱਚ ਹੈ — ਇਹ ਰਿਲੀਜ਼ ਭਾਸ਼ਾ ਡਿਜ਼ਾਈਨ ਦੇ ਸੰਕਲਪ ਦੀ ਪ੍ਰਮਾਣਿਕਤਾ ਹੈ। API, ਸਿੰਟੈਕਸ ਅਤੇ ਵਿਸ਼ੇਸ਼ਤਾਵਾਂ ਬਦਲ ਸਕਦੀਆਂ ਹਨ।",
+      "alpha_link": "GitHub 'ਤੇ ਤਰੱਕੀ ਫੋਲੋ ਕਰੋ →"
     },
     "mandarin": {
       "rtl": false,
@@ -2983,7 +3029,9 @@
       "subregion": "east_asia",
       "nav_try_online": "在线试用",
       "april_sub": "我们把所有运算符换成了表情包。开玩笑的。也许。😈",
-      "april_welcome": "欢迎 Zymbol-Lang"
+      "april_welcome": "欢迎 Zymbol-Lang",
+      "alpha_msg": "Zymbol 正处于积极开发阶段 — 此版本是语言设计理念的概念验证。API、语法和功能可能会有所变化。",
+      "alpha_link": "在 GitHub 上关注进展 →"
     },
     "japanese": {
       "rtl": false,
@@ -3239,7 +3287,9 @@
       "subregion": "southeast_asia",
       "nav_try_online": "Coba Online",
       "april_sub": "Kami mengganti semua operator dengan emoji. Bercanda. Mungkin. 😈",
-      "april_welcome": "Selamat datang Zymbol-Lang"
+      "april_welcome": "Selamat datang Zymbol-Lang",
+      "alpha_msg": "Zymbol sedang dalam pengembangan aktif — rilis ini merupakan validasi konsep desain bahasa. API, sintaks, dan fitur dapat berubah.",
+      "alpha_link": "Ikuti perkembangan di GitHub →"
     },
     "vietnamese": {
       "rtl": false,
@@ -3323,7 +3373,9 @@
       "subregion": "southeast_asia",
       "nav_try_online": "Dùng Thử Online",
       "april_sub": "Chúng tôi đã đổi tất cả toán tử thành emoji. Đùa thôi. Có thể. 😈",
-      "april_welcome": "Chào mừng Zymbol-Lang"
+      "april_welcome": "Chào mừng Zymbol-Lang",
+      "alpha_msg": "Zymbol đang trong giai đoạn phát triển tích cực — bản phát hành này là sự xác nhận khái niệm thiết kế ngôn ngữ. API, cú pháp và tính năng có thể thay đổi.",
+      "alpha_link": "Theo dõi tiến trình trên GitHub →"
     },
     "thai": {
       "rtl": false,
@@ -3407,7 +3459,9 @@
       "subregion": "southeast_asia",
       "nav_try_online": "ทดลองออนไลน์",
       "april_sub": "เราเปลี่ยนตัวดำเนินการทั้งหมดเป็นอีโมจิ ไม่จริงหรอก บางที 😈",
-      "april_welcome": "ยินดีต้อนรับ Zymbol-Lang"
+      "april_welcome": "ยินดีต้อนรับ Zymbol-Lang",
+      "alpha_msg": "Zymbol อยู่ในการพัฒนาอย่างต่อเนื่อง — การเผยแพร่นี้คือการตรวจสอบแนวคิดการออกแบบภาษา API ไวยากรณ์ และฟีเจอร์อาจมีการเปลี่ยนแปลง",
+      "alpha_link": "ติดตามความคืบหน้าบน GitHub →"
     },
     "tagalog": {
       "rtl": false,
@@ -3491,7 +3545,9 @@
       "subregion": "southeast_asia",
       "nav_try_online": "Subukan Online",
       "april_sub": "Pinalitan namin ang lahat ng operator ng emoji. Biro lang. Siguro. 😈",
-      "april_welcome": "Maligayang pagdating Zymbol-Lang"
+      "april_welcome": "Maligayang pagdating Zymbol-Lang",
+      "alpha_msg": "Ang Zymbol ay nasa aktibong pagpapaunlad — ang release na ito ay pagpapatunay ng konsepto ng disenyo ng wika. Maaaring magbago ang mga API, syntax, at feature.",
+      "alpha_link": "Sundan ang progreso sa GitHub →"
     },
     "swahili": {
       "rtl": false,
@@ -3575,7 +3631,9 @@
       "subregion": "east_africa",
       "nav_try_online": "Jaribu Mtandaoni",
       "april_sub": "Tulibadilisha waendeshaji wote na emoji. Mzaha tu. Labda. 😈",
-      "april_welcome": "Karibu Zymbol-Lang"
+      "april_welcome": "Karibu Zymbol-Lang",
+      "alpha_msg": "Zymbol iko katika maendeleo ya kazi — toleo hili ni uthibitisho wa dhana ya muundo wa lugha. API, sintaksia na vipengele vinaweza kubadilika.",
+      "alpha_link": "Fuata maendeleo kwenye GitHub →"
     },
     "hausa": {
       "rtl": false,
@@ -3659,7 +3717,9 @@
       "subregion": "west_africa",
       "nav_try_online": "Gwada Online",
       "april_sub": "Mun canza dukkan masu aiki zuwa emoji. Wasa ne. Watakila. 😈",
-      "april_welcome": "Maraba Zymbol-Lang"
+      "april_welcome": "Maraba Zymbol-Lang",
+      "alpha_msg": "Zymbol yana cikin ci gaban aiki — wannan sigar tabbatarwa ce ta ra'ayin tsarin harshe. API, nahawu da fasaloli na iya canzawa.",
+      "alpha_link": "Bi ci gaban a GitHub →"
     },
     "yoruba": {
       "rtl": false,
@@ -3743,7 +3803,9 @@
       "subregion": "west_africa",
       "nav_try_online": "Gbiyanju Online",
       "april_sub": "A yipada gbogbo awọn oṣiṣẹ si emoji. Ere ni. Boya. 😈",
-      "april_welcome": "Ẹ káàbọ̀ Zymbol-Lang"
+      "april_welcome": "Ẹ káàbọ̀ Zymbol-Lang",
+      "alpha_msg": "Zymbol wà ninu idagbasoke ti nṣiṣẹ — itusilẹ yii jẹ ijẹrisi ero ti apẹrẹ ede. API, girama ati awọn ẹya le yipada.",
+      "alpha_link": "Tẹle ilọsiwaju lori GitHub →"
     },
     "amharic": {
       "rtl": false,
@@ -3827,7 +3889,9 @@
       "manual_sub": "Zymbol-Lang አጭር መጽሐፍ",
       "nav_try_online": "በመስመር ላይ ይሞክሩ",
       "april_sub": "ሁሉም ኦፕሬተሮቻችንን ኢሞጂ አደረግናቸው። ቀልድ ነበር። ምናልባት። 😈",
-      "april_welcome": "እንኳን ደህና መጡ Zymbol-Lang"
+      "april_welcome": "እንኳን ደህና መጡ Zymbol-Lang",
+      "alpha_msg": "Zymbol በንቃት ልማት ላይ ነው — ይህ ልቀት የቋንቋ ንድፍ ፅንሰ-ሀሳብ ማረጋገጫ ነው። API፣ syntax እና ባህሪያት ሊለወጡ ይችላሉ።",
+      "alpha_link": "በ GitHub ላይ እድገትን ይከታተሉ →"
     },
     "emoji": {
       "rtl": false,
@@ -3911,7 +3975,9 @@
       "manual_sub": "📋 Zymbol-Lang ⚡ Guide",
       "nav_try_online": "🌐✨ Try Online",
       "april_sub": "🔣 ➡️ 😂 ❌🧠 🤷😈",
-      "april_welcome": "👋🎉 Zymbol-Lang"
+      "april_welcome": "👋🎉 Zymbol-Lang",
+      "alpha_msg": "🔨⚡ Zymbol v0.0.2 🧪 — 🚧 ⚠️ 🔄 API 🔀 syntax 🌀",
+      "alpha_link": "👀 GitHub →"
     },
     "turkish": {
       "rtl": false,
@@ -4082,7 +4148,9 @@
       "subregion": "romance",
       "nav_try_online": "Probar Online",
       "april_sub": "Renombramos todos los operadores con emojis. Es broma. O quizás no. 😈",
-      "april_welcome": "Bienvenido Zymbol-Lang"
+      "april_welcome": "Bienvenido Zymbol-Lang",
+      "alpha_msg": "Zymbol está en desarrollo activo — esta versión valida el concepto del diseño del lenguaje. Las APIs, la sintaxis y las funciones pueden cambiar.",
+      "alpha_link": "Sigue el progreso en GitHub →"
     },
     "portugues_eu": {
       "rtl": false,
@@ -4166,7 +4234,9 @@
       "subregion": "romance",
       "nav_try_online": "Experimentar Online",
       "april_sub": "Renomeámos todos os operadores para emojis. É piada. Talvez. 😈",
-      "april_welcome": "Bem-vindo Zymbol-Lang"
+      "april_welcome": "Bem-vindo Zymbol-Lang",
+      "alpha_msg": "Zymbol está em desenvolvimento activo — este lançamento valida o conceito de design da linguagem. As APIs, a sintaxe e as funcionalidades podem mudar.",
+      "alpha_link": "Seguir o progresso no GitHub →"
     },
     "tamil": {
       "rtl": false,
@@ -4250,7 +4320,9 @@
       "subregion": "dravidian",
       "nav_try_online": "ஆன்லைன் முயற்சி",
       "april_sub": "அனைத்து ஆபரேட்டர்களையும் எமோஜியாக மாற்றினோம். நகைச்சுவை. ஒருவேளை. 😈",
-      "april_welcome": "வரவேற்கிறோம் Zymbol-Lang"
+      "april_welcome": "வரவேற்கிறோம் Zymbol-Lang",
+      "alpha_msg": "Zymbol செயலில் உள்ள வளர்ச்சியில் உள்ளது — இந்த வெளியீடு மொழி வடிவமைப்பு கருத்தை சரிபார்க்கிறது. API, தொடரியல் மற்றும் அம்சங்கள் மாறலாம்.",
+      "alpha_link": "GitHub-ல் முன்னேற்றத்தை பின்தொடரவும் →"
     },
     "catalan": {
       "rtl": false,
@@ -4420,7 +4492,9 @@
       "subregion": "other_europe",
       "nav_try_online": "Probatu sarean",
       "april_sub": "Operadore guztiak emojiekin aldatu ditugu. Txantxa. Agian. 😈",
-      "april_welcome": "Ongi etorri Zymbol-Lang"
+      "april_welcome": "Ongi etorri Zymbol-Lang",
+      "alpha_msg": "Zymbol garapen aktiboan dago — bertsio honek hizkuntzaren diseinuaren kontzeptua balioztatzen du. APIak, sintaxia eta funtzioek alda daitezke.",
+      "alpha_link": "Jarraitu aurrerapenak GitHub-en →"
     },
     "telugu": {
       "rtl": false,
@@ -4504,7 +4578,9 @@
       "subregion": "dravidian",
       "nav_try_online": "ఆన్‌లైన్‌లో ప్రయత్నించండి",
       "april_sub": "మేము అన్ని ఆపరేటర్లను ఎమోజీలతో మార్చాము. జోక్. బహుశా. 😈",
-      "april_welcome": "స్వాగతం Zymbol-Lang"
+      "april_welcome": "స్వాగతం Zymbol-Lang",
+      "alpha_msg": "Zymbol చురుకైన అభివృద్ధిలో ఉంది — ఈ విడుదల భాష రూపకల్పన భావన ధృవీకరణ. API, వాక్యనిర్మాణం మరియు లక్షణాలు మారవచ్చు.",
+      "alpha_link": "GitHub లో పురోగతిని అనుసరించండి →"
     },
     "kannada": {
       "rtl": false,
@@ -4588,7 +4664,9 @@
       "subregion": "dravidian",
       "nav_try_online": "ಆನ್‌ಲೈನ್‌ನಲ್ಲಿ ಪ್ರಯತ್ನಿಸಿ",
       "april_sub": "ನಾವು ಎಲ್ಲಾ ಆಪರೇಟರ್‌ಗಳನ್ನು ಎಮೋಜಿಗಳಿಂದ ಬದಲಿಸಿದ್ದೇವೆ. ತಮಾಷೆ. ಬಹುಶಃ. 😈",
-      "april_welcome": "ಸ್ವಾಗತ Zymbol-Lang"
+      "april_welcome": "ಸ್ವಾಗತ Zymbol-Lang",
+      "alpha_msg": "Zymbol ಸಕ್ರಿಯ ಅಭಿವೃದ್ಧಿಯಲ್ಲಿದೆ — ಈ ಬಿಡುಗಡೆ ಭಾಷಾ ವಿನ್ಯಾಸ ಪರಿಕಲ್ಪನೆಯ ಮಾನ್ಯತೆಯಾಗಿದೆ. API, ಸಿಂಟ್ಯಾಕ್ಸ್ ಮತ್ತು ವೈಶಿಷ್ಟ್ಯಗಳು ಬದಲಾಗಬಹುದು.",
+      "alpha_link": "GitHub ನಲ್ಲಿ ಪ್ರಗತಿಯನ್ನು ಅನುಸರಿಸಿ →"
     },
     "georgian": {
       "rtl": false,
@@ -4672,7 +4750,9 @@
       "subregion": "caucasus",
       "nav_try_online": "სცადე ონლაინ",
       "april_sub": "ყველა ოპერატორი ემოჯიდ გადავარქვით. ხუმრობა. შეიძლება. 😈",
-      "april_welcome": "მოგესალმებით Zymbol-Lang"
+      "april_welcome": "მოგესალმებით Zymbol-Lang",
+      "alpha_msg": "Zymbol აქტიური განვითარების პროცესშია — ეს გამოშვება ამოწმებს ენის დიზაინის კონცეფციას. API-ები, სინტაქსი და ფუნქციები შეიძლება შეიცვალოს.",
+      "alpha_link": "გამოყვეთ პროგრესს GitHub-ზე →"
     },
     "welsh": {
       "rtl": false,
@@ -4756,7 +4836,9 @@
       "subregion": "other_europe",
       "nav_try_online": "Rhowch Gynnig Ar-lein",
       "april_sub": "Fe ailenwom yr holl weithredwyr yn emoji. Jôc. Efallai. 😈",
-      "april_welcome": "Croeso Zymbol-Lang"
+      "april_welcome": "Croeso Zymbol-Lang",
+      "alpha_msg": "Mae Zymbol mewn datblygiad gweithredol — mae'r rhyddhad hwn yn dilysu cysyniad dyluniad yr iaith. Gall APIs, cystrawen a nodweddion newid.",
+      "alpha_link": "Dilynwch gynnydd ar GitHub →"
     },
     "zulu": {
       "rtl": false,
@@ -4840,7 +4922,9 @@
       "subregion": "southern_africa",
       "nav_try_online": "Zama Online",
       "april_sub": "Sishintshile bonke abashayeli nge-emoji. Amahlaya. Mhlawumbe. 😈",
-      "april_welcome": "Wamukelekile Zymbol-Lang"
+      "april_welcome": "Wamukelekile Zymbol-Lang",
+      "alpha_msg": "I-Zymbol isekuthuthukisweni okusheshayo — lolu khuthazo luqinisekisa umqondo wokuyila ulwimi. Ama-API, i-syntax nezici angashintsha.",
+      "alpha_link": "Landela intuthuko ku-GitHub →"
     },
     "armenian": {
       "rtl": false,
@@ -4924,7 +5008,9 @@
       "subregion": "caucasus",
       "nav_try_online": "Փորձիր առցանց",
       "april_sub": "Բոլոր օператորները վերանվանեցինք էմոջիի. Կատակ. Թերևս. 😈",
-      "april_welcome": "Բարի գալուստ Zymbol-Lang"
+      "april_welcome": "Բարի գալուստ Zymbol-Lang",
+      "alpha_msg": "Zymbol-ն ակտիվ մշակման փուլում է — այս թողարկումը հաստատում է լեզվի դիզայնի հայեցակարգը. API-ները, շարահյուսությունը և հնարավորությունները կարող են փոխվել:",
+      "alpha_link": "Հետևեք առաջընթացին GitHub-ում →"
     },
     "quechua": {
       "rtl": false,
@@ -5008,7 +5094,9 @@
       "subregion": "south_america",
       "nav_try_online": "Qespi Internetpi",
       "april_sub": "Llapan operadorchakunata emojiman tikrarchirqanchis. Asikuy. Imallapas. 😈",
-      "april_welcome": "Allin hamunaykipi Zymbol-Lang"
+      "april_welcome": "Allin hamunaykipi Zymbol-Lang",
+      "alpha_msg": "Zymbol llankʼasqam kachkan — kay qispichiy simikunapa churayninkunata allinchayan. API, sintaxis, imaymanapis tikrakuyta atinku.",
+      "alpha_link": "GitHub-pi yachay-purin qʼawin →"
     },
     "galician": {
       "regions": [
@@ -5092,7 +5180,9 @@
       "subregion": "romance",
       "nav_try_online": "Proba en liña",
       "april_sub": "Cambiamos todos os operadores por emojis. É broma. Quizais. 😈",
-      "april_welcome": "Benvido Zymbol-Lang"
+      "april_welcome": "Benvido Zymbol-Lang",
+      "alpha_msg": "Zymbol está en desenvolvemento activo — esta versión valida o concepto do deseño da linguaxe. As API, a sintaxe e as funcións poden cambiar.",
+      "alpha_link": "Segue o progreso en GitHub →"
     },
     "slovenian": {
       "regions": [
@@ -5176,7 +5266,9 @@
       "subregion": "slavic",
       "nav_try_online": "Preizkusi Online",
       "april_sub": "Preimenovali smo vse operatorje v emoji. Šala. Mogoče. 😈",
-      "april_welcome": "Dobrodošli Zymbol-Lang"
+      "april_welcome": "Dobrodošli Zymbol-Lang",
+      "alpha_msg": "Zymbol je v aktivnem razvoju — ta izdaja preverja konceptualni dizajn jezika. API-ji, sintaksa in funkcije se lahko spremenijo.",
+      "alpha_link": "Sledite napredku na GitHubu →"
     },
     "albanian": {
       "regions": [
@@ -5260,7 +5352,9 @@
       "subregion": "other_europe",
       "nav_try_online": "Provo Online",
       "april_sub": "Riemërtuam të gjithë operatorët me emoji. Shaka. Ndoshta. 😈",
-      "april_welcome": "Mirësevini Zymbol-Lang"
+      "april_welcome": "Mirësevini Zymbol-Lang",
+      "alpha_msg": "Zymbol është në zhvillim aktiv — ky version vërteton konceptin e dizajnit të gjuhës. API-të, sintaksa dhe funksionet mund të ndryshojnë.",
+      "alpha_link": "Ndiqni progresin në GitHub →"
     },
     "belarusian": {
       "regions": [
@@ -5344,7 +5438,9 @@
       "subregion": "slavic",
       "nav_try_online": "Паспрабуй Online",
       "april_sub": "Мы перайменавалі ўсе аператары ў эмодзі. Жарт. Магчыма. 😈",
-      "april_welcome": "Сардэчна запрашаем Zymbol-Lang"
+      "april_welcome": "Сардэчна запрашаем Zymbol-Lang",
+      "alpha_msg": "Zymbol знаходзіцца ў актыўнай распрацоўцы — гэты рэліз правярае канцэпцыю дызайну мовы. API, сінтаксіс і функцыі могуць змяняцца.",
+      "alpha_link": "Сачыць за прагрэсам на GitHub →"
     },
     "gujarati": {
       "regions": [
@@ -5428,7 +5524,9 @@
       "subregion": "indo_aryan",
       "nav_try_online": "ઓનલાઈન અજમાવો",
       "april_sub": "અમે બધા ઓપરેટરો ઇમોજીથી બદલ્યા. મજાક. કદાચ. 😈",
-      "april_welcome": "સ્વાગત છે Zymbol-Lang"
+      "april_welcome": "સ્વાગત છે Zymbol-Lang",
+      "alpha_msg": "Zymbol સક્રિય વિકાસમાં છે — આ રિલીઝ ભાષા ડિઝાઇનના ખ્યાલની ચકાસણી છે. API, સિન્ટેક્સ અને સુવિધાઓ બદલાઈ શકે છે.",
+      "alpha_link": "GitHub પર પ્રગતિ અનુસરો →"
     },
     "malay": {
       "regions": [
@@ -5512,7 +5610,9 @@
       "subregion": "southeast_asia",
       "nav_try_online": "Cuba Dalam Talian",
       "april_sub": "Kami menukar semua operator dengan emoji. Gurau je. Mungkin. 😈",
-      "april_welcome": "Selamat datang Zymbol-Lang"
+      "april_welcome": "Selamat datang Zymbol-Lang",
+      "alpha_msg": "Zymbol sedang dalam pembangunan aktif — keluaran ini merupakan pengesahan konsep reka bentuk bahasa. API, sintaks dan ciri-ciri mungkin berubah.",
+      "alpha_link": "Ikuti kemajuan di GitHub →"
     },
     "burmese": {
       "regions": [
@@ -5596,7 +5696,9 @@
       "subregion": "southeast_asia",
       "nav_try_online": "အွန်လိုင်းတွင် စမ်းကြည့်ပါ",
       "april_sub": "Operator တွေအားလုံးကို emoji နဲ့ပြောင်းလိုက်တယ်. နှော်တာ. ဖြစ်နိုင်. 😈",
-      "april_welcome": "ကြိုဆိုပါတယ် Zymbol-Lang"
+      "april_welcome": "ကြိုဆိုပါတယ် Zymbol-Lang",
+      "alpha_msg": "Zymbol သည် တက်ကြွသောဖွံ့ဖြိုးမှုတွင်ရှိသည် — ဤ release သည် ဘာသာစကား ဒီဇိုင်း သဘောတရား မှတ်စစ်မှုဖြစ်သည်။ API၊ syntax နှင့် features များပြောင်းနိုင်သည်။",
+      "alpha_link": "GitHub တွင် တိုးတက်မှုအား ကြည့်ရှုပါ →"
     },
     "nepali": {
       "regions": [
@@ -5680,7 +5782,9 @@
       "subregion": "indo_aryan",
       "nav_try_online": "अनलाइनमा प्रयास गर्नुहोस्",
       "april_sub": "हामीले सबै अपरेटरहरू इमोजीले बदल्यौं। मजाक। सायद। 😈",
-      "april_welcome": "स्वागत छ Zymbol-Lang"
+      "april_welcome": "स्वागत छ Zymbol-Lang",
+      "alpha_msg": "Zymbol सक्रिय विकासमा छ — यो रिलिज भाषा डिजाइनको अवधारणाको प्रमाणीकरण हो। API, सिन्ट्याक्स र सुविधाहरू परिवर्तन हुन सक्छन्।",
+      "alpha_link": "GitHub मा प्रगति फलो गर्नुहोस् →"
     },
     "azerbaijani": {
       "regions": [
@@ -5764,7 +5868,9 @@
       "subregion": "turkic",
       "nav_try_online": "Onlayn Sınayın",
       "april_sub": "Bütün operatorları emojilərə dəyişdirdik. Zarafat. Bəlkə. 😈",
-      "april_welcome": "Xoş gəlmisiniz Zymbol-Lang"
+      "april_welcome": "Xoş gəlmisiniz Zymbol-Lang",
+      "alpha_msg": "Zymbol aktiv inkişafdadır — bu buraxılış dilin dizayn konsepsiyasını təsdiqləyir. API-lər, sintaksis və funksiyalar dəyişə bilər.",
+      "alpha_link": "GitHub-da irəliləyişi izləyin →"
     },
     "kurdish": {
       "regions": [
@@ -5848,7 +5954,9 @@
       "subregion": "iranian",
       "nav_try_online": "Bi Înternetê Biceribîne",
       "april_sub": "Me hemû operatorên emoji guhertin. Henekê. Belkî. 😈",
-      "april_welcome": "Xêr hatî Zymbol-Lang"
+      "april_welcome": "Xêr hatî Zymbol-Lang",
+      "alpha_msg": "Zymbol di pêşkeftina çalak de ye — ev berdest têgîna sêwirana ziman erêdike. API, hevoksazî û taybetmendî dikarin biguherên.",
+      "alpha_link": "Pêşketin li GitHub-ê bişopînin →"
     },
     "guarani": {
       "regions": [
@@ -5932,7 +6040,9 @@
       "subregion": "south_america",
       "nav_try_online": "Emo'ã Internetpe",
       "april_sub": "Rombopuku operador mba'ekuaáva emoji ndive. Jasajey. Umíva. 😈",
-      "april_welcome": "Eguahé porã Zymbol-Lang"
+      "april_welcome": "Eguahé porã Zymbol-Lang",
+      "alpha_msg": "Zymbol oiko ombohasa aporape — ko mbohasa ohechauka ha'e mba'e omonguera ñe'ẽrenda rape. API, sintaxis ha tembiporu oikuaa javy.",
+      "alpha_link": "Eñangarekoita tembiapo GitHub-pe →"
     },
     "igbo": {
       "regions": [
@@ -6016,7 +6126,9 @@
       "subregion": "west_africa",
       "nav_try_online": "Nwaa Online",
       "april_sub": "Anyị gbanwere ndị ọrụ niile na emoji. Ihe nzere. Ikekwe. 😈",
-      "april_welcome": "Nnọọ Zymbol-Lang"
+      "april_welcome": "Nnọọ Zymbol-Lang",
+      "alpha_msg": "Zymbol dị n'ọrụ mmepụta ọrụ — iwepu a bụ iwe nkwado nke echiche nhazi asụsụ. API, usoro okwu na atụmatụ nwere ike ịgbanwe.",
+      "alpha_link": "Soro ọganihu na GitHub →"
     },
     "afrikaans": {
       "regions": [
@@ -6100,7 +6212,9 @@
       "subregion": "southern_africa",
       "nav_try_online": "Probeer Aanlyn",
       "april_sub": "Ons het al die operateurs met emojis vervang. Grap. Miskien. 😈",
-      "april_welcome": "Welkom Zymbol-Lang"
+      "april_welcome": "Welkom Zymbol-Lang",
+      "alpha_msg": "Zymbol is in aktiewe ontwikkeling — hierdie weergawe valideer die konsep van die taalonwerp. API's, sintaksis en funksies kan verander.",
+      "alpha_link": "Volg die vordering op GitHub →"
     },
     "wolof": {
       "regions": [
@@ -6184,7 +6298,9 @@
       "subregion": "west_africa",
       "nav_try_online": "Jëfandikoo ci Internet",
       "april_sub": "Dananu soppi operateur yi ak emoji. Biir moo tax. Waaw-waaw. 😈",
-      "april_welcome": "Dalal ak jàmm Zymbol-Lang"
+      "april_welcome": "Dalal ak jàmm Zymbol-Lang",
+      "alpha_msg": "Zymbol def na ci xam-xam bu góor — bii yëgël lañu xam ni def ñu ci xam-xam bu góor. API yi, sintaksi ak yëkëti lañu mën a soppiku.",
+      "alpha_link": "Köoru mbokk bii ci GitHub →"
     },
     "xhosa": {
       "regions": [
@@ -6268,7 +6384,9 @@
       "subregion": "southern_africa",
       "nav_try_online": "Zama Ku-Intanethi",
       "april_sub": "Sibashintshe bonke abasebenzisi nge-emoji. Siyahleka. Mhlawumbi. 😈",
-      "april_welcome": "Wamkelekile Zymbol-Lang"
+      "april_welcome": "Wamkelekile Zymbol-Lang",
+      "alpha_msg": "I-Zymbol ikwi-development esebenzayo — le khululeko iqinisekisa umgondo wokuyila ulwimi. Ama-API, i-syntax kunye nezinto ezikhethekileyo zinokutshintshelwa.",
+      "alpha_link": "Landelela inkqubo kwi-GitHub →"
     },
     "macedonian": {
       "regions": [
@@ -6352,7 +6470,9 @@
       "subregion": "slavic",
       "nav_try_online": "Испробај Online",
       "april_sub": "Ги преименувавме сите оператори во емоџи. Шега. Можеби. 😈",
-      "april_welcome": "Добредојдовте Zymbol-Lang"
+      "april_welcome": "Добредојдовте Zymbol-Lang",
+      "alpha_msg": "Zymbol е во активен развој — ова издание го валидира концептот на дизајнот на јазикот. API, синтаксата и функциите може да се сменат.",
+      "alpha_link": "Следете го напредокот на GitHub →"
     },
     "nahuatl": {
       "rtl": false,
@@ -6436,7 +6556,9 @@
       "subregion": "mesoamerica",
       "nav_try_online": "Mochihua internet-pan",
       "april_sub": "Timopatlahque operator mochi emoji ipan. Chikole. Yece. 😈",
-      "april_welcome": "Ximohualli Zymbol-Lang"
+      "april_welcome": "Ximohualli Zymbol-Lang",
+      "alpha_msg": "Zymbol tequitl ic mochihua — in tlahcuilolli ic momachiotia in tlahtol ixehualiztli. API, tlahtolmachiotl ihuan tlapalehuiliztli hueliz mopatla.",
+      "alpha_link": "Mochihuatoc ica GitHub →"
     },
     "maya": {
       "rtl": false,
@@ -6520,7 +6642,9 @@
       "subregion": "mesoamerica",
       "nav_try_online": "Ti' internet",
       "april_sub": "Ti' k'am u beel tuláakal operadoorob emoji. Chicho'. Ken. 😈",
-      "april_welcome": "Ko'oten Zymbol-Lang"
+      "april_welcome": "Ko'oten Zymbol-Lang",
+      "alpha_msg": "Zymbol ku cháajkubtik yaan k'ajóolt'aan — leti' tsoolil ku cháantik u bejil t'aan wáaj. API, sintaxis yéetel tsikbalo'ob kalikbal páajtal u kex.",
+      "alpha_link": "K'ajóolt'aano'ob ti' GitHub →"
     },
     "mapuche": {
       "rtl": false,
@@ -6604,7 +6728,9 @@
       "subregion": "south_america",
       "nav_try_online": "Nütranmawün internet mew",
       "april_sub": "Tüfachi operator emoji mew küdawün. Küpay. Kudawkülelay. 😈",
-      "april_welcome": "Akuymi Zymbol-Lang"
+      "april_welcome": "Akuymi Zymbol-Lang",
+      "alpha_msg": "Zymbol ta trawüfiyew ñi zugu — fey ta wuñofe zewmangeel ka zugutual am. API, kimeltuwün ka fewla trokiken.",
+      "alpha_link": "GitHub mew feyentufinge →"
     },
     "navajo": {
       "rtl": false,
@@ -6688,7 +6814,9 @@
       "manual_sub": "Zymbol-Lang Diné bizaad bee",
       "nav_try_online": "Níłch'i naalkidí bine'dę́ę́' Bił Naaghá",
       "april_sub": "Operator t'áá'altso emoji bił naaltsoos ádaalyaa. Ats'ą́ą́. 😈",
-      "april_welcome": "Yá'át'ééh Zymbol-Lang"
+      "april_welcome": "Yá'át'ééh Zymbol-Lang",
+      "alpha_msg": "Zymbol t'áá ałso naaskaah — éí łaʼ dahodiilzin naalyéhé nidahaasdzihígíí baa nahashne'dóó. API, yółkał dóó naa dahane' ałhoji' ídínídloh.",
+      "alpha_link": "GitHub-di hodeeszhiizhgo bikʼehgo →"
     },
     "cherokee": {
       "rtl": false,
@@ -6772,7 +6900,9 @@
       "manual_sub": "Zymbol-Lang ᏣᎳᎩ ᎦᏬᏂᎯᏍᏗ",
       "nav_try_online": "ᎠᏂᏗᏢᎬᎢ ᎤᏍᏲᎯᎭ",
       "april_sub": "ᎤᏂᎳ ᎧᏄᎭ emoji ᏴᏩᏁᏗᏱ. ᏯᏓᎭᏍᎪᎢ. ᎠᎴᏒᎲ. 😈",
-      "april_welcome": "ᎣᏏᏲ Zymbol-Lang"
+      "april_welcome": "ᎣᏏᏲ Zymbol-Lang",
+      "alpha_msg": "Zymbol ᎠᎴᏔᎴ ᏣᎳᎩ ᎤᏙᏓᏟᏌᏁᎢ — ᎾᎿ ᏓᏃᏢᏓ ᏧᏂᎾᏫᏍᏗ ᏚᎾᏓᎴᎲᏍᎬ ᎤᏙᏓᏟᏌᏁᎢ. API, ᎢᎬᏃᎮᏍᏗ ᎠᎴ ᏚᎾᏓᎴᎲᏍᎬ ᎠᎴᏪᏏᎯ.",
+      "alpha_link": "GitHub ᎡᏆᎵᏗᏰᎢ →"
     },
     "cree": {
       "rtl": false,
@@ -6856,7 +6986,9 @@
       "manual_sub": "Zymbol-Lang nêhiyawêwin (SRO)",
       "nav_try_online": "Kicimisowin Online",
       "april_sub": "ᐊᓂᔑᓇᐯ ᐅᑆᕇᑕᐧᐁ emoji ᐋ ᑲᐸᔑᑲᑌᒃ. ᒫᒪᐢᑲᑦ. ᐊᐧᐃᓇ. 😈",
-      "april_welcome": "ᑕᓂᓯ Zymbol-Lang"
+      "april_welcome": "ᑕᓂᓯ Zymbol-Lang",
+      "alpha_msg": "Zymbol mâmawi-âpatisiwin kîkway — ôma wîhitamâwin kâ-itohtahikoyahk itwêwin-masinipayiwin. API, itowin-masinipayiwin ôhci kîkway kâ-wîcihihk mâka wasakâpitêw.",
+      "alpha_link": "GitHub ohci kâ-mâmawi-takwâstâhk →"
     },
     "aymara": {
       "rtl": false,
@@ -6940,7 +7072,9 @@
       "manual_sub": "Zymbol-Lang Aymara aru",
       "nav_try_online": "Arnakatax Internetjïpana",
       "april_sub": "Operatoornaka emojiru yatiyapxatayna. Iyawsañ. Amuyañäni. 😈",
-      "april_welcome": "Waliki jutamaw Zymbol-Lang"
+      "april_welcome": "Waliki jutamaw Zymbol-Lang",
+      "alpha_msg": "Zymbol lurasiwa — kaypacha jalïrixa aru pirwanaka yatxatañatakiwa. API, sintaxis ukhamaraki uñstayawinaka pachpacha arsuniñapataki.",
+      "alpha_link": "GitHub-xa uñakipata →"
     },
     "wayuu": {
       "rtl": false,
@@ -7024,7 +7158,9 @@
       "manual_sub": "Zymbol-Lang Wayuunaiki",
       "nav_try_online": "Aapüin Online",
       "april_sub": "Akaliia operator wayaapajala emoji rüpü. Waraitia. Talataka. 😈",
-      "april_welcome": "Jamaya Zymbol-Lang"
+      "april_welcome": "Jamaya Zymbol-Lang",
+      "alpha_msg": "Zymbol natuma aꞌalajirawaa — tü akumajiasü tü süchiirua nüchiki. API, sintaxis sümaa kayaawatain nashamaaje.",
+      "alpha_link": "GitHub-rü nüküjaliain →"
     },
     "embera": {
       "rtl": false,
@@ -7108,7 +7244,9 @@
       "manual_sub": "Zymbol-Lang Embera",
       "nav_try_online": "Biari Onlainba",
       "april_sub": "Erria operator emojia kachipurruá. Jõtunũma. Jãpí. 😈",
-      "april_welcome": "Bia Zymbol-Lang"
+      "april_welcome": "Bia Zymbol-Lang",
+      "alpha_msg": "Zymbol ome arra erumabida — besia ome kãwabida jarabida ome. API, sintaxis besia umakĩbida ome waibida.",
+      "alpha_link": "GitHub-e ome erumabida →"
     },
     "yanomami": {
       "rtl": false,
@@ -7192,7 +7330,9 @@
       "manual_sub": "Zymbol-Lang Yanomami",
       "nav_try_online": "Pata online-pe",
       "april_sub": "Opereradori emojia watupë yama. Warë. 😈",
-      "april_welcome": "Awei Zymbol-Lang"
+      "april_welcome": "Awei Zymbol-Lang",
+      "alpha_msg": "Zymbol yai thëpë wãã kãyõ — kami thëpë kãyõ yai wayu. API, sintaxis kami thë pë kãyõ.",
+      "alpha_link": "GitHub kãyõ yamaki →"
     },
     "oromo": {
       "rtl": false,
@@ -7276,7 +7416,9 @@
       "manual_sub": "Zymbol-Lang Afaan Oromoo",
       "nav_try_online": "Onlaayinii Yaali",
       "april_sub": "Hojjettoota hunda emoji goone. Goolii dha. Lafa tokko. 😈",
-      "april_welcome": "Baga nagaan dhuftan Zymbol-Lang"
+      "april_welcome": "Baga nagaan dhuftan Zymbol-Lang",
+      "alpha_msg": "Zymbol guddina hojii irra jiru keessa jira — kunneen gadhiifame mirkaneessa ejjannoo dizaayinii afaanii dha. API, makmaaksa fi fedhiileen jijjiiramuu danda'u.",
+      "alpha_link": "Guddina GitHub irra hordofi →"
     },
     "bambara": {
       "rtl": false,
@@ -7360,7 +7502,9 @@
       },
       "nav_try_online": "Jɛbila Interinɛti la",
       "april_sub": "An ye operator bɛɛ emoji la sigi. A ye ɲɛnajɛ. Sébén tɛ. 😈",
-      "april_welcome": "Aw bisimila Zymbol-Lang"
+      "april_welcome": "Aw bisimila Zymbol-Lang",
+      "alpha_msg": "Zymbol bɛ kalan nafama kɔrɔtɔ — kunbɛnna in ye kan halakali latigɛli ye. API, gafe ɲɔgɔnna ani baara minnu bɛ se ka yɛlɛma.",
+      "alpha_link": "Ka kalan nafama lajɛ GitHub kan →"
     },
     "fula": {
       "rtl": false,
@@ -7444,7 +7588,9 @@
       },
       "nav_try_online": "Heɓa Online",
       "april_sub": "Min neli hukkunooɗe fof emoji. Ko nguurndam. Teeŋti. 😈",
-      "april_welcome": "Jam tan Zymbol-Lang"
+      "april_welcome": "Jam tan Zymbol-Lang",
+      "alpha_msg": "Zymbol woni e cuɓtugol goongaawol — nde winnditaama nde faamaade haala ngenndiyankaagu. API, sintaksi e nulɗe keɓi waɗanaade yɛɛyde.",
+      "alpha_link": "Tigi hawrude e GitHub →"
     },
     "lingala": {
       "rtl": false,
@@ -7528,7 +7674,9 @@
       },
       "nav_try_online": "Leka Online",
       "april_sub": "Tobongoli baoperateur nyonso na emoji. Blague. Lisusu. 😈",
-      "april_welcome": "Boyei malamu Zymbol-Lang"
+      "april_welcome": "Boyei malamu Zymbol-Lang",
+      "alpha_msg": "Zymbol ezali na bokoli ya kosala — lisalisi oyo ezali confirmation ya makanisi ya sango. API, sintaksi mpe biloko ekoki kobongwana.",
+      "alpha_link": "Landa bokoli na GitHub →"
     },
     "somali": {
       "rtl": false,
@@ -7612,7 +7760,9 @@
       },
       "nav_try_online": "Ku Tijaabi Online",
       "april_sub": "Waxaan beddellay dhammaan hawlwadeennada emoji. Kaftan. Laga yaab. 😈",
-      "april_welcome": "Soo dhawoow Zymbol-Lang"
+      "april_welcome": "Soo dhawoow Zymbol-Lang",
+      "alpha_msg": "Zymbol waxay ku jirtaa horumarinta firfircoon — sii deyntan waxay xaqiijinaysaa fikradda naqshadaynta luuqadda. API-yada, syntax-ka iyo astaamaha waxay baddeli karaan.",
+      "alpha_link": "Ku soo raac horumarku GitHub →"
     },
     "tigrinya": {
       "rtl": false,
@@ -7696,7 +7846,9 @@
       },
       "nav_try_online": "ኦንላይን ሞኸር",
       "april_sub": "ኩሎም ኣፐሬተርታት ናብ ኢሞጂ ቀይርናዮም። ቀልዲ። ምናልባት። 😈",
-      "april_welcome": "ብደሓን መጻኹም Zymbol-Lang"
+      "april_welcome": "ብደሓን መጻኹም Zymbol-Lang",
+      "alpha_msg": "ዚምቦል ኣብ ንጡፍ ምዕባለ ኣሎ — እዚ ምዕባለ'ዚ ናይ ቋንቋ ዲዛይን ሓሳብ ምርግጋጽ እዩ። API ፣ ሲንታክስን ፊቸርታትን ክቕየሩ ይኽእሉ እዮም።",
+      "alpha_link": "ኣብ GitHub ምዕባለ ክትከታተሉ →"
     },
     "shona": {
       "rtl": false,
@@ -7780,7 +7932,9 @@
       },
       "nav_try_online": "Edza Online",
       "april_sub": "Takachiinja maoperator ese kuita emoji. Chinonyevedzera. Zvimwe. 😈",
-      "april_welcome": "Mauya Zymbol-Lang"
+      "april_welcome": "Mauya Zymbol-Lang",
+      "alpha_msg": "Zymbol iri mukugadzirwa kwakanyanyiswa — kubuda uku ndiko kuongororwa kwekufunga kunakurongedza rurimi. API, sintakisi uye zvinogona zvingashanduke.",
+      "alpha_link": "Tevedza mberi paGitHub →"
     },
     "esperanto": {
       "rtl": false,
@@ -7865,8 +8019,8 @@
       "nav_try_online": "Provu Rete",
       "april_sub": "Ni renomis ĉiujn operatorojn al emoĝioj. Ŝerco. Eble. 😈",
       "april_welcome": "Bonvenon Zymbol-Lang",
-      "alpha_msg": "Zymbol estas en aktiva disvolvo — ĉi tiu eldono validas la lingvan dezajnon. API-oj, sintakso kaj funkcioj povas ŝanĝiĝi.",
-      "alpha_link": "Sekvu progreson ĉe GitHub →"
+      "alpha_msg": "Zymbol estas en aktiva evoluo — ĉi tiu eldono validas la lingvan dezajnon. API-oj, sintakso kaj funkcioj povas ŝanĝiĝi.",
+      "alpha_link": "Sekvu progresson ĉe GitHub →"
     },
     "lojban": {
       "rtl": false,
@@ -7950,7 +8104,9 @@
       "manual_sub": "cmalu ciksi zymbol-lang",
       "nav_try_online": "ko pilno lo skami bende",
       "april_sub": "mi ba'e galfi ro fancu srana le emoji. gleki fasnu. ca'e. 😈",
-      "april_welcome": "coi Zymbol-Lang"
+      "april_welcome": "coi Zymbol-Lang",
+      "alpha_msg": "la zymbol cu vitno se zbasu — ti noi se jbera cu se nibli lo togystardzu be lo bangu. lo API jo'u fo'a jo'u ka'e galfi.",
+      "alpha_link": "ko skicu la github ca lo nu mulno →"
     },
     "toki_pona": {
       "rtl": false,
@@ -8034,7 +8190,9 @@
       "manual_sub": "lipu sona lili pi zymbol-lang",
       "nav_try_online": "o kepeken lon ilo",
       "april_sub": "mi ante e nimi pi ilo mute kepeken sitelen musi. ala. ken la. 😈",
-      "april_welcome": "kama pona Zymbol-Lang"
+      "april_welcome": "kama pona Zymbol-Lang",
+      "alpha_msg": "Zymbol li lon nasin pali — lipu ni li pali pi nimi kepeken. API en nasin toki en ijo li ken ante.",
+      "alpha_link": "o lukin e pali lon GitHub →"
     },
     "ido": {
       "rtl": false,
@@ -8118,7 +8276,9 @@
       "manual_sub": "Mallonga manlibro di Zymbol-Lang",
       "nav_try_online": "Provu Online",
       "april_sub": "Ni renomizis oli operatori kun emoji. Blogo. Forsan. 😈",
-      "april_welcome": "Bonvenu Zymbol-Lang"
+      "april_welcome": "Bonvenu Zymbol-Lang",
+      "alpha_msg": "Zymbol esas en aktiva evoluciono — ca liberigo esas validado di la designo-koncepto. API-i, sintaxo e funktioni povas chanjar.",
+      "alpha_link": "Sequar progresar adsur GitHub →"
     },
     "interlingua": {
       "rtl": false,
@@ -8202,7 +8362,9 @@
       "manual_sub": "Manual compacto de Zymbol-Lang",
       "nav_try_online": "Proba Online",
       "april_sub": "Nos renominate tote le operatores con emoji. Joke. Forsan. 😈",
-      "april_welcome": "Benvenite Zymbol-Lang"
+      "april_welcome": "Benvenite Zymbol-Lang",
+      "alpha_msg": "Zymbol es in disveloppamento active — iste edition valida le concepto del designo linguistic. APIs, syntaxe e functiones pote cambiar.",
+      "alpha_link": "Sequer le progresso in GitHub →"
     },
     "klingon": {
       "rtl": false,
@@ -8286,7 +8448,9 @@
       "manual_sub": "mach HaDlu'meH zymbol-lang",
       "nav_try_online": "yIlo' 'Internet",
       "april_sub": "maH Hoch operator emoji DIboqmoH. bIHeghbe'. chaq. 😈",
-      "april_welcome": "nuqneH Zymbol-Lang"
+      "april_welcome": "nuqneH Zymbol-Lang",
+      "alpha_msg": "Zymbol tay' ta' Hol Daj — Daj Duj DIvI' Hol. API Daj, syntax Daj je.",
+      "alpha_link": "GitHub HIja' →"
     },
     "mandoa": {
       "rtl": false,
@@ -8370,7 +8534,9 @@
       "manual_sub": "Kaysh tome zymbol-lang",
       "nav_try_online": "Muun Online",
       "april_sub": "Bid'gar draar operatore miit emodji. K'uur. Mhi vencuyanir. 😈",
-      "april_welcome": "Oya'karir Zymbol-Lang"
+      "april_welcome": "Oya'karir Zymbol-Lang",
+      "alpha_msg": "Zymbol runi aliit'alor — mhi ijaat gar ner. API bal syntax mhi cabur.",
+      "alpha_link": "GitHub burc'ya →"
     },
     "quenya": {
       "rtl": false,
@@ -8454,7 +8620,9 @@
       "manual_sub": "Pitya Parma Zymbol-Lang",
       "nav_try_online": "Cesta mir i Vorondë",
       "april_sub": "Úmë nótë ilye operatáreli emoji-nen. Naicel! Lé. 😈",
-      "april_welcome": "Á tula Zymbol-Lang"
+      "april_welcome": "Á tula Zymbol-Lang",
+      "alpha_msg": "Zymbol ná i cuilë ú-cenin — i quettar tenna i tengwa. API, syntaxë ar cuilëar mahtë.",
+      "alpha_link": "Tirë i nórë GitHub-enna →"
     },
     "sindarin": {
       "rtl": false,
@@ -8538,7 +8706,9 @@
       "manual_sub": "Pitya Sarch Zymbol-Lang",
       "nav_try_online": "Cesto an Lín",
       "april_sub": "Sín chennem i ôl operedhrim na emoji. Nan. Boe. 😈",
-      "april_welcome": "Mae govannen Zymbol-Lang"
+      "april_welcome": "Mae govannen Zymbol-Lang",
+      "alpha_msg": "Zymbol na 'waith thel — i parf erin iant gwaith. API, annabon ar caledh gaur.",
+      "alpha_link": "Tirio i pheth GitHub-o →"
     },
     "dothraki": {
       "rtl": false,
@@ -8622,7 +8792,9 @@
       "manual_sub": "Alegra Dothrak Zymbol-Lang",
       "nav_try_online": "Azho Online",
       "april_sub": "Kisha adakhat hrazef yomme emoji. Yer anni athjahakaroon. 😈",
-      "april_welcome": "M'athchomaroon Zymbol-Lang"
+      "april_welcome": "M'athchomaroon Zymbol-Lang",
+      "alpha_msg": "Zymbol ray vo chek — dothrak mae me lajat. API m'adakhh, dothraki m'adakhh.",
+      "alpha_link": "Anha vekha GitHub →"
     },
     "high_valyrian": {
       "rtl": false,
@@ -8706,7 +8878,9 @@
       "manual_sub": "Dovaogēdy Sȳrior Zymbol-Lang",
       "nav_try_online": "Ipradis Lenton",
       "april_sub": "Iksā emojis eman vali ēngoso. Daor. Kessa. 😈",
-      "april_welcome": "Rytsas Zymbol-Lang"
+      "april_welcome": "Rytsas Zymbol-Lang",
+      "alpha_msg": "Zymbol syt issa — kesir sȳz hen lentot issa. API, muñot se lentot yne.",
+      "alpha_link": "Embrot sȳz GitHub-ot →"
     },
     "navi": {
       "rtl": false,
@@ -8790,7 +8964,9 @@
       "manual_sub": "Lì'fya hin Zymbol-Lang",
       "nav_try_online": "Tivìng si",
       "april_sub": "Fìopelatort nì'aw emoji seri. Kehe. Srak? 😈",
-      "april_welcome": "Kaltxì Zymbol-Lang"
+      "april_welcome": "Kaltxì Zymbol-Lang",
+      "alpha_msg": "Zymbol lu sevin set — tìkangkem alu nì'awve. API, tìfkeytok fa txantsan.",
+      "alpha_link": "Eltu si GitHub-oru →"
     },
     "klingon_piqad": {
       "rtl": false,
@@ -8874,7 +9050,9 @@
       "subregion": "scifi",
       "nav_try_online": " ",
       "april_sub": "maH Hoch operator emoji DIboqmoH. bIHeghbe'. chaq. 😈",
-      "april_welcome": "nuqneH Zymbol-Lang"
+      "april_welcome": "nuqneH Zymbol-Lang",
+      "alpha_msg": "Zymbol tay' ta' Hol Daj — Daj Duj DIvI' Hol. API Daj, syntax Daj je.",
+      "alpha_link": "GitHub HIja' →"
     },
     "cree_syl": {
       "rtl": false,
@@ -8958,7 +9136,9 @@
       "manual_sub": "Zymbol-Lang ᓀᐦᐃᔭᐍᐏᐣ (ᐊᓯᓂᑿᐣ)",
       "nav_try_online": "ᑐᑦᑕᕐᓂᖅ ᐅᕙᓂ",
       "april_sub": "ᐊᓂᔑᓇᐯ ᐅᑆᕇᑕᐧᐁ emoji ᐋ ᑲᐸᔑᑲᑌᒃ. ᒫᒪᐢᑲᑦ. ᐊᐧᐃᓇ. 😈",
-      "april_welcome": "ᑕᓂᓯ Zymbol-Lang"
+      "april_welcome": "ᑕᓂᓯ Zymbol-Lang",
+      "alpha_msg": "Zymbol ᒥᓯᐌ ᐃᑕᑦᑎᓂᑦ — ᐁ ᑭᑦᐸᐊᑲᑦ ᑲᐱᑦ ᐊᔨᒧᐎᓐ. API, ᐃᑕᑦᑎᓐ ᐅᒋ ᑲᐱᑦ.",
+      "alpha_link": "GitHub ᓇᑕᒑᑎᑦ →"
     }
   },
   "subregion_labels": {
