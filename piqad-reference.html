@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="tlh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pIqaD Reference — Klingon Script</title>
+<style>
+  @font-face {
+    font-family: 'pIqaD qolqoS';
+    src: local('pIqaD qolqoS'),
+         url('/home/rakzo/.local/share/fonts/pIqaD-qolqoS.ttf') format('truetype');
+  }
+
+  :root {
+    --bg:       #0a0e1a;
+    --panel:    #111827;
+    --border:   #1f2d47;
+    --gold:     #c9a84c;
+    --red:      #8b1a1a;
+    --text:     #d4c5a9;
+    --dim:      #6b7280;
+    --piqad:    'pIqaD qolqoS', monospace;
+    --mono:     'Courier New', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: Georgia, serif;
+    line-height: 1.6;
+    padding: 2rem;
+  }
+
+  h1 {
+    font-family: var(--piqad);
+    font-size: 3rem;
+    color: var(--gold);
+    text-align: center;
+    letter-spacing: 0.2em;
+    margin-bottom: 0.25rem;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: var(--dim);
+    font-size: 0.9rem;
+    margin-bottom: 3rem;
+    font-family: var(--mono);
+  }
+
+  .subtitle span {
+    color: var(--gold);
+  }
+
+  h2 {
+    color: var(--gold);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+    margin: 2.5rem 0 1.5rem;
+    font-size: 1.1rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .h2-piqad {
+    font-family: var(--piqad);
+    font-size: 1.8rem;
+    font-weight: normal;
+    color: var(--gold);
+    float: right;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── ALPHABET GRID ── */
+  .alpha-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .char-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem 0.75rem 0.75rem;
+    text-align: center;
+    transition: border-color 0.15s;
+  }
+
+  .char-card:hover {
+    border-color: var(--gold);
+  }
+
+  .char-card.vowel   { border-left: 3px solid #4a7c59; }
+  .char-card.digraph { border-left: 3px solid #4a6a8c; }
+  .char-card.special { border-left: 3px solid var(--red); }
+
+  .glyph {
+    font-family: var(--piqad);
+    font-size: 2.8rem;
+    display: block;
+    color: #e8dcc8;
+    margin-bottom: 0.5rem;
+    min-height: 3.5rem;
+    line-height: 1.2;
+  }
+
+  .roman {
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 0.2rem;
+  }
+
+  .codepoint {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--dim);
+    display: block;
+  }
+
+  /* ── DIGITS ── */
+  .digit-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .digit-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+  }
+
+  .digit-card .glyph {
+    font-size: 2.2rem;
+    min-height: 3rem;
+    color: #d4b896;
+  }
+
+  .digit-val {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 0.2rem;
+  }
+
+  /* ── NOTE BOX ── */
+  .note {
+    background: #1a1408;
+    border: 1px solid #3d2f0a;
+    border-left: 4px solid var(--gold);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0 2rem;
+    font-size: 0.9rem;
+    color: #c4b48a;
+  }
+
+  .note strong { color: var(--gold); }
+
+  /* ── HEX TABLE ── */
+  .hex-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+
+  .hex-table th {
+    background: var(--red);
+    color: #e8d5c0;
+    padding: 0.6rem 1rem;
+    text-align: left;
+    font-weight: normal;
+    letter-spacing: 0.1em;
+  }
+
+  .hex-table td {
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  .hex-table tr:hover td { background: #141c2e; }
+
+  .hex-glyph {
+    font-family: var(--piqad);
+    font-size: 1.8rem;
+    color: #e8dcc8;
+  }
+
+  .hex-label {
+    color: var(--gold);
+    font-size: 1.1rem;
+  }
+
+  /* ── PUNCT ── */
+  .punct-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+
+  /* ── DEMO ── */
+  .demo-block {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .demo-piqad {
+    font-family: var(--piqad);
+    font-size: 2rem;
+    color: #e8dcc8;
+    display: block;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.15em;
+  }
+
+  .demo-roman {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--dim);
+  }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .dot-vowel   { background: #4a7c59; }
+  .dot-digraph { background: #4a6a8c; }
+  .dot-cons    { background: var(--border); }
+  .dot-special { background: var(--red); }
+
+  /* ── SEGMENT NOTE ── */
+  .segment-note {
+    background: #0f1a0f;
+    border: 1px solid #1e3a1e;
+    border-left: 4px solid #4a7c59;
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0 2rem;
+    font-size: 0.9rem;
+    color: #a0c4a0;
+  }
+
+  .segment-note strong { color: #6dbd6d; }
+
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--dim);
+  }
+
+  footer .piqad-footer {
+    font-family: var(--piqad);
+    font-size: 1.4rem;
+    display: block;
+    color: var(--gold);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.2em;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── TITLE ── -->
+<h1>&#xF8E4;&#xF8D9;&#xF8D6;&#xF8DB;&#xF8D5;&#xF8D0;&#xF8DB;</h1>
+<p class="subtitle">
+  pIqaD Reference &nbsp;|&nbsp;
+  <span>U+F8D0 – U+F8FF</span> &nbsp;|&nbsp;
+  CSUR · ConScript Unicode Registry &nbsp;|&nbsp;
+  font: pIqaD qolqoS
+</p>
+
+<!-- ── ALPHABET ── -->
+<h2>
+  <span class="h2-piqad">&#xF8D0;&#xF8DB;&#xF8DC;&#xF8E4;&#xF8D7;&#xF8DA;</span>
+  Alphabet — 26 phonemes
+</h2>
+
+<div class="legend">
+  <span class="legend-item"><span class="legend-dot dot-vowel"></span> vowel</span>
+  <span class="legend-item"><span class="legend-dot dot-digraph"></span> digraph (single codepoint)</span>
+  <span class="legend-item"><span class="legend-dot dot-cons"></span> consonant</span>
+  <span class="legend-item"><span class="legend-dot dot-special"></span> qaghwI' (glottal)</span>
+</div>
+
+<div class="alpha-grid">
+  <!-- Vowels & consonants in CSUR order -->
+  <div class="char-card vowel">
+    <span class="glyph">&#xF8D0;</span>
+    <span class="roman">a</span>
+    <span class="codepoint">U+F8D0</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8D1;</span>
+    <span class="roman">b</span>
+    <span class="codepoint">U+F8D1</span>
+  </div>
+  <div class="char-card digraph">
+    <span class="glyph">&#xF8D2;</span>
+    <span class="roman">ch</span>
+    <span class="codepoint">U+F8D2</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8D3;</span>
+    <span class="roman">D</span>
+    <span class="codepoint">U+F8D3</span>
+  </div>
+  <div class="char-card vowel">
+    <span class="glyph">&#xF8D4;</span>
+    <span class="roman">e</span>
+    <span class="codepoint">U+F8D4</span>
+  </div>
+  <div class="char-card digraph">
+    <span class="glyph">&#xF8D5;</span>
+    <span class="roman">gh</span>
+    <span class="codepoint">U+F8D5</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8D6;</span>
+    <span class="roman">H</span>
+    <span class="codepoint">U+F8D6</span>
+  </div>
+  <div class="char-card vowel">
+    <span class="glyph">&#xF8D7;</span>
+    <span class="roman">I</span>
+    <span class="codepoint">U+F8D7</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8D8;</span>
+    <span class="roman">j</span>
+    <span class="codepoint">U+F8D8</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8D9;</span>
+    <span class="roman">l</span>
+    <span class="codepoint">U+F8D9</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8DA;</span>
+    <span class="roman">m</span>
+    <span class="codepoint">U+F8DA</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8DB;</span>
+    <span class="roman">n</span>
+    <span class="codepoint">U+F8DB</span>
+  </div>
+  <div class="char-card digraph">
+    <span class="glyph">&#xF8DC;</span>
+    <span class="roman">ng</span>
+    <span class="codepoint">U+F8DC</span>
+  </div>
+  <div class="char-card vowel">
+    <span class="glyph">&#xF8DD;</span>
+    <span class="roman">o</span>
+    <span class="codepoint">U+F8DD</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8DE;</span>
+    <span class="roman">p</span>
+    <span class="codepoint">U+F8DE</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8DF;</span>
+    <span class="roman">q</span>
+    <span class="codepoint">U+F8DF</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8E0;</span>
+    <span class="roman">Q</span>
+    <span class="codepoint">U+F8E0</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8E1;</span>
+    <span class="roman">r</span>
+    <span class="codepoint">U+F8E1</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8E2;</span>
+    <span class="roman">S</span>
+    <span class="codepoint">U+F8E2</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8E3;</span>
+    <span class="roman">t</span>
+    <span class="codepoint">U+F8E3</span>
+  </div>
+  <div class="char-card digraph">
+    <span class="glyph">&#xF8E4;</span>
+    <span class="roman">tlh</span>
+    <span class="codepoint">U+F8E4</span>
+  </div>
+  <div class="char-card vowel">
+    <span class="glyph">&#xF8E5;</span>
+    <span class="roman">u</span>
+    <span class="codepoint">U+F8E5</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8E6;</span>
+    <span class="roman">v</span>
+    <span class="codepoint">U+F8E6</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8E7;</span>
+    <span class="roman">w</span>
+    <span class="codepoint">U+F8E7</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8E8;</span>
+    <span class="roman">y</span>
+    <span class="codepoint">U+F8E8</span>
+  </div>
+  <div class="char-card special">
+    <span class="glyph">&#xF8E9;</span>
+    <span class="roman">'</span>
+    <span class="codepoint">U+F8E9 qaghwI'</span>
+  </div>
+</div>
+
+<!-- ── DIGITS ── -->
+<h2>
+  <span class="h2-piqad">&#xF8DA;&#xF8D7;&#xF8E9;</span>
+  Digits — U+F8F0–U+F8F9
+</h2>
+
+<div class="segment-note">
+  <strong>Por qué los dígitos parecen segmentos/barras:</strong>
+  El sistema numérico pIqaD está diseñado con formas geométricas angulares —
+  barras horizontales, verticales y diagonales — consistente con la estética
+  del script. No son caracteres de box-drawing ASCII: son los símbolos
+  numéricos correctos del canon Klingon. La fuente <em>pIqaD qolqoS</em>
+  los tiene implementados en U+F8F0–U+F8F9.
+</div>
+
+<div class="digit-grid">
+  <div class="digit-card">
+    <span class="glyph">&#xF8F0;</span>
+    <span class="digit-val">0</span>
+    <span class="codepoint">U+F8F0</span>
+  </div>
+  <div class="digit-card">
+    <span class="glyph">&#xF8F1;</span>
+    <span class="digit-val">1</span>
+    <span class="codepoint">U+F8F1</span>
+  </div>
+  <div class="digit-card">
+    <span class="glyph">&#xF8F2;</span>
+    <span class="digit-val">2</span>
+    <span class="codepoint">U+F8F2</span>
+  </div>
+  <div class="digit-card">
+    <span class="glyph">&#xF8F3;</span>
+    <span class="digit-val">3</span>
+    <span class="codepoint">U+F8F3</span>
+  </div>
+  <div class="digit-card">
+    <span class="glyph">&#xF8F4;</span>
+    <span class="digit-val">4</span>
+    <span class="codepoint">U+F8F4</span>
+  </div>
+  <div class="digit-card">
+    <span class="glyph">&#xF8F5;</span>
+    <span class="digit-val">5</span>
+    <span class="codepoint">U+F8F5</span>
+  </div>
+  <div class="digit-card">
+    <span class="glyph">&#xF8F6;</span>
+    <span class="digit-val">6</span>
+    <span class="codepoint">U+F8F6</span>
+  </div>
+  <div class="digit-card">
+    <span class="glyph">&#xF8F7;</span>
+    <span class="digit-val">7</span>
+    <span class="codepoint">U+F8F7</span>
+  </div>
+  <div class="digit-card">
+    <span class="glyph">&#xF8F8;</span>
+    <span class="digit-val">8</span>
+    <span class="codepoint">U+F8F8</span>
+  </div>
+  <div class="digit-card">
+    <span class="glyph">&#xF8F9;</span>
+    <span class="digit-val">9</span>
+    <span class="codepoint">U+F8F9</span>
+  </div>
+</div>
+
+<!-- ── HEX A-F ── -->
+<h2>Hex A–F in pIqaD — first 6 letters of the alphabet</h2>
+
+<table class="hex-table">
+  <tr>
+    <th>Hex digit</th>
+    <th>Value</th>
+    <th>pIqaD char</th>
+    <th>Romanized</th>
+    <th>Unicode</th>
+  </tr>
+  <tr>
+    <td class="hex-label">A</td>
+    <td>10</td>
+    <td><span class="hex-glyph">&#xF8D0;</span></td>
+    <td><code>a</code></td>
+    <td><code>U+F8D0</code></td>
+  </tr>
+  <tr>
+    <td class="hex-label">B</td>
+    <td>11</td>
+    <td><span class="hex-glyph">&#xF8D1;</span></td>
+    <td><code>b</code></td>
+    <td><code>U+F8D1</code></td>
+  </tr>
+  <tr>
+    <td class="hex-label">C</td>
+    <td>12</td>
+    <td><span class="hex-glyph">&#xF8D2;</span></td>
+    <td><code>ch</code> (1 codepoint)</td>
+    <td><code>U+F8D2</code></td>
+  </tr>
+  <tr>
+    <td class="hex-label">D</td>
+    <td>13</td>
+    <td><span class="hex-glyph">&#xF8D3;</span></td>
+    <td><code>D</code></td>
+    <td><code>U+F8D3</code></td>
+  </tr>
+  <tr>
+    <td class="hex-label">E</td>
+    <td>14</td>
+    <td><span class="hex-glyph">&#xF8D4;</span></td>
+    <td><code>e</code></td>
+    <td><code>U+F8D4</code></td>
+  </tr>
+  <tr>
+    <td class="hex-label">F</td>
+    <td>15</td>
+    <td><span class="hex-glyph">&#xF8D5;</span></td>
+    <td><code>gh</code> (1 codepoint)</td>
+    <td><code>U+F8D5</code></td>
+  </tr>
+</table>
+
+<!-- ── PUNCTUATION ── -->
+<h2>Punctuation</h2>
+
+<div class="alpha-grid" style="grid-template-columns: repeat(3, 1fr);">
+  <div class="char-card">
+    <span class="glyph">&#xF8FD;</span>
+    <span class="roman">word separator</span>
+    <span class="codepoint">U+F8FD</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8FE;</span>
+    <span class="roman">sentence end</span>
+    <span class="codepoint">U+F8FE</span>
+  </div>
+  <div class="char-card">
+    <span class="glyph">&#xF8FF;</span>
+    <span class="roman">PUA end marker</span>
+    <span class="codepoint">U+F8FF</span>
+  </div>
+</div>
+
+<!-- ── DEMOS ── -->
+<h2>Examples</h2>
+
+<div class="demo-block">
+  <span class="demo-piqad">&#xF8E4;&#xF8D9;&#xF8D6;&#xF8DB;&#xF8D5;&#xF8D0;&#xF8DB;</span>
+  <span class="demo-roman">tlhIngan — "Klingon"</span>
+</div>
+
+<div class="demo-block">
+  <span class="demo-piqad">&#xF8DF;&#xF8D0;&#xF8DE;&#xF8D9;&#xF8D0;&#xF8E9;</span>
+  <span class="demo-roman">Qapla' — "Success"</span>
+</div>
+
+<div class="demo-block">
+  <span class="demo-piqad">&#xF8DB;&#xF8E5;&#xF8DF;&#xF8DB;&#xF8D4;&#xF8D6;</span>
+  <span class="demo-roman">nuqneH — "What do you want?"</span>
+</div>
+
+<div class="demo-block">
+  <span class="demo-piqad">&#xF8F1;&#xF8F2;&#xF8F3;&#xF8F4;&#xF8F5;&#xF8F6;&#xF8F7;&#xF8F8;&#xF8F9;&#xF8F0;</span>
+  <span class="demo-roman">1 2 3 4 5 6 7 8 9 0 — all digits</span>
+</div>
+
+<div class="demo-block">
+  <span class="demo-piqad">
+    zymbol&#xF8FD;&#xF8D9;&#xF8D0;&#xF8DB;&#xF8D5;&#xF8FD;&#xF8D6;&#xF8DD;&#xF8D9;&#xF8FD;
+    &#xF8D6;&#xF8D0;&#xF8D3;&#xF8D9;&#xF8E5;&#xF8E9;&#xF8DA;&#xF8D4;&#xF8D6;
+  </span>
+  <span class="demo-roman">zymbol lang HaDlu'meH — "for learning zymbol lang"</span>
+</div>
+
+<!-- ── QUICK REF ── -->
+<h2>Quick Unicode Reference</h2>
+
+<div class="note">
+  <strong>Range:</strong> U+F8D0 – U+F8FF &nbsp;(CSUR — ConScript Unicode Registry)<br>
+  <strong>Letters:</strong> U+F8D0–U+F8E9 &nbsp;(26 phonemes, digraphs are single codepoints)<br>
+  <strong>Digits:</strong> U+F8F0–U+F8F9 &nbsp;(0–9, geometric/segment design — correct per canon)<br>
+  <strong>Punct:</strong> U+F8FD word-sep &nbsp;· &nbsp;U+F8FE sentence-end &nbsp;· &nbsp;U+F8FF PUA marker<br>
+  <strong>Font:</strong> pIqaD qolqoS (SIL OFL) — all 39 codepoints present ✓<br>
+  <strong>Note:</strong> Private Use Area — requires explicit font. No Unicode standard recognition.
+</div>
+
+<footer>
+  <span class="piqad-footer">&#xF8DF;&#xF8D0;&#xF8DE;&#xF8D9;&#xF8D0;&#xF8E9;</span>
+  pIqaD Reference · CSUR U+F8D0–U+F8FF · pIqaD qolqoS font · zymbol-lang project
+</footer>
+
+</body>
+</html>
