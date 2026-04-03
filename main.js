@@ -446,6 +446,12 @@
       document.getElementById('footer-features').textContent = i18nEntry.nav_features    || 'Features';
       document.getElementById('footer-tagline').textContent  = i18nEntry.t1 + ' ' + i18nEntry.t2;
 
+      // Alpha notice
+      const alphaMsg  = document.getElementById('alpha-msg');
+      const alphaLink = document.getElementById('alpha-link');
+      if (alphaMsg)  alphaMsg.textContent  = i18nEntry.alpha_msg  || 'Zymbol is in active development — this release is a concept validation of the language design. APIs, syntax, and features may change.';
+      if (alphaLink) alphaLink.textContent = i18nEntry.alpha_link || 'Follow progress on GitHub →';
+
       // Hero snippet strings + identifiers
       document.getElementById('hero-str1').textContent    = i18nEntry.hero_str1    || 'write in any script';
       document.getElementById('hero-str2').textContent    = i18nEntry.hero_str2    || 'same operators';

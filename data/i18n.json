@@ -95,7 +95,9 @@
       "subregion": "north_america",
       "nav_try_online": "Try Online",
       "april_sub": "We renamed all operators to emojis. JK. Maybe. 😈",
-      "april_welcome": "Welcome Zymbol-Lang"
+      "april_welcome": "Welcome Zymbol-Lang",
+      "alpha_msg": "Zymbol is in active development — this release is a concept validation of the language design. APIs, syntax, and features may change.",
+      "alpha_link": "Follow progress on GitHub →"
     },
     "spanish": {
       "rtl": false,
@@ -179,7 +181,9 @@
       "subregion": "mesoamerica",
       "nav_try_online": "Probar Online",
       "april_sub": "Renombramos todos los operadores con emojis. Es broma. O quizás no. 😈",
-      "april_welcome": "Bienvenido Zymbol-Lang"
+      "april_welcome": "Bienvenido Zymbol-Lang",
+      "alpha_msg": "Zymbol está en desarrollo activo — esta versión valida el concepto del diseño del lenguaje. Las APIs, sintaxis y funciones pueden cambiar.",
+      "alpha_link": "Seguir el progreso en GitHub →"
     },
     "portuguese": {
       "rtl": false,
@@ -263,7 +267,9 @@
       "subregion": "south_america",
       "nav_try_online": "Experimentar Online",
       "april_sub": "Renomeamos todos os operadores para emojis. É brincadeira. Talvez. 😈",
-      "april_welcome": "Bem-vindo Zymbol-Lang"
+      "april_welcome": "Bem-vindo Zymbol-Lang",
+      "alpha_msg": "Zymbol está em desenvolvimento ativo — esta versão valida o conceito do design da linguagem. APIs, sintaxe e funcionalidades podem mudar.",
+      "alpha_link": "Acompanhar o progresso no GitHub →"
     },
     "french": {
       "rtl": false,
@@ -352,7 +358,9 @@
       "subregion": "western_europe",
       "nav_try_online": "Essayer en Ligne",
       "april_sub": "On a remplacé tous les opérateurs par des emojis. Blague. Enfin, presque. 😈",
-      "april_welcome": "Bienvenue Zymbol-Lang"
+      "april_welcome": "Bienvenue Zymbol-Lang",
+      "alpha_msg": "Zymbol est en développement actif — cette version valide le concept du design du langage. Les API, la syntaxe et les fonctionnalités peuvent changer.",
+      "alpha_link": "Suivre l'avancement sur GitHub →"
     },
     "german": {
       "rtl": false,
@@ -436,7 +444,9 @@
       "subregion": "germanic",
       "nav_try_online": "Online Testen",
       "april_sub": "Wir haben alle Operatoren durch Emojis ersetzt. Ein Scherz. Vielleicht. 😈",
-      "april_welcome": "Willkommen Zymbol-Lang"
+      "april_welcome": "Willkommen Zymbol-Lang",
+      "alpha_msg": "Zymbol befindet sich in aktiver Entwicklung — dieses Release validiert das Sprachdesign. APIs, Syntax und Funktionen können sich ändern.",
+      "alpha_link": "Fortschritt auf GitHub verfolgen →"
     },
     "italian": {
       "rtl": false,
@@ -520,7 +530,9 @@
       "subregion": "romance",
       "nav_try_online": "Prova Online",
       "april_sub": "Abbiamo rinominato tutti gli operatori con emoji. Scherzo. Forse. 😈",
-      "april_welcome": "Benvenuto Zymbol-Lang"
+      "april_welcome": "Benvenuto Zymbol-Lang",
+      "alpha_msg": "Zymbol è in sviluppo attivo — questa release valida il concept del design del linguaggio. API, sintassi e funzionalità possono cambiare.",
+      "alpha_link": "Segui il progresso su GitHub →"
     },
     "dutch": {
       "rtl": false,
@@ -604,7 +616,9 @@
       "subregion": "germanic",
       "nav_try_online": "Online Proberen",
       "april_sub": "We vervingen alle operatoren door emoji's. Grapje. Misschien. 😈",
-      "april_welcome": "Welkom Zymbol-Lang"
+      "april_welcome": "Welkom Zymbol-Lang",
+      "alpha_msg": "Zymbol is in actieve ontwikkeling — deze release valideert het taalontwerp. API's, syntax en functies kunnen veranderen.",
+      "alpha_link": "Volg de voortgang op GitHub →"
     },
     "polish": {
       "rtl": false,
@@ -688,7 +702,9 @@
       "subregion": "slavic",
       "nav_try_online": "Wypróbuj Online",
       "april_sub": "Zmieniliśmy nazwy wszystkich operatorów na emoji. Żart. Może. 😈",
-      "april_welcome": "Witaj Zymbol-Lang"
+      "april_welcome": "Witaj Zymbol-Lang",
+      "alpha_msg": "Zymbol jest w aktywnym rozwoju — to wydanie waliduje koncepcję projektu języka. API, składnia i funkcje mogą się zmieniać.",
+      "alpha_link": "Śledź postępy na GitHub →"
     },
     "russian": {
       "rtl": false,
@@ -772,7 +788,9 @@
       "subregion": "slavic",
       "nav_try_online": "Попробовать Online",
       "april_sub": "Мы переименовали все операторы в эмодзи. Шутка. Может быть. 😈",
-      "april_welcome": "Добро пожаловать Zymbol-Lang"
+      "april_welcome": "Добро пожаловать Zymbol-Lang",
+      "alpha_msg": "Zymbol находится в активной разработке — этот релиз проверяет концепцию дизайна языка. API, синтаксис и возможности могут измениться.",
+      "alpha_link": "Следить за прогрессом на GitHub →"
     },
     "ukrainian": {
       "rtl": false,
@@ -2289,7 +2307,9 @@
       "subregion": "middle_east",
       "nav_try_online": "جرّب مباشرةً",
       "april_sub": "غيّرنا جميع المعاملات إلى رموز تعبيرية. مزحة. ربما. 😈",
-      "april_welcome": "أهلاً وسهلاً Zymbol-Lang"
+      "april_welcome": "أهلاً وسهلاً Zymbol-Lang",
+      "alpha_msg": "زيمبول قيد التطوير النشط — هذا الإصدار يُثبت مفهوم تصميم اللغة. قد تتغير واجهات API والصياغة والميزات.",
+      "alpha_link": "تابع التقدم على GitHub →"
     },
     "hebrew": {
       "rtl": true,
@@ -2625,7 +2645,9 @@
       "subregion": "indo_aryan",
       "nav_try_online": "ऑनलाइन आज़माएं",
       "april_sub": "हमने सभी ऑपरेटरों को इमोजी से बदल दिया। मज़ाक था। शायद। 😈",
-      "april_welcome": "स्वागत है Zymbol-Lang"
+      "april_welcome": "स्वागत है Zymbol-Lang",
+      "alpha_msg": "Zymbol सक्रिय विकास में है — यह रिलीज़ भाषा के डिज़ाइन की अवधारणा की पुष्टि है। API, सिंटैक्स और फीचर बदल सकते हैं।",
+      "alpha_link": "GitHub पर प्रगति देखें →"
     },
     "bengali": {
       "rtl": false,
@@ -3045,7 +3067,9 @@
       "subregion": "east_asia",
       "nav_try_online": "オンラインで試す",
       "april_sub": "全ての演算子を絵文字に変えました。冗談です。たぶん。😈",
-      "april_welcome": "ようこそ Zymbol-Lang"
+      "april_welcome": "ようこそ Zymbol-Lang",
+      "alpha_msg": "Zymbolは開発中です — このリリースは言語設計のコンセプト検証版です。API・構文・機能は変更される場合があります。",
+      "alpha_link": "GitHubで進捗を確認 →"
     },
     "korean": {
       "rtl": false,
@@ -3129,7 +3153,9 @@
       "subregion": "east_asia",
       "nav_try_online": "온라인으로 체험",
       "april_sub": "모든 연산자를 이모지로 바꿨어요. 농담이에요. 아마도. 😈",
-      "april_welcome": "환영합니다 Zymbol-Lang"
+      "april_welcome": "환영합니다 Zymbol-Lang",
+      "alpha_msg": "Zymbol은 개발 중입니다 — 이 릴리스는 언어 설계 개념 검증 버전입니다. API, 문법, 기능은 변경될 수 있습니다.",
+      "alpha_link": "GitHub에서 진행 상황 확인 →"
     },
     "indonesian": {
       "rtl": false,
@@ -3969,7 +3995,9 @@
       "subregion": "turkic",
       "nav_try_online": "Çevrimiçi Dene",
       "april_sub": "Tüm operatörleri emojilerle değiştirdik. Şaka. Belki. 😈",
-      "april_welcome": "Hoş geldiniz Zymbol-Lang"
+      "april_welcome": "Hoş geldiniz Zymbol-Lang",
+      "alpha_msg": "Zymbol aktif geliştirme aşamasındadır — bu sürüm dil tasarımının kavram doğrulamasıdır. API'ler, sözdizimi ve özellikler değişebilir.",
+      "alpha_link": "GitHub'da ilerlemeyi takip et →"
     },
     "castellano": {
       "rtl": false,
@@ -4306,7 +4334,9 @@
       "subregion": "romance",
       "nav_try_online": "Prova en línia",
       "april_sub": "Hem canviat tots els operadors per emojis. És broma. Potser. 😈",
-      "april_welcome": "Benvingut Zymbol-Lang"
+      "april_welcome": "Benvingut Zymbol-Lang",
+      "alpha_msg": "Zymbol està en desenvolupament actiu — aquesta versió valida el concepte del disseny del llenguatge. Les API, sintaxi i funcionalitats poden canviar.",
+      "alpha_link": "Segueix el progrés a GitHub →"
     },
     "basque": {
       "rtl": false,
@@ -7834,7 +7864,9 @@
       "manual_sub": "Mallonga manlibro de Zymbol-Lang",
       "nav_try_online": "Provu Rete",
       "april_sub": "Ni renomis ĉiujn operatorojn al emoĝioj. Ŝerco. Eble. 😈",
-      "april_welcome": "Bonvenon Zymbol-Lang"
+      "april_welcome": "Bonvenon Zymbol-Lang",
+      "alpha_msg": "Zymbol estas en aktiva disvolvo — ĉi tiu eldono validas la lingvan dezajnon. API-oj, sintakso kaj funkcioj povas ŝanĝiĝi.",
+      "alpha_link": "Sekvu progreson ĉe GitHub →"
     },
     "lojban": {
       "rtl": false,
