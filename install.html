@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Install — Zymbol-Lang</title>
+  <meta name="description" content="Download and install Zymbol-Lang for Linux. VS Code extension. Compile from source on any platform.">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+  <link rel="apple-touch-icon" href="favicon.png">
+  <script>
+  (function(){
+    var s = localStorage.getItem('zy-theme');
+    var light = s ? s === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+    if (light) document.documentElement.classList.add('light');
+  })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header>
+  <a href="index.html" class="logo">
+    <img src="logo.png" alt="Zymbol-Lang">
+    <span class="logo-code">
+      <span class="logo-sym">@{</span>
+      <span class="logo-op">&gt;&gt;</span><span class="logo-str">" Zymbol-Lang "</span>
+      <span class="logo-sym">}</span>
+    </span>
+  </a>
+  <div class="header-right">
+    <nav id="main-nav">
+      <a href="index.html#showcase">Showcase</a>
+      <a href="index.html#operators">Operators</a>
+      <a href="index.html#features">Features</a>
+      <a href="index.html#manual">Docs</a>
+      <a href="https://github.com/zymbol-lang/interpreter" target="_blank">GitHub</a>
+      <a href="playground.html" class="nav-cta">Try Online</a>
+    </nav>
+    <button id="theme-toggle" aria-label="Toggle theme" title="Toggle light/dark">
+      <span id="theme-icon">🌙</span>
+    </button>
+    <button id="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span>☰</span>
+    </button>
+  </div>
+</header>
+
+<!-- ═══ HERO ═══ -->
+<div class="install-hero">
+  <div class="section-tag">// v0.0.2 · get zymbol</div>
+  <h1>Download &amp; Install</h1>
+  <p>Pre-built packages for Linux (x86_64 and aarch64). VS Code extension for syntax highlighting and LSP. Or compile from source on any platform.</p>
+  <div class="hero-actions">
+    <a href="https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.2" target="_blank" class="btn-primary">
+      <span>↓</span>&nbsp;GitHub Releases
+    </a>
+    <a href="#vscode" class="btn-ghost">VS Code Extension</a>
+    <a href="#compile" class="btn-ghost">Compile from Source</a>
+  </div>
+</div>
+
+<!-- ═══ LINUX PACKAGES ═══ -->
+<div class="install-section">
+  <div class="container">
+    <h2>Linux Packages</h2>
+    <p class="section-sub">The packages (.deb, .rpm, .pkg.tar.zst) install <code style="font-family:var(--mono);color:var(--green);font-size:0.82em">zymbol</code> to <code style="font-family:var(--mono);color:var(--hi);font-size:0.82em">/usr/bin/zymbol</code>. The static binary runs directly without installing — no dependencies needed.</p>
+
+    <div class="dl-table-wrap">
+      <table class="dl-table">
+        <thead>
+          <tr>
+            <th>Arch</th>
+            <th>Format</th>
+            <th>Download</th>
+            <th>SHA256</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- x86_64 -->
+          <tr>
+            <td rowspan="4"><span class="dl-arch-badge">x86_64</span></td>
+            <td style="color:var(--mid);font-size:0.78rem">.deb <span style="color:var(--dim)">Debian / Ubuntu</span></td>
+            <td><a class="dl-link" href="https://github.com/zymbol-lang/interpreter/releases/download/v0.0.2/zymbol_lang_v0.0.2_x86_64.deb">↓ zymbol_lang_v0.0.2_x86_64.deb</a></td>
+            <td>
+              <div class="dl-hash-cell">
+                <span class="dl-hash-val" title="cef2dc84428c8ef6cdd11e606f34fe64695b72560bca647bca3c4f757f5b5f1c">cef2dc84428c</span>
+                <button class="dl-copy-btn" data-hash="cef2dc84428c8ef6cdd11e606f34fe64695b72560bca647bca3c4f757f5b5f1c">copy</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:var(--mid);font-size:0.78rem">.rpm <span style="color:var(--dim)">Fedora / RHEL</span></td>
+            <td><a class="dl-link" href="https://github.com/zymbol-lang/interpreter/releases/download/v0.0.2/zymbol_lang_v0.0.2_x86_64.rpm">↓ zymbol_lang_v0.0.2_x86_64.rpm</a></td>
+            <td>
+              <div class="dl-hash-cell">
+                <span class="dl-hash-val" title="66df51c2ca5e868413bd4c7c9c2bf5ae484d2b45e8763d1f5c838bcf8150a826">66df51c2ca5e</span>
+                <button class="dl-copy-btn" data-hash="66df51c2ca5e868413bd4c7c9c2bf5ae484d2b45e8763d1f5c838bcf8150a826">copy</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:var(--mid);font-size:0.78rem">.pkg.tar.zst <span style="color:var(--dim)">Arch Linux</span></td>
+            <td><a class="dl-link" href="https://github.com/zymbol-lang/interpreter/releases/download/v0.0.2/zymbol_lang_v0.0.2_x86_64.pkg.tar.zst">↓ zymbol_lang_v0.0.2_x86_64.pkg.tar.zst</a></td>
+            <td>
+              <div class="dl-hash-cell">
+                <span class="dl-hash-val" title="c55029d58bf615941ded1aedd2ca73e2e3fd0f5eea756362f2d5675838616bb0">c55029d58bf6</span>
+                <button class="dl-copy-btn" data-hash="c55029d58bf615941ded1aedd2ca73e2e3fd0f5eea756362f2d5675838616bb0">copy</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:var(--mid);font-size:0.78rem">static binary <span style="color:var(--dim)">Any Linux (musl)</span></td>
+            <td><a class="dl-link" href="https://github.com/zymbol-lang/interpreter/releases/download/v0.0.2/zymbol_lang_v0.0.2_x86_64_linux">↓ zymbol_lang_v0.0.2_x86_64_linux</a></td>
+            <td>
+              <div class="dl-hash-cell">
+                <span class="dl-hash-val" title="32c8f631531ddff54dc5dfc42721ad644cb68ac9e702fbab4f19c06f89acf795">32c8f631531d</span>
+                <button class="dl-copy-btn" data-hash="32c8f631531ddff54dc5dfc42721ad644cb68ac9e702fbab4f19c06f89acf795">copy</button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- spacer row -->
+          <tr style="height:4px;background:var(--bg3)"><td colspan="4" style="border:none;padding:0"></td></tr>
+
+          <!-- aarch64 -->
+          <tr>
+            <td rowspan="3"><span class="dl-arch-badge">aarch64</span></td>
+            <td style="color:var(--mid);font-size:0.78rem">.deb <span style="color:var(--dim)">Debian / Ubuntu</span></td>
+            <td><a class="dl-link" href="https://github.com/zymbol-lang/interpreter/releases/download/v0.0.2/zymbol_lang_v0.0.2_aarch64.deb">↓ zymbol_lang_v0.0.2_aarch64.deb</a></td>
+            <td>
+              <div class="dl-hash-cell">
+                <span class="dl-hash-val" title="cbe3404fe9e6d33051f58cf724831252f9a23cffb0c489b6ccddbea889556388">cbe3404fe9e6</span>
+                <button class="dl-copy-btn" data-hash="cbe3404fe9e6d33051f58cf724831252f9a23cffb0c489b6ccddbea889556388">copy</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:var(--mid);font-size:0.78rem">.rpm <span style="color:var(--dim)">Fedora / RHEL</span></td>
+            <td><a class="dl-link" href="https://github.com/zymbol-lang/interpreter/releases/download/v0.0.2/zymbol_lang_v0.0.2_aarch64.rpm">↓ zymbol_lang_v0.0.2_aarch64.rpm</a></td>
+            <td>
+              <div class="dl-hash-cell">
+                <span class="dl-hash-val" title="6687f65ce8a702872b200a2d77ceb72199c86a25022a4e7cbfc3b22ad33e7361">6687f65ce8a7</span>
+                <button class="dl-copy-btn" data-hash="6687f65ce8a702872b200a2d77ceb72199c86a25022a4e7cbfc3b22ad33e7361">copy</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:var(--mid);font-size:0.78rem">.pkg.tar.zst <span style="color:var(--dim)">Arch Linux</span></td>
+            <td><a class="dl-link" href="https://github.com/zymbol-lang/interpreter/releases/download/v0.0.2/zymbol_lang_v0.0.2_aarch64.pkg.tar.zst">↓ zymbol_lang_v0.0.2_aarch64.pkg.tar.zst</a></td>
+            <td>
+              <div class="dl-hash-cell">
+                <span class="dl-hash-val" title="db02ea91957578ea207980e3a2ddee3c57485907f2d2f5d477d8d44d23f8ed5a">db02ea919575</span>
+                <button class="dl-copy-btn" data-hash="db02ea91957578ea207980e3a2ddee3c57485907f2d2f5d477d8d44d23f8ed5a">copy</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:var(--mid);font-size:0.78rem">static binary <span style="color:var(--dim)">coming soon</span></td>
+            <td><span style="color:var(--dim);font-size:0.78rem">aarch64 musl toolchain pending</span></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Hash files download -->
+    <div class="dl-sums-row">
+      <a class="dl-link" href="https://github.com/zymbol-lang/interpreter/releases/download/v0.0.2/SHA256SUMS">
+        ↓ SHA256SUMS
+      </a>
+      <a class="dl-link" href="https://github.com/zymbol-lang/interpreter/releases/download/v0.0.2/SHA512SUMS">
+        ↓ SHA512SUMS
+      </a>
+    </div>
+
+    <!-- Verify instructions -->
+    <div style="margin-top:1rem; padding:0.85rem 1.1rem; background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); font-family:var(--mono); font-size:0.78rem; color:var(--mid); line-height:1.7;">
+      <span style="color:var(--dim)"># Download SHA256SUMS into the same folder as the package, then:</span><br>
+      <span style="color:var(--green)">sha256sum</span> --ignore-missing -c SHA256SUMS
+    </div>
+
+    <!-- Static binary usage -->
+    <div style="margin-top:1.25rem;">
+      <h2 style="margin-bottom:0.4rem">Using the static binary</h2>
+      <p class="section-sub" style="margin-bottom:0.75rem">No installation needed — download, make executable, run.</p>
+      <div style="padding:0.85rem 1.1rem; background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); font-family:var(--mono); font-size:0.78rem; color:var(--mid); line-height:1.9;">
+        <span style="color:var(--dim)"># Make it executable</span><br>
+        <span style="color:var(--green)">chmod</span> +x zymbol_lang_v0.0.2_x86_64_linux<br>
+        <br>
+        <span style="color:var(--dim)"># Run a file</span><br>
+        ./zymbol_lang_v0.0.2_x86_64_linux run hello.zy<br>
+        <br>
+        <span style="color:var(--dim)"># (Optional) Install system-wide</span><br>
+        <span style="color:var(--green)">sudo install</span> -m755 zymbol_lang_v0.0.2_x86_64_linux /usr/local/bin/zymbol
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ VS CODE EXTENSION ═══ -->
+<div class="install-section" id="vscode">
+  <div class="container">
+    <h2>VS Code Extension</h2>
+    <p class="section-sub">Syntax highlighting, semantic tokens, bracket matching, and LSP integration (hover, go-to-definition, diagnostics).</p>
+
+    <div class="dl-table-wrap" style="margin-bottom:0.75rem">
+      <table class="dl-table">
+        <thead>
+          <tr>
+            <th>Package</th>
+            <th>Version</th>
+            <th>Download</th>
+            <th>SHA256</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--hi);font-size:0.82rem">Zymbol-Lang VSIX</td>
+            <td><span class="dl-arch-badge">v0.1.0</span></td>
+            <td>
+              <a class="dl-link" href="https://github.com/zymbol-lang/vscode/releases/download/v0.1.0/zymbol-lang-0.1.0.vsix">
+                ↓ zymbol-lang-0.1.0.vsix
+              </a>
+            </td>
+            <td>
+              <div class="dl-hash-cell">
+                <span class="dl-hash-val" title="34e101dc43d59907aa0890f2bc7ee8f2b41061b4afe90035adba79ba12172e0c">34e101dc43d5</span>
+                <button class="dl-copy-btn" data-hash="34e101dc43d59907aa0890f2bc7ee8f2b41061b4afe90035adba79ba12172e0c">copy</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Install instructions -->
+    <div style="padding:1rem 1.25rem; background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); font-family:var(--mono); font-size:0.78rem; color:var(--mid); line-height:1.9;">
+      <span style="color:var(--dim)"># Install from the .vsix file:</span><br>
+      <span style="color:var(--green)">code</span> --install-extension zymbol-lang-0.1.0.vsix<br>
+      <br>
+      <span style="color:var(--dim)"># Or in VS Code: Extensions (Ctrl+Shift+X) → ··· → Install from VSIX…</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ COMPILE FROM SOURCE ═══ -->
+<div class="install-section" id="compile">
+  <div class="container">
+    <h2>Compile from Source</h2>
+    <p class="section-sub">Works on Linux, macOS, and Windows. Requires <a href="https://rustup.rs" target="_blank" style="color:var(--green)">Rust stable</a> (rustup).</p>
+
+    <div class="source-steps">
+      <div class="source-step">
+        <div class="step-num">1</div>
+        <pre><span class="cmt"># Clone the interpreter repository</span>
+git clone https://github.com/zymbol-lang/interpreter
+cd interpreter</pre>
+      </div>
+      <div class="source-step">
+        <div class="step-num">2</div>
+        <pre><span class="cmt"># Build optimized release binary</span>
+cargo build --release
+<span class="cmt"># Binary: target/release/zymbol</span></pre>
+      </div>
+      <div class="source-step">
+        <div class="step-num">3</div>
+        <pre><span class="cmt"># (Optional) Install system-wide on Linux / macOS</span>
+sudo install -m755 target/release/zymbol /usr/local/bin/zymbol</pre>
+      </div>
+      <div class="source-step">
+        <div class="step-num">4</div>
+        <pre><span class="cmt"># Verify</span>
+zymbol --version</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ COMING SOON ═══ -->
+<div class="install-section">
+  <div class="container">
+    <h2>Other Platforms</h2>
+    <p class="section-sub">Pre-built packages for Windows and macOS are in progress.</p>
+    <div class="coming-soon-card">
+      <div class="cs-icon">⏳</div>
+      <div>
+        <div class="cs-title">Windows &amp; macOS — coming soon</div>
+        <div class="cs-desc">We are obtaining code-signing certificates. In the meantime, compile from source (steps above) — it works on all platforms with Rust installed.</div>
+        <div class="cs-badges">
+          <span class="cs-badge">Windows .msi</span>
+          <span class="cs-badge">Windows .exe setup</span>
+          <span class="cs-badge">macOS .pkg</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">
+      <img src="logo.png" alt="Zymbol-Lang" style="height:1.6rem;width:auto;opacity:0.8;vertical-align:middle;">
+    </div>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="index.html#showcase">Showcase</a>
+      <a href="index.html#operators">Operators</a>
+      <a href="index.html#features">Features</a>
+      <a href="https://github.com/zymbol-lang/interpreter" target="_blank">GitHub</a>
+    </div>
+    <div class="footer-copy">No keywords. Just symbols.</div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  // Theme toggle
+  var btn = document.getElementById('theme-toggle');
+  var icon = document.getElementById('theme-icon');
+  function applyTheme(light) {
+    document.documentElement.classList.toggle('light', light);
+    icon.textContent = light ? '☀️' : '🌙';
+  }
+  var stored = localStorage.getItem('zy-theme');
+  var isLight = stored ? stored === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+  applyTheme(isLight);
+  btn.addEventListener('click', function () {
+    isLight = !isLight;
+    localStorage.setItem('zy-theme', isLight ? 'light' : 'dark');
+    applyTheme(isLight);
+  });
+
+  // Hamburger menu
+  var menuBtn = document.getElementById('menu-toggle');
+  var nav = document.getElementById('main-nav');
+  menuBtn.addEventListener('click', function () {
+    var open = nav.classList.toggle('open');
+    menuBtn.setAttribute('aria-expanded', open);
+  });
+
+  // Copy hash buttons
+  document.querySelectorAll('.dl-copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var hash = btn.getAttribute('data-hash');
+      navigator.clipboard.writeText(hash).then(function () {
+        btn.textContent = 'copied!';
+        btn.classList.add('copied');
+        setTimeout(function () {
+          btn.textContent = 'copy';
+          btn.classList.remove('copied');
+        }, 1500);
+      });
+    });
+  });
+}());
+</script>
+</body>
+</html>
