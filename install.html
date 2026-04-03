@@ -54,19 +54,130 @@
 <div class="install-hero">
   <div class="section-tag">// v0.0.2 · get zymbol</div>
   <h1>Download &amp; Install</h1>
-  <p>Pre-built packages for Linux (x86_64 and aarch64). VS Code extension for syntax highlighting and LSP. Or compile from source on any platform.</p>
+  <p>Native binaries for macOS and Linux. VS Code extension with LSP. Or compile from source on any platform.</p>
   <div class="hero-actions">
     <a href="https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.2" target="_blank" class="btn-primary">
       <span>↓</span>&nbsp;GitHub Releases
     </a>
+    <a href="#vscode" class="btn-ghost">VS Code</a>
     <a href="#macos" class="btn-ghost">macOS</a>
-    <a href="#vscode" class="btn-ghost">VS Code Extension</a>
+    <a href="#linux" class="btn-ghost">Linux</a>
     <a href="#compile" class="btn-ghost">Compile from Source</a>
   </div>
 </div>
 
-<!-- ═══ LINUX PACKAGES ═══ -->
+<!-- ═══ VS CODE EXTENSION ═══ -->
+<div class="install-section" id="vscode">
+  <div class="container">
+    <h2>VS Code Extension</h2>
+    <p class="section-sub">Syntax highlighting, semantic tokens, bracket matching, and LSP integration (hover, go-to-definition, diagnostics).</p>
+
+    <div class="dl-table-wrap" style="margin-bottom:0.75rem">
+      <table class="dl-table">
+        <thead>
+          <tr>
+            <th>Package</th>
+            <th>Version</th>
+            <th>Download</th>
+            <th>SHA256</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--hi);font-size:0.82rem">Zymbol-Lang VSIX</td>
+            <td><span class="dl-arch-badge">v0.1.0</span></td>
+            <td>
+              <a class="dl-link" href="https://github.com/zymbol-lang/vscode/releases/download/v0.1.0/zymbol-lang-0.1.0.vsix">
+                ↓ zymbol-lang-0.1.0.vsix
+              </a>
+            </td>
+            <td>
+              <div class="dl-hash-cell">
+                <span class="dl-hash-val" title="34e101dc43d59907aa0890f2bc7ee8f2b41061b4afe90035adba79ba12172e0c">34e101dc43d5</span>
+                <button class="dl-copy-btn" data-hash="34e101dc43d59907aa0890f2bc7ee8f2b41061b4afe90035adba79ba12172e0c">copy</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="padding:0.85rem 1.1rem; background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); font-family:var(--mono); font-size:0.78rem; color:var(--mid); line-height:1.9;">
+      <span style="color:var(--dim)"># Install from the .vsix file:</span><br>
+      <span style="color:var(--green)">code</span> --install-extension zymbol-lang-0.1.0.vsix<br>
+      <br>
+      <span style="color:var(--dim)"># Or in VS Code: Extensions (Ctrl+Shift+X) → ··· → Install from VSIX…</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WINDOWS COMING SOON ═══ -->
 <div class="install-section">
+  <div class="container">
+    <h2>Windows</h2>
+    <p class="section-sub">Native installer for Windows is in progress.</p>
+    <div class="coming-soon-card">
+      <div class="cs-icon">⏳</div>
+      <div>
+        <div class="cs-title">Windows — coming soon</div>
+        <div class="cs-desc">We are obtaining a code-signing certificate. In the meantime, compile from source — it works on Windows with Rust installed.</div>
+        <div class="cs-badges">
+          <span class="cs-badge">Windows .msi</span>
+          <span class="cs-badge">Windows .exe setup</span>
+        </div>
+        <a href="#compile" class="btn-ghost" style="margin-top:0.85rem;display:inline-block">Compile from Source ↓</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MACOS ═══ -->
+<div class="install-section" id="macos">
+  <div class="container">
+    <h2>macOS</h2>
+    <p class="section-sub">Native binaries — no installer needed. Download, make executable, run.</p>
+
+    <div class="dl-table-wrap">
+      <table class="dl-table">
+        <thead>
+          <tr>
+            <th>Arch</th>
+            <th>Download</th>
+            <th>SHA256</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="dl-arch-badge">aarch64</span> <span style="color:var(--dim);font-size:0.75rem">Apple Silicon</span></td>
+            <td><a class="dl-link" href="https://github.com/zymbol-lang/interpreter/releases/download/v0.0.2/zymbol_lang_v0.0.2_aarch64_macos">↓ zymbol_lang_v0.0.2_aarch64_macos</a></td>
+            <td><span style="color:var(--dim);font-size:0.75rem">see SHA256_aarch64_macos.txt</span></td>
+          </tr>
+          <tr>
+            <td><span class="dl-arch-badge">x86_64</span> <span style="color:var(--dim);font-size:0.75rem">Intel — coming soon</span></td>
+            <td><span style="color:var(--dim);font-size:0.78rem">build in progress</span></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:1rem; padding:0.85rem 1.1rem; background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); font-family:var(--mono); font-size:0.78rem; color:var(--mid); line-height:1.9;">
+      <span style="color:var(--dim)"># Make it executable and run</span><br>
+      <span style="color:var(--green)">chmod</span> +x zymbol_lang_v0.0.2_aarch64_macos<br>
+      ./zymbol_lang_v0.0.2_aarch64_macos run hello.zy<br>
+      <br>
+      <span style="color:var(--dim)"># (Optional) Install system-wide</span><br>
+      <span style="color:var(--green)">sudo install</span> -m755 zymbol_lang_v0.0.2_aarch64_macos /usr/local/bin/zymbol
+    </div>
+
+    <div style="margin-top:0.75rem; padding:0.75rem 1rem; background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); font-size:0.78rem; color:var(--mid);">
+      <strong style="color:var(--hi)">First launch warning:</strong> macOS may show "unidentified developer". Right-click → Open → Open to bypass. Code signing coming soon.
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LINUX PACKAGES ═══ -->
+<div class="install-section" id="linux">
   <div class="container">
     <h2>Linux Packages</h2>
     <p class="section-sub">The packages (.deb, .rpm, .pkg.tar.zst) install <code style="font-family:var(--mono);color:var(--green);font-size:0.82em">zymbol</code> to <code style="font-family:var(--mono);color:var(--hi);font-size:0.82em">/usr/bin/zymbol</code>. The static binary runs directly without installing — no dependencies needed.</p>
@@ -130,7 +241,7 @@
 
           <!-- aarch64 -->
           <tr>
-            <td rowspan="3"><span class="dl-arch-badge">aarch64</span></td>
+            <td rowspan="4"><span class="dl-arch-badge">aarch64</span></td>
             <td style="color:var(--mid);font-size:0.78rem">.deb <span style="color:var(--dim)">Debian / Ubuntu</span></td>
             <td><a class="dl-link" href="https://github.com/zymbol-lang/interpreter/releases/download/v0.0.2/zymbol_lang_v0.0.2_aarch64.deb">↓ zymbol_lang_v0.0.2_aarch64.deb</a></td>
             <td>
@@ -161,8 +272,8 @@
             </td>
           </tr>
           <tr>
-            <td style="color:var(--mid);font-size:0.78rem">static binary <span style="color:var(--dim)">coming soon</span></td>
-            <td><span style="color:var(--dim);font-size:0.78rem">aarch64 musl toolchain pending</span></td>
+            <td style="color:var(--mid);font-size:0.78rem">static binary <span style="color:var(--dim)">Any Linux (musl) — coming soon</span></td>
+            <td><span style="color:var(--dim);font-size:0.78rem">aarch64 musl binary — build in progress</span></td>
             <td></td>
           </tr>
         </tbody>
@@ -187,7 +298,7 @@
 
     <!-- Static binary usage -->
     <div style="margin-top:1.25rem;">
-      <h2 style="margin-bottom:0.4rem">Using the static binary</h2>
+      <h2 style="margin-bottom:0.4rem">Using the static binary (x86_64)</h2>
       <p class="section-sub" style="margin-bottom:0.75rem">No installation needed — download, make executable, run.</p>
       <div style="padding:0.85rem 1.1rem; background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); font-family:var(--mono); font-size:0.78rem; color:var(--mid); line-height:1.9;">
         <span style="color:var(--dim)"># Make it executable</span><br>
@@ -199,97 +310,6 @@
         <span style="color:var(--dim)"># (Optional) Install system-wide</span><br>
         <span style="color:var(--green)">sudo install</span> -m755 zymbol_lang_v0.0.2_x86_64_linux /usr/local/bin/zymbol
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MACOS BINARIES ═══ -->
-<div class="install-section" id="macos">
-  <div class="container">
-    <h2>macOS Binaries</h2>
-    <p class="section-sub">Native binaries for Intel and Apple Silicon. No installer — download, make executable, run.</p>
-
-    <div class="dl-table-wrap">
-      <table class="dl-table">
-        <thead>
-          <tr>
-            <th>Arch</th>
-            <th>Download</th>
-            <th>SHA256</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><span class="dl-arch-badge">x86_64</span> <span style="color:var(--dim);font-size:0.75rem">Intel</span></td>
-            <td><a class="dl-link" href="https://github.com/zymbol-lang/interpreter/releases/download/v0.0.2/zymbol_lang_v0.0.2_x86_64_macos">↓ zymbol_lang_v0.0.2_x86_64_macos</a></td>
-            <td><span style="color:var(--dim);font-size:0.75rem">see SHA256_x86_64_macos.txt</span></td>
-          </tr>
-          <tr>
-            <td><span class="dl-arch-badge">aarch64</span> <span style="color:var(--dim);font-size:0.75rem">Apple Silicon</span></td>
-            <td><a class="dl-link" href="https://github.com/zymbol-lang/interpreter/releases/download/v0.0.2/zymbol_lang_v0.0.2_aarch64_macos">↓ zymbol_lang_v0.0.2_aarch64_macos</a></td>
-            <td><span style="color:var(--dim);font-size:0.75rem">see SHA256_aarch64_macos.txt</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div style="margin-top:1rem; padding:0.85rem 1.1rem; background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); font-family:var(--mono); font-size:0.78rem; color:var(--mid); line-height:1.9;">
-      <span style="color:var(--dim)"># Make it executable and run</span><br>
-      <span style="color:var(--green)">chmod</span> +x zymbol_lang_v0.0.2_aarch64_macos<br>
-      ./zymbol_lang_v0.0.2_aarch64_macos run hello.zy<br>
-      <br>
-      <span style="color:var(--dim)"># (Optional) Install system-wide</span><br>
-      <span style="color:var(--green)">sudo install</span> -m755 zymbol_lang_v0.0.2_aarch64_macos /usr/local/bin/zymbol
-    </div>
-
-    <div style="margin-top:0.75rem; padding:0.75rem 1rem; background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); font-size:0.78rem; color:var(--mid);">
-      <strong style="color:var(--hi)">First launch warning:</strong> macOS may block the binary as "unidentified developer". Right-click → Open → Open to bypass. Code signing is coming soon.
-    </div>
-  </div>
-</div>
-
-<!-- ═══ VS CODE EXTENSION ═══ -->
-<div class="install-section" id="vscode">
-  <div class="container">
-    <h2>VS Code Extension</h2>
-    <p class="section-sub">Syntax highlighting, semantic tokens, bracket matching, and LSP integration (hover, go-to-definition, diagnostics).</p>
-
-    <div class="dl-table-wrap" style="margin-bottom:0.75rem">
-      <table class="dl-table">
-        <thead>
-          <tr>
-            <th>Package</th>
-            <th>Version</th>
-            <th>Download</th>
-            <th>SHA256</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="color:var(--hi);font-size:0.82rem">Zymbol-Lang VSIX</td>
-            <td><span class="dl-arch-badge">v0.1.0</span></td>
-            <td>
-              <a class="dl-link" href="https://github.com/zymbol-lang/vscode/releases/download/v0.1.0/zymbol-lang-0.1.0.vsix">
-                ↓ zymbol-lang-0.1.0.vsix
-              </a>
-            </td>
-            <td>
-              <div class="dl-hash-cell">
-                <span class="dl-hash-val" title="34e101dc43d59907aa0890f2bc7ee8f2b41061b4afe90035adba79ba12172e0c">34e101dc43d5</span>
-                <button class="dl-copy-btn" data-hash="34e101dc43d59907aa0890f2bc7ee8f2b41061b4afe90035adba79ba12172e0c">copy</button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Install instructions -->
-    <div style="padding:1rem 1.25rem; background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); font-family:var(--mono); font-size:0.78rem; color:var(--mid); line-height:1.9;">
-      <span style="color:var(--dim)"># Install from the .vsix file:</span><br>
-      <span style="color:var(--green)">code</span> --install-extension zymbol-lang-0.1.0.vsix<br>
-      <br>
-      <span style="color:var(--dim)"># Or in VS Code: Extensions (Ctrl+Shift+X) → ··· → Install from VSIX…</span>
     </div>
   </div>
 </div>
@@ -322,26 +342,6 @@ sudo install -m755 target/release/zymbol /usr/local/bin/zymbol</pre>
         <div class="step-num">4</div>
         <pre><span class="cmt"># Verify</span>
 zymbol --version</pre>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ COMING SOON ═══ -->
-<div class="install-section">
-  <div class="container">
-    <h2>Other Platforms</h2>
-    <p class="section-sub">Pre-built packages for Windows and macOS are in progress.</p>
-    <div class="coming-soon-card">
-      <div class="cs-icon">⏳</div>
-      <div>
-        <div class="cs-title">Windows &amp; macOS — coming soon</div>
-        <div class="cs-desc">We are obtaining code-signing certificates. In the meantime, compile from source (steps above) — it works on all platforms with Rust installed.</div>
-        <div class="cs-badges">
-          <span class="cs-badge">Windows .msi</span>
-          <span class="cs-badge">Windows .exe setup</span>
-          <span class="cs-badge">macOS .pkg</span>
-        </div>
       </div>
     </div>
   </div>
