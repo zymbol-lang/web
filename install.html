@@ -199,19 +199,29 @@
           <tr>
             <td><span class="dl-arch-badge">aarch64</span> <span style="color:var(--dim);font-size:0.75rem">Apple Silicon</span></td>
             <td><a class="dl-link" href="https://github.com/zymbol-lang/interpreter/releases/download/v0.0.2/zymbol_lang_v0.0.2_aarch64_macos">↓ zymbol_lang_v0.0.2_aarch64_macos</a></td>
-            <td><span style="color:var(--dim);font-size:0.75rem">see SHA256_aarch64_macos.txt</span></td>
+            <td>
+              <div class="dl-hash-cell">
+                <span class="dl-hash-val" title="e762b80cdfa294d63d3615ce88bba42feb55fd980a98b59832907b1511d5ea15">e762b80cdfa2</span>
+                <button class="dl-copy-btn" data-hash="e762b80cdfa294d63d3615ce88bba42feb55fd980a98b59832907b1511d5ea15">copy</button>
+              </div>
+            </td>
           </tr>
           <tr>
-            <td><span class="dl-arch-badge">x86_64</span> <span style="color:var(--dim);font-size:0.75rem">Intel — coming soon</span></td>
-            <td><span style="color:var(--dim);font-size:0.78rem">build in progress</span></td>
-            <td></td>
+            <td><span class="dl-arch-badge">x86_64</span> <span style="color:var(--dim);font-size:0.75rem">Intel</span></td>
+            <td><a class="dl-link" href="https://github.com/zymbol-lang/interpreter/releases/download/v0.0.2/zymbol_lang_v0.0.2_x86_64_macos">↓ zymbol_lang_v0.0.2_x86_64_macos</a></td>
+            <td>
+              <div class="dl-hash-cell">
+                <span class="dl-hash-val" title="75baf03871d12dbcd16c6e763a3c8563840494a55147627453c00f202036e23c">75baf03871d1</span>
+                <button class="dl-copy-btn" data-hash="75baf03871d12dbcd16c6e763a3c8563840494a55147627453c00f202036e23c">copy</button>
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <div class="code-block" style="margin-top:1rem">
-      <span class="cmt"># Make it executable and run</span><br>
+      <span class="cmt"># Make it executable and run (replace _aarch64_ with _x86_64_ for Intel)</span><br>
       <span class="kw">chmod</span> +x zymbol_lang_v0.0.2_aarch64_macos<br>
       ./zymbol_lang_v0.0.2_aarch64_macos run hello.zy<br>
       <br>
