@@ -123,7 +123,9 @@
 <div class="install-section" id="windows">
   <div class="container">
     <h2>Windows</h2>
-    <p class="section-sub">Portable binary — no installer required. Download, place anywhere, add to PATH. Or use Scoop for automatic PATH management.</p>
+    <p class="section-sub">MSI installer with automatic PATH setup. Download and run — no manual configuration needed.</p>
+
+    <p class="section-sub" style="margin-bottom:0.75rem">MSI installer — adds <code>zymbol</code> to PATH automatically. Run the installer and you're done.</p>
 
     <div class="dl-table-wrap" style="margin-bottom:1rem">
       <table class="dl-table">
@@ -137,11 +139,11 @@
         <tbody>
           <tr>
             <td><span class="dl-arch-badge">x86_64</span></td>
-            <td><a class="dl-link" href="https://github.com/zymbol-lang/interpreter/releases/download/v0.0.2/zymbol_lang_v0.0.2_x86_64_windows.exe">↓ zymbol_lang_v0.0.2_x86_64_windows.exe</a></td>
+            <td><a class="dl-link" href="https://github.com/zymbol-lang/interpreter/releases/download/v0.0.2/zymbol_lang_v0.0.2_x86_64_windows.msi">↓ zymbol_lang_v0.0.2_x86_64_windows.msi</a></td>
             <td>
               <div class="dl-hash-cell">
-                <span class="dl-hash-val" title="dcabe0d5cf7e3f58c49c90d36209207f1c2f3b89d06592b5f380e44a4ba5870f">dcabe0d5cf7e</span>
-                <button class="dl-copy-btn" data-hash="dcabe0d5cf7e3f58c49c90d36209207f1c2f3b89d06592b5f380e44a4ba5870f">copy</button>
+                <span class="dl-hash-val" title="1fdbc78e1b5d8dc34e773e21f6b12a6c2cf39ef2d3089986a2832b457a2a4524">1fdbc78e1b5d</span>
+                <button class="dl-copy-btn" data-hash="1fdbc78e1b5d8dc34e773e21f6b12a6c2cf39ef2d3089986a2832b457a2a4524">copy</button>
               </div>
             </td>
           </tr>
@@ -149,40 +151,9 @@
       </table>
     </div>
 
-    <div class="code-block" style="margin-bottom:1rem">
-      <span class="cmt"># Place the .exe in a folder, then add it to PATH (PowerShell — run once):</span><br>
-      $dest = "$env:USERPROFILE\bin"<br>
-      New-Item -ItemType Directory -Force -Path $dest | Out-Null<br>
-      Move-Item zymbol_lang_v0.0.2_x86_64_windows.exe "$dest\zymbol.exe"<br>
-      [Environment]::SetEnvironmentVariable("Path", $env:Path + ";$dest", "User")<br>
-      <span class="cmt"># Restart your terminal, then:</span><br>
-      zymbol --version
-    </div>
-
-    <h2 style="margin-bottom:0.4rem;margin-top:1.5rem">Install via Scoop</h2>
-    <p class="section-sub" style="margin-bottom:0.75rem"><a href="https://scoop.sh" target="_blank" style="color:var(--green)">Scoop</a> manages the download, PATH, and future updates automatically.</p>
     <div class="code-block">
-      <span class="cmt"># Install Scoop if you don't have it (run in PowerShell):</span><br>
-      irm get.scoop.sh | iex<br>
-      <br>
-      <span class="cmt"># Add the Zymbol bucket and install:</span><br>
-      scoop bucket add zymbol https://github.com/zymbol-lang/scoop-bucket<br>
-      scoop install zymbol<br>
-      <br>
-      <span class="cmt"># Future updates:</span><br>
-      scoop update zymbol
-    </div>
-
-    <div class="coming-soon-card" style="margin-top:1.25rem">
-      <div class="cs-icon">⏳</div>
-      <div>
-        <div class="cs-title">Windows installer (.msi) — coming soon</div>
-        <div class="cs-desc">A proper installer with start menu integration is planned once code-signing certificates are in place. winget submission is in progress.</div>
-        <div class="cs-badges">
-          <span class="cs-badge">Windows .msi</span>
-          <span class="cs-badge">winget install zymbol-lang.zymbol</span>
-        </div>
-      </div>
+      <span class="cmt"># After installing, open a new terminal and verify:</span><br>
+      zymbol --version
     </div>
   </div>
 </div>
