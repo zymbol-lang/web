@@ -27,8 +27,11 @@
       --green-mid: #00e87a44;
       --str:       #c89a6e;
       --num:       #6aadce;
-      --cmt:       #3a3a3a;
+      --cmt:       #3d3d3d;
       --op:        #9ecbff;
+      --fn:        #c792ea;
+      --id:        #aaaaaa;
+      --punct:     #555555;
       --kw:        #00e87a;
       --header-bg: rgba(12,12,12,0.92);
       --mono: 'pIqaD-qolqoS', 'pIqaD qolqoS', 'JetBrains Mono', 'Courier New', monospace;
@@ -58,8 +61,11 @@
       --green-mid: #008a4830;
       --str:       #a0522d;
       --num:       #1a6a99;
-      --cmt:       #bbb;
+      --cmt:       #aaaaaa;
       --op:        #3a6fa8;
+      --fn:        #7c3aed;
+      --id:        #333333;
+      --punct:     #888888;
       --kw:        #008a48;
     }
 
@@ -497,14 +503,15 @@
     }
 
     /* syntax tokens */
-    .t-cmt  { color: var(--cmt); font-style: italic; }
-    .t-kw   { color: var(--green); font-weight: 600; }
-    .t-str  { color: var(--str); }
-    .t-num  { color: var(--num); }
-    .t-op   { color: var(--op); }
-    .t-id   { color: var(--hi); }
-    .t-fn   { color: #d4a0ff; }
-    .t-dim  { color: var(--dim); }
+    .t-cmt   { color: var(--cmt); font-style: italic; }
+    .t-kw    { color: var(--green); font-weight: 600; }
+    .t-str   { color: var(--str); }
+    .t-num   { color: var(--num); }
+    .t-op    { color: var(--op); }
+    .t-id    { color: var(--id); }
+    .t-fn    { color: var(--fn); }
+    .t-punct { color: var(--punct); }
+    .t-dim   { color: var(--dim); }
 
     /* ═══ SECTIONS ═══ */
     section {
