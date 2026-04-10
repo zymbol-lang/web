@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Arei
 
+Arei esas **mutebla** e tenas elementi di **sama tipo**. Arei ne esas nemutebla — elementi povas esar modifikita.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ per_nomo = db$^ (a, b -> a.nomo > b.nomo)   // dekrescanta per nomo (>)
 >> per_ago[0].nomo ¶     // → Ana
 >> per_nomo[0].nomo ¶    // → Karla
 
-arr[1] = 99              // ĝisdatigo in-loke
-arr = arr[1]$~ 99        // funkciala ĝisdatigo — returnas nova areo
+// Ĝisdatigo in-loke (arei sole) — Direct element update (arrays only)
+arr[1] = 99              // asignar — assign
+arr[0] += 5              // komposita: +=  -=  *=  /=  %=  ^= — compound
+
+// Funkciala ĝisdatigo — returnas nova areo; originala ne modifikita
+arr2 = arr[1]$~ 99
 ```
 
 > Omna kolekto-operatori returnas **nova areo**. Reassignar: `arr = arr$+ 4`.
 > Operatori ne povas katenesar — uzar meza assigni.
 > `$^+` / `$^-` ordigas **primitiva arei** (numeri, stringi). Por tuplo-arei uzar `$^` kun komparant-lambdo — la direkco esas kodita en la lambdo (`<` = krescanta, `>` = dekrescanta).
+
+**Valorala semantiko (Value semantics)** — Asignar areo kreas nova kopio independanta:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b ne modifikita
+```
 
 ```zymbol
 // Nestita arei
@@ -357,10 +373,15 @@ persono = (nomo: "Ana", ago: 25, urbo: "Madrido")
 
 ## Tupli
 
+Tuplo esas **nemutebla** ordigita kontenero kiu povas teni **diferenta tipi**. Diferente di arei, elementi ne povas esar modifikita pos kreuro.
+
 ```zymbol
 // Pozicional
 punkto = (10, 20)
 >> punkto[0] ¶    // → 10
+
+datumi = (42, "saluto", #1, 3.14)
+>> datumi[2] ¶     // → #1
 
 // Nomata
 persono = (nomo: "Alice", ago: 25)
@@ -371,6 +392,29 @@ persono = (nomo: "Alice", ago: 25)
 poz = (x: 10, y: 20)
 p = (poz: poz, etiketo: "origino")
 >> p.poz.x ¶         // → 10
+```
+
+**Nemuteblo (Immutability)** — Irga provo modifikar elemento di tuplo esas eroro:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ eroro: tuplo esas nemutebla
+// t[0] += 5    // ❌ sama eroro
+```
+
+Por derivar modifikita valoro uzar `$~` (funkciala ĝisdatigo) — returnas **nova** tuplo:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← originala ne modifikita
+>> t2 ¶    // → (10, 999, 30)
+
+// Nomata tuplo — rekonstruar explicite
+persono = (nomo: "Alice", ago: 25)
+majorulo = (nomo: persono.nomo, ago: 26)
+>> persono.ago ¶    // → 25
+>> majorulo.ago ¶   // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _interna_adicionar(a, b) { <~ a + b }
 
 ---
 
+## Numeral Modi
+
+Zymbol povas montrar nombri en **69 Unicode cifral skripti** — Devanagari, Araba-Hindiana, Tailandana, Klingon pIqaD, Matematikala Graseta, LCD-segmenti e plu. La aktiva modo influencas nur la output `>>`; la interna aritmetiko sempre esas binara.
+
+### Aktivigar skripto
+
+Skribu la cifro `0` e `9` di la celata skripto inter `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Araba-Hind.   (U+0660–U+0669)
+#๐๙#    // Tailandana    (U+0E50–U+0E59)
+#09#    // restabigar a ASCII
+```
+
+### Output e booleana valori
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII defaute)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (dekumala punkto sempre ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Booleani: # prefixo sempre ASCII, cifro adaptas
+>> #1 ¶         // → #१   (vera en Devanagari)
+>> #0 ¶         // → #०   (falsa — distingata de ०  entera nulo)
+
+x = 28 > 4
+>> x ¶          // → #१   (komparo rezulto sequas la aktiva modo)
+```
+
+### Indijena cifral literali en fonto-kodo
+
+Cifri di irga subportata skripto esas valida literali — en intervali, modulo, kompari:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Booleana literali en irga skripto
+
+`#` + cifro `0` o `1` di irga bloko esas valida booleana literalo:
+
+```zymbol
+#٠٩#
+نشط = #١        // sama kam #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` esas **sempre ASCII**. `#0` (falsa) sempre esas vize distingata de `0` (entera nulo) en omna skripto.
+
+---
+
 ## Datumi Operatori
 
 ```zymbol
@@ -563,8 +671,9 @@ klasifikar(nombro) {
 | `@!`       | rompo (break)      | `$>`         | map                     |
 | `@>`       | dauro (continue)   | `$\|`        | filter                  |
 | `->`       | lambdo             | `$<`         | reduce                  |
-| `$^+`      | ordigar krescanta  | `$^-`        | ordigar dekrescanta     |
-| `$^`       | ordigar kun komp.  | `$~`         | funkciala ĝisdatigo     |
+| `arr[i] = val` | ĝisdatigo in-loke | `arr[i] +=` | komposita ĝisdatigo    |
+| `arr[i]$~` | funkciala ĝisdatigo | `$^+`      | ordigar krescanta       |
+| `$^-`      | ordigar dekrescanta | `$^`       | ordigar kun komp.       |
 | `<~`       | returnar           | `!?`         | provar (try)            |
 | `\|>`      | pipo               | `:!`         | kaptar (catch)          |
 | `#1`       | vera               | `:>`         | sempre (finally)        |
@@ -574,8 +683,44 @@ klasifikar(nombro) {
 | `::`       | modulo-voko        | `.`          | aceso a kampo           |
 | `#\|..\|`  | parsizar numero    | `#?`         | tipo metadati           |
 | `#.N\|..\|` | rondigar          | `#!N\|..\|`  | trunkar                 |
-| `c\|..\|`  | formato kometo     | `e\|..\|`    | sciencala               |
+| `#,\|..\|`  | formato kometo     | `#^\|..\|`    | sciencala               |
+| `#d0d9#` | sxanjilo di numeral modo | `#09#` | restabigar a ASCII |
 | `<\ ..\>`  | shell exekut.      | `><`         | CLI-argumenti           |
+
+## Versiono-Historio
+
+### v0.0.3 — Unicode Numeral Sistemi & LSP Plibonigi _(Aprilo 2026)_
+
+- **Adjuntita** 69 Unicode cifral bloki kun la modo-sxanj-jetono `#d0d9#`
+- **Adjuntita** Booleana literali en irga skripto — `#१` / `#०`, `#١` / `#٠`, kc.
+- **Adjuntita** Klingon pIqaD cifri (CSUR PUA U+F8F0–U+F8F9)
+- **Adjuntita** VM opkodo `SetNumeralMode` — plena pareco kun tree-walker
+- **Adjuntita** REPL respektas aktiva numeral modo en eko e montro di variabli
+- **Sxanjita** Output `>>` di boolei nun inkluzas prefixo `#` (`#0` / `#1`) en omni modi
+
+### v0.0.2_01 — Renomado di Operatori _(30 Mar 2026)_
+
+- **Sxanjita** `c|..|` → `#,|..|` e `e|..|` → `#^|..|` — konsistenta kun `#`-prefixo familio
+- **Adjuntita** Export kromnomo: reeksportar modulo-membri sub altra nomo
+
+### v0.0.2 — API-Restrukturado di Kolekti & Instaleri _(24 Mar 2026)_
+
+- **Adjuntita** Unigita `$`-operatoro familio por tabeli e kordi (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Adjuntita** Destrikturo por tabeli, opoi e nomizita opoi
+- **Adjuntita** Negativa indici (`arr[-1]` = lasta elemento)
+- **Adjuntita** Indijena instaleri — Linux (deb/rpm/pkg/musl), macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Adjuntita** Kompozita asigno `^=`
+- **Korektita** Limka kazi di aritmetika analizero; dokumentala korektaji
+
+### v0.0.1 — Prima Publika Eldono _(22 Mar 2026)_
+
+- Arb-marchanta interpretero + registro-VM (`--vm`, ~4× plu rapida, ~95% pareco)
+- Omni kernala konstrukti: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Plena Unicode identigeri, modulo-sistemo, lambdi, klozuri, eroro-traktado
+- REPL, LSP, VS Code extenso, formatero (`zymbol fmt`)
 
 ---
 

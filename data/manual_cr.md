@@ -283,6 +283,8 @@ mitahtêwkî = osîhtâkê(10)
 
 ## Masinahikanisa
 
+Masinahikanisa **kâ-wîhcikâtêk** (mutable) kâ-kîsikohci **pêyak isi-kistêyin**.
+
 ```zymbol
 masinahikana = [1, 2, 3, 4, 5]
 
@@ -310,13 +312,27 @@ db = [(isiyihkâsowin: "Carla", akihtâson: 28), (isiyihkâsowin: "Ana", akihtâ
 by_akihtâson = db$^ (a, b -> a.akihtâson < b.akihtâson)
 >> by_akihtâson[0].isiyihkâsowin ¶     // → Ana
 
-masinahikana[1] = 99              // update in-place
-masinahikana = masinahikana[1]$~ 99   // functional update
+// Isi-wîhtamôwin (masinahikanisa piko)
+masinahikana[1] = 99              // wîhtamôwin
+masinahikana[0] += 5              // compound: +=  -=  *=  /=  %=  ^=
+
+// Kâ-nôhtê-mâmawi-pimipayihcikâtêk — pîtos masinahikana; sêhci namôya kâ-wîhcikâtêk
+masinahikana2 = masinahikana[1]$~ 99
 ```
 
 > T'áá ałtso **pîtos masinahikanisa** — kîhtwâm wîhtamôwin: `masinahikana = masinahikana$+ 4`.
 > Namôya kâ-mâmawi-pimipayihcikâtêk: niswaw wîhtamôwin kâ-isi-pimipayihcikâtêk.
 > `$^+` / `$^-` — primitives. Wîhcikâtêw tupêl — `$^` mîna lamda.
+
+**Isi-kistêyin semantics** — masinahikana kâ-wîhtamihcikâtêk pîtos jëfandikukaay kopia kâ-miyikôwit:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b namôya kâ-wîhcikâtêk
+```
 
 ```zymbol
 // Nested masinahikanisa
@@ -348,10 +364,15 @@ iyinîw = (isiyihkâsowin: "Ana", akihtâson: 25, pîkiskwêwin: "nêhiyaw")
 
 ## Tupêl
 
+Tupêl **namôya kâ-wîhcikâtêk** (immutable) kâ-kîsikohci **kâ-pimâcihôcik**. Masinahikanisa mâka, isi-kistêyinwa namôya kâ-wîhcikâtêk.
+
 ```zymbol
 // Positional
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+kistêyinwa = (42, "tânisi", #1, 3.14)
+>> kistêyinwa[2] ¶     // → #1
 
 // Wîhcikâtêw tupêl
 iyinîw = (isiyihkâsowin: "Alice", akihtâson: 25)
@@ -362,6 +383,29 @@ iyinîw = (isiyihkâsowin: "Alice", akihtâson: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, label: "nêhiyaw")
 >> p.pos.x ¶        // → 10
+```
+
+**Namôya kâ-wîhcikâtêk (Immutabilité)** — tupêl isi-kistêyin wîhcikâtêyiw pimipayiw Qagh:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ pimipayiw Qagh: tupêl namôya kâ-wîhcikâtêk
+// t[0] += 5    // ❌ pîtos Qagh
+```
+
+`$~` (kâ-nôhtê-mâmawi-pimipayihcikâtêk) fayyadami — **pîtos tupêl** deebisa:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← sêhci namôya kâ-wîhcikâtêk
+>> t2 ¶    // → (10, 999, 30)
+
+// Wîhcikâtêw tupêl — kîhtwâm wîhtamôwin
+iyinîw = (isiyihkâsowin: "Alice", akihtâson: 25)
+iyinîw2  = (isiyihkâsowin: iyinîw.isiyihkâsowin, akihtâson: 26)
+>> iyinîw.akihtâson ¶    // → 25
+>> iyinîw2.akihtâson ¶   // → 26
 ```
 
 ---
@@ -473,6 +517,49 @@ _internal_add(a, b) { <~ a + b }
 
 ---
 
+## Akihtâsowin Tipahikêwina
+
+Zymbol **Unicode akihtâsowin-masinahikanisa 69** kâ-nôcihtânâwak — Devanagari, Arabiyaw-Indiyas, Thai, Klingon pIqaD, ekwa mîna. `>>` pîci-kâ-masinahikâtêw; nâway-akihtâsowin mâwac kîsiwâk.
+
+### Kâ-nâtamoht
+
+```zymbol
+#٠٩#    // Arabiyaw-Indiyas (U+0660–U+0669)
+#०९#    // Devanagari       (U+0966–U+096F)
+#09#    // ASCII kiskinahamâtowin
+```
+
+### Pîci-masinahikan
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII)
+
+#٠٩#
+>> x ¶          // → ٤٢
+>> 1 + 2 ¶      // → ٣
+
+>> #1 ¶         // → #١
+>> #0 ¶         // → #٠
+```
+
+### Ohci-masinahikanisa
+
+```zymbol
+#٠٩#
+
+@ i:١..١٥ {
+    ? i % ١٥ == ٠ { >> "FizzBuzz" ¶ }
+    _? i % ٣  == ٠ { >> "Fizz" ¶ }
+    _? i % ٥  == ٠ { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+> `#` **ASCII kâ-ihtâk**. `#0` (namôy tâpwê) namôy `0` (pêyak-akihtâsowin).
+
+---
+
 ## Tipahamâkêwina
 
 ```zymbol
@@ -554,8 +641,9 @@ mâmawihoht(akihtâson) {
 | `@!`          | @! (break)          | `$>`            | map                           |
 | `@>`          | @> (continue)       | `$\|`           | filter                        |
 | `->`          | lamda               | `$<`            | reduce                        |
-| `$^+`         | Sort ascending      | `$^-`           | Sort descending               |
-| `$^`          | Sort lamda          |                 |                               |
+| `masinahikana[i] = val` | isi-wîhtamôwin (masinahikanisa piko) | `masinahikana[i] += val` | compound wîhtamôwin |
+| `masinahikana[i]$~` | kâ-nôhtê-mâmawi (kopia pîtos) | `$^+` | Sort ascending |
+| `$^-` | Sort descending | `$^` | Sort lamda (tuples) |
 | `<~`          | Kîhtwâm (return)    | `!?`            | kâ-kîskinotahwâhk (try)       |
 | `\|>`        | Pipe                | `:!`            | kâ-kîsihtâhk (catch)          |
 | `#1`          | tâpwêwin            | `:>`            | kahkiyaw (finally)            |
@@ -565,8 +653,43 @@ mâmawihoht(akihtâson) {
 | `::`          | Masinahikan âpacihâwin | `.`          | Field access                  |
 | `#\|..\|`    | Parse number        | `#?`            | Type metadata                 |
 | `#.N\|..\|`  | Round               | `#!N\|..\|`     | Truncate                      |
-| `c\|..\|`    | Comma format        | `e\|..\|`       | Scientific                    |
+| `#,\|..\|`    | Comma format        | `#^\|..\|`       | Scientific                    |
+| `#d0d9#` | mâmawi-akihtâsowin tipahikê | | |
 | `<\ ..\>`    | Shell exec          | `>\<`           | CLI args                      |
+
+
+## Kâ-ispîhcâw Masinahikanisa
+
+### v0.0.3 — Unicode Akihtâsowin Tipahikêwina ᏂᎨᏒᎾ LSP _(Pâskowi-pisim 2026)_
+
+- **Kâ-nîpawistamâht** Unicode akihtâsowin-masinahikanisa 69 `#d0d9#`-ohci
+- **Kâ-nîpawistamâht** Boolean ohci mâmawi — `#١` / `#٠`, `#१` / `#०`
+- **Kâ-nîpawistamâht** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Kâ-nîpawistamâht** VM Opcode `SetNumeralMode`
+- **Kâ-nîpawistamâht** REPL tipahikêwin kâ-nâkatêyihtahk
+- **Kâ-mêscipahtâht** Boolean `>>` `#` prefix (`#0` / `#1`)
+
+### v0.0.2_01 _(Niskipîsim 30 2026)_
+
+- **Kâ-mêscipahtâht** `c|..|` → `#,|..|` êkwa `e|..|` → `#^|..|`
+- **Kâ-nîpawistamâht** export nîhiyawêwin
+
+### v0.0.2 _(Niskipîsim 24 2026)_
+
+- **Kâ-nîpawistamâht** `$` tipahikêwina (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Kâ-nîpawistamâht** Destructuring
+- **Kâ-nîpawistamâht** `arr[-1]`
+- **Kâ-nîpawistamâht** Installer — Linux, macOS, Windows
+
+### v0.0.1-patch _(Niskipîsim 25 2026)_
+
+- **Kâ-nîpawistamâht** `^=`
+
+### v0.0.1 _(Niskipîsim 22 2026)_
+
+- Tree-walker + VM (`--vm`, ~4×, ~95%)
+- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- REPL, LSP, VS Code, `zymbol fmt`
 
 ---
 

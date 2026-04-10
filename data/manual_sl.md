@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Polja
 
+Polja so **spremenljiva** in vsebujejo elemente **istega tipa**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ po_imenu    = db$^ (a, b -> a.ime > b.ime)
 >> po_starosti[0].ime ¶    // → Ana
 >> po_imenu[0].ime ¶       // → Carla
 
-arr[1] = 99              // posodobi na mestu
-arr = arr[1]$~ 99        // funkcionalno posodabljanje — vrne novo polje
+// Neposredna posodobitev elementa (samo polja)
+arr[1] = 99              // dodelitev
+arr[0] += 5              // sestavljena: +=  -=  *=  /=  %=  ^=
+
+// Funkcionalno posodabljanje — vrne novo polje; original se ne spremeni
+arr2 = arr[1]$~ 99
 ```
 
 > Vsi operatorji zbirk vrnejo **novo polje**. Dodelite nazaj: `arr = arr$+ 4`.
 > Operatorji se ne morejo verižiti — uporabite vmesne dodelitve.
 > `$^+` / `$^-` razvrščata **primitivna polja** (številke, nizi). Za tuple polja uporabite `$^` s primerjalno lambdo.
+
+**Vrednostna semantika** — dodelitev polja drugi spremenljivki ustvari neodvisno kopijo:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b ni prizadet
+```
 
 ```zymbol
 // Gnezdena polja
@@ -357,10 +373,15 @@ oseba = (ime: "Ana", starost: 25, mesto: "Madrid")
 
 ## Tuple
 
+Tuple so **nespremenljivi** urejeni vsebniki, ki lahko vsebujejo vrednosti **različnih tipov**. Za razliko od polj elementov po ustvaritvi ni mogoče spremeniti.
+
 ```zymbol
 // Pozicijsko
 točka = (10, 20)
 >> točka[0] ¶    // → 10
+
+podatki = (42, "zdravo", #1, 3.14)
+>> podatki[2] ¶     // → #1
 
 // Poimenovano
 oseba = (ime: "Alice", starost: 25)
@@ -371,6 +392,29 @@ oseba = (ime: "Alice", starost: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, oznaka: "izhodišče")
 >> p.pos.x ¶        // → 10
+```
+
+**Nespremenljivost** — vsak poskus spremembe elementa tuple je napaka med izvajanjem:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ napaka med izvajanjem: tuple so nespremenljivi
+// t[0] += 5    // ❌ enaka napaka
+```
+
+Za pridobitev spremenjenega vrednosti uporabite `$~` (funkcionalno posodabljanje) — vrne **nov** tuple:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← original brez sprememb
+>> t2 ¶    // → (10, 999, 30)
+
+// Poimenovano tuple — eksplicitno rekonstruirajte
+oseba = (ime: "Alice", starost: 25)
+starejši = (ime: oseba.ime, starost: 26)
+>> oseba.starost ¶    // → 25
+>> starejši.starost ¶ // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _interno_sešteti(a, b) { <~ a + b }
 
 ---
 
+## Številski Načini
+
+Zymbol lahko prikazuje številke v **69 Unicode pisavah s številkami** — Devanagari, Arabsko-Indijska, Tajska, Klingon pIqaD, Matematično Krepko, LCD segmenti in več. Aktivni način vpliva samo na izhod `>>`; notranja aritmetika je vedno binarna.
+
+### Aktivacija pisave
+
+Zapišite števko `0` in `9` ciljne pisave med `#…#`:
+
+```zymbol
+#०९#    // Devanagari     (U+0966–U+096F)
+#٠٩#    // Arabsko-Ind.   (U+0660–U+0669)
+#๐๙#    // Tajska         (U+0E50–U+0E59)
+#09#    // ponastaviti na ASCII
+```
+
+### Izhod in logične vrednosti
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (privzeto ASCII)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (decimalna pika vedno ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Logične vrednosti: predpona # vedno ASCII, števka se prilagodi
+>> #1 ¶         // → #१   (res v Devanagari)
+>> #0 ¶         // → #०   (neresnično — drugačno od ०  celoštevilska nič)
+
+x = 28 > 4
+>> x ¶          // → #१   (rezultat primerjave sledi aktivnemu načinu)
+```
+
+### Domači številski literali v izvorni kodi
+
+Števke katerekoli podprte pisave so veljavni literali — v obsegih, modulo, primerjavah:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Logični literali v kateri koli pisavi
+
+`#` + števka `0` ali `1` iz katerega koli bloka je veljaven logični literal:
+
+```zymbol
+#٠٩#
+نشط = #١        // enako kot #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` je **vedno ASCII**. `#0` (neresnično) je v vsaki pisavi vedno vizualno drugačno od `0` (celoštevilska nič).
+
+---
+
 ## Podatkovni Operatorji
 
 ```zymbol
@@ -563,8 +671,9 @@ klasificirati(število) {
 | `@!` | prekini | `$>` | preslikava |
 | `@>` | nadaljuj | `$\|` | filtriranje |
 | `->` | lambda | `$<` | redukcija |
-| `$^+` | razvrsti naraščajoče (primitivi) | `$^-` | razvrsti padajoče (primitivi) |
-| `$^` | razvrsti s primerjavo (tuple) | | |
+| `arr[i] = val` | posodobi element (samo polja) | `arr[i] += val` | sestavljena posodobitev |
+| `arr[i]$~` | funkcionalna posodobitev (nova kopija) | `$^+` | razvrsti naraščajoče (primitivi) |
+| `$^-` | razvrsti padajoče (primitivi) | `$^` | razvrsti s primerjavo (tuple) |
 | `<~` | vrni | `!?` | poskusi |
 | `\|>` | cevovod | `:!` | ujemi |
 | `#1` | resnica | `:>` | na koncu |
@@ -574,8 +683,44 @@ klasificirati(število) {
 | `::` | klic modula | `.` | dostop do polja |
 | `#\|..\|` | razčleni število | `#?` | metapodatki tipa |
 | `#.N\|..\|` | zaokroži | `#!N\|..\|` | okrni |
-| `c\|..\|` | format z ločilom | `e\|..\|` | znanstveni |
+| `#,\|..\|` | format z ločilom | `#^\|..\|` | znanstveni |
+| `#d0d9#` | preklop številskega načina | `#09#` | ponastaviti na ASCII |
 | `<\ ..\>` | izvedi lupino | `><` | argumenti CLI |
+
+## Zgodovina Različic
+
+### v0.0.3 — Unicode Številski Sistemi & Izboljšave LSP _(April 2026)_
+
+- **Dodano** 69 Unicode blokov števk z žetonom za preklop načina `#d0d9#`
+- **Dodano** Logični literali v kateri koli pisavi — `#१` / `#०`, `#١` / `#٠`, itd.
+- **Dodano** Klingon pIqaD števke (CSUR PUA U+F8F0–U+F8F9)
+- **Dodano** VM opkoda `SetNumeralMode` — popolna pariteta z drevesom-sprehajalcem
+- **Dodano** REPL spoštuje aktivni številski način pri odmevanju in prikazu spremenljivk
+- **Spremenjeno** Izhod `>>` logičnih vrednosti zdaj vključuje predpono `#` (`#0` / `#1`) v vseh načinih
+
+### v0.0.2_01 — Preimenovanje Operatorjev _(30 Mar 2026)_
+
+- **Spremenjeno** `c|..|` → `#,|..|` in `e|..|` → `#^|..|` — skladno z družino predpon `#`
+- **Dodano** Alias za izvoz: ponovna izvoz članov modula pod drugim imenom
+
+### v0.0.2 — Preoblikovanje API Zbirk & Namestitveni Programi _(24 Mar 2026)_
+
+- **Dodano** Enotna družina operatorjev `$` za polja in nize (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Dodano** Destrukturiranje za polja, nabore in poimenovane nabore
+- **Dodano** Negativni indeksi (`arr[-1]` = zadnji element)
+- **Dodano** Domači namestitveni programi — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Dodano** Sestavljeno dodeljevanje `^=`
+- **Popravljeno** Robni primeri aritmetičnega razčlenjevalnika; popravki dokumentacije
+
+### v0.0.1 — Prva Javna Izdaja _(22 Mar 2026)_
+
+- Drevo-sprehajalec interpret + registrski VM (`--vm`, ~4× hitrejši, ~95% paritetа)
+- Vsi osnovni konstrukti: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Polni Unicode identifikatorji, sistem modulov, lambde, zaprtja, upravljanje napak
+- REPL, LSP, razširitev VS Code, oblikovalnik (`zymbol fmt`)
 
 ---
 

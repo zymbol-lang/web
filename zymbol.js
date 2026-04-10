@@ -3,16 +3,79 @@
  *
  * Supports: output (>>), input (<<), variables, constants, booleans (#0/#1),
  * integers, floats, strings (with interpolation), chars, arrays, tuples,
- * if/else (?/_?/_), match (??), all loop forms (@), functions (<~).
+ * if/else (?/_?/_), match (??), all loop forms (@), functions (<~),
+ * numeral mode switch (#09#, #०९#, etc.) for multi-script numeric output.
  *
  * Not supported: modules, shell integration (><), lambdas (->), closures.
  */
 
+// ─── Unicode digit blocks (mirrors DIGIT_BLOCKS in zymbol-lexer) ─────────────
+// Each entry: [blockBase, scriptName]. Sorted ascending by codepoint.
+const DIGIT_BLOCKS = [
+  [0x0030,'ASCII'],[0x0660,'Arabic-Indic'],[0x06F0,'Ext. Arabic-Indic'],
+  [0x07C0,'NKo'],[0x0966,'Devanagari'],[0x09E6,'Bengali'],[0x0A66,'Gurmukhi'],
+  [0x0AE6,'Gujarati'],[0x0B66,'Oriya'],[0x0BE6,'Tamil'],[0x0C66,'Telugu'],
+  [0x0CE6,'Kannada'],[0x0D66,'Malayalam'],[0x0DE6,'Sinhala Archaic'],
+  [0x0E50,'Thai'],[0x0ED0,'Lao'],[0x0F20,'Tibetan'],[0x1040,'Myanmar'],
+  [0x1090,'Myanmar Shan'],[0x17E0,'Khmer'],[0x1810,'Mongolian'],
+  [0x1946,'Limbu'],[0x19D0,'New Tai Lue'],[0x1A80,'Tai Tham Hora'],
+  [0x1A90,'Tai Tham Tham'],[0x1B50,'Balinese'],[0x1BB0,'Sundanese'],
+  [0x1C40,'Lepcha'],[0x1C50,'Ol Chiki'],[0xA620,'Vai'],[0xA8D0,'Saurashtra'],
+  [0xA900,'Kayah Li'],[0xA9D0,'Javanese'],[0xA9F0,'Myanmar Tai Laing'],
+  [0xAA50,'Cham'],[0xABF0,'Meetei Mayek'],[0xF8F0,'Klingon pIqaD'],
+  [0xFF10,'Fullwidth'],[0x104A0,'Osmanya'],[0x10D30,'Hanifi Rohingya'],
+  [0x11066,'Brahmi'],[0x110F0,'Sora Sompeng'],[0x11136,'Chakma'],
+  [0x111D0,'Sharada'],[0x112F0,'Khudawadi'],[0x11450,'Newa'],
+  [0x114D0,'Tirhuta'],[0x11650,'Modi'],[0x116C0,'Takri'],[0x11730,'Ahom'],
+  [0x118E0,'Warang Citi'],[0x11950,'Dives Akuru'],[0x11C50,'Bhaiksuki'],
+  [0x11D50,'Masaram Gondi'],[0x11DA0,'Gunjala Gondi'],[0x11F50,'Kawi'],
+  [0x16A60,'Mro'],[0x16AC0,'Tangsa'],[0x16B50,'Pahawh Hmong'],
+  [0x1D7CE,'Mathematical Bold'],[0x1D7D8,'Mathematical Double-struck'],
+  [0x1D7E2,'Mathematical Sans-serif'],[0x1D7EC,'Math Sans-serif Bold'],
+  [0x1D7F6,'Mathematical Monospace'],[0x1E140,'Nyiakeng Puachue Hmong'],
+  [0x1E2F0,'Wancho'],[0x1E4F0,'Nag Mundari'],[0x1E950,'Adlam'],
+  [0x1FBF0,'Segmented/LCD'],
+];
+
+/** Returns 0–9 if ch is a digit in any supported block, else -1. */
+function digitValue(ch) {
+  const cp = ch.codePointAt(0);
+  for (const [base] of DIGIT_BLOCKS) {
+    if (cp >= base && cp <= base + 9) return cp - base;
+  }
+  return -1;
+}
+
+/** Returns the block base of ch if it is a digit, else -1. */
+function digitBlockBase(ch) {
+  const cp = ch.codePointAt(0);
+  for (const [base] of DIGIT_BLOCKS) {
+    if (cp >= base && cp <= base + 9) return base;
+  }
+  return -1;
+}
+
+/** Maps every ASCII digit in s to the equivalent digit in the target block. */
+function mapToScript(s, blockBase) {
+  if (blockBase === 0x0030) return s; // ASCII fast-path
+  return [...s].map(ch => {
+    if (ch >= '0' && ch <= '9') return String.fromCodePoint(blockBase + (ch.charCodeAt(0) - 0x30));
+    return ch;
+  }).join('');
+}
+
+/** Format an integer in the active numeral mode. */
+function numeralInt(n, base) { return mapToScript(String(Math.trunc(n)), base); }
+/** Format a float in the active numeral mode (decimal point stays ASCII). */
+function numeralFloat(f, base) { return mapToScript(String(f), base); }
+/** Format a boolean in the active numeral mode, always with # prefix. */
+function numeralBool(b, base) { return '#' + numeralInt(b ? 1 : 0, base); }
+
 // ─── Signal types for control flow ───────────────────────────────────────────
 
 class ZyReturn  { constructor(value) { this.value = value; } }
-class ZyBreak   {}
-class ZyContinue {}
+class ZyBreak    { constructor(label = null) { this.label = label; } }
+class ZyContinue { constructor(label = null) { this.label = label; } }
 class ZyError extends Error {
   constructor(msg, line) {
     super(line ? `Line ${line}: ${msg}` : msg);
@@ -31,7 +94,10 @@ class ZyRuntimeError extends ZyError {
 
 export class Lexer {
   constructor(src) {
-    this.src = src;
+    // Spread into an array of Unicode code points so that supplementary
+    // characters (SMP, surrogate pairs) are treated as single entries.
+    // This makes ch(n) return a full character regardless of BMP/SMP.
+    this.src = [...src];
     this.pos = 0;
     this.line = 1;
   }
@@ -58,15 +124,69 @@ export class Lexer {
         continue;
       }
 
-      // booleans #0 #1 and error types ##xxx
+      // # — mode-switch #<d0><d9>#, booleans #0/#1 (any script), error types ##xxx
       if (this.ch() === '#') {
-        if (this.ch(1) === '0') { this.consume(); this.consume(); tok('BOOL', false); continue; }
-        if (this.ch(1) === '1') { this.consume(); this.consume(); tok('BOOL', true);  continue; }
-        if (this.ch(1) === '#') {
+        const c1 = this.ch(1);
+        const dv1 = digitValue(c1);
+        if (dv1 >= 0) {
+          // Check for mode-switch: #<digit0><digit9>#  (dv1==0, dv2==9, same block, closing #)
+          if (dv1 === 0) {
+            const c2 = this.ch(2);
+            const dv2 = digitValue(c2);
+            if (dv2 === 9 && digitBlockBase(c1) === digitBlockBase(c2) && this.ch(3) === '#') {
+              const base = digitBlockBase(c1);
+              this.consume(); this.consume(); this.consume(); this.consume(); // #d0d9#
+              tok('SET_NUMERAL_MODE', base); continue;
+            }
+          }
+          // Boolean: dv1 == 0 → false, dv1 == 1 → true
+          this.consume(); this.consume();
+          if (dv1 === 0) { tok('BOOL', false); continue; }
+          if (dv1 === 1) { tok('BOOL', true);  continue; }
+          // digit 2–9 after # is a lex error — emit nothing, skip
+          continue;
+        }
+        if (c1 === '#') {
           this.consume(); this.consume(); // consume ##
           let name = '##';
           while (/[A-Za-z0-9_]/.test(this.ch())) { name += this.ch(); this.consume(); }
           tok('IDENT', name); continue;
+        }
+        if (c1 === '?') {
+          this.consume(); this.consume(); // consume #?
+          tok('TYPE_QUERY', '#?'); continue;
+        }
+        // Data formatting operators: #|..| #.N|..| #!N|..| #,|..| #^|..|
+        {
+          let kind = null, prec = null, advance = 0;
+          const readDigits = start => {
+            let d = '', i = start;
+            while (/[0-9]/.test(this.ch(i))) { d += this.ch(i); i++; }
+            return { d, i };
+          };
+          if (c1 === '|') {
+            kind = 'eval'; advance = 2;
+          } else if (c1 === '.' ) {
+            const { d, i } = readDigits(2);
+            if (d.length > 0 && this.ch(i) === '|') { kind = 'round'; prec = parseInt(d); advance = i + 1; }
+          } else if (c1 === '!') {
+            const { d, i } = readDigits(2);
+            if (d.length > 0 && this.ch(i) === '|') { kind = 'trunc'; prec = parseInt(d); advance = i + 1; }
+          } else if (c1 === ',') {
+            const c2 = this.ch(2);
+            if (c2 === '|') { kind = 'comma'; advance = 3; }
+            else if (c2 === '.') { const { d, i } = readDigits(3); if (d.length > 0 && this.ch(i) === '|') { kind = 'comma_round'; prec = parseInt(d); advance = i + 1; } }
+            else if (c2 === '!') { const { d, i } = readDigits(3); if (d.length > 0 && this.ch(i) === '|') { kind = 'comma_trunc'; prec = parseInt(d); advance = i + 1; } }
+          } else if (c1 === '^') {
+            const c2 = this.ch(2);
+            if (c2 === '|') { kind = 'sci'; advance = 3; }
+            else if (c2 === '.') { const { d, i } = readDigits(3); if (d.length > 0 && this.ch(i) === '|') { kind = 'sci_round'; prec = parseInt(d); advance = i + 1; } }
+            else if (c2 === '!') { const { d, i } = readDigits(3); if (d.length > 0 && this.ch(i) === '|') { kind = 'sci_trunc'; prec = parseInt(d); advance = i + 1; } }
+          }
+          if (kind !== null) {
+            for (let i = 0; i < advance; i++) this.consume();
+            tok('DATA_OP', { kind, prec }); continue;
+          }
         }
         // unknown # sequence — skip
         this.consume(); continue;
@@ -97,7 +217,7 @@ export class Lexer {
 
       // _ — ELSE or start of identifier
       if (c === '_') {
-        if (/[\p{L}0-9_]/u.test(this.ch(1))) { this.readIdent(toks); }
+        if (/[\p{L}\p{Co}0-9_]/u.test(this.ch(1))) { this.readIdent(toks); }
         else { this.consume(); tok('ELSE', '_'); }
         continue;
       }
@@ -121,6 +241,7 @@ export class Lexer {
         if (a === '>')                      { this.consume(); this.consume();            tok('DMAP',       '$>');  continue; }
         if (a === '|')                      { this.consume(); this.consume();            tok('DFILTER',    '$|');  continue; }
         if (a === '<')                      { this.consume(); this.consume();            tok('DREDUCE',    '$<');  continue; }
+        if (a === '~' && b === '~')         { this.consume(); this.consume(); this.consume(); tok('DREPLACE',   '$~~'); continue; }
         if (a === '~')                      { this.consume(); this.consume();            tok('DUPDATE',    '$~');  continue; }
         if (a === '[')                      { this.consume();                            tok('DSLICE',     '$[');  continue; }
         if (a === '!' && b === '!')         { this.consume(); this.consume(); this.consume(); tok('DERRORPROP', '$!!'); continue; }
@@ -129,7 +250,7 @@ export class Lexer {
       }
 
       // numbers
-      if (/[0-9]/.test(c)) { this.readNumber(toks); continue; }
+      if (/[0-9]/.test(c) || digitValue(c) >= 0) { this.readNumber(toks); continue; }
 
       // strings
       if (c === '"') { this.readString(toks); continue; }
@@ -137,8 +258,9 @@ export class Lexer {
       // char literals 'A'
       if (c === "'") { this.readChar(toks); continue; }
 
-      // identifiers (all Unicode letters + emoji via surrogate pairs)
-      if (/\p{L}/u.test(c) || (c.charCodeAt(0) >= 0xD800 && c.charCodeAt(0) <= 0xDBFF)) {
+      // identifiers (all Unicode letters, marks, symbols — src is code-point array
+      // so each element is already a full character, no surrogate handling needed)
+      if (/[\p{L}\p{M}\p{So}\p{Co}]/u.test(c)) {
         this.readIdent(toks); continue;
       }
 
@@ -146,7 +268,7 @@ export class Lexer {
       const single = {
         '=':'ASSIGN', '<':'LT', '>':'GT',
         '+':'PLUS',   '-':'MINUS', '*':'TIMES', '/':'DIV', '%':'MOD', '^':'POW',
-        '!':'NOT',
+        '!':'NOT',    '|':'VBAR',
         '(':'LPAREN', ')':'RPAREN', '[':'LBRACKET', ']':'RBRACKET',
         '{':'LBRACE', '}':'RBRACE',
         ',':'COMMA',  ':':'COLON', '.':'DOT', ';':'SEMI', '\\':'BACKSLASH',
@@ -161,19 +283,35 @@ export class Lexer {
   }
 
   readNumber(toks) {
-    let s = '';
-    while (/[0-9]/.test(this.ch())) s += this.consume();
+    let value = 0;
+    // Read digits from any supported Unicode block (normalise to ASCII value)
+    while (this.pos < this.src.length) {
+      const dv = digitValue(this.ch());
+      if (dv < 0) break;
+      value = value * 10 + dv;
+      this.consume();
+    }
     if (this.ch() === '.' && this.ch(1) !== '.') {
-      s += this.consume();
-      while (/[0-9]/.test(this.ch())) s += this.consume();
-      if (this.ch() === 'e' || this.ch() === 'E') {
-        s += this.consume();
-        if (this.ch() === '+' || this.ch() === '-') s += this.consume();
-        while (/[0-9]/.test(this.ch())) s += this.consume();
+      this.consume(); // consume '.'
+      let frac = 0, div = 1;
+      while (this.pos < this.src.length) {
+        const dv = digitValue(this.ch());
+        if (dv < 0) break;
+        frac = frac * 10 + dv;
+        div *= 10;
+        this.consume();
       }
-      toks.push({ type: 'FLOAT', value: parseFloat(s), line: this.line });
+      const f = value + frac / div;
+      // scientific suffix stays ASCII
+      let sci = '';
+      if (this.ch() === 'e' || this.ch() === 'E') {
+        sci += this.consume();
+        if (this.ch() === '+' || this.ch() === '-') sci += this.consume();
+        while (/[0-9]/.test(this.ch())) sci += this.consume();
+      }
+      toks.push({ type: 'FLOAT', value: sci ? parseFloat(f + sci) : f, line: this.line });
     } else {
-      toks.push({ type: 'NUM', value: parseInt(s, 10), line: this.line });
+      toks.push({ type: 'NUM', value, line: this.line });
     }
   }
 
@@ -218,9 +356,12 @@ export class Lexer {
   readIdent(toks) {
     let s = '';
     while (true) {
-      const code = this.src.charCodeAt(this.pos);
-      if (code >= 0xD800 && code <= 0xDBFF) { s += this.consume(); s += this.consume(); continue; }
-      if (/[\p{L}\p{M}0-9_]/u.test(this.ch())) { s += this.consume(); continue; }
+      const c = this.ch();
+      if (!c) break;
+      // Non-ASCII Unicode digits (e.g. ०, ١, ๑) terminate the identifier;
+      // ASCII digits 0-9 are allowed inside identifiers (e.g. n1, x2).
+      if (digitValue(c) >= 0 && !(c >= '0' && c <= '9')) break;
+      if (/[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(c)) { s += this.consume(); continue; }
       break;
     }
     toks.push({ type: 'IDENT', value: s, line: this.line });
@@ -274,11 +415,12 @@ export class Parser {
   parseStmt() {
     const t = this.peek();
 
+    if (t.type === 'SET_NUMERAL_MODE') { this.adv(); return { type: 'SetNumeralMode', base: t.value }; }
     if (t.type === 'OUTPUT')   return this.parseOutput();
     if (t.type === 'INPUT')    return this.parseInput();
     if (t.type === 'RETURN')   return this.parseReturn();
-    if (t.type === 'BREAK')    { this.adv(); return { type: 'Break' }; }
-    if (t.type === 'CONTINUE') { this.adv(); return { type: 'Continue' }; }
+    if (t.type === 'BREAK')    { this.adv(); const bl = this.check('IDENT') ? this.adv().value : null; return { type: 'Break',    label: bl }; }
+    if (t.type === 'CONTINUE') { this.adv(); const cl = this.check('IDENT') ? this.adv().value : null; return { type: 'Continue', label: cl }; }
     if (t.type === 'IF')       return this.parseIf();
     if (t.type === 'MATCH')    return { type: 'ExprStmt', expr: this.parseMatchExpr() };
     if (t.type === 'AT')       { this.adv(); return this.parseLoop(); }
@@ -465,10 +607,34 @@ export class Parser {
   parseLoop() {
     // infinite: @ { }
     if (this.check('LBRACE')) {
-      return { type: 'Loop', kind: 'infinite', body: this.parseBlock() };
+      return { type: 'Loop', kind: 'infinite', label: null, body: this.parseBlock() };
     }
 
-    // labeled: @ @outer { } — skip, just consume label ident
+    // labeled: @ @label { }  or  @ @label var:... { }
+    if (this.check('AT')) {
+      this.adv(); // consume @
+      const label = this.eat('IDENT').value;
+      if (this.check('LBRACE')) {
+        return { type: 'Loop', kind: 'infinite', label, body: this.parseBlock() };
+      }
+      if (this.check('IDENT') && this.peek(1).type === 'COLON') {
+        const varName = this.adv().value;
+        this.adv(); // :
+        const startExpr = this.parseAdditive();
+        if (this.match('RANGE')) {
+          const endExpr = this.parseAdditive();
+          let stepExpr = null;
+          if (this.match('COLON')) stepExpr = this.parseAdditive();
+          return { type: 'Loop', kind: 'range', label, var: varName,
+                   from: startExpr, to: endExpr, step: stepExpr, body: this.parseBlock() };
+        }
+        return { type: 'Loop', kind: 'foreach', label, var: varName,
+                 iterable: startExpr, body: this.parseBlock() };
+      }
+      const cond = this.parseExpr();
+      return { type: 'Loop', kind: 'while', label, cond, body: this.parseBlock() };
+    }
+
     // range/foreach: @ var : ...
     if (this.check('IDENT') && this.peek(1).type === 'COLON') {
       const varName = this.adv().value;
@@ -478,17 +644,17 @@ export class Parser {
         const endExpr = this.parseAdditive();
         let stepExpr = null;
         if (this.match('COLON')) stepExpr = this.parseAdditive();
-        return { type: 'Loop', kind: 'range', var: varName,
+        return { type: 'Loop', kind: 'range', label: null, var: varName,
                  from: startExpr, to: endExpr, step: stepExpr,
                  body: this.parseBlock() };
       }
-      return { type: 'Loop', kind: 'foreach', var: varName,
+      return { type: 'Loop', kind: 'foreach', label: null, var: varName,
                iterable: startExpr, body: this.parseBlock() };
     }
 
     // while: @ cond { }
     const cond = this.parseExpr();
-    return { type: 'Loop', kind: 'while', cond, body: this.parseBlock() };
+    return { type: 'Loop', kind: 'while', label: null, cond, body: this.parseBlock() };
   }
 
   // Lookahead: is the current position a func decl? IDENT ( params ) {
@@ -543,13 +709,22 @@ export class Parser {
       return { type: 'VarAssign', name, value: this.parseRHS(), line };
     }
 
-    // subscript assign: name[idx] = val
-    if (this.check('LBRACKET')) {
+    // subscript assign: name[idx] = val  or  name[idx] += val
+    if (this.check('LBRACKET') && this.peek().line === this.toks[this.pos - 1].line) {
       this.adv();
       const idx = this.parseExpr();
       this.eat('RBRACKET');
       if (this.match('ASSIGN')) {
         return { type: 'IndexAssign', obj: name, index: idx, value: this.parseExpr(), line };
+      }
+      // compound indexed assign: arr[i] += rhs  →  IndexAssign(arr, i, arr[i] op rhs)
+      const idxCompound = compound[this.peek().type];
+      if (idxCompound) {
+        this.adv();
+        const rhs = this.parseExpr();
+        const currentElem = { type: 'Subscript', obj: { type: 'Ident', name }, index: idx };
+        const value = { type: 'BinOp', op: idxCompound, left: currentElem, right: rhs };
+        return { type: 'IndexAssign', obj: name, index: idx, value, line };
       }
       let left = { type: 'Subscript', obj: { type: 'Ident', name }, index: idx };
       return { type: 'ExprStmt', expr: this.parsePostfixRest(left) };
@@ -578,26 +753,37 @@ export class Parser {
   isLambdaStart() {
     // x -> ...
     if (this.peek(0).type === 'IDENT' && this.peek(1).type === 'ARROW') return true;
-    // (a, b) -> ...  — scan past LPAREN...RPAREN then check for ARROW
     if (this.peek(0).type !== 'LPAREN') return false;
+    // (a, b) -> ...  — scan past LPAREN...RPAREN then check for ARROW
     let i = 1, depth = 1;
     while (depth > 0 && this.pos + i < this.toks.length) {
       const t = this.toks[this.pos + i++];
       if (t.type === 'LPAREN') depth++;
       else if (t.type === 'RPAREN') depth--;
     }
-    return this.peek(i).type === 'ARROW';
+    if (this.peek(i).type === 'ARROW') return true;
+    // (a, b -> expr) — ARROW before closing RPAREN, all before are IDENT/COMMA
+    i = 1;
+    while (this.pos + i < this.toks.length) {
+      const t = this.toks[this.pos + i];
+      if (t.type === 'ARROW') return true;
+      if (t.type === 'RPAREN' || t.type === 'EOF') return false;
+      if (t.type !== 'IDENT' && t.type !== 'COMMA') return false;
+      i++;
+    }
+    return false;
   }
 
   parseLambda() {
     const params = [];
     if (this.check('LPAREN')) {
       this.adv();
-      while (!this.check('RPAREN') && !this.check('EOF')) {
+      // handles both (a, b) -> expr  and  (a, b -> expr)
+      while (!this.check('RPAREN') && !this.check('ARROW') && !this.check('EOF')) {
         params.push(this.eat('IDENT').value);
         this.match('COMMA');
       }
-      this.eat('RPAREN');
+      if (this.check('RPAREN')) this.adv(); // (a, b) -> form: consume closing )
     } else {
       params.push(this.adv().value); // single param without parens
     }
@@ -658,28 +844,36 @@ export class Parser {
 
   parsePostfixRest(left) {
     const COL_TOKENS = new Set(['DLEN','DAPPEND','DREMOVEALL','DREMOVE',
-      'DFINDALL','DCONTAINS','DUPDATE','DSORTASC','DSORTDESC','DSORT',
-      'DMAP','DFILTER','DREDUCE','DSLICE','DERROR','DERRORPROP']);
+      'DFINDALL','DCONTAINS','DSORTASC','DSORTDESC','DSORT',
+      'DMAP','DFILTER','DREDUCE','DSLICE','DERROR','DERRORPROP','DREPLACE']);
 
     while (true) {
-      if (this.check('LBRACKET')) {
+      const sameLine = () => this.peek().line === (this.toks[this.pos - 1]?.line ?? this.peek().line);
+      if (this.check('LBRACKET') && sameLine()) {
         this.adv();
         const idx = this.parseExpr();
         this.eat('RBRACKET');
-        left = { type: 'Subscript', obj: left, index: idx };
+        // expr[i]$~ val — functional update (must follow immediately)
+        if (this.check('DUPDATE')) {
+          this.adv();
+          const val = this.parseUnary();
+          left = { type: 'FuncUpdate', obj: left.obj ?? left, index: idx, value: val };
+        } else {
+          left = { type: 'Subscript', obj: left, index: idx };
+        }
 
       } else if (this.check('DOT')) {
         this.adv();
         const field = this.eat('IDENT').value;
         left = { type: 'FieldAccess', obj: left, field };
 
-      } else if (this.check('LPAREN') && left.type === 'Ident') {
+      } else if (this.check('LPAREN') && sameLine() && left.type === 'Ident') {
         this.adv();
         const args = this.parseArgList();
         this.eat('RPAREN');
         left = { type: 'Call', callee: left.name, args };
 
-      } else if (this.check('LPAREN') && left.type !== 'Ident') {
+      } else if (this.check('LPAREN') && sameLine() && left.type !== 'Ident') {
         // Chained call: expr(args) — e.g. make_adder(5)(3), (lambda)(args)
         this.adv();
         const args = this.parseArgList();
@@ -688,6 +882,10 @@ export class Parser {
 
       } else if (COL_TOKENS.has(this.peek().type)) {
         left = this.parseCollectionOp(left);
+
+      } else if (this.check('TYPE_QUERY')) {
+        this.adv();
+        left = { type: 'TypeMetadata', obj: left };
 
       } else {
         break;
@@ -751,17 +949,30 @@ export class Parser {
           const fn   = this.parseExpr(); this.eat('RPAREN');
           return { type: 'CollectionOp', op: '$<', obj: left, init, arg: fn }; }
 
-      case 'DSLICE':     // col$[i..j]
+      case 'DSLICE':     // col$[i..j]  or  col$[i:n]
         this.eat('LBRACKET');
-        { const from = this.parseExpr(); this.eat('RANGE');
-          const to   = this.parseExpr(); this.eat('RBRACKET');
-          return { type: 'CollectionOp', op: '$[i..j]', obj: left, range: { from, to } }; }
+        { const from = this.parseExpr();
+          if (this.match('RANGE')) {
+            const to = this.parseExpr(); this.eat('RBRACKET');
+            return { type: 'CollectionOp', op: '$[i..j]', obj: left, range: { from, to } };
+          }
+          this.eat('COLON');
+          const count = this.parseExpr(); this.eat('RBRACKET');
+          return { type: 'CollectionOp', op: '$[i:n]', obj: left, range: { from, count } }; }
 
       case 'DERROR':     // expr$!  — check if expression errored
         return { type: 'CollectionOp', op: '$!', obj: left };
 
       case 'DERRORPROP': // expr$!! — propagate error
         return { type: 'CollectionOp', op: '$!!', obj: left };
+
+      case 'DREPLACE':   // str$~~["from":"to"]  or  str$~~["from":"to":n]
+        this.eat('LBRACKET');
+        { const from = this.parseExpr(); this.eat('COLON');
+          const to   = this.parseExpr();
+          const count = this.match('COLON') ? this.parseExpr() : null;
+          this.eat('RBRACKET');
+          return { type: 'CollectionOp', op: '$~~', obj: left, from, to, count }; }
 
       default:
         return left;
@@ -778,6 +989,9 @@ export class Parser {
   }
 
   parsePrimary() {
+    // Lambda starting with ( — needs check before tuple parsing
+    if (this.peek().type === 'LPAREN' && this.isLambdaStart()) return this.parseLambda();
+
     const t = this.peek();
 
     if (t.type === 'NUM')   { this.adv(); return { type: 'Literal', kind: 'int',   value: t.value }; }
@@ -835,6 +1049,14 @@ export class Parser {
 
       this.eat('RPAREN');
       return firstVal; // grouped expression
+    }
+
+    // Data formatting operators: #|..| #.N|..| etc.
+    if (t.type === 'DATA_OP') {
+      this.adv();
+      const arg = this.parseExpr();
+      this.eat('VBAR');
+      return { type: 'DataOp', kind: t.value.kind, prec: t.value.prec, arg };
     }
 
     // skip unrecognised token
@@ -926,6 +1148,7 @@ export class Interpreter {
     this.outputBytes     = 0;
     this.maxBytes        = 8_000;   // 8 KB output cap
     this.lastYield       = performance.now();
+    this.numeralMode     = 0x0030;  // active output numeral block base (default: ASCII)
   }
 
   tick() {
@@ -967,9 +1190,14 @@ export class Interpreter {
     this.tick();
 
     switch (stmt.type) {
+      case 'SetNumeralMode': {
+        this.numeralMode = stmt.base;
+        return;
+      }
+
       case 'Output': {
         let out = '';
-        for (const item of stmt.items) out += this.display(await this.eval(item, env));
+        for (const item of stmt.items) out += this.displayOutput(await this.eval(item, env));
         if (stmt.newline) out += '\n';
         this.emit(out);
         return;
@@ -1019,8 +1247,8 @@ export class Interpreter {
         return new ZyReturn(val);
       }
 
-      case 'Break':    return new ZyBreak();
-      case 'Continue': return new ZyContinue();
+      case 'Break':    return new ZyBreak(stmt.label ?? null);
+      case 'Continue': return new ZyContinue(stmt.label ?? null);
 
       case 'If': {
         if (this.truthy(await this.eval(stmt.cond, env))) return await this.execBlock(stmt.then, new Env(env));
@@ -1038,10 +1266,24 @@ export class Interpreter {
       }
 
       case 'IndexAssign': {
-        const arr = env.get(stmt.obj);
-        if (arr.type !== 'arr') throw new ZyError('Not an array');
-        const idx = (await this.eval(stmt.index, env)).v;
-        arr.v[idx < 0 ? arr.v.length + idx : idx] = await this.eval(stmt.value, env);
+        // Value semantics: create a new collection instead of mutating in place.
+        // env.set() throws automatically if stmt.obj is a constant.
+        const col = env.get(stmt.obj);
+        const i   = (await this.eval(stmt.index, env)).v;
+        const val = await this.eval(stmt.value, env);
+        const idx = i < 0 ? col.v.length + i : i;
+        let updated;
+        if (col.type === 'arr') {
+          const r = [...col.v]; r[idx] = val; updated = mkArr(r);
+        } else if (col.type === 'tuple') {
+          throw new ZyError(
+            `cannot modify tuple '${stmt.obj}': tuples are immutable\n` +
+            `hint: use 'new_var = ${stmt.obj}[${i}]$~ value' for a functional update`
+          );
+        } else {
+          throw new ZyError(`'${stmt.obj}' is not an array`);
+        }
+        if (!env.set(stmt.obj, updated)) env.def(stmt.obj, updated);
         return;
       }
 
@@ -1122,6 +1364,9 @@ export class Interpreter {
 
   async execLoop(loop, env) {
     const outer = new Env(env);
+    // Returns true if a break/continue signal targets this loop (unlabeled or matching label)
+    const brk = sig => sig instanceof ZyBreak    && (sig.label === null || sig.label === loop.label);
+    const cnt = sig => sig instanceof ZyContinue && (sig.label === null || sig.label === loop.label);
 
     if (loop.kind === 'infinite') {
       let iter = 0;
@@ -1130,8 +1375,9 @@ export class Interpreter {
           throw new ZyError(`Infinite loop limit reached (${this.maxInfiniteIter} iterations) — add @! to break`);
         this.tick();
         const sig = await this.execBlock(loop.body, new Env(outer));
-        if (sig instanceof ZyBreak)  break;
+        if (brk(sig)) break;
         if (sig instanceof ZyReturn) return sig;
+        if (sig instanceof ZyBreak || sig instanceof ZyContinue) return sig; // propagate foreign label
         await this.maybeYield();
       }
       return;
@@ -1141,8 +1387,9 @@ export class Interpreter {
       while (this.truthy(await this.eval(loop.cond, env))) {
         this.tick();
         const sig = await this.execBlock(loop.body, new Env(outer));
-        if (sig instanceof ZyBreak)  break;
+        if (brk(sig)) break;
         if (sig instanceof ZyReturn) return sig;
+        if (sig instanceof ZyBreak || sig instanceof ZyContinue) return sig;
         await this.maybeYield();
       }
       return;
@@ -1158,9 +1405,10 @@ export class Interpreter {
         const iter = new Env(outer);
         iter.def(loop.var, mkInt(i));
         const sig = await this.execBlock(loop.body, iter);
-        if (sig instanceof ZyBreak)    break;
-        if (sig instanceof ZyContinue) continue;
-        if (sig instanceof ZyReturn)   return sig;
+        if (brk(sig)) break;
+        if (cnt(sig)) continue;
+        if (sig instanceof ZyReturn) return sig;
+        if (sig instanceof ZyBreak || sig instanceof ZyContinue) return sig;
         await this.maybeYield();
       }
       return;
@@ -1179,9 +1427,10 @@ export class Interpreter {
         const iter = new Env(outer);
         iter.def(loop.var, item);
         const sig = await this.execBlock(loop.body, iter);
-        if (sig instanceof ZyBreak)    break;
-        if (sig instanceof ZyContinue) continue;
-        if (sig instanceof ZyReturn)   return sig;
+        if (brk(sig)) break;
+        if (cnt(sig)) continue;
+        if (sig instanceof ZyReturn) return sig;
+        if (sig instanceof ZyBreak || sig instanceof ZyContinue) return sig;
         await this.maybeYield();
       }
       return;
@@ -1312,6 +1561,28 @@ export class Interpreter {
         return await this.evalCollectionOp(expr, env);
       }
 
+      case 'FuncUpdate': {
+        const arr = await this.eval(expr.obj, env);
+        const i   = (await this.eval(expr.index, env)).v;
+        const val = await this.eval(expr.value, env);
+        const idx = i < 0 ? arr.v.length + i : i;
+        if (arr.type === 'arr')   { const r = [...arr.v]; r[idx] = val; return mkArr(r); }
+        if (arr.type === 'str')   { const r = [...arr.v]; r[idx] = this.display(val); return mkStr(r.join('')); }
+        if (arr.type === 'tuple') { const r = [...arr.v]; r[idx] = val; return { type:'tuple', v:r, keys:arr.keys }; }
+        throw new ZyError(`$~ not supported on ${arr.type}`);
+      }
+
+      case 'TypeMetadata': {
+        let val;
+        if (expr.obj.type === 'Ident') {
+          try { val = env.get(expr.obj.name); }
+          catch { return { type: 'tuple', v: [mkStr('##_'), mkInt(0), mkUnit()], keys: null }; }
+        } else {
+          val = await this.eval(expr.obj, env);
+        }
+        return this.typeMetadata(val);
+      }
+
       case 'Match': {
         const val = await this.eval(expr.expr, env);
         for (const arm of expr.arms) {
@@ -1325,9 +1596,86 @@ export class Interpreter {
         }
         return mkUnit();
       }
+
+      case 'DataOp': {
+        const val = await this.eval(expr.arg, env);
+        const toNum = v => {
+          if (v.type === 'int' || v.type === 'float') return v.v;
+          if (v.type === 'str') { const n = parseFloat(v.v); return isNaN(n) ? 0 : n; }
+          return 0;
+        };
+        const fmtSci = (num, prec, mode) => {
+          if (num === 0) return '0e0';
+          const neg = num < 0;
+          const abs = Math.abs(num);
+          const exp = Math.floor(Math.log10(abs));
+          let mant = abs / Math.pow(10, exp);
+          if (prec !== null) {
+            if (mode === 'round') mant = parseFloat(mant.toFixed(prec));
+            else { const f = Math.pow(10, prec); mant = Math.trunc(mant * f) / f; }
+          }
+          const mantStr = parseFloat(mant.toPrecision(15)).toString().replace(/\.?0+$/, '');
+          return (neg ? '-' : '') + mantStr + 'e' + exp;
+        };
+        switch (expr.kind) {
+          case 'eval': {
+            if (val.type === 'str') {
+              const s = val.v.trim();
+              const p = parseFloat(s);
+              if (!isNaN(p)) {
+                if (Number.isInteger(p) && !s.includes('.') && !s.toLowerCase().includes('e')) return mkInt(p);
+                return mkFloat(p);
+              }
+            }
+            return val; // pass-through (already a number, or non-numeric string)
+          }
+          case 'round': {
+            return mkFloat(parseFloat(toNum(val).toFixed(expr.prec)));
+          }
+          case 'trunc': {
+            const n = toNum(val);
+            const f = Math.pow(10, expr.prec);
+            return mkFloat(Math.trunc(n * f) / f);
+          }
+          case 'comma': {
+            return mkStr(toNum(val).toLocaleString('en-US'));
+          }
+          case 'comma_round': {
+            const n = parseFloat(toNum(val).toFixed(expr.prec));
+            return mkStr(n.toLocaleString('en-US', { minimumFractionDigits: expr.prec, maximumFractionDigits: expr.prec }));
+          }
+          case 'comma_trunc': {
+            const raw = toNum(val);
+            const f = Math.pow(10, expr.prec);
+            const n = Math.trunc(raw * f) / f;
+            return mkStr(n.toLocaleString('en-US', { minimumFractionDigits: expr.prec, maximumFractionDigits: expr.prec }));
+          }
+          case 'sci':       return mkStr(fmtSci(toNum(val), null, null));
+          case 'sci_round': return mkStr(fmtSci(toNum(val), expr.prec, 'round'));
+          case 'sci_trunc': return mkStr(fmtSci(toNum(val), expr.prec, 'trunc'));
+        }
+        return val;
+      }
     }
 
     return mkUnit();
+  }
+
+  typeMetadata(val) {
+    const symMap = { int:'###', float:'##.', str:'##"', char:"##'", bool:'##?', arr:'##]', tuple:'##)', unit:'##_', error:'##_' };
+    const sym = symMap[val.type] ?? '##_';
+    let count;
+    switch (val.type) {
+      case 'int':   count = String(Math.abs(val.v)).length; break;
+      case 'float': count = String(val.v).replace(/^-/, '').length; break;
+      case 'str':   count = [...val.v].length; break;
+      case 'char':  count = 1; break;
+      case 'bool':  count = 1; break;
+      case 'arr':   count = val.v.length; break;
+      case 'tuple': count = val.v.length; break;
+      default:      count = 0;
+    }
+    return { type: 'tuple', v: [mkStr(sym), mkInt(count), val], keys: null };
   }
 
   async evalCollectionOp(expr, env) {
@@ -1456,10 +1804,18 @@ export class Interpreter {
       // ── slice ────────────────────────────────────────────────────────────
       case '$[i..j]': {
         const from=(await this.eval(expr.range.from,env)).v, to=(await this.eval(expr.range.to,env)).v;
-        if (col.type === 'arr')   return mkArr(col.v.slice(from, to+1));
-        if (col.type === 'str')   return mkStr([...col.v].slice(from,to+1).join(''));
-        if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(from,to+1), keys:col.keys?col.keys.slice(from,to+1):null };
+        if (col.type === 'arr')   return mkArr(col.v.slice(from, to));
+        if (col.type === 'str')   return mkStr([...col.v].slice(from,to).join(''));
+        if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(from,to), keys:col.keys?col.keys.slice(from,to):null };
         notSupported('$[i..j]');
+      }
+
+      case '$[i:n]': {
+        const from=(await this.eval(expr.range.from,env)).v, n=(await this.eval(expr.range.count,env)).v;
+        if (col.type === 'arr')   return mkArr(col.v.slice(from, from+n));
+        if (col.type === 'str')   return mkStr([...col.v].slice(from,from+n).join(''));
+        if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(from,from+n), keys:col.keys?col.keys.slice(from,from+n):null };
+        notSupported('$[i:n]');
       }
 
       // ── sort ─────────────────────────────────────────────────────────────
@@ -1470,6 +1826,20 @@ export class Interpreter {
       case '$^-': {
         if (col.type !== 'arr') notSupported('$^-');
         return mkArr([...col.v].sort((a,b)=> a.type==='str' ? b.v.localeCompare(a.v) : b.v-a.v));
+      }
+      case '$^': {
+        if (col.type !== 'arr') notSupported('$^');
+        const cmpFn = await this.evalCallable(expr.arg, env);
+        const items = [...col.v];
+        // Stable sort using comparator lambda: returns true if a < b (a before b)
+        for (let i = 1; i < items.length; i++) {
+          for (let j = i; j > 0; j--) {
+            const less = await this.callFunc(cmpFn, [items[j-1], items[j]]);
+            if (!this.truthy(less)) { const tmp = items[j-1]; items[j-1] = items[j]; items[j] = tmp; }
+            else break;
+          }
+        }
+        return mkArr(items);
       }
 
       // ── higher-order (require named function) ────────────────────────────
@@ -1503,6 +1873,21 @@ export class Interpreter {
         if (col.type === 'error')
           throw new ZyRuntimeError(col.v ?? 'error', col.errType ?? '##_');
         return col;
+      }
+      case '$~~': {
+        if (col.type !== 'str') notSupported('$~~');
+        const from = this.display(await this.eval(expr.from, env));
+        const to   = this.display(await this.eval(expr.to,   env));
+        const maxN = expr.count ? (await this.eval(expr.count, env)).v : Infinity;
+        let result = col.v, idx = 0, n = 0;
+        while (n < maxN) {
+          const p = result.indexOf(from, idx);
+          if (p === -1) break;
+          result = result.slice(0, p) + to + result.slice(p + from.length);
+          idx = p + to.length;
+          n++;
+        }
+        return mkStr(result);
       }
     }
     throw new ZyError(`Unknown collection operator: ${expr.op}`);
@@ -1606,14 +1991,12 @@ export class Interpreter {
     return true;
   }
 
+  // display() — internal representation (concatenation, array items, etc.)
+  // Does NOT apply numeral mode: booleans → #1/#0, numbers → ASCII digits.
   display(val) {
     if (!val || val.type === 'unit') return '';
     if (val.type === 'int')   return String(val.v);
-    if (val.type === 'float') {
-      const s = String(val.v);
-      // Match Rust display: whole floats show without .0 (e.g. 7, not 7.0)
-      return s;
-    }
+    if (val.type === 'float') return String(val.v);
     if (val.type === 'str')  return val.v;
     if (val.type === 'char') return val.v;
     if (val.type === 'bool') return val.v ? '#1' : '#0';
@@ -1625,6 +2008,17 @@ export class Interpreter {
     }
     if (val.type === 'func') return `<function ${val.name}>`;
     return String(val.v ?? val);
+  }
+
+  // displayOutput() — used exclusively by >>
+  // Applies the active numeral mode to int/float/bool; all other types unchanged.
+  displayOutput(val) {
+    const m = this.numeralMode;
+    if (!val || val.type === 'unit') return '';
+    if (val.type === 'int')   return numeralInt(val.v, m);
+    if (val.type === 'float') return numeralFloat(val.v, m);
+    if (val.type === 'bool')  return numeralBool(val.v, m);
+    return this.display(val);
   }
 }
 

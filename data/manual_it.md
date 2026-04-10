@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Array
 
+Gli array sono **mutabili** e contengono elementi dello **stesso tipo**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ per_nome = db$^ (a, b -> a.nome > b.nome)   // decrescente per nome (>)
 >> per_eta[0].nome ¶     // → Ana
 >> per_nome[0].nome ¶    // → Carla
 
-arr[1] = 99              // aggiornamento in-place
-arr = arr[1]$~ 99        // aggiornamento funzionale — restituisce nuovo array
+// Aggiornamento diretto dell'elemento (solo array)
+arr[1] = 99              // assegnare
+arr[0] += 5              // composto: +=  -=  *=  /=  %=  ^=
+
+// Aggiornamento funzionale — restituisce un nuovo array; l'originale rimane invariato
+arr2 = arr[1]$~ 99
 ```
 
 > Tutti gli operatori di collezione restituiscono un **nuovo array**. Riassegnare: `arr = arr$+ 4`.
 > Gli operatori non possono essere concatenati — usare assegnazioni intermedie.
 > `$^+` / `$^-` ordinano **array di primitivi** (numeri, stringhe). Per array di tuple, usare `$^` con lambda comparatore — la direzione è codificata nel lambda (`<` = crescente, `>` = decrescente).
+
+**Semantica del valore** — assegnare un array a un'altra variabile crea una copia indipendente:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b non è influenzato
+```
 
 ```zymbol
 // Array annidati
@@ -357,10 +373,16 @@ persona = (nome: "Ana", eta: 25, citta: "Roma")
 
 ## Tuple
 
+Le tuple sono contenitori ordinati **immutabili** che possono contenere valori di **tipi diversi**.
+A differenza degli array, gli elementi non possono essere modificati dopo la creazione.
+
 ```zymbol
 // Posizionale
 punto = (10, 20)
 >> punto[0] ¶    // → 10
+
+dati = (42, "hello", #1, 3.14)
+>> dati[2] ¶     // → #1
 
 // Nominata
 persona = (nome: "Alice", eta: 25)
@@ -371,6 +393,29 @@ persona = (nome: "Alice", eta: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, etichetta: "origine")
 >> p.pos.x ¶        // → 10
+```
+
+**Immutabilità** — qualsiasi tentativo di modificare un elemento di una tupla è un errore di esecuzione:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ errore di esecuzione: le tuple sono immutabili
+// t[0] += 5    // ❌ stesso errore
+```
+
+Per ricavare un valore modificato usare `$~` (aggiornamento funzionale) — restituisce una **nuova** tupla:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← originale invariato
+>> t2 ¶    // → (10, 999, 30)
+
+// Tupla nominata — ricostruire esplicitamente
+persona = (nome: "Alice", eta: 25)
+piu_vecchia  = (nome: persona.nome, eta: 26)
+>> persona.eta ¶    // → 25
+>> piu_vecchia.eta ¶    // → 26
 ```
 
 ---
@@ -482,6 +527,70 @@ _sommare_interno(a, b) { <~ a + b }
 
 ---
 
+## Modi Numerici
+
+Zymbol può visualizzare i numeri in **69 script di cifre Unicode** — Devanagari, Arabo-Indico, Tailandese, Klingon pIqaD, Grassetto Matematico, segmenti LCD e altro. Il modo attivo influisce solo sull'output `>>`; l'aritmetica interna è sempre binaria.
+
+### Attivare uno script
+
+Scrivere la cifra `0` e `9` dello script target racchiusa tra `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabo-Indico  (U+0660–U+0669)
+#๐๙#    // Tailandese    (U+0E50–U+0E59)
+#09#    // ripristinare in ASCII
+```
+
+### Output e booleani
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII predefinito)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (punto decimale sempre ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Booleani: prefisso # sempre ASCII, la cifra si adatta
+>> #1 ¶         // → #१   (vero in Devanagari)
+>> #0 ¶         // → #०   (falso — distinto da ०  zero intero)
+
+x = 28 > 4
+>> x ¶          // → #१   (risultato di confronto segue il modo attivo)
+```
+
+### Letterali numerici nativi nel sorgente
+
+Le cifre di qualsiasi script supportato sono letterali validi — in intervalli, modulo, confronti:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Letterali booleani in qualsiasi script
+
+`#` + cifra `0` o `1` di qualsiasi blocco è un letterale booleano valido:
+
+```zymbol
+#٠٩#
+نشط = #١        // equivalente a #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` è **sempre ASCII**. `#0` (falso) è sempre visivamente distinto da `0` (zero intero) in ogni script.
+
+---
+
 ## Operatori sui Dati
 
 ```zymbol
@@ -563,8 +672,9 @@ classificare(numero) {
 | `@!`      | interrompi (break)                  | `$>`          | map                           |
 | `@>`      | continua                            | `$\|`         | filter                        |
 | `->`      | lambda                              | `$<`          | reduce                        |
-| `$^+`     | ordinare crescente (primitivi)      | `$^-`         | ordinare decrescente          |
-| `$^`      | ordinare con lambda comparatore     |               |                               |
+| `arr[i] = val` | aggiornare elemento (solo array) | `arr[i] += val` | aggiornamento composto   |
+| `arr[i]$~` | aggiornamento funzionale (nuova copia) | `$^+`    | ordinare crescente (primitivi) |
+| `$^-`     | ordinare decrescente (primitivi)    | `$^`          | ordinare con lambda comparatore |
 | `<~`      | ritornare (return)                  | `!?`          | provare (try)                 |
 | `\|>`     | pipe                                | `:!`          | catturare (catch)             |
 | `#1`      | vero                                | `:>`          | sempre (finally)              |
@@ -574,8 +684,44 @@ classificare(numero) {
 | `::`      | chiamata modulo                     | `.`           | accesso al campo              |
 | `#\|..\|` | convertire in numero               | `#?`          | metadati di tipo              |
 | `#.N\|..\|` | arrotondare                      | `#!N\|..\|`   | troncare                      |
-| `c\|..\|` | formato virgola                    | `e\|..\|`     | scientifico                   |
+| `#,\|..\|` | formato virgola                    | `#^\|..\|`     | scientifico                   |
+| `#d0d9#` | cambio modalità numerica | `#09#` | ripristina in ASCII |
 | `<\ ..\>` | esecuzione shell                   | `>\<`         | argomenti CLI                 |
+
+## Registro delle Modifiche
+
+### v0.0.3 — Sistemi Numerici Unicode & Miglioramenti LSP _(Aprile 2026)_
+
+- **Aggiunto** 69 blocchi di cifre Unicode con il token di commutazione `#d0d9#`
+- **Aggiunto** Letterali booleani in qualsiasi script — `#१` / `#०`, `#١` / `#٠`, ecc.
+- **Aggiunto** Cifre Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Aggiunto** Opcode VM `SetNumeralMode` — parità completa con il tree-walker
+- **Aggiunto** Il REPL rispetta il modo numerico attivo nell'eco e nella visualizzazione delle variabili
+- **Modificato** L'output `>>` dei booleani include ora il prefisso `#` (`#0` / `#1`) in tutte le modalità
+
+### v0.0.2_01 — Rinomina degli Operatori _(30 Mar 2026)_
+
+- **Modificato** `c|..|` → `#,|..|` e `e|..|` → `#^|..|` — coerente con la famiglia di prefissi `#`
+- **Aggiunto** Alias di esportazione: riesportare membri di modulo con un nome diverso
+
+### v0.0.2 — Riprogettazione dell'API Collezioni & Installer _(24 Mar 2026)_
+
+- **Aggiunto** Famiglia di operatori `$` unificata per array e stringhe (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Aggiunto** Destrutturazione per array, tuple e tuple con nome
+- **Aggiunto** Indici negativi (`arr[-1]` = ultimo elemento)
+- **Aggiunto** Installer nativi — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Aggiunto** Assegnazione composta `^=`
+- **Corretto** Casi limite del parser aritmetico; correzioni alla documentazione
+
+### v0.0.1 — Rilascio Pubblico Iniziale _(22 Mar 2026)_
+
+- Interprete tree-walker + VM a registri (`--vm`, ~4× più veloce, ~95% di parità)
+- Tutti i costrutti principali: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Identificatori Unicode completi, sistema di moduli, lambda, closure, gestione degli errori
+- REPL, LSP, estensione VS Code, formattatore (`zymbol fmt`)
 
 ---
 

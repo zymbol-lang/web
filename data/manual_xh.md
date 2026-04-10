@@ -32,6 +32,70 @@ x--       // 4
 
 ---
 
+## Iimodi Zenombolo
+
+I-Zymbol inokubonakalisa amanani kwi**Unicode yezinhlobo zenombolo ezingama-69** — Devanagari, Arabic-Indian, Thai, Klingon pIqaD, Mathematics Eluqilima, izicubu ze-LCD nazo ezinye. Imodi esebenzayo ithinta kuphela i-output ye-`>>`; i-arithmetic yangaphakathi ihlala iyibinary.
+
+### Ukuvula uhlobo
+
+Bhala inombolo `0` ne-`9` yohlobo oluqondiweyo ngaphakathi kwe-`#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabic-Indic  (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // reset to ASCII
+```
+
+### I-output namanani e-boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII default)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # i-prefix ihlala iyiASCII, inombolo iyazisebenzela
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Izinombolo zomthombo kwikhodi yomthombo
+
+Izinombolo zohlobo oluphina oluxhaswayo zizinhlobo ezivumelekileyo — kwizivingci, modulo, uthelekiso:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Izinhlobo ze-boolean kwihlobo elihluphekilayo
+
+`#` + inombolo `0` okanye `1` kwibloko iphina iyinhlobo ye-boolean evumelekileyo:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` ihlala **iyiASCII**. `#0` (amanga) ihlala yahluke ngokubonakala kwi-`0` (zero yenombolo yonke) kuyo yonke imodi.
+
+---
+
 ## Iintlobo zeData
 
 | Uhlobo | Umzekelo | Impawu `#?` | Amanothi |
@@ -290,6 +354,8 @@ imienzo = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Uluhlu
 
+Uluhlu **luyaguquleka** kwaye lugcina izinto ze**uhlobo olufanayo**.
+
 ```zymbol
 uluhlu = [1, 2, 3, 4, 5]
 
@@ -319,13 +385,27 @@ negama = idatha$^ (a, b -> a.igama > b.igama)               // descending negama
 >> ngeminyaka[0].igama ¶     // → Ana
 >> negama[0].igama ¶         // → Carla
 
-uluhlu[1] = 99               // buyekeza endaweni
-uluhlu = uluhlu[1]$~ 99      // buyekeza ngomsebenzi — ibuya uluhlu olutsha
+// Buyekeza into ngqo (uluhlu kuphela)
+uluhlu[1] = 99              // nikela
+uluhlu[0] += 5              // intlanganiselo: +=  -=  *=  /=  %=  ^=
+
+// Buyekeza ngomsebenzi — ibuya uluhlu olutsha; owokuqala awuguquki
+uluhlu2 = uluhlu[1]$~ 99
 ```
 
 > Zonke ii-operator zokuqokelela zibuya **uluhlu olutsha**. Phinda unikezele: `uluhlu = uluhlu$+ 4`.
 > Ii-operator azikwazi ukuxhomeka — sebenzisa imibophelelo emibini ehlukanisiweyo.
 > `$^+` / `$^-` zihlela **izinhlu zamaprimitive** (iinombolo, imigca). Kwizinhlu zetupel sebenzisa `$^` nelelembu lokuthelekisa — inhloso ikhona kulelembu (`<` = ascending, `>` = descending).
+
+**Izincwadi zexabiso** — ukumiselwa uluhlu kwenguqu yenye kukhiqiza ikopi ezimeleyo:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b ayiguquki
+```
 
 ```zymbol
 // Uluhlu olufakwe phakathi
@@ -357,10 +437,15 @@ umntu = (igama: "Ana", iminyaka: 25, isixeko: "Gqeberha")
 
 ## Tupel
 
+I-Tupel **ayiguquki** iikhonteyina ezihlelelwe ezinokuqukumbela amanani **ezinhlobo ezihlukeneyo**. Hayi njengezinhlu, izinto azikwazi ukuguqulwa emva kokudaliwa.
+
 ```zymbol
 // Ngomgangatho
 iqhwelo = (10, 20)
 >> iqhwelo[0] ¶    // → 10
+
+idatha = (42, "molo", #1, 3.14)
+>> idatha[2] ¶     // → #1
 
 // Enegama
 umntu = (igama: "Alice", iminyaka: 25)
@@ -371,6 +456,29 @@ umntu = (igama: "Alice", iminyaka: 25)
 indawo = (x: 10, y: 20)
 p = (indawo: indawo, isihloko: "izikhala")
 >> p.indawo.x ¶    // → 10
+```
+
+**Ukungaguquki** — naliphi na izame zokuguqula into ye-tupel yimpazamo yexesha lokusebenza:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ impazamo yexesha lokusebenza: ii-tupel aziguquleki
+// t[0] += 5    // ❌ impazamo efanayo
+```
+
+Ukufumana ixabiso eliguquliweyo sebenzisa `$~` (buyekeza ngomsebenzi) — ibuya i-tupel **entsha**:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← owokuqala awuguquki
+>> t2 ¶    // → (10, 999, 30)
+
+// I-tupel enegama — yakha ngokucacileyo
+umntu = (igama: "Alice", iminyaka: 25)
+omdala  = (igama: umntu.igama, iminyaka: 26)
+>> umntu.iminyaka ¶    // → 25
+>> omdala.iminyaka ¶      // → 26
 ```
 
 ---
@@ -563,8 +671,9 @@ hlela(inombolo) {
 | `@!` | yeka (break) | `$>` | map |
 | `@>` | qhubeka (continue) | `$\|` | filter |
 | `->` | lambda | `$<` | reduce |
-| `$^+` | hlela kwe-ascending (primitives) | `$^-` | hlela kwe-descending (primitives) |
-| `$^` | hlela ngokuthelekisa (tupel) | | |
+| `uluhlu[i] = val` | buyekeza into (uluhlu kuphela) | `uluhlu[i] += val` | buyekeza intlanganiselo |
+| `uluhlu[i]$~` | buyekeza ngomsebenzi (ikopi entsha) | `$^+` | hlela kwe-ascending (primitives) |
+| `$^-` | hlela kwe-descending (primitives) | `$^` | hlela ngokuthelekisa (tupel) |
 | `<~` | buyela (return) | `!?` | zama (try) |
 | `\|>` | payiphi | `:!` | bamba (catch) |
 | `#1` | unyaniso (true) | `:>` | hlala (finally) |
@@ -574,8 +683,44 @@ hlela(inombolo) {
 | `::` | biza imodyuli | `.` | fikelela intsimi |
 | `#\|..\|` | guqula inombolo | `#?` | metadata yohlobo |
 | `#.N\|..\|` | yenqamla | `#!N\|..\|` | sika |
-| `c\|..\|` | ukwakheka kwekhoma | `e\|..\|` | sayensi |
+| `#,\|..\|` | ukwakheka kwekhoma | `#^\|..\|` | sayensi |
+| `#d0d9#` | ukushintsha imodi yenombolo | `#09#` | buyisela kwi-ASCII |
 | `<\ ..\>` | qalisa i-shell | `>\<` | iimpikiswano ze-CLI |
+
+## Imbali Yemikhuphelo
+
+### v0.0.3 — Unicode Izinhlobo Zenombolo & Ukulungiswa kwe-LSP _(Epreli 2026)_
+
+- **Yongezwa** Iibhloko ezingama-69 ze-Unicode zenombolo ngetoken yokushintsha imodi `#d0d9#`
+- **Yongezwa** Izinhlobo ze-boolean kwihlobo elihluphekilayo — `#१` / `#०`, `#١` / `#٠`, njalo njalo
+- **Yongezwa** Izinombolo ze-Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Yongezwa** I-VM opcode `SetNumeralMode` — ukulingana okugcweleyo ne-tree-walker
+- **Yongezwa** I-REPL ihlonela imodi yenombolo esebenzayo kwi-echo nakubonisa iziguquli
+- **Yalungiswa** I-output ye-`>>` ye-boolean ngoku ibandakanya `#` i-prefix (`#0` / `#1`) kwimodi zonke
+
+### v0.0.2_01 — Ukuphinda Igama Lezixhobo _(30 Mar 2026)_
+
+- **Yalungiswa** `c|..|` → `#,|..|` ne-`e|..|` → `#^|..|` — ngokuhambelana nosapho lwe-`#`
+- **Yongezwa** I-alias yokuthumela: ukuthumela kwakhona amalungu emoduli ngegama elahlukileyo
+
+### v0.0.2 — Ukuphinda Ukwakhiwa kwe-API yeZikhwama & Amaseti okufakela _(24 Mar 2026)_
+
+- **Yongezwa** Usapho lwezixhobo `$` oluhlangeneyo kwamarrays namagama (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Yongezwa** Ukuqhekeza kwamarrays, amatuples namatuples anegama
+- **Yongezwa** Amaziso amahle (`arr[-1]` = into yokugqibela)
+- **Yongezwa** Amaseti okufakela omthombo — Linux (deb/rpm/pkg/musl), macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Yongezwa** Ukufakwa okuhlanganisiweyo `^=`
+- **Yalungiswa** Imeko yomda we-parser yezibalo; ukulungiswa kwamaxwebhu
+
+### v0.0.1 — Ukukhutshwa Kokuqala Kokulawuleka _(22 Mar 2026)_
+
+- Tree-walker interpreter + register VM (`--vm`, ~4× ngokukhawuleza, ~95% ukulingana)
+- Zonke izakhiwo zesiseko: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Izichazi ze-Unicode ezigcweleyo, inkqubo yemoduli, lambda, ukuvalwa, ukulawula iimpazamo
+- REPL, LSP, i-VS Code extension, formatter (`zymbol fmt`)
 
 ---
 

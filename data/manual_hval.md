@@ -291,6 +291,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Glaeson
 
+Glaeson **iksan** yn lanta — ānogar **mēre bantis** issa. Glaeson daor morghūlis — bantis iemnon same issa.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -320,13 +322,27 @@ by_brōzi = db$^ (a, b -> a.brōzi > b.brōzi)
 >> by_ābre[0].brōzi ¶     // → Ana
 >> by_brōzi[0].brōzi ¶    // → Carla
 
-arr[1] = 99              // update in-place
-arr = arr[1]$~ 99        // functional update — returns new array
+// Issa tubagon (glaeson neP) — Direct element update (arrays only)
+arr[1] = 99              // issa — assign
+arr[0] += 5              // lanta tubagon: +=  -=  *=  /=  %=  ^= — compound
+
+// Ānogar issa — Functional update — returns a new array; original unchanged
+arr2 = arr[1]$~ 99
 ```
 
 > Iemnon collection ta' — **naur glaeson** — issa: `arr = arr$+ 4`.
 > Daor tanc: lanta issa.
 > `$^+` / `$^-` sort **primitive arrays**. For tuple arrays use `$^` with a comparator lambda.
+
+**Issa bantis (Value semantics)** — Glaeson issa naur kopio — daor morghūlis lanta:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b daor tubagon
+```
 
 ```zymbol
 // Nested arrays
@@ -358,10 +374,15 @@ vala = (brōzi: "Ana", ābre: 25, ēngos: "Valyria")
 
 ## Tuple
 
+Tuple **daor issa** — iemnon bantis morghūlis, ānogar **mēre bantis** glaeson. Daor morghūlis — bantis daor issa ao kostagon.
+
 ```zymbol
 // Positional
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+data = (42, "rytsas", #1, 3.14)
+>> data[2] ¶     // → #1
 
 // Named
 vala = (brōzi: "Alice", ābre: 25)
@@ -372,6 +393,29 @@ vala = (brōzi: "Alice", ābre: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, brōzi: "Valyria")
 >> p.pos.x ¶        // → 10
+```
+
+**Daor issa (Immutability)** — Ānogar daor issa — sōvēs gevives:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ sōvēs gevives: tuple daor issa
+// t[0] += 5    // ❌ sōvēs
+```
+
+Ānogar bantis morghūlis haz `$~` (ānogar issa) — naur **bora** tuple:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← original daor tubagon
+>> t2 ¶    // → (10, 999, 30)
+
+// Tuple brōzi — naur bora vala
+vala = (brōzi: "Alice", ābre: 25)
+vala_elder = (brōzi: vala.brōzi, ābre: 26)
+>> vala.ābre ¶          // → 25
+>> vala_elder.ābre ¶    // → 26
 ```
 
 ---
@@ -483,6 +527,70 @@ _internal_tubagon(a, b) { <~ a + b }
 
 ---
 
+## Ābre Numrio
+
+Zymbol māzis ābre numrio yn **Unicode numrio ēngos 69** — Devanagari, Arabi-India, Thai, Klingon pIqaD, Mathēmatika Beldis, LCD. Ēngos ābre `>>`; numrio binary.
+
+### Ēngos māzis
+
+Numrio `0` yn `9` yn `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabi-India   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // ASCII-o
+```
+
+### Ābre yn boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ASCII, numrio ābre
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Numrio asli kōdys
+
+Numrio ēngos literal — rynis, modulo:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal ēngos
+
+`#` + numrio `0` yn `1` bloc boolean:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII**. `#0` (daōr) `0` (numrio zēro) ēngos.
+
+---
+
 ## Ābre Bartosi
 
 ```zymbol
@@ -564,8 +672,9 @@ tymagon(lentor) {
 | `@!`     | ūbagon (break)     | `$>`       | map                   |
 | `@>`     | kostagon daur      | `$\|`      | filter                |
 | `->`     | Lambda             | `$<`       | reduce                |
-| `$^+`    | sort ascending     | `$^-`      | sort descending       |
-| `$^`     | sort comparator    |            |                       |
+| `arr[i] = val` | issa tubagon (update in-place) | `arr[i] +=` | lanta tubagon (compound update) |
+| `arr[i]$~` | ānogar issa (functional update) | `$^+` | sort ascending      |
+| `$^-`    | sort descending    | `$^`       | sort comparator       |
 | `<~`     | tubagon            | `!?`       | ȳdrassagon (try)      |
 | `\|>`    | Pipe               | `:!`       | karyai (catch)        |
 | `#1`     | iksan              | `:>`       | iemnon (finally)      |
@@ -575,8 +684,42 @@ tymagon(lentor) {
 | `::`     | valyria ānogar     | `.`        | field access          |
 | `#\|..\|` | parse number      | `#?`       | type metadata         |
 | `#.N\|..\|` | round           | `#!N\|..\|` | truncate            |
-| `c\|..\|` | comma format      | `e\|..\|`  | scientific            |
+| `#,\|..\|` | comma format      | `#^\|..\|`  | scientific            |
+| `#d0d9#` | ābre numrio ēngos | `#09#` | ASCII-o |
 | `<\ ..\>` | shell exec        | `>\<`      | CLI args              |
+
+## Versio Ēngos
+
+### v0.0.3 — Unicode Numrio & LSP _(Abril 2026)_
+
+- **Ābre** Unicode bloc 69 token `#d0d9#`
+- **Ābre** Boolean literals — `#१` / `#०`, `#१` / `#٠`
+- **Ābre** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Ābre** VM opcode `SetNumeralMode` — tree-walker
+- **Ābre** REPL numrio echo variable
+- **Māzis** `>>` boolean `#` (`#0` / `#1`)
+
+### v0.0.2_01 _(30 Mar 2026)_
+
+- **Māzis** `c|..|` → `#,|..|` yn `e|..|` → `#^|..|`
+- **Ābre** Export alias
+
+### v0.0.2 _(24 Mar 2026)_
+
+- **Ābre** `$` arrays yn strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Ābre** Destructuring arrays, tuples
+- **Ābre** Numrio daōr (`arr[-1]`)
+- **Ābre** Instalar — Linux, macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Ābre** `^=`
+
+### v0.0.1 _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4×, ~95%)
+- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Trattok'o
 
+Trattok'o **borarir** bal nayc — ibac hut'unn **pa' gai'tayl** tebec. Trattok'o n'ibac mhi'ade ne' — gai'tayl borarir ibac.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ by_gar   = db$^ (a, b -> a.gar > b.gar)
 >> by_cuir[0].gar ¶     // → Ana
 >> by_gar[0].gar ¶      // → Carla
 
-arr[1] = 99              // borarir pa'
-arr = arr[1]$~ 99        // borarir vaii — bora trattok'o
+// Borarir pa' (trattok'o tebec) — Direct element update (arrays only)
+arr[1] = 99              // gai'tayl — assign
+arr[0] += 5              // ibac borarir: +=  -=  *=  /=  %=  ^= — compound
+
+// Borarir vaii — Functional update — bora trattok'o; original nayc borarir
+arr2 = arr[1]$~ 99
 ```
 
 > Ibac hut'unn borarir **trattok'o vaii**. Borarir: `arr = arr$+ 4`.
 > N'gai'tayl: t'ad ara'novor mhi'ade.
 > `$^+` / `$^-` gai'tayl **naas solus**. Tuple aliit — hut'unn `$^` bal lambda.
+
+**Gai'tayl tebec (Value semantics)** — Mhi'ade trattok'o bora kopio nayc mirci:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b nayc borarir
+```
 
 ```zymbol
 // Trattok'o naasad
@@ -357,10 +373,15 @@ person = (gar: "Ana", cuir: 25, city: "Mandalore")
 
 ## Tuple
 
+Tuple **nayc borarir** — ibac gal mhi'ade, hut'unn **pa' gai'tayl** tebec. Nayc trattok'o — gai'tayl nayc borarir ibac.
+
 ```zymbol
 // Tracyn
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+kaysh = (42, "Su'cuy", #1, 3.14)
+>> kaysh[2] ¶     // → #1
 
 // Gar
 vod = (gar: "Alice", cuir: 25)
@@ -371,6 +392,29 @@ vod = (gar: "Alice", cuir: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, label: "Manda")
 >> p.pos.x ¶        // → 10
+```
+
+**Nayc borarir (Immutability)** — Ibac borarir gai'tayl tuple nayc cuyir:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ nayc cuyir: tuple nayc borarir
+// t[0] += 5    // ❌ nayc cuyir
+```
+
+Borarir vaii haz `$~` (borarir gai'tayl) — bora **naur** tuple:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← original nayc borarir
+>> t2 ¶    // → (10, 999, 30)
+
+// Tuple gar — bora naur vod
+vod = (gar: "Alice", cuir: 25)
+vod2 = (gar: vod.gar, cuir: 26)
+>> vod.cuir ¶    // → 25
+>> vod2.cuir ¶   // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _ibac_borarir(a, b) { <~ a + b }
 
 ---
 
+## Naasad Mirci
+
+Zymbol runi naasad **Unicode naasad'ika 69** — Devanagari, Arabi-India, Thai, Klingon pIqaD, Mirdalore, LCD. Mirci haat `>>`; naasad binary.
+
+### Ika gaa'tayl
+
+Naasad `0` mir `9` gaa `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabi-India   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // ASCII-e
+```
+
+### Haat mir boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ASCII, naasad runi
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Naasad asli kode
+
+Naasad ika literal — range, modulo:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal ika
+
+`#` + naasad `0` mir `1` bloc boolean:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII**. `#0` (ne) `0` (naasad nul) ika.
+
+---
+
 ## Operatore Naasad
 
 ```zymbol
@@ -563,8 +671,9 @@ jate(gal) {
 | `@!`     | troch'n (break)    | `$>`         | map                   |
 | `@>`     | meh darasuum       | `$\|`        | filter                |
 | `->`     | Lambda             | `$<`         | reduce                |
-| `$^+`    | jate (naas solus)  | `$^-`        | nayc (naas solus)     |
-| `$^`     | borarir lambda     |              |                       |
+| `arr[i] = val` | borarir pa' (update in-place) | `arr[i] +=` | ibac borarir (compound update) |
+| `arr[i]$~` | borarir vaii (functional update) | `$^+` | jate (naas solus) |
+| `$^-`    | nayc (naas solus)  | `$^`         | borarir lambda        |
 | `<~`     | bora               | `!?`         | troch'n (try)         |
 | `\|>`    | Pipe               | `:!`         | karyai (catch)        |
 | `#1`     | elek               | `:>`         | darasuum (finally)    |
@@ -574,8 +683,42 @@ jate(gal) {
 | `::`     | aliit lo'          | `.`          | gai'tayl tracyn       |
 | `#\|..\|`| bora gal           | `#?`         | gai'tayl naas         |
 | `#.N\|..\|` | tracyn         | `#!N\|..\|`  | teq                   |
-| `c\|..\|`| gai'tayl comma     | `e\|..\|`    | naas'ika              |
+| `#,\|..\|`| gai'tayl comma     | `#^\|..\|`    | naas'ika              |
+| `#d0d9#` | naasad mirci runi | `#09#` | ASCII-e |
 | `<\ ..\>`| shell hibira       | `>\<`        | CLI gai'tayl          |
+
+## Versione Haat
+
+### v0.0.3 — Unicode Naasad & LSP _(Abril 2026)_
+
+- **Runi** Unicode bloc 69 token `#d0d9#`
+- **Runi** Boolean literals — `#१` / `#०`, `#١` / `#٠`
+- **Runi** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Runi** VM opcode `SetNumeralMode` — tree-walker
+- **Runi** REPL naasad echo variable
+- **Mirci** `>>` boolean `#` (`#0` / `#1`)
+
+### v0.0.2_01 _(30 Mar 2026)_
+
+- **Mirci** `c|..|` → `#,|..|` mir `e|..|` → `#^|..|`
+- **Runi** Export alias
+
+### v0.0.2 _(24 Mar 2026)_
+
+- **Runi** `$` arrays mir strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Runi** Destructuring arrays, tuples
+- **Runi** Naasad ne (`arr[-1]`)
+- **Runi** Instalar — Linux, macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Runi** `^=`
+
+### v0.0.1 _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4×, ~95%)
+- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

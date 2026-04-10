@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Arrays
 
+Arrays zijn **veranderlijk** en bevatten elementen van hetzelfde **type**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ op_naam      = db$^ (a, b -> a.naam > b.naam)
 >> op_leeftijd[0].naam ¶     // → Ana
 >> op_naam[0].naam ¶         // → Carla
 
-arr[1] = 99              // bijwerken op locatie
-arr = arr[1]$~ 99        // functioneel bijwerken — geeft nieuwe array terug
+// Directe elementupdate (alleen arrays)
+arr[1] = 99              // toewijzen
+arr[0] += 5              // samengesteld: +=  -=  *=  /=  %=  ^=
+
+// Functionele update — geeft een nieuwe array terug; origineel ongewijzigd
+arr2 = arr[1]$~ 99
 ```
 
 > Alle collectie-operatoren geven een **nieuwe array** terug. Wijs terug toe: `arr = arr$+ 4`.
 > Operatoren kunnen niet worden gekoppeld — gebruik tussenliggende toewijzingen.
 > `$^+` / `$^-` sorteren **primitieve arrays** (getallen, strings). Voor tuple-arrays gebruik `$^` met een vergelijkingslambda.
+
+**Waardesemantiek** — een array toewijzen aan een andere variabele maakt een onafhankelijke kopie:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b is niet beïnvloed
+```
 
 ```zymbol
 // Geneste arrays
@@ -357,10 +373,16 @@ persoon = (naam: "Ana", leeftijd: 25, stad: "Madrid")
 
 ## Tupels
 
+Tuples zijn **onveranderlijke** geordende containers die waarden van **verschillende typen** kunnen bevatten.
+Anders dan arrays kunnen elementen na aanmaak niet worden gewijzigd.
+
 ```zymbol
-// Positioneel
+// Positioneel — gemengde typen toegestaan
 punt = (10, 20)
 >> punt[0] ¶    // → 10
+
+gegevens = (42, "hallo", #1, 3.14)
+>> gegevens[2] ¶     // → #1
 
 // Benoemd
 persoon = (naam: "Alice", leeftijd: 25)
@@ -371,6 +393,29 @@ persoon = (naam: "Alice", leeftijd: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, label: "oorsprong")
 >> p.pos.x ¶        // → 10
+```
+
+**Onveranderlijkheid** — elke poging om een tuple-element te wijzigen is een runtime-fout:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ runtime-fout: tuples zijn onveranderlijk
+// t[0] += 5    // ❌ dezelfde fout
+```
+
+Om een gewijzigde waarde af te leiden gebruik `$~` (functionele update) — geeft een **nieuwe** tuple terug:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← origineel ongewijzigd
+>> t2 ¶    // → (10, 999, 30)
+
+// Benoemde tuple — expliciet herbouwen
+persoon = (naam: "Alice", leeftijd: 25)
+ouder  = (naam: persoon.naam, leeftijd: 26)
+>> persoon.leeftijd ¶    // → 25
+>> ouder.leeftijd ¶      // → 26
 ```
 
 ---
@@ -482,6 +527,70 @@ _intern_optellen(a, b) { <~ a + b }
 
 ---
 
+## Cijfermodi
+
+Zymbol kan getallen weergeven in **69 Unicode-cijferschriften** — Devanagari, Arabisch-Indisch, Thais, Klingon pIqaD, Wiskundig Vet, LCD-segmenten en meer. De actieve modus beïnvloedt alleen de `>>`-uitvoer; interne rekenkunde is altijd binair.
+
+### Een schrift activeren
+
+Schrijf het cijfer `0` en `9` van het doelschrift omringd door `#…#`:
+
+```zymbol
+#०९#    // Devanagari      (U+0966–U+096F)
+#٠٩#    // Arabisch-Ind.   (U+0660–U+0669)
+#๐๙#    // Thais           (U+0E50–U+0E59)
+#09#    // terugzetten naar ASCII
+```
+
+### Uitvoer en booleans
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII standaard)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (decimaalpunt altijd ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Booleans: # prefix altijd ASCII, cijfer past zich aan
+>> #1 ¶         // → #१   (waar in Devanagari)
+>> #0 ¶         // → #०   (onwaar — onderscheiden van ०  geheel getal nul)
+
+x = 28 > 4
+>> x ¶          // → #१   (vergelijkingsresultaat volgt actieve modus)
+```
+
+### Oorspronkelijke cijfer-literals in broncode
+
+Cijfers van elk ondersteund schrift zijn geldige literals — in bereiken, modulo, vergelijkingen:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Booleaanse literals in elk schrift
+
+`#` + cijfer `0` of `1` uit elk blok is een geldige booleaanse literal:
+
+```zymbol
+#٠٩#
+نشط = #١        // hetzelfde als #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` is **altijd ASCII**. `#0` (onwaar) is in elk schrift altijd visueel onderscheidbaar van `0` (geheel getal nul).
+
+---
+
 ## Gegevensoperatoren
 
 ```zymbol
@@ -563,8 +672,9 @@ indelen(getal) {
 | `@!` | onderbreken | `$>` | map |
 | `@>` | doorgaan | `$\|` | filter |
 | `->` | lambda | `$<` | reduce |
-| `$^+` | oplopend sorteren (primitieven) | `$^-` | aflopend sorteren (primitieven) |
-| `$^` | sorteren met vergelijking (tuples) | | |
+| `arr[i] = val` | element bijwerken (alleen arrays) | `arr[i] += val` | samengestelde update |
+| `arr[i]$~` | functionele update (nieuwe kopie) | `$^+` | oplopend sorteren (primitieven) |
+| `$^-` | aflopend sorteren (primitieven) | `$^` | sorteren met vergelijking (tuples) |
 | `<~` | teruggave | `!?` | proberen |
 | `\|>` | pipe | `:!` | vangen |
 | `#1` | waar | `:>` | altijd |
@@ -574,8 +684,44 @@ indelen(getal) {
 | `::` | module-aanroep | `.` | veldzoegang |
 | `#\|..\|` | getal ontleden | `#?` | type-metadata |
 | `#.N\|..\|` | afronden | `#!N\|..\|` | afkappen |
-| `c\|..\|` | kommanotatie | `e\|..\|` | wetenschappelijk |
+| `#,\|..\|` | kommanotatie | `#^\|..\|` | wetenschappelijk |
+| `#d0d9#` | cijfermodus wisselen | `#09#` | terugzetten naar ASCII |
 | `<\ ..\>` | shell uitvoeren | `><` | CLI-argumenten |
+
+## Versiegeschiedenis
+
+### v0.0.3 — Unicode Talsystemen & LSP-verbeteringen _(April 2026)_
+
+- **Toegevoegd** 69 Unicode-cijferblokken met het modusschakeltoken `#d0d9#`
+- **Toegevoegd** Booleaanse literals in elk schrift — `#१` / `#०`, `#١` / `#٠`, enz.
+- **Toegevoegd** Klingon pIqaD-cijfers (CSUR PUA U+F8F0–U+F8F9)
+- **Toegevoegd** VM-opcode `SetNumeralMode` — volledige pariteit met de boom-wandelaar
+- **Toegevoegd** REPL respecteert actieve cijfermodus in echo en variabeleweergave
+- **Gewijzigd** `>>`-uitvoer van booleans bevat nu het `#`-prefix (`#0` / `#1`) in alle modi
+
+### v0.0.2_01 — Operatoren hernoemen _(30 Mar 2026)_
+
+- **Gewijzigd** `c|..|` → `#,|..|` en `e|..|` → `#^|..|` — consistent met de `#`-prefixfamilie
+- **Toegevoegd** Export-alias: moduleleden herexporteren onder een andere naam
+
+### v0.0.2 — Verzameling-API Herontwerp & Installatieprogramma's _(24 Mar 2026)_
+
+- **Toegevoegd** Verenigde `$`-operatorfamilie voor arrays en tekenreeksen (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Toegevoegd** Destructurering voor arrays, tuples en benoemde tuples
+- **Toegevoegd** Negatieve indices (`arr[-1]` = laatste element)
+- **Toegevoegd** Inheemse installatieprogramma's — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Toegevoegd** Samengestelde toewijzing `^=`
+- **Opgelost** Randgevallen in rekenkundige parser; documentatiecorrecties
+
+### v0.0.1 — Eerste Openbare Uitgave _(22 Mar 2026)_
+
+- Boom-wandelaar-interpreter + register-VM (`--vm`, ~4× sneller, ~95% pariteit)
+- Alle kernconstructies: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Volledige Unicode-identifiers, modulesysteem, lambda's, closures, foutafhandeling
+- REPL, LSP, VS Code-extensie, formatter (`zymbol fmt`)
 
 ---
 

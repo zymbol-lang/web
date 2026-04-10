@@ -290,6 +290,8 @@ ayyuka = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Jeri
 
+Jeri suna **canzawa** kuma suna riƙe da abubuwa na **nau'i ɗaya**.
+
 ```zymbol
 jeri = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ ta_suna = bayanai$^ (a, b -> a.suna > b.suna)              // saukar ta suna
 >> ta_shekara[0].suna ¶     // → Ana
 >> ta_suna[0].suna ¶        // → Carla
 
-jeri[1] = 99               // sabunta a wurin
-jeri = jeri[1]$~ 99        // sabunta na aiki — yana dawo da sabon jeri
+// Sabunta abu kai tsaye (jeri kawai)
+jeri[1] = 99              // sanya
+jeri[0] += 5              // haɗe: +=  -=  *=  /=  %=  ^=
+
+// Sabunta na aiki — yana dawo da sabon jeri; asali bai canza ba
+jeri2 = jeri[1]$~ 99
 ```
 
 > Dukkan masu aiki na tarin suna dawo da **sabon jeri**. Sake sanya: `jeri = jeri$+ 4`.
 > Masu aiki ba za a iya haɗawa ba — yi amfani da sanya na kati.
 > `$^+` / `$^-` suna tsara **jeri na primitives** (lambobi, kirtani). Don jeri na tuple yi amfani da `$^` da lambda mai kwatanci — alkibla tana cikin lambda (`<` = hawa, `>` = saukar).
+
+**Ma'anar ƙima** — sanya jeri zuwa wani mai canzawa yana ƙirƙirar kwafin mai zaman kansa:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b bai canza ba
+```
 
 ```zymbol
 // Jeri da aka saka
@@ -357,10 +373,15 @@ mutum = (suna: "Amina", shekara: 25, gari: "Kano")
 
 ## Tuple
 
+Tuple su ne **ba za a iya canza su ba** kwantena da aka tsara waɗanda za su iya riƙe ƙimomi na **nau'uka daban-daban**. Ba kamar jeri ba, ba za a iya canza abubuwa bayan ƙirƙira ba.
+
 ```zymbol
 // Matsayi
 batu = (10, 20)
 >> batu[0] ¶    // → 10
+
+bayanai = (42, "sannu", #1, 3.14)
+>> bayanai[2] ¶     // → #1
 
 // Mai suna
 mutum = (suna: "Aisha", shekara: 30)
@@ -371,6 +392,29 @@ mutum = (suna: "Aisha", shekara: 30)
 matsayi = (x: 10, y: 20)
 p = (matsayi: matsayi, lakabi: "asali")
 >> p.matsayi.x ¶   // → 10
+```
+
+**Rashin canzawa** — kowane yunkuri na canza abu na tuple kuskure ne na lokacin aiki:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ kuskure na lokacin aiki: tuple ba za a iya canza su ba
+// t[0] += 5    // ❌ wannan kuskuren ne
+```
+
+Don samo ƙimar da aka canza yi amfani da `$~` (sabunta na aiki) — yana dawo da tuple **sabon**:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← asali bai canza ba
+>> t2 ¶    // → (10, 999, 30)
+
+// Tuple mai suna — sake gini a sarari
+mutum = (suna: "Alice", shekara: 25)
+manya  = (suna: mutum.suna, shekara: 26)
+>> mutum.shekara ¶    // → 25
+>> manya.shekara ¶      // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _ƙara_ciki(a, b) { <~ a + b }
 
 ---
 
+## Yanayin Lamba
+
+Zymbol na iya nuna lambobi a **Unicode rubutun lamba 69** — Devanagari, Larabci-Indiya, Thai, Klingon pIqaD, Lissafi Mai Ƙarfi, sassan LCD da sauransu. Yanayin aiki yana shafar fitar `>>` kawai; lissafi na ciki kullum binary ne.
+
+### Kunna rubutu
+
+Rubuta lamba `0` da `9` na rubutun da aka zaba a cikin `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabic-Indic  (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // reset to ASCII
+```
+
+### Fita da ƙimar Boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII default)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # gabatarwa kullum ASCII, lamba tana daidaitawa
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Lambobin asali a cikin lambar tushe
+
+Lambobin kowane rubutu da ake tallafawa suna da ingantaccen literals — a zanguna, modulo, kwatancen:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literals a kowane rubutu
+
+`#` + lamba `0` ko `1` daga kowane toshe ingantaccen Boolean literal ne:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **kullum ASCII ne**. `#0` (ƙarya) kullum ya bambanta gani daga `0` (lamba sifili) a kowane rubutu.
+
+---
+
 ## Ma'aikatan Bayanai
 
 ```zymbol
@@ -563,8 +671,9 @@ rarrabawa(lamba) {
 | `@!` | Katse | `$>` | map |
 | `@>` | Ci gaba | `$\|` | filter |
 | `->` | Lambda | `$<` | reduce |
-| `$^+` | tsara hawa (primitives) | `$^-` | tsara saukar (primitives) |
-| `$^` | tsara da kwatanci (tuple) | | |
+| `jeri[i] = val` | sabunta abu (jeri kawai) | `jeri[i] += val` | sabunta haɗe |
+| `jeri[i]$~` | sabunta na aiki (kwafin sabon) | `$^+` | tsara hawa (primitives) |
+| `$^-` | tsara saukar (primitives) | `$^` | tsara da kwatanci (tuple) |
 | `<~` | Dawo | `!?` | gwadawa |
 | `\|>` | Bututu | `:!` | kama |
 | `#1` | gaskiya | `:>` | koyaushe |
@@ -574,8 +683,44 @@ rarrabawa(lamba) {
 | `::` | Kiran sashe | `.` | damar sehemu |
 | `#\|..\|` | canza lamba | `#?` | metadata nau'i |
 | `#.N\|..\|` | zagaye | `#!N\|..\|` | yanke |
-| `c\|..\|` | tsarin waƙafi | `e\|..\|` | kimiyya |
+| `#,\|..\|` | tsarin waƙafi | `#^\|..\|` | kimiyya |
+| `#d0d9#` | maɓallin yanayin lamba | `#09#` | maido da ASCII |
 | `<\ ..\>` | gudanar shell | `>\<` | hujjojin CLI |
+
+## Tarihin Sigar
+
+### v0.0.3 — Unicode Tsarin Lamba & Inganta LSP _(Afrilu 2026)_
+
+- **An ƙara** Unicode toshe lambobi 69 tare da maɓalli mai canzawa `#d0d9#`
+- **An ƙara** Boolean literals a kowane rubutu — `#१` / `#०`, `#١` / `#٠`, da sauransu
+- **An ƙara** Klingon pIqaD lambobi (CSUR PUA U+F8F0–U+F8F9)
+- **An ƙara** VM opcode `SetNumeralMode` — daidaito cikakke da tree-walker
+- **An ƙara** REPL yana girmama yanayin lamba mai aiki a cikin echo da nuna masu canji
+- **An canza** Fitowar `>>` ta Boolean yanzu tana haɗa `#` gabatarwa (`#0` / `#1`) a duk yanayi
+
+### v0.0.2_01 — Sake Suna Ma'aikata _(30 Mar 2026)_
+
+- **An canza** `c|..|` → `#,|..|` da `e|..|` → `#^|..|` — daidai da iyalin gabatarwa `#`
+- **An ƙara** Export alias: sake fitar da membobin moduli a ƙarƙashin wani suna
+
+### v0.0.2 — Sabuwar Tsarin API da Masu Shigarwa _(24 Mar 2026)_
+
+- **An ƙara** Iyalin ma'aikata `$` guda ɗaya don arrays da strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **An ƙara** Destructuring don arrays, tuples da tuples masu suna
+- **An ƙara** Indexes mara kyau (`arr[-1]` = ƙarshen abu)
+- **An ƙara** Masu shigarwa na asali — Linux (deb/rpm/pkg/musl), macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **An ƙara** Haɗaɗɗen sanya `^=`
+- **An gyara** Matsalolin parser lissafi; gyaran takaddun
+
+### v0.0.1 — Fitowar Jama'a ta Farko _(22 Mar 2026)_
+
+- Tree-walker interpreter + register VM (`--vm`, ~4× mafi sauri, ~95% daidaito)
+- Duk gine-ginen ginshiƙai: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Unicode masu ganewa cikakke, tsarin moduli, lambdas, closures, sarrafa kuskure
+- REPL, LSP, VS Code extension, formatter (`zymbol fmt`)
 
 ---
 

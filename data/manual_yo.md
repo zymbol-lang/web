@@ -32,6 +32,70 @@ x--       // 4
 
 ---
 
+## Àwọn Ọ̀nà Nọ́mbà
+
+Zymbol lè ṣàfihàn àwọn nọ́mbà ní **Unicode àwọn ìkọ ọlọ́wọ́ nọ́mbà 69** — Devanagari, Árábìkì-Ìndíà, Thai, Klingon pIqaD, Ìṣirò Tóóró, àwọn ẹ̀yà LCD àti àwọn mìíràn. Ọ̀nà tó ń ṣiṣẹ́ níkan nípa àbájáde `>>`; ìṣirò inú jẹ́ binary nígbà gbogbo.
+
+### Mú ìkọ ṣiṣẹ́
+
+Kọ nọ́mbà `0` àti `9` ti ìkọ tí a fẹ́ sínu `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabic-Indic  (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // reset to ASCII
+```
+
+### Àbájáde àti àwọn iye boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII default)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ìpamọ́ jẹ́ ASCII nígbà gbogbo, nọ́mbà ń yí padà
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Àwọn nọ́mbà abínibí nínú kóòdù orísun
+
+Àwọn nọ́mbà ti ìkọ àbájáde èyíkéyìí tó ṣe àtìlẹ́yìn jẹ́ literals tó wulo — nínú àwọn ìyí, modulo, ìfiwéra:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Àwọn boolean literals ní ìkọ èyíkéyìí
+
+`#` + nọ́mbà `0` tàbí `1` láti ìpele èyíkéyìí jẹ́ boolean literal tó wulo:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` jẹ́ **ASCII nígbà gbogbo**. `#0` (irọ́) jẹ́ yàtọ̀ ní ìwò lójúìwò sí `0` (nọ́mbà òdo odidi) ní ìkọ kọ̀ọ̀kan.
+
+---
+
 ## Àwọn Iru Data
 
 | Iru | Àpẹẹrẹ | Àmì `#?` | Àwọn Àkọ́sílẹ̀ |
@@ -290,6 +354,8 @@ pàárọ̀(x, y)
 
 ## Àwọn Àrègbè
 
+Àwọn àrègbè jẹ́ **tí wọ́n lè yí padà** tí wọ́n sì mu àwọn èròjà ti **irú kan náà** dání.
+
 ```zymbol
 àrègbè = [1, 2, 3, 4, 5]
 
@@ -319,13 +385,27 @@ nípasẹ̀_orúkọ = àkójọ$^ (a, b -> a.orúkọ > b.orúkọ)          //
 >> nípasẹ̀_ọjọ́orí[0].orúkọ ¶     // → Ana
 >> nípasẹ̀_orúkọ[0].orúkọ ¶      // → Carla
 
-àrègbè[1] = 99               // ìmúdójúìwọ̀n ní ààyè
-àrègbè = àrègbè[1]$~ 99      // ìmúdójúìwọ̀n iṣẹ́ — dá àrègbè tuntun padà
+// Ìmúdójúìwọ̀n èròjà tààrà (àwọn àrègbè nìkan)
+àrègbè[1] = 99              // yàn
+àrègbè[0] += 5              // àkópo: +=  -=  *=  /=  %=  ^=
+
+// Ìmúdójúìwọ̀n iṣẹ́ — dá àrègbè tuntun padà; àtẹwọ́gbà kò yí padà
+àrègbè2 = àrègbè[1]$~ 99
 ```
 
 > Gbogbo àwọn àṣẹ àkójọ dá **àrègbè tuntun** padà. Pínlẹ̀ tuntun: `àrègbè = àrègbè$+ 4`.
 > Àwọn àṣẹ kò lè wà ní ìjọpọ̀ — lò àwọn ìpínlẹ̀ àárọ̀ meji.
 > `$^+` / `$^-` tò **àwọn àrègbè primitives** (àwọn nọ́mbà, àwọn okun). Fún àwọn àrègbè tuple lò `$^` pẹ̀lú lambda àfiwéra — ìtọ́sọ́nà wà nínú lambda (`<` = gòkè, `>` = sọ̀kalẹ̀).
+
+**Ìtumọ̀ ìye** — fífiranṣẹ́ àrègbè sí ìyípadà mìíràn ṣẹ̀dá ẹ̀dà ìjẹ̀kúùjẹ̀:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b kò yí padà
+```
 
 ```zymbol
 // Àwọn àrègbè tí a fi sí ara wọn
@@ -357,10 +437,15 @@ mẹ́trìkì = [[1,2,3],[4,5,6],[7,8,9]]
 
 ## Tuple
 
+Àwọn tuple jẹ́ àwọn àpótí tí a tò **tí kò lè yí padà** tí wọ́n lè mu àwọn ìye ti **irú tí ó yàtọ̀** dání. Kò dàbí àwọn àrègbè, àwọn èròjà kò lè yí padà lẹ́yìn ìṣẹ̀dá.
+
 ```zymbol
 // Ìpò
 àmì = (10, 20)
 >> àmì[0] ¶    // → 10
+
+àdánwò = (42, "ẹ káàbọ̀", #1, 3.14)
+>> àdánwò[2] ¶     // → #1
 
 // Orúkọ
 ènìyàn = (orúkọ: "Alice", ọjọ́orí: 25)
@@ -371,6 +456,29 @@ mẹ́trìkì = [[1,2,3],[4,5,6],[7,8,9]]
 ipò = (x: 10, y: 20)
 p = (ipò: ipò, àmì: "ìpilẹ̀ṣẹ̀")
 >> p.ipò.x ¶         // → 10
+```
+
+**Àìyípadà** — ìgbìyànjú èyíkéyìí láti ṣe àtúnṣe èròjà tuple kan jẹ́ àṣìṣe àkókò ìmúṣiṣẹ́:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ àṣìṣe àkókò ìmúṣiṣẹ́: àwọn tuple kò lè yí padà
+// t[0] += 5    // ❌ àṣìṣe kan náà
+```
+
+Láti jẹ́ ká gba ìye tí ó yí padà lò `$~` (ìmúdójúìwọ̀n iṣẹ́) — ó dá tuple **tuntun** padà:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← àtẹwọ́gbà kò yí padà
+>> t2 ¶    // → (10, 999, 30)
+
+// Tuple orúkọ — tún kọ́ wazi
+ènìyàn = (orúkọ: "Alice", ọjọ́orí: 25)
+àgbàlagbà  = (orúkọ: ènìyàn.orúkọ, ọjọ́orí: 26)
+>> ènìyàn.ọjọ́orí ¶    // → 25
+>> àgbàlagbà.ọjọ́orí ¶      // → 26
 ```
 
 ---
@@ -574,8 +682,44 @@ pín(nọ́mbà) {
 | `::` | ìpè ẹka | `.` | ìwọlé sẹ́hẹ̀ndì |
 | `#\|..\|` | túmọ̀ nọ́mbà | `#?` | metadata irú |
 | `#.N\|..\|` | yíká | `#!N\|..\|` | gé |
-| `c\|..\|` | ìfọ́nà kọ́mà | `e\|..\|` | sáyẹ́nsì |
+| `#,\|..\|` | ìfọ́nà kọ́mà | `#^\|..\|` | sáyẹ́nsì |
+| `#d0d9#` | yípadà ọ̀nà nọ́mbà | `#09#` | padà sí ASCII |
 | `<\ ..\>` | ṣe shell | `>\<` | àwọn ìjiyàn CLI |
+
+## Ìtàn Ìtúsílẹ̀
+
+### v0.0.3 — Unicode Àwọn Ètò Nọ́mbà & Ìmúdára LSP _(Àpréérì 2026)_
+
+- **Ṣàfikún** Àwọn ìpele nọ́mbà Unicode 69 pẹ̀lú tọ́kẹ̀n ìpadà ọ̀nà `#d0d9#`
+- **Ṣàfikún** Àwọn boolean literals ní ìkọ èyíkéyìí — `#१` / `#०`, `#١` / `#٠`, àti bẹ́ẹ̀ bẹ́ẹ̀ lọ
+- **Ṣàfikún** Àwọn nọ́mbà Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Ṣàfikún** VM opcode `SetNumeralMode` — ìfẹ́sẹ̀ pápá pẹ̀lú tree-walker
+- **Ṣàfikún** REPL ń bọ̀wọ̀ fún ọ̀nà nọ́mbà tó ń ṣiṣẹ́ nínú àtọ́ àti ìṣàfihàn àwọn olùgbéjáde
+- **Yí padà** Àbájáde `>>` ti boolean ní báyìí ní `#` ìpamọ́ (`#0` / `#1`) ní àwọn ọ̀nà gbogbo
+
+### v0.0.2_01 — Àtúnpè Orúkọ Àwọn Ẹ̀rọ _(30 Mar 2026)_
+
+- **Yí padà** `c|..|` → `#,|..|` àti `e|..|` → `#^|..|` — àárọ̀ pẹ̀lú ìdílé ìpamọ́ `#`
+- **Ṣàfikún** Àmì ìtàgé: ìtàgé àwọn ọmọ moduli lábẹ́ orúkọ mìíràn
+
+### v0.0.2 — Àtúnṣe API ti Àwọn Ìkójọpọ̀ & Àwọn Olùfi sórí _(24 Mar 2026)_
+
+- **Ṣàfikún** Ìdílé ẹ̀rọ `$` tó jọpọ̀ fún arrays àti strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Ṣàfikún** Destructuring fún arrays, tuples àti tuples tó ní orúkọ
+- **Ṣàfikún** Àwọn àmì odi (`arr[-1]` = ohun ikẹyìn)
+- **Ṣàfikún** Àwọn olùfi sórí abínibí — Linux (deb/rpm/pkg/musl), macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Ṣàfikún** Ìyàtọ̀ àpọ̀pọ̀ `^=`
+- **Ṣètùn** Àwọn ìṣẹ̀lẹ̀ ẹ̀bẹ̀ àna àrítìmétíìkì; àtúnṣe àwọn ìwé àṣà
+
+### v0.0.1 — Ìtúsílẹ̀ Àkọ́kọ́ fún Gbogbo Ènìyàn _(22 Mar 2026)_
+
+- Tree-walker interpreter + register VM (`--vm`, ~4× yára, ~95% ìfẹ́sẹ̀)
+- Gbogbo àwọn ìkọ̀ àárọ̀: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Àwọn orúkọ Unicode tó pé, ètò moduli, lambdas, closures, ìdarí àṣìṣe
+- REPL, LSP, àfikún VS Code, formatter (`zymbol fmt`)
 
 ---
 

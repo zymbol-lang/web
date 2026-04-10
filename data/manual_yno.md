@@ -291,6 +291,8 @@ mahi_pë = [yama -> yama+1, yama -> yama*2, yama -> yama*yama]
 
 ## Mahipë
 
+Mahipë **yamaki nowë** (mutable) na **wanee kain kain**.
+
 ```zymbol
 mahipë = [1, 2, 3, 4, 5]
 
@@ -320,13 +322,27 @@ by_nowë = db$^ (a, b -> a.nowë > b.nowë)
 >> by_yama[0].nowë ¶     // → Ana
 >> by_nowë[0].nowë ¶     // → Carla
 
-mahipë[1] = 99              // yamaki nowë
-mahipë = mahipë[1]$~ 99     // nowë mahipë — thëpë nowë
+// Yamaki nowë stret (mahipë tasol)
+mahipë[1] = 99              // yamaki
+mahipë[0] += 5              // compound: +=  -=  *=  /=  %=  ^=
+
+// Nowë mahipë thëpë — thëpë nowë; as i no senisim
+mahipë2 = mahipë[1]$~ 99
 ```
 
 > `$+`, `$-`, `$[..]` — **nowë mahipë** thëpë — yamaki: `mahipë = mahipë$+ 4`.
 > Haya kami: nowë yamaki thëpë.
 > `$^+` / `$^-` nowë **naas solus**. Nowë Tuple — hut'unn `$^` mîna lambda.
+
+**Semantik nowë** — yamaki mahipë sünain variable thëpë kami kopia:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b nnojolüin nowë
+```
 
 ```zymbol
 // Mahipë naasad
@@ -358,10 +374,15 @@ person = (nowë: "Ana", yama: 25, city: "Yanomami")
 
 ## Tuple
 
+Tuple **nnojolüin yamaki** (immutable) na nowë **kain kain pë**. Kala mahipë, wanee nnojolüin nowë thëpë.
+
 ```zymbol
 // Nowë yamaki
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+thëpë = (42, "kami", #1, 3.14)
+>> thëpë[2] ¶     // → #1
 
 // Nowë
 yanomami = (nowë: "Alice", yama: 25)
@@ -372,6 +393,29 @@ yanomami = (nowë: "Alice", yama: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, label: "yanomami")
 >> p.pos.x ¶        // → 10
+```
+
+**Nnojolüin yamaki (Immutabilité)** — yamaki nowë sünain tuple dü'üsü waktu:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ dü'üsü waktu: tuple nnojolüin yamaki
+// t[0] += 5    // ❌ dü'üsü ai
+```
+
+Yusim `$~` (nowë thëpë wanee) süpüla **bora tuple**:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← jalqabaa hin jijjiiramu
+>> t2 ¶    // → (10, 999, 30)
+
+// Tuple Nowë — yamaki stret
+yanomami = (nowë: "Alice", yama: 25)
+yanomami2  = (nowë: yanomami.nowë, yama: 26)
+>> yanomami.yama ¶    // → 25
+>> yanomami2.yama ¶   // → 26
 ```
 
 ---
@@ -483,6 +527,70 @@ _ibac_poremai(mahi, nowë) { <~ mahi + nowë }
 
 ---
 
+## Ynojakhu
+
+Zymbol mahipë **Unicode jakhu 69** — Devanagari, Arabi-India, Thai, Klingon pIqaD, Matemáticas, LCD. Nowë aktivo `>>`-pë; jakhu binary.
+
+### Nowë pë yamaki
+
+Yama `0` thëpë `9` `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabi-India   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // ASCII thëpë
+```
+
+### Poremai thëpë boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ASCII, jakhu nowë
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Jakhu asli kódigo
+
+Jakhu literal — rango, modulo:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal
+
+`#` + jakhu `0` thëpë `1` bloc boolean:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII**. `#0` (kami) `0` (jakhu zero) poremai.
+
+---
+
 ## Ynodatops
 
 ```zymbol
@@ -564,8 +672,9 @@ poremai(mahi) {
 | `@!`    | Kami (break)       | `$>`         | map                   |
 | `@>`    | Thëpë (continue)   | `$\|`        | filter                |
 | `->`    | Lambda             | `$<`         | reduce                |
-| `$^+`   | Nowë yamaki        | `$^-`        | Haya yamaki           |
-| `$^`    | Yamaki lambda      |              |                       |
+| `mahipë[i] = val` | yamaki (mahipë tasol) | `mahipë[i] += val` | compound yamaki |
+| `mahipë[i]$~` | nowë thëpë (kopia bora) | `$^+` | Nowë yamaki |
+| `$^-`   | Haya yamaki        | `$^`         | Yamaki lambda (tuples) |
 | `<~`    | Yamaki (return)    | `!?`         | Kami thëpë (try)      |
 | `\|>`   | Pipe               | `:!`         | Nowë kami (catch)     |
 | `#1`    | Kami thëpë         | `:>`         | Nowë (finally)        |
@@ -575,8 +684,42 @@ poremai(mahi) {
 | `::`    | Nowë poremai       | `.`          | Yamaki nowë           |
 | `#\|..\|`| Bora yama        | `#?`         | Nowë yamaki naas      |
 | `#.N\|..\|`| Thëpë          | `#!N\|..\|`  | Kami                  |
-| `c\|..\|`| Yamaki comma     | `e\|..\|`    | Naas'ika              |
+| `#,\|..\|`| Yamaki comma     | `#^\|..\|`    | Naas'ika              |
+| `#d0d9#` | ynojakhu nowë | `#09#` | ASCII thëpë |
 | `<\ ..\>`| Shell poremai    | `>\<`        | CLI nowë              |
+
+## Versión Yamaki
+
+### v0.0.3 — Unicode Jakhu & LSP _(Abril 2026)_
+
+- **Ida'ame** Unicode bloc 69 token `#d0d9#`
+- **Ida'ame** Boolean literals — `#१` / `#०`, `#١` / `#٠`
+- **Ida'ame** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Ida'ame** VM opcode `SetNumeralMode` — tree-walker
+- **Ida'ame** REPL jakhu echo variable
+- **Jijjiirame** `>>` boolean `#` (`#0` / `#1`)
+
+### v0.0.2_01 _(30 Mar 2026)_
+
+- **Jijjiirame** `c|..|` → `#,|..|` thëpë `e|..|` → `#^|..|`
+- **Ida'ame** Export alias
+
+### v0.0.2 _(24 Mar 2026)_
+
+- **Ida'ame** `$` arrays thëpë strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Ida'ame** Destructuring arrays, tuples
+- **Ida'ame** Índice kami (`arr[-1]`)
+- **Ida'ame** Instalar — Linux, macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Ida'ame** `^=`
+
+### v0.0.1 _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4×, ~95%)
+- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

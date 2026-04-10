@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Polja
 
+Polja su **promjenjiva** i sadrže elemente **istog tipa**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ po_imenu = db$^ (a, b -> a.ime > b.ime)
 >> po_dobi[0].ime ¶     // → Ana
 >> po_imenu[0].ime ¶    // → Carla
 
-arr[1] = 99              // ažuriraj na mjestu
-arr = arr[1]$~ 99        // funkcionalno ažuriranje — vraća novo polje
+// Izravno ažuriranje elementa (samo polja)
+arr[1] = 99              // dodijeli
+arr[0] += 5              // složeno: +=  -=  *=  /=  %=  ^=
+
+// Funkcionalno ažuriranje — vraća novo polje; original nepromijenjen
+arr2 = arr[1]$~ 99
 ```
 
 > Svi operatori kolekcija vraćaju **novo polje**. Dodjeli natrag: `arr = arr$+ 4`.
 > Operatori se ne mogu ulančati — koristite međunje dodjele.
 > `$^+` / `$^-` sortiraju **primitivna polja** (brojevi, nizovi). Za tuple polja koristite `$^` s usporednom lambdom.
+
+**Vrijednosna semantika** — dodjeljivanje polja drugoj varijabli stvara neovisnu kopiju:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b nije pogođeno
+```
 
 ```zymbol
 // Ugniježđena polja
@@ -357,10 +373,15 @@ osoba = (ime: "Ana", dob: 25, grad: "Madrid")
 
 ## Tuple
 
+Tupleovi su **nepromjenjivi** uređeni kontejneri koji mogu sadržavati vrijednosti **različitih tipova**. Za razliku od polja, elementi se ne mogu mijenjati nakon stvaranja.
+
 ```zymbol
 // Pozicijsko
 točka = (10, 20)
 >> točka[0] ¶    // → 10
+
+podatak = (42, "hello", #1, 3.14)
+>> podatak[2] ¶     // → #1
 
 // Imenovano
 osoba = (ime: "Alice", dob: 25)
@@ -371,6 +392,29 @@ osoba = (ime: "Alice", dob: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, oznaka: "ishodište")
 >> p.pos.x ¶        // → 10
+```
+
+**Nepromjenjivost** — svaki pokušaj izmjene elementa tuplea je greška pri izvođenju:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ greška izvođenja: tupleovi su nepromjenjivi
+// t[0] += 5    // ❌ ista greška
+```
+
+Za izvođenje izmijenjene vrijednosti koristite `$~` (funkcionalno ažuriranje) — vraća **novi** tuple:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← original nepromijenjen
+>> t2 ¶    // → (10, 999, 30)
+
+// Imenovani tuple — eksplicitno obnoviti
+osoba = (ime: "Alice", dob: 25)
+starija = (ime: osoba.ime, dob: 26)
+>> osoba.dob ¶    // → 25
+>> starija.dob ¶  // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _interni_zbrojiti(a, b) { <~ a + b }
 
 ---
 
+## Numerički Načini
+
+Zymbol može prikazivati brojeve u **69 Unicode pisama s znamenkama** — Devanagari, Arapsko-indijsko, Tajlandsko, Klingon pIqaD, Matematički podebljano, LCD segmenti i više. Aktivni način utječe samo na `>>`-izlaz; interna aritmetika uvijek je binarna.
+
+### Aktiviranje pisma
+
+Zapišite znamenku `0` i `9` ciljnog pisma unutar `#…#`:
+
+```zymbol
+#०९#    // Devanagari      (U+0966–U+096F)
+#٠٩#    // Arapsko-ind.    (U+0660–U+0669)
+#๐๙#    // Tajlandsko      (U+0E50–U+0E59)
+#09#    // resetirati na ASCII
+```
+
+### Izlaz i booleani
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII zadano)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (decimalna točka uvijek ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Booleani: prefiks # uvijek ASCII, znamenka se prilagođava
+>> #1 ¶         // → #१   (istina u Devanagari)
+>> #0 ¶         // → #०   (neistina — različito od ०  cijeli broj nula)
+
+x = 28 > 4
+>> x ¶          // → #१   (rezultat usporedbe prati aktivni način)
+```
+
+### Nativni literali znamenki u izvornom kodu
+
+Znamenke bilo kojeg podržanog pisma su valjani literali — u rasponima, modulo, usporedbama:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolovske literale u bilo kojem pismu
+
+`#` + znamenka `0` ili `1` iz bilo kojeg bloka je valjani boolov literal:
+
+```zymbol
+#٠٩#
+نشط = #١        // isto kao #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` je **uvijek ASCII**. `#0` (neistina) uvijek je vizualno različit od `0` (cijeli broj nula) u svakom pismu.
+
+---
+
 ## Operatori Podataka
 
 ```zymbol
@@ -574,8 +682,44 @@ klasificirati(broj) {
 | `::` | poziv modula | `.` | pristup polju |
 | `#\|..\|` | parsiraj broj | `#?` | metapodaci tipa |
 | `#.N\|..\|` | zaokruži | `#!N\|..\|` | skrati |
-| `c\|..\|` | format s odjelnicom | `e\|..\|` | znanstveni |
+| `#,\|..\|` | format s odjelnicom | `#^\|..\|` | znanstveni |
+| `#d0d9#` | prekidač numeričkog načina | `#09#` | resetirati na ASCII |
 | `<\ ..\>` | izvršiti ljusku | `><` | argumenti CLI |
+
+## Povijest Verzija
+
+### v0.0.3 — Unicode Brojevni Sustavi & Poboljšanja LSP _(Travanj 2026)_
+
+- **Dodano** 69 Unicode blokova znamenki s token za prekidanje načina `#d0d9#`
+- **Dodano** Boolovske literale u bilo kojem pismu — `#१` / `#०`, `#١` / `#٠`, itd.
+- **Dodano** Klingon pIqaD znamenke (CSUR PUA U+F8F0–U+F8F9)
+- **Dodano** VM opkod `SetNumeralMode` — potpuni paritet s tree-walkerom
+- **Dodano** REPL poštuje aktivni numerički način u echu i prikazu varijabli
+- **Promijenjeno** `>>`-izlaz booleana sada uključuje prefiks `#` (`#0` / `#1`) u svim načinima
+
+### v0.0.2_01 — Preimenovanje Operatora _(30 Mar 2026)_
+
+- **Promijenjeno** `c|..|` → `#,|..|` i `e|..|` → `#^|..|` — dosljedno obitelji prefiksa `#`
+- **Dodano** Alias izvoza: ponovni izvoz članova modula pod drugim imenom
+
+### v0.0.2 — Redizajn API Kolekcija & Instalatori _(24 Mar 2026)_
+
+- **Dodano** Ujedinjena obitelj operatora `$` za polja i nizove (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Dodano** Destrukturiranje za polja, tuple i imenovane tuple
+- **Dodano** Negativni indeksi (`arr[-1]` = zadnji element)
+- **Dodano** Nativni instalatori — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Dodano** Složena dodjela `^=`
+- **Ispravljeno** Rubni slučajevi aritmetičkog parsera; ispravci dokumentacije
+
+### v0.0.1 — Prvo Javno Izdanje _(22 Mar 2026)_
+
+- Tree-walker interpreter + registarski VM (`--vm`, ~4× brži, ~95% paritet)
+- Svi osnovni konstrukti: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Puni Unicode identifikatori, modularni sustav, lambde, zatvorenja, rukovanje greškama
+- REPL, LSP, VS Code proširenje, formater (`zymbol fmt`)
 
 ---
 

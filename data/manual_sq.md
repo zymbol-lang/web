@@ -294,6 +294,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Vargjet
 
+Vargjet janë **të ndryshueshme** dhe mbajnë elemente të **të njëjtit lloj**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -321,13 +323,27 @@ db = [(name: "Carla", age: 28), (name: "Ana", age: 25), (name: "Bob", age: 30)]
 sipas_moshes = db$^ (a, b -> a.age < b.age)
 >> sipas_moshes[0].name ¶    // → Ana
 
-arr[1] = 99              // përditëso në vend
-arr = arr[1]$~ 99        // përditësim funksional — kthen varg të ri
+// Përditësoim i drejtpërdrejtë i elementit (vetëm vargje)
+arr[1] = 99              // caktim
+arr[0] += 5              // i përbërë: +=  -=  *=  /=  %=  ^=
+
+// Përditësim funksional — kthen varg të ri; origjinali mbetet i pandryshuar
+arr2 = arr[1]$~ 99
 ```
 
 > Të gjithë operatorët e koleksionit kthejnë një **varg të ri**. Caktoni mbrapsht: `arr = arr$+ 4`.
 > Operatorët nuk mund të zinxhirohen — përdorni caktime të ndërmjetme.
 > `$^+` / `$^-` renditen **vargje primitivësh** (numra, vargje teksti). Për vargje tuple përdorni `$^` me lambda krahasuese.
+
+**Semantika e vlerës** — caktimi i një vargu në një variabël tjetër krijon një kopje të pavarur:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b nuk preket
+```
 
 ```zymbol
 // Vargje të ndërtuara
@@ -359,10 +375,15 @@ personi = (name: "Ana", age: 25, city: "Madrid")
 
 ## Tuples
 
+Tuples janë kontejnerë të renditura **të pandryshueshme** që mund të mbajnë vlera të **llojeve të ndryshme**. Ndryshe nga vargjet, elementet nuk mund të ndryshohen pas krijimit.
+
 ```zymbol
 // Pozicional
 pika = (10, 20)
 >> pika[0] ¶    // → 10
+
+të_dhënat = (42, "përshëndetje", #1, 3.14)
+>> të_dhënat[2] ¶     // → #1
 
 // I emërtuar
 personi = (name: "Alice", age: 25)
@@ -373,6 +394,29 @@ personi = (name: "Alice", age: 25)
 poz = (x: 10, y: 20)
 p = (poz: poz, label: "origjina")
 >> p.poz.x ¶         // → 10
+```
+
+**Pandryshueshmëria** — çdo përpjekje për të modifikuar një element tuple është gabim gjatë ekzekutimit:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ gabim gjatë ekzekutimit: tuples janë të pandryshueshme
+// t[0] += 5    // ❌ i njëjti gabim
+```
+
+Për të derivuar një vlerë të modifikuar, përdorni `$~` (përditësim funksional) — kthen një tuple **të ri**:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← origjinali i pandryshuar
+>> t2 ¶    // → (10, 999, 30)
+
+// Tuple i emërtuar — rindërtoni eksplicitisht
+personi = (name: "Alice", age: 25)
+më_i_vjetër = (name: personi.name, age: 26)
+>> personi.age ¶      // → 25
+>> më_i_vjetër.age ¶  // → 26
 ```
 
 ---
@@ -488,6 +532,70 @@ _internal_add(a, b) { <~ a + b }
 
 ---
 
+## Mënyrat Numerike
+
+Zymbol mund të shfaqë numra në **69 alfabete shifrore Unicode** — Devanagari, Arabiko-Indiane, Tailandeze, Klingon pIqaD, Matematike e Trashë, segmente LCD dhe më shumë. Mënyra aktive ndikon vetëm te dalja `>>`; aritmetika e brendshme është gjithmonë binare.
+
+### Aktivizimi i një alfabeti
+
+Shkruani shifrën `0` dhe `9` të alfabetit të synuar të mbyllur në `#…#`:
+
+```zymbol
+#०९#    // Devanagari     (U+0966–U+096F)
+#٠٩#    // Arabiko-Ind.   (U+0660–U+0669)
+#๐๙#    // Tailandeze     (U+0E50–U+0E59)
+#09#    // rivendos në ASCII
+```
+
+### Dalja dhe vlerat logjike
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII parazgjedhje)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (pika dhjetore gjithmonë ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Vlerat logjike: parashtesa # gjithmonë ASCII, shifra përshtatet
+>> #1 ¶         // → #१   (e vërtetë në Devanagari)
+>> #0 ¶         // → #०   (e gabuar — e ndryshme nga ०  zero numër i plotë)
+
+x = 28 > 4
+>> x ¶          // → #१   (rezultati i krahasimit ndjek mënyrën aktive)
+```
+
+### Literalë vendas shifrash në kod burimor
+
+Shifrat e çdo alfabeti të mbështetur janë literalë të vlefshëm — në intervale, modulo, krahasime:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Literalë logjikë në çdo alfabet
+
+`#` + shifrë `0` ose `1` nga çdo bllok është literal logjik i vlefshëm:
+
+```zymbol
+#٠٩#
+نشط = #١        // e njëjtë me #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` është **gjithmonë ASCII**. `#0` (e gabuar) është gjithmonë vizualisht e ndryshme nga `0` (zero numër i plotë) në çdo alfabet.
+
+---
+
 ## Operatorët e të Dhënave
 
 ```zymbol
@@ -568,24 +676,62 @@ klasifiko(numër) {
 | `@`        | cikël               | `$>`         | hartëzo                   |
 | `@!`       | ndalo               | `$\|`        | filtro                    |
 | `@>`       | vazhdo              | `$<`         | redukto                   |
-| `->`       | lambda              | `$^+`        | rendito rritës            |
-| `<~`       | kthe                | `$^-`        | rendito zbritës           |
-| `\|>`      | tub                 | `$^`         | rendito me krahasues      |
+| `->`       | lambda              | `$<`         | redukto                   |
+| `arr[i] = val` | përditëso element (vetëm vargje) | `arr[i] += val` | përditësim i përbërë |
+| `arr[i]$~` | përditësim funksional (kopje e re) | `$^+` | rendito rritës (primitivë) |
+| `$^-`      | rendito zbritës (primitivë) | `$^`  | rendito me krahasues (tuple) |
+| `<~`       | kthe                | `!?`         | provoni                   |
+| `\|>`      | tub                 | `:!`         | kapni                     |
 | `#1`       | i vërtetë           | `$!`         | është gabim               |
 | `#0`       | i rremë             | `$!!`        | përhap gabimin            |
-| `!?`       | provoni             | `#`          | deklaro modulin           |
-| `:!`       | kapni               | `#>`         | eksporto                  |
-| `:>`       | në fund             | `<#`         | importo                   |
+| `:>`       | në fund             | `#`          | deklaro modulin           |
+| `<#`       | importo             | `#>`         | eksporto                  |
 | `.`        | qasje fushe         | `::`         | thirrje moduli            |
 | `#\|..\|`  | analizim numri      | `#.N\|..\|`  | rrumbullakosje            |
-| `#!N\|..\|`| prerje              | `c\|..\|`    | formatim me presje        |
-| `e\|..\|`  | shkencor            | `<\ ..\>`    | ekzekutim guaske          |
+| `#!N\|..\|`| prerje              | `#,\|..\|`    | formatim me presje        |
+| `#d0d9#` | ndërrues i mënyrës numerike | `#09#` | rivendos në ASCII |
+| `#^\|..\|`  | shkencor            | `<\ ..\>`    | ekzekutim guaske          |
 | `>\<`      | argumentet CLI      | `$~~[..]`    | zëvendëso varg teksti     |
 | `[a,b]=arr`| destrukturim vargu  | `(x,y)=tup`  | destrukturim tuple        |
 
 ---
 
 *Zymbol-Lang — Simbolik. Universal. I Pandryshueshëm.*
+
+## Historia e Versioneve
+
+### v0.0.3 — Sistemet Numerike Unicode & Përmirësimet LSP _(Prill 2026)_
+
+- **Shtuar** 69 blloqe shifrash Unicode me tokenin e ndërrimit të mënyrës `#d0d9#`
+- **Shtuar** Literalë logjikë në çdo alfabet — `#१` / `#०`, `#١` / `#٠`, etj.
+- **Shtuar** Shifrat Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Shtuar** Opkodi VM `SetNumeralMode` — paritet i plotë me tree-walker
+- **Shtuar** REPL respekton mënyrën numerike aktive në eko dhe shfaqjen e variablave
+- **Ndryshuar** Dalja `>>` e vlerave logjike tani përfshin parashtesën `#` (`#0` / `#1`) në të gjitha mënyrat
+
+### v0.0.2_01 — Riemërtimi i Operatorëve _(30 Mar 2026)_
+
+- **Ndryshuar** `c|..|` → `#,|..|` dhe `e|..|` → `#^|..|` — konsistente me familjen e parashtesave `#`
+- **Shtuar** Alias eksporti: rieksportimi i anëtarëve të modulit me emër tjetër
+
+### v0.0.2 — Ridesenjimi i API të Koleksioneve & Instaluesit _(24 Mar 2026)_
+
+- **Shtuar** Familja e unifikuar e operatorëve `$` për vargje dhe vargëza (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Shtuar** Destrukturimi për vargje, tuple dhe tuple me emër
+- **Shtuar** Indekse negative (`arr[-1]` = elementi i fundit)
+- **Shtuar** Instalues vendas — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Shtuar** Caktim i përbërë `^=`
+- **Rregulluar** Rastet kufitare të analizuesit aritmetik; korrigjime dokumentacioni
+
+### v0.0.1 — Versioni i Parë Publik _(22 Mar 2026)_
+
+- Interpretues tree-walker + VM regjistri (`--vm`, ~4× më i shpejtë, ~95% paritet)
+- Të gjitha konstruktet kryesore: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Identifikues Unicode të plotë, sistem modulesh, lambda, mbyllje, trajtim gabimesh
+- REPL, LSP, zgjerim VS Code, formatues (`zymbol fmt`)
 
 ---
 

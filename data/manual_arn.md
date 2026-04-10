@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Küpalwe
 
+Küpalwe **püleley** ka fentren kimün mew **kiñe kimün** katupewma.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ sutimew   = db$^ (a, b -> a.suti > b.suti)
 >> xipanmew[0].suti ¶     // → Ana
 >> sutimew[0].suti ¶      // → Carla
 
-arr[1] = 99              // wixal patla
-arr = arr[1]$~ 99        // küpalwe yáanal kutitaña
+// Wixal chalilay (küpalwe kama)
+arr[1] = 99              // churay
+arr[0] += 5              // huñiway: +=  -=  *=  /=  %=  ^=
+
+// Küpalwe yáanal — küpalwe yáanal kutitaña; ñawpaq mana tikray
+arr2 = arr[1]$~ 99
 ```
 
 > Tukuy colección wixal **küpalwe yáanal** kutitaña. Ts'aak: `arr = arr$+ 4`.
 > Ngäy huñi — epu tz'iibil.
 > `$^+` / `$^-` **primitivo küpalwe** (xokiñnak, zugun). Tuple küpalwemew `$^` comparador lambdawan — ñanqa lambdapi churasqa (`<` = wichay, `>` = uray).
+
+**Wixal kimün** — küpalwe wixalpe churay küpalwe yáanal kutipaymi:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b mana tikray
+```
 
 ```zymbol
 // Ukupi küpalwe
@@ -357,10 +373,15 @@ che = (suti: "Ana", xipan: 25, mapu: "Wallmapu")
 
 ## Tupla
 
+Tupla **ngäy püleley** ka fentren kimün mew **imaymana kimün** katupewma. Küpalwe ngächi, elementos ngäy püleley zugu küpayetew.
+
 ```zymbol
 // Xokiñ
 punto = (10, 20)
 >> punto[0] ¶    // → 10
+
+datos = (42, "mari mari", #1, 3.14)
+>> datos[2] ¶     // → #1
 
 // Suti mew
 che = (suti: "Alice", xipan: 25)
@@ -371,6 +392,29 @@ che = (suti: "Alice", xipan: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, suti: "punta")
 >> p.pos.x ¶        // → 10
+```
+
+**Ngäy püleley** — tupla elemento tikraküley wingkatu:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ wingka: tupla ngäy püleley
+// t[0] += 5    // ❌ kiñechi wingka
+```
+
+`$~` (küpalwe yáanal) apaykachay — **küpalwe yáanal** kutipan:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← ñawpaq mana tikray
+>> t2 ¶    // → (10, 999, 30)
+
+// Suti tupla — kisuam churay
+che = (suti: "Alice", xipan: 25)
+che_fütra = (suti: che.suti, xipan: 26)
+>> che.xipan ¶      // → 25
+>> che_fütra.xipan ¶ // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _internal_add(a, b) { <~ a + b }
 
 ---
 
+## Rakizuam Pichike Kvzaw
+
+Zymbol fey pichike kvzaw nütramen ta **Unicode pichike kvzaw ñi itroam 69** mew — Devanagari, Arabe-India, Thai, Klingon pIqaD, Matemática Rangikülefilu, LCD ka feychi chi zugu. Feychi kvzaw nütramen küpan `>>`-mew; kvzaw mew feychi kam binaryche.
+
+### Kimün kvzaw wekufüyen
+
+Wirin pichike kvzaw `0` ka `9` feychi kvzaw `#…#` mew:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabe-India   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // ASCII mew küpan
+```
+
+### Küpan ka chillkay boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII standard)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # feychi pichi ASCII, pichike kvzaw feychi kam
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Pichike kvzaw asli mew kode
+
+Pichike kvzaw kvme literal nga — range, modulo, rekiñman mew:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal kvzaw mew
+
+`#` + pichike kvzaw `0` ka `1` bloc mew literal boolean kvme:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII** nga. `#0` (no) `0` (zéro) mew feychi kvzaw mew küme ñi rakizuam.
+
+---
+
 ## Ngünechen Data
 
 ```zymbol
@@ -563,8 +671,9 @@ kimeltun(rakizuam) {
 | `@!`    | fütra             | `$>`       | map                |
 | `@>`    | amun              | `$\|`      | filter             |
 | `->`    | lambda            | `$<`       | reduce             |
-| `$^+`   | wichay (primitivos) | `$^-`    | uray (primitivos)  |
-| `$^`    | comparador (tuples) | | |
+| `arr[i] = val` | wixal chalilay | `arr[i] += val` | huñiway chalilay |
+| `arr[i]$~` | küpalwe yáanal (küpalwe yáanal) | `$^+` | wichay (primitivos) |
+| `$^-` | uray (primitivos) | `$^` | comparador (tuples) |
 | `<~`    | küme mew          | `!?`       | itrofilu           |
 | `\|>`   | pipe              | `:!`       | k'aak'al           |
 | `#1`    | küme              | `:>`       | fentren            |
@@ -574,8 +683,44 @@ kimeltun(rakizuam) {
 | `::`    | módulo kimeltun   | `.`        | campo taripay      |
 | `#\|..\|` | xokiñ tikraña   | `#?`       | tipo metadata      |
 | `#.N\|..\|` | xokiñ          | `#!N\|..\|` | ch'iqtaña        |
-| `c\|..\|` | coma formato    | `e\|..\|`  | científico         |
+| `#,\|..\|` | coma formato    | `#^\|..\|`  | científico         |
+| `#d0d9#` | pichike kvzaw rakizuam yafülün | `#09#` | ASCII mew küpan |
 | `<\ ..\>` | shell luraña    | `><`       | CLI argumentonak   |
+
+## Versiyon Tañi Fewla
+
+### v0.0.3 — Unicode Pichike Kvzaw & LSP Küme _(Abril 2026)_
+
+- **Fentren** Unicode bloc 69 ka token `#d0d9#`
+- **Fentren** Boolean literals kvzaw mew — `#१` / `#०`, `#١` / `#٠`, ka feychi
+- **Fentren** Klingon pIqaD pichike kvzaw (CSUR PUA U+F8F0–U+F8F9)
+- **Fentren** VM opcode `SetNumeralMode` — tree-walker mew kvme
+- **Fentren** REPL pichike kvzaw rakizuam echo ka variable mew
+- **Kisuam** `>>` boolean `#` (`#0` / `#1`) kvzaw mew
+
+### v0.0.2_01 — Kvzaw Tañi Kvzaw _(30 Mar 2026)_
+
+- **Kisuam** `c|..|` → `#,|..|` ka `e|..|` → `#^|..|` — `#` nütramen mew kvme
+- **Fentren** Export alias: module mew kvzaw welu tañi kvzaw
+
+### v0.0.2 — Küme Tañi API & Machi _(24 Mar 2026)_
+
+- **Fentren** `$` kvzaw arrays ka strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Fentren** Destructuring arrays, tuples ka tuples tañi kvzaw
+- **Fentren** Index no (`arr[-1]` = feychi chi zugu)
+- **Fentren** Machi asli — Linux (deb/rpm/pkg/musl), macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Fentren** `^=`
+- **Küme** Parser; documentación
+
+### v0.0.1 — Kvzaw Küme _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4× wente, ~95% kvme)
+- Kvzaw mew: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Unicode, module, lambda, closure, kvzaw
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

@@ -288,6 +288,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Arrays
 
+Arrays er **mutable** og indeholder elementer af **samme type**.
+
 ```zymbol
 arr = [10, 20, 30, 40, 50]
 
@@ -309,11 +311,11 @@ idx = arr$?? 30              // → [1]   alle indekser for værdi
 del = arr$[0..2]             // slice [0,2): [20, 30]
 antal = arr$[0:3]            // antalbaseret: [20, 30, 40]
 
-// Opdater element
-arr[1] = 99
->> arr ¶    // → [20, 99, 40, 50, 60]
+// Direkte elementopdatering (kun arrays)
+arr[1] = 99              // tildel
+arr[0] += 5              // sammensat: +=  -=  *=  /=  %=  ^=
 
-// Funktionel opdatering (returnerer nyt array)
+// Funktionel opdatering — returnerer et nyt array; originalet uændret
 arr2 = arr[1]$~ 77           // → [20, 77, 40, 50, 60]
 
 // Sorter (primitiver)
@@ -337,6 +339,16 @@ matrix = [[1,2],[3,4],[5,6]]
 > `$+`, `$-`, `$[..]` returnerer et **nyt array** — tildel til samme navn: `arr = arr$+ 4`.
 > Kæd ikke: `arr$+ 4$+ 5` virker ikke — brug to tildelinger.
 > `arr$??` og `arr$[s:n]` bruger anden syntaks end `arr$[s..e]` — se Symbolreference.
+
+**Værdi-semantik** — at tildele et array til en anden variabel opretter en uafhængig kopi:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b er ikke påvirket
+```
 
 ---
 
@@ -365,11 +377,16 @@ person = (navn: "Alice", alder: 25)
 
 ## Tupler
 
+Tupler er **uforanderlige** ordnede beholdere, der kan indeholde værdier af **forskellige typer**.
+I modsætning til arrays kan elementer ikke ændres efter oprettelsen.
+
 ```zymbol
-// Positionel tupel
+// Positionel tupel — blandede typer tilladt
 punkt = (10, 20)
 >> punkt[0] ¶    // → 10
->> punkt[1] ¶    // → 20
+
+data = (42, "hej", #1, 3.14)
+>> data[2] ¶     // → #1
 
 // Navngivet tupel
 person = (navn: "Alice", alder: 25)
@@ -382,6 +399,29 @@ pos = (x: 3, y: 4)
 p = (pos: pos, etiket: "oprindelse")
 >> p.etiket ¶    // → oprindelse
 >> p.pos.x ¶     // → 3
+```
+
+**Uforanderlighed** — ethvert forsøg på at ændre et tupel-element er en kørselsfejl:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ kørselsfejl: tupler er uforanderlige
+// t[0] += 5    // ❌ samme fejl
+```
+
+For at afledes en ændret værdi bruges `$~` (funktionel opdatering) — returnerer en **ny** tupel:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← originalet uændret
+>> t2 ¶    // → (10, 999, 30)
+
+// Navngivet tupel — genopbyg eksplicit
+person = (navn: "Alice", alder: 25)
+ældre  = (navn: person.navn, alder: 26)
+>> person.alder ¶    // → 25
+>> ældre.alder ¶     // → 26
 ```
 
 ---
@@ -499,6 +539,70 @@ pi = c::get_PI()
 
 ---
 
+## Numeriske Tilstande
+
+Zymbol kan vise tal i **69 Unicode-ciferskrifter** — Devanagari, Arabisk-Indisk, Thai, Klingon pIqaD, Matematisk Fed, LCD-segmenter og mere. Den aktive tilstand påvirker kun `>>`-output; intern aritmetik er altid binær.
+
+### Aktivér et skrift
+
+Skriv cifrene `0` og `9` fra målskriften omgivet af `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabisk-Ind.  (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // nulstil til ASCII
+```
+
+### Output og booleaner
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII standard)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (decimalkomma altid ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Booleaner: # præfiks altid ASCII, ciffer tilpasser sig
+>> #1 ¶         // → #१   (sand i Devanagari)
+>> #0 ¶         // → #०   (falsk — adskilt fra ०  heltals-nul)
+
+x = 28 > 4
+>> x ¶          // → #१   (sammenligningsresultat følger aktiv tilstand)
+```
+
+### Oprindelige ciferliteraler i kildekode
+
+Cifre fra ethvert understøttet skrift er gyldige literaler — i intervaller, modulo, sammenligninger:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Booleske literaler i ethvert skrift
+
+`#` + ciffer `0` eller `1` fra ethvert blok er en gyldig boolsk literal:
+
+```zymbol
+#٠٩#
+نشط = #١        // samme som #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` er **altid ASCII**. `#0` (falsk) er altid visuelt forskellig fra `0` (heltals-nul) i hvert skrift.
+
+---
+
 ## Dataoperatorer
 
 ```zymbol
@@ -581,24 +685,62 @@ klassificer(tal) {
 | `@`         | løkke                | `$>`         | map                        |
 | `@!`        | afbryd               | `$\|`        | filter                     |
 | `@>`        | fortsæt              | `$<`         | reduce                     |
-| `->`        | lambda               | `$^+`        | sorter stigende            |
-| `<~`        | retur                | `$^-`        | sorter faldende            |
-| `\|>`       | rør                  | `$^`         | sorter med komparator      |
-| `#1`        | sand                 | `$!`         | er fejl                    |
-| `#0`        | falsk                | `$!!`        | propagér fejl              |
-| `!?`        | prøv (try)           | `#`          | deklarer modul             |
-| `:!`        | fang (catch)         | `#>`         | eksportér                  |
-| `:>`        | altid (finally)      | `<#`         | importér                   |
+| `->`        | lambda               | `arr[i] = val` | opdater element (kun arrays) |
+| `arr[i] += val` | sammensat opdatering | `arr[i]$~` | funktionel opdatering (ny kopi) |
+| `$^+`       | sorter stigende      | `$^-`        | sorter faldende            |
+| `$^`        | sorter med komparator |             |                            |
+| `<~`        | retur                | `!?`         | prøv (try)                 |
+| `\|>`       | rør                  | `:!`         | fang (catch)               |
+| `#1`        | sand                 | `:>`         | altid (finally)            |
+| `#0`        | falsk                | `$!`         | er fejl                    |
+| `<#`        | importér             | `$!!`        | propagér fejl              |
+| `#`         | deklarer modul       | `#>`         | eksportér                  |
 | `.`         | feltadgang           | `::`         | modulkald                  |
 | `#\|..\|`   | fortolk (parse)      | `#.N\|..\|`  | afrund N decimaler         |
-| `#!N\|..\|` | afkort N decimaler   | `c\|..\|`    | kommaformat                |
-| `e\|..\|`   | videnskabelig not.   | `<\ \>`      | skalkommando               |
+| `#!N\|..\|` | afkort N decimaler   | `#,\|..\|`    | kommaformat                |
+| `#d0d9#` | skifte numerisk tilstand | `#09#` | nulstil til ASCII |
+| `#^\|..\|`   | videnskabelig not.   | `<\ \>`      | skalkommando               |
 | `><`        | skaluddata           | `$~~[..]`    | erstat i streng            |
 | `[a,b]=arr` | destrukturering      | `(x,y)=tup`  | tupel-destrukturering      |
 
 ---
 
 *Zymbol-Lang — Symbolsk. Universelt. Uforanderligt.*
+
+## Versionshistorik
+
+### v0.0.3 — Unicode Talsystemer & LSP-forbedringer _(April 2026)_
+
+- **Tilføjet** 69 Unicode-ciferbokke med skiftejegnet `#d0d9#`
+- **Tilføjet** Booleske literaler i ethvert skrift — `#१` / `#०`, `#١` / `#٠`, osv.
+- **Tilføjet** Klingon pIqaD-cifre (CSUR PUA U+F8F0–U+F8F9)
+- **Tilføjet** VM-opkode `SetNumeralMode` — fuld paritet med træ-vandrer
+- **Tilføjet** REPL respekterer aktiv numerisk tilstand i ekko og variabelvisning
+- **Ændret** `>>`-output for booleaner inkluderer nu `#`-præfiks (`#0` / `#1`) i alle tilstande
+
+### v0.0.2_01 — Operatøromdøbning _(30 Mar 2026)_
+
+- **Ændret** `c|..|` → `#,|..|` og `e|..|` → `#^|..|` — konsistent med `#`-præfiksfamilien
+- **Tilføjet** Eksport-alias: reeksporter modulmedlemmer under et andet navn
+
+### v0.0.2 — Samlings-API Redesign & Installationsprogrammer _(24 Mar 2026)_
+
+- **Tilføjet** Samlet `$`-operatørfamilie for arrays og strenge (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Tilføjet** Destrukturering for arrays, tupler og navngivne tupler
+- **Tilføjet** Negative indekser (`arr[-1]` = sidste element)
+- **Tilføjet** Native installationsprogrammer — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Tilføjet** Sammensat tildeling `^=`
+- **Rettet** Kanttilfælde i aritmetisk parser; dokumentationsrettelser
+
+### v0.0.1 — Første Offentlige Udgivelse _(22 Mar 2026)_
+
+- Træ-vandrer-fortolker + register-VM (`--vm`, ~4× hurtigere, ~95% paritet)
+- Alle kernekonstruktioner: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Fulde Unicode-identifikatorer, modulsystem, lambdaer, closures, fejlhåndtering
+- REPL, LSP, VS Code-udvidelse, formater (`zymbol fmt`)
 
 ---
 

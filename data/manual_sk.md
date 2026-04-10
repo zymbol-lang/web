@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Polia
 
+Polia sú **meniteľné** a obsahujú prvky **rovnakého typu**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ podľa_mena  = db$^ (a, b -> a.meno > b.meno)
 >> podľa_veku[0].meno ¶     // → Ana
 >> podľa_mena[0].meno ¶     // → Carla
 
-arr[1] = 99              // aktualizovať na mieste
-arr = arr[1]$~ 99        // funkčná aktualizácia — vráti nové pole
+// Priama aktualizácia prvku (iba polia)
+arr[1] = 99              // priradiť
+arr[0] += 5              // zložené: +=  -=  *=  /=  %=  ^=
+
+// Funkčná aktualizácia — vráti nové pole; originál bez zmien
+arr2 = arr[1]$~ 99
 ```
 
 > Všetky operátory kolekcií vracajú **nové pole**. Priraď späť: `arr = arr$+ 4`.
 > Operátory nemôžu byť zreťazené — použi medzipriradenia.
 > `$^+` / `$^-` zoraďujú **primitívne polia** (čísla, reťazce). Pre tuple polia použi `$^` s porovnávacou lambdou.
+
+**Hodnotová sémantika** — priradenie poľa do inej premennej vytvorí nezávislú kópiu:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b nie je ovplyvnené
+```
 
 ```zymbol
 // Vnorené polia
@@ -357,10 +373,15 @@ osoba = (meno: "Ana", vek: 25, mesto: "Madrid")
 
 ## Tuple
 
+Tuple sú **nemenné** usporiadané kontajnery, ktoré môžu obsahovať hodnoty **rôznych typov**. Na rozdiel od polí nie je možné prvky po vytvorení meniť.
+
 ```zymbol
 // Pozičné
 bod = (10, 20)
 >> bod[0] ¶    // → 10
+
+dáta = (42, "ahoj", #1, 3.14)
+>> dáta[2] ¶     // → #1
 
 // Pomenované
 osoba = (meno: "Alice", vek: 25)
@@ -371,6 +392,29 @@ osoba = (meno: "Alice", vek: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, označenie: "počiatok")
 >> p.pos.x ¶        // → 10
+```
+
+**Nemennosť** — akýkoľvek pokus o zmenu prvku tuple je chybou za behu:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ chyba za behu: tuple sú nemenné
+// t[0] += 5    // ❌ rovnaká chyba
+```
+
+Na odvodenie zmenenej hodnoty použite `$~` (funkčná aktualizácia) — vráti **nový** tuple:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← originál bez zmien
+>> t2 ¶    // → (10, 999, 30)
+
+// Pomenovaný tuple — explicitne prestavať
+osoba = (meno: "Alice", vek: 25)
+staršia  = (meno: osoba.meno, vek: 26)
+>> osoba.vek ¶    // → 25
+>> staršia.vek ¶  // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _interné_pridať(a, b) { <~ a + b }
 
 ---
 
+## Číselné Režimy
+
+Zymbol môže zobrazovať čísla v **69 Unicode číselných písmach** — Dévanágarí, Arabsko-indická, Thajská, Klingon pIqaD, Matematická tučná, LCD segmenty a ďalšie. Aktívny režim ovplyvňuje iba výstup `>>`; interná aritmetika je vždy binárna.
+
+### Aktivácia písma
+
+Zapíšte číslicu `0` a `9` cieľového písma uzavretú do `#…#`:
+
+```zymbol
+#०९#    // Dévanágarí      (U+0966–U+096F)
+#٠٩#    // Arabsko-indická (U+0660–U+0669)
+#๐๙#    // Thajská         (U+0E50–U+0E59)
+#09#    // reset na ASCII
+```
+
+### Výstup a booleany
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII predvolené)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (desatinná bodka vždy ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Booleany: predpona # vždy ASCII, číslica sa prispôsobuje
+>> #1 ¶         // → #१   (pravda v Dévanágarí)
+>> #0 ¶         // → #०   (nepravda — odlišné od ०  celočíselnej nuly)
+
+x = 28 > 4
+>> x ¶          // → #१   (výsledok porovnania sleduje aktívny režim)
+```
+
+### Natívne číselné literály v zdrojovom kóde
+
+Číslice ľubovoľného podporovaného písma sú platnými literálmi — v rozsahoch, modulo, porovnaniach:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolovské literály v ľubovoľnom písme
+
+`#` + číslica `0` alebo `1` z ľubovoľného bloku je platným boolovským literálom:
+
+```zymbol
+#٠٩#
+نشط = #١        // to isté ako #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` je **vždy ASCII**. `#0` (nepravda) je vždy vizuálne odlišné od `0` (celočíselná nula) v každom písme.
+
+---
+
 ## Dátové Operátory
 
 ```zymbol
@@ -563,8 +671,9 @@ klasifikovať(číslo) {
 | `@!` | prerušenie | `$>` | mapovanie |
 | `@>` | pokračovanie | `$\|` | filtrovanie |
 | `->` | lambda | `$<` | redukcia |
-| `$^+` | zoradiť vzostupne (primitívy) | `$^-` | zoradiť zostupne (primitívy) |
-| `$^` | zoradiť s porovnaním (tuple) | | |
+| `arr[i] = val` | aktualizovať prvok (iba polia) | `arr[i] += val` | zložená aktualizácia |
+| `arr[i]$~` | funkčná aktualizácia (nová kópia) | `$^+` | zoradiť vzostupne (primitívy) |
+| `$^-` | zoradiť zostupne (primitívy) | `$^` | zoradiť s porovnaním (tuple) |
 | `<~` | návrat | `!?` | skúsiť |
 | `\|>` | rúra | `:!` | zachytiť |
 | `#1` | pravda | `:>` | nakoniec |
@@ -574,8 +683,44 @@ klasifikovať(číslo) {
 | `::` | volanie modulu | `.` | prístup k poľu |
 | `#\|..\|` | parsovať číslo | `#?` | metadata typu |
 | `#.N\|..\|` | zaokrúhliť | `#!N\|..\|` | skrátiť |
-| `c\|..\|` | formát s oddeľovačom | `e\|..\|` | vedecký |
+| `#,\|..\|` | formát s oddeľovačom | `#^\|..\|` | vedecký |
+| `#d0d9#` | prepínač číselného režimu | `#09#` | reset na ASCII |
 | `<\ ..\>` | spustiť shell | `><` | argumenty CLI |
+
+## História Verzií
+
+### v0.0.3 — Unicode Číselné Sústavy & Vylepšenia LSP _(Apríl 2026)_
+
+- **Pridané** 69 Unicode číselných blokov s prepínacím tokenom `#d0d9#`
+- **Pridané** Boolovské literály v ľubovoľnom písme — `#१` / `#०`, `#١` / `#٠`, atď.
+- **Pridané** Klingon pIqaD číslice (CSUR PUA U+F8F0–U+F8F9)
+- **Pridané** VM opkód `SetNumeralMode` — plná parita s tree-walkerom
+- **Pridané** REPL rešpektuje aktívny číselný režim pri echu a zobrazení premenných
+- **Zmenené** Výstup `>>` booleanov teraz zahŕňa predponu `#` (`#0` / `#1`) vo všetkých režimoch
+
+### v0.0.2_01 — Premenovanie Operátorov _(30 Mar 2026)_
+
+- **Zmenené** `c|..|` → `#,|..|` a `e|..|` → `#^|..|` — konzistentné s rodinou predpôn `#`
+- **Pridané** Alias exportu: znovuexportovanie členov modulu pod iným názvom
+
+### v0.0.2 — Redesign API Kolekcií & Inštalátory _(24 Mar 2026)_
+
+- **Pridané** Zjednotená rodina operátorov `$` pre polia a reťazce (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Pridané** Deštruktúrovanie pre polia, n-tice a pomenované n-tice
+- **Pridané** Záporné indexy (`arr[-1]` = posledný prvok)
+- **Pridané** Natívne inštalátory — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Pridané** Zložené priradenie `^=`
+- **Opravené** Hraničné prípady aritmetického parsera; opravy dokumentácie
+
+### v0.0.1 — Prvé Verejné Vydanie _(22 Mar 2026)_
+
+- Tree-walker interpret + registrový VM (`--vm`, ~4× rýchlejší, ~95% parita)
+- Všetky základné konštrukty: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Plné Unicode identifikátory, modulový systém, lambdy, uzávery, spracovanie chýb
+- REPL, LSP, rozšírenie VS Code, formátovač (`zymbol fmt`)
 
 ---
 

@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Sarɗi
 
+Sarɗi ngonɗe **waɗandeeji** kadi ndumi àwọn èròjà **juuɗe gooto**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ innde_kama = db$^ (a, b -> a.innde > b.innde)     // dartinde famɗude e innde (
 >> jimre_kama[0].innde ¶     // → Ana
 >> innde_kama[0].innde ¶    // → Karla
 
-arr[1] = 99              // waɗde e nokku
-arr = arr[1]$~ 99        // waɗde tiiɗungal — hollana sarɗi kesel
+// Waɗde binndi taaɗtinde (sarɗi tan)
+arr[1] = 99              // siifde
+arr[0] += 5              // nde waɗi: +=  -=  *=  /=  %=  ^=
+
+// Waɗde tiiɗungal — hollana sarɗi kesel; asli yottaaki waylude
+arr2 = arr[1]$~ 99
 ```
 
 > Tiimooje fof ngollana **sarɗi kesel**. Waɗanaa: `arr = arr$+ 4`.
 > Alaa jokkude — waɗande ɗiɗi jaɓɓinee.
 > `$^+` / `$^-` ngollana **sarɗi limreeje** (limreeje, winndannde). Tupili waɗanee `$^` e lambda safaara.
+
+**Miijo iye** — siifde sarɗi coccorde welnde ɗiɗi waɗa ɗiɗi gere:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b waɗaaka
+```
 
 ```zymbol
 // Sarɗi ɗiɗiɗe
@@ -357,10 +373,14 @@ neɗɗo = (innde: "Ana", jimre: 25, wuro: "Dakar")
 
 ## Tupili
 
+Àwọn tupili ko àwọn àpótí tí a tò **tí ngonɗe waɗataa** tí waɗi àwọn ìye **juuɗe goorɗe**. Sarɗi fenaali, binndi ngonaa waɗanteeji ɗiɗi ɓenndii.
+
 ```zymbol
 // E goɗɗe
 nokku = (10, 20)
 >> nokku[0] ¶    // → 10
+kunnafoniw = (42, "jaama", #1, 3.14)
+>> kunnafoniw[2] ¶     // → #1
 
 // Inndiraaɗe
 neɗɗo = (innde: "Alice", jimre: 25)
@@ -371,6 +391,24 @@ neɗɗo = (innde: "Alice", jimre: 25)
 weeyo = (x: 10, y: 20)
 p = (weeyo: weeyo, innde: "adannde")
 >> p.weeyo.x ¶      // → 10
+```
+
+**Ngonaa waɗanteeji** — tupili ngonaa waɗanteeji; haɗndanaa tiimooje:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99      // ❌ Juumre: tupili ngonaa waɗanteeji
+// t[0] += 5      // ❌ Juumre: tupili ngonaa waɗanteeji
+```
+
+Waɗdu binndi kesel e `$~`:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[0]$~ 99    // → (99, 20, 30)  — t yottaaki waylude
+
+// Tupili inndiraaɗe — waɗdu binndi e innde
+mawɗo = (innde: neɗɗo.innde, jimre: 26)
 ```
 
 ---
@@ -482,6 +520,70 @@ _jumlol_katin(a, b) { <~ a + b }
 
 ---
 
+## Haaɓe Limooje
+
+Zymbol waawi yiytude limooje e **Unicode ɗemɗe limooje 69** — Devanagari, Arabi-Indiya, Tayilaandi, Klingon pIqaD, Matemetik Ɓamɓam, segiman LCD e go'i. Haaɓere gollorde hollitata tan hakkunde `>>`-yiytirde; aritmetik dow huunde fof ko binaari.
+
+### Suɓugol ɗemngal
+
+Winndude limoore `0` e `9` e nder `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabic-Indic  (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // reset to ASCII
+```
+
+### Yiytirde e ñiiɓirɗe goonga
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII default)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Ñiiɓirɗe goonga: # dow huunde fof ko ASCII, limoore yoɓii
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Limooje asliije e kodu asli
+
+Limooje e kala ɗemngal piɗtuɗo ko limooje ɓurɗe — e faandaare, modulo, suɓude:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Ñiiɓirɗe goonga e kala ɗemngal
+
+`#` + limoore `0` walla `1` e kala keɓirde ko ñiiɓere goonga ɓurde:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` ko **dow huunde fof ASCII**. `#0` (feere) ko huunde yiɗde fof fawaade hakkunde `0` (limoore ɓaawo) e kala ɗemngal.
+
+---
+
 ## Kuutooɓe Jaati
 
 ```zymbol
@@ -563,8 +665,9 @@ suudude(limorde) {
 | `@!`     | dankude (break)    | `$>`       | map                   |
 | `@>`     | jokkude (continue) | `$\|`      | filter                |
 | `->`     | Lambda             | `$<`       | reduce                |
-| `$^+`    | Dartinde mawnde    | `$^-`      | Dartinde famɗude      |
-| `$^`     | Dartinde e lambda  | | |
+| `arr[i] = val` | Siifde (sarɗi tan) | `arr[i] += val` | Siifde e kuutorde  |
+| `arr[i]$~`| Waɗdu binndi kesel | `$^+`      | Dartinde mawnde       |
+| `$^-`    | Dartinde famɗude   | `$^`       | Dartinde e lambda     |
 | `<~`     | jooɗaare           | `!?`       | ɗannude (try)         |
 | `\|>`    | Pipe               | `:!`       | jaɓɓude (catch)       |
 | `#1`     | goonga             | `:>`       | fof (finally)         |
@@ -574,8 +677,44 @@ suudude(limorde) {
 | `::`     | nodde modul        | `.`        | naatgol binndi        |
 | `#\|..\|` | feccude limre    | `#?`       | weltaare juuɗe        |
 | `#.N\|..\|` | dartinde       | `#!N\|..\|` | feccude            |
-| `c\|..\|` | windannde virgule | `e\|..\|` | siyantiifik           |
+| `#,\|..\|` | windannde virgule | `#^\|..\|` | siyantiifik           |
+| `#d0d9#` | suɓugol haaɓere limooje | `#09#` | ruttugol ASCII |
 | `<\ ..\>` | shell golloroo  | `>\<`      | kuutooɗe CLI          |
+
+## Taarikuure Yamirooje
+
+### v0.0.3 — Unicode Limooje & Laatinooji LSP _(Avrili 2026)_
+
+- **Felludaa** Unicode keɓirɗe limooje 69 e toɓɓere suɓugol haaɓere `#d0d9#`
+- **Felludaa** Ñiiɓirɗe goonga e kala ɗemngal — `#१` / `#०`, `#١` / `#٠`, e go'i
+- **Felludaa** Klingon pIqaD limooje (CSUR PUA U+F8F0–U+F8F9)
+- **Felludaa** VM opcode `SetNumeralMode` — nafoore gaa tree-walker
+- **Felludaa** REPL yoɓii haaɓere limooje dow huunde fof e yiytirde e hollude ciiñal
+- **Waynitaa** `>>` ñiiɓirɗe hollit `#` dow (`#0` / `#1`) e kala haaɓere
+
+### v0.0.2_01 — Innde Kuutooɓe Waynitaama _(30 Mar 2026)_
+
+- **Waynitaa** `c|..|` → `#,|..|` e `e|..|` → `#^|..|` — taƴondiral e dow `#`
+- **Felludaa** Export innde: ruttugol innde modiila e innde woɗnde
+
+### v0.0.2 — Laatinooji API Jaati & Nelnooɓe _(24 Mar 2026)_
+
+- **Felludaa** `$` kuutooɓe koolol dow arrays e strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Felludaa** Feccugol dow arrays, tuples e tuples e innde
+- **Felludaa** Limooje koroya (`arr[-1]` = jawɗe timmunde)
+- **Felludaa** Nelnooɓe asliiji — Linux (deb/rpm/pkg/musl), macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Felludaa** Suɓugol rewindaandu `^=`
+- **Dɓitaama** Keerol aritmetik; laatinooji binndol
+
+### v0.0.1 — Yamirde Gadane _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4× gaɗɗa, ~95% nafoore)
+- Kala cogciɗi: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Unicode, modiila, lambda, uddungol, dɓitde juumre
+- REPL, LSP, VS Code, formater (`zymbol fmt`)
 
 ---
 

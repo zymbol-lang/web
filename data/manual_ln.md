@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Mitanda
 
+Mitanda ezali **ya kobongwana** mpe ebateli biloko ya **motindo moko** kaka.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,26 @@ nkombo_kama = db$^ (a, b -> a.nkombo > b.nkombo) // kobeba nse na nkombo (>)
 >> mibu_kama[0].nkombo ¶     // → Ana
 >> nkombo_kama[0].nkombo ¶   // → Karla
 
-arr[1] = 99              // kobongisa na esika
-arr = arr[1]$~ 99        // kobongisa ya mosala — ezongisaka mitanda mipe
+// Kobongisa elemá moko na esika (mitanda kaka)
+arr[1] = 99
+arr[0] += 5              // esalaka mpe: +=  -=  *=  /=  %=  ^=
+// Kobongisa ya mosala — ezongisaka mitanda mipe; original ebongwani te
+arr2 = arr[1]$~ 99
 ```
 
 > Bato nyonso ya kolekta ezongisaka **mitanda mipe**. Tya lisusu: `arr = arr$+ 4`.
 > Kokatisa te — salelaka kotya mibale ya semba.
 > `$^+` / `$^-` ebeba **mitanda ya mboto** (baminotango, mibeko). Mpo na tupeli salelaka `$^` na lambda ya kotala.
+
+**Motindo ya motuya** — kotia mitanda na bintoko mibale esalaka mitanda mibale ya semba:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b ebongwani te
+```
 
 ```zymbol
 // Mitanda ya kati
@@ -357,10 +372,14 @@ moto = (nkombo: "Ana", mibu: 25, mboka: "Kinshasa")
 
 ## Tupeli
 
+Tupeli ezali bitanga ya **ezangi kobongwana** ebateli biloko ya **mitindo ndenge ndenge**.
+
 ```zymbol
 // Ya esika
 esika = (10, 20)
 >> esika[0] ¶    // → 10
+eloko = (42, "mbote", #1, 3.14)
+>> eloko[2] ¶     // → #1
 
 // Na nkombo
 moto = (nkombo: "Alice", mibu: 25)
@@ -371,6 +390,24 @@ moto = (nkombo: "Alice", mibu: 25)
 bɔkɔ = (x: 10, y: 20)
 p = (bɔkɔ: bɔkɔ, etikɛtɛ: "ebandeli")
 >> p.bɔkɔ.x ¶      // → 10
+```
+
+**Ezangi kobongwana** — tupeli ekoki kobongwana te; bato bapekisami:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99      // ❌ Bosembo: tupeli ekoki kobongwana te
+// t[0] += 5      // ❌ Bosembo: tupeli ekoki kobongwana te
+```
+
+Sala kopi ya mipe na `$~`:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[0]$~ 99    // → (99, 20, 30)  — t ebongwani te
+
+// Tupeli na nkombo — sala kopi na kosilisa nkombo
+moto_ya_kala = (nkombo: moto.nkombo, mibu: 26)
 ```
 
 ---
@@ -482,6 +519,70 @@ _kotanga_kati(a, b) { <~ a + b }
 
 ---
 
+## Mikano ya Manomero
+
+Zymbol ekoki kolakisa manomero na **Unicode système ya manomero 69** — Devanagari, Arabi-India, Thai, Klingon pIqaD, Matematik ya Makasi, segment LCD na mosusu. Mikano oyo etali kaka kobima `>>`; kalikile ya kati ezali binary ntango nyonso.
+
+### Kotia système
+
+Koma nomero `0` na `9` ya système olingi na kati ya `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabic-Indic  (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // reset to ASCII
+```
+
+### Kobima na valeur boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII default)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # liboso ntango nyonso ASCII, nomero etali
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Manomero ya asali na kode source
+
+Manomero ya système nyonso oyo esalisami ezali literals ya solo — na zétendue, modulo, kotala:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literals na système nyonso
+
+`#` + nomero `0` to `1` uta na bloc nyonso ezali literal boolean ya solo:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ntango nyonso ASCII**. `#0` (lokuta) ntango nyonso etondi na `0` (nomero zéro) na système nyonso.
+
+---
+
 ## Bato ya misala ya data
 
 ```zymbol
@@ -563,8 +664,9 @@ kotanga(nomboro) {
 | `@!`     | simba (break)      | `$>`       | map                   |
 | `@>`     | tɔlɔlɔ (continue)  | `$\|`      | filter                |
 | `->`     | Lambda             | `$<`       | reduce                |
-| `$^+`    | kobeba na mokolo   | `$^-`      | kobeba na nse         |
-| `$^`     | kobeba na lambda   | | |
+| `arr[i] = val` | Kobongisa (mitanda kaka) | `arr[i] += val` | Kobongisa na misala  |
+| `arr[i]$~`| Mitanda mipe          | `$^+`      | kobeba na mokolo      |
+| `$^-`    | kobeba na nse          | `$^`       | kobeba na lambda      |
 | `<~`     | kozongisa          | `!?`       | luka (try)            |
 | `\|>`    | Pipe               | `:!`       | kanga (catch)         |
 | `#1`     | solo               | `:>`       | ntango nyonso (finally)|
@@ -574,8 +676,44 @@ kotanga(nomboro) {
 | `::`     | benga moduli       | `.`        | kokɔta esika          |
 | `#\|..\|` | kobongola motango | `#?`       | kotala motindo        |
 | `#.N\|..\|` | kotondo        | `#!N\|..\|` | kobeba             |
-| `c\|..\|` | virgule ya ndakisa | `e\|..\|` | kisayansi             |
+| `#,\|..\|` | virgule ya ndakisa | `#^\|..\|` | kisayansi             |
+| `#d0d9#` | kobongola mikano ya manomero | `#09#` | kozonga na ASCII |
 | `<\ ..\>` | shell kosala     | `>\<`      | mitindo ya CLI        |
+
+## Makambo ya Versions
+
+### v0.0.3 — Unicode Système ya Manomero & Bolamu LSP _(Avril 2026)_
+
+- **Ebakisami** Bloc 69 ya manomero Unicode na token ya kobongola mikano `#d0d9#`
+- **Ebakisami** Boolean literals na système nyonso — `#१` / `#०`, `#١` / `#٠`, na mosusu
+- **Ebakisami** Klingon pIqaD manomero (CSUR PUA U+F8F0–U+F8F9)
+- **Ebakisami** VM opcode `SetNumeralMode` — parité ya mobimba na tree-walker
+- **Ebakisami** REPL etosi mikano oyo esali na echo na kolakisa variables
+- **Ebongolami** Kobima `>>` ya boolean ezali na `#` liboso (`#0` / `#1`) na mikano nyonso
+
+### v0.0.2_01 — Kobongola Nkombo ya Misala _(30 Mar 2026)_
+
+- **Ebongolami** `c|..|` → `#,|..|` na `e|..|` → `#^|..|` — kolanda libota ya prefix `#`
+- **Ebakisami** Alias ya export: kobimisa lisusu membres ya module na nkombo mosusu
+
+### v0.0.2 — Transformation ya API ya Collections & Instalateurs _(24 Mar 2026)_
+
+- **Ebakisami** Libota ya misala `$` moko mpo na arrays na strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Ebakisami** Destructuring mpo na arrays, tuples na tuples ya nkombo
+- **Ebakisami** Index ya négatif (`arr[-1]` = élément ya nsuka)
+- **Ebakisami** Instalateurs ya asali — Linux (deb/rpm/pkg/musl), macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Ebakisami** Attribution composée `^=`
+- **Ebongolami** Likambo ya parser aritmetik; kobongola documents
+
+### v0.0.1 — Kobima ya Liboso _(22 Mar 2026)_
+
+- Tree-walker interpreter + register VM (`--vm`, ~4× ya ngai, ~95% parité)
+- Constructions nyonso ya miboko: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Unicode identifiants mobimba, système ya module, lambda, fermeture, kobatela bosembo
+- REPL, LSP, extension VS Code, formatter (`zymbol fmt`)
 
 ---
 

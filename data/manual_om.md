@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Tarreeffamtoota
 
+Tarreeffamtoonni **jijjiiramoo** (mutable) waan **gosa tokko** qabu.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ maqaadhan = db$^ (a, b -> a.maqaa > b.maqaa)
 >> umuriidhan[0].maqaa ¶     // → Ana
 >> maqaadhan[0].maqaa ¶      // → Carla
 
-arr[1] = 99               // bakka irratti haaromsuu
-arr = arr[1]$~ 99         // haaromsuu hojii-ta'aa — tarreeffamaa haaraa deebisa
+// Bakka irratti haaromsuu (tarreeffamaa qofa)
+arr[1] = 99               // ramaduu
+arr[0] += 5               // compound: +=  -=  *=  /=  %=  ^=
+
+// Haaromsuu hojii-ta'aa — tarreeffamaa haaraa deebisa; jalqabaa hin jijjiiramu
+arr2 = arr[1]$~ 99
 ```
 
 > Operator ururina hundi **tarreeffamaa haaraa** deebisu — irra-ramaddi: `arr = arr$+ 4`.
 > Hin walqabsiisu — ramaddiiwwan dhexee fayyadami.
 > `$^+` / `$^-` **tarreeffamaa primitive** tartiibaan kaa'u. Tuupilii tarreeffamaa `$^` lambda wal-bira-qabii wajin fayyadami.
+
+**Semantiksii gatii** — tarreeffamaa gara jijjiiramaa biraa ramaduu koppii danbii uuma:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b hin jijjiiramne
+```
 
 ```zymbol
 // Tarreeffamaa xidid
@@ -357,10 +373,15 @@ namaa = (maqaa: "Ana", umurii: 25, magaalaa: "Finfinnee")
 
 ## Tuupilii
 
+Tuupiliwwan **hin jijjiiramnee** (immutable) waan **gosaa adda addaa** qabu. Tarreeffama caalaatti, elemantoonni erga uumamanii booda hin jijjiiramu.
+
 ```zymbol
 // Sadarkaan
 dhibii = (10, 20)
 >> dhibii[0] ¶    // → 10
+
+ragaa = (42, "akkam", #1, 3.14)
+>> ragaa[2] ¶     // → #1
 
 // Maqaan
 namaa = (maqaa: "Alice", umurii: 25)
@@ -371,6 +392,29 @@ namaa = (maqaa: "Alice", umurii: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, summaa: "madda")
 >> p.pos.x ¶        // → 10
+```
+
+**Hin jijjiiramnee (Immutabilité)** — elemanta tuupilii jijjiiruuf yaaluu dogoggora yeroo raawwii dha:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ dogoggora yeroo raawwii: tuupilii hin jijjiiramu
+// t[0] += 5    // ❌ dogoggora walfakkaataa
+```
+
+Gatii jijjiirame argachuuf `$~` (haaromsuu hojii-ta'aa) fayyadami — **tuupilii haaraa** deebisa:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← jalqabaa hin jijjiiramu
+>> t2 ¶    // → (10, 999, 30)
+
+// Tuupilii maqaa — bakka irratti haaromsuu
+namaa = (maqaa: "Alice", umurii: 25)
+namaa2  = (maqaa: namaa.maqaa, umurii: 26)
+>> namaa.umurii ¶    // → 25
+>> namaa2.umurii ¶   // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _internal_add(a, b) { <~ a + b }
 
 ---
 
+## Haalaawwan Lakkoofsa
+
+Zymbol lakkoofsa **Unicode barreeffama lakkoofsa 69** keessatti agarsiisuu danda'a — Devanagari, Arabii-Indiyaa, Taayilaandii, Klingon pIqaD, Maaticii Cimsaa, LCD fi kkf. Haalaawwan hojii `>>`-bu'aa irratti qofaa dhiibbaa qabu; herregni keessaa yeroo hunda binaari.
+
+### Barreeffama hojjaachisu
+
+Lakkoofsa `0` fi `9` barreeffama kaayyeffame `#…#` gidduu barreessi:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabic-Indic  (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // reset to ASCII
+```
+
+### Bu'aa fi gatii boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII default)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # dura yeroo hunda ASCII, lakkoofsi madda'a
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Lakkoofsota asaasaa koodii madda keessatti
+
+Lakkoofsota barreeffama deeggarsamu kamuu literals sirrii dha — daangalee, modulo, wal-gitii keessatti:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literals barreeffama kamuu keessatti
+
+`#` + lakkoofsa `0` yookaan `1` tirroo kamuu keessaa literal boolean sirrii dha:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **yeroo hunda ASCII dha**. `#0` (soba) barreeffama kamuu keessatti `0` (lakkoofsa duwwaa) irraa mul'ataan adda.
+
+---
+
 ## Hojjechiisota Daataa
 
 ```zymbol
@@ -563,8 +671,9 @@ qooduu(lakkoofsaa) {
 | `@!` | addaan kuti (break) | `$>` | map |
 | `@>` | itti fufi (continue) | `$\|` | filter |
 | `->` | Lambda | `$<` | reduce |
-| `$^+` | tartiiba ol (primitives) | `$^-` | tartiiba gad (primitives) |
-| `$^` | comparator wajin tartiibuu (tuples) | | |
+| `arr[i] = val` | elemanta haaromsuu (tarreeffamaa qofa) | `arr[i] += val` | haaromsuu compound |
+| `arr[i]$~` | haaromsuu hojii-ta'aa (koppii haaraa) | `$^+` | tartiiba ol (primitives) |
+| `$^-` | tartiiba gad (primitives) | `$^` | comparator wajin tartiibuu (tuples) |
 | `<~` | deebi'i (return) | `!?` | yaali (try) |
 | `\|>` | Pipe | `:!` | qabi (catch) |
 | `#1` | dhugaa | `:>` | yeroo hundaa (finally) |
@@ -574,8 +683,44 @@ qooduu(lakkoofsaa) {
 | `::` | moduulii waamuu | `.` | bakka argachuu |
 | `#\|..\|` | lakkoofsa parse | `#?` | metadata gosa |
 | `#.N\|..\|` | wareeguu | `#!N\|..\|` | muruu |
-| `c\|..\|` | comma miidhamaa | `e\|..\|` | saayinsaawaa |
+| `#,\|..\|` | comma miidhamaa | `#^\|..\|` | saayinsaawaa |
+| `#d0d9#` | jijjiirama haalaawwan lakkoofsa | `#09#` | ASCII deebi'uu |
 | `<\ ..\>` | shell exec | `>\<` | doodaa CLI |
+
+## Seenaa Moggaasaa
+
+### v0.0.3 — Unicode Sirna Lakkoofsa & Fooyyeffama LSP _(Ebla 2026)_
+
+- **Ida'ame** Unicode tirroo lakkoofsa 69 mallattoo jijjiirama haalaa `#d0d9#` waliin
+- **Ida'ame** Boolean literals barreeffama kamuu — `#१` / `#०`, `#١` / `#٠`, fi kkf
+- **Ida'ame** Klingon pIqaD lakkoofsota (CSUR PUA U+F8F0–U+F8F9)
+- **Ida'ame** VM opcode `SetNumeralMode` — walqixxummaa guutuu tree-walker waliin
+- **Ida'ame** REPL haalaawwan lakkoofsa hojii echo fi agarsiisa jijjiiruu keessatti kabaja
+- **Jijjiirame** Bu'aan `>>` boolean amma `#` (`#0` / `#1`) haalaawwan hunda keessatti of-keessatti
+
+### v0.0.2_01 — Moggaasa Hojjechiisotaa Jijjiirame _(30 Mar 2026)_
+
+- **Jijjiirame** `c|..|` → `#,|..|` fi `e|..|` → `#^|..|` — maatii dura `#` waliin walta'a
+- **Ida'ame** Alias ergumsaa: miseensota modiyuulii maqaa biraatiin deebi'ee erguu
+
+### v0.0.2 — Haareffama API Kuusaa & Maxxansituu _(24 Mar 2026)_
+
+- **Ida'ame** Maatii hojjechiisota `$` tokkoomaa arrays fi strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Ida'ame** Destructuring arrays, tuples fi tuples maqaa qaban
+- **Ida'ame** Maamilaa dimshaashaa (`arr[-1]` = miseensa dhumaa)
+- **Ida'ame** Maxxansituu asaasaa — Linux (deb/rpm/pkg/musl), macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Ida'ame** Ramaddii walitti-makame `^=`
+- **Sirreeffame** Gatii xiqqaa parser herregaa; sirreeffama galmee
+
+### v0.0.1 — Maxxansaa Ummataa Jalqabaa _(22 Mar 2026)_
+
+- Tree-walker turjumaanaa + register VM (`--vm`, ~4× saffisaa, ~95% walqixxummaa)
+- Caasaalee hunda: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Unicode adda-baafattoota guutuu, sirna modiyuulii, lambda, cufamoo, dogoggora bulchuu
+- REPL, LSP, VS Code extension, format godhuu (`zymbol fmt`)
 
 ---
 

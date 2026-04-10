@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Tableaux
 
+Les tableaux sont **mutables** et contiennent des éléments du **même type**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ par_nom  = db$^ (a, b -> a.nom > b.nom)    // décroissant par nom (>)
 >> par_age[0].nom ¶     // → Ana
 >> par_nom[0].nom ¶     // → Carla
 
-arr[1] = 99              // mise à jour en place
-arr = arr[1]$~ 99        // mise à jour fonctionnelle — retourne nouveau tableau
+// Mise à jour directe d'un élément (tableaux seulement)
+arr[1] = 99              // affecter
+arr[0] += 5              // composé : +=  -=  *=  /=  %=  ^=
+
+// Mise à jour fonctionnelle — retourne un nouveau tableau ; l'original est inchangé
+arr2 = arr[1]$~ 99
 ```
 
 > Tous les opérateurs de collection retournent un **nouveau tableau**. Réassigner : `arr = arr$+ 4`.
 > Les opérateurs ne peuvent pas être enchaînés — utiliser des affectations intermédiaires.
 > `$^+` / `$^-` trient les **tableaux de primitifs** (nombres, chaînes). Pour les tableaux de tuples, utiliser `$^` avec un lambda comparateur — la direction est encodée dans le lambda (`<` = croissant, `>` = décroissant).
+
+**Sémantique de valeur** — assigner un tableau à une autre variable crée une copie indépendante :
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b n'est pas affecté
+```
 
 ```zymbol
 // Tableaux imbriqués
@@ -357,10 +373,16 @@ personne = (nom: "Ana", age: 25, ville: "Paris")
 
 ## Tuples
 
+Les tuples sont des conteneurs ordonnés **immuables** pouvant contenir des valeurs de **types différents**.
+Contrairement aux tableaux, les éléments ne peuvent pas être modifiés après la création.
+
 ```zymbol
 // Positionnel
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+données = (42, "hello", #1, 3.14)
+>> données[2] ¶     // → #1
 
 // Nommé
 personne = (nom: "Alice", age: 25)
@@ -371,6 +393,29 @@ personne = (nom: "Alice", age: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, etiquette: "origine")
 >> p.pos.x ¶        // → 10
+```
+
+**Immuabilité** — toute tentative de modifier un élément d'un tuple est une erreur d'exécution :
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ erreur d'exécution : les tuples sont immuables
+// t[0] += 5    // ❌ même erreur
+```
+
+Pour dériver une valeur modifiée, utiliser `$~` (mise à jour fonctionnelle) — retourne un **nouveau** tuple :
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← original inchangé
+>> t2 ¶    // → (10, 999, 30)
+
+// Tuple nommé — reconstruire explicitement
+personne = (nom: "Alice", age: 25)
+plus_age  = (nom: personne.nom, age: 26)
+>> personne.age ¶    // → 25
+>> plus_age.age ¶    // → 26
 ```
 
 ---
@@ -482,6 +527,70 @@ _additionner_interne(a, b) { <~ a + b }
 
 ---
 
+## Modes Numériques
+
+Zymbol peut afficher les nombres dans **69 scripts de chiffres Unicode** — Devanagari, Arabe-Indic, Thaï, Klingon pIqaD, Gras Mathématique, affichages LCD, et plus. Le mode actif n'affecte que la sortie `>>`; l'arithmétique interne est toujours binaire.
+
+### Activer un script
+
+Écrivez le chiffre `0` et `9` du script cible encadrés dans `#…#` :
+
+```zymbol
+#०९#    // Devanagari   (U+0966–U+096F)
+#٠٩#    // Arabe-Indic  (U+0660–U+0669)
+#๐๙#    // Thaï         (U+0E50–U+0E59)
+#09#    // réinitialiser en ASCII
+```
+
+### Sortie et booléens
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII par défaut)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (point décimal toujours ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Booléens : préfixe # toujours ASCII, chiffre s'adapte
+>> #1 ¶         // → #१   (vrai en Devanagari)
+>> #0 ¶         // → #०   (faux — distinct de ०  zéro entier)
+
+x = 28 > 4
+>> x ¶          // → #१   (résultat de comparaison suit le mode actif)
+```
+
+### Littéraux numériques natifs dans le source
+
+Les chiffres de tout script supporté sont des littéraux valides — dans les plages, modulo, comparaisons :
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Littéraux booléens dans n'importe quel script
+
+`#` + chiffre `0` ou `1` de n'importe quel bloc est un littéral booléen valide :
+
+```zymbol
+#٠٩#
+نشط = #١        // identique à #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` est **toujours ASCII**. `#0` (faux) est toujours visuellement distinct de `0` (zéro entier) dans chaque script.
+
+---
+
 ## Opérateurs de Données
 
 ```zymbol
@@ -563,8 +672,9 @@ classer(nombre) {
 | `@!`      | arrêter (break)                     | `$>`          | map                           |
 | `@>`      | continuer                           | `$\|`         | filter                        |
 | `->`      | lambda                              | `$<`          | reduce                        |
-| `$^+`     | trier croissant (primitifs)         | `$^-`         | trier décroissant             |
-| `$^`      | trier avec lambda comparateur       |               |                               |
+| `arr[i] = val` | mettre à jour un élément (tableaux seulement) | `arr[i] += val` | mise à jour composée |
+| `arr[i]$~` | mise à jour fonctionnelle (nouvelle copie) | `$^+` | trier croissant (primitifs) |
+| `$^-`     | trier décroissant (primitifs)       | `$^`          | trier avec lambda comparateur |
 | `<~`      | retourner (return)                  | `!?`          | essayer (try)                 |
 | `\|>`     | pipe                                | `:!`          | attraper (catch)              |
 | `#1`      | vrai                                | `:>`          | toujours (finally)            |
@@ -574,8 +684,44 @@ classer(nombre) {
 | `::`      | appel de module                     | `.`           | accès au champ                |
 | `#\|..\|` | parser un nombre                   | `#?`          | métadonnées de type           |
 | `#.N\|..\|` | arrondir                         | `#!N\|..\|`   | tronquer                      |
-| `c\|..\|` | format virgule                     | `e\|..\|`     | scientifique                  |
+| `#,\|..\|` | format virgule                     | `#^\|..\|`     | scientifique                  |
+| `#d0d9#` | commutation de mode numérique | `#09#` | réinitialiser en ASCII |
 | `<\ ..\>` | exécution shell                    | `>\<`         | arguments CLI                 |
+
+## Historique des Versions
+
+### v0.0.3 — Systèmes Numériques Unicode & Améliorations LSP _(Avril 2026)_
+
+- **Ajouté** 69 blocs de chiffres Unicode avec le jeton de commutation `#d0d9#`
+- **Ajouté** Littéraux booléens dans n'importe quel script — `#१` / `#०`, `#١` / `#٠`, etc.
+- **Ajouté** Chiffres Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Ajouté** Opcode VM `SetNumeralMode` — parité complète avec le tree-walker
+- **Ajouté** Le REPL respecte le mode numérique actif dans l'écho et l'affichage des variables
+- **Modifié** La sortie `>>` des booléens inclut désormais le préfixe `#` (`#0` / `#1`) dans tous les modes
+
+### v0.0.2_01 — Renommage d'Opérateurs _(30 Mar 2026)_
+
+- **Modifié** `c|..|` → `#,|..|` et `e|..|` → `#^|..|` — cohérent avec la famille de préfixes `#`
+- **Ajouté** Alias d'export : réexporter des membres de module sous un nom différent
+
+### v0.0.2 — Refonte de l'API Collections & Installateurs _(24 Mar 2026)_
+
+- **Ajouté** Famille d'opérateurs `$` unifiée pour tableaux et chaînes (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Ajouté** Destructuration pour tableaux, tuples et tuples nommés
+- **Ajouté** Indices négatifs (`arr[-1]` = dernier élément)
+- **Ajouté** Installateurs natifs — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Ajouté** Affectation composée `^=`
+- **Corrigé** Cas limites du parseur arithmétique ; corrections de documentation
+
+### v0.0.1 — Version Publique Initiale _(22 Mar 2026)_
+
+- Interprète tree-walker + VM à registres (`--vm`, ~4× plus rapide, ~95% de parité)
+- Toutes les constructions principales : `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Identifiants Unicode complets, système de modules, lambdas, fermetures, gestion d'erreurs
+- REPL, LSP, extension VS Code, formateur (`zymbol fmt`)
 
 ---
 

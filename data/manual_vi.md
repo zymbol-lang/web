@@ -290,6 +290,8 @@ phép = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Mảng
 
+Mảng có thể **thay đổi** và chứa các phần tử có **cùng kiểu**.
+
 ```zymbol
 mảng = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ theo_tên = dữ_liệu$^ (a, b -> a.tên > b.tên)
 >> theo_tuổi[0].tên ¶     // → Ana
 >> theo_tên[0].tên ¶    // → Carla
 
-mảng[1] = 99              // cập nhật tại chỗ
-mảng = mảng[1]$~ 99        // cập nhật kiểu hàm
+// Cập nhật phần tử trực tiếp (chỉ mảng)
+mảng[1] = 99              // gán
+mảng[0] += 5              // phức hợp: +=  -=  *=  /=  %=  ^=
+
+// Cập nhật kiểu hàm — trả về mảng mới; bản gốc không thay đổi
+mảng2 = mảng[1]$~ 99
 ```
 
 > Tất cả toán tử collection trả về **mảng mới**. Gán lại: `mảng = mảng$+ 4`.
 > Không thể xâu chuỗi — dùng gán trung gian.
 > `$^+` / `$^-` sắp xếp **mảng nguyên thủy**. Với tuple arrays, dùng `$^` cùng comparator lambda.
+
+**Ngữ nghĩa giá trị** — gán mảng cho biến khác tạo ra một bản sao độc lập:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b không bị ảnh hưởng
+```
 
 ```zymbol
 // Mảng lồng nhau
@@ -357,10 +373,15 @@ người = (tên: "Ana", tuổi: 25, thành_phố: "Hà Nội")
 
 ## Tuple
 
+Tuple là các container có thứ tự **bất biến** có thể chứa các giá trị có **kiểu khác nhau**. Không giống mảng, các phần tử không thể thay đổi sau khi tạo.
+
 ```zymbol
 // Positional
 điểm = (10, 20)
 >> điểm[0] ¶    // → 10
+
+dữ_liệu = (42, "hello", #1, 3.14)
+>> dữ_liệu[2] ¶     // → #1
 
 // Named
 người = (tên: "Alice", tuổi: 25)
@@ -371,6 +392,29 @@ người = (tên: "Alice", tuổi: 25)
 vị_trí = (x: 10, y: 20)
 p = (vị_trí: vị_trí, nhãn: "gốc")
 >> p.vị_trí.x ¶        // → 10
+```
+
+**Tính bất biến** — bất kỳ nỗ lực nào để sửa đổi phần tử tuple đều là lỗi thời gian chạy:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ lỗi thời gian chạy: tuple là bất biến
+// t[0] += 5    // ❌ cùng lỗi
+```
+
+Để tạo ra giá trị đã sửa đổi, dùng `$~` (cập nhật kiểu hàm) — trả về một tuple **mới**:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← bản gốc không thay đổi
+>> t2 ¶    // → (10, 999, 30)
+
+// Tuple có tên — tái tạo tường minh
+người = (tên: "Alice", tuổi: 25)
+lớnHơn = (tên: người.tên, tuổi: 26)
+>> người.tuổi ¶    // → 25
+>> lớnHơn.tuổi ¶   // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _cộng_nội(a, b) { <~ a + b }
 
 ---
 
+## Chế Độ Số
+
+Zymbol có thể hiển thị số trong **69 hệ chữ số Unicode** — Devanagari, Ả Rập-Ấn Độ, Thái, Klingon pIqaD, Toán học In đậm, phân đoạn LCD và nhiều hơn nữa. Chế độ hoạt động chỉ ảnh hưởng đến đầu ra `>>`; phép tính nội bộ luôn là nhị phân.
+
+### Kích hoạt một hệ chữ
+
+Viết chữ số `0` và `9` của hệ chữ đích trong `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Ả Rập-Ấn Độ  (U+0660–U+0669)
+#๐๙#    // Thái          (U+0E50–U+0E59)
+#09#    // đặt lại về ASCII
+```
+
+### Đầu ra và giá trị boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII mặc định)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (dấu thập phân luôn là ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Boolean: tiền tố # luôn là ASCII, chữ số thích nghi
+>> #1 ¶         // → #१   (đúng trong Devanagari)
+>> #0 ¶         // → #०   (sai — khác với ०  số nguyên không)
+
+x = 28 > 4
+>> x ¶          // → #१   (kết quả so sánh theo chế độ hiện hoạt)
+```
+
+### Ký tự số gốc trong mã nguồn
+
+Chữ số từ bất kỳ hệ chữ được hỗ trợ nào đều là ký tự hợp lệ — trong phạm vi, modulo, so sánh:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Ký tự boolean trong bất kỳ hệ chữ nào
+
+`#` + chữ số `0` hoặc `1` từ bất kỳ khối nào là ký tự boolean hợp lệ:
+
+```zymbol
+#٠٩#
+نشط = #١        // giống như #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **luôn là ASCII**. `#0` (sai) luôn khác biệt về mặt thị giác so với `0` (số nguyên không) trong mỗi hệ chữ.
+
+---
+
 ## Toán tử dữ liệu
 
 ```zymbol
@@ -563,8 +671,9 @@ phânLoại(số) {
 | `@!`         | dừng (break)                      | `$>`          | map                             |
 | `@>`         | tiếp tục (continue)               | `$\|`         | filter                          |
 | `->`         | lambda                            | `$<`          | reduce                          |
-| `$^+`        | sắp xếp tăng dần (nguyên thủy)    | `$^-`         | sắp xếp giảm dần (nguyên thủy)  |
-| `$^`         | sắp xếp với comparator (tuples)   | | |
+| `arr[i] = val` | cập nhật phần tử (chỉ mảng)   | `arr[i] += val` | cập nhật phức hợp             |
+| `arr[i]$~`   | cập nhật kiểu hàm (bản sao mới)  | `$^+`         | sắp xếp tăng dần (nguyên thủy) |
+| `$^-`        | sắp xếp giảm dần (nguyên thủy)   | `$^`          | sắp xếp với comparator (tuples) |
 | `<~`         | trả về (return)                   | `!?`          | thử (try)                       |
 | `\|>`        | pipe                              | `:!`          | bắt lỗi (catch)                 |
 | `#1`         | đúng (true)                       | `:>`          | luôn chạy (finally)             |
@@ -574,8 +683,44 @@ phânLoại(số) {
 | `::`         | gọi mô-đun                        | `.`           | truy cập trường                 |
 | `#\|..\|`    | chuyển đổi số                     | `#?`          | siêu dữ liệu kiểu               |
 | `#.N\|..\|`  | làm tròn                          | `#!N\|..\|`   | cắt bớt                         |
-| `c\|..\|`    | định dạng dấu phẩy                | `e\|..\|`     | ký hiệu khoa học                |
+| `#,\|..\|`    | định dạng dấu phẩy                | `#^\|..\|`     | ký hiệu khoa học                |
+| `#d0d9#` | chuyển chế độ số | `#09#` | đặt lại về ASCII |
 | `<\ ..\>`    | thực thi shell                    | `>\<`         | tham số CLI                     |
+
+## Lịch Sử Phiên Bản
+
+### v0.0.3 — Hệ Thống Số Unicode & Cải Tiến LSP _(Tháng 4 năm 2026)_
+
+- **Thêm** 69 khối chữ số Unicode với token chuyển chế độ `#d0d9#`
+- **Thêm** Ký tự boolean trong bất kỳ hệ chữ nào — `#१` / `#०`, `#١` / `#٠`, v.v.
+- **Thêm** Chữ số Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Thêm** Opcode VM `SetNumeralMode` — tương đương hoàn toàn với tree-walker
+- **Thêm** REPL tôn trọng chế độ số hiện hoạt trong echo và hiển thị biến
+- **Thay đổi** Đầu ra `>>` của boolean giờ bao gồm tiền tố `#` (`#0` / `#1`) trong tất cả các chế độ
+
+### v0.0.2_01 — Đổi Tên Toán Tử _(30 tháng 3 năm 2026)_
+
+- **Thay đổi** `c|..|` → `#,|..|` và `e|..|` → `#^|..|` — nhất quán với họ tiền tố `#`
+- **Thêm** Bí danh xuất: xuất lại các thành viên module với tên khác
+
+### v0.0.2 — Thiết Kế Lại API Bộ Sưu Tập & Trình Cài Đặt _(24 tháng 3 năm 2026)_
+
+- **Thêm** Họ toán tử `$` thống nhất cho mảng và chuỗi (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Thêm** Destructuring cho mảng, tuple và tuple có tên
+- **Thêm** Chỉ số âm (`arr[-1]` = phần tử cuối)
+- **Thêm** Trình cài đặt gốc — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 tháng 3 năm 2026)_
+
+- **Thêm** Gán kết hợp `^=`
+- **Sửa** Các trường hợp biên của parser số học; sửa tài liệu
+
+### v0.0.1 — Phát Hành Công Khai Đầu Tiên _(22 tháng 3 năm 2026)_
+
+- Trình thông dịch tree-walker + VM thanh ghi (`--vm`, ~4× nhanh hơn, ~95% tương đương)
+- Tất cả các cấu trúc cốt lõi: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Định danh Unicode đầy đủ, hệ thống module, lambda, closure, xử lý lỗi
+- REPL, LSP, tiện ích mở rộng VS Code, bộ định dạng (`zymbol fmt`)
 
 ---
 

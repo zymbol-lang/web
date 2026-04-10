@@ -282,6 +282,8 @@ olta' = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Łah Siłtsooí
 
+Arrays are **mutable** and hold elements of the **same type**. _(Łah siłtsooí **nályééh** dóó t'áá ałtso **ła' ádaat'éhígíí**.)_
+
 ```zymbol
 łah = [1, 2, 3, 4, 5]
 
@@ -311,13 +313,27 @@ by_bizhi' = db$^ (a, b -> a.bizhi' > b.bizhi')
 >> by_namboo[0].bizhi' ¶     // → Ana
 >> by_bizhi'[0].bizhi' ¶     // → Carla
 
-łah[1] = 99              // update in-place
-łah = łah[1]$~ 99        // functional update
+// Nályééh (łah siłtsooí cha'an)
+łah[1] = 99              // nályééh (assign)
+łah[0] += 5              // ła' nahalin: +=  -=  *=  /=  %=  ^=
+
+// Ła'í nahalin — naaltsoos nályééh; nayc doo nahalin da
+łah2 = łah[1]$~ 99
 ```
 
 > T'áá ałtso **naaltsoos nályééh** — bił ninídá: `łah = łah$+ 4`.
 > Doo chaining da: łah nahalin bił bił.
 > `$^+` / `$^-` — primitives. Tuple łah — `$^` bił lambda.
+
+**Ła' ádaat'éhígíí** — łah siłtsooí ambé saad bił nahalinígíí yínółta' copia sapykueráva:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b doo nahalin da
+```
 
 ```zymbol
 // Nested łah siłtsooí
@@ -349,10 +365,15 @@ diné = (bizhi': "Ana", namboo: 25, nahalin: "Dinétah")
 
 ## Tuple
 
+Tuples are **immutable** ordered containers that can hold values of **different types**. Unlike arrays, elements cannot be changed after creation. _(Tuple **doo nályééh da** — t'áá ałtso **ła' ádaat'éhígíí** bił nahalin. Łah siłtsooí bił nahalinígíí doo ła' nahalin da ts'o'ok ályaa.)_
+
 ```zymbol
 // Positional
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+naaltsoos = (42, "yá'át'ééh", #1, 3.14)
+>> naaltsoos[2] ¶     // → #1
 
 // Named tuple
 diné = (bizhi': "Shizhe'é", namboo: 25)
@@ -364,6 +385,29 @@ diné = (bizhi': "Shizhe'é", namboo: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, label: "Diné Bikéyah")
 >> p.pos.x ¶        // → 10
+```
+
+**Doo nályééh da** — tuple ádaat'éhígíí nályééh doo hólǫ́ da:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ baa ntsídíkees: tuple doo nályééh da
+// t[0] += 5    // ❌ bey kex
+```
+
+Ła' ádaat'éhígíí nályééh haguã `$~` apaykachaña (ła' nahalin) — **naaltsoos** tuple yínółta':
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← nayc doo nahalin da
+>> t2 ¶    // → (10, 999, 30)
+
+// Named tuple — yancuic ts'aak
+diné = (bizhi': "Shizhe'é", namboo: 25)
+diné2 = (bizhi': diné.bizhi', namboo: 26)
+>> diné.namboo ¶    // → 25
+>> diné2.namboo ¶   // → 26
 ```
 
 ---
@@ -475,6 +519,70 @@ _internal_add(a, b) { <~ a + b }
 
 ---
 
+## Łah Siłtsooí Naaltsoos
+
+Zymbol bił haz'á **Unicode naaltsoos 69** — Devanagari, Arabi-India, Thai, Klingon pIqaD, Naaltsoos Nízaadígíí, LCD. Łah siłtsooí bił haz'á `>>`-di; naaltsoos binary.
+
+### Naaltsoos bee hane'
+
+Naaltsoos `0` dóó `9` `#…#`-di:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabi-India   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // ASCII-di naasgó
+```
+
+### Bił haz'á dóó boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ASCII, naaltsoos yoołkaał
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Naaltsoos asli kodi-di
+
+Naaltsoos literal — range, modulo:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal naaltsoos
+
+`#` + naaltsoos `0` éí doodago `1` bloc boolean:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII**. `#0` (doo) `0` (łah naaltsoos) yoołkaał.
+
+---
+
 ## Naaltsoos Ná'ádleehí
 
 ```zymbol
@@ -567,8 +675,42 @@ nályééh(namboo) {
 | `::`    | Module call        | `.`         | Field access           |
 | `#\|..\|` | Parse number    | `#?`        | Type metadata          |
 | `#.N\|..\|` | Round         | `#!N\|..\|` | Truncate              |
-| `c\|..\|` | Comma format    | `e\|..\|`   | Scientific             |
+| `#,\|..\|` | Comma format    | `#^\|..\|`   | Scientific             |
+| `#d0d9#` | łah siłtsooí naaltsoos | `#09#` | ASCII-di naasgó |
 | `<\ ..\>` | Shell exec      | `>\<`       | CLI args               |
+
+## Naaltsoos Taalik
+
+### v0.0.3 — Unicode Naaltsoos & LSP _(Abril 2026)_
+
+- **Nayiiłtsooz** Unicode bloc 69 token `#d0d9#`
+- **Nayiiłtsooz** Boolean literals — `#१` / `#०`, `#١` / `#٠`
+- **Nayiiłtsooz** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Nayiiłtsooz** VM opcode `SetNumeralMode` — tree-walker
+- **Nayiiłtsooz** REPL naaltsoos echo variable
+- **Yiináá'** `>>` boolean `#` (`#0` / `#1`)
+
+### v0.0.2_01 _(30 Mar 2026)_
+
+- **Yiináá'** `c|..|` → `#,|..|` dóó `e|..|` → `#^|..|`
+- **Nayiiłtsooz** Export alias
+
+### v0.0.2 _(24 Mar 2026)_
+
+- **Nayiiłtsooz** `$` arrays dóó strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Nayiiłtsooz** Destructuring arrays, tuples
+- **Nayiiłtsooz** Index doo (`arr[-1]`)
+- **Nayiiłtsooz** Instalar — Linux, macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Nayiiłtsooz** `^=`
+
+### v0.0.1 _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4×, ~95%)
+- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

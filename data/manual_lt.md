@@ -288,6 +288,8 @@ operacijos = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Masyvai
 
+Masyvai yra **keičiami** ir laiko **to paties tipo** elementus.
+
 ```zymbol
 arr = [10, 20, 30, 40, 50]
 
@@ -309,11 +311,11 @@ idx = arr$?? 30              // → [1]   visi indeksai reikšmei
 pjūvis = arr$[0..2]          // pjūvis [0,2): [20, 30]
 skaičius_pjūvis = arr$[0:3]  // skaičiumi pagrįstas: [20, 30, 40]
 
-// Elemento atnaujinimas
-arr[1] = 99
->> arr ¶    // → [20, 99, 40, 50, 60]
+// Tiesioginis elemento atnaujinimas (tik masyvai)
+arr[1] = 99              // priskirti
+arr[0] += 5              // sudėtinis: +=  -=  *=  /=  %=  ^=
 
-// Funkcinis atnaujinimas (grąžina naują masyvą)
+// Funkcinis atnaujinimas — grąžina naują masyvą; originalas nepakitęs
 arr2 = arr[1]$~ 77           // → [20, 77, 40, 50, 60]
 
 // Rūšiuoti (primityvai)
@@ -337,6 +339,16 @@ matrica = [[1,2],[3,4],[5,6]]
 > `$+`, `$-`, `$[..]` grąžina **naują masyvą** — priskirkite atgal: `arr = arr$+ 4`.
 > Negalima grandinėti: naudokite du atskirus priskyrimus.
 > `arr$??` ir `arr$[s:n]` naudoja kitokią sintaksę nei `arr$[s..e]` — žr. Simbolių Nuoroda.
+
+**Reikšmių semantika** — priskiriant masyvą kitam kintamajam sukuriama nepriklausoma kopija:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b nepaveiktas
+```
 
 ---
 
@@ -365,11 +377,16 @@ asmuo = (vardas: "Alice", amžius: 25)
 
 ## Tuplai
 
+Tuplai yra **nekintami** tvarkomi konteineriai, galintys laikyti **skirtingų tipų** reikšmes. Skirtingai nuo masyvų, elementų po sukūrimo keisti negalima.
+
 ```zymbol
 // Pozicinis tuple
 taškas = (10, 20)
 >> taškas[0] ¶    // → 10
 >> taškas[1] ¶    // → 20
+
+duomenys = (42, "labas", #1, 3.14)
+>> duomenys[2] ¶     // → #1
 
 // Pavadintas tuple
 asmuo = (vardas: "Alice", amžius: 25)
@@ -382,6 +399,29 @@ pos = (x: 3, y: 4)
 p = (pos: pos, etiketė: "pradžia")
 >> p.etiketė ¶    // → pradžia
 >> p.pos.x ¶      // → 3
+```
+
+**Nekintamumas** — bet koks bandymas pakeisti tuple elementą yra vykdymo klaida:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ vykdymo klaida: tuplai yra nekintami
+// t[0] += 5    // ❌ ta pati klaida
+```
+
+Norėdami gauti pakeistą reikšmę, naudokite `$~` (funkcinis atnaujinimas) — grąžina **naują** tuplą:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← originalas nepakitęs
+>> t2 ¶    // → (10, 999, 30)
+
+// Pavadintas tuple — rekonstruokite eksplicitiškai
+asmuo = (vardas: "Alice", amžius: 25)
+vyresnis = (vardas: asmuo.vardas, amžius: 26)
+>> asmuo.amžius ¶    // → 25
+>> vyresnis.amžius ¶ // → 26
 ```
 
 ---
@@ -499,6 +539,70 @@ pi = c::get_PI()
 
 ---
 
+## Skaitmeniniai Režimai
+
+Zymbol gali rodyti skaičius **69 „Unicode" skaitmenų raštais** — Devanagari, Arabų-Indų, Tajų, Klingon pIqaD, Matematinis Pusjuodis, LCD segmentai ir kt. Aktyvus režimas veikia tik `>>`-išvestį; vidinė aritmetika visada yra dvejetainė.
+
+### Rašto aktyvavimas
+
+Parašykite tikslinio rašto skaitmenį `0` ir `9`, uždarytu į `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabų-Indų    (U+0660–U+0669)
+#๐๙#    // Tajų          (U+0E50–U+0E59)
+#09#    // atkurti ASCII
+```
+
+### Išvestis ir loginės reikšmės
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII numatytasis)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (dešimtainis taškas visada ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Loginės: # priešdėlis visada ASCII, skaitmuo prisitaiko
+>> #1 ¶         // → #१   (tiesa Devanagari)
+>> #0 ¶         // → #०   (netiesa — skiriasi nuo ०  sveikas skaičius nulis)
+
+x = 28 > 4
+>> x ¶          // → #१   (palyginimo rezultatas seka aktyvų režimą)
+```
+
+### Vietiniai skaitmenų literalai šaltinio kode
+
+Bet kurio palaikomo rašto skaitmenys yra galiojantys literalai — diapazonuose, modulo, palyginimuose:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Loginiai literalai bet kuriame rašte
+
+`#` + skaitmuo `0` arba `1` iš bet kurio bloko yra galiojantis loginis literalas:
+
+```zymbol
+#٠٩#
+نشط = #١        // tas pats kaip #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` yra **visada ASCII**. `#0` (netiesa) visada vizualiai skiriasi nuo `0` (sveikas skaičius nulis) kiekviename rašte.
+
+---
+
 ## Duomenų Operatoriai
 
 ```zymbol
@@ -581,24 +685,62 @@ klasifikuok(skaičius) {
 | `@`         | ciklas               | `$>`         | žemėlapis                  |
 | `@!`        | pertraukti           | `$\|`        | filtravimas                |
 | `@>`        | tęsti                | `$<`         | redukcija                  |
-| `->`        | lambda               | `$^+`        | rūšiuoti didėjančiai       |
-| `<~`        | grąžinti             | `$^-`        | rūšiuoti mažėjančiai       |
-| `\|>`       | vamzdis              | `$^`         | rūšiuoti komparatoriumi    |
+| `->`        | lambda               | `$<`         | redukcija                  |
+| `arr[i] = val` | atnaujinti elementą (tik masyvai) | `arr[i] += val` | sudėtinis atnaujinimas |
+| `arr[i]$~`  | funkcinis atnaujinimas (nauja kopija) | `$^+` | rūšiuoti didėjančiai (primityviems) |
+| `$^-`       | rūšiuoti mažėjančiai (primityviems) | `$^` | rūšiuoti komparatoriumi (tuple) |
+| `<~`        | grąžinti             | `!?`         | bandyti (try)              |
+| `\|>`       | vamzdis              | `:!`         | pagauti (catch)            |
 | `#1`        | tiesa                | `$!`         | yra klaida                 |
 | `#0`        | netiesa              | `$!!`        | skleisti klaidą            |
-| `!?`        | bandyti (try)        | `#`          | deklaruoti modulį          |
-| `:!`        | pagauti (catch)      | `#>`         | eksportuoti                |
-| `:>`        | galų gale (finally)  | `<#`         | importuoti                 |
+| `:>`        | galų gale (finally)  | `#`          | deklaruoti modulį          |
+| `<#`        | importuoti           | `#>`         | eksportuoti                |
 | `.`         | lauko prieiga        | `::`         | modulio iškvietimas        |
 | `#\|..\|`   | analizuoti (parse)   | `#.N\|..\|`  | apvalinti N skaičių        |
-| `#!N\|..\|` | sutrumpinti N sk.    | `c\|..\|`    | kablelių formatas          |
-| `e\|..\|`   | mokslinis žym.       | `<\ \>`      | apvalkalo komanda          |
+| `#!N\|..\|` | sutrumpinti N sk.    | `#,\|..\|`    | kablelių formatas          |
+| `#d0d9#` | skaitmeninio režimo perjungiklis | `#09#` | atkurti ASCII |
+| `#^\|..\|`   | mokslinis žym.       | `<\ \>`      | apvalkalo komanda          |
 | `><`        | apvalkalo išvestis   | `$~~[..]`    | pakeisti eilutėje          |
 | `[a,b]=arr` | destrukturizacija    | `(x,y)=tup`  | tuple destrukturizacija    |
 
 ---
 
 *Zymbol-Lang — Simbolinis. Universalus. Nekintamas.*
+
+## Versijų Istorija
+
+### v0.0.3 — „Unicode" Skaičių Sistemos & LSP Patobulinimai _(2026 m. balandis)_
+
+- **Pridėta** 69 „Unicode" skaitmenų blokai su režimo perjungimo žetonu `#d0d9#`
+- **Pridėta** Loginiai literalai bet kuriame rašte — `#१` / `#०`, `#١` / `#٠` ir kt.
+- **Pridėta** Klingon pIqaD skaitmenys (CSUR PUA U+F8F0–U+F8F9)
+- **Pridėta** VM opkodas `SetNumeralMode` — visiškas paritetą su tree-walker
+- **Pridėta** REPL gerbia aktyvų skaitmeninį režimą aidint ir rodant kintamuosius
+- **Pakeista** `>>` loginių reikšmių išvestis dabar apima priešdėlį `#` (`#0` / `#1`) visuose režimuose
+
+### v0.0.2_01 — Operatorių Pervadinimas _(2026 m. kovo 30 d.)_
+
+- **Pakeista** `c|..|` → `#,|..|` ir `e|..|` → `#^|..|` — nuoseklu su priešdėlio `#` šeima
+- **Pridėta** Eksporto pseudonimas: modulio narių reeksportavimas kitu pavadinimu
+
+### v0.0.2 — Kolekcijų API Pertvarkymas & Diegėjai _(2026 m. kovo 24 d.)_
+
+- **Pridėta** Bendroji `$` operatorių šeima masyvams ir eilutėms (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Pridėta** Destruktūrizavimas masyvams, kortežams ir įvardintiems kortežams
+- **Pridėta** Neigiami indeksai (`arr[-1]` = paskutinis elementas)
+- **Pridėta** Vietiniai diegėjai — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(2026 m. kovo 25 d.)_
+
+- **Pridėta** Sudėtinis priskyrimas `^=`
+- **Pataisyta** Aritmetinio analizatoriaus kraštiniai atvejai; dokumentacijos pataisymai
+
+### v0.0.1 — Pirmasis Viešas Leidimas _(2026 m. kovo 22 d.)_
+
+- Tree-walker interpretatorius + registro VM (`--vm`, ~4× greitesnis, ~95% paritetą)
+- Visi pagrindiniai konstruktai: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Pilni „Unicode" identifikatoriai, modulių sistema, lambdos, uždaros, klaidų tvarkymas
+- REPL, LSP, VS Code plėtinys, formatuotuvas (`zymbol fmt`)
 
 ---
 

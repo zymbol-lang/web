@@ -291,6 +291,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Rimbar
 
+Rimbar **cuivëa** ar lá — ilqua tama lu **er tarmë** essë. Rimbar lá cuivëa — tama polë harya.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -320,13 +322,27 @@ by_essë = db$^ (a, b -> a.essë > b.essë)
 >> by_loa[0].essë ¶     // → Ana
 >> by_essë[0].essë ¶    // → Carla
 
-arr[1] = 99              // update in-place
-arr = arr[1]$~ 99        // functional update — returns new array
+// Harya nótë (rimba toi) — Direct element update (arrays only)
+arr[1] = 99              // harya — assign
+arr[0] += 5              // tatya harya: +=  -=  *=  /=  %=  ^= — compound
+
+// Maquet harya — Functional update — cuivëa rimba nótë; harya lá carma
+arr2 = arr[1]$~ 99
 ```
 
 > Ilqua collection ta' — **cuivëa rimba** — harya: `arr = arr$+ 4`.
 > Lá tanwë: tatya harya.
 > `$^+` / `$^-` sort **primitive arrays**. For tuple arrays use `$^` with a comparator lambda.
+
+**Tarmë quetta (Value semantics)** — Harya rimba naur kopio lá tatya essë:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b lá carma
+```
 
 ```zymbol
 // Nested arrays
@@ -358,10 +374,15 @@ Elda = (essë: "Ana", loa: 25, nórë: "Valinor")
 
 ## Tuplë
 
+Tuplë **lá cuivëa** — ilqua rimba harya, pol tama **úmë tarmë** essë. Lá rimbar — tama lá polë harya ao carna.
+
 ```zymbol
 // Positional
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+cuilë = (42, "namárië", #1, 3.14)
+>> cuilë[2] ¶     // → #1
 
 // Named
 Elda = (essë: "Alice", loa: 25)
@@ -372,6 +393,29 @@ Elda = (essë: "Alice", loa: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, essë: "Tirion")
 >> p.pos.x ¶        // → 10
+```
+
+**Lá cuivëa (Immutability)** — Ilya temë harya tama tuplë ná raxë:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ raxë: tuplë lá cuivëa
+// t[0] += 5    // ❌ sama raxë
+```
+
+Cuivëa tuplë haz `$~` (maquet harya) — naur **cuivëa** tuplë:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← harya lá carma
+>> t2 ¶    // → (10, 999, 30)
+
+// Essëa tuplë — cuivëa naur Elda
+Elda = (essë: "Alice", loa: 25)
+Elda2 = (essë: Elda.essë, loa: 26)
+>> Elda.loa ¶     // → 25
+>> Elda2.loa ¶    // → 26
 ```
 
 ---
@@ -483,6 +527,70 @@ _internal_boqë(a, b) { <~ a + b }
 
 ---
 
+## Nótë Quettar
+
+Zymbol pol' nótë **Unicode nótë tengwar 69** — Devanagari, Arabi-India, Thai, Klingon pIqaD, Nótyë, LCD. Carma nótë `>>`; nótë binary.
+
+### Tengwar carma
+
+Nótë `0` ar `9` mi `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabi-India   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // ASCII-nna
+```
+
+### Nótë ar boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ASCII, nótë carma
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Nótë asli kodë
+
+Nótë tengwar literal — ranga, modulo:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal tengwar
+
+`#` + nótë `0` hya `1` bloc boolean:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII**. `#0` (lá) `0` (nótë míca) tengwar.
+
+---
+
 ## Nótë Carmar
 
 ```zymbol
@@ -564,8 +672,9 @@ carna(nótë) {
 | `@!`     | caitë (break)      | `$>`       | map                   |
 | `@>`     | endë (continue)    | `$\|`      | filter                |
 | `->`     | Lambda             | `$<`       | reduce                |
-| `$^+`    | sort ascending     | `$^-`      | sort descending       |
-| `$^`     | sort comparator    |            |                       |
+| `arr[i] = val` | harya nótë (update in-place) | `arr[i] +=` | tatya harya (compound update) |
+| `arr[i]$~` | maquet harya (functional update) | `$^+` | sort ascending    |
+| `$^-`    | sort descending    | `$^`       | sort comparator       |
 | `<~`     | anna               | `!?`       | temë (try)            |
 | `\|>`    | Pipe               | `:!`       | nurta (catch)         |
 | `#1`     | vórë               | `:>`       | ilya (finally)        |
@@ -575,8 +684,42 @@ carna(nótë) {
 | `::`     | tanwesta maquet    | `.`        | field access          |
 | `#\|..\|` | parse number      | `#?`       | type metadata         |
 | `#.N\|..\|` | round           | `#!N\|..\|` | truncate            |
-| `c\|..\|` | comma format      | `e\|..\|`  | scientific            |
+| `#,\|..\|` | comma format      | `#^\|..\|`  | scientific            |
+| `#d0d9#` | nótë carma tengwar | `#09#` | ASCII-nna |
 | `<\ ..\>` | shell exec        | `>\<`      | CLI args              |
+
+## Versio Nótë
+
+### v0.0.3 — Unicode Nótë & LSP _(Abril 2026)_
+
+- **Pol'** Unicode bloc 69 token `#d0d9#`
+- **Pol'** Boolean literals — `#१` / `#०`, `#१` / `#٠`
+- **Pol'** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Pol'** VM opcode `SetNumeralMode` — tree-walker
+- **Pol'** REPL nótë echo variable
+- **Carma** `>>` boolean `#` (`#0` / `#1`)
+
+### v0.0.2_01 _(30 Mar 2026)_
+
+- **Carma** `c|..|` → `#,|..|` ar `e|..|` → `#^|..|`
+- **Pol'** Export alias
+
+### v0.0.2 _(24 Mar 2026)_
+
+- **Pol'** `$` arrays ar strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Pol'** Destructuring arrays, tuples
+- **Pol'** Nótë lá (`arr[-1]`)
+- **Pol'** Instalar — Linux, macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Pol'** `^=`
+
+### v0.0.1 _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4×, ~95%)
+- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

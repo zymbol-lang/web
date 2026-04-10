@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Array-uri
 
+Array-urile sunt **mutabile** și conțin elemente de **același tip**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ dupa_nume   = db$^ (a, b -> a.nume > b.nume)        // descrescător după nume 
 >> dupa_varsta[0].nume ¶     // → Ana
 >> dupa_nume[0].nume ¶       // → Carla
 
-arr[1] = 99              // actualizare la loc
-arr = arr[1]$~ 99        // actualizare funcțională — returnează array nou
+// Actualizare directă a elementului (doar array-uri)
+arr[1] = 99              // atribuire
+arr[0] += 5              // compus: +=  -=  *=  /=  %=  ^=
+
+// Actualizare funcțională — returnează un array nou; originalul rămâne nemodificat
+arr2 = arr[1]$~ 99
 ```
 
 > Toți operatorii de colecție returnează un **array nou**. Reatribuiți: `arr = arr$+ 4`.
 > Operatorii nu pot fi înlănțuiți — folosiți atribuiri intermediare.
 > `$^+` / `$^-` sortează **array-uri primitive** (numere, șiruri). Pentru array-uri de tuple, folosiți `$^` cu lambda comparator — direcția este codificată în lambda (`<` = crescător, `>` = descrescător).
+
+**Semantică de valoare** — atribuirea unui array la o altă variabilă creează o copie independentă:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b nu este afectat
+```
 
 ```zymbol
 // Array-uri imbricate
@@ -357,10 +373,16 @@ persoana = (nume: "Ana", varsta: 25, oras: "București")
 
 ## Tupluri
 
+Tuplurile sunt containere ordonate **imutabile** care pot conține valori de **tipuri diferite**.
+Spre deosebire de array-uri, elementele nu pot fi modificate după creare.
+
 ```zymbol
 // Pozițional
 punct = (10, 20)
 >> punct[0] ¶    // → 10
+
+date = (42, "hello", #1, 3.14)
+>> date[2] ¶     // → #1
 
 // Numit
 persoana = (nume: "Alice", varsta: 25)
@@ -371,6 +393,29 @@ persoana = (nume: "Alice", varsta: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, eticheta: "origine")
 >> p.pos.x ¶        // → 10
+```
+
+**Imutabilitate** — orice încercare de a modifica un element de tuplu este o eroare de execuție:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ eroare de execuție: tuplurile sunt imutabile
+// t[0] += 5    // ❌ aceeași eroare
+```
+
+Pentru a deriva o valoare modificată folosiți `$~` (actualizare funcțională) — returnează un **nou** tuplu:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← original nemodificat
+>> t2 ¶    // → (10, 999, 30)
+
+// Tuplu numit — reconstruiți explicit
+persoana = (nume: "Alice", varsta: 25)
+mai_batrana  = (nume: persoana.nume, varsta: 26)
+>> persoana.varsta ¶    // → 25
+>> mai_batrana.varsta ¶    // → 26
 ```
 
 ---
@@ -482,6 +527,70 @@ _aduna_interna(a, b) { <~ a + b }
 
 ---
 
+## Moduri Numerice
+
+Zymbol poate afișa numerele în **69 de scripturi de cifre Unicode** — Devanagari, Arabo-Indic, Thailandez, Klingon pIqaD, Aldine Matematice, segmente LCD și altele. Modul activ afectează doar ieșirea `>>`; aritmetica internă este întotdeauna binară.
+
+### Activarea unui script
+
+Scrieți cifra `0` și `9` a scriptului țintă între `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabo-Indic   (U+0660–U+0669)
+#๐๙#    // Thailandez    (U+0E50–U+0E59)
+#09#    // revenire la ASCII
+```
+
+### Ieșire și booleeni
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII implicit)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (punct zecimal mereu ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Booleeni: prefixul # mereu ASCII, cifra se adaptează
+>> #1 ¶         // → #१   (adevărat în Devanagari)
+>> #0 ¶         // → #०   (fals — distinct de ०  zero întreg)
+
+x = 28 > 4
+>> x ¶          // → #१   (rezultatul comparației urmează modul activ)
+```
+
+### Literale de cifre native în sursă
+
+Cifrele oricărui script suportat sunt literale valide — în intervale, modulo, comparații:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Literale booleene în orice script
+
+`#` + cifra `0` sau `1` din orice bloc este un literal boolean valid:
+
+```zymbol
+#٠٩#
+نشط = #١        // echivalent cu #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` este **întotdeauna ASCII**. `#0` (fals) este întotdeauna vizual distinct de `0` (zero întreg) în orice script.
+
+---
+
 ## Operatori de Date
 
 ```zymbol
@@ -563,8 +672,9 @@ clasifică(număr) {
 | `@!`      | oprește (break)                    | `$>`          | map                           |
 | `@>`      | continuă                           | `$\|`         | filter                        |
 | `->`      | lambda                             | `$<`          | reduce                        |
-| `$^+`     | sorta crescător (primitive)        | `$^-`         | sorta descrescător            |
-| `$^`      | sorta cu lambda comparator         |               |                               |
+| `arr[i] = val` | actualizare element (doar array-uri) | `arr[i] += val` | actualizare compusă    |
+| `arr[i]$~` | actualizare funcțională (copie nouă) | `$^+`      | sorta crescător (primitive)   |
+| `$^-`     | sorta descrescător (primitive)     | `$^`          | sorta cu lambda comparator    |
 | `<~`      | întoarce (return)                  | `!?`          | încearcă (try)                |
 | `\|>`     | pipe                               | `:!`          | prinde (catch)                |
 | `#1`      | adevărat                           | `:>`          | întotdeauna (finally)         |
@@ -574,8 +684,44 @@ clasifică(număr) {
 | `::`      | apel modul                         | `.`           | acces câmp                    |
 | `#\|..\|` | conversi număr                    | `#?`          | metadate tip                  |
 | `#.N\|..\|` | rotunjire                       | `#!N\|..\|`   | trunchiere                    |
-| `c\|..\|` | format virgulă                    | `e\|..\|`     | științific                    |
+| `#,\|..\|` | format virgulă                    | `#^\|..\|`     | științific                    |
+| `#d0d9#` | comutare mod numeric | `#09#` | revenire la ASCII |
 | `<\ ..\>` | execuție shell                    | `>\<`         | argumente CLI                 |
+
+## Istoricul Versiunilor
+
+### v0.0.3 — Sisteme Numerice Unicode & Îmbunătățiri LSP _(Aprilie 2026)_
+
+- **Adăugat** 69 blocuri de cifre Unicode cu jetonul de comutare `#d0d9#`
+- **Adăugat** Literale booleene în orice script — `#१` / `#०`, `#١` / `#٠`, etc.
+- **Adăugat** Cifre Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Adăugat** Opcode VM `SetNumeralMode` — paritate completă cu tree-walker
+- **Adăugat** REPL-ul respectă modul numeric activ în eco și afișarea variabilelor
+- **Modificat** Ieșirea `>>` a booleenilor include acum prefixul `#` (`#0` / `#1`) în toate modurile
+
+### v0.0.2_01 — Redenumire Operatori _(30 Mar 2026)_
+
+- **Modificat** `c|..|` → `#,|..|` și `e|..|` → `#^|..|` — consistent cu familia de prefixe `#`
+- **Adăugat** Alias de export: reexportarea membrilor de modul cu un alt nume
+
+### v0.0.2 — Reproiectarea API Colecții & Instalatori _(24 Mar 2026)_
+
+- **Adăugat** Familie de operatori `$` unificată pentru tablouri și șiruri (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Adăugat** Destructurare pentru tablouri, tupluri și tupluri cu nume
+- **Adăugat** Indici negativi (`arr[-1]` = ultimul element)
+- **Adăugat** Instalatori nativi — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Adăugat** Atribuire compusă `^=`
+- **Corectat** Cazuri limită ale parserului aritmetic; corecții de documentație
+
+### v0.0.1 — Lansare Publică Inițială _(22 Mar 2026)_
+
+- Interpret tree-walker + VM pe registre (`--vm`, ~4× mai rapid, ~95% paritate)
+- Toate constructele principale: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Identificatori Unicode completi, sistem de module, lambda, închideri, gestionarea erorilor
+- REPL, LSP, extensie VS Code, formatator (`zymbol fmt`)
 
 ---
 

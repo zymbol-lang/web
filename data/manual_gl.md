@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Arrays
 
+Os arrays son **mutables** e conteñen elementos do **mesmo tipo**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ por_nome  = db$^ (a, b -> a.nome > b.nome)      // descendente por nome (>)
 >> por_idade[0].nome ¶     // → Ana
 >> por_nome[0].nome ¶      // → Carla
 
-arr[1] = 99              // actualizar no lugar
-arr = arr[1]$~ 99        // actualización funcional — devolve novo array
+// Actualización directa de elemento (só arrays)
+arr[1] = 99              // asignar
+arr[0] += 5              // composto: +=  -=  *=  /=  %=  ^=
+
+// Actualización funcional — devolve un novo array; o orixinal non cambia
+arr2 = arr[1]$~ 99
 ```
 
 > Todos os operadores de colección devolven un **novo array**. Reasignar: `arr = arr$+ 4`.
 > Os operadores non se poden encadear — usar asignacións intermedias.
 > `$^+` / `$^-` ordenan **arrays primitivos** (números, cadeas). Para arrays de tuplas, usar `$^` con lambda comparador — a dirección codifícase no lambda (`<` = ascendente, `>` = descendente).
+
+**Semántica de valor** — asignar un array a outra variable crea unha copia independente:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b non se ve afectado
+```
 
 ```zymbol
 // Arrays anidados
@@ -357,10 +373,16 @@ persoa = (nome: "Ana", idade: 25, cidade: "Santiago")
 
 ## Tuplas
 
+As tuplas son contedores ordenados **inmutables** que poden conter valores de **tipos diferentes**.
+A diferenza dos arrays, os elementos non se poden cambiar despois da creación.
+
 ```zymbol
 // Posicional
 punto = (10, 20)
 >> punto[0] ¶    // → 10
+
+datos = (42, "hello", #1, 3.14)
+>> datos[2] ¶     // → #1
 
 // Nomeada
 persoa = (nome: "Alice", idade: 25)
@@ -371,6 +393,29 @@ persoa = (nome: "Alice", idade: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, etiqueta: "orixe")
 >> p.pos.x ¶        // → 10
+```
+
+**Inmutabilidade** — calquera intento de modificar un elemento dunha tupla é un erro de execución:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ erro de execución: as tuplas son inmutables
+// t[0] += 5    // ❌ mesmo erro
+```
+
+Para derivar un valor modificado usa `$~` (actualización funcional) — devolve unha **nova** tupla:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← orixinal sen cambios
+>> t2 ¶    // → (10, 999, 30)
+
+// Tupla nomeada — reconstruír explicitamente
+persoa = (nome: "Alice", idade: 25)
+maior  = (nome: persoa.nome, idade: 26)
+>> persoa.idade ¶    // → 25
+>> maior.idade ¶     // → 26
 ```
 
 ---
@@ -482,6 +527,70 @@ _sumar_interno(a, b) { <~ a + b }
 
 ---
 
+## Modos Numéricos
+
+Zymbol pode mostrar números en **69 scripts de díxitos Unicode** — Devanagari, Árabe-Índico, Tailandés, Klingon pIqaD, Negriña Matemática, segmentos LCD e máis. O modo activo só afecta á saída `>>`; a aritmética interna é sempre binaria.
+
+### Activar un script
+
+Escriba o díxito `0` e `9` do script obxectivo entre `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Árabe-Índico  (U+0660–U+0669)
+#๐๙#    // Tailandés     (U+0E50–U+0E59)
+#09#    // restablecer a ASCII
+```
+
+### Saída e booleanos
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII por defecto)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (punto decimal sempre ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Booleanos: prefixo # sempre ASCII, díxito adáptase
+>> #1 ¶         // → #१   (verdadeiro en Devanagari)
+>> #0 ¶         // → #०   (falso — distinto de ०  cero enteiro)
+
+x = 28 > 4
+>> x ¶          // → #१   (resultado de comparación segue o modo activo)
+```
+
+### Literais de díxitos nativos no código fonte
+
+Os díxitos de calquera script compatible son literais válidos — en rangos, módulo, comparacións:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Literais booleanos en calquera script
+
+`#` + díxito `0` ou `1` de calquera bloque é un literal booleano válido:
+
+```zymbol
+#٠٩#
+نشط = #١        // equivalente a #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` é **sempre ASCII**. `#0` (falso) é sempre visualmente distinto de `0` (cero enteiro) en cada script.
+
+---
+
 ## Operadores de Datos
 
 ```zymbol
@@ -563,8 +672,9 @@ clasificar(número) {
 | `@!`      | parar (break)                      | `$>`          | map                           |
 | `@>`      | continuar                          | `$\|`         | filter                        |
 | `->`      | lambda                             | `$<`          | reduce                        |
-| `$^+`     | ordenar ascendente (primitivos)    | `$^-`         | ordenar descendente           |
-| `$^`      | ordenar con lambda comparador      |               |                               |
+| `arr[i] = val` | actualizar elemento (só arrays) | `arr[i] += val` | actualización composta    |
+| `arr[i]$~` | actualización funcional (nova copia) | `$^+`      | ordenar ascendente (primitivos) |
+| `$^-`     | ordenar descendente (primitivos)   | `$^`          | ordenar con lambda comparador |
 | `<~`      | retornar (return)                  | `!?`          | intentar (try)                |
 | `\|>`     | pipe                               | `:!`          | capturar (catch)              |
 | `#1`      | verdadeiro                         | `:>`          | sempre (finally)              |
@@ -574,8 +684,44 @@ clasificar(número) {
 | `::`      | chamada de módulo                  | `.`           | acceso a campo                |
 | `#\|..\|` | converter a número                | `#?`          | metadatos de tipo             |
 | `#.N\|..\|` | arredondar                      | `#!N\|..\|`   | truncar                       |
-| `c\|..\|` | formato con comas                 | `e\|..\|`     | científico                    |
+| `#,\|..\|` | formato con comas                 | `#^\|..\|`     | científico                    |
+| `#d0d9#` | cambio de modo numérico | `#09#` | restablecer a ASCII |
 | `<\ ..\>` | executar shell                    | `>\<`         | argumentos CLI                |
+
+## Rexistro de Cambios
+
+### v0.0.3 — Sistemas Numéricos Unicode & Melloras LSP _(Abril 2026)_
+
+- **Engadido** 69 bloques de díxitos Unicode co token de cambio `#d0d9#`
+- **Engadido** Literais booleanos en calquera script — `#१` / `#०`, `#١` / `#٠`, etc.
+- **Engadido** Díxitos Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Engadido** Opcode VM `SetNumeralMode` — paridade completa co tree-walker
+- **Engadido** O REPL respecta o modo numérico activo no eco e visualización de variables
+- **Cambiado** A saída `>>` dos booleanos inclúe agora o prefixo `#` (`#0` / `#1`) en todos os modos
+
+### v0.0.2_01 — Cambio de Nome de Operadores _(30 Mar 2026)_
+
+- **Cambiado** `c|..|` → `#,|..|` e `e|..|` → `#^|..|` — coherente coa familia de prefixos `#`
+- **Engadido** Alias de exportación: reexportar membros de módulo con nome diferente
+
+### v0.0.2 — Redeseño da API de Coleccións & Instaladores _(24 Mar 2026)_
+
+- **Engadido** Familia de operadores `$` unificada para arrays e cadeas (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Engadido** Desestruturación para arrays, tuplas e tuplas con nome
+- **Engadido** Índices negativos (`arr[-1]` = último elemento)
+- **Engadido** Instaladores nativos — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Engadido** Asignación composta `^=`
+- **Corrixido** Casos límite do parser aritmético; correccións de documentación
+
+### v0.0.1 — Lanzamento Público Inicial _(22 Mar 2026)_
+
+- Intérprete tree-walker + VM de rexistros (`--vm`, ~4× máis rápido, ~95% de paridade)
+- Todas as construcións principais: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Identificadores Unicode completos, sistema de módulos, lambdas, peches, xestión de erros
+- REPL, LSP, extensión VS Code, formateador (`zymbol fmt`)
 
 ---
 

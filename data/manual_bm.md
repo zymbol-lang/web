@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Siraw
 
+Siraw bɛ **yɛlɛma** ani bɛ fɛnw **suguba kelen** kɔnɔ.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ tɔgɔ_kama = db$^ (a, b -> a.tɔgɔ > b.tɔgɔ)   // gɛlɛya kama tɔgɔ (>)
 >> saan_kama[0].tɔgɔ ¶     // → Ana
 >> tɔgɔ_kama[0].tɔgɔ ¶    // → Kala
 
-arr[1] = 99              // yɛlɛma yɔrɔ la
-arr = arr[1]$~ 99        // yɛlɛma ni array kura ye
+// Yɛlɛma yɔrɔ kelen la (siraw dɔrɔn)
+arr[1] = 99              // dilan
+arr[0] += 5              // kafo: +=  -=  *=  /=  %=  ^=
+
+// Yɛlɛma ni baara ye — array kura di; kɔrɔ bɛ to ka se
+arr2 = arr[1]$~ 99
 ```
 
 > Array yɔrɔlenw bɛɛ bɛ **array kura** di. Segin kɔ: `arr = arr$+ 4`.
 > Tɛ se ka ɲɔgɔn kɔnɔ: fɛn dilan fila wɛrɛ wɛrɛ la kɛ.
 > `$^+` / `$^-` bɛ **jate dɔrɔn** bila (jatew, kumakaw). Tupilw kama `$^` ni ɲɔgɔn kɔnɔ kɛ.
+
+**Baarakɛ kunnafoni** — array fɛn wɛrɛ ma ni ka yɛlɛmalen kɛ, ɲɔgɔn kelen bɛ kɛ:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b ma yɛlɛma
+```
 
 ```zymbol
 // Siraw ɲɔgɔn kɔnɔ
@@ -357,10 +373,15 @@ mɔgɔ = (tɔgɔ: "Ana", saan: 25, dugu: "Bamako")
 
 ## Tupilw
 
+Tupilw bɛ **yɛlɛma tɛ** ani bɛ se ka **suguba dɔw** ta. Siraw i kɔ, fɛnw tɛ se ka yɛlɛma fara kan.
+
 ```zymbol
 // Yɔrɔ kɔnɔ
 yɔrɔ = (10, 20)
 >> yɔrɔ[0] ¶    // → 10
+
+kunnafoniw = (42, "i ni ce", #1, 3.14)
+>> kunnafoniw[2] ¶     // → #1
 
 // Tɔgɔlen
 mɔgɔ = (tɔgɔ: "Alice", saan: 25)
@@ -371,6 +392,29 @@ mɔgɔ = (tɔgɔ: "Alice", saan: 25)
 bɔkɔ = (x: 10, y: 20)
 p = (bɔkɔ: bɔkɔ, tɔgɔ: "kɔrɔ")
 >> p.bɔkɔ.x ¶        // → 10
+```
+
+**Yɛlɛma tɛ** — tupili fɛn yɛlɛma sɔrɔ bɛ fili bɔ tuma bɛɛ:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ fili: tupilw tɛ yɛlɛma
+// t[0] += 5    // ❌ fili kelen
+```
+
+Ka ɲɛnajɛlen sɔrɔ jɔyɔrɔ fɛ jiri `$~` (yɛlɛma ni baara ye) — tupili kura di:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← kɔrɔ bɛ to ka se
+>> t2 ¶    // → (10, 999, 30)
+
+// Tupili tɔgɔlen — fara kan kura kɛ
+mɔgɔ = (tɔgɔ: "Alice", saan: 25)
+kɔrɔba  = (tɔgɔ: mɔgɔ.tɔgɔ, saan: 26)
+>> mɔgɔ.saan ¶    // → 25
+>> kɔrɔba.saan ¶      // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _sɛgɛsɛgɛ_kɔnɔ(a, b) { <~ a + b }
 
 ---
 
+## Kɛlɛnnali Jateminɛw
+
+Zymbol bɛ se ka jateminɛw jira **Unicode jateminɛ sɛbɛnniw 69** kɔnɔ — Devanagari, Arabi-Indiya, Tayilandi, Klingon pIqaD, Matematiki Bon, LCD segimɛntw ani wɛrɛw. Kɛlɛnnali minɛ bɛ `>>`-bɔlaw kɔnɔ dɔrɔn; kɔnɔ jate tuma bɛɛ ye binaari ye.
+
+### Sɛbɛnni daminɛ
+
+Jateminɛ `0` ni `9` sɛbɛn `#…#` cɛ:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabic-Indic  (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // reset to ASCII
+```
+
+### Bɔlaw ni tiɲɛ-galon
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII default)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Tiɲɛ-galon: # ka tɔgɔ tuma bɛɛ ye ASCII ye, jateminɛ bɛ yɛlɛma
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Jateminɛ fɔlɔw sɔrɔ kɔdɔ kɔnɔ
+
+Cogoya minɛ jateminɛw bɛ valid ye — hakɛw, modulo, sɛgɛsɛgɛliw kɔnɔ:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Tiɲɛ-galon fɔlɔw sɛbɛnniw kɔnɔ
+
+`#` + jateminɛ `0` walima `1` sɛbɛnni o sɛbɛnni la ye valid tiɲɛ-galon ye:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **tuma bɛɛ ye ASCII ye**. `#0` (galon) tuma bɛɛ bɛ `0` (jateminɛ zero) kɛ wɛrɛ ye sɛbɛnni o sɛbɛnni kɔnɔ.
+
+---
+
 ## Data Baara kɛcogo
 
 ```zymbol
@@ -563,8 +671,9 @@ sɛgɛsɛgɛ(jate) {
 | `@!`    | Dɔgɔtɔ (break)     | `$>`       | map                   |
 | `@>`    | Taa ɲɔgɔn          | `$\|`      | filter                |
 | `->`    | Lambda             | `$<`       | reduce                |
-| `$^+`   | Bila fara (jatew)  | `$^-`      | Bila gɛlɛya (jatew)  |
-| `$^`    | Bila ni ɲɔgɔn (tupilw) | | |
+| `arr[i] = val` | Yɛlɛma yɔrɔ (siraw dɔrɔn) | `arr[i] += val` | Yɛlɛma kafo |
+| `arr[i]$~` | Yɛlɛma ni baara (kura) | `$^+`   | Bila fara (jatew)  |
+| `$^-`   | Bila gɛlɛya (jatew) | `$^`      | Bila ni ɲɔgɔn (tupilw) |
 | `<~`    | Segin kɔ           | `!?`       | sɛbɛn (try)           |
 | `\|>`   | Pipe               | `:!`       | minɛ (catch)          |
 | `#1`    | tiɲɛ               | `:>`       | tuma bɛɛ (finally)    |
@@ -574,8 +683,44 @@ sɛgɛsɛgɛ(jate) {
 | `::`    | Modiil wele        | `.`        | yɔrɔ sɔrɔ            |
 | `#\|..\|` | Jate kalan      | `#?`       | Suguba lɛsɛli         |
 | `#.N\|..\|` | Telen         | `#!N\|..\|` | Bɔsen              |
-| `c\|..\|` | Zapiya sɛbɛnni  | `e\|..\|`  | Kɛfɔlen siɲɛ          |
+| `#,\|..\|` | Zapiya sɛbɛnni  | `#^\|..\|`  | Kɛfɔlen siɲɛ          |
+| `#d0d9#` | kɛlɛnnali jateminɛ yɛlɛmali | `#09#` | ASCII ma segin |
 | `<\ ..\>` | Shell kɛ        | `>\<`      | CLI kumaw             |
+
+## Verisiyon Taarixi
+
+### v0.0.3 — Unicode Jateminɛ Hɔrɔnya & LSP Ɲɛsɔrɔli _(Avrili 2026)_
+
+- **Fara** Unicode jateminɛ blɔki 69 ni kɛlɛnnali yɛlɛmali tɔgɔ `#d0d9#`
+- **Fara** Tiɲɛ-galon fɔlɔw sɛbɛnni o sɛbɛnni kɔnɔ — `#१` / `#०`, `#١` / `#٠`, ani wɛrɛw
+- **Fara** Klingon pIqaD jateminɛw (CSUR PUA U+F8F0–U+F8F9)
+- **Fara** VM opcode `SetNumeralMode` — tree-walker ni kɔfɔlen ye
+- **Fara** REPL bɛ kɛlɛnnali minɛ tɔ kunnafoni ni jateminɛ yira kɔnɔ
+- **Yɛlɛmana** Boolean `>>` bɔlaw bɛ `#` tɔgɔ ta sisan (`#0` / `#1`) kɛlɛnnaliw bɛɛ kɔnɔ
+
+### v0.0.2_01 — Baara kɛcogola Tɔgɔ Yɛlɛmali _(30 Mar 2026)_
+
+- **Yɛlɛmana** `c|..|` → `#,|..|` ani `e|..|` → `#^|..|` — `#` tɔgɔ jɛkuluw ni kɔfɔlen
+- **Fara** Jɔ-tɔgɔ export: modiili kɔnɔ tɔgɔw ka jɔ tɔgɔ wɛrɛ la
+
+### v0.0.2 — Jɛkulu API Kura & Sɛtɔw _(24 Mar 2026)_
+
+- **Fara** `$` baara kɛcogola jɛkulu kelen array ni string ɲɔgɔn na (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Fara** Hiikkuu arrays, tuples ani tuples ni tɔgɔw ye
+- **Fara** Index koroba (`arr[-1]` = laban fɛn)
+- **Fara** Sɛtɔ fɔlɔw — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Fara** Sɔsɔnafɛnna `^=`
+- **Kɛrɛnnana** Jate parser kɔrɔkɛw; sɛbɛnni kɛrɛnnali
+
+### v0.0.1 — Fɔlɔ Yɛrɛ Bɔ _(22 Mar 2026)_
+
+- Tree-walker kalan + register VM (`--vm`, ~4× teliman, ~95% kɔfɔlen)
+- Kɔnɔ cogoya bɛɛ: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Unicode tɔgɔw bɛɛ, modiili hɔrɔnya, lambda, kogɛnw, fili kɛcogo
+- REPL, LSP, VS Code taarikɛ, formater (`zymbol fmt`)
 
 ---
 

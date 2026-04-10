@@ -294,6 +294,8 @@ eragiketak = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Arrayak
 
+Arrayak **aldarazgarriak** dira eta **mota bereko** elementuak gordetzen dituzte.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -321,13 +323,27 @@ db = [(izena: "Ane", adina: 28), (izena: "Ana", adina: 25), (izena: "Mikel", adi
 adinaren_arabera = db$^ (a, b -> a.adina < b.adina)
 >> adinaren_arabera[0].izena ¶    // → Ana
 
-arr[1] = 99              // tokian eguneratzea
-arr = arr[1]$~ 99        // eguneratze funtzionala — array berria itzultzen du
+// Elementuaren zuzeneko eguneratzea (arrayak soilik)
+arr[1] = 99              // esleitu
+arr[0] += 5              // konposatua: +=  -=  *=  /=  %=  ^=
+
+// Eguneratze funtzionala — array berri bat itzultzen du; originala ez da aldatzen
+arr2 = arr[1]$~ 99
 ```
 
 > Bilduma-operadore guztiek **array berri bat** itzultzen dute. Esleitu atzera: `arr = arr$+ 4`.
 > Operadoreak ezin dira kateatu — erabili tarteko esleipen-aldagaiak.
 > `$^+` / `$^-`-k **primitive-arrayak** ordenatzen dituzte (zenbakiak, kateak). Tupla-arrayetarako erabili `$^` konparatzaile-lambda batekin.
+
+**Balio-semantika** — array bat beste aldagai bati esleitzeak kopia independente bat sortzen du:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b ez da aldatzen
+```
 
 ```zymbol
 // Habiaratutako arrayak
@@ -359,10 +375,15 @@ pertsona = (izena: "Ana", adina: 25, hiria: "Bilbao")
 
 ## Tuplak
 
+Tuplak **aldaezinak** diren edukiontzi ordenatu dira, **mota ezberdineko** balioak gordetzen dituzte. Arrayak ez bezala, elementuak ezin dira aldatu sortzen diren ondoren.
+
 ```zymbol
 // Posizionala
 puntua = (10, 20)
 >> puntua[0] ¶    // → 10
+
+datuak = (42, "kaixo", #1, 3.14)
+>> datuak[2] ¶     // → #1
 
 // Izendatua
 pertsona = (izena: "Ane", adina: 25)
@@ -373,6 +394,29 @@ pertsona = (izena: "Ane", adina: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, etiketa: "jatorria")
 >> p.pos.x ¶           // → 10
+```
+
+**Aldaezintasuna** — tupla elementu bat aldatzeko edozein saiakera exekuzio-denboran errorea da:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ exekuzio-denborako errorea: tuplak aldaezinak dira
+// t[0] += 5    // ❌ errore berdina
+```
+
+Balio aldatua lortzeko erabili `$~` (eguneratze funtzionala) — **tupla berri** bat itzultzen du:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← originala aldatu gabe
+>> t2 ¶    // → (10, 999, 30)
+
+// Izendatutako tupla — berreraikitzen da esplizituki
+pertsona = (izena: "Ane", adina: 25)
+zaharragoa  = (izena: pertsona.izena, adina: 26)
+>> pertsona.adina ¶    // → 25
+>> zaharragoa.adina ¶  // → 26
 ```
 
 ---
@@ -488,6 +532,70 @@ _internal_gehitu(a, b) { <~ a + b }
 
 ---
 
+## Zenbaki Moduak
+
+Zymbol-ek zenbakiak **69 Unicode zenbaki-idazkeratan** bistaratu ditzake — Devanagari, Arabiar-Indiarra, Tailandiera, Klingon pIqaD, Matematika Lodia, LCD segmentuak eta gehiago. Modu aktiboak `>>`-irteeran bakarrik du eragina; barne-aritmetika beti da bitarra.
+
+### Idazkera aktibatzea
+
+Idatzi `0` eta `9` digituak `#…#` artean:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabiar-Ind.  (U+0660–U+0669)
+#๐๙#    // Tailandiera   (U+0E50–U+0E59)
+#09#    // ASCII-ra berrezarri
+```
+
+### Irteera eta boolearrak
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII lehenetsia)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (puntu hamartarra beti ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Boolearrak: # aurrizkia beti ASCII, digitua egokitzen da
+>> #1 ¶         // → #१   (egiazkoa Devanagarin)
+>> #0 ¶         // → #०   (faltsua — ०  zero osoetik bereizita)
+
+x = 28 > 4
+>> x ¶          // → #१   (konparaketa-emaitza modu aktiboa jarraitzen du)
+```
+
+### Jatorrizko digitu-literalak iturburu-kodean
+
+Onartutako edozein idazkeraren digitoak literal baliozko dira — tarteetan, modulo, konparaketetan:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolear literalak edozein idazkeratan
+
+`#` + `0` edo `1` digitua edozein bloketik boolear literal baliozko da:
+
+```zymbol
+#٠٩#
+نشط = #١        // #1 berdina
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **beti da ASCII**. `#0` (faltsua) beti bereizten da ikusmen aldetik `0`-tik (zero osoa) idazkera guztietan.
+
+---
+
 ## Datu-Operadoreak
 
 ```zymbol
@@ -568,24 +676,61 @@ sailkatu(zenbakia) {
 | `@`         | begizta             | `$>`          | mapa                       |
 | `@!`        | eten                | `$\|`         | iragazkia                  |
 | `@>`        | jarraitu            | `$<`          | murrizketa                 |
-| `->`        | lambda              | `$^+`         | goranzko ordena            |
-| `<~`        | itzuli              | `$^-`         | beheranzko ordena          |
-| `\|>`       | hodia               | `$^`          | konparatzaile-ordena        |
-| `#1`        | egia                | `$!`          | errorea da                 |
-| `#0`        | gezurra             | `$!!`         | errorea hedatu             |
-| `!?`        | saiatu              | `#`           | modulua deklaratu          |
-| `:!`        | errorea harrapatu   | `#>`          | esportatu                  |
+| `->`        | lambda              | `arr[i] = val` | elementua eguneratu (arrayak soilik) |
+| `arr[i] += val` | eguneratze konposatua | `arr[i]$~` | eguneratze funtzionala (kopia berria) |
+| `$^+`       | goranzko ordena     | `$^-`         | beheranzko ordena          |
+| `<~`        | itzuli              | `$^`          | konparatzaile-ordena        |
+| `\|>`       | hodia               | `$!`          | errorea da                 |
+| `#1`        | egia                | `$!!`         | errorea hedatu             |
+| `#0`        | gezurra             | `!?`          | saiatu                     |
+| `:!`        | errorea harrapatu   | `#`           | modulua deklaratu          |
 | `:>`        | azkenik             | `<#`          | inportatu                  |
 | `.`         | eremuaren sarbidea  | `::`          | moduluaren deia            |
 | `#\|..\|`   | zenbakia bihurtu    | `#.N\|..\|`   | biribilketa                |
-| `#!N\|..\|` | mozketa             | `c\|..\|`     | koma-formatua              |
-| `e\|..\|`   | zientifikoa         | `<\ ..\>`     | shell exekuzioa            |
+| `#!N\|..\|` | mozketa             | `#,\|..\|`     | koma-formatua              |
+| `#d0d9#` | zenbaki-modu aldagailua | `#09#` | ASCII-ra berrezarri |
+| `#^\|..\|`   | zientifikoa         | `<\ ..\>`     | shell exekuzioa            |
 | `>\<`       | CLI argumentuak     | `$~~[..]`     | katea ordezkatu            |
 | `[a,b]=arr` | array-destrukturak. | `(x,y)=tup`   | tupla-destrukturak.        |
 
 ---
 
 *Zymbol-Lang — Sinbolikoa. Unibertsala. Aldaezina.*
+
+## Bertsio Historia
+
+### v0.0.3 — Unicode Zenbaki Sistemak & LSP Hobekuntzak _(2026ko apirila)_
+
+- **Gehitua** 69 Unicode digitu-bloke modu-aldatze tokenarekin `#d0d9#`
+- **Gehitua** Boolear literalak edozein idazkeratan — `#१` / `#०`, `#١` / `#٠`, etab.
+- **Gehitua** Klingon pIqaD digitoak (CSUR PUA U+F8F0–U+F8F9)
+- **Gehitua** `SetNumeralMode` VM opkodea — tree-walkerarekin parekotasun osoa
+- **Gehitua** REPL-ek modu zenbakiduna aktiboan errespetatzen du oihartzunean eta aldagaiak erakusterakoan
+- **Aldatua** Boolearren `>>`-irteera-k `#` aurrizkia biltzen du orain (`#0` / `#1`) modu guztietan
+
+### v0.0.2_01 — Operadore Aldaketak _(2026ko martxoaren 30a)_
+
+- **Aldatua** `c|..|` → `#,|..|` eta `e|..|` → `#^|..|` — `#` aurrizki-familiarekin koherentea
+- **Gehitua** Esportazio-aliasa: moduluaren kideak beste izen batekin berresportatzea
+
+### v0.0.2 — Bildumen API Berrediseinua & Instalatzaileak _(2026ko martxoaren 24a)_
+
+- **Gehitua** `$` operadore-familia bateratua arrayentzat eta kateentzat (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Gehitua** Desegituraketa arrayentzat, tuplaentzat eta izendutako tuplaentzat
+- **Gehitua** Indize negatiboak (`arr[-1]` = azken elementua)
+- **Gehitua** Instalatzaile natiboak — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(2026ko martxoaren 25a)_
+
+- **Gehitua** Esleipen konposatua `^=`
+- **Konpondua** Analizatzaile aritmetikoaren ertz-kasuak; dokumentazio-zuzenketak
+
+### v0.0.1 — Lehen Argitalpen Publikoa _(2026ko martxoaren 22a)_
+
+- Tree-walker interpretatzailea + erregistro VM (`--vm`, ~4× azkarragoa, ~95% parekotasuna)
+- Oinarrizko eraikuntza guztiak: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Unicode identifikatzaile osoak, modulu-sistema, lambdak, itxierak, errore-kudeaketa
+- REPL, LSP, VS Code luzapena, formateatzailea (`zymbol fmt`)
 
 ---
 

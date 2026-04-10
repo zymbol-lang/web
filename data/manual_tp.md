@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Ol Lain
 
+Ol lain i **ken senisim** (mutable) na i gat ol samting bilong **wankain kain**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ long_nem  = db$^ (a, b -> a.nem > b.nem)    // daun long nem   (>)
 >> long_yia[0].nem ¶     // → Ana
 >> long_nem[0].nem ¶     // → Karla
 
-arr[1] = 99              // senisim long ples
-arr = arr[1]$~ 99        // wok senisim — givim bek nupela lain
+// Senisim stret long ples (ol lain tasol)
+arr[1] = 99              // putim
+arr[0] += 5              // compound: +=  -=  *=  /=  %=  ^=
+
+// Wok senisim — givim bek nupela lain; as i no senisim
+arr2 = arr[1]$~ 99
 ```
 
 > Olgeta koleksen sain i givim bek **nupela lain**. Putim bek: `arr = arr$+ 4`.
 > Sain i no ken joinim — yusim namel putim.
 > `$^+` / `$^-` i sotim **primitiv lain** (namba, strin). Bilong grup lain yusim `$^` wantaim kompea lambda — direksen i stap long lambda (`<` = antap, `>` = daun).
+
+**Semantik bilong valyu** — putim lain long narapela veriabel i mekim kopi bilong en:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b i no senisim
+```
 
 ```zymbol
 // Nestim lain
@@ -357,10 +373,15 @@ man = (nem: "Ana", yia: 25, taun: "Madrido")
 
 ## Ol Grup
 
+Ol grup i **no ken senisim** (immutable) na i gat ol samting bilong **kain kain kain**. Ol samting i no ken senisim bihain long em i kamap.
+
 ```zymbol
 // Namba ples
 poin = (10, 20)
 >> poin[0] ¶    // → 10
+
+save = (42, "gude", #1, 3.14)
+>> save[2] ¶     // → #1
 
 // Nem
 man = (nem: "Alice", yia: 25)
@@ -371,6 +392,29 @@ man = (nem: "Alice", yia: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, mak: "stat")
 >> p.pos.x ¶    // → 10
+```
+
+**No ken senisim (Immutabilité)** — traim bilong senisim samting long grup i gat bagarap long taim bilong wok:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ bagarap long taim bilong wok: grup i no ken senisim
+// t[0] += 5    // ❌ sem bagarap
+```
+
+Yusim `$~` (wok senisim) bilong kisim valyu i senisim — i givim bek **nupela grup**:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← as i no senisim
+>> t2 ¶    // → (10, 999, 30)
+
+// Grup bilong nem — bildim gen stret
+man = (nem: "Alice", yia: 25)
+man2  = (nem: man.nem, yia: 26)
+>> man.yia ¶    // → 25
+>> man2.yia ¶   // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _insait_putim(a, b) { <~ a + b }
 
 ---
 
+## Namba Rot
+
+Zymbol inap soim namba long **69 Unicode skript bilong namba** — Devanagari, Arabi-India, Thai, Klingon pIqaD, Strong Matematik, LCD na moa. Rot i wok long `>>` tasol; namba insait binary.
+
+### Kirapim skript
+
+Raitim namba `0` na `9` bilong skript insait long `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabi-India   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // go bek long ASCII
+```
+
+### Soim na boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ASCII, namba senisim
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Namba asli long kod
+
+Namba bilong eni skript literal — renji, modulo:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal long eni skript
+
+`#` + namba `0` o `1` boolean literal:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII**. `#0` (no tru) i narakenim long `0` (zero) long olgeta skript.
+
+---
+
 ## Ol bilong save
 
 ```zymbol
@@ -563,8 +671,9 @@ makim(namba) {
 | `@!`       | stap (break)       | `$>`         | map                     |
 | `@>`       | go het (continue)  | `$\|`        | filter                  |
 | `->`       | lambda             | `$<`         | reduce                  |
-| `$^+`      | sotim antap        | `$^-`        | sotim daun              |
-| `$^`       | sotim wantaim komp | `$~`         | wok senisim             |
+| `arr[i] = val` | senisim samting (ol lain tasol) | `arr[i] += val` | compound senisim |
+| `arr[i]$~` | wok senisim (nupela kopi) | `$^+` | sotim antap |
+| `$^-` | sotim daun | `$^` | sotim wantaim kompea (tuples) |
 | `<~`       | givim bek (return) | `!?`         | traim (try)             |
 | `\|>`      | banis              | `:!`         | kisim (catch)           |
 | `#1`       | tru                | `:>`         | oltaim (finally)        |
@@ -574,8 +683,42 @@ makim(namba) {
 | `::`       | yusim modul        | `.`          | kisim fil               |
 | `#\|..\|`  | ritim namba        | `#?`         | kain save               |
 | `#.N\|..\|` | raunim            | `#!N\|..\|`  | katim                   |
-| `c\|..\|`  | koma fom           | `e\|..\|`    | siantifik               |
+| `#,\|..\|`  | koma fom           | `#^\|..\|`    | siantifik               |
+| `#d0d9#` | senisim namba rot | `#09#` | go bek long ASCII |
 | `<\ ..\>`  | renim shell        | `><`         | CLI agument             |
+
+## Histri bilong Vesian
+
+### v0.0.3 — Unicode Namba & LSP _(Epril 2026)_
+
+- **Putim** Unicode bloc 69 token `#d0d9#`
+- **Putim** Boolean literals long eni skript — `#१` / `#०`, `#١` / `#٠`
+- **Putim** Klingon pIqaD namba (CSUR PUA U+F8F0–U+F8F9)
+- **Putim** VM opcode `SetNumeralMode` — tree-walker
+- **Putim** REPL namba rot echo variable
+- **Senisim** `>>` boolean `#` (`#0` / `#1`)
+
+### v0.0.2_01 _(30 Mar 2026)_
+
+- **Senisim** `c|..|` → `#,|..|` na `e|..|` → `#^|..|`
+- **Putim** Export alias
+
+### v0.0.2 _(24 Mar 2026)_
+
+- **Putim** `$` arrays na strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Putim** Destructuring arrays, tuples
+- **Putim** Index nogat (`arr[-1]`)
+- **Putim** Instolim — Linux, macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Putim** `^=`
+
+### v0.0.1 _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4×, ~95%)
+- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

@@ -290,6 +290,8 @@ karan = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Rêze-Kom (Array)
 
+Rêze-kom **guherbar** in û hêmanên **heman celebî** dihewîne.
+
 ```zymbol
 kom = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ by_name = db$^ (a, b -> a.nav > b.nav)         // li gorî navê dakêşan (>)
 >> by_age[0].nav ¶     // → Leyla
 >> by_name[0].nav ¶    // → Carla
 
-kom[1] = 99              // nûvekirina li cih
-kom = kom[1]$~ 99        // nûvekirina fonksiyonî — rêze-komek nû vedigerîne
+// Nûvekirina rasterast a hêmanê (tenê rêze-kom)
+kom[1] = 99              // peywirdan
+kom[0] += 5              // pêkhatî: +=  -=  *=  /=  %=  ^=
+
+// Nûvekirina fonksiyonî — rêze-komek nû vedigerîne; orjînal naguhere
+k2 = kom[1]$~ 99
 ```
 
 > Hemî operatorên koleksiyonê **rêze-komek nû** vedigerîne. Ji nû ve bispêre: `kom = kom$+ 4`.
 > Zincîrkirin nîne: du peywirdanên cûda bikar bîne.
 > `$^+` / `$^-` **rêze-komên primitîv** (jimare, rêze) rêz dike. Ji bo rêze-komên tuple `$^` bi lambda-ya berhevdanê bikar bîne.
+
+**Semantîka nirxê** — peywirdana rêze-komê ji guhêrbarekê re kopiyek serbixwe çêdike:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b bandor nebûye
+```
 
 ```zymbol
 // Rêze-komên ç-nav-ç
@@ -357,10 +373,15 @@ kes = (nav: "Leyla", temen: 25, bajar: "Amed")
 
 ## Tuple
 
+Tuple konteynerên rêzkirî **neguherbar** in ku dikarin nirxên **celebên cûda** bihewînin. Berevajî rêze-komê, piştî afirandinê hêman nayên guhertin.
+
 ```zymbol
 // Pozisyonî
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+daneyê = (42, "hello", #1, 3.14)
+>> daneyê[2] ¶     // → #1
 
 // Bi nav
 kes = (nav: "Leyla", temen: 28)
@@ -371,6 +392,29 @@ kes = (nav: "Leyla", temen: 28)
 pos = (x: 10, y: 20)
 p = (pos: pos, label: "destpêk")
 >> p.pos.x ¶        // → 10
+```
+
+**Neguhêrbarî** — her hewldana guherandina hêmanekî tuple xeletiya dema xebitandinê ye:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ xeletiya dema xebitandinê: tuple neguherbar in
+// t[0] += 5    // ❌ heman xeletî
+```
+
+Ji bo derxistina nirxek guherandî `$~` (nûvekirina fonksiyonî) bikar bîne — tuple-yek **nû** vedigerîne:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← orjînal neguheriya
+>> t2 ¶    // → (10, 999, 30)
+
+// Tuple bi nav — ji nû ve bi eşkere avakirin
+kes = (nav: "Alice", temen: 25)
+mezintir  = (nav: kes.nav, temen: 26)
+>> kes.temen ¶    // → 25
+>> mezintir.temen ¶    // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _dahilî_kirin(a, b) { <~ a + b }
 
 ---
 
+## Modên Hejmarî
+
+Zymbol dikare hejmarên di **69 nivîsarên hejmarî yên Unicode** de nîşan bide — Devanagari, Erebî-Hindî, Taylandî, Klingon pIqaD, Matematîk Qalind, parçeyên LCD û bêtir. Moda çalak tenê li ser derxistina `>>`-ê bandor dike; aritmetîka navxweyî her dem binaryê ye.
+
+### Çalakkirina nivîsarekê
+
+Reqema `0` û `9` ya nivîsara armancê di navbera `#…#` de binivîse:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Erebî-Hindî   (U+0660–U+0669)
+#๐๙#    // Taylandî      (U+0E50–U+0E59)
+#09#    // vegere ASCII
+```
+
+### Derxistin û nirxên mantiqî
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII xwerû)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (xala dehiyê her dem ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Mantiqî: pêşgira # her dem ASCII, reqem xwe diguhêze
+>> #1 ¶         // → #१   (rast di Devanagari de)
+>> #0 ¶         // → #०   (xelet — ji ०  sifira jimara temam cuda ye)
+
+x = 28 > 4
+>> x ¶          // → #१   (encama berhevdanê moda çalak dişopîne)
+```
+
+### Wêneya reqemên xwecihî di koda çavkaniyê de
+
+Reqemên her nivîsarek piştgirîkirî wêneya derbasdar in — di navçeyên, modulo, berhevdanan de:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Wêneya mantiqî di her nivîsarekê de
+
+`#` + reqema `0` an jî `1` ji her blokê wêneya mantiqî ya derbasdar e:
+
+```zymbol
+#٠٩#
+نشط = #١        // wekî #1 e
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **her dem ASCII** e. `#0` (xelet) di her nivîsarekê de ji `0` (sifira jimara temam) her dem ji hêla dîtbarî ve cuda ye.
+
+---
+
 ## Operatorên Daneyê
 
 ```zymbol
@@ -563,8 +671,9 @@ dabeşkirin(hejmar) {
 | `@!`    | rawestan (break)     | `$>`       | map                      |
 | `@>`    | berdewamkirin        | `$\|`      | filter                   |
 | `->`    | Lambda               | `$<`       | reduce                   |
-| `$^+`   | Rêzkirin hilkişan (prim.) | `$^-` | Rêzkirin daketinê (prim.) |
-| `$^`    | Komparatorê rêzkirin |            |                          |
+| `kom[i] = val` | nûvekirina hêmanê (tenê rêze-kom) | `kom[i] += val` | nûvekirina pêkhatî |
+| `kom[i]$~` | nûvekirina fonksiyonî (kopiya nû) | `$^+` | Rêzkirin hilkişan (prim.) |
+| `$^-`   | Rêzkirin daketinê (prim.) | `$^`  | Komparatorê rêzkirin (tuple) |
 | `<~`    | vegerandin (return)  | `!?`       | ceribandî (try)          |
 | `\|>`   | Bori (pipe)          | `:!`       | girtin (catch)           |
 | `#1`    | rast (true)          | `:>`       | her dem (finally)        |
@@ -574,8 +683,44 @@ dabeşkirin(hejmar) {
 | `::`    | bangkirina modulê    | `.`        | gihîştina qadê           |
 | `#\|..\|` | Jimareyê parse     | `#?`       | Metadata celebê          |
 | `#.N\|..\|` | Giroverkirinê    | `#!N\|..\|` | Kurtkirin               |
-| `c\|..\|` | Şêweya vîrgulê     | `e\|..\|`  | Şêweya zanistî           |
+| `#,\|..\|` | Şêweya vîrgulê     | `#^\|..\|`  | Şêweya zanistî           |
+| `#d0d9#` | guherîna moda hejmarî | `#09#` | vegere ASCII |
 | `<\ ..\>` | Shell meşandin     | `><`       | Argumantên CLI           |
+
+## Dîroka Guhertoyê
+
+### v0.0.3 — Pergalên Hejmarî yên Unicode & Baştirkirinên LSP _(Nîsan 2026)_
+
+- **Zêde kir** 69 blokên reqemê yên Unicode bi tokena guherîna modê `#d0d9#`
+- **Zêde kir** Wêneya mantiqî di her nivîsarekê de — `#१` / `#०`, `#١` / `#٠`, hwd.
+- **Zêde kir** Reqemên Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Zêde kir** Opkoda VM `SetNumeralMode` — wekheviya tam bi tree-walker re
+- **Zêde kir** REPL moda hejmarî ya çalak di dengvedan û nîşandana guhêrbarên de rêz digire
+- **Guherî** Derxistina `>>` ya nirxên mantiqî naha pêşgira `#` (`#0` / `#1`) di hemû modan de dihewîne
+
+### v0.0.2_01 — Navguherîna Operatoran _(30 Mar 2026)_
+
+- **Guherî** `c|..|` → `#,|..|` û `e|..|` → `#^|..|` — li gel malbata pêşgira `#` hevaheng
+- **Zêde kir** Aliasê hinardeyê: hinardena ji nû ve endamên modulê bi navekî din
+
+### v0.0.2 — Sêwirana API ya Berhevokê & Sazker _(24 Mar 2026)_
+
+- **Zêde kir** Malbata operatorên `$` ya yekgirtî ji bo rêze û xêzan (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Zêde kir** Destrûktûrkirin ji bo rêze, tuple û tupleên navkirî
+- **Zêde kir** Nîşaneyên neyînî (`arr[-1]` = hêmana paşîn)
+- **Zêde kir** Sazkêrên xwecihî — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Zêde kir** Destnîşankirina tevhevî `^=`
+- **Serast kir** Rewşên sînorê yên parsera aritmetîkê; serasterkirinên belgeyê
+
+### v0.0.1 — Weşana Yekem a Giştî _(22 Mar 2026)_
+
+- Şiroveger tree-walker + VM-a tomarê (`--vm`, ~4× zûtir, ~95% wekhevî)
+- Hemû avahiyên bingehîn: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Nasnavên Unicode-ya temam, pergala modulan, lambda, girtî, rêvekirina xeletiyê
+- REPL, LSP, dirêjkirina VS Code, formatkêr (`zymbol fmt`)
 
 ---
 

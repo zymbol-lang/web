@@ -296,6 +296,8 @@ operasi = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Tatasusunan
 
+Tatasusunan adalah **boleh diubah** dan menyimpan elemen yang mempunyai **jenis yang sama**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -325,13 +327,27 @@ ikut_nama  = db$^ (a, b -> a.nama > b.nama)    // menurun mengikut nama (>)
 >> ikut_umur[0].nama ¶     // → Ana
 >> ikut_nama[0].nama ¶     // → Carla
 
-arr[1] = 99              // kemas kini di tempat
-arr = arr[1]$~ 99        // kemas kini berfungsi — mengembalikan tatasusunan baru
+// Kemas kini elemen terus (tatasusunan sahaja)
+arr[1] = 99              // tetapkan
+arr[0] += 5              // gabungan: +=  -=  *=  /=  %=  ^=
+
+// Kemas kini berfungsi — mengembalikan tatasusunan baru; asal tidak berubah
+arr2 = arr[1]$~ 99
 ```
 
 > Semua pengendali koleksi mengembalikan **tatasusunan baru**. Tugaskan semula: `arr = arr$+ 4`.
 > Pengendali tidak boleh dirantai — gunakan tugasan perantara.
 > `$^+` / `$^-` mengisih **tatasusunan primitif** (nombor, rentetan). Untuk tatasusunan tupel gunakan `$^` dengan lambda pembanding — arah dikodkan dalam lambda (`<` = menaik, `>` = menurun).
+
+**Semantik nilai** — menugaskan tatasusunan kepada pemboleh ubah lain mencipta salinan bebas:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b tidak terjejas
+```
 
 ```zymbol
 // Tatasusunan bersarang
@@ -363,10 +379,15 @@ orang = (nama: "Ana", umur: 25, bandar: "Kuala Lumpur")
 
 ## Tupel
 
+Tupel adalah bekas teratur yang **tidak boleh diubah** yang boleh menyimpan nilai dengan **jenis yang berbeza**. Tidak seperti tatasusunan, elemen tidak boleh ditukar selepas penciptaan.
+
 ```zymbol
 // Kedudukan
 titik = (10, 20)
 >> titik[0] ¶    // → 10
+
+data = (42, "hello", #1, 3.14)
+>> data[2] ¶     // → #1
 
 // Bernama
 orang = (nama: "Alisa", umur: 25)
@@ -377,6 +398,29 @@ orang = (nama: "Alisa", umur: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, label: "asal")
 >> p.pos.x ¶        // → 10
+```
+
+**Ketidakbolehubahan** — sebarang percubaan untuk mengubah suai elemen tupel adalah ralat masa jalan:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ ralat masa jalan: tupel tidak boleh diubah
+// t[0] += 5    // ❌ ralat yang sama
+```
+
+Untuk mendapatkan nilai yang diubah suai, gunakan `$~` (kemas kini berfungsi) — mengembalikan tupel **baru**:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← asal tidak berubah
+>> t2 ¶    // → (10, 999, 30)
+
+// Tupel bernama — bina semula secara eksplisit
+orang = (nama: "Alisa", umur: 25)
+lebihTua = (nama: orang.nama, umur: 26)
+>> orang.umur ¶    // → 25
+>> lebihTua.umur ¶ // → 26
 ```
 
 ---
@@ -488,6 +532,70 @@ _tambah_dalaman(a, b) { <~ a + b }
 
 ---
 
+## Mod Angka
+
+Zymbol boleh memaparkan nombor dalam **69 skrip digit Unicode** — Devanagari, Arab-India, Thai, Klingon pIqaD, Matematik Tebal, segmen LCD dan lain-lain. Mod aktif hanya mempengaruhi output `>>`; aritmetik dalaman sentiasa binari.
+
+### Mengaktifkan skrip
+
+Tulis digit `0` dan `9` skrip sasaran di dalam `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arab-India    (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // tetapkan semula ke ASCII
+```
+
+### Output dan nilai boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII lalai)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (titik perpuluhan sentiasa ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Boolean: awalan # sentiasa ASCII, digit menyesuaikan diri
+>> #1 ¶         // → #१   (benar dalam Devanagari)
+>> #0 ¶         // → #०   (salah — berbeza daripada ०  sifar integer)
+
+x = 28 > 4
+>> x ¶          // → #१   (hasil perbandingan mengikut mod aktif)
+```
+
+### Literal digit asli dalam kod sumber
+
+Digit daripada mana-mana skrip yang disokong adalah literal yang sah — dalam julat, modulo, perbandingan:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Literal boolean dalam mana-mana skrip
+
+`#` + digit `0` atau `1` daripada mana-mana blok adalah literal boolean yang sah:
+
+```zymbol
+#٠٩#
+نشط = #١        // sama dengan #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` adalah **sentiasa ASCII**. `#0` (salah) sentiasa berbeza secara visual daripada `0` (sifar integer) dalam setiap skrip.
+
+---
+
 ## Pengendali Data
 
 ```zymbol
@@ -569,8 +677,9 @@ klasifikasi(nombor) {
 | `@!`      | henti (break)             | `$>`       | peta (map)                    |
 | `@>`      | teruskan (continue)       | `$\|`      | tapis (filter)                |
 | `->`      | lambda                    | `$<`       | kurangkan (reduce)            |
-| `$^+`     | isih menaik (primitif)    | `$^-`      | isih menurun (primitif)       |
-| `$^`      | isih dengan pembanding (tupel) | |                          |
+| `arr[i] = val` | kemas kini elemen (tatasusunan sahaja) | `arr[i] += val` | kemas kini gabungan |
+| `arr[i]$~` | kemas kini berfungsi (salinan baru) | `$^+` | isih menaik (primitif)   |
+| `$^-`     | isih menurun (primitif)   | `$^`       | isih dengan pembanding (tupel)|
 | `<~`      | pulang (return)           | `!?`       | cuba (try)                    |
 | `\|>`     | paip (pipe)               | `:!`       | tangkap (catch)               |
 | `#1`      | benar                     | `:>`       | sentiasa (finally)            |
@@ -580,8 +689,44 @@ klasifikasi(nombor) {
 | `::`      | panggilan modul           | `.`        | akses medan                   |
 | `#\|..\|` | parsing nombor            | `#?`       | metadata jenis                |
 | `#.N\|..\|` | bundarkan              | `#!N\|..\|` | potong                     |
-| `c\|..\|` | format koma              | `e\|..\|`  | format saintifik              |
+| `#,\|..\|` | format koma              | `#^\|..\|`  | format saintifik              |
+| `#d0d9#` | suis mod angka | `#09#` | tetapkan semula ke ASCII |
 | `<\ ..\>` | pelaksanaan shell        | `>\<`      | argumen CLI                   |
+
+## Sejarah Versi
+
+### v0.0.3 — Sistem Angka Unicode & Penambahbaikan LSP _(April 2026)_
+
+- **Ditambah** 69 blok digit Unicode dengan token penukaran mod `#d0d9#`
+- **Ditambah** Literal boolean dalam mana-mana skrip — `#१` / `#०`, `#١` / `#٠`, dll.
+- **Ditambah** Digit Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Ditambah** Opkod VM `SetNumeralMode` — pariti penuh dengan tree-walker
+- **Ditambah** REPL menghormati mod angka aktif dalam gema dan paparan pemboleh ubah
+- **Diubah** Output `>>` boolean kini menyertakan awalan `#` (`#0` / `#1`) dalam semua mod
+
+### v0.0.2_01 — Menamakan Semula Pengendali _(30 Mac 2026)_
+
+- **Diubah** `c|..|` → `#,|..|` dan `e|..|` → `#^|..|` — konsisten dengan keluarga awalan `#`
+- **Ditambah** Alias eksport: mengeksport semula ahli modul dengan nama berbeza
+
+### v0.0.2 — Reka Bentuk Semula API Koleksi & Pemasang _(24 Mac 2026)_
+
+- **Ditambah** Keluarga pengendali `$` bersatu untuk tatasusunan dan rentetan (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Ditambah** Pemusnahan untuk tatasusunan, tuple dan tuple bernama
+- **Ditambah** Indeks negatif (`arr[-1]` = elemen terakhir)
+- **Ditambah** Pemasang asli — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mac 2026)_
+
+- **Ditambah** Tugasan gabungan `^=`
+- **Diperbaiki** Kes tepi parser aritmetik; pembetulan dokumentasi
+
+### v0.0.1 — Keluaran Awam Pertama _(22 Mac 2026)_
+
+- Jurubahasa tree-walker + VM daftar (`--vm`, ~4× lebih pantas, ~95% pariti)
+- Semua binaan teras: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Pengecam Unicode lengkap, sistem modul, lambda, penutupan, pengendalian ralat
+- REPL, LSP, sambungan VS Code, pemformat (`zymbol fmt`)
 
 ---
 

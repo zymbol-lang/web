@@ -178,6 +178,23 @@
     }
     #theme-toggle:hover { border-color: var(--dim); color: var(--hi); }
 
+    #pg-about-btn {
+      background: none;
+      border: 1px solid var(--line);
+      color: var(--mid);
+      cursor: pointer;
+      border-radius: 50%;
+      width: 1.7rem;
+      height: 1.7rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      line-height: 1;
+      font-family: var(--ui);
+      transition: border-color 0.15s, color 0.15s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #pg-about-btn:hover { border-color: var(--green); color: var(--green); }
+
     /* ─── Playground layout: editor | output ─── */
     #playground {
       flex: 1;
@@ -453,9 +470,127 @@
       #editor-panel { border-right: none; border-bottom: 1px solid var(--line); }
       --examples-h: 200px;
     }
+
+    /* ─── Playground notice modal ─── */
+    #pg-notice-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.6);
+      backdrop-filter: blur(3px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    #pg-notice-backdrop.hidden { display: none; }
+
+    #pg-notice {
+      background: var(--bg2);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      max-width: 520px;
+      width: calc(100% - 2rem);
+      padding: 1.6rem 1.8rem 1.4rem;
+      box-shadow: 0 16px 48px rgba(0,0,0,.5);
+    }
+
+    #pg-notice h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--hi);
+      margin-bottom: .8rem;
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+    }
+    #pg-notice h2 .badge {
+      font-size: .7rem;
+      font-weight: 600;
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid var(--green-mid);
+      padding: .1rem .45rem;
+      border-radius: 4px;
+      font-family: var(--mono);
+      letter-spacing: .02em;
+    }
+
+    #pg-notice p {
+      font-size: .85rem;
+      color: var(--text);
+      line-height: 1.6;
+      margin-bottom: .75rem;
+    }
+    #pg-notice p:last-of-type { margin-bottom: 1.1rem; }
+
+    #pg-notice ul {
+      list-style: none;
+      margin: .5rem 0 1rem 0;
+      display: flex;
+      flex-direction: column;
+      gap: .3rem;
+    }
+    #pg-notice ul li {
+      font-size: .82rem;
+      color: var(--text);
+      display: flex;
+      align-items: baseline;
+      gap: .5rem;
+    }
+    #pg-notice ul li::before {
+      content: '·';
+      color: var(--green);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    #pg-notice .notice-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    #pg-notice-ok {
+      background: var(--green);
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      padding: .42rem 1.2rem;
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--ui);
+      transition: background .15s;
+    }
+    #pg-notice-ok:hover { background: var(--green2); }
   </style>
 </head>
 <body>
+
+<!-- ═══ PLAYGROUND NOTICE ═══ -->
+<div id="pg-notice-backdrop" class="hidden" role="dialog" aria-modal="true" aria-labelledby="pg-notice-title">
+  <div id="pg-notice">
+    <h2 id="pg-notice-title">
+      Browser Playground
+      <span class="badge">zymbol.js v0.0.3</span>
+    </h2>
+    <p>
+      This playground runs a <strong>browser-only build</strong> of the Zymbol interpreter
+      (<code>zymbol.js</code>) compiled directly to JavaScript. It is a preview environment
+      intended to explore the language without installing anything.
+    </p>
+    <p>The following features are <strong>not available</strong> in the browser runtime:</p>
+    <ul>
+      <li>Shell execution <code>&lt;\ cmd \&gt;</code> and script inclusion <code>&lt;/ file.zy /&gt;</code></li>
+      <li>Module system — <code>&lt;#</code> imports, <code>#&gt;</code> exports, and <code>::</code> calls</li>
+      <li>CLI argument capture <code>&gt;&lt; args</code></li>
+    </ul>
+    <p>
+      Code runs without prior semantic checking — runtime errors are displayed in the output panel.
+      For the full language experience use the <a href="install.html" style="color:var(--green)">native interpreter</a>.
+    </p>
+    <div class="notice-footer">
+      <button id="pg-notice-ok">Got it</button>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ HEADER ═══ -->
 <header>
@@ -470,6 +605,7 @@
   <span class="header-title">Playground</span>
   <div class="header-right">
     <a href="index.html" class="back-link">← Home</a>
+    <button id="pg-about-btn" title="About this playground">?</button>
     <button id="theme-toggle" title="Toggle theme">🌙</button>
   </div>
 </header>
@@ -540,8 +676,9 @@ const EXAMPLES = {
     { title: 'Compound ops',  code: 'x = 10\nx += 5\nx *= 2\nx--\n>> x ¶' },
   ],
   'Collections': [
-    { title: 'Array',         code: 'arr = [10, 20, 30]\n>> arr ¶\n>> arr[0] ¶\n>> arr[-1] ¶' },
-    { title: 'Tuple',         code: 't = (1, 2, 3)\n>> t ¶\n>> t[0] ¶' },
+    { title: 'Array',         code: 'arr = [10, 20, 30]\n>> arr ¶\n>> arr[0] ¶\n>> arr[-1] ¶\n\n// Arrays are mutable\narr[1] = 99\narr[0] += 5\n>> arr ¶' },
+    { title: 'Array: value semantics', code: '// Assigning an array creates an independent copy\na = [1, 2, 3]\nb = a\na[0] = 99\n>> a ¶    // [99, 2, 3]\n>> b ¶    // [1, 2, 3]  ← b unaffected' },
+    { title: 'Tuple',         code: '// Tuples are immutable — elements cannot be changed\nt = (10, "hello", #1)\n>> t ¶\n>> t[0] ¶\n>> t[1] ¶\n\n// Use $~ for a functional update (returns new tuple)\nt2 = t[0]$~ 99\n>> t ¶     // original unchanged\n>> t2 ¶    // new tuple' },
     { title: 'Named tuple',   code: 'pt = (x: 3, y: 7)\n>> pt ¶\n>> pt[0] " " pt[1] ¶' },
     { title: 'Field access .', code: 'pt = (x: 3, y: 7)\n>> pt.x ¶\n>> pt.y ¶\nperson = (name: "Alice", age: 30)\n>> person.name " is " person.age ¶' },
     { title: 'Nested .field', code: 'p = (pos: (x: 5, y: 8), label: "origin")\n>> p.pos.x ¶\n>> p.pos.y ¶\n>> p.label ¶' },
@@ -553,7 +690,7 @@ const EXAMPLES = {
     { title: '$-[i] remove at',code:'arr = [10, 20, 30, 40]\narr = arr$-[0]\n>> arr ¶\narr = arr$-[1..2]\n>> arr ¶' },
     { title: '$? contains',   code: 'arr = [1, 2, 3, 4, 5]\n>> arr$? 3 ¶\n>> arr$? 9 ¶\n>> "hello"$? \'l\' ¶' },
     { title: '$?? find all',  code: 'arr = [20, 10, 20, 30, 20]\n>> arr$?? 20 ¶\n>> "hello"$?? \'l\' ¶' },
-    { title: '$~ update',     code: 'arr = [10, 20, 30]\narr = arr$~[1] 99\n>> arr ¶' },
+    { title: 'arr[i] update',  code: 'arr = [10, 20, 30]\narr[1] = 99       // direct update\narr[0] += 5       // compound: += -= *= /= %= ^=\n>> arr ¶\n\n// Functional update — returns new array\narr2 = arr[2]$~ 0\n>> arr ¶     // original unchanged\n>> arr2 ¶    // new array' },
     { title: '$[i..j] slice', code: 'arr = [10, 20, 30, 40, 50]\n>> arr$[1..3] ¶\n>> "hello world"$[6..10] ¶' },
     { title: '$^+ sort',      code: 'nums = [3, 1, 4, 1, 5, 9, 2, 6]\n>> nums$^+ ¶\n>> nums$^- ¶' },
     { title: '$> map',        code: 'double(x) { <~ x * 2 }\narr = [1, 2, 3, 4, 5]\n>> arr$> double ¶' },
@@ -619,38 +756,99 @@ const EXAMPLES = {
     { title: 'Finally always', code: '!? {\n    >> "try" ¶\n    x = 1 / 0\n} :! {\n    >> "catch" ¶\n} :> {\n    >> "finally — always runs" ¶\n}' },
     { title: 'Error check $!', code: 'x = 42\n? x$! {\n    >> "x is error" ¶\n} _ {\n    >> "x is not error" ¶\n}' },
   ],
+  'Numerals 🔢': [
+    { title: 'Mode switch intro',
+      code: '// Numeral mode switch — same value, four scripts\n\nx = 42\n>> "ASCII:      " x ¶\n\n#०९#\n>> "Devanagari: " x ¶\n\n#๐๙#\n>> "Thai:       " x ¶\n\n#𝟎𝟗#\n>> "Math Bold:  " x ¶\n\n#09#  // reset\n>> "ASCII again: " x ¶' },
+
+    { title: 'Booleans in scripts',
+      code: '// Booleans output with # prefix + active script digit\n\na = 42\nb = 10\n\n// ASCII (default)\n>> a > b ¶      // → #1\n>> b > a ¶      // → #0\n\n#०९#  // Devanagari\n>> a > b ¶      // → #१\n>> b > a ¶      // → #०\n\n#๐๙#  // Thai\n>> a > b ¶      // → #๑\n>> b > a ¶      // → #๐\n\n#09#            // reset' },
+
+    { title: 'Math Bold 𝟎𝟏𝟐',
+      code: '// Numerals: Mathematical Bold (U+1D7CE\u2013U+1D7D7)\n// Loop and output in bold digit style.\n\n>> "Mathematical Bold numerals:" ¶\n\n#𝟎𝟗#\n\n@ i:𝟏..𝟏𝟓 {\n    >> i " "\n}\n>> ¶\n\n// Boolean output in bold:\n>> 𝟓 > 𝟑 ¶\n>> 𝟑 > 𝟓 ¶\n\n#09#  // reset to ASCII' },
+
+    { title: 'LCD 🯰🯱🯲',
+      code: '// Numerals: Segmented/LCD (U+1FBF0\u2013U+1FBF9)\n// Classic 7-segment display style.\n\n>> "LCD display mode:" ¶\n\n#🯰🯹#\n\n@ i:🯱..🯹 {\n    >> i " "\n}\n>> ¶\n\n// Arithmetic:\n>> 🯳 + 🯴 ¶\n>> 🯹 * 🯹 ¶\n\n#09#  // reset to ASCII' },
+  ],
   'RosettaStone 🪨': [
     { title: '🌍 Emoji',  code: '// FizzBuzz — 🌍 Universal Emoji\n// Identifiers: emojis. Operators: always symbolic. Output: emojis.\n\n>> "👋🌍✨" ¶\n\n🎯(🔢) {\n    ? 🔢 % 15 == 0 { <~ "🫧🐝" }\n    _? 🔢 % 3  == 0 { <~ "🫧" }\n    _? 🔢 % 5  == 0 { <~ "🐝" }\n    _ { <~ 🔢 }\n}\n\n@ i:1..15 {\n    >> 🎯(i) ¶\n}' },
     { title: 'English',   code: '// FizzBuzz — English\n// Identifiers in English. Operators always symbolic.\n\n>> "Hello, English-speaking World!" ¶\n\nclassify(number) {\n    ? number % 15 == 0 { <~ "FizzBuzz" }\n    _? number % 3  == 0 { <~ "Fizz" }\n    _? number % 5  == 0 { <~ "Buzz" }\n    _ { <~ number }\n}\n\n@ i:1..15 {\n    >> classify(i) ¶\n}' },
     { title: 'Español',   code: '// FizzBuzz — Español\n// Identificadores en español. Operadores siempre simbólicos.\n\n>> "¡Hola, Mundo Hispanohablante!" ¶\n\nclasificar(número) {\n    ? número % 15 == 0 { <~ "BurbujaZumbido" }\n    _? número % 3  == 0 { <~ "Burbuja" }\n    _? número % 5  == 0 { <~ "Zumbido" }\n    _ { <~ número }\n}\n\n@ i:1..15 {\n    >> clasificar(i) ¶\n}' },
-    { title: '한국어',     code: '// FizzBuzz — 한국어\n// 식별자는 한국어로. 연산자는 항상 기호.\n\n>> "안녕하세요, 한국어 세계!" ¶\n\n분류(숫자) {\n    ? 숫자 % 15 == 0 { <~ "쉬익붕붕" }\n    _? 숫자 % 3  == 0 { <~ "쉬익" }\n    _? 숫자 % 5  == 0 { <~ "붕붕" }\n    _ { <~ 숫자 }\n}\n\n@ 이:1..15 {\n    >> 분류(이) ¶\n}' },
-    { title: 'Ελληνικά', code: '// FizzBuzz — Ελληνικά\n// Αναγνωριστικά στα ελληνικά. Τελεστές πάντα συμβολικοί.\n\n>> "Γεια σου, ελληνόφωνε κόσμε!" ¶\n\nταξινόμηση(αριθμός) {\n    ? αριθμός % 15 == 0 { <~ "ΑφρόςΒόμβος" }\n    _? αριθμός % 3  == 0 { <~ "Αφρός" }\n    _? αριθμός % 5  == 0 { <~ "Βόμβος" }\n    _ { <~ αριθμός }\n}\n\n@ ι:1..15 {\n    >> ταξινόμηση(ι) ¶\n}' },
-    { title: 'العربية',  code: '// FizzBuzz — العربية\n// المعرّفات بالعربية. المشغّلات دائماً رمزية.\n\n>> "مرحباً، عالم ناطق بالعربية!" ¶\n\nتصنيف(عدد) {\n    ? عدد % 15 == 0 { <~ "فقاعةطنين" }\n    _? عدد % 3  == 0 { <~ "فقاعة" }\n    _? عدد % 5  == 0 { <~ "طنين" }\n    _ { <~ عدد }\n}\n\n@ ن:1..15 {\n    >> تصنيف(ن) ¶\n}' },
-    { title: '中文',     code: '// FizzBuzz — 中文（普通话）\n// 标识符用中文。运算符始终是符号。\n\n>> "你好，中文世界！" ¶\n\n分类(数字) {\n    ? 数字 % 15 == 0 { <~ "嘶嘶嗡嗡" }\n    _? 数字 % 3  == 0 { <~ "嘶嘶" }\n    _? 数字 % 5  == 0 { <~ "嗡嗡" }\n    _ { <~ 数字 }\n}\n\n@ 数:1..15 {\n    >> 分类(数) ¶\n}' },
-    { title: 'हिन्दी',  code: '// FizzBuzz — हिन्दी\n// पहचानकर्ता हिन्दी में। ऑपरेटर हमेशा प्रतीकात्मक।\n\n>> "नमस्ते, हिन्दी भाषी दुनिया!" ¶\n\nवर्गीकरण(संख्या) {\n    ? संख्या % 15 == 0 { <~ "बुलबुलाभनभन" }\n    _? संख्या % 3  == 0 { <~ "बुलबुला" }\n    _? संख्या % 5  == 0 { <~ "भनभन" }\n    _ { <~ संख्या }\n}\n\n@ न:1..15 {\n    >> वर्गीकरण(न) ¶\n}' },
-    { title: '日本語',   code: '// FizzBuzz — 日本語\n// 識別子はひらがなで。演算子は常にシンボル。\n\n>> "こんにちは、日本語の世界！" ¶\n\nぶんるい(かず) {\n    ? かず % 15 == 0 { <~ "シュワブーン" }\n    _? かず % 3  == 0 { <~ "シュワ" }\n    _? かず % 5  == 0 { <~ "ブーン" }\n    _ { <~ かず }\n}\n\n@ い:1..15 {\n    >> ぶんるい(い) ¶\n}' },
-    { title: 'Русский', code: '// FizzBuzz — Русский\n// Идентификаторы на русском. Операторы всегда символьные.\n\n>> "Привет, русскоязычный мир!" ¶\n\nтип(число) {\n    ? число % 15 == 0 { <~ "ШипЖуж" }\n    _? число % 3  == 0 { <~ "Шип" }\n    _? число % 5  == 0 { <~ "Жуж" }\n    _ { <~ число }\n}\n\n@ и:1..15 {\n    >> тип(и) ¶\n}' },
-    { title: 'עברית',   code: '// FizzBuzz — עברית\n// מזהים בעברית. אופרטורים תמיד סמליים.\n\n>> "שלום, עולם דובר עברית!" ¶\n\nסיווג(מספר) {\n    ? מספר % 15 == 0 { <~ "בועהזמזום" }\n    _? מספר % 3  == 0 { <~ "בועה" }\n    _? מספר % 5  == 0 { <~ "זמזום" }\n    _ { <~ מספר }\n}\n\n@ נ:1..15 {\n    >> סיווג(נ) ¶\n}' },
-    { title: 'ภาษาไทย', code: '// FizzBuzz — ภาษาไทย\n// ตัวระบุเป็นภาษาไทย ตัวดำเนินการเป็นสัญลักษณ์เสมอ\n\n>> "สวัสดี โลกที่พูดภาษาไทย!" ¶\n\nจำแนก(ตัวเลข) {\n    ? ตัวเลข % 15 == 0 { <~ "ซ่าหึ่ง" }\n    _? ตัวเลข % 3  == 0 { <~ "ซ่า" }\n    _? ตัวเลข % 5  == 0 { <~ "หึ่ง" }\n    _ { <~ ตัวเลข }\n}\n\n@ น:1..15 {\n    >> จำแนก(น) ¶\n}' },
-    { title: 'ქართული', code: '// FizzBuzz — ქართული\n// იდენტიფიკატორები ქართულად. ოპერატორები ყოველთვის სიმბოლური.\n\n>> "გამარჯობა, სამყარო!" ¶\n\nდახარისხება(რიცხვი) {\n    ? რიცხვი % 15 == 0 { <~ "ბუშტიჟრჟოლა" }\n    _? რიცხვი % 3  == 0 { <~ "ბუშტი" }\n    _? რიცხვი % 5  == 0 { <~ "ჟრჟოლა" }\n    _ { <~ რიცხვი }\n}\n\n@ ი:1..15 {\n    >> დახარისხება(ი) ¶\n}' },
-    { title: 'Հայերեն', code: '// FizzBuzz — Հայերեն\n// Նույնացուցիչներ հայերենով։ Օպերատորները միշտ խորհրդանշական։\n\n>> "Բարև, Աշխարհ!" ¶\n\nդասակարգել(թիվ) {\n    ? թիվ % 15 == 0 { <~ "ՊղպջակԲզզոց" }\n    _? թիվ % 3  == 0 { <~ "Պղպջակ" }\n    _? թիվ % 5  == 0 { <~ "Բզզոց" }\n    _ { <~ թիվ }\n}\n\n@ ն:1..15 {\n    >> դասակարգել(ն) ¶\n}' },
-    { title: 'বাংলা',   code: '// FizzBuzz — বাংলা\n// বাংলায় পরিচয়কারক। অপারেটর সর্বদা প্রতীকী।\n\n>> "হ্যালো, বাংলাভাষী বিশ্ব!" ¶\n\nশ্রেণী(সংখ্যা) {\n    ? সংখ্যা % 15 == 0 { <~ "বুদবুদগুনগুন" }\n    _? সংখ্যা % 3  == 0 { <~ "বুদবুদ" }\n    _? সংখ্যা % 5  == 0 { <~ "গুনগুন" }\n    _ { <~ সংখ্যা }\n}\n\n@ ন:1..15 {\n    >> শ্রেণী(ন) ¶\n}' },
-    { title: 'தமிழ்',  code: '// FizzBuzz — தமிழ்\n// தமிழில் அடையாளங்காட்டிகள். இயக்கிகள் எப்போதும் குறியீட்டு.\n\n>> "வணக்கம், உலகம்!" ¶\n\nவகைப்படுத்து(எண்) {\n    ? எண் % 15 == 0 { <~ "குமிழ்சத்தம்" }\n    _? எண் % 3  == 0 { <~ "குமிழ்" }\n    _? எண் % 5  == 0 { <~ "சத்தம்" }\n    _ { <~ எண் }\n}\n\n@ ந:1..15 {\n    >> வகைப்படுத்து(ந) ¶\n}' },
-    { title: 'አማርኛ',  code: '// FizzBuzz — አማርኛ\n// መለያዎች በአማርኛ። ኦፕሬተሮች ሁልጊዜ ምሳሌያዊ።\n\n>> "ሰላም፣ አማርኛ ተናጋሪ ዓለም!" ¶\n\nምደባ(ቁጥር) {\n    ? ቁጥር % 15 == 0 { <~ "ቡርቡርዝምዝም" }\n    _? ቁጥር % 3  == 0 { <~ "ቡርቡር" }\n    _? ቁጥር % 5  == 0 { <~ "ዝምዝም" }\n    _ { <~ ቁጥር }\n}\n\n@ ን:1..15 {\n    >> ምደባ(ን) ¶\n}' },
+    { title: '한국어 — Korean',     code: '// FizzBuzz — 한국어\n// 식별자는 한국어로. 연산자는 항상 기호.\n\n>> "안녕하세요, 한국어 세계!" ¶\n\n분류(숫자) {\n    ? 숫자 % 15 == 0 { <~ "쉬익붕붕" }\n    _? 숫자 % 3  == 0 { <~ "쉬익" }\n    _? 숫자 % 5  == 0 { <~ "붕붕" }\n    _ { <~ 숫자 }\n}\n\n@ 이:1..15 {\n    >> 분류(이) ¶\n}' },
+    { title: 'Ελληνικά — Greek', code: '// FizzBuzz — Ελληνικά\n// Αναγνωριστικά στα ελληνικά. Τελεστές πάντα συμβολικοί.\n\n>> "Γεια σου, ελληνόφωνε κόσμε!" ¶\n\nταξινόμηση(αριθμός) {\n    ? αριθμός % 15 == 0 { <~ "ΑφρόςΒόμβος" }\n    _? αριθμός % 3  == 0 { <~ "Αφρός" }\n    _? αριθμός % 5  == 0 { <~ "Βόμβος" }\n    _ { <~ αριθμός }\n}\n\n@ ι:1..15 {\n    >> ταξινόμηση(ι) ¶\n}' },
+    { title: 'العربية — Arabic',  code: '// FizzBuzz — العربية\n// المعرّفات بالعربية. الأرقام عربية-هندية (٠–٩).\n\n>> "مرحباً، عالم ناطق بالعربية!" ¶\n\n#٠٩#\n\nتصنيف(عدد) {\n    ? عدد % ١٥ == ٠ { <~ "فقاعةطنين" }\n    _? عدد % ٣  == ٠ { <~ "فقاعة" }\n    _? عدد % ٥  == ٠ { <~ "طنين" }\n    _ { <~ عدد }\n}\n\n@ ن:١..١٥ {\n    >> تصنيف(ن) ¶\n}' },
+    { title: '中文 — Chinese',     code: '// FizzBuzz — 中文（普通话）\n// 标识符用中文。运算符始终是符号。\n\n>> "你好，中文世界！" ¶\n\n分类(数字) {\n    ? 数字 % 15 == 0 { <~ "嘶嘶嗡嗡" }\n    _? 数字 % 3  == 0 { <~ "嘶嘶" }\n    _? 数字 % 5  == 0 { <~ "嗡嗡" }\n    _ { <~ 数字 }\n}\n\n@ 数:1..15 {\n    >> 分类(数) ¶\n}' },
+    { title: 'हिन्दी — Hindi',  code: '// FizzBuzz — हिन्दी\n// पहचानकर्ता हिन्दी में। अंक देवनागरी (०–९)।\n\n>> "नमस्ते, हिन्दी भाषी दुनिया!" ¶\n\n#०९#\n\nवर्गीकरण(संख्या) {\n    ? संख्या % १५ == ० { <~ "बुलबुलाभनभन" }\n    _? संख्या % ३  == ० { <~ "बुलबुला" }\n    _? संख्या % ५  == ० { <~ "भनभन" }\n    _ { <~ संख्या }\n}\n\n@ न:१..१५ {\n    >> वर्गीकरण(न) ¶\n}' },
+    { title: '日本語 — Japanese',   code: '// FizzBuzz — 日本語\n// 識別子はひらがなで。演算子は常にシンボル。\n\n>> "こんにちは、日本語の世界！" ¶\n\nぶんるい(かず) {\n    ? かず % 15 == 0 { <~ "シュワブーン" }\n    _? かず % 3  == 0 { <~ "シュワ" }\n    _? かず % 5  == 0 { <~ "ブーン" }\n    _ { <~ かず }\n}\n\n@ い:1..15 {\n    >> ぶんるい(い) ¶\n}' },
+    { title: 'Русский — Russian', code: '// FizzBuzz — Русский\n// Идентификаторы на русском. Операторы всегда символьные.\n\n>> "Привет, русскоязычный мир!" ¶\n\nтип(число) {\n    ? число % 15 == 0 { <~ "ШипЖуж" }\n    _? число % 3  == 0 { <~ "Шип" }\n    _? число % 5  == 0 { <~ "Жуж" }\n    _ { <~ число }\n}\n\n@ и:1..15 {\n    >> тип(и) ¶\n}' },
+    { title: 'עברית — Hebrew',   code: '// FizzBuzz — עברית\n// מזהים בעברית. אופרטורים תמיד סמליים.\n\n>> "שלום, עולם דובר עברית!" ¶\n\nסיווג(מספר) {\n    ? מספר % 15 == 0 { <~ "בועהזמזום" }\n    _? מספר % 3  == 0 { <~ "בועה" }\n    _? מספר % 5  == 0 { <~ "זמזום" }\n    _ { <~ מספר }\n}\n\n@ נ:1..15 {\n    >> סיווג(נ) ¶\n}' },
+    { title: 'ภาษาไทย — Thai', code: '// FizzBuzz — ภาษาไทย\n// ตัวระบุเป็นภาษาไทย ตัวเลขไทย (๐–๙).\n\n>> "สวัสดี โลกที่พูดภาษาไทย!" ¶\n\n#๐๙#\n\nจำแนก(จำนวน) {\n    ? จำนวน % ๑๕ == ๐ { <~ "ฟองวิ้ง" }\n    _? จำนวน % ๓  == ๐ { <~ "ฟอง" }\n    _? จำนวน % ๕  == ๐ { <~ "วิ้ง" }\n    _ { <~ จำนวน }\n}\n\n@ น:๑..๑๕ {\n    >> จำแนก(น) ¶\n}' },
+    { title: 'ქართული — Georgian', code: '// FizzBuzz — ქართული\n// იდენტიფიკატორები ქართულად. ოპერატორები ყოველთვის სიმბოლური.\n\n>> "გამარჯობა, სამყარო!" ¶\n\nდახარისხება(რიცხვი) {\n    ? რიცხვი % 15 == 0 { <~ "ბუშტიჟრჟოლა" }\n    _? რიცხვი % 3  == 0 { <~ "ბუშტი" }\n    _? რიცხვი % 5  == 0 { <~ "ჟრჟოლა" }\n    _ { <~ რიცხვი }\n}\n\n@ ი:1..15 {\n    >> დახარისხება(ი) ¶\n}' },
+    { title: 'Հայերեն — Armenian', code: '// FizzBuzz — Հայերեն\n// Նույնացուցիչներ հայերենով։ Օպերատորները միշտ խորհրդանշական։\n\n>> "Բարև, Աշխարհ!" ¶\n\nդասակարգել(թիվ) {\n    ? թիվ % 15 == 0 { <~ "ՊղպջակԲզզոց" }\n    _? թիվ % 3  == 0 { <~ "Պղպջակ" }\n    _? թիվ % 5  == 0 { <~ "Բզզոց" }\n    _ { <~ թիվ }\n}\n\n@ ն:1..15 {\n    >> դասակարգել(ն) ¶\n}' },
+    { title: 'বাংলা — Bengali',   code: '// FizzBuzz — বাংলা\n// বাংলায় পরিচয়কারক। অঙ্ক বাংলা (০–৯)।\n\n>> "নমস্কার, বাংলাভাষী বিশ্ব!" ¶\n\n#০৯#\n\nশ্রেণীবিভাগ(সংখ্যা) {\n    ? সংখ্যা % ১৫ == ০ { <~ "বুদবুদভনভন" }\n    _? সংখ্যা % ৩  == ০ { <~ "বুদবুদ" }\n    _? সংখ্যা % ৫  == ০ { <~ "ভনভন" }\n    _ { <~ সংখ্যা }\n}\n\n@ ন:১..১৫ {\n    >> শ্রেণীবিভাগ(ন) ¶\n}' },
+    { title: 'தமிழ் — Tamil',  code: '// FizzBuzz — தமிழ்\n// தமிழில் அடையாளங்காட்டிகள். இயக்கிகள் எப்போதும் குறியீட்டு.\n\n>> "வணக்கம், உலகம்!" ¶\n\nவகைப்படுத்து(எண்) {\n    ? எண் % 15 == 0 { <~ "குமிழ்சத்தம்" }\n    _? எண் % 3  == 0 { <~ "குமிழ்" }\n    _? எண் % 5  == 0 { <~ "சத்தம்" }\n    _ { <~ எண் }\n}\n\n@ ந:1..15 {\n    >> வகைப்படுத்து(ந) ¶\n}' },
+    { title: 'አማርኛ — Amharic',  code: '// FizzBuzz — አማርኛ\n// መለያዎች በአማርኛ። ኦፕሬተሮች ሁልጊዜ ምሳሌያዊ።\n\n>> "ሰላም፣ አማርኛ ተናጋሪ ዓለም!" ¶\n\nምደባ(ቁጥር) {\n    ? ቁጥር % 15 == 0 { <~ "ቡርቡርዝምዝም" }\n    _? ቁጥር % 3  == 0 { <~ "ቡርቡር" }\n    _? ቁጥር % 5  == 0 { <~ "ዝምዝም" }\n    _ { <~ ቁጥር }\n}\n\n@ ን:1..15 {\n    >> ምደባ(ን) ¶\n}' },
+
+    { title: 'தமிழ் ௦-௯ — Tamil',
+      code: '// FizzBuzz — தமிழ் + Tamil numerals (௦-௯)\n// Loop range, modulo checks, and output all use Tamil digits.\n\n>> "வணக்கம், தமிழ் உலகம்!" ¶\n\n#௦௯#\n\nவகைப்படுத்தல்(எண்) {\n    ? எண் % ௧௫ == ௦ { <~ "குமிழிசலசலப்பு" }\n    _? எண் % ௩  == ௦ { <~ "குமிழி" }\n    _? எண் % ௫  == ௦ { <~ "சலசலப்பு" }\n    _ { <~ எண் }\n}\n\n@ ந:௧..௧௫ {\n    >> வகைப்படுத்தல்(ந) ¶\n}' },
+
+    { title: 'తెలుగు — Telugu',
+      code: '// FizzBuzz — తెలుగు + Telugu numerals (౦-౯)\n// Loop range, modulo checks, and output all use Telugu digits.\n\n>> "నమస్కారం, తెలుగు ప్రపంచం!" ¶\n\n#౦౯#\n\nవర్గీకరణ(సంఖ్య) {\n    ? సంఖ్య % ౧౫ == ౦ { <~ "బుడగగుయ్యి" }\n    _? సంఖ్య % ౩  == ౦ { <~ "బుడగ" }\n    _? సంఖ్య % ౫  == ౦ { <~ "గుయ్యి" }\n    _ { <~ సంఖ్య }\n}\n\n@ న:౧..౧౫ {\n    >> వర్గీకరణ(న) ¶\n}' },
+
+    { title: 'ਪੰਜਾਬੀ — Gurmukhi',
+      code: '// FizzBuzz — ਪੰਜਾਬੀ + Gurmukhi numerals (੦-੯)\n// Loop range, modulo checks, and output all use Gurmukhi digits.\n\n>> "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ, ਪੰਜਾਬੀ ਦੁਨੀਆ!" ¶\n\n#੦੯#\n\nਵਰਗੀਕਰਨ(ਸੰਖਿਆ) {\n    ? ਸੰਖਿਆ % ੧੫ == ੦ { <~ "ਬੁਲਬੁਲਾਗੂੰਜ" }\n    _? ਸੰਖਿਆ % ੩  == ੦ { <~ "ਬੁਲਬੁਲਾ" }\n    _? ਸੰਖਿਆ % ੫  == ੦ { <~ "ਗੂੰਜ" }\n    _ { <~ ਸੰਖਿਆ }\n}\n\n@ ਨ:੧..੧੫ {\n    >> ਵਰਗੀਕਰਨ(ਨ) ¶\n}' },
+
+    { title: 'မြန်မာ — Myanmar',
+      code: '// FizzBuzz — မြန်မာ + Myanmar numerals (၀-၉)\n// Loop range, modulo checks, and output all use Myanmar digits.\n\n>> "မင်္ဂလာပါ မြန်မာဘာသာပြောသူများ!" ¶\n\n#၀၉#\n\nခွဲခြားသတ်မှတ်(နံပါတ်) {\n    ? နံပါတ် % ၁၅ == ၀ { <~ "ဖုပ်ဗုန်း" }\n    _? နံပါတ် % ၃  == ၀ { <~ "ဖုပ်" }\n    _? နံပါတ် % ၅  == ၀ { <~ "ဗုန်း" }\n    _ { <~ နံပါတ် }\n}\n\n@ ည:၁..၁၅ {\n    >> ခွဲခြားသတ်မှတ်(ည) ¶\n}' },
+
+    { title: ' — Klingon pIqaD',
+      code: "// FizzBuzz \u2014 \uf8e4\uf8d7\uf8dc\uf8d0\uf8db \uf8de\uf8d7\uf8df\uf8d0\uf8d3\n// pIqaD digits: CSUR PUA U+F8F0\u2013U+F8F9\n// pIqaD letters: CSUR PUA U+F8D0\u2013U+F8EF\n// Requires a pIqaD font (e.g. pIqaD-qolqoS) to render visually.\n\n#\uf8f0\uf8f9#\n\n>> \"\uf8db\uf8e5\uf8df\uf8db\uf8d4\uf8d6\" \u00b6\n\n\uf8e7\uf8d7\uf8e6(\uf8da\uf8d7\uf8e9) {\n    ? \uf8da\uf8d7\uf8e9 % \uf8f1\uf8f5 == 0 { <~ \"\uf8e0\uf8d0\uf8de\uf8d9\uf8d0\uf8e9\uf8d6\uf8dd\uf8d6\" }\n    _? \uf8da\uf8d7\uf8e9 % \uf8f3  == 0 { <~ \"\uf8e0\uf8d0\uf8de\uf8d9\uf8d0\uf8e9\" }\n    _? \uf8da\uf8d7\uf8e9 % \uf8f5  == 0 { <~ \"\uf8d6\uf8dd\uf8d6\" }\n    _ { <~ \uf8da\uf8d7\uf8e9 }\n}\n\n@ \uf8d3:\uf8f1..\uf8f1\uf8f5 {\n    >> \uf8e7\uf8d7\uf8e6(\uf8d3) \u00b6\n}" },
   ],
+
 };
 
 // ─── Syntax highlighter ───────────────────────────────────────────────────────
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function highlightLine(line) {
-  if (/^\s*\/\//.test(line)) return `<span class="t-cmt">${esc(line)}</span>`;
-
+// Returns [html, inBlockComment] — caller threads the state between lines.
+function highlightLine(line, inBlockComment) {
   let out = '', i = 0;
   const s = line, len = s.length;
 
+  // ── Continue a block comment that started on a previous line ──────────────
+  if (inBlockComment) {
+    const end = s.indexOf('*/');
+    if (end === -1) {
+      return [`<span class="t-cmt">${esc(line)}</span>`, true];
+    }
+    out += `<span class="t-cmt">${esc(s.slice(0, end + 2))}</span>`;
+    i = end + 2;
+    inBlockComment = false;
+    if (i >= len) return [out, false];
+  }
+
+  // ── Full-line // comment (fast path) ─────────────────────────────────────
+  if (i === 0 && /^\s*\/\//.test(s)) {
+    return [`<span class="t-cmt">${esc(line)}</span>`, false];
+  }
+
   while (i < len) {
-    if (s[i] === '/' && s[i+1] === '/') { out += `<span class="t-cmt">${esc(s.slice(i))}</span>`; break; }
+    // Inline // comment — rest of line is comment
+    if (s[i] === '/' && s[i+1] === '/') {
+      out += `<span class="t-cmt">${esc(s.slice(i))}</span>`; break;
+    }
+
+    // Block comment /* ... */
+    if (s[i] === '/' && s[i+1] === '*') {
+      const end = s.indexOf('*/', i + 2);
+      if (end === -1) {
+        // Block comment spans to next line(s)
+        out += `<span class="t-cmt">${esc(s.slice(i))}</span>`;
+        inBlockComment = true;
+        break;
+      }
+      out += `<span class="t-cmt">${esc(s.slice(i, end + 2))}</span>`;
+      i = end + 2; continue;
+    }
 
     if (s[i] === '"') {
       let j = i+1;
@@ -720,11 +918,16 @@ function highlightLine(line) {
 
     out += esc(one); i++;
   }
-  return out;
+  return [out, inBlockComment];
 }
 
 function highlightCode(code) {
-  return code.split('\n').map(highlightLine).join('\n');
+  let inBlockComment = false;
+  return code.split('\n').map(line => {
+    const [html, nextState] = highlightLine(line, inBlockComment);
+    inBlockComment = nextState;
+    return html;
+  }).join('\n');
 }
 
 // ─── Editor sync ──────────────────────────────────────────────────────────────
@@ -905,6 +1108,34 @@ applyTheme(document.documentElement.classList.contains('light'));
 // ─── Initial code ─────────────────────────────────────────────────────────────
 editor.value = `>> "Hello, Zymbol-Lang!" ¶`;
 syncHighlight();
+
+// ─── Playground notice ────────────────────────────────────────────────────────
+(function () {
+  const NOTICE_KEY = 'zy-pg-notice-seen';
+  const backdrop   = document.getElementById('pg-notice-backdrop');
+  const okBtn      = document.getElementById('pg-notice-ok');
+
+  function dismiss() {
+    backdrop.classList.add('hidden');
+    localStorage.setItem(NOTICE_KEY, '1');
+  }
+
+  if (!localStorage.getItem(NOTICE_KEY)) {
+    backdrop.classList.remove('hidden');
+  }
+
+  document.getElementById('pg-about-btn').addEventListener('click', () => {
+    backdrop.classList.remove('hidden');
+  });
+
+  okBtn.addEventListener('click', dismiss);
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) dismiss();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !backdrop.classList.contains('hidden')) dismiss();
+  });
+})();
 
 </script>
 </body>

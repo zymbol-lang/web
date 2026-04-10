@@ -282,6 +282,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Tskxe
 
+Tskxe lu **tìkangkem** sì ke — ałtso tì'ef lu **pxey numtseng** tìng. Tskxe ke lu ke tìkangkem — elementi tsun munge.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -311,13 +313,27 @@ by_name = db$^ (a, b -> a.name > b.name)
 >> by_age[0].name ¶     // → Ana
 >> by_name[0].name ¶    // → Carla
 
-arr[1] = 99              // tìng mì
-arr = arr[1]$~ 99        // tìkangkem tìran — naur tskxe
+// Tìng mì (tskxe toi) — Direct element update (arrays only)
+arr[1] = 99              // tìng — assign
+arr[0] += 5              // tatìng tìng: +=  -=  *=  /=  %=  ^= — compound
+
+// Tìkangkem tìran — Functional update — naur tskxe; original ke tìkangkem
+arr2 = arr[1]$~ 99
 ```
 
 > Ałtso tskxe operator **naur tskxe** tìkangkem. Tìng: `arr = arr$+ 4`.
 > Ke tsaheyl: tatìng tìng.
 > `$^+` / `$^-` — primitives (numtseng, tìran). Tuple tskxe — `$^` ulte lambda.
+
+**Tìng numtseng (Value semantics)** — Tìng tskxe naur kopio rarna:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b ke tìkangkem
+```
 
 ```zymbol
 // Nested tskxe
@@ -349,10 +365,15 @@ person = (name: "Ana", age: 25, city: "Eywa'eveng")
 
 ## Tuple
 
+Tuple lu **ke tìkangkem** — ałtso sìpawm tìng, hut'unn **pxey numtseng** tskxe. Ke tskxe — elementi ke tsun munge ao tìkangkem.
+
 ```zymbol
 // Tìng
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+tìran = (42, "oel ngati", #1, 3.14)
+>> tìran[2] ¶     // → #1
 
 // Tìfya
 sute = (tìfya: "Alice", numtseng: 25)
@@ -363,6 +384,29 @@ sute = (tìfya: "Alice", numtseng: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, label: "Eywa")
 >> p.pos.x ¶        // → 10
+```
+
+**Ke tìkangkem (Immutability)** — Irga provo tìkangkem elementi tuple lu tìhawnu:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ tìhawnu: tuple ke tìkangkem
+// t[0] += 5    // ❌ tìhawnu tìng
+```
+
+Fi naur tìran yusim `$~` (tìkangkem tìran) — naur **bora** tuple:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← original ke tìkangkem
+>> t2 ¶    // → (10, 999, 30)
+
+// Tìfya tuple — naur bora sute
+sute = (tìfya: "Alice", numtseng: 25)
+sute2 = (tìfya: sute.tìfya, numtseng: 26)
+>> sute.numtseng ¶     // → 25
+>> sute2.numtseng ¶    // → 26
 ```
 
 ---
@@ -474,6 +518,70 @@ _internal_add(a, b) { <~ a + b }
 
 ---
 
+## Lì'fya Tìran
+
+Zymbol tìran lì'fya **Unicode tìran alo 69** — Devanagari, Arabi-India, Thai, Klingon pIqaD, Mìftxavìl, LCD. Alo lì'fya `>>`; tìran binary.
+
+### Alo sì'a
+
+Tìran `0` sì `9` nìwotx `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabi-India   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // ASCII-e sì'a
+```
+
+### Tìran sì boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ASCII, tìran sì'a
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Tìran asli kode
+
+Tìran alo literal — range, modulo:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal alo
+
+`#` + tìran `0` pxan `1` bloc boolean:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII**. `#0` (ke) `0` (tìran zéro) alo.
+
+---
+
 ## Naaltsoos Ná'ádleehí
 
 ```zymbol
@@ -555,8 +663,9 @@ tìkan(tìfya) {
 | `@!`     | tìhawnu (break)    | `$>`       | map                   |
 | `@>`     | fpxäkìm daur       | `$\|`      | filter                |
 | `->`     | Lambda             | `$<`       | reduce                |
-| `$^+`    | sorted ascending   | `$^-`      | sorted descending     |
-| `$^`     | sorted lambda      |            |                       |
+| `arr[i] = val` | tìng mì (update in-place) | `arr[i] +=` | tatìng tìng (compound update) |
+| `arr[i]$~` | tìkangkem tìran (functional update) | `$^+` | sorted ascending |
+| `$^-`    | sorted descending  | `$^`       | sorted lambda         |
 | `<~`     | tìkangkem          | `!?`       | tìtxur (try)          |
 | `\|>`    | Pipe               | `:!`       | karyai (catch)        |
 | `#1`     | srane              | `:>`       | sìpawm (finally)      |
@@ -566,8 +675,42 @@ tìkan(tìfya) {
 | `::`     | tìkangkem tìkan    | `.`        | field access          |
 | `#\|..\|` | tìkangkem numtseng | `#?`      | tì'efumì              |
 | `#.N\|..\|` | round           | `#!N\|..\|` | truncate           |
-| `c\|..\|` | comma format      | `e\|..\|`  | scientific            |
+| `#,\|..\|` | comma format      | `#^\|..\|`  | scientific            |
+| `#d0d9#` | tìran alo sì'a | `#09#` | ASCII-e sì'a |
 | `<\ ..\>` | shell exec        | `>\<`      | CLI args              |
+
+## Versión Tìran
+
+### v0.0.3 — Unicode Tìran & LSP _(Abril 2026)_
+
+- **Sì'a** Unicode bloc 69 token `#d0d9#`
+- **Sì'a** Boolean literals — `#१` / `#०`, `#١` / `#٠`
+- **Sì'a** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Sì'a** VM opcode `SetNumeralMode` — tree-walker
+- **Sì'a** REPL tìran echo variable
+- **Lu** `>>` boolean `#` (`#0` / `#1`)
+
+### v0.0.2_01 _(30 Mar 2026)_
+
+- **Lu** `c|..|` → `#,|..|` sì `e|..|` → `#^|..|`
+- **Sì'a** Export alias
+
+### v0.0.2 _(24 Mar 2026)_
+
+- **Sì'a** `$` arrays sì strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Sì'a** Destructuring arrays, tuples
+- **Sì'a** Tìran ke (`arr[-1]`)
+- **Sì'a** Instalar — Linux, macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Sì'a** `^=`
+
+### v0.0.1 _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4×, ~95%)
+- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

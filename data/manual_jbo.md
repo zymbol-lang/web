@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## porsi
 
+Porsi cu **galfi** je ka'e — ro stika cu **pa klesi**. Porsi cu na stodi — stika ka'e galfi.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ fi_cmene  = db$^ (a, b -> a.cmene > b.cmene)    // jdika fi cmene (>)
 >> fi_nanca[0].cmene ¶     // → Ana
 >> fi_cmene[0].cmene ¶     // → Karla
 
-arr[1] = 99              // galfi fi tcita
-arr = arr[1]$~ 99        // fancu galfi — krefu cnino porsi
+// Galfi fi tcita (porsi toi) — Direct element update (arrays only)
+arr[1] = 99              // stika — assign
+arr[0] += 5              // sujni galfi: +=  -=  *=  /=  %=  ^= — compound
+
+// Fancu galfi — krefu cnino porsi; original na galfi
+arr2 = arr[1]$~ 99
 ```
 
 > Ro kolekto tadji cu krefu **cnino porsi**. stika: `arr = arr$+ 4`.
 > Na jonta: pilno re drata stika.
 > `$^+` / `$^-` sorto **sampu porsi** (namcu, valsi). fi tuple porsi pilno `$^` fi cimni lambda — direkco fi lambda (`<` = zenba, `>` = jdika).
+
+**Valsi semantiko (Value semantics)** — Stika porsi cu krefu cnino kopio rarna:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b na galfi
+```
 
 ```zymbol
 // nestita porsi
@@ -357,10 +373,15 @@ prenu = (cmene: "Ana", nanca: 25, tcadu: "Madrido")
 
 ## tuple
 
+Tuple cu **na galfi** — ka'e teni **drata klesi**. Na porsi — stika na ka'e galfi ca zbasu.
+
 ```zymbol
 // tcita
 punkto = (10, 20)
 >> punkto[0] ¶    // → 10
+
+datni = (42, "coi", #1, 3.14)
+>> datni[2] ¶     // → #1
 
 // cmene
 prenu = (cmene: "Alice", nanca: 25)
@@ -371,6 +392,29 @@ prenu = (cmene: "Alice", nanca: 25)
 poz = (x: 10, y: 20)
 p = (poz: poz, cmene: "cfari")
 >> p.poz.x ¶        // → 10
+```
+
+**Na galfi (Immutability)** — Ro nu troci galfi stika be tuple cu srera:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ srera: tuple cu na galfi
+// t[0] += 5    // ❌ sama srera
+```
+
+Fi krefu galfi valsi pilno `$~` (fancu galfi) — krefu **cnino** tuple:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← original na galfi
+>> t2 ¶    // → (10, 999, 30)
+
+// Cmene tuple — zbasu naur
+prenu = (cmene: "Alice", nanca: 25)
+ci_prenu = (cmene: prenu.cmene, nanca: 26)
+>> prenu.nanca ¶       // → 25
+>> ci_prenu.nanca ¶    // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _jbocme_sumji(a, b) { <~ a + b }
 
 ---
 
+## namcu liste
+
+Zymbol ka'e jarco namcu fo **Unicode namcu liste 69** — Devanagari, arabi-xindo, tai, klingon pIqaD, cmaci tumla, LCD je drata. zo'e liste co'a srana le `>>`-judri; namcu ke'a binary.
+
+### liste co'a pilno
+
+ciska le namcu `0` e `9` fo le liste fo `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // arabi-xindo   (U+0660–U+0669)
+#๐๙#    // tai           (U+0E50–U+0E59)
+#09#    // ASCII co'a
+```
+
+### judri e jitfa jetnu
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII ni'a)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (decimal ASCII)
+>> 1 + 2 ¶      // → ३
+
+// jetnu: # ASCII, namcu galfi
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### asli namcu fo liste
+
+ro namcu liste literal — porsi, modulo, vreji:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### jetnu literal fo liste
+
+`#` + namcu `0` a `1` bloc jetnu literal:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII**. `#0` (jitfa) drata `0` (namcu nomo) ro liste.
+
+---
+
 ## datni mekso
 
 ```zymbol
@@ -563,8 +671,9 @@ fancu(namcu) {
 | `@!`       | sisti (break)      | `$>`         | map                     |
 | `@>`       | dauno              | `$\|`        | filter                  |
 | `->`       | lambda             | `$<`         | reduce                  |
-| `$^+`      | sorto zenba        | `$^-`        | sorto jdika             |
-| `$^`       | sorto fi cimni     | `$~`         | fancu galfi             |
+| `arr[i] = val` | galfi fi tcita (update in-place) | `arr[i] +=` | sujni galfi (compound update) |
+| `arr[i]$~` | fancu galfi (functional update) | `$^+` | sorto zenba             |
+| `$^-`      | sorto jdika        | `$^`         | sorto fi cimni          |
 | `<~`       | krefu              | `!?`         | troci (try)             |
 | `\|>`      | pipe               | `:!`         | kei (catch)             |
 | `#1`       | jetnu              | `:>`         | ro roi (finally)        |
@@ -574,8 +683,42 @@ fancu(namcu) {
 | `::`       | modli vokei        | `.`          | kampo catlu             |
 | `#\|..\|`  | porsi namcu        | `#?`         | klesi datni             |
 | `#.N\|..\|` | cimni             | `#!N\|..\|`  | vimcu                   |
-| `c\|..\|`  | koma tadji         | `e\|..\|`    | saientifi               |
+| `#,\|..\|`  | koma tadji         | `#^\|..\|`    | saientifi               |
+| `#d0d9#` | liste galfi | `#09#` | ASCII co'a |
 | `<\ ..\>`  | samru gasnu        | `><`         | CLI tcita               |
+
+## versio-notci
+
+### v0.0.3 — Unicode namcu & LSP _(abril 2026)_
+
+- **jdika** Unicode bloc 69 token `#d0d9#`
+- **jdika** jetnu literal fo liste — `#१` / `#०`, `#१` / `#٠`, e drata
+- **jdika** klingon pIqaD namcu (CSUR PUA U+F8F0–U+F8F9)
+- **jdika** VM opcode `SetNumeralMode` — tree-walker
+- **jdika** REPL liste echo variable
+- **galfi** `>>` jetnu `#` (`#0` / `#1`) liste
+
+### v0.0.2_01 _(30 Mar 2026)_
+
+- **galfi** `c|..|` → `#,|..|` e `e|..|` → `#^|..|`
+- **jdika** export alias
+
+### v0.0.2 _(24 Mar 2026)_
+
+- **jdika** `$` arrays e strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **jdika** destructuring arrays, tuples
+- **jdika** index ni'a (`arr[-1]`)
+- **jdika** instali — Linux, macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **jdika** `^=`
+
+### v0.0.1 _(22 Mar 2026)_
+
+- tree-walker + register VM (`--vm`, ~4×, ~95%)
+- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

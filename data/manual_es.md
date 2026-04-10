@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Arreglos
 
+Los arreglos son **mutables** y contienen elementos del **mismo tipo**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ por_nombre = db$^ (a, b -> a.name > b.name)  // descendente por nombre (>)
 >> por_edad[0].name ¶     // → Ana
 >> por_nombre[0].name ¶   // → Carla
 
-arr[1] = 99              // actualizar en su lugar
-arr = arr[1]$~ 99        // actualización funcional — retorna nuevo arreglo
+// Actualización directa de elemento (solo arreglos)
+arr[1] = 99              // asignar
+arr[0] += 5              // compuesto: +=  -=  *=  /=  %=  ^=
+
+// Actualización funcional — retorna un nuevo arreglo; el original no cambia
+arr2 = arr[1]$~ 99
 ```
 
 > Todos los operadores de colección retornan un **nuevo arreglo**. Asignar de vuelta: `arr = arr$+ 4`.
 > Los operadores no se pueden encadenar — usar asignaciones intermedias.
 > `$^+` / `$^-` ordenan **arreglos de primitivos** (números, cadenas). Para arreglos de tuplas, usar `$^` con lambda comparadora — la dirección se codifica en la lambda (`<` = ascendente, `>` = descendente).
+
+**Semántica de valor** — asignar un arreglo a otra variable crea una copia independiente:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b no se ve afectado
+```
 
 ```zymbol
 // Arreglos anidados
@@ -357,10 +373,16 @@ persona = (nombre: "Ana", edad: 25, ciudad: "Madrid")
 
 ## Tuplas
 
+Las tuplas son contenedores ordenados **inmutables** que pueden contener valores de **diferentes tipos**.
+A diferencia de los arreglos, los elementos no se pueden cambiar después de su creación.
+
 ```zymbol
-// Posicional
+// Posicional — tipos mixtos permitidos
 punto = (10, 20)
 >> punto[0] ¶    // → 10
+
+datos = (42, "hola", #1, 3.14)
+>> datos[2] ¶     // → #1
 
 // Nombrada
 persona = (nombre: "Alice", edad: 25)
@@ -371,6 +393,29 @@ persona = (nombre: "Alice", edad: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, etiqueta: "origen")
 >> p.pos.x ¶        // → 10
+```
+
+**Inmutabilidad** — cualquier intento de modificar un elemento de una tupla es un error en tiempo de ejecución:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ error en tiempo de ejecución: las tuplas son inmutables
+// t[0] += 5    // ❌ mismo error
+```
+
+Para derivar un valor modificado usar `$~` (actualización funcional) — retorna una **nueva** tupla:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← original sin cambios
+>> t2 ¶    // → (10, 999, 30)
+
+// Tupla nombrada — reconstruir explícitamente
+persona = (nombre: "Alice", edad: 25)
+mayor  = (nombre: persona.nombre, edad: 26)
+>> persona.edad ¶    // → 25
+>> mayor.edad ¶      // → 26
 ```
 
 ---
@@ -482,6 +527,70 @@ _sumar_interno(a, b) { <~ a + b }
 
 ---
 
+## Modos Numéricos
+
+Zymbol puede mostrar números en **69 sistemas de dígitos Unicode** — Devanagari, Árabe-Índico, Tailandés, Klingon pIqaD, Negrita Matemática, dígitos LCD, y más. El modo activo solo afecta la salida `>>`; la aritmética interna siempre es binaria.
+
+### Activar un sistema
+
+Escribe el dígito `0` y el dígito `9` del sistema deseado entre `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Árabe-Índico  (U+0660–U+0669)
+#๐๙#    // Tailandés     (U+0E50–U+0E59)
+#09#    // restablecer ASCII
+```
+
+### Salida y booleanos
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII por defecto)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (punto decimal siempre ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Booleanos: prefijo # siempre ASCII, dígito se adapta
+>> #1 ¶         // → #१   (verdadero en Devanagari)
+>> #0 ¶         // → #०   (falso — distinto de ०  cero entero)
+
+x = 28 > 4
+>> x ¶          // → #१   (resultado de comparación sigue el modo activo)
+```
+
+### Literales nativos en código fuente
+
+Los dígitos de cualquier sistema soportado son literales válidos — en rangos, módulo, comparaciones:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Literales booleanos en cualquier sistema
+
+`#` + dígito `0` o `1` de cualquier bloque soportado es un literal booleano válido:
+
+```zymbol
+#٠٩#
+نشط = #١        // igual que #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` es **siempre ASCII**. `#0` (falso) siempre es visualmente distinto de `0` (cero entero) en cualquier sistema.
+
+---
+
 ## Operadores de Datos
 
 ```zymbol
@@ -563,8 +672,9 @@ clasificar(numero) {
 | `@!` | romper | `$>` | map |
 | `@>` | continuar | `$\|` | filter |
 | `->` | lambda | `$<` | reduce |
-| `$^+` | ordenar asc (primitivos) | `$^-` | ordenar desc (primitivos) |
-| `$^` | ordenar con comparadora (tuplas) | | |
+| `arr[i] = val` | actualizar elemento (solo arreglos) | `arr[i] += val` | actualización compuesta |
+| `arr[i]$~` | actualización funcional (nueva copia) | `$^+` | ordenar asc (primitivos) |
+| `$^-` | ordenar desc (primitivos) | `$^` | ordenar con comparadora (tuplas) |
 | `<~` | retornar | `!?` | intentar |
 | `\|>` | pipe | `:!` | capturar |
 | `#1` | verdadero | `:>` | siempre |
@@ -574,12 +684,50 @@ clasificar(numero) {
 | `::` | llamar módulo | `.` | acceso a campo |
 | `#\|..\|` | parsear número | `#?` | metadato de tipo |
 | `#.N\|..\|` | redondear | `#!N\|..\|` | truncar |
-| `c\|..\|` | formato comas | `e\|..\|` | notación científica |
+| `#,\|..\|` | formato comas | `#^\|..\|` | notación científica |
+| `#d0d9#` | cambio de sistema numérico | `#09#` | restablecer ASCII |
 | `<\ ..\>` | ejecutar shell | `>\<` | argumentos CLI |
 
 ---
 
-*Zymbol-Lang — Simbólico. Universal. Inmutable.*
+## Historial de Versiones
+
+### v0.0.3 — Sistemas Numéricos Unicode & Mejoras LSP _(Abril 2026)_
+
+- **Añadido** 69 bloques de dígitos Unicode con token de cambio de modo `#d0d9#`
+- **Añadido** Literales booleanos en cualquier sistema — `#१` / `#०`, `#١` / `#٠`, etc.
+- **Añadido** Dígitos Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Añadido** Opcode VM `SetNumeralMode` — paridad completa con el árbol de evaluación
+- **Añadido** REPL respeta el modo numérico activo en eco y visualización de variables
+- **Cambiado** Salida booleana `>>` incluye prefijo `#` (`#0` / `#1`) en todos los modos
+
+### v0.0.2_01 — Renombrado de Operadores _(30 Mar 2026)_
+
+- **Cambiado** `c|..|` → `#,|..|` y `e|..|` → `#^|..|` — consistente con la familia de prefijo `#`
+- **Añadido** Alias de exportación: re-exportar miembros de módulo con nombre diferente
+
+### v0.0.2 — Rediseño de Colecciones & Instaladores _(24 Mar 2026)_
+
+- **Añadido** Familia unificada de operadores `$` para arreglos y cadenas (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Añadido** Destructuring para arreglos, tuplas y tuplas nombradas
+- **Añadido** Índices negativos (`arr[-1]` = último elemento)
+- **Añadido** Instaladores nativos — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Añadido** Asignación compuesta `^=`
+- **Corregido** Casos extremos en aritmética del parser; correcciones de documentación
+
+### v0.0.1 — Primera Versión Pública _(22 Mar 2026)_
+
+- Intérprete árbol de evaluación + VM de registros (`--vm`, ~4× más rápido, ~95% paridad)
+- Todos los constructos base: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Identificadores Unicode completos, sistema de módulos, lambdas, closures, manejo de errores
+- REPL, LSP, extensión VS Code, formateador (`zymbol fmt`)
+
+---
+
+_Zymbol-Lang — Simbólico. Universal. Inmutable._
 
 > **Aviso:** Esta documentación fue creada con asistencia de inteligencia artificial (IA).
 > La referencia canónica es [MANUAL.md](https://github.com/zymbol-lang/interpreter) en el repositorio del intérprete.

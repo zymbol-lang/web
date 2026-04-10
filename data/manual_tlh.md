@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## ghom
 
+ghom **Hap** je HIja' — Hoch De' lu **wa' tIq** pong.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,24 @@ by_pong = db$^ (a, b -> a.pong > b.pong)
 >> by_DIS[0].pong ¶     // → Ana
 >> by_pong[0].pong ¶    // → Carla
 
-arr[1] = 99              // update in-place
-arr = arr[1]$~ 99        // functional update — returns new array
+arr[1] = 99              // ghaj Hap — update in-place
+arr[1] += 10             // boq Hap — compound update
+arr2 = arr[1]$~ 99       // ta' ghaj — chu' ghom nob
 ```
 
 > Hoch collection ta' — **chu' ghom** — ghaH: `arr = arr$+ 4`.
 > boqHa'be': cha' ghaj Dalo'.
 > `$^+` / `$^-` — primitive arrays neH. tuple arrays — `$^` lambda Dalo'.
+
+**ghaj De' (value semantics):** ghaj ghom chu' copy — boqHa' pong mab.
+
+```zymbol
+a = [1, 2, 3]
+b = a            // chu' copy — boqHa' ghaj Hap
+b[0] = 99
+>> a ¶           // → [1, 2, 3]  (boqHa' Hap)
+>> b ¶           // → [99, 2, 3]
+```
 
 ```zymbol
 // Nested arrays
@@ -357,10 +370,15 @@ SuvwI' = (pong: "Ana", DIS: 25, qach: "Qo'noS")
 
 ## Tuple
 
+Tuple **boqHa' Hap** — Hoch ghom ghaj, pol tama **Hoch De'** pong.
+
 ```zymbol
 // Positional
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+data = (42, "pong", #1, 3.14)
+>> data[2] ¶     // → #1
 
 // Named
 SuvwI' = (pong: "Alice", DIS: 25)
@@ -371,6 +389,23 @@ SuvwI' = (pong: "Alice", DIS: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, pong: "tlhIngan")
 >> p.pos.x ¶        // → 10
+```
+
+**boqHa' Hap (Immutability):** Tuple Hap boqHa' — Qagh.
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ Qagh poSmoHbe'lu'bogh: tuple boqHa' Hap
+// t[0] += 5    // ❌ Qagh ai
+```
+
+**ta' ghaj ($~):** chu' tuple boqHa' Hap — ghaj De'.
+
+```zymbol
+SuvwI' = (pong: "Alice", DIS: 25)
+SuvwI'2 = (pong: SuvwI'.pong, DIS: 26)  // chu' tuple, DIS ghaj
+>> SuvwI'2.DIS ¶    // → 26
+>> SuvwI'.DIS ¶     // → 25  (boqHa' Hap)
 ```
 
 ---
@@ -482,6 +517,70 @@ _internal_boq(a, b) { <~ a + b }
 
 ---
 
+## mI' Hap
+
+Zymbol mI' lujatlhlaH **Unicode mI' paq 69** — Devanagari, Arabi-India, Thai, Klingon pIqaD, HISlaH-mI', LCD. Hap mI' `>>`; mI' binary.
+
+### paq chu'
+
+mI' `0` je `9` `#…#`-Daq:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabi-India   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // ASCII-Daq
+```
+
+### lujatlh je boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ASCII, mI' Hap
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### mI' asli HolQeD
+
+mI' paq literal — mIv, modulo:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal paq
+
+`#` + mI' `0` pagh `1` bloc boolean:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII**. `#0` (ghobe') `0` (mI' pagh) paq.
+
+---
+
 ## De' muvmeywi'
 
 ```zymbol
@@ -563,8 +662,9 @@ buv(mI') {
 | `@!`    | pItlh (break)     | `$>`       | map                   |
 | `@>`    | HaD (continue)    | `$\|`      | filter                |
 | `->`    | Lambda            | `$<`       | reduce                |
-| `$^+`   | sort ascending    | `$^-`      | sort descending       |
-| `$^`    | sort comparator   |            |                       |
+| `arr[i] = val` | ghaj Hap (update in-place) | `arr[i] +=` | boq Hap (compound update) |
+| `arr[i]$~` | ta' ghaj (functional update) | `$^+` | sort ascending       |
+| `$^-`   | sort descending   | `$^`       | sort comparator       |
 | `<~`    | nob               | `!?`       | tIv (try)             |
 | `\|>`   | Pipe              | `:!`       | Hap (catch)           |
 | `#1`    | teH               | `:>`       | reH (finally)         |
@@ -574,8 +674,42 @@ buv(mI') {
 | `::`    | HoD lo'           | `.`        | De' tu'               |
 | `#\|..\|` | parse number   | `#?`       | type metadata         |
 | `#.N\|..\|` | round        | `#!N\|..\|` | truncate            |
-| `c\|..\|` | comma format   | `e\|..\|`  | scientific            |
+| `#,\|..\|` | comma format   | `#^\|..\|`  | scientific            |
+| `#d0d9#` | mI' Hap chu' | `#09#` | ASCII-Daq |
 | `<\ ..\>` | shell exec     | `>\<`      | CLI args              |
+
+## paq tI'ang
+
+### v0.0.3 — Unicode mI' & LSP _(Abril 2026)_
+
+- **chu'** Unicode bloc 69 token `#d0d9#`
+- **chu'** Boolean literals — `#१` / `#०`, `#١` / `#٠`
+- **chu'** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **chu'** VM opcode `SetNumeralMode` — tree-walker
+- **chu'** REPL mI' echo variable
+- **Hap** `>>` boolean `#` (`#0` / `#1`)
+
+### v0.0.2_01 _(30 Mar 2026)_
+
+- **Hap** `c|..|` → `#,|..|` je `e|..|` → `#^|..|`
+- **chu'** Export alias
+
+### v0.0.2 _(24 Mar 2026)_
+
+- **chu'** `$` arrays je strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **chu'** Destructuring arrays, tuples
+- **chu'** mI' ghobe' (`arr[-1]`)
+- **chu'** Instalar — Linux, macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **chu'** `^=`
+
+### v0.0.1 _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4×, ~95%)
+- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

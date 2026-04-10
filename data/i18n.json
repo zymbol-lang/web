@@ -97,7 +97,9 @@
       "april_sub": "We renamed all operators to emojis. JK. Maybe. 😈",
       "april_welcome": "Welcome Zymbol-Lang",
       "alpha_msg": "Zymbol is in active development — this release is a concept validation of the language design. APIs, syntax, and features may change.",
-      "alpha_link": "Follow progress on GitHub →"
+      "alpha_link": "Follow progress on GitHub →",
+      "f4_title": "69 numeral systems",
+      "f4_desc": "Switch output digits to Devanagari, Thai, Arabic-Indic, Klingon pIqaD and 65 more with a single mode token."
     },
     "spanish": {
       "rtl": false,
@@ -183,7 +185,9 @@
       "april_sub": "Renombramos todos los operadores con emojis. Es broma. O quizás no. 😈",
       "april_welcome": "Bienvenido Zymbol-Lang",
       "alpha_msg": "Zymbol está en desarrollo activo — esta versión valida el concepto del diseño del lenguaje. Las APIs, sintaxis y funciones pueden cambiar.",
-      "alpha_link": "Seguir el progreso en GitHub →"
+      "alpha_link": "Seguir el progreso en GitHub →",
+      "f4_title": "69 sistemas numerales",
+      "f4_desc": "Cambia los dígitos de salida a devanagari, tailandés, índico-arábigo, klingon pIqaD y 65 más con un solo token de modo."
     },
     "portuguese": {
       "rtl": false,
@@ -269,7 +273,9 @@
       "april_sub": "Renomeamos todos os operadores para emojis. É brincadeira. Talvez. 😈",
       "april_welcome": "Bem-vindo Zymbol-Lang",
       "alpha_msg": "Zymbol está em desenvolvimento ativo — esta versão valida o conceito do design da linguagem. APIs, sintaxe e funcionalidades podem mudar.",
-      "alpha_link": "Acompanhar o progresso no GitHub →"
+      "alpha_link": "Acompanhar o progresso no GitHub →",
+      "f4_title": "69 sistemas numerais",
+      "f4_desc": "Mude os dígitos de saída para devanagari, tailandês, indo-arábico, klingon pIqaD e mais 65 com um único token de modo."
     },
     "french": {
       "rtl": false,
@@ -360,7 +366,9 @@
       "april_sub": "On a remplacé tous les opérateurs par des emojis. Blague. Enfin, presque. 😈",
       "april_welcome": "Bienvenue Zymbol-Lang",
       "alpha_msg": "Zymbol est en développement actif — cette version valide le concept du design du langage. Les API, la syntaxe et les fonctionnalités peuvent changer.",
-      "alpha_link": "Suivre l'avancement sur GitHub →"
+      "alpha_link": "Suivre l'avancement sur GitHub →",
+      "f4_title": "69 systèmes numéraux",
+      "f4_desc": "Changez les chiffres de sortie en devanagari, thaï, indo-arabe, klingon pIqaD et 65 autres avec un seul jeton de mode."
     },
     "german": {
       "rtl": false,
@@ -446,7 +454,9 @@
       "april_sub": "Wir haben alle Operatoren durch Emojis ersetzt. Ein Scherz. Vielleicht. 😈",
       "april_welcome": "Willkommen Zymbol-Lang",
       "alpha_msg": "Zymbol befindet sich in aktiver Entwicklung — dieses Release validiert das Sprachdesign. APIs, Syntax und Funktionen können sich ändern.",
-      "alpha_link": "Fortschritt auf GitHub verfolgen →"
+      "alpha_link": "Fortschritt auf GitHub verfolgen →",
+      "f4_title": "69 Zahlensysteme",
+      "f4_desc": "Wechsle Ausgabeziffern zu Devanagari, Thai, Arabisch-Indisch, Klingonisch pIqaD und 65 weiteren mit einem einzigen Modustoken."
     },
     "italian": {
       "rtl": false,
@@ -532,7 +542,9 @@
       "april_sub": "Abbiamo rinominato tutti gli operatori con emoji. Scherzo. Forse. 😈",
       "april_welcome": "Benvenuto Zymbol-Lang",
       "alpha_msg": "Zymbol è in sviluppo attivo — questa release valida il concept del design del linguaggio. API, sintassi e funzionalità possono cambiare.",
-      "alpha_link": "Segui il progresso su GitHub →"
+      "alpha_link": "Segui il progresso su GitHub →",
+      "f4_title": "69 sistemi numerali",
+      "f4_desc": "Cambia le cifre di output in devanagari, thai, indo-arabo, klingon pIqaD e altri 65 con un singolo token di modalità."
     },
     "dutch": {
       "rtl": false,
@@ -618,7 +630,9 @@
       "april_sub": "We vervingen alle operatoren door emoji's. Grapje. Misschien. 😈",
       "april_welcome": "Welkom Zymbol-Lang",
       "alpha_msg": "Zymbol is in actieve ontwikkeling — deze release valideert het taalontwerp. API's, syntax en functies kunnen veranderen.",
-      "alpha_link": "Volg de voortgang op GitHub →"
+      "alpha_link": "Volg de voortgang op GitHub →",
+      "f4_title": "69 getallenstelsels",
+      "f4_desc": "Schakel uitvoercijfers naar devanagari, Thais, Arabisch-Indisch, Klingon pIqaD en 65 meer met één modustoken."
     },
     "polish": {
       "rtl": false,
@@ -704,7 +718,9 @@
       "april_sub": "Zmieniliśmy nazwy wszystkich operatorów na emoji. Żart. Może. 😈",
       "april_welcome": "Witaj Zymbol-Lang",
       "alpha_msg": "Zymbol jest w aktywnym rozwoju — to wydanie waliduje koncepcję projektu języka. API, składnia i funkcje mogą się zmieniać.",
-      "alpha_link": "Śledź postępy na GitHub →"
+      "alpha_link": "Śledź postępy na GitHub →",
+      "f4_title": "69 systemów liczbowych",
+      "f4_desc": "Przełączaj cyfry wyjściowe na dewanagari, tajski, arabsko-indyjski, klingon pIqaD i 65 innych za pomocą jednego tokenu trybu."
     },
     "russian": {
       "rtl": false,
@@ -790,7 +806,9 @@
       "april_sub": "Мы переименовали все операторы в эмодзи. Шутка. Может быть. 😈",
       "april_welcome": "Добро пожаловать Zymbol-Lang",
       "alpha_msg": "Zymbol находится в активной разработке — этот релиз проверяет концепцию дизайна языка. API, синтаксис и возможности могут измениться.",
-      "alpha_link": "Следить за прогрессом на GitHub →"
+      "alpha_link": "Следить за прогрессом на GitHub →",
+      "f4_title": "69 систем счисления",
+      "f4_desc": "Переключайте выходные цифры на деванагари, тайский, арабско-индийский, клингон pIqaD и ещё 65 с помощью одного токена режима."
     },
     "ukrainian": {
       "rtl": false,
@@ -876,7 +894,9 @@
       "april_sub": "Ми перейменували всі оператори на емодзі. Жарт. Можливо. 😈",
       "april_welcome": "Ласкаво просимо Zymbol-Lang",
       "alpha_msg": "Zymbol активно розробляється — цей реліз перевіряє концепцію дизайну мови. API, синтаксис і функції можуть змінюватися.",
-      "alpha_link": "Стежити за прогресом на GitHub →"
+      "alpha_link": "Стежити за прогресом на GitHub →",
+      "f4_title": "69 систем числення",
+      "f4_desc": "Перемикайте вихідні цифри на деванагарі, тайську, арабсько-індійську, клінгон pIqaD та ще 65 за допомогою одного токена режиму."
     },
     "bulgarian": {
       "rtl": false,
@@ -962,7 +982,9 @@
       "april_sub": "Преименувахме всички оператори с емоджи. Шега. Може би. 😈",
       "april_welcome": "Добре дошли Zymbol-Lang",
       "alpha_msg": "Zymbol е в активна разработка — това издание валидира концепцията на езиковия дизайн. API, синтаксис и функции могат да се променят.",
-      "alpha_link": "Следете напредъка в GitHub →"
+      "alpha_link": "Следете напредъка в GitHub →",
+      "f4_title": "69 числови системи",
+      "f4_desc": "Превключвайте изходните цифри към деванагари, тайски, арабско-индийски, клингон pIqaD и още 65 с един маркер на режима."
     },
     "croatian": {
       "rtl": false,
@@ -1048,7 +1070,9 @@
       "april_sub": "Preimenovali smo sve operatore u emoji. Šala. Možda. 😈",
       "april_welcome": "Dobrodošli Zymbol-Lang",
       "alpha_msg": "Zymbol je u aktivnom razvoju — ovo izdanje potvrđuje konceptualni dizajn jezika. API-ji, sintaksa i funkcije mogu se promijeniti.",
-      "alpha_link": "Pratite napredak na GitHubu →"
+      "alpha_link": "Pratite napredak na GitHubu →",
+      "f4_title": "69 brojevnih sustava",
+      "f4_desc": "Prebacite izlazne znamenke na devanagari, tajlandski, arapsko-indijski, klingon pIqaD i još 65 s jednim modusom-tokenom."
     },
     "czech": {
       "rtl": false,
@@ -1134,7 +1158,9 @@
       "april_sub": "Přejmenovali jsme všechny operátory na emoji. Vtip. Možná. 😈",
       "april_welcome": "Vítejte Zymbol-Lang",
       "alpha_msg": "Zymbol je v aktivním vývoji — toto vydání ověřuje konceptuální návrh jazyka. API, syntaxe a funkce se mohou měnit.",
-      "alpha_link": "Sledovat vývoj na GitHubu →"
+      "alpha_link": "Sledovat vývoj na GitHubu →",
+      "f4_title": "69 číselných soustav",
+      "f4_desc": "Přepínejte výstupní číslice na devanagari, thajský, arabsko-indický, klingon pIqaD a dalších 65 jediným tokenem režimu."
     },
     "slovak": {
       "rtl": false,
@@ -1220,7 +1246,9 @@
       "april_sub": "Premenovali sme všetky operátory na emoji. Vtip. Možno. 😈",
       "april_welcome": "Vitajte Zymbol-Lang",
       "alpha_msg": "Zymbol je v aktívnom vývoji — toto vydanie overuje konceptuálny návrh jazyka. API, syntax a funkcie sa môžu meniť.",
-      "alpha_link": "Sledovať pokrok na GitHube →"
+      "alpha_link": "Sledovať pokrok na GitHube →",
+      "f4_title": "69 číselných sústav",
+      "f4_desc": "Prepínajte výstupné číslice na devanagari, thajský, arabsko-indický, klingon pIqaD a ďalších 65 jediným tokenom režimu."
     },
     "romanian": {
       "rtl": false,
@@ -1306,7 +1334,9 @@
       "april_sub": "Am redenumit toți operatorii cu emoji. Glumă. Poate. 😈",
       "april_welcome": "Bun venit Zymbol-Lang",
       "alpha_msg": "Zymbol este în dezvoltare activă — această versiune validează conceptul de design al limbajului. API-urile, sintaxa și funcțiile se pot schimba.",
-      "alpha_link": "Urmărește progresul pe GitHub →"
+      "alpha_link": "Urmărește progresul pe GitHub →",
+      "f4_title": "69 sisteme numerice",
+      "f4_desc": "Schimbați cifrele de ieșire în devanagari, thai, arabo-indic, klingon pIqaD și alte 65 cu un singur token de mod."
     },
     "hungarian": {
       "rtl": false,
@@ -1392,7 +1422,9 @@
       "april_sub": "Átneveztük az összes operátort emojira. Vicc. Talán. 😈",
       "april_welcome": "Üdvözöljük Zymbol-Lang",
       "alpha_msg": "A Zymbol aktív fejlesztés alatt áll — ez a kiadás a nyelv tervezési koncepcióját ellenőrzi. Az API-k, a szintaxis és a funkciók változhatnak.",
-      "alpha_link": "Kövesd a fejlesztést a GitHubon →"
+      "alpha_link": "Kövesd a fejlesztést a GitHubon →",
+      "f4_title": "69 számrendszer",
+      "f4_desc": "Váltsd az kimeneti számjegyeket devanagari, thai, arab-indiai, klingon pIqaD és még 65 rendszerre egyetlen módtokennel."
     },
     "finnish": {
       "rtl": false,
@@ -1478,7 +1510,9 @@
       "april_sub": "Nimesimme kaikki operaattorit emojeiksi. Vitsi. Ehkä. 😈",
       "april_welcome": "Tervetuloa Zymbol-Lang",
       "alpha_msg": "Zymbol on aktiivisessa kehityksessä — tämä julkaisu on kielen suunnittelukonseptin validointi. API:t, syntaksi ja ominaisuudet voivat muuttua.",
-      "alpha_link": "Seuraa edistymistä GitHubissa →"
+      "alpha_link": "Seuraa edistymistä GitHubissa →",
+      "f4_title": "69 numerojärjestelmää",
+      "f4_desc": "Vaihda tulosteiden numerot devanagari-, thai-, arabialais-indialais-, klingon pIqaD- ja 65 muuhun järjestelmään yhdellä tilamerkillä."
     },
     "estonian": {
       "rtl": false,
@@ -1564,7 +1598,9 @@
       "april_sub": "Nimetasime kõik operaatorid emojideks ümber. Nali. Võib-olla. 😈",
       "april_welcome": "Tere tulemast Zymbol-Lang",
       "alpha_msg": "Zymbol on aktiivses arenduses — see väljaanne kinnitab keele disainikontseptsiooni. API-d, süntaks ja funktsioonid võivad muutuda.",
-      "alpha_link": "Jälgi edusamme GitHubis →"
+      "alpha_link": "Jälgi edusamme GitHubis →",
+      "f4_title": "69 arvusüsteemi",
+      "f4_desc": "Vaheta väljundnumbreid devanagari, tai, araabia-india, klingon pIqaD ja veel 65 süsteemi vahel ühe režiimimärgiga."
     },
     "latvian": {
       "rtl": false,
@@ -1650,7 +1686,9 @@
       "april_sub": "Mēs pārdēvējām visus operatorus par emodzijiem. Joks. Varbūt. 😈",
       "april_welcome": "Laipni lūdzam Zymbol-Lang",
       "alpha_msg": "Zymbol ir aktīvā izstrādē — šis laidiens apstiprina valodas dizaina koncepciju. API, sintakse un funkcijas var mainīties.",
-      "alpha_link": "Sekojiet progresam GitHub →"
+      "alpha_link": "Sekojiet progresam GitHub →",
+      "f4_title": "69 skaitļu sistēmas",
+      "f4_desc": "Pārslēdz izvades ciparus uz devanagari, taizemiešu, arābu-indiešu, klingon pIqaD un vēl 65 citām ar vienu režīma marķieri."
     },
     "lithuanian": {
       "rtl": false,
@@ -1736,7 +1774,9 @@
       "april_sub": "Pervardijome visus operatorius emojiais. Juokas. Gal. 😈",
       "april_welcome": "Sveiki atvykę Zymbol-Lang",
       "alpha_msg": "Zymbol yra aktyviai kuriamas — šis leidimas patvirtina kalbos dizaino koncepciją. API, sintaksė ir funkcijos gali keistis.",
-      "alpha_link": "Sekite pažangą GitHub →"
+      "alpha_link": "Sekite pažangą GitHub →",
+      "f4_title": "69 skaičių sistemos",
+      "f4_desc": "Perjunkite išvesties skaitmenis į devanagari, tajų, arabų-indų, klingon pIqaD ir dar 65 kitas su vienu režimo žetonu."
     },
     "norwegian": {
       "rtl": false,
@@ -1822,7 +1862,9 @@
       "april_sub": "Vi byttet alle operatorer til emojis. Bare tull. Kanskje. 😈",
       "april_welcome": "Velkommen Zymbol-Lang",
       "alpha_msg": "Zymbol er under aktiv utvikling — denne utgivelsen validerer konseptet for språkdesignet. API-er, syntaks og funksjoner kan endres.",
-      "alpha_link": "Følg fremgangen på GitHub →"
+      "alpha_link": "Følg fremgangen på GitHub →",
+      "f4_title": "69 tallsystemer",
+      "f4_desc": "Bytt utdatasifre til devanagari, thai, arabisk-indisk, klingon pIqaD og 65 andre med ett modustoken."
     },
     "danish": {
       "rtl": false,
@@ -1908,7 +1950,9 @@
       "april_sub": "Vi omdøbte alle operatorer til emojis. Sjov. Måske. 😈",
       "april_welcome": "Velkommen Zymbol-Lang",
       "alpha_msg": "Zymbol er under aktiv udvikling — denne udgivelse validerer sprogets designkoncept. API'er, syntaks og funktioner kan ændre sig.",
-      "alpha_link": "Følg fremgangen på GitHub →"
+      "alpha_link": "Følg fremgangen på GitHub →",
+      "f4_title": "69 talsystemer",
+      "f4_desc": "Skift outputcifre til devanagari, thai, arabisk-indisk, klingon pIqaD og 65 andre med ét modustoken."
     },
     "swedish": {
       "rtl": false,
@@ -1994,7 +2038,9 @@
       "april_sub": "Vi döpte om alla operatorer till emojis. Skämt. Kanske. 😈",
       "april_welcome": "Välkommen Zymbol-Lang",
       "alpha_msg": "Zymbol är under aktiv utveckling — denna utgåva validerar konceptet för språkdesignen. API:er, syntax och funktioner kan ändras.",
-      "alpha_link": "Följ framstegen på GitHub →"
+      "alpha_link": "Följ framstegen på GitHub →",
+      "f4_title": "69 talsystem",
+      "f4_desc": "Byt utdatasiffror till devanagari, thai, arabisk-indisk, klingon pIqaD och 65 fler med ett enda lägestoken."
     },
     "icelandic": {
       "rtl": false,
@@ -2080,7 +2126,9 @@
       "april_sub": "Við endurnefndum alla virkja í emojis. Brandarinn. Kannski. 😈",
       "april_welcome": "Velkomin Zymbol-Lang",
       "alpha_msg": "Zymbol er í virkri þróun — þessi útgáfa staðfestir hugmyndina að málhönnuninni. API, setningafræði og eiginleikar geta breyst.",
-      "alpha_link": "Fylgstu með framgangi á GitHub →"
+      "alpha_link": "Fylgstu með framgangi á GitHub →",
+      "f4_title": "69 talnkerfi",
+      "f4_desc": "Skiptu úttakstölum yfir í devanagari, taílenskt, arabísk-indverskt, klingon pIqaD og 65 önnur með einum háttatákni."
     },
     "greek": {
       "rtl": false,
@@ -2166,7 +2214,9 @@
       "april_sub": "Μετονομάσαμε όλους τους τελεστές σε emoji. Αστείο. Ίσως. 😈",
       "april_welcome": "Καλώς ήρθατε Zymbol-Lang",
       "alpha_msg": "Το Zymbol βρίσκεται σε ενεργή ανάπτυξη — αυτή η έκδοση επικυρώνει την έννοια του σχεδιασμού της γλώσσας. Τα API, η σύνταξη και οι λειτουργίες ενδέχεται να αλλάξουν.",
-      "alpha_link": "Παρακολουθήστε την πρόοδο στο GitHub →"
+      "alpha_link": "Παρακολουθήστε την πρόοδο στο GitHub →",
+      "f4_title": "69 αριθμητικά συστήματα",
+      "f4_desc": "Αλλάξτε τους αριθμούς εξόδου σε ντεβαναγκάρι, ταϊλανδικούς, αραβο-ινδικούς, κλίνγκον pIqaD και άλλα 65 με ένα μόνο token λειτουργίας."
     },
     "serbian": {
       "rtl": false,
@@ -2252,7 +2302,9 @@
       "april_sub": "Преименовали смо све операторе у емоџије. Шала. Можда. 😈",
       "april_welcome": "Добродошли Zymbol-Lang",
       "alpha_msg": "Zymbol је у активном развоју — ово издање потврђује концепт дизајна језика. API-ји, синтакса и функције могу се мењати.",
-      "alpha_link": "Пратите напредак на GitHub-у →"
+      "alpha_link": "Пратите напредак на GitHub-у →",
+      "f4_title": "69 нумеричких система",
+      "f4_desc": "Пребаците излазне цифре на деванагари, тајски, арабско-индијски, клингон pIqaD и још 65 јединственим токеном режима."
     },
     "arabic": {
       "rtl": true,
@@ -2343,7 +2395,9 @@
       "april_sub": "غيّرنا جميع المعاملات إلى رموز تعبيرية. مزحة. ربما. 😈",
       "april_welcome": "أهلاً وسهلاً Zymbol-Lang",
       "alpha_msg": "زيمبول قيد التطوير النشط — هذا الإصدار يُثبت مفهوم تصميم اللغة. قد تتغير واجهات API والصياغة والميزات.",
-      "alpha_link": "تابع التقدم على GitHub →"
+      "alpha_link": "تابع التقدم على GitHub →",
+      "f4_title": "٦٩ نظامًا عدديًا",
+      "f4_desc": "بدّل أرقام الإخراج إلى ديفاناغاري، تايلاندية، عربية هندية، كلينغون pIqaD و٦٥ نظامًا آخر بمحدد وضع واحد."
     },
     "hebrew": {
       "rtl": true,
@@ -2429,7 +2483,9 @@
       "april_sub": "שינינו את כל האופרטורים לאמוג'י. בדיחה. אולי. 😈",
       "april_welcome": "ברוכים הבאים Zymbol-Lang",
       "alpha_msg": "Zymbol נמצא בפיתוח פעיל — גרסה זו מאמתת את הרעיון של עיצוב השפה. ממשקי API, תחביר ותכונות עשויים להשתנות.",
-      "alpha_link": "עקוב אחר ההתקדמות ב-GitHub →"
+      "alpha_link": "עקוב אחר ההתקדמות ב-GitHub →",
+      "f4_title": "69 מערכות ספרות",
+      "f4_desc": "החלף ספרות פלט לדוואנאגרי, תאי, ערבי-הינדי, קלינגון pIqaD ו-65 נוספות עם אסימון מצב אחד."
     },
     "persian": {
       "rtl": true,
@@ -2515,7 +2571,9 @@
       "april_sub": "همه عملگرها را به ایموجی تبدیل کردیم. شوخی بود. شاید. 😈",
       "april_welcome": "خوش آمدید Zymbol-Lang",
       "alpha_msg": "Zymbol در حال توسعه فعال است — این نسخه، مفهوم طراحی زبان را اعتبارسنجی می‌کند. API‌ها، نحو و ویژگی‌ها ممکن است تغییر کنند.",
-      "alpha_link": "پیشرفت را در GitHub دنبال کنید →"
+      "alpha_link": "پیشرفت را در GitHub دنبال کنید →",
+      "f4_title": "۶۹ دستگاه عددی",
+      "f4_desc": "با یک توکن حالت، ارقام خروجی را به دواناگری، تایلندی، عربی-هندی، کلینگون pIqaD و ۶۵ سیستم دیگر تغییر دهید."
     },
     "urdu": {
       "rtl": true,
@@ -2601,7 +2659,9 @@
       "april_sub": "ہم نے سارے آپریٹرز کو ایموجی سے بدل دیا۔ مذاق ہے۔ شاید۔ 😈",
       "april_welcome": "خوش آمدید Zymbol-Lang",
       "alpha_msg": "Zymbol فعال ترقی میں ہے — یہ ریلیز زبان کے ڈیزائن کے تصور کی توثیق ہے۔ API، نحو اور خصوصیات تبدیل ہو سکتے ہیں۔",
-      "alpha_link": "GitHub پر پیشرفت فالو کریں →"
+      "alpha_link": "GitHub پر پیشرفت فالو کریں →",
+      "f4_title": "۶۹ عددی نظام",
+      "f4_desc": "ایک موڈ ٹوکن سے آؤٹ پٹ ہندسوں کو دیوناگری، تھائی، عربی-ہندی، کلنگن pIqaD اور ۶۵ مزید میں تبدیل کریں۔"
     },
     "hindi": {
       "rtl": false,
@@ -2687,7 +2747,9 @@
       "april_sub": "हमने सभी ऑपरेटरों को इमोजी से बदल दिया। मज़ाक था। शायद। 😈",
       "april_welcome": "स्वागत है Zymbol-Lang",
       "alpha_msg": "Zymbol सक्रिय विकास में है — यह रिलीज़ भाषा के डिज़ाइन की अवधारणा की पुष्टि है। API, सिंटैक्स और फीचर बदल सकते हैं।",
-      "alpha_link": "GitHub पर प्रगति देखें →"
+      "alpha_link": "GitHub पर प्रगति देखें →",
+      "f4_title": "६९ अंक प्रणालियाँ",
+      "f4_desc": "एक मोड टोकन से आउटपुट अंकों को देवनागरी, थाई, अरबी-इंडिक, क्लिंगन pIqaD और ६५ अन्य में बदलें।"
     },
     "bengali": {
       "rtl": false,
@@ -2773,7 +2835,9 @@
       "april_sub": "আমরা সব অপারেটর ইমোজি দিয়ে বদলেছি। মজা করছি। হয়তো। 😈",
       "april_welcome": "স্বাগতম Zymbol-Lang",
       "alpha_msg": "Zymbol সক্রিয় উন্নয়নে রয়েছে — এই রিলিজটি ভাষা ডিজাইনের ধারণার যাচাইকরণ। API, সিনট্যাক্স এবং ফিচার পরিবর্তন হতে পারে।",
-      "alpha_link": "GitHub-এ অগ্রগতি অনুসরণ করুন →"
+      "alpha_link": "GitHub-এ অগ্রগতি অনুসরণ করুন →",
+      "f4_title": "৬৯টি সংখ্যা পদ্ধতি",
+      "f4_desc": "একটি মোড টোকেন দিয়ে আউটপুট সংখ্যা দেবনাগরী, থাই, আরবি-ইন্ডিক, ক্লিংগন pIqaD এবং আরও ৬৫টিতে পরিবর্তন করুন।"
     },
     "marathi": {
       "rtl": false,
@@ -2859,7 +2923,9 @@
       "april_sub": "आम्ही सर्व ऑपरेटर इमोजीने बदलले. विनोद होता. कदाचित. 😈",
       "april_welcome": "स्वागत आहे Zymbol-Lang",
       "alpha_msg": "Zymbol सक्रिय विकासात आहे — हे रिलीज भाषेच्या डिझाइन संकल्पनेची पडताळणी आहे. API, सिंटॅक्स आणि वैशिष्ट्ये बदलू शकतात.",
-      "alpha_link": "GitHub वर प्रगती फॉलो करा →"
+      "alpha_link": "GitHub वर प्रगती फॉलो करा →",
+      "f4_title": "६९ अंक प्रणाली",
+      "f4_desc": "एका मोड टोकनने आउटपुट अंक देवनागरी, थाई, अरेबिक-इंडिक, क्लिंगन pIqaD आणि ६५ इतरांमध्ये बदला।"
     },
     "punjabi": {
       "rtl": false,
@@ -2945,7 +3011,9 @@
       "april_sub": "ਅਸੀਂ ਸਾਰੇ ਓਪਰੇਟਰਾਂ ਨੂੰ ਇਮੋਜੀ ਨਾਲ ਬਦਲ ਦਿੱਤਾ। ਮਜ਼ਾਕ ਸੀ। ਸ਼ਾਇਦ। 😈",
       "april_welcome": "ਜੀ ਆਇਆਂ ਨੂੰ Zymbol-Lang",
       "alpha_msg": "Zymbol ਸਰਗਰਮ ਵਿਕਾਸ ਵਿੱਚ ਹੈ — ਇਹ ਰਿਲੀਜ਼ ਭਾਸ਼ਾ ਡਿਜ਼ਾਈਨ ਦੇ ਸੰਕਲਪ ਦੀ ਪ੍ਰਮਾਣਿਕਤਾ ਹੈ। API, ਸਿੰਟੈਕਸ ਅਤੇ ਵਿਸ਼ੇਸ਼ਤਾਵਾਂ ਬਦਲ ਸਕਦੀਆਂ ਹਨ।",
-      "alpha_link": "GitHub 'ਤੇ ਤਰੱਕੀ ਫੋਲੋ ਕਰੋ →"
+      "alpha_link": "GitHub 'ਤੇ ਤਰੱਕੀ ਫੋਲੋ ਕਰੋ →",
+      "f4_title": "੬੯ ਅੰਕ ਪ੍ਰਣਾਲੀਆਂ",
+      "f4_desc": "ਇੱਕ ਮੋਡ ਟੋਕਨ ਨਾਲ ਆਉਟਪੁੱਟ ਅੰਕਾਂ ਨੂੰ ਦੇਵਨਾਗਰੀ, ਥਾਈ, ਅਰਬੀ-ਇੰਡਿਕ, ਕਲਿੰਗਨ pIqaD ਅਤੇ ੬੫ ਹੋਰਨਾਂ ਵਿੱਚ ਬਦਲੋ।"
     },
     "mandarin": {
       "rtl": false,
@@ -3031,7 +3099,9 @@
       "april_sub": "我们把所有运算符换成了表情包。开玩笑的。也许。😈",
       "april_welcome": "欢迎 Zymbol-Lang",
       "alpha_msg": "Zymbol 正处于积极开发阶段 — 此版本是语言设计理念的概念验证。API、语法和功能可能会有所变化。",
-      "alpha_link": "在 GitHub 上关注进展 →"
+      "alpha_link": "在 GitHub 上关注进展 →",
+      "f4_title": "69种数字体系",
+      "f4_desc": "只需一个模式标记，即可将输出数字切换为天城文、泰文、阿拉伯-印度文、克林贡 pIqaD 及另外 65 种数字体系。"
     },
     "japanese": {
       "rtl": false,
@@ -3117,7 +3187,9 @@
       "april_sub": "全ての演算子を絵文字に変えました。冗談です。たぶん。😈",
       "april_welcome": "ようこそ Zymbol-Lang",
       "alpha_msg": "Zymbolは開発中です — このリリースは言語設計のコンセプト検証版です。API・構文・機能は変更される場合があります。",
-      "alpha_link": "GitHubで進捗を確認 →"
+      "alpha_link": "GitHubで進捗を確認 →",
+      "f4_title": "69の数字体系",
+      "f4_desc": "1つのモードトークンで、デーヴァナーガリー、タイ、アラビア数字、クリンゴンpIqaDなど65以上の数字体系に切り替えられます。"
     },
     "korean": {
       "rtl": false,
@@ -3203,7 +3275,9 @@
       "april_sub": "모든 연산자를 이모지로 바꿨어요. 농담이에요. 아마도. 😈",
       "april_welcome": "환영합니다 Zymbol-Lang",
       "alpha_msg": "Zymbol은 개발 중입니다 — 이 릴리스는 언어 설계 개념 검증 버전입니다. API, 문법, 기능은 변경될 수 있습니다.",
-      "alpha_link": "GitHub에서 진행 상황 확인 →"
+      "alpha_link": "GitHub에서 진행 상황 확인 →",
+      "f4_title": "69가지 숫자 체계",
+      "f4_desc": "하나의 모드 토큰으로 출력 숫자를 데바나가리, 태국어, 아라비아-인도, 클링온 pIqaD 및 65가지 더 전환할 수 있습니다."
     },
     "indonesian": {
       "rtl": false,
@@ -3289,7 +3363,9 @@
       "april_sub": "Kami mengganti semua operator dengan emoji. Bercanda. Mungkin. 😈",
       "april_welcome": "Selamat datang Zymbol-Lang",
       "alpha_msg": "Zymbol sedang dalam pengembangan aktif — rilis ini merupakan validasi konsep desain bahasa. API, sintaks, dan fitur dapat berubah.",
-      "alpha_link": "Ikuti perkembangan di GitHub →"
+      "alpha_link": "Ikuti perkembangan di GitHub →",
+      "f4_title": "69 sistem numerik",
+      "f4_desc": "Ganti digit keluaran ke devanagari, Thai, Arab-India, Klingon pIqaD dan 65 lainnya dengan satu token mode."
     },
     "vietnamese": {
       "rtl": false,
@@ -3375,7 +3451,9 @@
       "april_sub": "Chúng tôi đã đổi tất cả toán tử thành emoji. Đùa thôi. Có thể. 😈",
       "april_welcome": "Chào mừng Zymbol-Lang",
       "alpha_msg": "Zymbol đang trong giai đoạn phát triển tích cực — bản phát hành này là sự xác nhận khái niệm thiết kế ngôn ngữ. API, cú pháp và tính năng có thể thay đổi.",
-      "alpha_link": "Theo dõi tiến trình trên GitHub →"
+      "alpha_link": "Theo dõi tiến trình trên GitHub →",
+      "f4_title": "69 hệ thống số",
+      "f4_desc": "Chuyển đổi chữ số đầu ra sang devanagari, Thái, Ả Rập-Ấn Độ, Klingon pIqaD và 65 hệ thống khác bằng một token chế độ duy nhất."
     },
     "thai": {
       "rtl": false,
@@ -3461,7 +3539,9 @@
       "april_sub": "เราเปลี่ยนตัวดำเนินการทั้งหมดเป็นอีโมจิ ไม่จริงหรอก บางที 😈",
       "april_welcome": "ยินดีต้อนรับ Zymbol-Lang",
       "alpha_msg": "Zymbol อยู่ในการพัฒนาอย่างต่อเนื่อง — การเผยแพร่นี้คือการตรวจสอบแนวคิดการออกแบบภาษา API ไวยากรณ์ และฟีเจอร์อาจมีการเปลี่ยนแปลง",
-      "alpha_link": "ติดตามความคืบหน้าบน GitHub →"
+      "alpha_link": "ติดตามความคืบหน้าบน GitHub →",
+      "f4_title": "๖๙ ระบบตัวเลข",
+      "f4_desc": "เปลี่ยนตัวเลขเอาต์พุตเป็นเทวนาครี ไทย อาหรับ-อินดิก คลิงกอน pIqaD และอีก ๖๕ ระบบด้วยโทเค็นโหมดเดียว"
     },
     "tagalog": {
       "rtl": false,
@@ -3547,7 +3627,9 @@
       "april_sub": "Pinalitan namin ang lahat ng operator ng emoji. Biro lang. Siguro. 😈",
       "april_welcome": "Maligayang pagdating Zymbol-Lang",
       "alpha_msg": "Ang Zymbol ay nasa aktibong pagpapaunlad — ang release na ito ay pagpapatunay ng konsepto ng disenyo ng wika. Maaaring magbago ang mga API, syntax, at feature.",
-      "alpha_link": "Sundan ang progreso sa GitHub →"
+      "alpha_link": "Sundan ang progreso sa GitHub →",
+      "f4_title": "69 sistema ng numero",
+      "f4_desc": "Palitan ang mga output digit sa devanagari, Thai, Arabic-Indic, Klingon pIqaD at 65 pa gamit ang isang mode token."
     },
     "swahili": {
       "rtl": false,
@@ -3633,7 +3715,9 @@
       "april_sub": "Tulibadilisha waendeshaji wote na emoji. Mzaha tu. Labda. 😈",
       "april_welcome": "Karibu Zymbol-Lang",
       "alpha_msg": "Zymbol iko katika maendeleo ya kazi — toleo hili ni uthibitisho wa dhana ya muundo wa lugha. API, sintaksia na vipengele vinaweza kubadilika.",
-      "alpha_link": "Fuata maendeleo kwenye GitHub →"
+      "alpha_link": "Fuata maendeleo kwenye GitHub →",
+      "f4_title": "Mifumo 69 ya nambari",
+      "f4_desc": "Badilisha tarakimu za matokeo hadi devanagari, Thai, Kiarabu-Kihindi, Klingon pIqaD na 65 zaidi kwa tokeni moja ya hali."
     },
     "hausa": {
       "rtl": false,
@@ -3719,7 +3803,9 @@
       "april_sub": "Mun canza dukkan masu aiki zuwa emoji. Wasa ne. Watakila. 😈",
       "april_welcome": "Maraba Zymbol-Lang",
       "alpha_msg": "Zymbol yana cikin ci gaban aiki — wannan sigar tabbatarwa ce ta ra'ayin tsarin harshe. API, nahawu da fasaloli na iya canzawa.",
-      "alpha_link": "Bi ci gaban a GitHub →"
+      "alpha_link": "Bi ci gaban a GitHub →",
+      "f4_title": "Tsarin lambobi 69",
+      "f4_desc": "Canza lambobin fitarwa zuwa devanagari, Thai, Larabci-Indic, Klingon pIqaD da 65 ƙari tare da alamar yanayi ɗaya."
     },
     "yoruba": {
       "rtl": false,
@@ -3805,7 +3891,9 @@
       "april_sub": "A yipada gbogbo awọn oṣiṣẹ si emoji. Ere ni. Boya. 😈",
       "april_welcome": "Ẹ káàbọ̀ Zymbol-Lang",
       "alpha_msg": "Zymbol wà ninu idagbasoke ti nṣiṣẹ — itusilẹ yii jẹ ijẹrisi ero ti apẹrẹ ede. API, girama ati awọn ẹya le yipada.",
-      "alpha_link": "Tẹle ilọsiwaju lori GitHub →"
+      "alpha_link": "Tẹle ilọsiwaju lori GitHub →",
+      "f4_title": "Eto nọmba 69",
+      "f4_desc": "Yi awọn nọmba itusilẹ pada si devanagari, Thai, Arabic-Indic, Klingon pIqaD ati 65 miiran pẹlu ami-aami ipo kan."
     },
     "amharic": {
       "rtl": false,
@@ -3891,7 +3979,9 @@
       "april_sub": "ሁሉም ኦፕሬተሮቻችንን ኢሞጂ አደረግናቸው። ቀልድ ነበር። ምናልባት። 😈",
       "april_welcome": "እንኳን ደህና መጡ Zymbol-Lang",
       "alpha_msg": "Zymbol በንቃት ልማት ላይ ነው — ይህ ልቀት የቋንቋ ንድፍ ፅንሰ-ሀሳብ ማረጋገጫ ነው። API፣ syntax እና ባህሪያት ሊለወጡ ይችላሉ።",
-      "alpha_link": "በ GitHub ላይ እድገትን ይከታተሉ →"
+      "alpha_link": "በ GitHub ላይ እድገትን ይከታተሉ →",
+      "f4_title": "69 የቁጥር ሥርዓቶች",
+      "f4_desc": "በአንድ የሁነታ ቶከን የውጤት ቁጥሮችን ወደ ደቫናጋሪ፣ ታይ፣ አረብኛ-ኢንዲክ፣ ክሊንጎን pIqaD እና ሌሎች 65 ሥርዓቶች ቀይሩ።"
     },
     "emoji": {
       "rtl": false,
@@ -3977,7 +4067,9 @@
       "april_sub": "🔣 ➡️ 😂 ❌🧠 🤷😈",
       "april_welcome": "👋🎉 Zymbol-Lang",
       "alpha_msg": "🔨⚡ Zymbol v0.0.2 🧪 — 🚧 ⚠️ 🔄 API 🔀 syntax 🌀",
-      "alpha_link": "👀 GitHub →"
+      "alpha_link": "👀 GitHub →",
+      "f4_title": "6️⃣9️⃣ 🔢 systems",
+      "f4_desc": "🔀 output digits → 🕉️ Devanagari · 🇹🇭 Thai · 🌍 Arabic-Indic · 🖖 Klingon pIqaD · +65 🌐 with 1️⃣ mode token."
     },
     "turkish": {
       "rtl": false,
@@ -4063,7 +4155,9 @@
       "april_sub": "Tüm operatörleri emojilerle değiştirdik. Şaka. Belki. 😈",
       "april_welcome": "Hoş geldiniz Zymbol-Lang",
       "alpha_msg": "Zymbol aktif geliştirme aşamasındadır — bu sürüm dil tasarımının kavram doğrulamasıdır. API'ler, sözdizimi ve özellikler değişebilir.",
-      "alpha_link": "GitHub'da ilerlemeyi takip et →"
+      "alpha_link": "GitHub'da ilerlemeyi takip et →",
+      "f4_title": "69 sayı sistemi",
+      "f4_desc": "Tek bir mod belirteciyle çıktı rakamlarını devanagari, Tay, Arap-Hint, Klingon pIqaD ve 65 daha fazlasına geçirin."
     },
     "castellano": {
       "rtl": false,
@@ -4150,7 +4244,9 @@
       "april_sub": "Renombramos todos los operadores con emojis. Es broma. O quizás no. 😈",
       "april_welcome": "Bienvenido Zymbol-Lang",
       "alpha_msg": "Zymbol está en desarrollo activo — esta versión valida el concepto del diseño del lenguaje. Las APIs, la sintaxis y las funciones pueden cambiar.",
-      "alpha_link": "Sigue el progreso en GitHub →"
+      "alpha_link": "Sigue el progreso en GitHub →",
+      "f4_title": "69 sistemas numerales",
+      "f4_desc": "Cambia los dígitos de salida a devanagari, tailandés, índico-arábigo, klingon pIqaD y 65 más con un solo token de modo."
     },
     "portugues_eu": {
       "rtl": false,
@@ -4236,7 +4332,9 @@
       "april_sub": "Renomeámos todos os operadores para emojis. É piada. Talvez. 😈",
       "april_welcome": "Bem-vindo Zymbol-Lang",
       "alpha_msg": "Zymbol está em desenvolvimento activo — este lançamento valida o conceito de design da linguagem. As APIs, a sintaxe e as funcionalidades podem mudar.",
-      "alpha_link": "Seguir o progresso no GitHub →"
+      "alpha_link": "Seguir o progresso no GitHub →",
+      "f4_title": "69 sistemas numerais",
+      "f4_desc": "Mude os dígitos de saída para devanagari, tailandês, indo-arábico, klingon pIqaD e mais 65 com um único token de modo."
     },
     "tamil": {
       "rtl": false,
@@ -4322,7 +4420,9 @@
       "april_sub": "அனைத்து ஆபரேட்டர்களையும் எமோஜியாக மாற்றினோம். நகைச்சுவை. ஒருவேளை. 😈",
       "april_welcome": "வரவேற்கிறோம் Zymbol-Lang",
       "alpha_msg": "Zymbol செயலில் உள்ள வளர்ச்சியில் உள்ளது — இந்த வெளியீடு மொழி வடிவமைப்பு கருத்தை சரிபார்க்கிறது. API, தொடரியல் மற்றும் அம்சங்கள் மாறலாம்.",
-      "alpha_link": "GitHub-ல் முன்னேற்றத்தை பின்தொடரவும் →"
+      "alpha_link": "GitHub-ல் முன்னேற்றத்தை பின்தொடரவும் →",
+      "f4_title": "69 எண் முறைமைகள்",
+      "f4_desc": "ஒரு பயன்முறை டோக்கனில் வெளியீட்டு இலக்கங்களை தேவநாகரி, தாய், அரபு-இந்திக, கிளிங்கன் pIqaD மற்றும் 65 மேலும் மாற்றுங்கள்."
     },
     "catalan": {
       "rtl": false,
@@ -4408,7 +4508,9 @@
       "april_sub": "Hem canviat tots els operadors per emojis. És broma. Potser. 😈",
       "april_welcome": "Benvingut Zymbol-Lang",
       "alpha_msg": "Zymbol està en desenvolupament actiu — aquesta versió valida el concepte del disseny del llenguatge. Les API, sintaxi i funcionalitats poden canviar.",
-      "alpha_link": "Segueix el progrés a GitHub →"
+      "alpha_link": "Segueix el progrés a GitHub →",
+      "f4_title": "69 sistemes numèrics",
+      "f4_desc": "Canvia els dígits de sortida a devanagari, tailandès, indo-àrab, klingon pIqaD i 65 més amb un únic testimoni de mode."
     },
     "basque": {
       "rtl": false,
@@ -4494,7 +4596,9 @@
       "april_sub": "Operadore guztiak emojiekin aldatu ditugu. Txantxa. Agian. 😈",
       "april_welcome": "Ongi etorri Zymbol-Lang",
       "alpha_msg": "Zymbol garapen aktiboan dago — bertsio honek hizkuntzaren diseinuaren kontzeptua balioztatzen du. APIak, sintaxia eta funtzioek alda daitezke.",
-      "alpha_link": "Jarraitu aurrerapenak GitHub-en →"
+      "alpha_link": "Jarraitu aurrerapenak GitHub-en →",
+      "f4_title": "69 zenbakizko sistema",
+      "f4_desc": "Aldatu irteerako zenbakiak devanagari, thai, arabiar-indiar, klingon pIqaD eta 65 gehiagora modu-token bakarra erabiliz."
     },
     "telugu": {
       "rtl": false,
@@ -4580,7 +4684,9 @@
       "april_sub": "మేము అన్ని ఆపరేటర్లను ఎమోజీలతో మార్చాము. జోక్. బహుశా. 😈",
       "april_welcome": "స్వాగతం Zymbol-Lang",
       "alpha_msg": "Zymbol చురుకైన అభివృద్ధిలో ఉంది — ఈ విడుదల భాష రూపకల్పన భావన ధృవీకరణ. API, వాక్యనిర్మాణం మరియు లక్షణాలు మారవచ్చు.",
-      "alpha_link": "GitHub లో పురోగతిని అనుసరించండి →"
+      "alpha_link": "GitHub లో పురోగతిని అనుసరించండి →",
+      "f4_title": "69 సంఖ్య వ్యవస్థలు",
+      "f4_desc": "ఒక మోడ్ టోకన్‌తో అవుట్‌పుట్ అంకెలను దేవనాగరి, థాయ్, అరబిక్-ఇండిక్, క్లింగన్ pIqaD మరియు 65 ఇతరాలకు మార్చండి."
     },
     "kannada": {
       "rtl": false,
@@ -4666,7 +4772,9 @@
       "april_sub": "ನಾವು ಎಲ್ಲಾ ಆಪರೇಟರ್‌ಗಳನ್ನು ಎಮೋಜಿಗಳಿಂದ ಬದಲಿಸಿದ್ದೇವೆ. ತಮಾಷೆ. ಬಹುಶಃ. 😈",
       "april_welcome": "ಸ್ವಾಗತ Zymbol-Lang",
       "alpha_msg": "Zymbol ಸಕ್ರಿಯ ಅಭಿವೃದ್ಧಿಯಲ್ಲಿದೆ — ಈ ಬಿಡುಗಡೆ ಭಾಷಾ ವಿನ್ಯಾಸ ಪರಿಕಲ್ಪನೆಯ ಮಾನ್ಯತೆಯಾಗಿದೆ. API, ಸಿಂಟ್ಯಾಕ್ಸ್ ಮತ್ತು ವೈಶಿಷ್ಟ್ಯಗಳು ಬದಲಾಗಬಹುದು.",
-      "alpha_link": "GitHub ನಲ್ಲಿ ಪ್ರಗತಿಯನ್ನು ಅನುಸರಿಸಿ →"
+      "alpha_link": "GitHub ನಲ್ಲಿ ಪ್ರಗತಿಯನ್ನು ಅನುಸರಿಸಿ →",
+      "f4_title": "69 ಸಂಖ್ಯಾ ವ್ಯವಸ್ಥೆಗಳು",
+      "f4_desc": "ಒಂದು ಮೋಡ್ ಟೋಕನ್‌ನಿಂದ ಔಟ್‌ಪುಟ್ ಅಂಕಿಗಳನ್ನು ದೇವನಾಗರಿ, ಥಾಯ್, ಅರೇಬಿಕ್-ಇಂಡಿಕ್, ಕ್ಲಿಂಗನ್ pIqaD ಮತ್ತು 65 ಇತರರಿಗೆ ಬದಲಾಯಿಸಿ."
     },
     "georgian": {
       "rtl": false,
@@ -4752,7 +4860,9 @@
       "april_sub": "ყველა ოპერატორი ემოჯიდ გადავარქვით. ხუმრობა. შეიძლება. 😈",
       "april_welcome": "მოგესალმებით Zymbol-Lang",
       "alpha_msg": "Zymbol აქტიური განვითარების პროცესშია — ეს გამოშვება ამოწმებს ენის დიზაინის კონცეფციას. API-ები, სინტაქსი და ფუნქციები შეიძლება შეიცვალოს.",
-      "alpha_link": "გამოყვეთ პროგრესს GitHub-ზე →"
+      "alpha_link": "გამოყვეთ პროგრესს GitHub-ზე →",
+      "f4_title": "რიცხვის 69 სისტემა",
+      "f4_desc": "ერთი რეჟიმის ტოკენით შეცვალეთ გამოსავლის ციფრები დევანაგარიზე, ტაიზე, არაბულ-ინდურზე, კლინგონ pIqaD-ზე და კიდევ 65-ზე."
     },
     "welsh": {
       "rtl": false,
@@ -4838,7 +4948,9 @@
       "april_sub": "Fe ailenwom yr holl weithredwyr yn emoji. Jôc. Efallai. 😈",
       "april_welcome": "Croeso Zymbol-Lang",
       "alpha_msg": "Mae Zymbol mewn datblygiad gweithredol — mae'r rhyddhad hwn yn dilysu cysyniad dyluniad yr iaith. Gall APIs, cystrawen a nodweddion newid.",
-      "alpha_link": "Dilynwch gynnydd ar GitHub →"
+      "alpha_link": "Dilynwch gynnydd ar GitHub →",
+      "f4_title": "69 system rifau",
+      "f4_desc": "Newidiwch ddigidau allbwn i devanagari, Thai, Arabig-Indig, Klingon pIqaD a 65 arall gydag un tocyn modd."
     },
     "zulu": {
       "rtl": false,
@@ -4924,7 +5036,9 @@
       "april_sub": "Sishintshile bonke abashayeli nge-emoji. Amahlaya. Mhlawumbe. 😈",
       "april_welcome": "Wamukelekile Zymbol-Lang",
       "alpha_msg": "I-Zymbol isekuthuthukisweni okusheshayo — lolu khuthazo luqinisekisa umqondo wokuyila ulwimi. Ama-API, i-syntax nezici angashintsha.",
-      "alpha_link": "Landela intuthuko ku-GitHub →"
+      "alpha_link": "Landela intuthuko ku-GitHub →",
+      "f4_title": "Izinhlelo ezingama-69 zenombolo",
+      "f4_desc": "Shintsha izinombolo zokukhipha ukuya ku-devanagari, Thai, Arabic-Indic, Klingon pIqaD no-65 okunye ngephoyinti elilodwa lemode."
     },
     "armenian": {
       "rtl": false,
@@ -5010,7 +5124,9 @@
       "april_sub": "Բոլոր օператորները վերանվանեցինք էմոջիի. Կատակ. Թերևս. 😈",
       "april_welcome": "Բարի գալուստ Zymbol-Lang",
       "alpha_msg": "Zymbol-ն ակտիվ մշակման փուլում է — այս թողարկումը հաստատում է լեզվի դիզայնի հայեցակարգը. API-ները, շարահյուսությունը և հնարավորությունները կարող են փոխվել:",
-      "alpha_link": "Հետևեք առաջընթացին GitHub-ում →"
+      "alpha_link": "Հետևեք առաջընթացին GitHub-ում →",
+      "f4_title": "69 թվային համակարգ",
+      "f4_desc": "Մեկ ռեժիմի նշանով փոխեք ելքային թվանշանները դևանագարի, թայ, արաբա-հնդկական, կլինգոն pIqaD և ևս 65 համակարգի:"
     },
     "quechua": {
       "rtl": false,
@@ -5096,7 +5212,9 @@
       "april_sub": "Llapan operadorchakunata emojiman tikrarchirqanchis. Asikuy. Imallapas. 😈",
       "april_welcome": "Allin hamunaykipi Zymbol-Lang",
       "alpha_msg": "Zymbol llankʼasqam kachkan — kay qispichiy simikunapa churayninkunata allinchayan. API, sintaxis, imaymanapis tikrakuyta atinku.",
-      "alpha_link": "GitHub-pi yachay-purin qʼawin →"
+      "alpha_link": "GitHub-pi yachay-purin qʼawin →",
+      "f4_title": "69 yupana siminchis",
+      "f4_desc": "Huk mode tokenwan llujsimuy yupakunata devanagari, Thai, Arabe-Indik, Klingon pIqaD, hukkunamantataq 65 kutichiy."
     },
     "galician": {
       "regions": [
@@ -5182,7 +5300,9 @@
       "april_sub": "Cambiamos todos os operadores por emojis. É broma. Quizais. 😈",
       "april_welcome": "Benvido Zymbol-Lang",
       "alpha_msg": "Zymbol está en desenvolvemento activo — esta versión valida o concepto do deseño da linguaxe. As API, a sintaxe e as funcións poden cambiar.",
-      "alpha_link": "Segue o progreso en GitHub →"
+      "alpha_link": "Segue o progreso en GitHub →",
+      "f4_title": "69 sistemas numerais",
+      "f4_desc": "Cambia os díxitos de saída a devanagari, tailandés, indoárabe, klingon pIqaD e 65 máis cun único token de modo."
     },
     "slovenian": {
       "regions": [
@@ -5268,7 +5388,9 @@
       "april_sub": "Preimenovali smo vse operatorje v emoji. Šala. Mogoče. 😈",
       "april_welcome": "Dobrodošli Zymbol-Lang",
       "alpha_msg": "Zymbol je v aktivnem razvoju — ta izdaja preverja konceptualni dizajn jezika. API-ji, sintaksa in funkcije se lahko spremenijo.",
-      "alpha_link": "Sledite napredku na GitHubu →"
+      "alpha_link": "Sledite napredku na GitHubu →",
+      "f4_title": "69 številskih sistemov",
+      "f4_desc": "Preklopite izhodne cifre na devanagari, tajski, arabsko-indijski, klingon pIqaD in še 65 z enim žetonom načina."
     },
     "albanian": {
       "regions": [
@@ -5354,7 +5476,9 @@
       "april_sub": "Riemërtuam të gjithë operatorët me emoji. Shaka. Ndoshta. 😈",
       "april_welcome": "Mirësevini Zymbol-Lang",
       "alpha_msg": "Zymbol është në zhvillim aktiv — ky version vërteton konceptin e dizajnit të gjuhës. API-të, sintaksa dhe funksionet mund të ndryshojnë.",
-      "alpha_link": "Ndiqni progresin në GitHub →"
+      "alpha_link": "Ndiqni progresin në GitHub →",
+      "f4_title": "69 sisteme numerike",
+      "f4_desc": "Ndërroni shifrat e daljes në devanagari, tailandez, arabiko-indik, klingon pIqaD dhe 65 të tjera me një token të vetëm mode."
     },
     "belarusian": {
       "regions": [
@@ -5440,7 +5564,9 @@
       "april_sub": "Мы перайменавалі ўсе аператары ў эмодзі. Жарт. Магчыма. 😈",
       "april_welcome": "Сардэчна запрашаем Zymbol-Lang",
       "alpha_msg": "Zymbol знаходзіцца ў актыўнай распрацоўцы — гэты рэліз правярае канцэпцыю дызайну мовы. API, сінтаксіс і функцыі могуць змяняцца.",
-      "alpha_link": "Сачыць за прагрэсам на GitHub →"
+      "alpha_link": "Сачыць за прагрэсам на GitHub →",
+      "f4_title": "69 лікавых сістэм",
+      "f4_desc": "Пераключайце выходныя лічбы на дэванагары, тайскую, арабска-індыйскую, клінгон pIqaD і яшчэ 65 з дапамогай аднаго токена рэжыму."
     },
     "gujarati": {
       "regions": [
@@ -5526,7 +5652,9 @@
       "april_sub": "અમે બધા ઓપરેટરો ઇમોજીથી બદલ્યા. મજાક. કદાચ. 😈",
       "april_welcome": "સ્વાગત છે Zymbol-Lang",
       "alpha_msg": "Zymbol સક્રિય વિકાસમાં છે — આ રિલીઝ ભાષા ડિઝાઇનના ખ્યાલની ચકાસણી છે. API, સિન્ટેક્સ અને સુવિધાઓ બદલાઈ શકે છે.",
-      "alpha_link": "GitHub પર પ્રગતિ અનુસરો →"
+      "alpha_link": "GitHub પર પ્રગતિ અનુસરો →",
+      "f4_title": "૬૯ સંખ્યા પ્રણાલીઓ",
+      "f4_desc": "એક મોડ ટોકનથી આઉટપુટ અંકો દેવનાગરી, થાઈ, અરબી-ઈન્ડિક, ક્લિન્ગોન pIqaD અને ૬૫ અન્ય પ્રણાલીઓ પર બદલો."
     },
     "malay": {
       "regions": [
@@ -5612,7 +5740,9 @@
       "april_sub": "Kami menukar semua operator dengan emoji. Gurau je. Mungkin. 😈",
       "april_welcome": "Selamat datang Zymbol-Lang",
       "alpha_msg": "Zymbol sedang dalam pembangunan aktif — keluaran ini merupakan pengesahan konsep reka bentuk bahasa. API, sintaks dan ciri-ciri mungkin berubah.",
-      "alpha_link": "Ikuti kemajuan di GitHub →"
+      "alpha_link": "Ikuti kemajuan di GitHub →",
+      "f4_title": "69 sistem angka",
+      "f4_desc": "Tukar digit output kepada devanagari, Thai, Arab-India, Klingon pIqaD dan 65 lagi dengan satu token mod."
     },
     "burmese": {
       "regions": [
@@ -5698,7 +5828,9 @@
       "april_sub": "Operator တွေအားလုံးကို emoji နဲ့ပြောင်းလိုက်တယ်. နှော်တာ. ဖြစ်နိုင်. 😈",
       "april_welcome": "ကြိုဆိုပါတယ် Zymbol-Lang",
       "alpha_msg": "Zymbol သည် တက်ကြွသောဖွံ့ဖြိုးမှုတွင်ရှိသည် — ဤ release သည် ဘာသာစကား ဒီဇိုင်း သဘောတရား မှတ်စစ်မှုဖြစ်သည်။ API၊ syntax နှင့် features များပြောင်းနိုင်သည်။",
-      "alpha_link": "GitHub တွင် တိုးတက်မှုအား ကြည့်ရှုပါ →"
+      "alpha_link": "GitHub တွင် တိုးတက်မှုအား ကြည့်ရှုပါ →",
+      "f4_title": "ဂဏန်းစနစ် ၆၉ မျိုး",
+      "f4_desc": "Mode token တစ်ခုဖြင့် output ဂဏန်းများကို Devanagari၊ Thai၊ Arabic-Indic၊ Klingon pIqaD နှင့် နောက်ထပ် ၆၅ မျိုးသို့ ပြောင်းနိုင်သည်"
     },
     "nepali": {
       "regions": [
@@ -5784,7 +5916,9 @@
       "april_sub": "हामीले सबै अपरेटरहरू इमोजीले बदल्यौं। मजाक। सायद। 😈",
       "april_welcome": "स्वागत छ Zymbol-Lang",
       "alpha_msg": "Zymbol सक्रिय विकासमा छ — यो रिलिज भाषा डिजाइनको अवधारणाको प्रमाणीकरण हो। API, सिन्ट्याक्स र सुविधाहरू परिवर्तन हुन सक्छन्।",
-      "alpha_link": "GitHub मा प्रगति फलो गर्नुहोस् →"
+      "alpha_link": "GitHub मा प्रगति फलो गर्नुहोस् →",
+      "f4_title": "६९ संख्या प्रणालीहरू",
+      "f4_desc": "एउटा मोड टोकनले आउटपुट अंकहरू देवनागरी, थाई, अरबी-इन्डिक, क्लिङ्गन pIqaD र अन्य ६५ मा परिवर्तन गर्नुहोस्।"
     },
     "azerbaijani": {
       "regions": [
@@ -5870,7 +6004,9 @@
       "april_sub": "Bütün operatorları emojilərə dəyişdirdik. Zarafat. Bəlkə. 😈",
       "april_welcome": "Xoş gəlmisiniz Zymbol-Lang",
       "alpha_msg": "Zymbol aktiv inkişafdadır — bu buraxılış dilin dizayn konsepsiyasını təsdiqləyir. API-lər, sintaksis və funksiyalar dəyişə bilər.",
-      "alpha_link": "GitHub-da irəliləyişi izləyin →"
+      "alpha_link": "GitHub-da irəliləyişi izləyin →",
+      "f4_title": "69 say sistemi",
+      "f4_desc": "Bir mod tokeni ilə çıxış rəqəmlərini devanagari, tailand, ərəb-hind, klingon pIqaD və daha 65 sistemə keçirin."
     },
     "kurdish": {
       "regions": [
@@ -5956,7 +6092,9 @@
       "april_sub": "Me hemû operatorên emoji guhertin. Henekê. Belkî. 😈",
       "april_welcome": "Xêr hatî Zymbol-Lang",
       "alpha_msg": "Zymbol di pêşkeftina çalak de ye — ev berdest têgîna sêwirana ziman erêdike. API, hevoksazî û taybetmendî dikarin biguherên.",
-      "alpha_link": "Pêşketin li GitHub-ê bişopînin →"
+      "alpha_link": "Pêşketin li GitHub-ê bişopînin →",
+      "f4_title": "69 pergalên jimareyê",
+      "f4_desc": "Bi yek nîşaneka mod reqemên derketinê biguhezînin devanagari, Thai, Erebî-Hindî, Klingon pIqaD û 65 yên din."
     },
     "guarani": {
       "regions": [
@@ -6042,7 +6180,9 @@
       "april_sub": "Rombopuku operador mba'ekuaáva emoji ndive. Jasajey. Umíva. 😈",
       "april_welcome": "Eguahé porã Zymbol-Lang",
       "alpha_msg": "Zymbol oiko ombohasa aporape — ko mbohasa ohechauka ha'e mba'e omonguera ñe'ẽrenda rape. API, sintaxis ha tembiporu oikuaa javy.",
-      "alpha_link": "Eñangarekoita tembiapo GitHub-pe →"
+      "alpha_link": "Eñangarekoita tembiapo GitHub-pe →",
+      "f4_title": "Poapy 69 papapy ñe'ẽ",
+      "f4_desc": "Emoambue papapy jehechauka kuéra devanagari-pe, Thai-pe, Arabe-Indik-pe, Klingon pIqaD-pe ha ambuépe 65 peteĩ modo token ndive."
     },
     "igbo": {
       "regions": [
@@ -6128,7 +6268,9 @@
       "april_sub": "Anyị gbanwere ndị ọrụ niile na emoji. Ihe nzere. Ikekwe. 😈",
       "april_welcome": "Nnọọ Zymbol-Lang",
       "alpha_msg": "Zymbol dị n'ọrụ mmepụta ọrụ — iwepu a bụ iwe nkwado nke echiche nhazi asụsụ. API, usoro okwu na atụmatụ nwere ike ịgbanwe.",
-      "alpha_link": "Soro ọganihu na GitHub →"
+      "alpha_link": "Soro ọganihu na GitHub →",
+      "f4_title": "Usoro nọmba 69",
+      "f4_desc": "Gbanwee ọnụọgụ ọpụtara gaa devanagari, Thai, Arabic-Indic, Klingon pIqaD na 65 ọzọ site na akara ọnọdụ otu."
     },
     "afrikaans": {
       "regions": [
@@ -6214,7 +6356,9 @@
       "april_sub": "Ons het al die operateurs met emojis vervang. Grap. Miskien. 😈",
       "april_welcome": "Welkom Zymbol-Lang",
       "alpha_msg": "Zymbol is in aktiewe ontwikkeling — hierdie weergawe valideer die konsep van die taalonwerp. API's, sintaksis en funksies kan verander.",
-      "alpha_link": "Volg die vordering op GitHub →"
+      "alpha_link": "Volg die vordering op GitHub →",
+      "f4_title": "69 syferstellels",
+      "f4_desc": "Skakel uitvoersyfers na devanagari, Thai, Arabies-Indies, Klingon pIqaD en 65 meer met een enkelmodus-teken."
     },
     "wolof": {
       "regions": [
@@ -6300,7 +6444,9 @@
       "april_sub": "Dananu soppi operateur yi ak emoji. Biir moo tax. Waaw-waaw. 😈",
       "april_welcome": "Dalal ak jàmm Zymbol-Lang",
       "alpha_msg": "Zymbol def na ci xam-xam bu góor — bii yëgël lañu xam ni def ñu ci xam-xam bu góor. API yi, sintaksi ak yëkëti lañu mën a soppiku.",
-      "alpha_link": "Köoru mbokk bii ci GitHub →"
+      "alpha_link": "Köoru mbokk bii ci GitHub →",
+      "f4_title": "Sisteem yu noomr 69",
+      "f4_desc": "Soppi noomru jëfandikoo bi ci devanagari, Thai, Araab-Indik, Klingon pIqaD ak 65 yeneen ak benn token yu mode."
     },
     "xhosa": {
       "regions": [
@@ -6386,7 +6532,9 @@
       "april_sub": "Sibashintshe bonke abasebenzisi nge-emoji. Siyahleka. Mhlawumbi. 😈",
       "april_welcome": "Wamkelekile Zymbol-Lang",
       "alpha_msg": "I-Zymbol ikwi-development esebenzayo — le khululeko iqinisekisa umgondo wokuyila ulwimi. Ama-API, i-syntax kunye nezinto ezikhethekileyo zinokutshintshelwa.",
-      "alpha_link": "Landelela inkqubo kwi-GitHub →"
+      "alpha_link": "Landelela inkqubo kwi-GitHub →",
+      "f4_title": "Iinkqubo ezingama-69 zamanani",
+      "f4_desc": "Tshintshanisa izinombolo zokuphuma ukuya ku-devanagari, Thai, Arabic-Indic, Klingon pIqaD nakwamanye amathandathu anesihlanu ngetoken enye yemode."
     },
     "macedonian": {
       "regions": [
@@ -6472,7 +6620,9 @@
       "april_sub": "Ги преименувавме сите оператори во емоџи. Шега. Можеби. 😈",
       "april_welcome": "Добредојдовте Zymbol-Lang",
       "alpha_msg": "Zymbol е во активен развој — ова издание го валидира концептот на дизајнот на јазикот. API, синтаксата и функциите може да се сменат.",
-      "alpha_link": "Следете го напредокот на GitHub →"
+      "alpha_link": "Следете го напредокот на GitHub →",
+      "f4_title": "69 бројни системи",
+      "f4_desc": "Префрлете ги излезните цифри на деванагари, тајски, арабско-индиски, клингон pIqaD и уште 65 со еден токен на режим."
     },
     "nahuatl": {
       "rtl": false,
@@ -6558,7 +6708,9 @@
       "april_sub": "Timopatlahque operator mochi emoji ipan. Chikole. Yece. 😈",
       "april_welcome": "Ximohualli Zymbol-Lang",
       "alpha_msg": "Zymbol tequitl ic mochihua — in tlahcuilolli ic momachiotia in tlahtol ixehualiztli. API, tlahtolmachiotl ihuan tlapalehuiliztli hueliz mopatla.",
-      "alpha_link": "Mochihuatoc ica GitHub →"
+      "alpha_link": "Mochihuatoc ica GitHub →",
+      "f4_title": "69 tlapohualmachiyotl",
+      "f4_desc": "Xicmocuiti tlapohualtin ipan devanagari, Thai, Arabe-Indic, Klingon pIqaD ihuan oc 65 huehueyac ce mode token."
     },
     "maya": {
       "rtl": false,
@@ -6644,7 +6796,9 @@
       "april_sub": "Ti' k'am u beel tuláakal operadoorob emoji. Chicho'. Ken. 😈",
       "april_welcome": "Ko'oten Zymbol-Lang",
       "alpha_msg": "Zymbol ku cháajkubtik yaan k'ajóolt'aan — leti' tsoolil ku cháantik u bejil t'aan wáaj. API, sintaxis yéetel tsikbalo'ob kalikbal páajtal u kex.",
-      "alpha_link": "K'ajóolt'aano'ob ti' GitHub →"
+      "alpha_link": "K'ajóolt'aano'ob ti' GitHub →",
+      "f4_title": "69 xook numen",
+      "f4_desc": "Ka'ana numen le xook ku yúuchul devanagari, Thai, Árabe-Índic, Klingon pIqaD yéetel 65 ka'ach je'el béey jun mode token."
     },
     "mapuche": {
       "rtl": false,
@@ -6730,7 +6884,9 @@
       "april_sub": "Tüfachi operator emoji mew küdawün. Küpay. Kudawkülelay. 😈",
       "april_welcome": "Akuymi Zymbol-Lang",
       "alpha_msg": "Zymbol ta trawüfiyew ñi zugu — fey ta wuñofe zewmangeel ka zugutual am. API, kimeltuwün ka fewla trokiken.",
-      "alpha_link": "GitHub mew feyentufinge →"
+      "alpha_link": "GitHub mew feyentufinge →",
+      "f4_title": "69 azkintuwe nüyan",
+      "f4_desc": "Petu ñi rakizuam fey nüyan egün devanagari mew, Thai, Arabe-Indik, Klingon pIqaD ka 65 feymew pichi mode token."
     },
     "navajo": {
       "rtl": false,
@@ -6816,7 +6972,9 @@
       "april_sub": "Operator t'áá'altso emoji bił naaltsoos ádaalyaa. Ats'ą́ą́. 😈",
       "april_welcome": "Yá'át'ééh Zymbol-Lang",
       "alpha_msg": "Zymbol t'áá ałso naaskaah — éí łaʼ dahodiilzin naalyéhé nidahaasdzihígíí baa nahashne'dóó. API, yółkał dóó naa dahane' ałhoji' ídínídloh.",
-      "alpha_link": "GitHub-di hodeeszhiizhgo bikʼehgo →"
+      "alpha_link": "GitHub-di hodeeszhiizhgo bikʼehgo →",
+      "f4_title": "69 naaltsoos łahgo bił",
+      "f4_desc": "T'áá ła' mode token bee naaltsoos bił devanagari, Thai, Arabe-Indic, Klingon pIqaD dóó 65 lahgo bił."
     },
     "cherokee": {
       "rtl": false,
@@ -6902,7 +7060,9 @@
       "april_sub": "ᎤᏂᎳ ᎧᏄᎭ emoji ᏴᏩᏁᏗᏱ. ᏯᏓᎭᏍᎪᎢ. ᎠᎴᏒᎲ. 😈",
       "april_welcome": "ᎣᏏᏲ Zymbol-Lang",
       "alpha_msg": "Zymbol ᎠᎴᏔᎴ ᏣᎳᎩ ᎤᏙᏓᏟᏌᏁᎢ — ᎾᎿ ᏓᏃᏢᏓ ᏧᏂᎾᏫᏍᏗ ᏚᎾᏓᎴᎲᏍᎬ ᎤᏙᏓᏟᏌᏁᎢ. API, ᎢᎬᏃᎮᏍᏗ ᎠᎴ ᏚᎾᏓᎴᎲᏍᎬ ᎠᎴᏪᏏᎯ.",
-      "alpha_link": "GitHub ᎡᏆᎵᏗᏰᎢ →"
+      "alpha_link": "GitHub ᎡᏆᎵᏗᏰᎢ →",
+      "f4_title": "69 ᎭᏉᎧᏍᏓ ᏓᏯᏌᏛᏁᏗ",
+      "f4_desc": "ᎤᏂᎫᏗ ᏙᎨᏎᎢ ᏂᎪᎯᎸ ᏙᏍᏗ ᎾᏍᎩᎾ ᎭᏉᎧᏍᏓ ᎥᏍᎩᏙᎨᏍᏛ devanagari, Thai, Klingon pIqaD ᎠᎴ 65 ᏧᏓᎴᎲ."
     },
     "cree": {
       "rtl": false,
@@ -6988,7 +7148,9 @@
       "april_sub": "ᐊᓂᔑᓇᐯ ᐅᑆᕇᑕᐧᐁ emoji ᐋ ᑲᐸᔑᑲᑌᒃ. ᒫᒪᐢᑲᑦ. ᐊᐧᐃᓇ. 😈",
       "april_welcome": "ᑕᓂᓯ Zymbol-Lang",
       "alpha_msg": "Zymbol mâmawi-âpatisiwin kîkway — ôma wîhitamâwin kâ-itohtahikoyahk itwêwin-masinipayiwin. API, itowin-masinipayiwin ôhci kîkway kâ-wîcihihk mâka wasakâpitêw.",
-      "alpha_link": "GitHub ohci kâ-mâmawi-takwâstâhk →"
+      "alpha_link": "GitHub ohci kâ-mâmawi-takwâstâhk →",
+      "f4_title": "69 nīmihitowak",
+      "f4_desc": "Switch output digits to Devanagari, Thai, Klingon pIqaD and 65 more with one mode token."
     },
     "aymara": {
       "rtl": false,
@@ -7074,7 +7236,9 @@
       "april_sub": "Operatoornaka emojiru yatiyapxatayna. Iyawsañ. Amuyañäni. 😈",
       "april_welcome": "Waliki jutamaw Zymbol-Lang",
       "alpha_msg": "Zymbol lurasiwa — kaypacha jalïrixa aru pirwanaka yatxatañatakiwa. API, sintaxis ukhamaraki uñstayawinaka pachpacha arsuniñapataki.",
-      "alpha_link": "GitHub-xa uñakipata →"
+      "alpha_link": "GitHub-xa uñakipata →",
+      "f4_title": "69 jakhuña thakhi",
+      "f4_desc": "Maya mode token ukampiw jakhunakap devanagari, Thai, Arabe-Indik, Klingon pIqaD utjirir 65 ampararu churatasi."
     },
     "wayuu": {
       "rtl": false,
@@ -7160,7 +7324,9 @@
       "april_sub": "Akaliia operator wayaapajala emoji rüpü. Waraitia. Talataka. 😈",
       "april_welcome": "Jamaya Zymbol-Lang",
       "alpha_msg": "Zymbol natuma aꞌalajirawaa — tü akumajiasü tü süchiirua nüchiki. API, sintaxis sümaa kayaawatain nashamaaje.",
-      "alpha_link": "GitHub-rü nüküjaliain →"
+      "alpha_link": "GitHub-rü nüküjaliain →",
+      "f4_title": "69 akumajaa nümerü",
+      "f4_desc": "Pütchi mode token suulia nümerü devanagari, Thai, Arabe-Indik, Klingon pIqaD sünain 65 amia."
     },
     "embera": {
       "rtl": false,
@@ -7246,7 +7412,9 @@
       "april_sub": "Erria operator emojia kachipurruá. Jõtunũma. Jãpí. 😈",
       "april_welcome": "Bia Zymbol-Lang",
       "alpha_msg": "Zymbol ome arra erumabida — besia ome kãwabida jarabida ome. API, sintaxis besia umakĩbida ome waibida.",
-      "alpha_link": "GitHub-e ome erumabida →"
+      "alpha_link": "GitHub-e ome erumabida →",
+      "f4_title": "69 número ewari",
+      "f4_desc": "Mode token ome número devanagari, Thai, Klingon pIqaD ba 65 ewari jua."
     },
     "yanomami": {
       "rtl": false,
@@ -7332,7 +7500,9 @@
       "april_sub": "Opereradori emojia watupë yama. Warë. 😈",
       "april_welcome": "Awei Zymbol-Lang",
       "alpha_msg": "Zymbol yai thëpë wãã kãyõ — kami thëpë kãyõ yai wayu. API, sintaxis kami thë pë kãyõ.",
-      "alpha_link": "GitHub kãyõ yamaki →"
+      "alpha_link": "GitHub kãyõ yamaki →",
+      "f4_title": "69 mahi papa",
+      "f4_desc": "Mode token pë a yanomami devanagari, Thai, Klingon pIqaD ba 65 hë papa yanomamiyoma."
     },
     "oromo": {
       "rtl": false,
@@ -7418,7 +7588,9 @@
       "april_sub": "Hojjettoota hunda emoji goone. Goolii dha. Lafa tokko. 😈",
       "april_welcome": "Baga nagaan dhuftan Zymbol-Lang",
       "alpha_msg": "Zymbol guddina hojii irra jiru keessa jira — kunneen gadhiifame mirkaneessa ejjannoo dizaayinii afaanii dha. API, makmaaksa fi fedhiileen jijjiiramuu danda'u.",
-      "alpha_link": "Guddina GitHub irra hordofi →"
+      "alpha_link": "Guddina GitHub irra hordofi →",
+      "f4_title": "Sirna lakkoofsa 69",
+      "f4_desc": "Lakkoofsa maddisiisaa gara devanagari, Thai, Arabic-Indic, Klingon pIqaD fi 65 birootitti mallattoo tokkoon jijjiiri."
     },
     "bambara": {
       "rtl": false,
@@ -7504,7 +7676,9 @@
       "april_sub": "An ye operator bɛɛ emoji la sigi. A ye ɲɛnajɛ. Sébén tɛ. 😈",
       "april_welcome": "Aw bisimila Zymbol-Lang",
       "alpha_msg": "Zymbol bɛ kalan nafama kɔrɔtɔ — kunbɛnna in ye kan halakali latigɛli ye. API, gafe ɲɔgɔnna ani baara minnu bɛ se ka yɛlɛma.",
-      "alpha_link": "Ka kalan nafama lajɛ GitHub kan →"
+      "alpha_link": "Ka kalan nafama lajɛ GitHub kan →",
+      "f4_title": "Nɔmɔrɔ sɛbɛnni 69",
+      "f4_desc": "Numɛrɔw yɔrɔ lajɛ devanagari, Thai, Arabik-Indik, Klingon pIqaD ni 65 tɔw la mode token kelen fɛ."
     },
     "fula": {
       "rtl": false,
@@ -7590,7 +7764,9 @@
       "april_sub": "Min neli hukkunooɗe fof emoji. Ko nguurndam. Teeŋti. 😈",
       "april_welcome": "Jam tan Zymbol-Lang",
       "alpha_msg": "Zymbol woni e cuɓtugol goongaawol — nde winnditaama nde faamaade haala ngenndiyankaagu. API, sintaksi e nulɗe keɓi waɗanaade yɛɛyde.",
-      "alpha_link": "Tigi hawrude e GitHub →"
+      "alpha_link": "Tigi hawrude e GitHub →",
+      "f4_title": "Miijo 69 nɗi nimeruuji",
+      "f4_desc": "Waylii nimeruuji feeñirde to devanagari, Thai, Arabik-Indik, Klingon pIqaD e 65 woɗɗe koo e token go'o."
     },
     "lingala": {
       "rtl": false,
@@ -7676,7 +7852,9 @@
       "april_sub": "Tobongoli baoperateur nyonso na emoji. Blague. Lisusu. 😈",
       "april_welcome": "Boyei malamu Zymbol-Lang",
       "alpha_msg": "Zymbol ezali na bokoli ya kosala — lisalisi oyo ezali confirmation ya makanisi ya sango. API, sintaksi mpe biloko ekoki kobongwana.",
-      "alpha_link": "Landa bokoli na GitHub →"
+      "alpha_link": "Landa bokoli na GitHub →",
+      "f4_title": "Misala 69 ya manombolo",
+      "f4_desc": "Suka manombolo ya kobima na devanagari, Thai, Arabi-Indiki, Klingon pIqaD na 65 mosusu na token moko ya ndenge."
     },
     "somali": {
       "rtl": false,
@@ -7762,7 +7940,9 @@
       "april_sub": "Waxaan beddellay dhammaan hawlwadeennada emoji. Kaftan. Laga yaab. 😈",
       "april_welcome": "Soo dhawoow Zymbol-Lang",
       "alpha_msg": "Zymbol waxay ku jirtaa horumarinta firfircoon — sii deyntan waxay xaqiijinaysaa fikradda naqshadaynta luuqadda. API-yada, syntax-ka iyo astaamaha waxay baddeli karaan.",
-      "alpha_link": "Ku soo raac horumarku GitHub →"
+      "alpha_link": "Ku soo raac horumarku GitHub →",
+      "f4_title": "69 nidaam tiro",
+      "f4_desc": "Bedel tirooyin wax soo saarka ah devanagari, Thai, Carabiga-Hindida, Klingon pIqaD iyo 65 kale oo leh calaamad heer hal ah."
     },
     "tigrinya": {
       "rtl": false,
@@ -7848,7 +8028,9 @@
       "april_sub": "ኩሎም ኣፐሬተርታት ናብ ኢሞጂ ቀይርናዮም። ቀልዲ። ምናልባት። 😈",
       "april_welcome": "ብደሓን መጻኹም Zymbol-Lang",
       "alpha_msg": "ዚምቦል ኣብ ንጡፍ ምዕባለ ኣሎ — እዚ ምዕባለ'ዚ ናይ ቋንቋ ዲዛይን ሓሳብ ምርግጋጽ እዩ። API ፣ ሲንታክስን ፊቸርታትን ክቕየሩ ይኽእሉ እዮም።",
-      "alpha_link": "ኣብ GitHub ምዕባለ ክትከታተሉ →"
+      "alpha_link": "ኣብ GitHub ምዕባለ ክትከታተሉ →",
+      "f4_title": "69 ስርዓተ ቁጽሪ",
+      "f4_desc": "ብሓደ ሞድ ቶከን ናብ ደቫናጋሪ፣ ታይ፣ ዓረቢ-ኢንዲክ፣ ክሊንጎን pIqaD ንዝኾኑ 65 ካልኦት ቀይሮ ውጽኢት ቁጽሪ።"
     },
     "shona": {
       "rtl": false,
@@ -7934,7 +8116,9 @@
       "april_sub": "Takachiinja maoperator ese kuita emoji. Chinonyevedzera. Zvimwe. 😈",
       "april_welcome": "Mauya Zymbol-Lang",
       "alpha_msg": "Zymbol iri mukugadzirwa kwakanyanyiswa — kubuda uku ndiko kuongororwa kwekufunga kunakurongedza rurimi. API, sintakisi uye zvinogona zvingashanduke.",
-      "alpha_link": "Tevedza mberi paGitHub →"
+      "alpha_link": "Tevedza mberi paGitHub →",
+      "f4_title": "Masisitimu 69 enhamba",
+      "f4_desc": "Shandura nhamba dzekunze kuenda kudevanagari, Thai, Arabic-Indic, Klingon pIqaD uye 65 dzimwe netoken imwe yemhando."
     },
     "esperanto": {
       "rtl": false,
@@ -8020,7 +8204,9 @@
       "april_sub": "Ni renomis ĉiujn operatorojn al emoĝioj. Ŝerco. Eble. 😈",
       "april_welcome": "Bonvenon Zymbol-Lang",
       "alpha_msg": "Zymbol estas en aktiva evoluo — ĉi tiu eldono validas la lingvan dezajnon. API-oj, sintakso kaj funkcioj povas ŝanĝiĝi.",
-      "alpha_link": "Sekvu progresson ĉe GitHub →"
+      "alpha_link": "Sekvu progresson ĉe GitHub →",
+      "f4_title": "69 ciferarsistemoj",
+      "f4_desc": "Ŝanĝu eligo-ciferojn al devanagaro, tajlanda, araba-hinda, klingona pIqaD kaj 65 aliaj per unu reĝima ĵetono."
     },
     "lojban": {
       "rtl": false,
@@ -8106,7 +8292,9 @@
       "april_sub": "mi ba'e galfi ro fancu srana le emoji. gleki fasnu. ca'e. 😈",
       "april_welcome": "coi Zymbol-Lang",
       "alpha_msg": "la zymbol cu vitno se zbasu — ti noi se jbera cu se nibli lo togystardzu be lo bangu. lo API jo'u fo'a jo'u ka'e galfi.",
-      "alpha_link": "ko skicu la github ca lo nu mulno →"
+      "alpha_link": "ko skicu la github ca lo nu mulno →",
+      "f4_title": "69 namcu selci'a",
+      "f4_desc": "co'e mode token be la devanagari, tai, xrabo-xindo, klingon pIqaD e 65 da-sku fi lo panoysle."
     },
     "toki_pona": {
       "rtl": false,
@@ -8192,7 +8380,9 @@
       "april_sub": "mi ante e nimi pi ilo mute kepeken sitelen musi. ala. ken la. 😈",
       "april_welcome": "kama pona Zymbol-Lang",
       "alpha_msg": "Zymbol li lon nasin pali — lipu ni li pali pi nimi kepeken. API en nasin toki en ijo li ken ante.",
-      "alpha_link": "o lukin e pali lon GitHub →"
+      "alpha_link": "o lukin e pali lon GitHub →",
+      "f4_title": "nanpa nasin 69",
+      "f4_desc": "kepeken ijo mode wan la sina ken ante e nanpa pi toki devanagari, thai, klingon pIqaD en 65 ante."
     },
     "ido": {
       "rtl": false,
@@ -8278,7 +8468,9 @@
       "april_sub": "Ni renomizis oli operatori kun emoji. Blogo. Forsan. 😈",
       "april_welcome": "Bonvenu Zymbol-Lang",
       "alpha_msg": "Zymbol esas en aktiva evoluciono — ca liberigo esas validado di la designo-koncepto. API-i, sintaxo e funktioni povas chanjar.",
-      "alpha_link": "Sequar progresar adsur GitHub →"
+      "alpha_link": "Sequar progresar adsur GitHub →",
+      "f4_title": "69 cifra-sistemi",
+      "f4_desc": "Chanjas cifri di output a devanagari, tai, araba-hinda, klingon pIqaD e 65 altra kun un sola modo-lexo."
     },
     "interlingua": {
       "rtl": false,
@@ -8364,7 +8556,9 @@
       "april_sub": "Nos renominate tote le operatores con emoji. Joke. Forsan. 😈",
       "april_welcome": "Benvenite Zymbol-Lang",
       "alpha_msg": "Zymbol es in disveloppamento active — iste edition valida le concepto del designo linguistic. APIs, syntaxe e functiones pote cambiar.",
-      "alpha_link": "Sequer le progresso in GitHub →"
+      "alpha_link": "Sequer le progresso in GitHub →",
+      "f4_title": "69 systemas numeric",
+      "f4_desc": "Cambia cifras de output a devanagari, thai, arabico-indic, klingon pIqaD e 65 altere con un sol token de modo."
     },
     "klingon": {
       "rtl": false,
@@ -8449,8 +8643,10 @@
       "nav_try_online": "yIlo' 'Internet",
       "april_sub": "maH Hoch operator emoji DIboqmoH. bIHeghbe'. chaq. 😈",
       "april_welcome": "nuqneH Zymbol-Lang",
-      "alpha_msg": "Zymbol tay' ta' Hol Daj — Daj Duj DIvI' Hol. API Daj, syntax Daj je.",
-      "alpha_link": "GitHub HIja' →"
+      "alpha_msg": "Zymbol     —    . API , syntax  .",
+      "alpha_link": "GitHub  →",
+      "f4_title": "wa'maH loS vatlhvI' 'uj nagh mI'",
+      "f4_desc": "mI' chen'eghmeH token wa' lo'laH. devanagari, Thai, Klingon pIqaD, 65 latlh je."
     },
     "mandoa": {
       "rtl": false,
@@ -8536,7 +8732,9 @@
       "april_sub": "Bid'gar draar operatore miit emodji. K'uur. Mhi vencuyanir. 😈",
       "april_welcome": "Oya'karir Zymbol-Lang",
       "alpha_msg": "Zymbol runi aliit'alor — mhi ijaat gar ner. API bal syntax mhi cabur.",
-      "alpha_link": "GitHub burc'ya →"
+      "alpha_link": "GitHub burc'ya →",
+      "f4_title": "69 mando'a numer",
+      "f4_desc": "Solus mode token ra devanagari, Thai, Klingon pIqaD bal 65 naasad numer gaan."
     },
     "quenya": {
       "rtl": false,
@@ -8622,7 +8820,9 @@
       "april_sub": "Úmë nótë ilye operatáreli emoji-nen. Naicel! Lé. 😈",
       "april_welcome": "Á tula Zymbol-Lang",
       "alpha_msg": "Zymbol ná i cuilë ú-cenin — i quettar tenna i tengwa. API, syntaxë ar cuilëar mahtë.",
-      "alpha_link": "Tirë i nórë GitHub-enna →"
+      "alpha_link": "Tirë i nórë GitHub-enna →",
+      "f4_title": "69 nótë quettar",
+      "f4_desc": "Etta mode-tengwa minya sí: número i-tengwar Devanagari, Thai, Klingon pIqaD ar 65 alda quettar."
     },
     "sindarin": {
       "rtl": false,
@@ -8708,7 +8908,9 @@
       "april_sub": "Sín chennem i ôl operedhrim na emoji. Nan. Boe. 😈",
       "april_welcome": "Mae govannen Zymbol-Lang",
       "alpha_msg": "Zymbol na 'waith thel — i parf erin iant gwaith. API, annabon ar caledh gaur.",
-      "alpha_link": "Tirio i pheth GitHub-o →"
+      "alpha_link": "Tirio i pheth GitHub-o →",
+      "f4_title": "69 peth nîr",
+      "f4_desc": "Aphada i nîr erin-dhínen na devanagari, Thai, Klingon pIqaD a 65 eraid na mode-thennin."
     },
     "dothraki": {
       "rtl": false,
@@ -8794,7 +8996,9 @@
       "april_sub": "Kisha adakhat hrazef yomme emoji. Yer anni athjahakaroon. 😈",
       "april_welcome": "M'athchomaroon Zymbol-Lang",
       "alpha_msg": "Zymbol ray vo chek — dothrak mae me lajat. API m'adakhh, dothraki m'adakhh.",
-      "alpha_link": "Anha vekha GitHub →"
+      "alpha_link": "Anha vekha GitHub →",
+      "f4_title": "69 chiories",
+      "f4_desc": "K'athijilari mode token yomme, zigereo chiories devanagari, Thai, Klingon pIqaD ma 65 anni."
     },
     "high_valyrian": {
       "rtl": false,
@@ -8880,7 +9084,9 @@
       "april_sub": "Iksā emojis eman vali ēngoso. Daor. Kessa. 😈",
       "april_welcome": "Rytsas Zymbol-Lang",
       "alpha_msg": "Zymbol syt issa — kesir sȳz hen lentot issa. API, muñot se lentot yne.",
-      "alpha_link": "Embrot sȳz GitHub-ot →"
+      "alpha_link": "Embrot sȳz GitHub-ot →",
+      "f4_title": "69 syzȳha numeros",
+      "f4_desc": "Syt mode token se, numeros pōntys devanagari, Thai, Klingon pIqaD se 65 ȳghon kessa."
     },
     "navi": {
       "rtl": false,
@@ -8966,7 +9172,9 @@
       "april_sub": "Fìopelatort nì'aw emoji seri. Kehe. Srak? 😈",
       "april_welcome": "Kaltxì Zymbol-Lang",
       "alpha_msg": "Zymbol lu sevin set — tìkangkem alu nì'awve. API, tìfkeytok fa txantsan.",
-      "alpha_link": "Eltu si GitHub-oru →"
+      "alpha_link": "Eltu si GitHub-oru →",
+      "f4_title": "Melo 69 ayvurit",
+      "f4_desc": "Atan mode token amip pxiset, ayvurit devanagari, Thai, Klingon pIqaD si 65 fkol."
     },
     "klingon_piqad": {
       "rtl": false,
@@ -9051,8 +9259,10 @@
       "nav_try_online": " ",
       "april_sub": "maH Hoch operator emoji DIboqmoH. bIHeghbe'. chaq. 😈",
       "april_welcome": "nuqneH Zymbol-Lang",
-      "alpha_msg": "Zymbol tay' ta' Hol Daj — Daj Duj DIvI' Hol. API Daj, syntax Daj je.",
-      "alpha_link": "GitHub HIja' →"
+      "alpha_msg": "Zymbol     —    . API , syntax  .",
+      "alpha_link": "GitHub  →",
+      "f4_title": "  ",
+      "f4_desc": "  — devanagari, Thai, Klingon pIqaD  65  —  mode token ."
     },
     "cree_syl": {
       "rtl": false,
@@ -9138,7 +9348,9 @@
       "april_sub": "ᐊᓂᔑᓇᐯ ᐅᑆᕇᑕᐧᐁ emoji ᐋ ᑲᐸᔑᑲᑌᒃ. ᒫᒪᐢᑲᑦ. ᐊᐧᐃᓇ. 😈",
       "april_welcome": "ᑕᓂᓯ Zymbol-Lang",
       "alpha_msg": "Zymbol ᒥᓯᐌ ᐃᑕᑦᑎᓂᑦ — ᐁ ᑭᑦᐸᐊᑲᑦ ᑲᐱᑦ ᐊᔨᒧᐎᓐ. API, ᐃᑕᑦᑎᓐ ᐅᒋ ᑲᐱᑦ.",
-      "alpha_link": "GitHub ᓇᑕᒑᑎᑦ →"
+      "alpha_link": "GitHub ᓇᑕᒑᑎᑦ →",
+      "f4_title": "69 ᑲᓇᑕᐃᑲᓐ",
+      "f4_desc": "ᐊᓂᔑᓈᐸᐃᑯ output digits ᐊᑕᐅᓯᖅ mode token ᒥᒃ devanagari, Thai, Klingon pIqaD ᐊᒻᒪ 65 ᓯᓚᑎᒦᑦᑐᑦ."
     }
   },
   "subregion_labels": {

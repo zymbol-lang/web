@@ -296,6 +296,8 @@ mga_operasyon = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Hanay
 
+Ang mga hanay ay **nababago** at naglalaman ng mga elemento ng **parehong uri**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -325,13 +327,27 @@ ayon_sa_pangalan = db$^ (a, b -> a.pangalan > b.pangalan) // pababa ayon sa pang
 >> ayon_sa_edad[0].pangalan ¶     // → Ana
 >> ayon_sa_pangalan[0].pangalan ¶ // → Carla
 
-arr[1] = 99              // i-update sa lugar
-arr = arr[1]$~ 99        // functional na update — nagbabalik ng bagong array
+// Direktang pag-update ng elemento (mga hanay lamang)
+arr[1] = 99              // italaga
+arr[0] += 5              // compound: +=  -=  *=  /=  %=  ^=
+
+// Functional na update — nagbabalik ng bagong hanay; ang orihinal ay hindi nababago
+arr2 = arr[1]$~ 99
 ```
 
 > Lahat ng mga operator ng koleksyon ay nagbabalik ng **bagong array**. Italaga ulit: `arr = arr$+ 4`.
 > Hindi maaaring i-chain ang mga operator — gumamit ng mga intermediate na pagtatalaga.
 > `$^+` / `$^-` nag-uuri ng **mga primitive array** (mga numero, string). Para sa mga tuple array gamitin ang `$^` na may comparator lambda — ang direksyon ay naka-encode sa lambda (`<` = pataas, `>` = pababa).
+
+**Semantika ng halaga** — ang pagtatalaga ng hanay sa ibang variable ay gumagawa ng independyenteng kopya:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← hindi apektado ang b
+```
 
 ```zymbol
 // Mga nested array
@@ -363,10 +379,15 @@ tao = (pangalan: "Ana", edad: 25, lungsod: "Maynila")
 
 ## Tuple
 
+Ang mga tuple ay **hindi nababago** na mga nakaayos na lalagyan na maaaring maglaman ng mga halaga ng **iba't ibang uri**. Hindi tulad ng mga hanay, ang mga elemento ay hindi maaaring baguhin pagkatapos ng paglikha.
+
 ```zymbol
 // Posisyonal
 punto = (10, 20)
 >> punto[0] ¶    // → 10
+
+datos = (42, "hello", #1, 3.14)
+>> datos[2] ¶     // → #1
 
 // Pinangalanan
 tao = (pangalan: "Alisa", edad: 25)
@@ -377,6 +398,29 @@ tao = (pangalan: "Alisa", edad: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, label: "simula")
 >> p.pos.x ¶        // → 10
+```
+
+**Hindi nababago** — anumang pagtatangkang baguhin ang elemento ng tuple ay isang runtime error:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ runtime error: ang mga tuple ay hindi nababago
+// t[0] += 5    // ❌ parehong error
+```
+
+Upang makuha ang nabagong halaga, gamitin ang `$~` (functional na update) — nagbabalik ng **bagong** tuple:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← ang orihinal ay hindi nababago
+>> t2 ¶    // → (10, 999, 30)
+
+// Pinangalanang tuple — muling buuin nang malinaw
+tao = (pangalan: "Alisa", edad: 25)
+masMatanda = (pangalan: tao.pangalan, edad: 26)
+>> tao.edad ¶         // → 25
+>> masMatanda.edad ¶  // → 26
 ```
 
 ---
@@ -488,6 +532,70 @@ _panloob_na_dagdag(a, b) { <~ a + b }
 
 ---
 
+## Mga Mode ng Numero
+
+Ang Zymbol ay maaaring magpakita ng mga numero sa **69 Unicode na script ng digit** — Devanagari, Arabe-Indiyano, Thai, Klingon pIqaD, Mathematical Bold, mga segment ng LCD, at iba pa. Ang aktibong mode ay nakakaapekto lamang sa output ng `>>`; ang panloob na aritmetika ay palaging binary.
+
+### Pag-activate ng isang script
+
+Isulat ang digit na `0` at `9` ng target na script na nakapaloob sa `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabe-Ind.    (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // i-reset sa ASCII
+```
+
+### Output at mga boolean na halaga
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII default)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (decimal point palaging ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # prefix palaging ASCII, digit nag-aayon
+>> #1 ¶         // → #१   (totoo sa Devanagari)
+>> #0 ¶         // → #०   (mali — naiiba mula sa ०  integer na zero)
+
+x = 28 > 4
+>> x ¶          // → #१   (resulta ng paghahambing ay sumusunod sa aktibong mode)
+```
+
+### Mga native na digit literal sa source code
+
+Ang mga digit mula sa anumang sinusuportahang script ay mga wastong literal — sa mga hanay, modulo, paghahambing:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Mga boolean literal sa anumang script
+
+`#` + digit na `0` o `1` mula sa anumang bloke ay isang wastong boolean literal:
+
+```zymbol
+#٠٩#
+نشط = #١        // katulad ng #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> Ang `#` ay **palaging ASCII**. Ang `#0` (mali) ay palaging naiiba sa visual mula sa `0` (integer na zero) sa bawat script.
+
+---
+
 ## Mga Operator ng Data
 
 ```zymbol
@@ -569,8 +677,9 @@ uriin(bilang) {
 | `@!`      | ihinto (break)              | `$>`         | mapa (map)                       |
 | `@>`      | ituloy (continue)           | `$\|`        | salain (filter)                  |
 | `->`      | lambda                      | `$<`         | bawasan (reduce)                 |
-| `$^+`     | ayusin pataas (primitibo)   | `$^-`        | ayusin pababa (primitibo)        |
-| `$^`      | ayusin na may comparator (tuple) | |                               |
+| `arr[i] = val` | i-update ang elemento (mga hanay lamang) | `arr[i] += val` | compound na update  |
+| `arr[i]$~` | functional na update (bagong kopya) | `$^+`  | ayusin pataas (primitibo)       |
+| `$^-`     | ayusin pababa (primitibo)   | `$^`         | ayusin na may comparator (tuple) |
 | `<~`      | ibalik (return)             | `!?`         | subukan (try)                    |
 | `\|>`     | tubo (pipe)                 | `:!`         | hulihin (catch)                  |
 | `#1`      | totoo (true)                | `:>`         | sa wakas (finally)               |
@@ -580,8 +689,44 @@ uriin(bilang) {
 | `::`      | tawag sa module             | `.`          | pag-access sa field              |
 | `#\|..\|` | mag-parse ng numero         | `#?`         | metadata ng uri                  |
 | `#.N\|..\|` | bilugan                   | `#!N\|..\|`  | putulin                          |
-| `c\|..\|` | format na may kuwit         | `e\|..\|`    | format na siyentipiko            |
+| `#,\|..\|` | format na may kuwit         | `#^\|..\|`    | format na siyentipiko            |
+| `#d0d9#` | switch ng mode ng numero | `#09#` | i-reset sa ASCII |
 | `<\ ..\>` | pagpapatakbo ng shell       | `>\<`        | mga CLI argument                 |
+
+## Kasaysayan ng Bersyon
+
+### v0.0.3 — Mga Sistema ng Numero ng Unicode & Mga Pagpapabuti ng LSP _(Abril 2026)_
+
+- **Idinagdag** 69 Unicode na bloke ng digit na may mode-switch token na `#d0d9#`
+- **Idinagdag** Mga boolean literal sa anumang script — `#१` / `#०`, `#١` / `#٠`, atbp.
+- **Idinagdag** Mga digit ng Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Idinagdag** VM opcode na `SetNumeralMode` — buong paridad sa tree-walker
+- **Idinagdag** Ang REPL ay gumagalang sa aktibong mode ng numero sa echo at display ng variable
+- **Binago** Ang `>>` output ng mga boolean ay kasama na ang `#` prefix (`#0` / `#1`) sa lahat ng mode
+
+### v0.0.2_01 — Pagpapalit ng Pangalan ng Operator _(30 Mar 2026)_
+
+- **Binago** `c|..|` → `#,|..|` at `e|..|` → `#^|..|` — pare-pareho sa pamilya ng prefix na `#`
+- **Idinagdag** Export alias: muling pag-export ng mga miyembro ng module sa ibang pangalan
+
+### v0.0.2 — Muling Disenyo ng API ng Koleksyon & Mga Installer _(24 Mar 2026)_
+
+- **Idinagdag** Pinag-isang pamilya ng operator na `$` para sa mga array at string (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Idinagdag** Destructuring para sa mga array, tuple, at pinangalanang tuple
+- **Idinagdag** Mga negatibong index (`arr[-1]` = huling elemento)
+- **Idinagdag** Mga native na installer — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Idinagdag** Compound assignment na `^=`
+- **Naayos** Mga edge case ng arithmetic parser; mga pagwawasto sa dokumentasyon
+
+### v0.0.1 — Unang Pampublikong Labas _(22 Mar 2026)_
+
+- Tree-walker interpreter + register VM (`--vm`, ~4× mas mabilis, ~95% paridad)
+- Lahat ng pangunahing construct: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Buong Unicode identifier, sistema ng module, lambda, closure, paghawak ng error
+- REPL, LSP, VS Code extension, formatter (`zymbol fmt`)
 
 ---
 

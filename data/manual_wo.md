@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Wàllu
 
+Wàllu **yi soppi** (mutable) ak ëlëm yi **bu xëtu dati bu dëkk**.
+
 ```zymbol
 deret = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ ci_tur  = db$^ (a, b -> a.tur > b.tur)
 >> ci_at[0].tur ¶     // → Ana
 >> ci_tur[0].tur ¶    // → Carla
 
-deret[1] = 99              // yokku ci biir
-deret = deret[1]$~ 99      // yokku bu liggéey — array bu bees may
+// Jox ci biir (wàllu rekk)
+deret[1] = 99              // jox
+deret[0] += 5              // compound: +=  -=  *=  /=  %=  ^=
+
+// Yokku bu liggéey — def wàllu bu bees; njëkk bi du soppi
+deret2 = deret[1]$~ 99
 ```
 
 > Operatör uru yi lépp dañu jox **array bu bees**. Jëfandikoo ci: `deret = deret$+ 4`.
 > Du soxor ñaar — jëfandikoo jëfandikoo dhexee.
 > `$^+` / `$^-` dañu tartiib **array yu primitive**. Tuple array jëfandikoo `$^` ak lambda.
+
+**Semantik xëy** — jox wàllu ci jëfandikukaay bees di def kopi bu yombal:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b du soppi
+```
 
 ```zymbol
 // Array yu xidid
@@ -357,10 +373,15 @@ nit = (tur: "Ana", at: 25, dëkk: "Ndakaaru")
 
 ## Tuple
 
+Tuple yi **du soppi** (immutable) — dañu am elemang **yu bëgg-bëgg**. Àkku wàllu yi, elemang yi du soppi juqël yi créé.
+
 ```zymbol
 // Bu nomer
 dhibic = (10, 20)
 >> dhibic[0] ¶    // → 10
+
+xëyu = (42, "salam", #1, 3.14)
+>> xëyu[2] ¶     // → #1
 
 // Bu tur
 nit = (tur: "Alice", at: 25)
@@ -371,6 +392,29 @@ nit = (tur: "Alice", at: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, summad: "origine")
 >> p.pos.x ¶        // → 10
+```
+
+**Du soppi (Immutabilité)** — soppi ci elemang bi tuple dafa am dëgg ci waktu:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ dëgg ci waktu: tuple du soppi
+// t[0] += 5    // ❌ dëgg bii rekk
+```
+
+Jëfandikoo `$~` (yokku bu liggéey) — def **Tuple bu bees**:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← njëkk bi du soppi
+>> t2 ¶    // → (10, 999, 30)
+
+// Tuple bu tur — def mees ci biir
+nit = (tur: "Alice", at: 25)
+nit2  = (tur: nit.tur, at: 26)
+>> nit.at ¶    // → 25
+>> nit2.at ¶   // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _internal_add(a, b) { <~ a + b }
 
 ---
 
+## Yoon yi Ciif
+
+Zymbol mën na yëgël ciif ci **Unicode bëj-gànnaar yi 69** — Devanagari, Arabi-Inde, Taayilaand, Klingon pIqaD, Xam-xam bu Dëkk, segment LCD ak yeneen. Yoon bu am njëkk bi dëkk ak loxo `>>`-bi rekk; xam-xam bi ci tëgg dëkk binary la.
+
+### Jëfandiku bëj-gànnaar
+
+Bind ciif `0` ak `9` bëj-gànnaar bi ci `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabic-Indic  (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // reset to ASCII
+```
+
+### Yëgël ak xaritu yëgëlëef
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII default)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Yëgëlëef: # kanam dëkk ASCII, ciif yi jaaxle
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Ciif asli ci kood source
+
+Ciif bëj-gànnaar bu ëlëek yi am ngëm — ci suufu, modulo, taaxuleen:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Yëgëlëef ci bëj-gànnaar
+
+`#` + ciif `0` walla `1` ci bloc ci fi xam ngëm yëgëlëef:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` dëkk **ASCII**. `#0` (fànaan) dëkk feebar `0` (ciif zero) ci bëj-gànnaar bëgg.
+
+---
+
 ## Jëfandikukaay Data
 
 ```zymbol
@@ -563,8 +671,9 @@ setal(nomer) {
 | `@!` | Jël dem (break) | `$>` | map |
 | `@>` | Dem kanam (continue) | `$\|` | filter |
 | `->` | Lambda | `$<` | reduce |
-| `$^+` | Tartiib ol (primitives) | `$^-` | Tartiib sëf (primitives) |
-| `$^` | Tartiib comparator (tuples) | | |
+| `deret[i] = val` | Jox elemang (wàllu rekk) | `deret[i] += val` | compound jox |
+| `deret[i]$~` | yokku bu liggéey (kopi bu bees) | `$^+` | Tartiib ol (primitives) |
+| `$^-` | Tartiib sëf (primitives) | `$^` | Tartiib ak comparator (tuples) |
 | `<~` | Màggal (return) | `!?` | Solu (try) |
 | `\|>` | Pipe | `:!` | Jëfal (catch) |
 | `#1` | Wér | `:>` | Ndaw (finally) |
@@ -574,8 +683,44 @@ setal(nomer) {
 | `::` | Jëfal modul | `.` | Jëfal biir |
 | `#\|..\|` | Parse nomer | `#?` | Metadata xëtu |
 | `#.N\|..\|` | Waxtaanal | `#!N\|..\|` | Tëj |
-| `c\|..\|` | Qaab comma | `e\|..\|` | Siyantifik |
+| `#,\|..\|` | Qaab comma | `#^\|..\|` | Siyantifik |
+| `#d0d9#` | soppi yoon yi ciif | `#09#` | dellu ASCII |
 | `<\ ..\>` | shell exec | `>\<` | Doodaa CLI |
+
+## Tariix Wersiyon yi
+
+### v0.0.3 — Unicode Bëj-gànnaar Ciif & Yaatal LSP _(Awril 2026)_
+
+- **Yokk** Unicode bloc ciif 69 ak caloon soppi yoon `#d0d9#`
+- **Yokk** Yëgëlëef ci bëj-gànnaar — `#१` / `#०`, `#١` / `#٠`, ak yeneen
+- **Yokk** Klingon pIqaD ciif (CSUR PUA U+F8F0–U+F8F9)
+- **Yokk** VM opcode `SetNumeralMode` — pareeti ak tree-walker
+- **Yokk** REPL soxoroon yoon ciif ci echo ak yëgëlëef variables
+- **Soppi** Yëgël `>>` yëgëlëef am `#` kanam (`#0` / `#1`) ci yoon yëpp
+
+### v0.0.2_01 — Soppi Turu Jëfandikukaay _(30 Mar 2026)_
+
+- **Soppi** `c|..|` → `#,|..|` ak `e|..|` → `#^|..|` — rafetoon ak waa-kër `#`
+- **Yokk** Alias export: export mujjeel module ci turu yeneen
+
+### v0.0.2 — Yokk API Collection & Instalateur _(24 Mar 2026)_
+
+- **Yokk** Waa-kër jëfandikukaay `$` arrays ak strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Yokk** Destructuring arrays, tuples ak tuples bu turu
+- **Yokk** Index yu tàng (`arr[-1]` = element yu dëkk)
+- **Yokk** Instalateur asli — Linux (deb/rpm/pkg/musl), macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Yokk** Attribution `^=`
+- **Dëgël** Kees border parser xam-xam; dëggël documents
+
+### v0.0.1 — Yëgël bu Njëkk _(22 Mar 2026)_
+
+- Tree-walker interpreter + register VM (`--vm`, ~4× gaaw, ~95% pareeti)
+- Constructions yëpp: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Unicode identifiants, système module, lambda, fermeture, dëggël njëjjëef
+- REPL, LSP, extension VS Code, formatter (`zymbol fmt`)
 
 ---
 

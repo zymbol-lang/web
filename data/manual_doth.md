@@ -291,6 +291,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Lajaki
 
+Lajaki **azhat** ma vos — alegra **azh fichas** thirat jikxatasiñatawa. Lajaki vos mra — alegra fichas nan.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -320,13 +322,27 @@ by_fichas = db$^ (a, b -> a.fichas > b.fichas)
 >> by_akat[0].fichas ¶     // → Ana
 >> by_fichas[0].fichas ¶   // → Carla
 
-arr[1] = 99              // update in-place
-arr = arr[1]$~ 99        // functional update — returns new array
+// Azhat thirat (lajaki tebec) — Direct element update (arrays only)
+arr[1] = 99              // azhat — assign
+arr[0] += 5              // azhat mra: +=  -=  *=  /=  %=  ^= — compound
+
+// Alegra azhat — Functional update — returns a new array; original unchanged
+arr2 = arr[1]$~ 99
 ```
 
 > Ilach alegra ta' — **naur lajaki** — azhat: `arr = arr$+ 4`.
 > Vos tanc: akat azhat.
 > `$^+` / `$^-` sort **primitive arrays**. For tuple arrays use `$^` with a comparator lambda.
+
+**Azhat fichas (Value semantics)** — Azhat lajaki bora naur lajaki — vos fichas azhat:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b vos azhat
+```
 
 ```zymbol
 // Nested arrays
@@ -358,10 +374,15 @@ lajak3 = (fichas: "Ana", akat: 25, vaes: "Vaes Dothrak")
 
 ## Tuple
 
+Tuple **vos azhat** — alegra fichas mra, thirat **azh fichas** jikxatasiñatawa. Vos fichas azhat — lajaki vos azhat fichas mra.
+
 ```zymbol
 // Positional
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+data = (42, "fichas", #1, 3.14)
+>> data[2] ¶     // → #1
 
 // Named
 lajak3 = (fichas: "Alice", akat: 25)
@@ -372,6 +393,29 @@ lajak3 = (fichas: "Alice", akat: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, fichas: "Qohor")
 >> p.pos.x ¶        // → 10
+```
+
+**Vos azhat (Immutability)** — Tuple alegra vos azhat — vosecchi thirat:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ vosecchi thirat: tuple vos azhat
+// t[0] += 5    // ❌ vosecchi thirat
+```
+
+Alegra fichas mra haz `$~` (alegra azhat) — bora **naur** tuple:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← original vos azhat
+>> t2 ¶    // → (10, 999, 30)
+
+// Tuple fichas — bora naur lajak3
+lajak3 = (fichas: "Alice", akat: 25)
+lajak3_elder = (fichas: lajak3.fichas, akat: 26)
+>> lajak3.akat ¶          // → 25
+>> lajak3_elder.akat ¶    // → 26
 ```
 
 ---
@@ -483,6 +527,70 @@ _internal_boq(a, b) { <~ a + b }
 
 ---
 
+## Thirat Chaf
+
+Zymbol laz athdrivar thirat **Unicode chaf thirat 69** — Devanagari, Arabi-Indiya, Thai, Klingon pIqaD, Thisat Chafo, LCD. Thirat chaf `>>`-k; thirat binary.
+
+### Thirat qora
+
+Thirat `0` ma `9` k `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabi-India   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // ASCII-k
+```
+
+### Athdrivar ma boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ASCII, chaf thirat
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Chaf asli kodis
+
+Chaf thirat literal — range, modulo:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal thirat
+
+`#` + chaf `0` ma `1` bloc boolean:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII**. `#0` (vo) `0` (thirat ziro) thirat.
+
+---
+
 ## Thirat Me Jinne
 
 ```zymbol
@@ -564,8 +672,9 @@ astat(eveth) {
 | `@!`     | troch'n (break)    | `$>`       | map                   |
 | `@>`     | meh (continue)     | `$\|`      | filter                |
 | `->`     | Lambda             | `$<`       | reduce                |
-| `$^+`    | sort ascending     | `$^-`      | sort descending       |
-| `$^`     | sort comparator    |            |                       |
+| `arr[i] = val` | azhat thirat (update in-place) | `arr[i] +=` | azhat mra (compound update) |
+| `arr[i]$~` | alegra azhat (functional update) | `$^+`  | sort ascending        |
+| `$^-`    | sort descending    | `$^`       | sort comparator       |
 | `<~`     | bora               | `!?`       | lajak (try)           |
 | `\|>`    | Pipe               | `:!`       | karyai (catch)        |
 | `#1`     | hash               | `:>`       | ilach (finally)       |
@@ -575,8 +684,42 @@ astat(eveth) {
 | `::`     | vaes maded         | `.`        | field access          |
 | `#\|..\|` | parse number      | `#?`       | type metadata         |
 | `#.N\|..\|` | round           | `#!N\|..\|` | truncate            |
-| `c\|..\|` | comma format      | `e\|..\|`  | scientific            |
+| `#,\|..\|` | comma format      | `#^\|..\|`  | scientific            |
+| `#d0d9#` | thirat chaf qora | `#09#` | ASCII-k |
 | `<\ ..\>` | shell exec        | `>\<`      | CLI args              |
+
+## Vezhven Thirat
+
+### v0.0.3 — Unicode Chaf & LSP _(Abril 2026)_
+
+- **Laz** Unicode bloc 69 token `#d0d9#`
+- **Laz** Boolean literals — `#१` / `#०`, `#١` / `#٠`
+- **Laz** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Laz** VM opcode `SetNumeralMode` — tree-walker
+- **Laz** REPL chaf echo variable
+- **Thirat** `>>` boolean `#` (`#0` / `#1`)
+
+### v0.0.2_01 _(30 Mar 2026)_
+
+- **Thirat** `c|..|` → `#,|..|` ma `e|..|` → `#^|..|`
+- **Laz** Export alias
+
+### v0.0.2 _(24 Mar 2026)_
+
+- **Laz** `$` arrays ma strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Laz** Destructuring arrays, tuples
+- **Laz** Chaf vo (`arr[-1]`)
+- **Laz** Instalar — Linux, macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Laz** `^=`
+
+### v0.0.1 _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4×, ~95%)
+- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

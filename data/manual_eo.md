@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Aroj
 
+Aroj estas **ŝanĝeblaj** kaj enhavas elementojn de la **sama tipo**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ laŭ_nomo = db$^ (a, b -> a.nomo > b.nomo)   // malkres. laŭ nomo (>)
 >> laŭ_aĝo[0].nomo ¶     // → Ana
 >> laŭ_nomo[0].nomo ¶    // → Karla
 
-arr[1] = 99              // ĝisdatigo enloke
-arr = arr[1]$~ 99        // funkcia ĝisdatigo — redonas novan tabelon
+// Rekta ĝisdatigo de elemento (nur aroj)
+arr[1] = 99              // asigni
+arr[0] += 5              // kunmetita: +=  -=  *=  /=  %=  ^=
+
+// Funkcia ĝisdatigo — redonas novan tabelon; la originalo ne ŝanĝiĝas
+arr2 = arr[1]$~ 99
 ```
 
 > Ĉiuj kolektaj operatoroj redonas **novan tabelon**. Reattributu: `arr = arr$+ 4`.
 > Operatoroj ne povas esti ĉenataj — uzu mezajn atribuojn.
 > `$^+` / `$^-` ordigas **primitivajn tabelojn** (nombroj, ĉenoj). Por oplaj tabeloj uzu `$^` kun kompara lambdo — la direkto estas kodita en la lambdo (`<` = kreskanta, `>` = malkreskanta).
+
+**Valora semantiko** — asigni tabelon al alia variablo kreas sendependan kopion:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b ne estas tuŝita
+```
 
 ```zymbol
 // Nestitaj tabeloj
@@ -357,10 +373,15 @@ persono = (nomo: "Ana", aĝo: 25, urbo: "Madrido")
 
 ## Tuploj
 
+Tuploj estas **neŝanĝeblaj** ordigitaj ujoj, kiuj povas enhavi valorojn de **malsamaj tipoj**. Male al aroj, elementoj ne povas esti ŝanĝitaj post kreado.
+
 ```zymbol
 // Pozicia
 punkto = (10, 20)
 >> punkto[0] ¶    // → 10
+
+datumoj = (42, "saluton", #1, 3.14)
+>> datumoj[2] ¶     // → #1
 
 // Nomita
 persono = (nomo: "Alice", aĝo: 25)
@@ -371,6 +392,29 @@ persono = (nomo: "Alice", aĝo: 25)
 poz = (x: 10, y: 20)
 p = (poz: poz, etikedo: "origino")
 >> p.poz.x ¶        // → 10
+```
+
+**Neŝanĝebleco** — ĉiu provo modifi tuploelementon estas eraro dum ekzekuto:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ eraro dum ekzekuto: tuploj estas neŝanĝeblaj
+// t[0] += 5    // ❌ sama eraro
+```
+
+Por derivi modifitan valoron uzu `$~` (funkcia ĝisdatigo) — redonas **novan** tuplon:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← originalo ne ŝanĝiĝis
+>> t2 ¶    // → (10, 999, 30)
+
+// Nomita tuplo — rekonstrui eksplicite
+persono = (nomo: "Alice", aĝo: 25)
+pliagxa  = (nomo: persono.nomo, aĝo: 26)
+>> persono.aĝo ¶    // → 25
+>> pliagxa.aĝo ¶    // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _interna_aldoni(a, b) { <~ a + b }
 
 ---
 
+## Cifera Reĝimoj
+
+Zymbol povas montri nombrojn en **69 Unikodaj ciferaj skriboj** — Devanagari, Araba-Hinda, Taja, Klingona pIqaD, Matematika Grasa, LCD-segmentoj kaj pli. La aktiva reĝimo nur influas la eliron `>>`; la interna aritmetiko estas ĉiam duuma.
+
+### Aktivigi skribon
+
+Skribu la ciferon `0` kaj `9` de la celita skribo inter `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Araba-Hinda   (U+0660–U+0669)
+#๐๙#    // Taja          (U+0E50–U+0E59)
+#09#    // restarigi al ASCII
+```
+
+### Eliro kaj bulea valoroj
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII defaŭlte)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (dekuma punkto ĉiam ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Buleaj: # prefikso ĉiam ASCII, cifero adaptiĝas
+>> #1 ¶         // → #१   (vera en Devanagari)
+>> #0 ¶         // → #०   (malvera — distingas de ०  entjera nulo)
+
+x = 28 > 4
+>> x ¶          // → #१   (kompara rezulto sekvas aktivan reĝimon)
+```
+
+### Indiĝenaj ciferaj literaloj en fontkodo
+
+Ciferoj de ajna subtenata skribo estas validaj literaloj — en intervaloj, modulo, komparoj:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Buleaj literaloj en ajna skribo
+
+`#` + cifero `0` aŭ `1` el ajna bloko estas valida bulea literalo:
+
+```zymbol
+#٠٩#
+نشط = #١        // sama kiel #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` estas **ĉiam ASCII**. `#0` (malvera) ĉiam estas vide distinga de `0` (entjera nulo) en ĉiu skribo.
+
+---
+
 ## Datumaj Operatoroj
 
 ```zymbol
@@ -563,8 +671,9 @@ klasifiki(nombro) {
 | `@!`     | haltu              | `$>`         | mapu                  |
 | `@>`     | daŭrigu            | `$\|`        | filtru                |
 | `->`     | lambdo             | `$<`         | reduktu               |
-| `$^+`    | ordigu kreskanta   | `$^-`        | ordigu malkreskanta   |
-| `$^`     | ordigu kun komparo | `$~`         | funkcia ĝisdatigo     |
+| `arr[i] = val` | ĝisdatigi elementon (nur aroj) | `arr[i] += val` | kunmetita ĝisdatigo |
+| `arr[i]$~` | funkcia ĝisdatigo (nova kopio) | `$^+` | ordigu kreskanta |
+| `$^-` | ordigu malkreskanta | `$^` | ordigu kun kompara lambdo |
 | `<~`     | redonu             | `!?`         | provu                 |
 | `\|>`    | tubo               | `:!`         | kaptu                 |
 | `#1`     | vera               | `:>`         | fine                  |
@@ -574,8 +683,44 @@ klasifiki(nombro) {
 | `::`     | modulovoko         | `.`          | aliro al kampo        |
 | `#\|..\|` | analizu nombron  | `#?`         | tiaj metadatenoj      |
 | `#.N\|..\|` | rondigi        | `#!N\|..\|`  | trunki                |
-| `c\|..\|` | komforma         | `e\|..\|`    | scienca               |
+| `#,\|..\|` | komforma         | `#^\|..\|`    | scienca               |
+| `#d0d9#` | ŝaltilo de cifera reĝimo | `#09#` | restarigi al ASCII |
 | `<\ ..\>` | ŝela ekz.        | `><`         | CLI-argumentoj        |
+
+## Versiohistorio
+
+### v0.0.3 — Unikodaj Ciferaj Sistemoj & LSP Plibonigoj _(Aprilo 2026)_
+
+- **Aldonita** 69 Unikodaj ciferaj blokoj kun la reĝim-ŝalt-ĵetono `#d0d9#`
+- **Aldonita** Buleaj literaloj en ajna skribo — `#१` / `#०`, `#१` / `#٠`, ktp.
+- **Aldonita** Klingonaj pIqaD ciferoj (CSUR PUA U+F8F0–U+F8F9)
+- **Aldonita** VM opkodo `SetNumeralMode` — plena pareco kun la arbmarŝanto
+- **Aldonita** REPL respektas aktivan ciferon reĝimon en eĥo kaj montrado de variabloj
+- **Ŝanĝita** La `>>` eliro de buleaj valoroj nun inkluzivas la prefikson `#` (`#0` / `#1`) en ĉiuj reĝimoj
+
+### v0.0.2_01 — Renomado de Operatoroj _(30 Mar 2026)_
+
+- **Ŝanĝita** `c|..|` → `#,|..|` kaj `e|..|` → `#^|..|` — konsekvenca kun la `#`-prefiksa familio
+- **Aldonita** Eksporta kromnomo: reeksporti modulanojn sub alia nomo
+
+### v0.0.2 — Kolekto-API Reenkonceptigo & Instaliloj _(24 Mar 2026)_
+
+- **Aldonita** Unuigita `$`-operatora familio por tabeloj kaj ĉenoj (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Aldonita** Malstrukturo por tabeloj, opoj kaj nomitaj opoj
+- **Aldonita** Negativaj indicoj (`arr[-1]` = lasta elemento)
+- **Aldonita** Denaskaj instaliloj — Linux (deb/rpm/pkg/musl), macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Aldonita** Kunmetita asigno `^=`
+- **Korektita** Limkazoj de aritmetika analizilo; dokumentadaj korektoj
+
+### v0.0.1 — Unua Publika Eldono _(22 Mar 2026)_
+
+- Arbmarŝanta interpretilo + registro-VM (`--vm`, ~4× pli rapida, ~95% pareco)
+- Ĉiuj kernaj konstruoj: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Plenaj Unikodaj identigiloj, modula sistemo, lambdoj, fermoj, eraro-traktado
+- REPL, LSP, VS Code etendaĵo, formatiilo (`zymbol fmt`)
 
 ---
 

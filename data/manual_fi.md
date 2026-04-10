@@ -288,6 +288,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Taulukot
 
+Taulukot ovat **muutettavia** ja sisältävät **samantyyppisiä** elementtejä.
+
 ```zymbol
 arr = [10, 20, 30, 40, 50]
 
@@ -309,12 +311,12 @@ idx = arr$?? 30              // → [1]   kaikki indeksit arvolle
 osa = arr$[0..2]             // siivu [0,2): [20, 30]
 määrä = arr$[0:3]            // määräpohjainen: [20, 30, 40]
 
-// Päivitä elementti
-arr[1] = 99
->> arr ¶    // → [20, 99, 40, 50, 60]
+// Elementin suora päivitys (vain taulukot)
+arr[1] = 99              // aseta
+arr[0] += 5              // yhdistetty: +=  -=  *=  /=  %=  ^=
 
-// Toiminnallinen päivitys (palauttaa uuden taulukon)
-arr2 = arr[1]$~ 77           // → [20, 77, 40, 50, 60]
+// Toiminnallinen päivitys — palauttaa uuden taulukon; alkuperäinen pysyy muuttumattomana
+arr2 = arr[1]$~ 77
 
 // Lajittele (primitiivit)
 num = [3, 1, 4, 1, 5]
@@ -337,6 +339,39 @@ matriisi = [[1,2],[3,4],[5,6]]
 > `$+`, `$-`, `$[..]` palauttavat **uuden taulukon** — sijoita samaan nimeen: `arr = arr$+ 4`.
 > Älä ketjuta: `arr$+ 4$+ 5` ei toimi — käytä kahta sijoitusta.
 > `arr$??` ja `arr$[s:n]` käyttävät eri syntaksia kuin `arr$[s..e]` — katso Symboliviite.
+
+**Arvosematiikka** — taulukon sijoittaminen toiseen muuttujaan luo itsenäisen kopion:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b ei muutu
+```
+
+**Muuttumattomuus** — mikä tahansa yritys muuttaa tuplin elementtiä on ajonaikainen virhe:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ ajonaikainen virhe: tuplit ovat muuttumattomia
+// t[0] += 5    // ❌ sama virhe
+```
+
+Muokatun arvon johtamiseen käytä `$~` (toiminnallinen päivitys) — palauttaa **uuden** tuplin:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← alkuperäinen ei muutu
+>> t2 ¶    // → (10, 999, 30)
+
+// Nimetty monikko — rakenna eksplisiittisesti uudelleen
+henkilö = (nimi: "Alice", ikä: 25)
+vanhempi = (nimi: henkilö.nimi, ikä: 26)
+>> henkilö.ikä ¶    // → 25
+>> vanhempi.ikä ¶   // → 26
+```
 
 ---
 
@@ -365,10 +400,16 @@ henkilö = (nimi: "Alice", ikä: 25)
 
 ## Tuplit
 
+Tuplit ovat **muuttumattomia** järjestettyjä säiliöitä, jotka voivat sisältää **erityyppisiä** arvoja. Toisin kuin taulukot, elementtejä ei voi muuttaa luomisen jälkeen.
+
 ```zymbol
 // Paikallinen monikko
 piste = (10, 20)
 >> piste[0] ¶    // → 10
+
+tieto = (42, "hei", #1, 3.14)
+>> tieto[2] ¶     // → #1
+
 >> piste[1] ¶    // → 20
 
 // Nimetty monikko
@@ -499,6 +540,70 @@ pi = c::get_PI()
 
 ---
 
+## Numerotilat
+
+Zymbol voi näyttää lukuja **69 Unicode-numeromerkistössä** — Devanagari, Arabi-Intialainen, Thaimaalainen, Klingon pIqaD, Matemaattinen Lihavoitu, LCD-segmentit ja muita. Aktiivinen tila vaikuttaa vain `>>`-ulostuloon; sisäinen aritmetiikka on aina binaarinen.
+
+### Merkistön aktivointi
+
+Kirjoita kohdemerkistön numero `0` ja `9` suljettu `#…#`-väliin:
+
+```zymbol
+#०९#    // Devanagari     (U+0966–U+096F)
+#٠٩#    // Arabi-Intial.  (U+0660–U+0669)
+#๐๙#    // Thaimaalainen  (U+0E50–U+0E59)
+#09#    // palauta ASCII:ksi
+```
+
+### Tulostus ja totuusarvot
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII oletus)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (desimaalipiste aina ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Totuusarvot: # etuliite aina ASCII, numero mukautuu
+>> #1 ¶         // → #१   (tosi Devanagari-merkistössä)
+>> #0 ¶         // → #०   (epätosi — eroaa ०  kokonaisluku nollasta)
+
+x = 28 > 4
+>> x ¶          // → #१   (vertailutulos seuraa aktiivista tilaa)
+```
+
+### Alkuperäiset numeroliteraalit lähdekoodissa
+
+Minkä tahansa tuetun merkistön numerot ovat kelvollisia literaaleja — väleissä, modulo, vertailuissa:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Totuusarvoliteraalit missä tahansa merkistössä
+
+`#` + numero `0` tai `1` mistä tahansa lohkosta on kelvollinen totuusarvoliteraali:
+
+```zymbol
+#٠٩#
+نشط = #١        // sama kuin #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` on **aina ASCII**. `#0` (epätosi) on aina visuaalisesti erilainen kuin `0` (kokonaisluku nolla) jokaisessa merkistössä.
+
+---
+
 ## Dataoperaattorit
 
 ```zymbol
@@ -581,24 +686,61 @@ luokittele(luku) {
 | `@`         | silmukka             | `$>`         | map                        |
 | `@!`        | keskeytä             | `$\|`        | filter                     |
 | `@>`        | jatka                | `$<`         | reduce                     |
-| `->`        | lambda               | `$^+`        | lajittele nousevasti       |
-| `<~`        | palautus             | `$^-`        | lajittele laskevasti       |
-| `\|>`       | putki                | `$^`         | lajittele vertailulla      |
-| `#1`        | tosi                 | `$!`         | on virhe                   |
-| `#0`        | epätosi              | `$!!`        | propagoi virhe             |
-| `!?`        | yritä (try)          | `#`          | määrittele moduuli         |
-| `:!`        | ota kiinni (catch)   | `#>`         | vie ulos                   |
-| `:>`        | aina (finally)       | `<#`         | tuo sisään                 |
-| `.`         | kenttäpääsy          | `::`         | moduulikutsu               |
-| `#\|..\|`   | jäsennä (parse)      | `#.N\|..\|`  | pyöristä N desimaalia      |
-| `#!N\|..\|` | katkaise N desimaalia| `c\|..\|`    | pilkkumuoto                |
-| `e\|..\|`   | tieteellinen not.    | `<\ \>`      | komentotulkin komento      |
+| `->`        | lambda               | `arr[i] = val` | elementin päivitys (vain taulukot) |
+| `arr[i] += val` | yhdistetty päivitys | `arr[i]$~` | toiminnallinen päivitys (uusi kopio) |
+| `$^+`       | lajittele nousevasti | `$^-`        | lajittele laskevasti       |
+| `$^`        | lajittele vertailulla | `<~`        | palautus                   |
+| `\|>`       | putki                | `#1`         | tosi                       |
+| `#0`        | epätosi              | `!?`         | yritä (try)                |
+| `:!`        | ota kiinni (catch)   | `$!`         | on virhe                   |
+| `:>`        | aina (finally)       | `$!!`        | propagoi virhe             |
+| `#`         | määrittele moduuli   | `#>`         | vie ulos                   |
+| `<#`        | tuo sisään           | `::`         | moduulikutsu               |
+| `.`         | kenttäpääsy          | `#.N\|..\|`  | pyöristä N desimaalia      |
+| `#!N\|..\|` | katkaise N desimaalia| `#,\|..\|`    | pilkkumuoto                |
+| `#d0d9#` | numerotilan vaihto | `#09#` | palauta ASCII:ksi |
+| `#^\|..\|`   | tieteellinen not.    | `<\ \>`      | komentotulkin komento      |
 | `><`        | komentotulkin tuloste| `$~~[..]`    | korvaa merkkijonossa       |
 | `[a,b]=arr` | purkaminen           | `(x,y)=tup`  | monikon purkaminen         |
 
 ---
 
 *Zymbol-Lang — Symbolinen. Universaali. Muuttumaton.*
+
+## Versiohistoria
+
+### v0.0.3 — Unicode Numerojärjestelmät & LSP-parannukset _(Huhtikuu 2026)_
+
+- **Lisätty** 69 Unicode-numerolohkoa tilanvaihtotokenilla `#d0d9#`
+- **Lisätty** Totuusarvoliteraalit missä tahansa merkistössä — `#१` / `#०`, `#١` / `#٠`, jne.
+- **Lisätty** Klingon pIqaD-numerot (CSUR PUA U+F8F0–U+F8F9)
+- **Lisätty** VM-opkoodi `SetNumeralMode` — täysi pariteetti tree-walkerin kanssa
+- **Lisätty** REPL kunnioittaa aktiivista numerotilaa kaiussa ja muuttujien näytössä
+- **Muutettu** Totuusarvojen `>>`-tulostus sisältää nyt `#`-etuliitteen (`#0` / `#1`) kaikissa tiloissa
+
+### v0.0.2_01 — Operaattorien Uudelleennimeäminen _(30 Mar 2026)_
+
+- **Muutettu** `c|..|` → `#,|..|` ja `e|..|` → `#^|..|` — yhdenmukainen `#`-etuliiteperheeseen
+- **Lisätty** Vientialias: moduulin jäsenten uudelleenvienti toisella nimellä
+
+### v0.0.2 — Kokoelmien API-uudelleensuunnittelu & Asennusohjelmat _(24 Mar 2026)_
+
+- **Lisätty** Yhdistetty `$`-operaattoriperhe taulukoille ja merkkijonoille (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Lisätty** Destrukturointi taulukoille, tuplille ja nimetyille tuplille
+- **Lisätty** Negatiiviset indeksit (`arr[-1]` = viimeinen alkio)
+- **Lisätty** Alkuperäiset asennusohjelmat — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Lisätty** Yhdistetty sijoitus `^=`
+- **Korjattu** Aritmeettisen jäsentäjän reunatapaukset; dokumentaatiokorjaukset
+
+### v0.0.1 — Ensimmäinen Julkinen Julkaisu _(22 Mar 2026)_
+
+- Tree-walker-tulkki + rekisteriVM (`--vm`, ~4× nopeampi, ~95% pariteetti)
+- Kaikki ydinrakenteet: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Täydelliset Unicode-tunnisteet, moduulijärjestelmä, lambdat, sulkeumat, virheenkäsittely
+- REPL, LSP, VS Code -laajennus, muotoiluohjelma (`zymbol fmt`)
 
 ---
 

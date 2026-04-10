@@ -291,6 +291,8 @@ kasas = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Pütchiirua
 
+Pütchiirua **achikirawaa** (mutable) na wanee **kasa akatsa kasa**.
+
 ```zymbol
 pütchiirua = [1, 2, 3, 4, 5]
 
@@ -320,13 +322,27 @@ by_suulu    = db$^ (a, b -> a.suulu > b.suulu)
 >> by_akumajaa[0].suulu ¶     // → Ana
 >> by_suulu[0].suulu ¶        // → Carla
 
-pütchiirua[1] = 99              // pütchi achikirawaa
-pütchiirua = pütchiirua[1]$~ 99 // achikirawaa wanee — bora pütchiirua
+// Pütchi achikirawaa sünain ples (pütchiirua tasol)
+pütchiirua[1] = 99              // achikirawaa
+pütchiirua[0] += 5              // compound: +=  -=  *=  /=  %=  ^=
+
+// Achikirawaa wanee — bora pütchiirua; jalqabaa hin jijjiiramu
+pütchiirua2 = pütchiirua[1]$~ 99
 ```
 
 > `$+`, `$-`, `$[..]` pütchiirua **wanee** — achikirawaa: `pütchiirua = pütchiirua$+ 4`.
 > Nnojolüin jünüin: wayuu pütchi wanee sünain.
 > `$^+` / `$^-` gai'tayl **naas solus**. Tuple Suulu — hut'unn `$^` mîna lambda.
+
+**Semantik süchikua** — achikirawaa pütchiirua sünain variable wanee meküin kopia anüikat:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b nnojolüin achikirawaa
+```
 
 ```zymbol
 // Pütchiirua naasad
@@ -358,10 +374,15 @@ person = (suulu: "Ana", akumajaa: 25, city: "Maracaibo")
 
 ## Tuple
 
+Tuple **nnojolüin achikirawaa** (immutable) na kasa **sulu'u kasa kasa**. Kala pütchiirua, wanee nnojolüin beddel tü aainkuajaa.
+
 ```zymbol
 // Akumajaa
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+wayuusain = (42, "kasa", #1, 3.14)
+>> wayuusain[2] ¶     // → #1
 
 // Suulu
 wayuu = (suulu: "Wayuu", akumajaa: 25)
@@ -372,6 +393,29 @@ wayuu = (suulu: "Wayuu", akumajaa: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, label: "wayuunaiki")
 >> p.pos.x ¶        // → 10
+```
+
+**Nnojolüin achikirawaa (Immutabilité)** — tü wanee achikirawaa kasa sünain tuple dü'üsü waktu:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ dü'üsü waktu: tuple nnojolüin achikirawaa
+// t[0] += 5    // ❌ dü'üsü ai
+```
+
+Yusim `$~` (achikirawaa wanee) süpüla kisim valyu i senisim — **nupela tuple** givim:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← jalqabaa hin jijjiiramu
+>> t2 ¶    // → (10, 999, 30)
+
+// Tuple Suulu — achikirawaa stret
+wayuu = (suulu: "Alice", akumajaa: 25)
+wayuu2  = (suulu: wayuu.suulu, akumajaa: 26)
+>> wayuu.akumajaa ¶    // → 25
+>> wayuu2.akumajaa ¶   // → 26
 ```
 
 ---
@@ -483,6 +527,70 @@ _ibac_ayaawataa(a, b) { <~ a + b }
 
 ---
 
+## Wayjakhu
+
+Zymbol alataka süpüla **Unicode jakhu 69** — Devanagari, Arabi-India, Thai, Klingon pIqaD, Matemáticas, LCD. Kasain aktivo `>>`-pe; jakhu binary.
+
+### Pütchi alataka
+
+Ts'íib jakhu `0` mîna `9` `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabi-India   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // ASCII anüiki
+```
+
+### Anüiki mîna boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ASCII, jakhu kasain
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Jakhu asli kódigo
+
+Jakhu literal — rango, modulo:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal
+
+`#` + jakhu `0` walla `1` bloc boolean:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII**. `#0` (nnojolüin) `0` (jakhu zero) anüiki.
+
+---
+
 ## Waydatops
 
 ```zymbol
@@ -564,8 +672,9 @@ ayaawataa(nüchukua) {
 | `@!`    | Süpüla (break)     | `$>`         | map                   |
 | `@>`    | Naülaajain         | `$\|`        | filter                |
 | `->`    | Lambda             | `$<`         | reduce                |
-| `$^+`   | Gai'tayl anüikat   | `$^-`        | Gai'tayl nnojolüin    |
-| `$^`    | Gai'tayl lambda    |              |                       |
+| `pütchiirua[i] = val` | achikirawaa (pütchiirua tasol) | `pütchiirua[i] += val` | compound achikirawaa |
+| `pütchiirua[i]$~` | achikirawaa wanee (kopia bora) | `$^+` | Gai'tayl anüikat |
+| `$^-`   | Gai'tayl nnojolüin | `$^`         | Gai'tayl lambda (tuples) |
 | `<~`    | Pütchi jüpüla      | `!?`         | Nnojo kasain (try)    |
 | `\|>`   | Pipe               | `:!`         | Nnojo (catch)         |
 | `#1`    | Wanee              | `:>`         | Wanee (finally)       |
@@ -575,8 +684,42 @@ ayaawataa(nüchukua) {
 | `::`    | Aküjaliaka ayaawataa | `.`        | Süchiki aküjaa        |
 | `#\|..\|`| Bora akumajaa    | `#?`         | Kasa süchiki          |
 | `#.N\|..\|`| Tracyn         | `#!N\|..\|`  | Süpüla                |
-| `c\|..\|`| Aküjaa comma     | `e\|..\|`    | Naas'ika              |
+| `#,\|..\|`| Aküjaa comma     | `#^\|..\|`    | Naas'ika              |
+| `#d0d9#` | wayjakhu kasain | `#09#` | ASCII anüiki |
 | `<\ ..\>`| Shell ayaawataa  | `>\<`        | CLI pütchi            |
+
+## Versión Taarikuya
+
+### v0.0.3 — Unicode Jakhu & LSP _(Abril 2026)_
+
+- **Ts'áab** Unicode bloc 69 token `#d0d9#`
+- **Ts'áab** Boolean literals — `#१` / `#०`, `#١` / `#٠`
+- **Ts'áab** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Ts'áab** VM opcode `SetNumeralMode` — tree-walker
+- **Ts'áab** REPL jakhu echo variable
+- **Bisik** `>>` boolean `#` (`#0` / `#1`)
+
+### v0.0.2_01 _(30 Mar 2026)_
+
+- **Bisik** `c|..|` → `#,|..|` mîna `e|..|` → `#^|..|`
+- **Ts'áab** Export alias
+
+### v0.0.2 _(24 Mar 2026)_
+
+- **Ts'áab** `$` arrays mîna strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Ts'áab** Destructuring arrays, tuples
+- **Ts'áab** Índice nnojolüin (`arr[-1]`)
+- **Ts'áab** Instalar — Linux, macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Ts'áab** `^=`
+
+### v0.0.1 _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4×, ~95%)
+- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

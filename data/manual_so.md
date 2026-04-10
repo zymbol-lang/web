@@ -290,6 +290,8 @@ hawlaha = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Taxanayaasha
 
+Taxanayaashu **waa la bedeli karaa** (mutable) waxayna ku jiraan curiyayaal **nooc isku mid ah**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ biyo_magac = db$^ (a, b -> a.magac > b.magac)
 >> biyo_da[0].magac ¶     // → Ana
 >> biyo_magac[0].magac ¶  // → Carla
 
-arr[1] = 99               // cusboonaysii meelha
-arr = arr[1]$~ 99         // cusboonaysii shaqeyneed — taxane cusub soo celiya
+// Cusboonaysii curiyaha si toos ah (taxanayaasha kaliya)
+arr[1] = 99               // qoondee
+arr[0] += 5               // compound: +=  -=  *=  /=  %=  ^=
+
+// Cusboonaysii shaqeyneed — taxane cusub soo celiya; asalka ma beddelo
+arr2 = arr[1]$~ 99
 ```
 
 > Dhammaan hawlwadeenada ururinta waxay soo celiyaan **taxane cusub**. Dib u qoondee: `arr = arr$+ 4`.
 > Silsiladayn ma jirto — isticmaal qoondaynta dhexe.
 > `$^+` / `$^-` waxay kala-saaraan **taxanaha primitive-ka**. Tupulaha isticmaal `$^` lambda barbar-dhig leh.
+
+**Semantigga qiimaha** — u qoondaynta taxane doorsoomaha kale koobi madaxbanaan abuuraa:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b ma beddelin
+```
 
 ```zymbol
 // Taxanaha xidid ah
@@ -357,10 +373,15 @@ qof = (magac: "Ana", da: 25, magaalo: "Muqdisho")
 
 ## Tupulaha
 
+Tupulahu waa weelal **aan la bedeli karin** (immutable) oo leh curiyayaal **noocyo kala duwan**. Kala duwan taxanayaasha, curiyayaasha ma beddeli karto ka dib abuurista.
+
 ```zymbol
 // Meel-meel
 dhibic = (10, 20)
 >> dhibic[0] ¶    // → 10
+
+xog = (42, "salaan", #1, 3.14)
+>> xog[2] ¶     // → #1
 
 // La magacaabay
 qof = (magac: "Alice", da: 25)
@@ -371,6 +392,29 @@ qof = (magac: "Alice", da: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, summad: "asalka")
 >> p.pos.x ¶        // → 10
+```
+
+**Aan la bedeli karin (Immutabilité)** — isku daygga beddelka curiyaha waa khalad wakhti-socodka:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ khalad wakhti-socodka: tupulaha ma beddelo
+// t[0] += 5    // ❌ khalad isku mid ah
+```
+
+Isticmaal `$~` (cusboonaysii shaqeyneed) si aad u hesho qiime beddel — **tupul cusub** soo celisaa:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← asalka ma beddelin
+>> t2 ¶    // → (10, 999, 30)
+
+// Tupul magacaabay — dib u dhis si cad
+qof = (magac: "Alice", da: 25)
+qof2  = (magac: qof.magac, da: 26)
+>> qof.da ¶    // → 25
+>> qof2.da ¶   // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _internal_add(a, b) { <~ a + b }
 
 ---
 
+## Hababka Tirooyinka
+
+Zymbol waxay u muujin kartaa tirada **Unicode qoraalada tirooyin 69** — Devanagari, Carabi-Hindiya, Thai, Klingon pIqaD, Xisaab Adag, qaybaha LCD iyo kuwa kale. Habka firfircoon waxuu saameeyaa keliya bixinta `>>`; xisaabta gudaha waa binary mar walba.
+
+### Hawlgalin qoraal
+
+Ku qor tiro `0` iyo `9` ee qoraalka la rabo ee ku jira `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabic-Indic  (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // reset to ASCII
+```
+
+### Bixinta iyo qiyamka boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII default)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # hore mar walba ASCII, tiro ayaa is-beddelaysa
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Tirooyin asalka ah oo ku jira koodka
+
+Tirooyin kasta oo qoraal la taageero waa literals sax ah — meelaynta, modulo, barbaraadinta:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literals qoraal kastaba
+
+`#` + tiro `0` ama `1` block kasta waa literal boolean sax ah:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` waa **mar walba ASCII**. `#0` (been) waxay mar walba muujisaa kala duwanaansho muuqaal ahaan ka `0` (eber tirada) qoraal kasta.
+
+---
+
 ## Hawlwadeenada Xogta
 
 ```zymbol
@@ -563,8 +671,9 @@ kala_sooc(tiro) {
 | `@!` | jooji (break) | `$>` | map |
 | `@>` | sii-wad (continue) | `$\|` | filter |
 | `->` | Lambda | `$<` | reduce |
-| `$^+` | kala-saar kor (primitives) | `$^-` | kala-saar hoos (primitives) |
-| `$^` | kala-saar comparator (tuples) | | |
+| `arr[i] = val` | cusboonaysii curiyaha (taxanayaasha kaliya) | `arr[i] += val` | cusboonaysii compound |
+| `arr[i]$~` | cusboonaysii shaqeyneed (koobi cusub) | `$^+` | kala-saar kor (primitives) |
+| `$^-` | kala-saar hoos (primitives) | `$^` | kala-saar comparator (tuples) |
 | `<~` | soo-celi (return) | `!?` | isku-day (try) |
 | `\|>` | Pipe | `:!` | qaado (catch) |
 | `#1` | run | `:>` | had-jeer (finally) |
@@ -574,8 +683,44 @@ kala_sooc(tiro) {
 | `::` | wicitaanka moduulka | `.` | galitaanka goobta |
 | `#\|..\|` | tiro parse | `#?` | metadata nooca |
 | `#.N\|..\|` | wareejin | `#!N\|..\|` | jaro |
-| `c\|..\|` | qaabka comma | `e\|..\|` | saynis |
+| `#,\|..\|` | qaabka comma | `#^\|..\|` | saynis |
+| `#d0d9#` | beddelka habka tirooyinka | `#09#` | dib u celi ASCII |
 | `<\ ..\>` | shell exec | `>\<` | doodaha CLI |
+
+## Taariikhda Noocyada
+
+### v0.0.3 — Unicode Nidaamyada Tirooyin & Horumarinta LSP _(Abriil 2026)_
+
+- **La daray** Block 69 Unicode ah oo tirooyin ah oo leh calaamad beddelka hababka `#d0d9#`
+- **La daray** Boolean literals qoraal kastaba — `#१` / `#०`, `#١` / `#٠`, iwm
+- **La daray** Klingon pIqaD tirooyin (CSUR PUA U+F8F0–U+F8F9)
+- **La daray** VM opcode `SetNumeralMode` — sinnaanta buuxda ee tree-walker
+- **La daray** REPL waxay xurmeysaa habka tirooyinka firfircoon ee echo iyo muujinta doorsoome
+- **La beddelay** Bixinta `>>` ee boolean hadda waxay leedahay `#` hore (`#0` / `#1`) hababka oo dhan
+
+### v0.0.2_01 — Magacaabista Hawlwadeenada _(30 Mar 2026)_
+
+- **La beddelay** `c|..|` → `#,|..|` iyo `e|..|` → `#^|..|` — waafaqsan qoyska `#`
+- **La daray** Alias dhoofin: dib u dhoofinta xubnaha module magac kale
+
+### v0.0.2 — Dib-u-naqshadaynta API Uruurinta & Dejiyayaasha _(24 Mar 2026)_
+
+- **La daray** Qoyska hawlwadeenada `$` midaysan arrays iyo strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **La daray** Destructuring arrays, tuples iyo tuples magac leh
+- **La daray** Indexes taban (`arr[-1]` = curiyaha ugu danbeeya)
+- **La daray** Dejiyayaasha asalka ah — Linux (deb/rpm/pkg/musl), macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **La daray** Xilsi isku dhafan `^=`
+- **La hagaajiyay** Xaaladaha xadka parser xisaab; saxitaanka dukumeentiyada
+
+### v0.0.1 — Sii-deynta Dadweynaha ee Ugu Horreysa _(22 Mar 2026)_
+
+- Tree-walker interpreter + register VM (`--vm`, ~4× degdeg, ~95% sinnaanta)
+- Dhammaan qaabaynta aasaasiga ah: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Unicode aqoonsiyeyaasha buuxa, nidaamka module, lambdas, xidhnaanta, maaraynta khaladaadka
+- REPL, LSP, VS Code extension, formatter (`zymbol fmt`)
 
 ---
 

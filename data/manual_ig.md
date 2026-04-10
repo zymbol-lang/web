@@ -32,6 +32,70 @@ x--       // 4
 
 ---
 
+## Ọnọdụ Ọnụọgụ
+
+Zymbol nwere ike igosi ọnụọgụ na **ọnụọgụ Unicode 69** — Devanagari, Arabic-India, Thai, Klingon pIqaD, Mgbakọ Siri Ike, LCD ma ọzọ. Ọnọdụ dị ndụ naanị metụtara mmepụta `>>`; mgbakọ dị n'ime na-abụ naanị binary.
+
+### Mee ka ọdịnaala arụọrụ
+
+Dee ọnụọgụ `0` na `9` nke ọdịnaala ị chọrọ n'ime `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabic-Indic  (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // reset to ASCII
+```
+
+### Mmepụta na uru Boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII default)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # na-abụ naanị ASCII, ọnụọgụ na-eme mgbanwe
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Ọnụọgụ nke ọha n'ime koodu isi mmalite
+
+Ọnụọgụ nke ọ bụla ọdịnaala a na-akwado bụ literals ziri ezi — n'ime ógbè, modulo, ntụnyere:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literals n'ime ọdịnaala ọ bụla
+
+`#` + ọnụọgụ `0` ma ọ bụ `1` sitere n'ime ngọngọ ọ bụla bụ literal Boolean ziri ezi:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` bụ **ASCII mgbe niile**. `#0` (ụgha) na-abụ naanị ihe dị iche n'anya na `0` (zero nọmba zuru oke) n'ime ọdịnaala ọ bụla.
+
+---
+
 ## Ụdị Data
 
 | Ụdị | Ihe Atụ | Akara `#?` | Nchọkwa |
@@ -290,6 +354,8 @@ tinye10 = mee_ngụkọta(10)
 
 ## Usoro
 
+Usoro bụ **nke enwere ike gbanwee** ma na-ejide ihe nke **ụdị otu**.
+
 ```zymbol
 usoro = [1, 2, 3, 4, 5]
 
@@ -319,13 +385,27 @@ site_aha = nchekwa$^ (a, b -> a.aha > b.aha)      // n'ala site n'aha
 >> site_afọ[0].aha ¶     // → Ada
 >> site_aha[0].aha ¶     // → Carla
 
-usoro[1] = 99              // melite ebe ahụ
-usoro = usoro[1]$~ 99      // melite ọrụ — na-azaghachi usoro ọhụrụ
+// Melite ihe ozugbo (usoro naanị)
+usoro[1] = 99              // kenye
+usoro[0] += 5              // nchịkọta: +=  -=  *=  /=  %=  ^=
+
+// Melite ọrụ — na-azaghachi usoro ọhụrụ; nke mbụ adịghịzi gbanwe
+usoro2 = usoro[1]$~ 99
 ```
 
 > Ihe mgbakọ nchịkọta niile na-azaghachi **usoro ọhụrụ**. Tinye ọzọ: `usoro = usoro$+ 4`.
 > Enweghị njikọ — jiri nkwupụta abụọ dị iche iche.
 > `$^+` / `$^-` hazie **usoro primitives** (nọmba, eriri). Maka usoro tuple jiri `$^` na lambda itule — ọnọdụ dị na lambda (`<` = n'elu, `>` = n'ala).
+
+**Usoro nke ọnụọgụ** — ịnyefe usoro na mgbanwe ọzọ na-emepụta otu ihe dị onwe ya:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b adịghị gbanwe
+```
 
 ```zymbol
 // Usoro ndị edebere n'ime
@@ -357,10 +437,15 @@ mmadụ = (aha: "Ada", afọ: 25, obodo: "Enugu")
 
 ## Tuples
 
+Tuples bụ ọpụpụ ndị **enweghị ike gbanwee** nke nwere ike ijide ọnụọgụ nke **ụdị dị iche iche**. N'adịghị ka usoro, enweghị ike gbanwee ihe mgbe emepụtara ya.
+
 ```zymbol
 // Ọnọdụ
 ebe = (10, 20)
 >> ebe[0] ¶    // → 10
+
+ihe_ọmụmụ = (42, "nnọọ", #1, 3.14)
+>> ihe_ọmụmụ[2] ¶     // → #1
 
 // Aha
 mmadụ = (aha: "Adaeze", afọ: 25)
@@ -371,6 +456,29 @@ mmadụ = (aha: "Adaeze", afọ: 25)
 ọnọdụ = (x: 10, y: 20)
 p = (ọnọdụ: ọnọdụ, akara: "mmalite")
 >> p.ọnọdụ.x ¶   // → 10
+```
+
+**Enweghị ike gbanwee** — ọ bụ naanị mgbalị iji gbanwee ihe tuple bụ njehie oge ọrụ:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ njehie oge ọrụ: tuples enweghị ike gbanwee
+// t[0] += 5    // ❌ njehie otu ahụ
+```
+
+Iji nweta ọnụọgụ gbanweere jiri `$~` (melite ọrụ) — na-azaghachi tuple **ọhụrụ**:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← nke mbụ adịghizi gbanwe
+>> t2 ¶    // → (10, 999, 30)
+
+// Tuple aha — wughachite n'ụzọ doro anya
+mmadụ = (aha: "Alice", afọ: 25)
+okenye  = (aha: mmadụ.aha, afọ: 26)
+>> mmadụ.afọ ¶    // → 25
+>> okenye.afọ ¶      // → 26
 ```
 
 ---
@@ -574,8 +682,44 @@ kewaa(nọmba) {
 | `::` | ọgụgụ ọchịchọ | `.` | nweta ubi |
 | `#\|..\|` | tụgharịa nọmba | `#?` | metadata ụdị |
 | `#.N\|..\|` | tụọ okirikiri | `#!N\|..\|` | bee |
-| `c\|..\|` | nhazi ude | `e\|..\|` | sayensị |
+| `#,\|..\|` | nhazi ude | `#^\|..\|` | sayensị |
+| `#d0d9#` | mgbanwe ọnọdụ ọnụọgụ | `#09#` | laghachi na ASCII |
 | `<\ ..\>` | mee shell | `>\<` | arụmọrụ CLI |
+
+## Akụkọ Ihe Mere Eme nke Ụdị
+
+### v0.0.3 — Unicode Sistemu Ọnụọgụ & Ndozi LSP _(Eprel 2026)_
+
+- **Agbakwunyere** Ngọngọ ọnụọgụ Unicode 69 na token mgbanwe ọnọdụ `#d0d9#`
+- **Agbakwunyere** Boolean literals n'ime ọdịnaala ọ bụla — `#१` / `#०`, `#١` / `#٠`, wdg
+- **Agbakwunyere** Klingon pIqaD ọnụọgụ (CSUR PUA U+F8F0–U+F8F9)
+- **Agbakwunyere** VM opcode `SetNumeralMode` — nhata zuru ezu na tree-walker
+- **Agbakwunyere** REPL na-asọpụrụ ọnọdụ ọnụọgụ dị ndụ n'ime echo na igosi mgbanwe
+- **Agbanwere** Mmepụta `>>` nke Boolean ugbu a gụnyere `#` (`#0` / `#1`) n'ime ọnọdụ niile
+
+### v0.0.2_01 — Ịgbanwe Aha Ihe Arụọrụ _(30 Mar 2026)_
+
+- **Agbanwere** `c|..|` → `#,|..|` na `e|..|` → `#^|..|` — na-agbaso ụlọ ọrụ prefix `#`
+- **Agbakwunyere** Alias mwepụta: ịpụtaazị ndị otu module n'okwu ọzọ
+
+### v0.0.2 — Atụmatụ Ọhụrụ nke API Nchịkọta & Ndị Na-etinye _(24 Mar 2026)_
+
+- **Agbakwunyere** Ezinụlọ ihe arụọrụ `$` zikọtara maka arrays na strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Agbakwunyere** Destructuring maka arrays, tuples na tuples nwere aha
+- **Agbakwunyere** Indexes na-adịghị mma (`arr[-1]` = ihe ikpeazụ)
+- **Agbakwunyere** Ndị Na-etinye ọha — Linux (deb/rpm/pkg/musl), macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Agbakwunyere** Ntinye jikọtara `^=`
+- **Edoziri** Ikpu parser mgbakọ; ndozi akwụkwọ
+
+### v0.0.1 — Ntọhapụ Ọha Mbụ _(22 Mar 2026)_
+
+- Tree-walker interpreter + register VM (`--vm`, ~4× ọsọ ọsọ, ~95% nhata)
+- Ihe arụọrụ niile bụ isi: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Unicode njirimara zuru ezu, sistemu module, lambdas, closures, njikwa mperi
+- REPL, LSP, VS Code extension, formatter (`zymbol fmt`)
 
 ---
 

@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Araeau
 
+Mae araeau yn **newidiadwy** ac yn dal elfennau o'r **un math**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ yn_ol_enw = db$^ (a, b -> a.name > b.name)  // disgynol yn ôl enw (>)
 >> yn_ol_oed[0].name ¶     // → Ana
 >> yn_ol_enw[0].name ¶    // → Carla
 
-arr[1] = 99              // diweddaru yn y fan
-arr = arr[1]$~ 99        // diweddariad swyddogaethol — yn dychwelyd arae newydd
+// Diweddariad uniongyrchol elfen (araeau yn unig)
+arr[1] = 99              // neilltuo
+arr[0] += 5              // cyfansawdd: +=  -=  *=  /=  %=  ^=
+
+// Diweddariad swyddogaethol — yn dychwelyd arae newydd; gwreiddiol heb newid
+arr2 = arr[1]$~ 99
 ```
 
 > Mae pob gweithredwr casgliad yn dychwelyd **arae newydd**. Neiltuiwch yn ôl: `arr = arr$+ 4`.
 > Ni ellir cadwyno gweithredwyr — defnyddiwch aseiniadau canolradd.
 > Mae `$^+` / `$^-` yn trefnu **araeau sylfaenol** (rhifau, llinynau). Ar gyfer araeau twpl defnyddiwch `$^` gyda lambda cymhariaeth — mae'r cyfeiriad wedi'i amgodio yn y lambda (`<` = esgynnol, `>` = disgynol).
+
+**Semanteg gwerth** — mae neilltuo arae i newidyn arall yn creu copi annibynnol:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← nid yw b wedi'i effeithio
+```
 
 ```zymbol
 // Araeau nyth
@@ -357,10 +373,15 @@ person = (enw: "Ana", oed: 25, dinas: "Caerdydd")
 
 ## Typlau
 
+Mae typlau yn gynwysyddion trefnus **annewidiadwy** sy'n gallu dal gwerthoedd o **wahanol fathau**. Yn wahanol i araeau, ni ellir newid elfennau ar ôl eu creu.
+
 ```zymbol
 // Safleol
 pwynt = (10, 20)
 >> pwynt[0] ¶    // → 10
+
+data = (42, "helo", #1, 3.14)
+>> data[2] ¶     // → #1
 
 // Enwol
 person = (name: "Alice", age: 25)
@@ -371,6 +392,29 @@ person = (name: "Alice", age: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, label: "tarddiad")
 >> p.pos.x ¶        // → 10
+```
+
+**Annewidiadwyedd** — mae unrhyw ymgais i addasu elfen twpl yn wall amser rhedeg:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ gwall amser rhedeg: mae typlau yn annewidiadwy
+// t[0] += 5    // ❌ yr un gwall
+```
+
+I gael gwerth wedi'i addasu defnyddiwch `$~` (diweddariad swyddogaethol) — yn dychwelyd twpl **newydd**:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← gwreiddiol heb newid
+>> t2 ¶    // → (10, 999, 30)
+
+// Twpl enwol — ailgreu yn benodol
+person = (name: "Alice", age: 25)
+hŷn = (name: person.name, age: 26)
+>> person.age ¶    // → 25
+>> hŷn.age ¶       // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _add_mewnol(a, b) { <~ a + b }
 
 ---
 
+## Moddau Rhifol
+
+Gall Zymbol arddangos rhifau mewn **69 o sgriptiau digid Unicode** — Devanagari, Arabaidd-Indiaidd, Thai, Klingon pIqaD, Mathemategol Trwm, segmentau LCD a mwy. Mae'r modd actif yn effeithio ar allbwn `>>` yn unig; mae rhifyddeg fewnol bob amser yn ddeuaidd.
+
+### Actifadu sgript
+
+Ysgrifennwch ddigid `0` a `9` y sgript targed wedi'i amgáu yn `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabaidd-Ind. (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // ailosod i ASCII
+```
+
+### Allbwn a booleans
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII rhagosodiad)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (pwynt degol bob amser yn ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Booleans: rhagddodiad # bob amser yn ASCII, digid yn addasu
+>> #1 ¶         // → #१   (gwir yn Devanagari)
+>> #0 ¶         // → #०   (anghywir — gwahanol i ०  sero cyfanrif)
+
+x = 28 > 4
+>> x ¶          // → #१   (canlyniad cymhariaeth yn dilyn modd actif)
+```
+
+### Llythrennau digid brodorol yn y cod ffynhonnell
+
+Mae digidau unrhyw sgript a gefnogir yn llythrennau dilys — mewn ystodau, modulo, cymhariaethau:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Llythrennau boolean mewn unrhyw sgript
+
+`#` + digid `0` neu `1` o unrhyw floc yw llythyren boolean ddilys:
+
+```zymbol
+#٠٩#
+نشط = #١        // yr un fath â #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> Mae `#` **bob amser yn ASCII**. Mae `#0` (anghywir) bob amser yn wahanol yn weledol i `0` (sero cyfanrif) ym mhob sgript.
+
+---
+
 ## Gweithredwyr Data
 
 ```zymbol
@@ -563,8 +671,9 @@ dosbarthu(rhif) {
 | `@!` | torri | `$>` | mapio |
 | `@>` | parhau | `$\|` | hidlo |
 | `->` | lambda | `$<` | lleihau |
-| `$^+` | trefnu esgynnol (sylfaenol) | `$^-` | trefnu disgynol (sylfaenol) |
-| `$^` | trefnu gyda chymhariaeth (typlau) | | |
+| `arr[i] = val` | diweddaru elfen (araeau yn unig) | `arr[i] += val` | diweddariad cyfansawdd |
+| `arr[i]$~` | diweddariad swyddogaethol (copi newydd) | `$^+` | trefnu esgynnol (sylfaenol) |
+| `$^-` | trefnu disgynol (sylfaenol) | `$^` | trefnu gyda chymhariaeth (typlau) |
 | `<~` | dychwelyd | `!?` | ceisio |
 | `\|>` | pib | `:!` | dal |
 | `#1` | gwir | `:>` | yn y diwedd |
@@ -574,8 +683,44 @@ dosbarthu(rhif) {
 | `::` | galwad modiwl | `.` | mynediad maes |
 | `#\|..\|` | trosi rhif | `#?` | metadata math |
 | `#.N\|..\|` | talgrynnu | `#!N\|..\|` | torri |
-| `c\|..\|` | fformat atalnod | `e\|..\|` | gwyddonol |
+| `#,\|..\|` | fformat atalnod | `#^\|..\|` | gwyddonol |
+| `#d0d9#` | newid modd rhifol | `#09#` | ailosod i ASCII |
 | `<\ ..\>` | gweithredu shell | `>\<` | dadleuon CLI |
+
+## Hanes Fersiynau
+
+### v0.0.3 — Systemau Rhifol Unicode & Gwelliannau LSP _(Ebrill 2026)_
+
+- **Ychwanegwyd** 69 bloc digid Unicode gyda thocyn newid modd `#d0d9#`
+- **Ychwanegwyd** Llythrennau boolean mewn unrhyw sgript — `#१` / `#०`, `#١` / `#٠`, ac ati
+- **Ychwanegwyd** Digidau Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Ychwanegwyd** Opcode VM `SetNumeralMode` — paredd llawn gyda'r tree-walker
+- **Ychwanegwyd** Mae REPL yn parchu'r modd rhifol actif mewn atsain a dangos newidynnau
+- **Newidiwyd** Mae allbwn `>>` booleans nawr yn cynnwys rhagddodiad `#` (`#0` / `#1`) ym mhob modd
+
+### v0.0.2_01 — Ailenwi Gweithredwyr _(30 Mar 2026)_
+
+- **Newidiwyd** `c|..|` → `#,|..|` ac `e|..|` → `#^|..|` — cyson â theulu rhagddodiaid `#`
+- **Ychwanegwyd** Alias allforio: ailallforio aelodau modiwl dan enw gwahanol
+
+### v0.0.2 — Ailddylunio API Casgliadau & Gosodwyr _(24 Mar 2026)_
+
+- **Ychwanegwyd** Teulu gweithredwyr `$` unedig ar gyfer araeau a llinynau (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Ychwanegwyd** Dadstrwythuro ar gyfer araeau, typlau a thyplau enwog
+- **Ychwanegwyd** Mynegeion negyddol (`arr[-1]` = elfen olaf)
+- **Ychwanegwyd** Gosodwyr brodorol — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Ychwanegwyd** Aseiniad cyfansawdd `^=`
+- **Trwsiwyd** Achosion ymylol parser rhifyddeg; cywiriadau dogfennaeth
+
+### v0.0.1 — Rhyddhad Cyhoeddus Cyntaf _(22 Mar 2026)_
+
+- Dehonglydd tree-walker + VM cofrestr (`--vm`, ~4× cyflymach, ~95% paredd)
+- Pob adeiladwaith craidd: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Nodwyr Unicode llawn, system fodiwlau, lambdas, caethiwedd, trin gwallau
+- REPL, LSP, estyniad VS Code, fformatiwr (`zymbol fmt`)
 
 ---
 

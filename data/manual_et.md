@@ -288,6 +288,8 @@ toimingud = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Massiivid
 
+Massiivid on **muudetavad** ja hoiavad **sama tüüpi** elemente.
+
 ```zymbol
 arr = [10, 20, 30, 40, 50]
 
@@ -309,11 +311,11 @@ idx = arr$?? 30              // → [1]   kõik indeksid väärtusele
 lõige = arr$[0..2]           // lõige [0,2): [20, 30]
 arv_põhine = arr$[0:3]       // arvupõhine: [20, 30, 40]
 
-// Elemendi uuendamine
-arr[1] = 99
->> arr ¶    // → [20, 99, 40, 50, 60]
+// Otsene elemendi uuendamine (ainult massiivid)
+arr[1] = 99              // omistada
+arr[0] += 5              // liit: +=  -=  *=  /=  %=  ^=
 
-// Funktsionaalne uuendamine (tagastab uue massiivi)
+// Funktsionaalne uuendamine — tagastab uue massiivi; originaal muutumatu
 arr2 = arr[1]$~ 77           // → [20, 77, 40, 50, 60]
 
 // Sorteeri (primitiivid)
@@ -337,6 +339,16 @@ maatriks = [[1,2],[3,4],[5,6]]
 > `$+`, `$-`, `$[..]` tagastavad **uue massiivi** — omistage tagasi: `arr = arr$+ 4`.
 > Ei saa ahelada: kasutage kahte eraldi omistamist.
 > `arr$??` ja `arr$[s:n]` kasutavad teist süntaksit kui `arr$[s..e]` — vt Sümbolite Viide.
+
+**Väärtusse semantika** — massiivi omistamine teisele muutujale loob sõltumatu koopia:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b ei ole mõjutatud
+```
 
 ---
 
@@ -365,11 +377,16 @@ isik = (nimi: "Alice", vanus: 25)
 
 ## Tuplid
 
+Tuplid on **muutumatud** järjestatud konteinerid, mis võivad hoida **erinevat tüüpi** väärtusi. Erinevalt massiividest ei saa elemente pärast loomist muuta.
+
 ```zymbol
 // Positsioonipõhine tuple
 punkt = (10, 20)
 >> punkt[0] ¶    // → 10
 >> punkt[1] ¶    // → 20
+
+andmed = (42, "tere", #1, 3.14)
+>> andmed[2] ¶     // → #1
 
 // Nimega tuple
 isik = (nimi: "Alice", vanus: 25)
@@ -382,6 +399,29 @@ pos = (x: 3, y: 4)
 p = (pos: pos, silt: "alguspunkt")
 >> p.silt ¶    // → alguspunkt
 >> p.pos.x ¶   // → 3
+```
+
+**Muutumatus** — igasugune katse muuta tuple elementi on käitusaegne viga:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ käitusaegne viga: tuplid on muutumatud
+// t[0] += 5    // ❌ sama viga
+```
+
+Muudetud väärtuse saamiseks kasutage `$~` (funktsionaalne uuendamine) — tagastab **uue** tupli:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← originaal muutumatu
+>> t2 ¶    // → (10, 999, 30)
+
+// Nimega tuple — rekonstrueerige eksplicitiivselt
+isik = (nimi: "Alice", vanus: 25)
+vanem = (nimi: isik.nimi, vanus: 26)
+>> isik.vanus ¶    // → 25
+>> vanem.vanus ¶   // → 26
 ```
 
 ---
@@ -499,6 +539,70 @@ pi = c::get_PI()
 
 ---
 
+## Arvurežiimid
+
+Zymbol saab kuvada numbreid **69 Unicode numbrikirjas** — Devanagari, Araabia-India, Tai, Klingon pIqaD, matemaatiline rasvane, LCD-segmendid jne. Aktiivne režiim mõjutab ainult `>>`-väljundit; sisemine aritmeetika on alati binaarne.
+
+### Kirja aktiveerimine
+
+Kirjutage sihtkirja number `0` ja `9` vahemärgi `#…#` sisse:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Araabia-India (U+0660–U+0669)
+#๐๙#    // Tai           (U+0E50–U+0E59)
+#09#    // lähtesta ASCII-le
+```
+
+### Väljund ja tõeväärtused
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII vaikimisi)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (kümnendpunkt alati ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Tõeväärtused: # eesliide alati ASCII, number kohandub
+>> #1 ¶         // → #१   (tõene Devanagaris)
+>> #0 ¶         // → #०   (väär — erineb ०  täisarv nullist)
+
+x = 28 > 4
+>> x ¶          // → #१   (võrdlustulemus järgib aktiivset režiimi)
+```
+
+### Kohalikud numbriliteraalid lähtekoodis
+
+Mis tahes toetatud kirja numbrid on kehtivad literaalid — vahemikes, modulo, võrdlustes:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Tõeväärtuse literaalid mis tahes kirjas
+
+`#` + number `0` või `1` mis tahes blokist on kehtiv tõeväärtuse literaal:
+
+```zymbol
+#٠٩#
+نشط = #١        // sama mis #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` on **alati ASCII**. `#0` (väär) erineb visuaalselt `0`-st (täisarv null) igas kirjas.
+
+---
+
 ## Andmeoperaatorid
 
 ```zymbol
@@ -581,24 +685,62 @@ klassifitseeri(arv) {
 | `@`         | tsükkel              | `$>`         | kaardistamine              |
 | `@!`        | katkesta             | `$\|`        | filtreerimine              |
 | `@>`        | jätka                | `$<`         | vähendamine                |
-| `->`        | lambda               | `$^+`        | sorteeri kasvavalt         |
-| `<~`        | tagasta              | `$^-`        | sorteeri kahanevalt        |
-| `\|>`       | toru                 | `$^`         | sorteeri komparaatoriga    |
+| `->`        | lambda               | `$<`         | vähendamine                |
+| `arr[i] = val` | uuenda element (ainult massiivid) | `arr[i] += val` | liituuendamine |
+| `arr[i]$~`  | funktsionaalne uuendamine (uus koopia) | `$^+` | sorteeri kasvavalt (primitiivid) |
+| `$^-`       | sorteeri kahanevalt (primitiivid) | `$^` | sorteeri komparaatoriga (tuplid) |
+| `<~`        | tagasta              | `!?`         | proovi (try)               |
+| `\|>`       | toru                 | `:!`         | püüa (catch)               |
 | `#1`        | tõene                | `$!`         | on viga                    |
 | `#0`        | väär                 | `$!!`        | levi viga                  |
-| `!?`        | proovi (try)         | `#`          | deklareeri moodul          |
-| `:!`        | püüa (catch)         | `#>`         | ekspordi                   |
-| `:>`        | lõpuks (finally)     | `<#`         | impordi                    |
+| `:>`        | lõpuks (finally)     | `#`          | deklareeri moodul          |
+| `<#`        | impordi              | `#>`         | ekspordi                   |
 | `.`         | väljapääs            | `::`         | mooduli kutse              |
 | `#\|..\|`   | parsi (parse)        | `#.N\|..\|`  | ümarda N kohani            |
-| `#!N\|..\|` | kärbi N kohani       | `c\|..\|`    | komavormingus              |
-| `e\|..\|`   | teaduslik not.       | `<\ \>`      | kesta käsk                 |
+| `#!N\|..\|` | kärbi N kohani       | `#,\|..\|`    | komavormingus              |
+| `#d0d9#` | arvurežiimi lüliti | `#09#` | lähtesta ASCII-le |
+| `#^\|..\|`   | teaduslik not.       | `<\ \>`      | kesta käsk                 |
 | `><`        | kesta väljund        | `$~~[..]`    | asenda stringis            |
 | `[a,b]=arr` | destruktureerimine   | `(x,y)=tup`  | tuple destruktureerimine   |
 
 ---
 
 *Zymbol-Lang — Sümboolne. Universaalne. Muutumatu.*
+
+## Versiooniajalugu
+
+### v0.0.3 — Unicode Arvusüsteemid & LSP Täiustused _(Aprill 2026)_
+
+- **Lisatud** 69 Unicode numbribloки режиими lülitustokeniga `#d0d9#`
+- **Lisatud** Tõeväärtuse literaalid mis tahes kirjas — `#१` / `#०`, `#١` / `#٠` jne.
+- **Lisatud** Klingon pIqaD numbrid (CSUR PUA U+F8F0–U+F8F9)
+- **Lisatud** VM opkood `SetNumeralMode` — täielik pariteет tree-walkeriga
+- **Lisatud** REPL austab aktiivset arvurežiimi kaja ja muutujate kuvamisel
+- **Muudetud** `>>` tõeväärtuste väljund sisaldab nüüd eesliidet `#` (`#0` / `#1`) kõigis režiimides
+
+### v0.0.2_01 — Operaatorite Ümbernimetamine _(30 Mar 2026)_
+
+- **Muudetud** `c|..|` → `#,|..|` ja `e|..|` → `#^|..|` — kooskõlas `#`-eesliidete perekonnaga
+- **Lisatud** Ekspordi alias: mooduli liikmete taaseksportimine teise nimega
+
+### v0.0.2 — Kollektsioonide API Ümberkujundamine & Installijad _(24 Mar 2026)_
+
+- **Lisatud** Ühtne `$`-operaatorite perekond massiividele ja stringidele (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Lisatud** Destruktureerimine massiividele, tuupelitele ja nimega tuupelitele
+- **Lisatud** Negatiivsed indeksid (`arr[-1]` = viimane element)
+- **Lisatud** Kohalikud installijad — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Lisatud** Liitomistamine `^=`
+- **Parandatud** Aritmeetilise parseri äärejuhud; dokumentatsiooniparandused
+
+### v0.0.1 — Esimene Avalik Väljaanne _(22 Mar 2026)_
+
+- Tree-walker tõlk + registri VM (`--vm`, ~4× kiirem, ~95% pariteет)
+- Kõik põhikonstruktid: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Täielikud Unicode-identifikaatorid, moodulisüsteem, lambdad, sulundid, veakäsitlus
+- REPL, LSP, VS Code laiendus, vormindaja (`zymbol fmt`)
 
 ---
 

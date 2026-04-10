@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Centlāliztli
 
+Arrays are **mutable** and hold elements of the **same type**. _(Centlāliztli **huel mopatla** yéetel tlahtoa **bey kex tlapaltic**.)_
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ tocāpan  = db$^ (a, b -> a.tocāitl > b.tocāitl)
 >> xiuhpan[0].tocāitl ¶     // → Ana
 >> tocāpan[0].tocāitl ¶     // → Carla
 
-arr[1] = 99              // tlapōhualoni patla
-arr = arr[1]$~ 99        // yancuic centlāliztli kutitaña
+// Tlapōhualoni patla (centlāliztli cha'an)
+arr[1] = 99              // tlapōhualoni patla (calāquia)
+arr[0] += 5              // ōme tlapōhualoni: +=  -=  *=  /=  %=  ^=
+
+// Tlapōhualli patla funcional — yancuic centlāliztli quitemoa; nayc mana tikiti
+arr2 = arr[1]$~ 99
 ```
 
 > Nochi colección tlapōhualoni **yancuic centlāliztli** quitemoa. Calāquia: `arr = arr$+ 4`.
 > Āmo ōmome — ōme tēxtli quichihua.
 > `$^+` / `$^-` **primitivo centlāliztli** (tlapōhuallinak, tlahtōl). Tuple centlāliztliw `$^` comparador lambdawan — ñanqa lambdapi churasqa (`<` = wichay, `>` = nochi).
+
+**Tlapaltic neltiliztli** — centlāliztli tēxtli mopatla yancuic centlāliztli quichihua:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b āmo mopatla
+```
 
 ```zymbol
 // Ukupi centlāliztli
@@ -357,10 +373,15 @@ tlacatl = (tocāitl: "Ana", xiuh: 25, altepetl: "Tenochtitlan")
 
 ## Tupla
 
+Tuples are **immutable** ordered containers that can hold values of **different types**. Unlike arrays, elements cannot be changed after creation. _(Tupla **āmo mopatla** ōmome tlahtoa quimomachilia — **ōme tlapaltic** yéetel bey kex. Centlāliztliwa āmo ōme — ba'al āmo mopatla ts'o'ok u ts'aak.)_
+
 ```zymbol
 // Tlapōhualli
 punto = (10, 20)
 >> punto[0] ¶    // → 10
+
+tlahtōl = (42, "niltze", #1, 3.14)
+>> tlahtōl[2] ¶     // → #1
 
 // Tocāitl
 tlacatl = (tocāitl: "Alice", xiuhpōhualli: 25)
@@ -371,6 +392,29 @@ tlacatl = (tocāitl: "Alice", xiuhpōhualli: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, tocāitl: "qallta")
 >> p.pos.x ¶        // → 10
+```
+
+**Āmo mopatla** — quemman tēxtli tupla mopatla ku beet tlahtlacohuiliztli:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ tlahtlacohuiliztli: tupla āmo mopatla
+// t[0] += 5    // ❌ bey kex tlahtlacohuiliztli
+```
+
+Ti' u ts'o'okol ba'al cháajil apaykachaña `$~` (tlahtoa yáanal) — **yancuic** tupla quitemoa:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← nayc mana tikiti
+>> t2 ¶    // → (10, 999, 30)
+
+// Tupla tocāitl — yancuic ts'aak
+tlacatl = (tocāitl: "Alice", xiuhpōhualli: 25)
+tlacatl2 = (tocāitl: tlacatl.tocāitl, xiuhpōhualli: 26)
+>> tlacatl.xiuhpōhualli ¶    // → 25
+>> tlacatl2.xiuhpōhualli ¶   // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _internal_add(a, b) { <~ a + b }
 
 ---
 
+## Tlapōhualli Tēixpōhua
+
+Zymbol weli quinamaca tlapōhualli **Unicode tlapalteōtl 69** — Devanagari, Arabe-India, Thai, Klingon pIqaD, Tlahtoa Chicāhuac, LCD ihuan oc cequi. In tlapōhualli quinamaca zancuel `>>`; tlanāhuatilli binary.
+
+### Tlapalteōtl quizaliztli
+
+Tlacuilo tlapōhualōni `0` ihuan `9` nāhuatl `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabe-India   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // ASCII-co cuepa
+```
+
+### Tlahtoa ihuan boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ASCII, tlapōhualōni yoliztli
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Tlapōhualōni asli código-co
+
+Tlapōhualōni literal — range, modulo:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal tlapalteōtl
+
+`#` + tlapōhualōni `0` anozo `1` bloc boolean:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII**. `#0` (amo) `0` (ce tlapōhualōni) yoliztli.
+
+---
+
 ## Tlahtolmachiyotl
 
 ```zymbol
@@ -563,8 +671,9 @@ xelihui(tlapōhualli) {
 | `@!`         | tlamia            | `$>`         | map                |
 | `@>`         | nemi              | `$\|`        | filter             |
 | `->`         | lambda            | `$<`         | reduce             |
-| `$^+`        | wichay (primitivos) | `$^-`      | nochi (primitivos) |
-| `$^`         | comparador (tuples) | | |
+| `arr[i] = val` | tlapōhualoni patla (centlāliztli cha'an) | `arr[i] += val` | ōme tlapōhualoni |
+| `arr[i]$~` | tlahtoa yáanal (yancuic copia) | `$^+` | wichay (primitivos) |
+| `$^-`        | nochi (primitivos) | `$^`       | comparador (tuples) |
 | `<~`         | tenehualiztli     | `!?`         | quipia             |
 | `\|>`        | pipe              | `:!`         | quitemohua         |
 | `#1`         | neltia            | `:>`         | nochi nemi         |
@@ -574,8 +683,42 @@ xelihui(tlapōhualli) {
 | `::`         | módulo xelihui    | `.`          | campo taripay      |
 | `#\|..\|`    | tlapōhualli tikraña | `#?`       | tipo metadata      |
 | `#.N\|..\|`  | xocotl            | `#!N\|..\|`  | ch'iqtaña          |
-| `c\|..\|`    | coma formato      | `e\|..\|`    | científico         |
+| `#,\|..\|`    | coma formato      | `#^\|..\|`    | científico         |
+| `#d0d9#` | tlapōhualli tēixpōhua | `#09#` | ASCII-co cuepa |
 | `<\ ..\>`    | shell luraña      | `><`         | CLI argumentonak   |
+
+## Yancuic Tlamachiliz
+
+### v0.0.3 — Unicode Tlapōhualōni & LSP _(Abril 2026)_
+
+- **Calaquilli** Unicode bloc 69 token `#d0d9#`
+- **Calaquilli** Boolean literals — `#१` / `#०`, `#١` / `#٠`
+- **Calaquilli** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Calaquilli** VM opcode `SetNumeralMode` — tree-walker
+- **Calaquilli** REPL tlapōhualli echo variable
+- **Tlamachtilli** `>>` boolean `#` (`#0` / `#1`)
+
+### v0.0.2_01 _(30 Mar 2026)_
+
+- **Tlamachtilli** `c|..|` → `#,|..|` ihuan `e|..|` → `#^|..|`
+- **Calaquilli** Export alias
+
+### v0.0.2 _(24 Mar 2026)_
+
+- **Calaquilli** `$` arrays ihuan strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Calaquilli** Destructuring arrays, tuples
+- **Calaquilli** Index amo (`arr[-1]`)
+- **Calaquilli** Instalador — Linux, macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Calaquilli** `^=`
+
+### v0.0.1 _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4×, ~95%)
+- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

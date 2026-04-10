@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Skikkings
 
+Skikkings is **veranderbaar** en bevat elemente van **dieselfde tipe**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ per_naam     = db$^ (a, b -> a.naam > b.naam)
 >> per_ouderdom[0].naam ¶     // → Ana
 >> per_naam[0].naam ¶         // → Carla
 
-arr[1] = 99               // opdateer in-plek
-arr = arr[1]$~ 99         // funksionele opdatering — gee nuwe skikking terug
+// Direkte element-opdatering (slegs skikkings)
+arr[1] = 99              // toewys
+arr[0] += 5              // saamgesteld: +=  -=  *=  /=  %=  ^=
+
+// Funksionele opdatering — gee 'n nuwe skikking terug; origineel onveranderd
+arr2 = arr[1]$~ 99
 ```
 
 > Alle versamelingsoperateurs gee 'n **nuwe skikking** terug. Wys terug toe: `arr = arr$+ 4`.
 > Operateurs kan nie geketting word nie — gebruik tussentoewysings.
 > `$^+` / `$^-` sorteer **primitiewe skikkings**. Vir tuple-skikkings gebruik `$^` met 'n vergelykings-lambda.
+
+**Waardesemantiek** — om 'n skikking aan 'n ander veranderlike toe te wys skep 'n onafhanklike kopie:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b is nie beïnvloed nie
+```
 
 ```zymbol
 // Geneste skikkings
@@ -357,10 +373,16 @@ persoon = (naam: "Ana", ouderdom: 25, stad: "Kaapstad")
 
 ## Tuples
 
+Tuples is **onveranderlike** geordende houers wat waardes van **verskillende tipes** kan bevat.
+Anders as skikkings kan elemente nie na skepping gewysig word nie.
+
 ```zymbol
-// Posisioneel
+// Posisioneel — gemengde tipes toegelaat
 punt = (10, 20)
 >> punt[0] ¶    // → 10
+
+data = (42, "hallo", #1, 3.14)
+>> data[2] ¶     // → #1
 
 // Benoem
 persoon = (naam: "Alice", ouderdom: 25)
@@ -371,6 +393,29 @@ persoon = (naam: "Alice", ouderdom: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, etiket: "oorsprong")
 >> p.pos.x ¶        // → 10
+```
+
+**Onveranderlikheid** — enige poging om 'n tuple-element te wysig is 'n looptydsfout:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ looptydsfout: tuples is onveranderlik
+// t[0] += 5    // ❌ dieselfde fout
+```
+
+Om 'n gewysigde waarde af te lei, gebruik `$~` (funksionele opdatering) — gee 'n **nuwe** tuple terug:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← origineel onveranderd
+>> t2 ¶    // → (10, 999, 30)
+
+// Benoemde tuple — herkonstrueer eksplisiet
+persoon = (naam: "Alice", ouderdom: 25)
+ouer  = (naam: persoon.naam, ouderdom: 26)
+>> persoon.ouderdom ¶    // → 25
+>> ouer.ouderdom ¶       // → 26
 ```
 
 ---
@@ -482,6 +527,70 @@ _internal_add(a, b) { <~ a + b }
 
 ---
 
+## Numeriese Modi
+
+Zymbol kan getalle vertoon in **69 Unicode-syferskrifte** — Devanagari, Arabies-Indies, Thais, Klingon pIqaD, Wiskundige Vetdruk, LCD-segmente en meer. Die aktiewe modus beïnvloed slegs `>>`-uitvoer; interne rekenkunde is altyd binêr.
+
+### 'n Skrif aktiveer
+
+Skryf die `0`- en `9`-syfer van die teikenskrif tussen `#…#`:
+
+```zymbol
+#०९#    // Devanagari   (U+0966–U+096F)
+#٠٩#    // Arabies-Ind. (U+0660–U+0669)
+#๐๙#    // Thais        (U+0E50–U+0E59)
+#09#    // herstel na ASCII
+```
+
+### Uitvoer en Booleans
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII standaard)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (desimaalkomma altyd ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Booleans: # voorvoegsel altyd ASCII, syfer pas aan
+>> #1 ¶         // → #१   (waar in Devanagari)
+>> #0 ¶         // → #०   (onwaar — anders as ०  heelgetal nul)
+
+x = 28 > 4
+>> x ¶          // → #१   (vergelykingsuitslag volg aktiewe modus)
+```
+
+### Oorspronklike syfer-literals in bronkode
+
+Syfers van enige ondersteunde skrif is geldige literals — in reekse, modulo, vergelykings:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boole-literals in enige skrif
+
+`#` + syfer `0` of `1` uit enige blok is 'n geldige boole-literal:
+
+```zymbol
+#٠٩#
+نشط = #١        // dieselfde as #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` is **altyd ASCII**. `#0` (onwaar) is altyd visueel onderskeibaar van `0` (heelgetal nul) in elke skrif.
+
+---
+
 ## Data-operateurs
 
 ```zymbol
@@ -563,8 +672,9 @@ klassifiseer(nommer) {
 | `@!` | breek | `$>` | kaart |
 | `@>` | gaan voort | `$\|` | filter |
 | `->` | lambda | `$<` | verminder |
-| `$^+` | sorteer oplopend (primitiewe) | `$^-` | sorteer aflopend (primitiewe) |
-| `$^` | sorteer met vergelyker (tuples) | | |
+| `arr[i] = val` | opdateer element (slegs skikkings) | `arr[i] += val` | saamgestelde opdatering |
+| `arr[i]$~` | funksionele opdatering (nuwe kopie) | `$^+` | sorteer oplopend (primitiewe) |
+| `$^-` | sorteer aflopend (primitiewe) | `$^` | sorteer met vergelyker (tuples) |
 | `<~` | gee terug | `!?` | probeer |
 | `\|>` | pyp | `:!` | vang |
 | `#1` | waar | `:>` | ten slotte |
@@ -574,8 +684,44 @@ klassifiseer(nommer) {
 | `::` | module-oproep | `.` | veld-toegang |
 | `#\|..\|` | ontleed nommer | `#?` | tipe-metadata |
 | `#.N\|..\|` | afrond | `#!N\|..\|` | afkap |
-| `c\|..\|` | komma-formaat | `e\|..\|` | wetenskaplik |
+| `#,\|..\|` | komma-formaat | `#^\|..\|` | wetenskaplik |
+| `#d0d9#` | numeriese modus-skakelaar | `#09#` | herstel na ASCII |
 | `<\ ..\>` | skaal-uitvoering | `>\<` | CLI-argumente |
+
+## Wysigingslys
+
+### v0.0.3 — Unicode Numeriese Stelsels & LSP-verbeterings _(April 2026)_
+
+- **Bygevoeg** 69 Unicode-syferblokke met die modus-skakelteken `#d0d9#`
+- **Bygevoeg** Boole-literals in enige skrif — `#१` / `#०`, `#١` / `#٠`, ens.
+- **Bygevoeg** Klingon pIqaD-syfers (CSUR PUA U+F8F0–U+F8F9)
+- **Bygevoeg** VM-opkode `SetNumeralMode` — volle pariteit met die boom-wandelaar
+- **Bygevoeg** REPL respekteer aktiewe numeriese modus in eggo en veranderlike-vertoning
+- **Verander** `>>`-uitvoer van Booleans sluit nou die `#`-voorvoegsel in (`#0` / `#1`) in alle modi
+
+### v0.0.2_01 — Operateur-hernoem _(30 Mar 2026)_
+
+- **Verander** `c|..|` → `#,|..|` en `e|..|` → `#^|..|` — konsekwent met die `#`-voorvoegselfamilie
+- **Bygevoeg** Uitvoer-alias: heruitvoer van moduleledenames onder 'n ander naam
+
+### v0.0.2 — Versameling-API Herontwerp & Installeerders _(24 Mar 2026)_
+
+- **Bygevoeg** Verenigde `$`-operateurfamilie vir skikkings en stringe (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Bygevoeg** Destrukturering vir skikkings, tuples en benoemde tuples
+- **Bygevoeg** Negatiewe indekse (`arr[-1]` = laaste element)
+- **Bygevoeg** Oorspronklike installeerders — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Bygevoeg** Saamgestelde toekenning `^=`
+- **Reggemaak** Rekenkundige ontleder-randgevalle; dokumentasiekorreksies
+
+### v0.0.1 — Eerste Publieke Vrystelling _(22 Mar 2026)_
+
+- Boom-wandelaar-tolk + register-VM (`--vm`, ~4× vinniger, ~95% pariteit)
+- Alle kernkonstrukte: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Volledige Unicode-identifiseerders, modulestelsel, lambdas, sluitings, fouthantering
+- REPL, LSP, VS Code-uitbreiding, formatteerder (`zymbol fmt`)
 
 ---
 

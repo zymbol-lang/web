@@ -290,6 +290,8 @@ add10 = adder_yarat(10)
 
 ## Massivlər
 
+Massivlər **dəyişdirilə biləndir** və **eyni tipdə** elementlər saxlayır.
+
 ```zymbol
 massiv = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ by_name = db$^ (a, b -> a.ad > b.ad)      // ada görə azalan (>)
 >> by_age[0].ad ¶     // → Aytən
 >> by_name[0].ad ¶    // → Carla
 
-massiv[1] = 99              // yerində yeniləmə
-massiv = massiv[1]$~ 99     // funksional yeniləmə — yeni massiv qaytarır
+// Elementin birbaşa yenilənməsi (yalnız massivlər)
+massiv[1] = 99              // atama
+massiv[0] += 5              // mürəkkəb: +=  -=  *=  /=  %=  ^=
+
+// Funksional yeniləmə — yeni massiv qaytarır; orijinal dəyişmir
+m2 = massiv[1]$~ 99
 ```
 
 > Bütün kolleksiya operatorları **yeni massiv** qaytarır. Yenidən təyin edin: `massiv = massiv$+ 4`.
 > Operatorlar zəncirlənə bilməz — aralıq dəyişənlər istifadə edin.
 > `$^+` / `$^-` **primitiv massivləri** (rəqəmlər, sətirlər) sıralayır. Kortej massivləri üçün `$^` komparator lambda ilə istifadə edin.
+
+**Dəyər semantikası** — massivin başqa dəyişənə təyin edilməsi müstəqil bir nüsxə yaradır:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b təsirlənmir
+```
 
 ```zymbol
 // İç-içə massivlər
@@ -357,10 +373,15 @@ person = (ad: "Aytən", yas: 25, şəhər: "Bakı")
 
 ## Kortejlər
 
+Kortejlər **dəyişdirilməz** sıralı konteynerlerdir ki, **müxtəlif tiplərdə** dəyərlər saxlaya bilir. Massivlərdən fərqli olaraq, yaradıldıqdan sonra elementlər dəyişdirilə bilməz.
+
 ```zymbol
 // Mövqe
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+data = (42, "hello", #1, 3.14)
+>> data[2] ¶     // → #1
 
 // Adlandırılmış
 şəxs = (ad: "Aytən", yaş: 25)
@@ -371,6 +392,29 @@ point = (10, 20)
 pos = (x: 10, y: 20)
 p = (pos: pos, label: "mənşə")
 >> p.pos.x ¶        // → 10
+```
+
+**Dəyişməzlik** — kortej elementini dəyişdirməyə hər hansı cəhd icra zamanı xətasıdır:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ icra zamanı xətası: kortejlər dəyişdirilməzdir
+// t[0] += 5    // ❌ eyni xəta
+```
+
+Dəyişdirilmiş dəyər əldə etmək üçün `$~` (funksional yeniləmə) istifadə edin — **yeni** kortej qaytarır:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← orijinal dəyişmədi
+>> t2 ¶    // → (10, 999, 30)
+
+// Adlandırılmış kortej — açıq şəkildə yenidən qurun
+şəxs = (ad: "Alice", yaş: 25)
+böyük  = (ad: şəxs.ad, yaş: 26)
+>> şəxs.yaş ¶    // → 25
+>> böyük.yaş ¶    // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _daxili_topla(a, b) { <~ a + b }
 
 ---
 
+## Rəqəm Rejimləri
+
+Zymbol rəqəmləri **69 Unicode rəqəm yazısında** göstərə bilər — Devanaqari, Ərəb-Hindistan, Tailand, Klingon pIqaD, Riyazi Qalın, LCD seqmentləri və daha çoxu. Aktiv rejim yalnız `>>`-çıxışına təsir edir; daxili arifmetika həmişə binarydir.
+
+### Yazının aktivləşdirilməsi
+
+Hədəf yazının `0` və `9` rəqəmlərini `#…#` arasına yazın:
+
+```zymbol
+#०९#    // Devanaqari    (U+0966–U+096F)
+#٠٩#    // Ərəb-Hind.    (U+0660–U+0669)
+#๐๙#    // Tailand       (U+0E50–U+0E59)
+#09#    // ASCII-yə sıfırlayın
+```
+
+### Çıxış və məntiqi dəyərlər
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII standart)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (onluq nöqtə həmişə ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Məntiqi: # prefiksi həmişə ASCII, rəqəm uyğunlaşır
+>> #1 ¶         // → #१   (doğru Devanaqaridə)
+>> #0 ¶         // → #०   (yanlış — ०  tam ədəd sıfırdan fərqlənir)
+
+x = 28 > 4
+>> x ¶          // → #१   (müqayisə nəticəsi aktiv rejimi izləyir)
+```
+
+### Mənbə kodunda yerli rəqəm literalları
+
+İstənilən dəstəklənən yazının rəqəmləri etibarlı literallardır — aralıqlarda, modulo, müqayisələrdə:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### İstənilən yazıda məntiqi literallar
+
+`#` + istənilən blokdan `0` və ya `1` rəqəmi etibarlı məntiqi literaldır:
+
+```zymbol
+#٠٩#
+نشط = #١        // #1 ilə eynidir
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **həmişə ASCII**-dir. `#0` (yanlış) hər yazıda `0`-dan (tam ədəd sıfır) həmişə vizual olaraq fərqlənir.
+
+---
+
 ## Məlumat Operatorları
 
 ```zymbol
@@ -563,8 +671,9 @@ təsnif(rəqəm) {
 | `@!`     | kəs (break)           | `$>`       | map                     |
 | `@>`     | davam et (continue)   | `$\|`      | filter                  |
 | `->`     | Lambda                | `$<`       | reduce                  |
-| `$^+`    | Artan sıralama (prim.) | `$^-`     | Azalan sıralama (prim.) |
-| `$^`     | Komparator ilə sırala |            |                         |
+| `massiv[i] = val` | elementi yenilə (yalnız massivlər) | `massiv[i] += val` | mürəkkəb yeniləmə |
+| `massiv[i]$~` | funksional yeniləmə (yeni nüsxə) | `$^+`  | Artan sıralama (prim.)  |
+| `$^-`    | Azalan sıralama (prim.) | `$^`    | Komparator ilə sırala (kortejlər) |
 | `<~`     | qaytar (return)       | `!?`       | cəhd et (try)           |
 | `\|>`    | Boru (pipe)           | `:!`       | tut (catch)             |
 | `#1`     | doğru (true)          | `:>`       | həmişə (finally)        |
@@ -574,8 +683,44 @@ təsnif(rəqəm) {
 | `::`     | Modul çağırışı        | `.`        | sahəyə giriş            |
 | `#\|..\|` | Rəqəm parse          | `#?`       | Tip metadatası          |
 | `#.N\|..\|` | Yuvarlaqlaşdır     | `#!N\|..\|` | Kəs                   |
-| `c\|..\|` | Vergüllü format      | `e\|..\|`  | Elmi format             |
+| `#,\|..\|` | Vergüllü format      | `#^\|..\|`  | Elmi format             |
+| `#d0d9#` | rəqəm rejimi açarı | `#09#` | ASCII-yə sıfırlayın |
 | `<\ ..\>` | Shell icra           | `><`       | CLI arqumentlər         |
+
+## Versiya Tarixi
+
+### v0.0.3 — Unicode Rəqəm Sistemləri & LSP Təkmilləşdirmələri _(Aprel 2026)_
+
+- **Əlavə edildi** 69 Unicode rəqəm bloku rejim keçid tokeni `#d0d9#` ilə
+- **Əlavə edildi** İstənilən yazıda məntiqi literallar — `#१` / `#०`, `#١` / `#٠`, və s.
+- **Əlavə edildi** Klingon pIqaD rəqəmləri (CSUR PUA U+F8F0–U+F8F9)
+- **Əlavə edildi** `SetNumeralMode` VM opkodu — tree-walker ilə tam paritet
+- **Əlavə edildi** REPL əks-səda və dəyişən göstəricidə aktiv rəqəm rejimini rəayət edir
+- **Dəyişdirildi** Məntiqi dəyərlərin `>>` çıxışı artıq `#` prefiksini (`#0` / `#1`) bütün rejimlərdə əhatə edir
+
+### v0.0.2_01 — Operator Adlarının Dəyişdirilməsi _(30 Mar 2026)_
+
+- **Dəyişdirildi** `c|..|` → `#,|..|` və `e|..|` → `#^|..|` — `#` prefiks ailəsi ilə ardıcıl
+- **Əlavə edildi** İxrac əvəzadı: modul üzvlərini başqa ad altında yenidən ixrac etmək
+
+### v0.0.2 — Kolleksiya API Yenidən Dizaynı & Quraşdırıcılar _(24 Mar 2026)_
+
+- **Əlavə edildi** Massivlər və sətrlər üçün vahid `$` operator ailəsi (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Əlavə edildi** Massivlər, dəstlər və adlandırılmış dəstlər üçün destrukturlaşdırma
+- **Əlavə edildi** Mənfi indekslər (`arr[-1]` = son element)
+- **Əlavə edildi** Yerli quraşdırıcılar — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Əlavə edildi** Mürəkkəb mənimsətmə `^=`
+- **Düzəldildi** Arifmetik parser kənar halları; sənədləşdirmə düzəlişləri
+
+### v0.0.1 — İlk İctimai Buraxılış _(22 Mar 2026)_
+
+- Tree-walker tərcüməçi + reyestr VM (`--vm`, ~4× sürətli, ~95% paritet)
+- Bütün əsas konstruktlar: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Tam Unicode identifikatorlar, modul sistemi, lambdalar, bağlamalar, xəta idarəetməsi
+- REPL, LSP, VS Code uzantısı, formatlayıcı (`zymbol fmt`)
 
 ---
 

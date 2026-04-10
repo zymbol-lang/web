@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Arreas
 
+Arreas es **mutabile** e contine elementos del **mesme typo**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ per_nomine = db$^ (a, b -> a.nomine > b.nomine)  // descendente per nomine (>)
 >> per_etate[0].nomine ¶     // → Ana
 >> per_nomine[0].nomine ¶    // → Carla
 
-arr[1] = 99              // actualisation in loco
-arr = arr[1]$~ 99        // actualisation functional — returna nove arrea
+// Actualisation directe de elemento (arreas solmente)
+arr[1] = 99              // assignar
+arr[0] += 5              // composite: +=  -=  *=  /=  %=  ^=
+
+// Actualisation functional — returna nove arrea; original non cambiate
+arr2 = arr[1]$~ 99
 ```
 
 > Tote operatores de collection returna un **nove arrea**. Reassignar: `arr = arr$+ 4`.
 > Operatores non pote esser catenate — usar assignationes intermediate.
 > `$^+` / `$^-` ordina **arreas primitive** (numeros, catenas). Pro arreas de tuplas usar `$^` con lambda comparator — le direction es codificate in le lambda (`<` = ascendente, `>` = descendente).
+
+**Semantica de valor** — assignar un arrea a un altere variabile crea un copia independente:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b non es affectate
+```
 
 ```zymbol
 // Arreas nestite
@@ -357,10 +373,15 @@ persona = (nomine: "Ana", etate: 25, citate: "Madrid")
 
 ## Tuplas
 
+Tuplas es contenitores ordinate **immutabile** que pote continer valores de **typos differente**. Differentemente del arreas, elementos non pote esser cambiate post creation.
+
 ```zymbol
 // Positional
 puncto = (10, 20)
 >> puncto[0] ¶    // → 10
+
+datos = (42, "bon die", #1, 3.14)
+>> datos[2] ¶     // → #1
 
 // Nominate
 persona = (nomine: "Alice", etate: 25)
@@ -371,6 +392,29 @@ persona = (nomine: "Alice", etate: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, etiquetta: "origine")
 >> p.pos.x ¶           // → 10
+```
+
+**Immutabilitate** — qualcunque tentativa de modificar un elemento de tupla es un error de runtime:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ error de runtime: tuplas es immutabile
+// t[0] += 5    // ❌ mesme error
+```
+
+Pro derivar un valor modificate usar `$~` (actualisation functional) — returna un **nove** tupla:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← original non cambiate
+>> t2 ¶    // → (10, 999, 30)
+
+// Tupla nominate — reconstruir explicitemente
+persona = (nomine: "Alice", etate: 25)
+major  = (nomine: persona.nomine, etate: 26)
+>> persona.etate ¶    // → 25
+>> major.etate ¶      // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _adder_interne(a, b) { <~ a + b }
 
 ---
 
+## Modos Numeral
+
+Zymbol pote monstrar numeros in **69 scriptos de cifras Unicode** — Devanagari, Arabe-Indic, Thai, Klingon pIqaD, Mathematica Grasse, segmentos LCD e plus. Le modo active influe solmente le output `>>`; le arithmetica interne es semper binari.
+
+### Activar un scripto
+
+Scribe le cifra `0` e `9` del scripto target incluse in `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabe-Indic   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // reinitialisar a ASCII
+```
+
+### Output e valores boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII per defecto)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (puncto decimal semper ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Boolean: prefixo # semper ASCII, cifra se adapta
+>> #1 ¶         // → #१   (vere in Devanagari)
+>> #0 ¶         // → #०   (false — distincte de ०  zero integer)
+
+x = 28 > 4
+>> x ¶          // → #१   (resultato de comparation seque modo active)
+```
+
+### Literales de cifras native in codice fonte
+
+Cifras de qualcunque scripto supportate es literales valide — in intervallos, modulo, comparationes:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Literales boolean in qualcunque scripto
+
+`#` + cifra `0` o `1` de qualcunque bloco es un literal boolean valide:
+
+```zymbol
+#٠٩#
+نشط = #١        // equivalente a #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` es **semper ASCII**. `#0` (false) es semper visualmente distincte de `0` (zero integer) in cata scripto.
+
+---
+
 ## Operatores de Datos
 
 ```zymbol
@@ -563,8 +671,9 @@ classificar(numero) {
 | `@!`       | ruptura (break)    | `$>`         | map                     |
 | `@>`       | continuar          | `$\|`        | filter                  |
 | `->`       | lambda             | `$<`         | reduce                  |
-| `$^+`      | ordinar ascendente | `$^-`        | ordinar descendente     |
-| `$^`       | ordinar con comp.  | `$~`         | actualisation functional|
+| `arr[i] = val` | actualisar elemento (arreas solmente) | `arr[i] += val` | actualisation composite |
+| `arr[i]$~` | actualisation functional (nove copia) | `$^+` | ordinar ascendente |
+| `$^-` | ordinar descendente | `$^` | ordinar con comparator (tuplas) |
 | `<~`       | retornar           | `!?`         | probar (try)            |
 | `\|>`      | tubo               | `:!`         | capturar (catch)        |
 | `#1`       | vere               | `:>`         | sempre (finally)        |
@@ -574,8 +683,44 @@ classificar(numero) {
 | `::`       | appello de modulo  | `.`          | accesso a campo         |
 | `#\|..\|`  | analysar numero    | `#?`         | metadata de typo        |
 | `#.N\|..\|` | rotundar          | `#!N\|..\|`  | truncar                 |
-| `c\|..\|`  | formato comma      | `e\|..\|`    | scientific              |
+| `#,\|..\|`  | formato comma      | `#^\|..\|`    | scientific              |
+| `#d0d9#` | commutation de modo numeral | `#09#` | reinitialisar a ASCII |
 | `<\ ..\>`  | exec shell         | `><`         | argumentos CLI          |
+
+## Historia de Versiones
+
+### v0.0.3 — Systemas Numeral Unicode & Melioramentos LSP _(April 2026)_
+
+- **Addite** 69 blocos de cifras Unicode con le token de commutation `#d0d9#`
+- **Addite** Literales boolean in qualcunque scripto — `#१` / `#०`, `#١` / `#٠`, etc.
+- **Addite** Cifras Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Addite** Opcode VM `SetNumeralMode` — paritate complete con tree-walker
+- **Addite** REPL respecta modo numeral active in echo e monstration de variabiles
+- **Cambiate** Output `>>` de boolean ora include prefixo `#` (`#0` / `#1`) in tote modos
+
+### v0.0.2_01 — Renomination de Operatores _(30 Mar 2026)_
+
+- **Cambiate** `c|..|` → `#,|..|` e `e|..|` → `#^|..|` — consistente con familia de prefixo `#`
+- **Addite** Alias de exportation: reexportar membros de modulo sub altere nomine
+
+### v0.0.2 — Redisegno de API de Collectiones & Installatores _(24 Mar 2026)_
+
+- **Addite** Familia de operatores `$` unificate pro arrays e chordas (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Addite** Destructuration pro arrays, tuples e tuples nominate
+- **Addite** Indices negative (`arr[-1]` = ultime elemento)
+- **Addite** Installatores native — Linux (deb/rpm/pkg/musl), macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Addite** Assignation composite `^=`
+- **Corrigite** Casos limite del parser arithmetico; correctiones de documentation
+
+### v0.0.1 — Prime Edition Public _(22 Mar 2026)_
+
+- Interprete tree-walker + VM de registro (`--vm`, ~4× plus rapide, ~95% paritate)
+- Tote le constructiones cardinal: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Identificatores Unicode complete, systema de modulos, lambdas, clausuras, gestion de errores
+- REPL, LSP, extension VS Code, formattator (`zymbol fmt`)
 
 ---
 

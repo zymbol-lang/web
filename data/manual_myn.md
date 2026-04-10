@@ -291,6 +291,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Tzikbal
 
+Arrays are **mutable** and hold elements of the **same type**. _(Tzikbal **páajtal u cháajil** yéetel u tzikbal **bey kex chuuyil**.)_
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -320,13 +322,27 @@ by_k'aaba' = db$^ (a, b -> a.k'aaba' > b.k'aaba')
 >> by_ja'ab[0].k'aaba' ¶     // → Ana
 >> by_k'aaba'[0].k'aaba' ¶   // → Carla
 
-arr[1] = 99              // ba'al tikrakuq
-arr = arr[1]$~ 99        // ba'al yáanal — bora tzikbal
+// U cháajil ba'al (tzikbal cha'an)
+arr[1] = 99              // ba'al tikrakuq (ts'aak)
+arr[0] += 5              // noj ts'aak: +=  -=  *=  /=  %=  ^=
+
+// Ba'al yáanal — bora tzikbal ku yúuchul; nayc ma' cháajil
+arr2 = arr[1]$~ 99
 ```
 
 > `$+`, `$-`, `$[..]` u ts'o'okol **tzikbal yáanal** — ts'aak: `arr = arr$+ 4`.
 > Ma' tz'aab — ka'p'éel tz'iibil.
 > `$^+` / `$^-` gai'tayl **naas solus**. Tupla tzikbal — hut'unn `$^` yéetel lambda.
+
+**Ba'al chuuyil** — ts'aak tzikbal ti' k'aaba' yáanal ku beet bora tzikbal ku ts'o'okol:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b ma' u cháajil
+```
 
 ```zymbol
 // Tzikbal naasad
@@ -358,10 +374,15 @@ person = (k'aaba': "Ana", ja'ab: 25, city: "Mérida")
 
 ## Tupla
 
+Tuples are **immutable** ordered containers that can hold values of **different types**. Unlike arrays, elements cannot be changed after creation. _(Tupla **ma' páajtal u cháajil** — u tzikbal **bey kex chuuyil**. Tzikbal bey ma', ba'al ma' páajtal u cháajil ts'o'ok u ts'aak.)_
+
 ```zymbol
 // Chuuyil
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+ba'alche' = (42, "ba'ax ka wa'alik", #1, 3.14)
+>> ba'alche'[2] ¶     // → #1
 
 // K'aaba'
 winik = (k'aaba': "Alice", ja'ab: 25)
@@ -372,6 +393,29 @@ winik = (k'aaba': "Alice", ja'ab: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, label: "kaaj")
 >> p.pos.x ¶        // → 10
+```
+
+**Ma' páajtal u cháajil** — ken bix u ts'aak tupla ba'al ku beet chaambel:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ chaambel: tupla ma' páajtal u cháajil
+// t[0] += 5    // ❌ bey kex chaambel
+```
+
+Ti' u ts'o'okol ba'al cháajil apaykachaña `$~` (ba'al yáanal) — ku bisik **bora** tupla:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← nayc ma' cháajil
+>> t2 ¶    // → (10, 999, 30)
+
+// Tupla k'aaba' — bora ts'aak
+winik = (k'aaba': "Alice", ja'ab: 25)
+winik2 = (k'aaba': winik.k'aaba', ja'ab: 26)
+>> winik.ja'ab ¶    // → 25
+>> winik2.ja'ab ¶   // → 26
 ```
 
 ---
@@ -483,6 +527,70 @@ _ibac_k'áatik(a, b) { <~ a + b }
 
 ---
 
+## Xook Operatoru
+
+Zymbol u bisik xook ichil **Unicode xook tz'íib 69** — Devanagari, Árabe-India, Tailandés, Klingon pIqaD, Matemáticas, LCD. U kúuchil aktibo ku páajtal ti' bix u `>>`; xook ku beel binary.
+
+### U chíikpajal tz'íib
+
+Ts'íib xook `0` yéetel `9` ichil `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Árabe-India   (U+0660–U+0669)
+#๐๙#    // Tailandés     (U+0E50–U+0E59)
+#09#    // ASCII-e bisik
+```
+
+### Bix u yilik ka' boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ASCII, xook ku beel
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Xook asli ichil código
+
+Xook ku páajtal literal — rango, modulo:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal ichil tz'íib
+
+`#` + xook `0` waa `1` bloc boolean:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII**. `#0` (mina'an) xook `0` (p'aat) ku séeb.
+
+---
+
 ## Datinu Operatoru
 
 ```zymbol
@@ -564,8 +672,9 @@ tsibtik(xook) {
 | `@!`    | ts'o'ok           | `$>`         | map                |
 | `@>`    | xíimbal           | `$\|`        | filter             |
 | `->`    | lambda            | `$<`         | reduce             |
-| `$^+`   | gai'tayl jate     | `$^-`        | gai'tayl nayc      |
-| `$^`    | gai'tayl lambda   |              |                    |
+| `arr[i] = val` | ba'al tikrakuq (tzikbal cha'an) | `arr[i] += val` | noj ts'aak |
+| `arr[i]$~` | ba'al yáanal (bora copia) | `$^+` | gai'tayl jate (naas solus) |
+| `$^-`   | gai'tayl nayc (naas solus) | `$^` | gai'tayl lambda   |
 | `<~`    | tz'ibik           | `!?`         | kaab               |
 | `\|>`   | pipe              | `:!`         | k'aak'al           |
 | `#1`    | jaaj              | `:>`         | tuláakal           |
@@ -575,8 +684,42 @@ tsibtik(xook) {
 | `::`    | módulo k'áatik    | `.`          | chuuyil yilaj      |
 | `#\|..\|`| bora xook        | `#?`         | chuuyil naas       |
 | `#.N\|..\|`| tracyn         | `#!N\|..\|`  | kíinsik            |
-| `c\|..\|`| gai'tayl comma   | `e\|..\|`    | científico         |
+| `#,\|..\|`| gai'tayl comma   | `#^\|..\|`    | científico         |
+| `#d0d9#` | u bisik xook kúuchil | `#09#` | ASCII-e bisik |
 | `<\ ..\>`| shell beetik     | `>\<`        | CLI k'aaba'        |
+
+## Taanil Versión
+
+### v0.0.3 — Unicode Xook & LSP _(Abril 2026)_
+
+- **Ts'áab** Unicode bloc 69 token `#d0d9#`
+- **Ts'áab** Boolean literals — `#१` / `#०`, `#١` / `#٠`
+- **Ts'áab** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Ts'áab** VM opcode `SetNumeralMode` — tree-walker
+- **Ts'áab** REPL xook echo variable
+- **Bisik** `>>` boolean `#` (`#0` / `#1`)
+
+### v0.0.2_01 _(30 Mar 2026)_
+
+- **Bisik** `c|..|` → `#,|..|` yéetel `e|..|` → `#^|..|`
+- **Ts'áab** Export alias
+
+### v0.0.2 _(24 Mar 2026)_
+
+- **Ts'áab** `$` arrays yéetel strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Ts'áab** Destructuring arrays, tuples
+- **Ts'áab** Índice mina'an (`arr[-1]`)
+- **Ts'áab** Instalador — Linux, macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Ts'áab** `^=`
+
+### v0.0.1 _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4×, ~95%)
+- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Tablice
 
+Tablice są **mutowalne** i przechowują elementy tego **samego typu**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ wg_nazwy  = db$^ (a, b -> a.nazwa > b.nazwa)
 >> wg_wieku[0].nazwa ¶     // → Ana
 >> wg_nazwy[0].nazwa ¶     // → Carla
 
-arr[1] = 99              // aktualizacja w miejscu
-arr = arr[1]$~ 99        // aktualizacja funkcyjna — zwraca nową tablicę
+// Bezpośrednia aktualizacja elementu (tylko tablice)
+arr[1] = 99              // przypisz
+arr[0] += 5              // złożone: +=  -=  *=  /=  %=  ^=
+
+// Aktualizacja funkcyjna — zwraca nową tablicę; oryginał bez zmian
+arr2 = arr[1]$~ 99
 ```
 
 > Wszystkie operatory kolekcji zwracają **nową tablicę**. Przypisz z powrotem: `arr = arr$+ 4`.
 > Operatory nie mogą być łączone — używaj przypisań pośrednich.
 > `$^+` / `$^-` sortują **tablice prymitywne** (liczby, ciągi). Dla tablic krotek używaj `$^` z lambdą porównującą.
+
+**Semantyka wartości** — przypisanie tablicy do innej zmiennej tworzy niezależną kopię:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b nie zostaje zmienione
+```
 
 ```zymbol
 // Tablice zagnieżdżone
@@ -357,10 +373,15 @@ osoba = (nazwa: "Ana", wiek: 25, miasto: "Madryt")
 
 ## Krotki
 
+Krotki są **niezmiennymi** kontenerami porządkowanymi, które mogą przechowywać wartości **różnych typów**. W przeciwieństwie do tablic, elementy nie mogą być zmieniane po utworzeniu.
+
 ```zymbol
 // Pozycyjna
 punkt = (10, 20)
 >> punkt[0] ¶    // → 10
+
+dane = (42, "cześć", #1, 3.14)
+>> dane[2] ¶     // → #1
 
 // Nazwana
 osoba = (nazwa: "Alice", wiek: 25)
@@ -371,6 +392,29 @@ osoba = (nazwa: "Alice", wiek: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, etykieta: "poczatek")
 >> p.pos.x ¶        // → 10
+```
+
+**Niezmienność** — każda próba modyfikacji elementu krotki jest błędem czasu wykonania:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ błąd czasu wykonania: krotki są niezmienne
+// t[0] += 5    // ❌ ten sam błąd
+```
+
+Aby uzyskać zmodyfikowaną wartość, użyj `$~` (aktualizacja funkcyjna) — zwraca **nową** krotkę:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← oryginał bez zmian
+>> t2 ¶    // → (10, 999, 30)
+
+// Nazwana krotka — przebuduj jawnie
+osoba = (nazwa: "Alice", wiek: 25)
+starsza  = (nazwa: osoba.nazwa, wiek: 26)
+>> osoba.wiek ¶    // → 25
+>> starsza.wiek ¶  // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _wewnetrzne_dodaj(a, b) { <~ a + b }
 
 ---
 
+## Tryby Numeryczne
+
+Zymbol może wyświetlać liczby w **69 pismach cyfrowych Unicode** — Devanagari, Arabsko-Indyjskim, Tajskim, Klingon pIqaD, Matematycznym Pogrubieniu, segmentach LCD i innych. Aktywny tryb wpływa tylko na wyjście `>>`; wewnętrzna arytmetyka jest zawsze binarna.
+
+### Aktywacja pisma
+
+Zapisz cyfrę `0` i `9` docelowego pisma między `#…#`:
+
+```zymbol
+#०९#    // Devanagari     (U+0966–U+096F)
+#٠٩#    // Arabsko-Ind.   (U+0660–U+0669)
+#๐๙#    // Tajskie        (U+0E50–U+0E59)
+#09#    // reset do ASCII
+```
+
+### Wyjście i wartości logiczne
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (domyślnie ASCII)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (przecinek dziesiętny zawsze ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Wartości logiczne: prefiks # zawsze ASCII, cyfra dostosowuje się
+>> #1 ¶         // → #१   (prawda w Devanagari)
+>> #0 ¶         // → #०   (fałsz — różne od ०  całkowitego zera)
+
+x = 28 > 4
+>> x ¶          // → #१   (wynik porównania podąża za aktywnym trybem)
+```
+
+### Natywne literały cyfrowe w kodzie źródłowym
+
+Cyfry z dowolnego obsługiwanego pisma są poprawnymi literałami — w zakresach, modulo, porównaniach:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Literały logiczne w dowolnym piśmie
+
+`#` + cyfra `0` lub `1` z dowolnego bloku jest poprawnym literałem logicznym:
+
+```zymbol
+#٠٩#
+نشط = #١        // to samo co #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` jest **zawsze ASCII**. `#0` (fałsz) jest zawsze wizualnie różne od `0` (całkowitego zera) w każdym piśmie.
+
+---
+
 ## Operatory Danych
 
 ```zymbol
@@ -563,8 +671,9 @@ klasyfikuj(liczba) {
 | `@!` | przerwanie | `$>` | mapowanie |
 | `@>` | kontynuacja | `$\|` | filtrowanie |
 | `->` | lambda | `$<` | redukcja |
-| `$^+` | sortuj rosnąco (prymitywy) | `$^-` | sortuj malejąco (prymitywy) |
-| `$^` | sortuj z porównaniem (krotki) | | |
+| `arr[i] = val` | aktualizuj element (tylko tablice) | `arr[i] += val` | aktualizacja złożona |
+| `arr[i]$~` | aktualizacja funkcyjna (nowa kopia) | `$^+` | sortuj rosnąco (prymitywy) |
+| `$^-` | sortuj malejąco (prymitywy) | `$^` | sortuj z porównaniem (krotki) |
 | `<~` | powrót | `!?` | próba |
 | `\|>` | potok | `:!` | przechwycenie |
 | `#1` | prawda | `:>` | na końcu |
@@ -574,8 +683,44 @@ klasyfikuj(liczba) {
 | `::` | wywołanie modułu | `.` | dostęp do pola |
 | `#\|..\|` | parsuj liczbę | `#?` | metadane typu |
 | `#.N\|..\|` | zaokrąglij | `#!N\|..\|` | obetnij |
-| `c\|..\|` | format z separatorem | `e\|..\|` | naukowy |
+| `#,\|..\|` | format z separatorem | `#^\|..\|` | naukowy |
+| `#d0d9#` | przełącznik trybu numerycznego | `#09#` | reset do ASCII |
 | `<\ ..\>` | wykonaj shell | `><` | argumenty CLI |
+
+## Historia Wersji
+
+### v0.0.3 — Systemy Numeryczne Unicode & Ulepszenia LSP _(Kwiecień 2026)_
+
+- **Dodano** 69 bloków cyfr Unicode z tokenem przełączania trybu `#d0d9#`
+- **Dodano** Literały logiczne w dowolnym piśmie — `#१` / `#०`, `#١` / `#٠`, itp.
+- **Dodano** Cyfry Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Dodano** Opkod VM `SetNumeralMode` — pełna parytét z tree-walkerem
+- **Dodano** REPL respektuje aktywny tryb numeryczny w echo i wyświetlaniu zmiennych
+- **Zmieniono** Wyjście `>>` wartości logicznych zawiera teraz prefiks `#` (`#0` / `#1`) we wszystkich trybach
+
+### v0.0.2_01 — Zmiana Nazw Operatorów _(30 Mar 2026)_
+
+- **Zmieniono** `c|..|` → `#,|..|` i `e|..|` → `#^|..|` — spójne z rodziną prefiksów `#`
+- **Dodano** Alias eksportu: ponowny eksport członków modułu pod inną nazwą
+
+### v0.0.2 — Przeprojektowanie API Kolekcji & Instalatory _(24 Mar 2026)_
+
+- **Dodano** Ujednolicona rodzina operatorów `$` dla tablic i ciągów (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Dodano** Destrukturyzacja dla tablic, krotek i nazwanych krotek
+- **Dodano** Ujemne indeksy (`arr[-1]` = ostatni element)
+- **Dodano** Natywne instalatory — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Dodano** Złożone przypisanie `^=`
+- **Naprawiono** Przypadki brzegowe parsera arytmetycznego; korekty dokumentacji
+
+### v0.0.1 — Pierwsze Publiczne Wydanie _(22 Mar 2026)_
+
+- Interpreter tree-walker + rejestrowy VM (`--vm`, ~4× szybszy, ~95% parytetu)
+- Wszystkie podstawowe konstrukty: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Pełne identyfikatory Unicode, system modułów, lambdy, domknięcia, obsługa błędów
+- REPL, LSP, rozszerzenie VS Code, formater (`zymbol fmt`)
 
 ---
 

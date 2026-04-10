@@ -288,6 +288,8 @@ darbības = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Masīvi
 
+Masīvi ir **maināmi** un satur **viena tipa** elementus.
+
 ```zymbol
 arr = [10, 20, 30, 40, 50]
 
@@ -309,11 +311,11 @@ idx = arr$?? 30              // → [1]   visi indeksi vērtībai
 šķēle = arr$[0..2]           // šķēle [0,2): [20, 30]
 skaits = arr$[0:3]           // skaita bāzes: [20, 30, 40]
 
-// Elementa atjaunināšana
-arr[1] = 99
->> arr ¶    // → [20, 99, 40, 50, 60]
+// Tiešā elementa atjaunināšana (tikai masīvi)
+arr[1] = 99              // piešķirt
+arr[0] += 5              // salikts: +=  -=  *=  /=  %=  ^=
 
-// Funkcionāla atjaunināšana (atgriež jaunu masīvu)
+// Funkcionāla atjaunināšana — atgriež jaunu masīvu; oriģināls nemainās
 arr2 = arr[1]$~ 77           // → [20, 77, 40, 50, 60]
 
 // Kārtot (primitīvi)
@@ -337,6 +339,16 @@ matrica = [[1,2],[3,4],[5,6]]
 > `$+`, `$-`, `$[..]` atgriež **jaunu masīvu** — piešķiriet atpakaļ: `arr = arr$+ 4`.
 > Nav ķēdēšanas: izmantojiet divas atsevišķas piešķiršanas.
 > `arr$??` un `arr$[s:n]` izmanto citu sintaksi nekā `arr$[s..e]` — skatiet Simbolu Atsauce.
+
+**Vērtību semantika** — piešķirot masīvu citam mainīgajam, tiek izveidota neatkarīga kopija:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b nav ietekmēts
+```
 
 ---
 
@@ -365,11 +377,16 @@ persona = (vārds: "Alice", vecums: 25)
 
 ## Tuplās
 
+Tuplās ir **nemainīgi** sakārtoti konteineri, kas var saturēt **dažādu tipu** vērtības. Atšķirībā no masīviem, elementus pēc izveides nevar mainīt.
+
 ```zymbol
 // Pozicionāla tuple
 punkts = (10, 20)
 >> punkts[0] ¶    // → 10
 >> punkts[1] ¶    // → 20
+
+dati = (42, "sveika", #1, 3.14)
+>> dati[2] ¶     // → #1
 
 // Nosaukta tuple
 persona = (vārds: "Alice", vecums: 25)
@@ -382,6 +399,29 @@ pos = (x: 3, y: 4)
 p = (pos: pos, etiķete: "sākumpunkts")
 >> p.etiķete ¶    // → sākumpunkts
 >> p.pos.x ¶      // → 3
+```
+
+**Nemainīgums** — jebkurš mēģinājums mainīt tuple elementu ir izpildes laika kļūda:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ izpildes laika kļūda: tuplās ir nemainīgas
+// t[0] += 5    // ❌ tāda pati kļūda
+```
+
+Lai iegūtu mainītu vērtību, izmantojiet `$~` (funkcionāla atjaunināšana) — atgriež **jaunu** tuplu:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← oriģināls nemainīts
+>> t2 ¶    // → (10, 999, 30)
+
+// Nosaukta tuple — rekonstruējiet eksplicitāk
+persona = (vārds: "Alice", vecums: 25)
+vecāks = (vārds: persona.vārds, vecums: 26)
+>> persona.vecums ¶    // → 25
+>> vecāks.vecums ¶     // → 26
 ```
 
 ---
@@ -499,6 +539,70 @@ pi = c::get_PI()
 
 ---
 
+## Skaitļu Režīmi
+
+Zymbol var attēlot skaitļus **69 Unicode ciparu rakstos** — Devanagari, Arābu-Indijas, Taizemes, Klingon pIqaD, Matemātiskais Treknraksts, LCD segmenti un vairāk. Aktīvais režīms ietekmē tikai `>>`-izvadi; iekšējā aritmētika vienmēr ir bināra.
+
+### Raksta aktivizēšana
+
+Ierakstiet mērķa raksta ciparu `0` un `9`, ievietojot `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arābu-Indijas (U+0660–U+0669)
+#๐๙#    // Taizemes      (U+0E50–U+0E59)
+#09#    // atiestatīt uz ASCII
+```
+
+### Izvade un Būla vērtības
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII noklusējums)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (decimāldaļas punkts vienmēr ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Būla: # prefikss vienmēr ASCII, cipars pielāgojas
+>> #1 ¶         // → #१   (patiesība Devanagari)
+>> #0 ¶         // → #०   (nepatiesa — atšķiras no ०  vesels skaitlis nulle)
+
+x = 28 > 4
+>> x ¶          // → #१   (salīdzinājuma rezultāts seko aktīvajam režīmam)
+```
+
+### Vietējo ciparu literāļi avota kodā
+
+Jebkura atbalstītā raksta cipari ir derīgi literāļi — diapazonos, modulo, salīdzinājumos:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Būla literāļi jebkurā rakstā
+
+`#` + cipars `0` vai `1` no jebkura bloka ir derīgs Būla literāls:
+
+```zymbol
+#٠٩#
+نشط = #١        // tas pats kā #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` ir **vienmēr ASCII**. `#0` (nepatiesa) vienmēr ir vizuāli atšķirīgs no `0` (vesels skaitlis nulle) katrā rakstā.
+
+---
+
 ## Datu Operatori
 
 ```zymbol
@@ -581,24 +685,62 @@ klasificē(skaitlis) {
 | `@`         | cilpa                | `$>`         | kartēšana                  |
 | `@!`        | pārtraukt            | `$\|`        | filtrēšana                 |
 | `@>`        | turpināt             | `$<`         | samazināšana               |
-| `->`        | lambda               | `$^+`        | kārtot augošā              |
-| `<~`        | atgriezt             | `$^-`        | kārtot dilstošā            |
-| `\|>`       | caurule              | `$^`         | kārtot ar komparatoru      |
+| `->`        | lambda               | `$<`         | samazināšana               |
+| `arr[i] = val` | atjaunināt elementu (tikai masīvi) | `arr[i] += val` | saliktā atjaunināšana |
+| `arr[i]$~`  | funkcionāla atjaunināšana (jauna kopija) | `$^+` | kārtot augošā (primitīvi) |
+| `$^-`       | kārtot dilstošā (primitīvi) | `$^`   | kārtot ar komparatoru (tuplās) |
+| `<~`        | atgriezt             | `!?`         | mēģināt (try)              |
+| `\|>`       | caurule              | `:!`         | noķert (catch)             |
 | `#1`        | patiess              | `$!`         | ir kļūda                   |
 | `#0`        | aplams               | `$!!`        | izplatīt kļūdu             |
-| `!?`        | mēģināt (try)        | `#`          | deklarēt moduli            |
-| `:!`        | noķert (catch)       | `#>`         | eksportēt                  |
-| `:>`        | beidzot (finally)    | `<#`         | importēt                   |
+| `:>`        | beidzot (finally)    | `#`          | deklarēt moduli            |
+| `<#`        | importēt             | `#>`         | eksportēt                  |
 | `.`         | lauka piekļuve       | `::`         | moduļa izsaukums           |
 | `#\|..\|`   | parsēt (parse)       | `#.N\|..\|`  | noapaļot N decimāļus       |
-| `#!N\|..\|` | saīsināt N decimāļus | `c\|..\|`    | komata formāts             |
-| `e\|..\|`   | zinātniskā not.      | `<\ \>`      | čaulas komanda             |
+| `#!N\|..\|` | saīsināt N decimāļus | `#,\|..\|`    | komata formāts             |
+| `#d0d9#` | skaitļu režīma pārslēdzējs | `#09#` | atiestatīt uz ASCII |
+| `#^\|..\|`   | zinātniskā not.      | `<\ \>`      | čaulas komanda             |
 | `><`        | čaulas izvade        | `$~~[..]`    | aizstāt virknē             |
 | `[a,b]=arr` | destrukturēšana      | `(x,y)=tup`  | tuple destrukturēšana      |
 
 ---
 
 *Zymbol-Lang — Simbolisks. Universāls. Nemainīgs.*
+
+## Versiju Vēsture
+
+### v0.0.3 — Unicode Skaitļu Sistēmas & LSP Uzlabojumi _(2026. gada aprīlis)_
+
+- **Pievienots** 69 Unicode ciparu bloki ar režīma pārslēgšanas pilnvaru `#d0d9#`
+- **Pievienots** Būla literāļi jebkurā rakstā — `#१` / `#०`, `#١` / `#٠` utt.
+- **Pievienots** Klingon pIqaD cipari (CSUR PUA U+F8F0–U+F8F9)
+- **Pievienots** VM opkods `SetNumeralMode` — pilna paritāte ar tree-walker
+- **Pievienots** REPL ievēro aktīvo skaitļu režīmu atbalsī un mainīgo attēlošanā
+- **Mainīts** `>>` Būla vērtību izvade tagad ietver prefiksu `#` (`#0` / `#1`) visos režīmos
+
+### v0.0.2_01 — Operatoru Pārdēvēšana _(2026. gada 30. marts)_
+
+- **Mainīts** `c|..|` → `#,|..|` un `e|..|` → `#^|..|` — konsekventi ar `#` prefiksu saimi
+- **Pievienots** Eksporta aizstājvārds: moduļa locekļu atkārtota eksportēšana ar citu nosaukumu
+
+### v0.0.2 — Kolekciju API Pārveidojums & Instalētāji _(2026. gada 24. marts)_
+
+- **Pievienots** Vienotā `$` operatoru saime masīviem un virknēm (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Pievienots** Destrukturēšana masīviem, kortežiem un nosauktiem kortežiem
+- **Pievienots** Negatīvie indeksi (`arr[-1]` = pēdējais elements)
+- **Pievienots** Vietējie instalētāji — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(2026. gada 25. marts)_
+
+- **Pievienots** Saliktā piešķiršana `^=`
+- **Labots** Aritmētiskā parsera robežgadījumi; dokumentācijas labojumi
+
+### v0.0.1 — Pirmais Publiskais Laidiens _(2026. gada 22. marts)_
+
+- Tree-walker interpretators + reģistra VM (`--vm`, ~4× ātrāks, ~95% paritāte)
+- Visi galvenie konstrukti: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Pilni Unicode identifikatori, moduļu sistēma, lambdas, slēgumi, kļūdu apstrāde
+- REPL, LSP, VS Code paplašinājums, formatētājs (`zymbol fmt`)
 
 ---
 

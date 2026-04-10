@@ -290,6 +290,10 @@ lurawinaka = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Tantachaña
 
+Tantachaña **achikirawaa** ukhamarak kastax **peteĩ kasta** jikxatasiñatawa.
+
+> Los arreglos son **mutables** y contienen elementos del **mismo tipo**. _(Tantachaña **tikisiñax yatipxi** ukhamarak kastax **mayni kasta** jikxatasiñatawa.)_
+
 ```zymbol
 tantachaña = [1, 2, 3, 4, 5]
 
@@ -319,13 +323,27 @@ sutixapi    = db$^ (a, b -> a.sutixa > b.sutixa)
 >> maranakapi[0].sutixa ¶     // → Ana
 >> sutixapi[0].sutixa ¶       // → Carla
 
-tantachaña[1] = 99              // jakhu cambiaña
-tantachaña = tantachaña[1]$~ 99 // mayni tantachaña kutitaña
+// Jakhu cambiaña (tantachaña kama)
+tantachaña[1] = 99              // churay
+tantachaña[0] += 5              // huñiy: +=  -=  *=  /=  %=  ^=
+
+// Yatiyaña cambiaña — mayni tantachaña kutipxi; nayra mana tikiti
+arr2 = tantachaña[1]$~ 99
 ```
 
 > Tukuy colección lurawinakax **mayni tantachaña** kutipxi. Yapxtaña: `tantachaña = tantachaña$+ 4`.
 > Janiw chiqanchasiñax yatiti: pàya cambianakaw luraña.
 > `$^+` / `$^-` **primitivo tantachaña** (jakhunak, arunak). Tuple tantachañapx `$^` comparador lambdawan — ñanqa lambdapi churasqa (`<` = wichay, `>` = janiw pampa).
+
+**Yatiyaña kasta** — tantachaña mayni yatiyañan churay mayni tantachaña lurasiwa:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b janiw cambisiñakiti
+```
 
 ```zymbol
 // Ukupi tantachaña
@@ -357,10 +375,17 @@ jaqi = (sutixa: "Ana", maranaka: 25, marka: "La Paz")
 
 ## Tuple
 
+Tuple **janiw achikirawiti** ukhamarak jach'anaka **kastax janiw kikiliti** jikxatasiña. Tantachañampixa, elementos janiw cambisiñax yatiti lurasipxata qhipana.
+
+> Las tuplas son contenedores ordenados **inmutables** que pueden contener valores de **diferentes tipos**. A diferencia de los arreglos, los elementos no se pueden cambiar después de su creación. _(Tuple **janiw achikirawiti** ukhamarak jach'anaka **kastax janiw kikiliti** jikxatasiñatawa. Tantachañampixa, janiw cambisiñax yatiti lurasipxata qhipana.)_
+
 ```zymbol
 // Jakhu
 punto = (10, 20)
 >> punto[0] ¶    // → 10
+
+datos = (42, "kamisaraki", #1, 3.14)
+>> datos[2] ¶     // → #1
 
 // Sutinak
 jaqi = (sutixa: "Alice", maranaka: 25)
@@ -371,6 +396,29 @@ jaqi = (sutixa: "Alice", maranaka: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, sutixa: "qallta")
 >> p.pos.x ¶        // → 10
+```
+
+**Janiw achikirawiti** — Tuple elementon cambiaña munasixa panthasiñam lurasipxi:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ panthasiña: tuple janiw achikirawiti
+// t[0] += 5    // ❌ kikillan panthasiña
+```
+
+Janiw achikirasipxiti munasixa `$~` apaykachaña (yatiyaña cambiaña) — **mayni** tuple kutipxi:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← nayra mana tikiti
+>> t2 ¶    // → (10, 999, 30)
+
+// Sutinak tuple — mayni lurasiña
+jaqi = (sutixa: "Alice", maranaka: 25)
+mayor  = (sutixa: jaqi.sutixa, maranaka: 26)
+>> jaqi.maranaka ¶    // → 25
+>> mayor.maranaka ¶   // → 26
 ```
 
 ---
@@ -482,6 +530,70 @@ _internal_add(a, b) { <~ a + b }
 
 ---
 
+## Jakhu Yatiqawi
+
+Zymbol jakhunaka uñjaña danañatawa **Unicode jakhu aru 69** — Devanagari, Arabi-India, Thai, Klingon pIqaD, Matemática Sasa, LCD ukanakaw. Jakhu yatiqawi `>>`-nakata churawipawa; ukhamaraki jakhu binario sarakiwa.
+
+### Aru qalltaña
+
+Jakhu `0` ukhamarak `9` ukhamaraki churañatawa `#…#` ukana:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabi-India   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // ASCII ukaña
+```
+
+### Churawi ukhamarak boolean yatiqawi
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII ukhamaraki)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ASCII ukhamaraki, jakhu yatiqawi
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Jakhu asli kodi ukana
+
+Jakhu aru ukhamaraki literal ukhamaraki — range, modulo, uñjaña ukana:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal aru ukana
+
+`#` + jakhu `0` ukhamaraki `1` bloc ukana boolean literal ukhamaraki:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII** ukhamaraki. `#0` (janiwa) `0` (ch'usa jakhu) ukana uñjasiwa.
+
+---
+
 ## Yatiyawinaka Lurawi
 
 ```zymbol
@@ -563,8 +675,9 @@ sartaña(jakhu) {
 | `@!`     | jaqukipaña (break)  | `$>`       | map                   |
 | `@>`     | saraña (continue)   | `$\|`      | filter                |
 | `->`     | lambda              | `$<`       | reduce                |
-| `$^+`    | wichay (primitivos) | `$^-`      | janiw pampa (primitivos) |
-| `$^`     | comparador (tuples) | | |
+| `arr[i] = val` | jakhu cambiaña (tantachaña kama) | `arr[i] += val` | huñiy cambiaña |
+| `arr[i]$~` | yatiyaña cambiaña (mayni copia) | `$^+` | wichay (primitivos) |
+| `$^-`    | janiw pampa (primitivos) | `$^` | comparador (tuples) |
 | `<~`     | kutitaña (return)   | `!?`       | luraña (try)          |
 | `\|>`    | pipe                | `:!`       | aptaña (catch)        |
 | `#1`     | chiqani             | `:>`       | mayniw (finally)      |
@@ -574,8 +687,44 @@ sartaña(jakhu) {
 | `::`     | lurawi wawxataña    | `.`        | campo yatinuña        |
 | `#\|..\|` | jakhu tikraña      | `#?`       | tipo metadata         |
 | `#.N\|..\|` | jakhuntaña       | `#!N\|..\|` | ch'iqtaña           |
-| `c\|..\|` | coma formato       | `e\|..\|`  | científico            |
+| `#,\|..\|` | coma formato       | `#^\|..\|`  | científico            |
+| `#d0d9#` | jakhu yatiqawi amtaña | `#09#` | ASCII ukaña |
 | `<\ ..\>` | shell luraña       | `><`       | CLI argumentanaka     |
+
+## Versión Yatiqawi
+
+### v0.0.3 — Unicode Jakhu Aru & LSP Yanapt'aña _(Abril 2026)_
+
+- **Churawi** Unicode bloc 69 ukhamarak token `#d0d9#`
+- **Churawi** Boolean literals aru ukana — `#१` / `#०`, `#١` / `#٠`, ukhamaraki
+- **Churawi** Klingon pIqaD jakhu (CSUR PUA U+F8F0–U+F8F9)
+- **Churawi** VM opcode `SetNumeralMode` — tree-walker ukhamarak ukhamaraki
+- **Churawi** REPL jakhu yatiqawi echo ukhamarak variable uñjaña
+- **Amtawi** `>>` boolean `#` (`#0` / `#1`) yatiqawi ukana
+
+### v0.0.2_01 — Lurawi Sutipa Amtaña _(30 Mar 2026)_
+
+- **Amtawi** `c|..|` → `#,|..|` ukhamarak `e|..|` → `#^|..|` — `#` ukhamaraki
+- **Churawi** Export alias: module ukhamarak suti amtaña
+
+### v0.0.2 — API Amtaña & Instalar _(24 Mar 2026)_
+
+- **Churawi** `$` lurawi arrays ukhamarak strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Churawi** Destructuring arrays, tuples ukhamarak tuples sutipa
+- **Churawi** Index janiwa (`arr[-1]` = qhipa)
+- **Churawi** Instalar asli — Linux (deb/rpm/pkg/musl), macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Churawi** `^=`
+- **Amtawi** Parser; documentación
+
+### v0.0.1 — Qalltaña _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4× utjiwa, ~95% ukhamaraki)
+- Ukana: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Unicode, module, lambda, closure, lurawi
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

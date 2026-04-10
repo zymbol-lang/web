@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Arrays
 
+Arrays sind **veränderlich** und enthalten Elemente desselben **Typs**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ nach_name  = db$^ (a, b -> a.name > b.name)       // absteigend nach Name (>)
 >> nach_alter[0].name ¶     // → Ana
 >> nach_name[0].name ¶      // → Carla
 
-arr[1] = 99              // direkt aktualisieren
-arr = arr[1]$~ 99        // funktionale Aktualisierung — gibt neues Array zurück
+// Direktes Element-Update (nur Arrays)
+arr[1] = 99              // zuweisen
+arr[0] += 5              // zusammengesetzt: +=  -=  *=  /=  %=  ^=
+
+// Funktionale Aktualisierung — gibt ein neues Array zurück; Original bleibt unverändert
+arr2 = arr[1]$~ 99
 ```
 
 > Alle Kollektionsoperatoren geben ein **neues Array** zurück. Neu zuweisen: `arr = arr$+ 4`.
 > Operatoren können nicht verkettet werden — Zwischenzuweisungen verwenden.
 > `$^+` / `$^-` sortieren **primitive Arrays** (Zahlen, Zeichenketten). Für Tupel-Arrays `$^` mit Vergleichs-Lambda verwenden — Richtung ist in der Lambda kodiert (`<` = aufsteigend, `>` = absteigend).
+
+**Wertsemantik** — einem anderen Variablen ein Array zuzuweisen erstellt eine unabhängige Kopie:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b bleibt unberührt
+```
 
 ```zymbol
 // Verschachtelte Arrays
@@ -357,10 +373,16 @@ person = (name: "Ana", alter: 25, stadt: "Berlin")
 
 ## Tupel
 
+Tupel sind **unveränderliche** geordnete Container, die Werte **verschiedener Typen** enthalten können.
+Im Gegensatz zu Arrays können Elemente nach der Erstellung nicht mehr geändert werden.
+
 ```zymbol
-// Positionell
+// Positionell — gemischte Typen erlaubt
 punkt = (10, 20)
 >> punkt[0] ¶    // → 10
+
+daten = (42, "hallo", #1, 3.14)
+>> daten[2] ¶     // → #1
 
 // Benannt
 person = (name: "Alice", alter: 25)
@@ -371,6 +393,29 @@ person = (name: "Alice", alter: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, bezeichnung: "Ursprung")
 >> p.pos.x ¶        // → 10
+```
+
+**Unveränderlichkeit** — jeder Versuch, ein Tupel-Element zu ändern, ist ein Laufzeitfehler:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ Laufzeitfehler: Tupel sind unveränderlich
+// t[0] += 5    // ❌ gleicher Fehler
+```
+
+Um einen geänderten Wert abzuleiten, `$~` verwenden (funktionale Aktualisierung) — gibt ein **neues** Tupel zurück:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← Original unverändert
+>> t2 ¶    // → (10, 999, 30)
+
+// Benanntes Tupel — explizit neu aufbauen
+person = (name: "Alice", alter: 25)
+älter  = (name: person.name, alter: 26)
+>> person.alter ¶    // → 25
+>> älter.alter ¶     // → 26
 ```
 
 ---
@@ -482,6 +527,70 @@ _intern_addieren(a, b) { <~ a + b }
 
 ---
 
+## Zahlenmodi
+
+Zymbol kann Zahlen in **69 Unicode-Ziffernskripten** anzeigen — Devanagari, Arabisch-Indisch, Thailändisch, Klingon pIqaD, Mathematisch Fett, LCD-Segmente und mehr. Der aktive Modus wirkt sich nur auf die `>>`-Ausgabe aus; die interne Arithmetik ist immer binär.
+
+### Ein Skript aktivieren
+
+Schreiben Sie die Ziffer `0` und `9` des Zielskripts zwischen `#…#`:
+
+```zymbol
+#०९#    // Devanagari        (U+0966–U+096F)
+#٠٩#    // Arabisch-Indisch  (U+0660–U+0669)
+#๐๙#    // Thailändisch      (U+0E50–U+0E59)
+#09#    // auf ASCII zurücksetzen
+```
+
+### Ausgabe und Boolesche Werte
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII Standard)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (Dezimalpunkt immer ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Boolesche Werte: # Präfix immer ASCII, Ziffer passt sich an
+>> #1 ¶         // → #१   (wahr in Devanagari)
+>> #0 ¶         // → #०   (falsch — unterscheidet sich von ०  Integer-Null)
+
+x = 28 > 4
+>> x ¶          // → #१   (Vergleichsergebnis folgt aktivem Modus)
+```
+
+### Native Ziffern-Literale im Quellcode
+
+Ziffern aus jedem unterstützten Skript sind gültige Literale — in Bereichen, Modulo, Vergleichen:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolesche Literale in jedem Skript
+
+`#` + Ziffer `0` oder `1` aus jedem Block ist ein gültiges boolesches Literal:
+
+```zymbol
+#٠٩#
+نشط = #١        // entspricht #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` ist **immer ASCII**. `#0` (falsch) ist in jedem Skript immer visuell von `0` (Integer-Null) unterscheidbar.
+
+---
+
 ## Datenoperatoren
 
 ```zymbol
@@ -563,8 +672,9 @@ einordnen(zahl) {
 | `@!`    | abbrechen (break)                  | `$>`          | map                          |
 | `@>`    | weitermachen (continue)            | `$\|`         | filter                       |
 | `->`    | Lambda                             | `$<`          | reduce                       |
-| `$^+`   | aufsteigend sortieren (Primitive)  | `$^-`         | absteigend sortieren         |
-| `$^`    | sortieren mit Vergleichs-Lambda    |               |                              |
+| `arr[i] = val` | Element aktualisieren (nur Arrays) | `arr[i] += val` | zusammengesetzte Aktualisierung |
+| `arr[i]$~` | funktionale Aktualisierung (neue Kopie) | `$^+` | aufsteigend sortieren (Primitive) |
+| `$^-`   | absteigend sortieren (Primitive)   | `$^`          | sortieren mit Vergleichs-Lambda |
 | `<~`    | zurückgeben (return)               | `!?`          | versuchen (try)              |
 | `\|>`   | Pipe                               | `:!`          | abfangen (catch)             |
 | `#1`    | wahr                               | `:>`          | immer (finally)              |
@@ -574,8 +684,44 @@ einordnen(zahl) {
 | `::`    | Modulaufruf                        | `.`           | Feldzugriff                  |
 | `#\|..\|` | Zahl parsen                      | `#?`          | Typ-Metadaten                |
 | `#.N\|..\|` | runden                         | `#!N\|..\|`   | abschneiden                  |
-| `c\|..\|` | Kommaformat                      | `e\|..\|`     | wissenschaftlich             |
+| `#,\|..\|` | Kommaformat                      | `#^\|..\|`     | wissenschaftlich             |
+| `#d0d9#` | Zahlenmodus wechseln | `#09#` | auf ASCII zurücksetzen |
 | `<\ ..\>` | Shell-Befehl                     | `>\<`         | CLI-Argumente                |
+
+## Versionshistorie
+
+### v0.0.3 — Unicode Zahlensysteme & LSP-Verbesserungen _(April 2026)_
+
+- **Hinzugefügt** 69 Unicode-Ziffernblöcke mit dem Moduswechsel-Token `#d0d9#`
+- **Hinzugefügt** Boolesche Literale in jedem Skript — `#१` / `#०`, `#١` / `#٠`, usw.
+- **Hinzugefügt** Klingon pIqaD-Ziffern (CSUR PUA U+F8F0–U+F8F9)
+- **Hinzugefügt** VM-Opcode `SetNumeralMode` — vollständige Parität mit dem Tree-Walker
+- **Hinzugefügt** REPL respektiert aktiven Zahlenmodus bei Echo und Variablenanzeige
+- **Geändert** `>>`-Ausgabe von Booleschen Werten enthält jetzt das `#`-Präfix (`#0` / `#1`) in allen Modi
+
+### v0.0.2_01 — Operatoren-Umbenennung _(30 Mar 2026)_
+
+- **Geändert** `c|..|` → `#,|..|` und `e|..|` → `#^|..|` — konsistent mit der `#`-Präfix-Familie
+- **Hinzugefügt** Export-Alias: Modulelemente unter anderem Namen neu exportieren
+
+### v0.0.2 — Sammlungs-API-Neugestaltung & Installationsprogramme _(24 Mar 2026)_
+
+- **Hinzugefügt** Einheitliche `$`-Operatorfamilie für Arrays und Zeichenketten (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Hinzugefügt** Destrukturierung für Arrays, Tuples und benannte Tuples
+- **Hinzugefügt** Negative Indizes (`arr[-1]` = letztes Element)
+- **Hinzugefügt** Native Installationsprogramme — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Hinzugefügt** Zusammengesetzte Zuweisung `^=`
+- **Behoben** Grenzfälle im arithmetischen Parser; Dokumentationskorrekturen
+
+### v0.0.1 — Erste öffentliche Veröffentlichung _(22 Mar 2026)_
+
+- Tree-Walker-Interpreter + Register-VM (`--vm`, ~4× schneller, ~95% Parität)
+- Alle Kernkonstrukte: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Vollständige Unicode-Bezeichner, Modulsystem, Lambdas, Closures, Fehlerbehandlung
+- REPL, LSP, VS Code-Erweiterung, Formatierer (`zymbol fmt`)
 
 ---
 

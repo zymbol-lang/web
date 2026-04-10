@@ -290,6 +290,8 @@ shughuli = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Safu
 
+Safu ni **zinazobadilika** na hushikilia vipengele vya **aina moja**.
+
 ```zymbol
 safu = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ kwa_jina = hifadhidata$^ (a, b -> a.jina > b.jina)     // kushuka kwa jina
 >> kwa_umri[0].jina ¶     // → Ana
 >> kwa_jina[0].jina ¶     // → Carla
 
-safu[1] = 99               // sasisha mahali pale pale
-safu = safu[1]$~ 99        // sasisha kwa kazi — inarudisha safu mpya
+// Sasisha kipengele moja kwa moja (safu tu)
+safu[1] = 99              // kabidhia
+safu[0] += 5              // kiwanja: +=  -=  *=  /=  %=  ^=
+
+// Sasisha kwa kazi — inarudisha safu mpya; asili haibadiliki
+safu2 = safu[1]$~ 99
 ```
 
 > Waendeshaji wote wa mkusanyiko wanrudisha **safu mpya**. Kabidhia tena: `safu = safu$+ 4`.
 > Waendeshaji haiwezekani kuunganishwa — tumia ukabidhiaji wa kati.
 > `$^+` / `$^-` zinapanga **safu za primitives** (nambari, mifuatano). Kwa safu za tuple tumia `$^` na lambda ya ulinganishaji — mwelekeo umewekwa kwenye lambda (`<` = kupanda, `>` = kushuka).
+
+**Semantiki ya thamani** — kukabidhia safu kwa kigeuzí kingine kunaunda nakala huru:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b haiathiriki
+```
 
 ```zymbol
 // Safu zilizowekwa ndani
@@ -357,10 +373,15 @@ mtu = (jina: "Ana", umri: 25, mji: "Nairobi")
 
 ## Tuple
 
+Tuple ni vyombo vilivyopangwa **visivyobadilika** ambavyo vinaweza kushikilia thamani za **aina tofauti**. Tofauti na safu, vipengele haviwezi kubadilishwa baada ya kuundwa.
+
 ```zymbol
 // Kwa nafasi
 pointi = (10, 20)
 >> pointi[0] ¶    // → 10
+
+data = (42, "habari", #1, 3.14)
+>> data[2] ¶     // → #1
 
 // Yenye jina
 mtu = (jina: "Alice", umri: 25)
@@ -371,6 +392,29 @@ mtu = (jina: "Alice", umri: 25)
 nafasi = (x: 10, y: 20)
 p = (nafasi: nafasi, lebo: "asili")
 >> p.nafasi.x ¶  // → 10
+```
+
+**Kutobadilika** — jaribio lolote la kubadilisha kipengele cha tuple ni kosa la wakati wa utekelezaji:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ kosa la wakati wa utekelezaji: tuple hazibadiliki
+// t[0] += 5    // ❌ kosa lilo lilo
+```
+
+Ili kupata thamani iliyobadilishwa tumia `$~` (sasisha kwa kazi) — inarudisha tuple **mpya**:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← asili haibadiliki
+>> t2 ¶    // → (10, 999, 30)
+
+// Tuple yenye jina — jenga upya wazi
+mtu = (jina: "Alice", umri: 25)
+mkubwa  = (jina: mtu.jina, umri: 26)
+>> mtu.umri ¶    // → 25
+>> mkubwa.umri ¶      // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _jumlisha_ndani(a, b) { <~ a + b }
 
 ---
 
+## Hali za Nambari
+
+Zymbol inaweza kuonyesha nambari katika **mifumo ya tarakimu ya Unicode 69** — Devanagari, Kiarabu-Kihindi, Kithai, Klingon pIqaD, Hisabati Nzito, sehemu za LCD na zaidi. Hali inayofanya kazi inaathiri tu matokeo ya `>>`; hesabu ya ndani ni binary daima.
+
+### Kuwezesha mfumo wa tarakimu
+
+Andika tarakimu `0` na `9` za mfumo unaolengwa ndani ya `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabic-Indic  (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // reset to ASCII
+```
+
+### Matokeo na thamani za boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII default)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # awali daima ASCII, tarakimu inabadilika
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Tarakimu za asili katika msimbo chanzo
+
+Tarakimu za mfumo wowote unaotumika ni vigeu halali — katika masafa, modulo, ulinganisho:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Vigeu vya boolean katika mfumo wowote
+
+`#` + tarakimu `0` au `1` kutoka kizuizi chochote ni kigeu cha boolean halali:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` ni **ASCII daima**. `#0` (uwongo) daima tofauti kwa macho na `0` (sifuri nzima) katika kila mfumo.
+
+---
+
 ## Waendeshaji wa Data
 
 ```zymbol
@@ -563,8 +671,9 @@ ainisha(nambari) {
 | `@!` | simama | `$>` | ramani |
 | `@>` | endelea | `$\|` | chuja |
 | `->` | lambda | `$<` | punguza |
-| `$^+` | panga kupanda (primitives) | `$^-` | panga kushuka (primitives) |
-| `$^` | panga na ulinganishaji (tuple) | | |
+| `safu[i] = val` | sasisha kipengele (safu tu) | `safu[i] += val` | sasisha kiwanja |
+| `safu[i]$~` | sasisha kwa kazi (nakala mpya) | `$^+` | panga kupanda (primitives) |
+| `$^-` | panga kushuka (primitives) | `$^` | panga na ulinganishaji (tuple) |
 | `<~` | rudisha | `!?` | jaribu |
 | `\|>` | bomba | `:!` | kamata |
 | `#1` | kweli | `:>` | daima |
@@ -574,8 +683,44 @@ ainisha(nambari) {
 | `::` | wito wa moduli | `.` | ufikiaji wa sehemu |
 | `#\|..\|` | geuza nambari | `#?` | metadata ya aina |
 | `#.N\|..\|` | pinda | `#!N\|..\|` | kata |
-| `c\|..\|` | umbizo wa koma | `e\|..\|` | kisayansi |
+| `#,\|..\|` | umbizo wa koma | `#^\|..\|` | kisayansi |
+| `#d0d9#` | kubadilisha hali ya nambari | `#09#` | rejesha ASCII |
 | `<\ ..\>` | tekeleza shell | `>\<` | hoja za CLI |
+
+## Historia ya Matoleo
+
+### v0.0.3 — Mifumo ya Nambari ya Unicode & Maboresho ya LSP _(Aprili 2026)_
+
+- **Imeongezwa** Vizuizi 69 vya tarakimu vya Unicode na ishara ya kubadilisha hali `#d0d9#`
+- **Imeongezwa** Vigeu vya boolean katika mfumo wowote — `#१` / `#०`, `#١` / `#٠`, n.k.
+- **Imeongezwa** Tarakimu za Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Imeongezwa** VM opcode `SetNumeralMode` — usawa kamili na tree-walker
+- **Imeongezwa** REPL inazingatia hali ya nambari inayofanya kazi katika mwangwi na uonyeshaji wa vigeu
+- **Imebadilishwa** Matokeo ya `>>` ya boolean sasa yanajumuisha kiambishi awali `#` (`#0` / `#1`) katika hali zote
+
+### v0.0.2_01 — Kubadilisha Majina ya Waendeshaji _(30 Mar 2026)_
+
+- **Imebadilishwa** `c|..|` → `#,|..|` na `e|..|` → `#^|..|` — sawa na familia ya kiambishi `#`
+- **Imeongezwa** Alias ya usafirishaji: kusafirisha tena wanachama wa moduli kwa jina tofauti
+
+### v0.0.2 — Kubuni Upya API ya Makusanyiko & Vifaa vya Usakinishaji _(24 Mar 2026)_
+
+- **Imeongezwa** Familia ya waendeshaji `$` iliyounganishwa kwa arrays na nyuzi (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Imeongezwa** Uharibifu kwa arrays, tuples na tuples zenye majina
+- **Imeongezwa** Vipengele hasi (`arr[-1]` = kipengele cha mwisho)
+- **Imeongezwa** Vifaa vya usakinishaji vya asili — Linux (deb/rpm/pkg/musl), macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Imeongezwa** Ugawaji wa pamoja `^=`
+- **Imerekebishwa** Kesi za mipaka ya parser ya hisabati; marekebisho ya nyaraka
+
+### v0.0.1 — Kutolewa kwa Umma kwa Mara ya Kwanza _(22 Mar 2026)_
+
+- Tree-walker interpreter + register VM (`--vm`, ~4× kwa kasi, ~95% usawa)
+- Muundo wote wa msingi: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Vitambulisho kamili vya Unicode, mfumo wa moduli, lambdas, mafungo, kushughulikia makosa
+- REPL, LSP, kiendelezi cha VS Code, mfumo wa muundo (`zymbol fmt`)
 
 ---
 

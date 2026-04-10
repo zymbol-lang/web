@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Fylki
 
+Fylki eru **breytanleg** og innihalda stök af **sömu gerð**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ eftir_nafni = db$^ (a, b -> a.name > b.name)  // lækkandi eftir nafni (>)
 >> eftir_aldri[0].name ¶     // → Ana
 >> eftir_nafni[0].name ¶    // → Carla
 
-arr[1] = 99              // uppfæra á stað
-arr = arr[1]$~ 99        // virknilegar uppfærsla — skilar nýju fylki
+// Bein staks-uppfærsla (aðeins fylki)
+arr[1] = 99              // úthluta
+arr[0] += 5              // samsett: +=  -=  *=  /=  %=  ^=
+
+// Virknileg uppfærsla — skilar nýju fylki; frumritið óbreytt
+arr2 = arr[1]$~ 99
 ```
 
 > Allar safnaðaraðgerðir skila **nýju fylki**. Úthluta aftur: `arr = arr$+ 4`.
 > Ekki er hægt að keðja aðgerðir — notaðu millistig úthlutanir.
 > `$^+` / `$^-` raða **frumstæðum fylkjum** (tölur, strengir). Fyrir tuple fylki notaðu `$^` með samanburðarlambda — stefnan er kóðuð í lambdanu (`<` = hækkandi, `>` = lækkandi).
+
+**Gildismerking** — að úthluta fylki til annarrar breytu skapar sjálfstæða afrit:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b er ósnert
+```
 
 ```zymbol
 // Hreiður fylki
@@ -357,10 +373,16 @@ einstaklingur = (nafn: "Ana", aldur: 25, borg: "Reykjavík")
 
 ## Tuples
 
+Tuples eru **óbreytanleg** raðuð gámar sem geta geymt gildi af **mismunandi gerðum**.
+Ólíkt fylkjum er ekki hægt að breyta stökum eftir stofnun.
+
 ```zymbol
-// Staðsetningarlægt
+// Staðsetningarlægt — blöndaðar gerðir leyfðar
 punktur = (10, 20)
 >> punktur[0] ¶    // → 10
+
+gögn = (42, "halló", #1, 3.14)
+>> gögn[2] ¶     // → #1
 
 // Nafngreint
 einstaklingur = (nafn: "Alice", aldur: 25)
@@ -371,6 +393,29 @@ einstaklingur = (nafn: "Alice", aldur: 25)
 staðsetning = (x: 10, y: 20)
 p = (staðsetning: staðsetning, merki: "uppruni")
 >> p.staðsetning.x ¶        // → 10
+```
+
+**Óbreytanleiki** — sérhver tilraun til að breyta tuple-staki er keyrsluvilla:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ keyrsluvilla: tuples eru óbreytanleg
+// t[0] += 5    // ❌ sama villa
+```
+
+Til að leiða út breytt gildi notaðu `$~` (virknileg uppfærsla) — skilar **nýju** tuple:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← frumritið óbreytt
+>> t2 ¶    // → (10, 999, 30)
+
+// Nafngreint tuple — endurbyggja sérstaklega
+einstaklingur = (nafn: "Alice", aldur: 25)
+eldri  = (nafn: einstaklingur.nafn, aldur: 26)
+>> einstaklingur.aldur ¶    // → 25
+>> eldri.aldur ¶             // → 26
 ```
 
 ---
@@ -482,6 +527,70 @@ _innri_add(a, b) { <~ a + b }
 
 ---
 
+## Tölustafahamur
+
+Zymbol getur sýnt tölur í **69 Unicode-tölustafaskriftum** — Devanagari, Arabísk-Indversk, Taílensk, Klingon pIqaD, Stærðfræðileg Feitletrað, LCD-hlutar og fleiri. Virkur hamur hefur aðeins áhrif á `>>`-úttak; innri reikningur er alltaf tvíundur.
+
+### Virkja skrift
+
+Skrifaðu tölustafina `0` og `9` úr markhömlunni innan `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabísk-Ind.  (U+0660–U+0669)
+#๐๙#    // Taílensk      (U+0E50–U+0E59)
+#09#    // endurstilla í ASCII
+```
+
+### Úttak og boole-gildi
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII sjálfgefið)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (aukastafur alltaf ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Boole: # forskeyti alltaf ASCII, tölustafur aðlagast
+>> #1 ¶         // → #१   (satt í Devanagari)
+>> #0 ¶         // → #०   (ósatt — greinilegt frá ०  heiltölunúll)
+
+x = 28 > 4
+>> x ¶          // → #१   (samanburðarniðurstaða fylgir virkum ham)
+```
+
+### Upprunalegir tölustafa-literals í frumkóða
+
+Tölustafir úr hvaða studdri skrift sem er eru gild literals — í sviðum, modulo, samanburði:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boole-literals í hvaða skrift sem er
+
+`#` + tölustafur `0` eða `1` úr hvaða blokk sem er er gilt boole-literal:
+
+```zymbol
+#٠٩#
+نشط = #١        // sama og #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` er **alltaf ASCII**. `#0` (ósatt) er alltaf sjónrænt greinilegt frá `0` (heiltölunúll) í hverri skrift.
+
+---
+
 ## Gagnagirðar
 
 ```zymbol
@@ -563,8 +672,9 @@ flokkaðu(tala) {
 | `@!` | brjóta | `$>` | kortleggja |
 | `@>` | halda áfram | `$\|` | sía |
 | `->` | lambda | `$<` | minnka |
-| `$^+` | raða hækkandi (frumstæðar) | `$^-` | raða lækkandi (frumstæðar) |
-| `$^` | raða með samanburði (tuples) | | |
+| `arr[i] = val` | uppfæra stak (aðeins fylki) | `arr[i] += val` | samsett uppfærsla |
+| `arr[i]$~` | virknileg uppfærsla (ný afrit) | `$^+` | raða hækkandi (frumstæðar) |
+| `$^-` | raða lækkandi (frumstæðar) | `$^` | raða með samanburðarlambda (tuples) |
 | `<~` | skila | `!?` | reyna |
 | `\|>` | pípa | `:!` | grípa |
 | `#1` | satt | `:>` | að lokum |
@@ -574,8 +684,44 @@ flokkaðu(tala) {
 | `::` | eininga kall | `.` | svæðis aðgangur |
 | `#\|..\|` | þátta tölu | `#?` | gerðarflokkar |
 | `#.N\|..\|` | námunda | `#!N\|..\|` | stytta |
-| `c\|..\|` | kommusnið | `e\|..\|` | vísindalegt |
+| `#,\|..\|` | kommusnið | `#^\|..\|` | vísindalegt |
+| `#d0d9#` | skipta um tölustafaham | `#09#` | endurstilla í ASCII |
 | `<\ ..\>` | keyra shell | `>\<` | CLI-frumbreytur |
+
+## Útgáfuferill
+
+### v0.0.3 — Unicode Talningstafir & LSP-endurbætur _(Apríl 2026)_
+
+- **Bætt við** 69 Unicode-tölustafablokkum með hamabreytingarmerki `#d0d9#`
+- **Bætt við** Boole-literals í hvaða skrift sem er — `#१` / `#०`, `#١` / `#٠`, o.fl.
+- **Bætt við** Klingon pIqaD-tölustafir (CSUR PUA U+F8F0–U+F8F9)
+- **Bætt við** VM-opkóði `SetNumeralMode` — fullur jafngildi við tréferð
+- **Bætt við** REPL virðir virkan tölustafaham í bergmáli og breytubirting
+- **Breytt** `>>`-úttak boole-gilda inniheldur nú `#`-forskeyti (`#0` / `#1`) í öllum hömum
+
+### v0.0.2_01 — Endurnöfnun virkja _(30 Mar 2026)_
+
+- **Breytt** `c|..|` → `#,|..|` og `e|..|` → `#^|..|` — samræmt `#`-forskeytisfjölskyldunni
+- **Bætt við** Útflutningssamheiti: endurútflytja einingarlimi undir öðru nafni
+
+### v0.0.2 — Safn-API Endurhönnun & Uppsetningarforrit _(24 Mar 2026)_
+
+- **Bætt við** Sameinað `$`-virkjasett fyrir fylki og strengi (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Bætt við** Niðurbrot fyrir fylki, túplur og nafngreindar túplur
+- **Bætt við** Neikvæðar vísur (`arr[-1]` = síðasta stak)
+- **Bætt við** Innfædd uppsetningarforrit — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Bætt við** Samsett úthlutun `^=`
+- **Lagað** Jaðartilfelli í reikniþáttara; leiðréttingar í skjölun
+
+### v0.0.1 — Fyrsta opinbera útgáfa _(22 Mar 2026)_
+
+- Tréferðartúlkur + skráarVM (`--vm`, ~4× hraðari, ~95% jafngildi)
+- Öll kjarnasmíði: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Fullgildar Unicode-auðkenni, einingakerfi, lambdur, lokun, villumeðhöndlun
+- REPL, LSP, VS Code-viðbót, sniðstillir (`zymbol fmt`)
 
 ---
 

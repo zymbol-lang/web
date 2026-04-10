@@ -290,6 +290,8 @@ işlemler = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Diziler
 
+Diziler **değiştirilebilirdir** ve **aynı tipteki** elemanları barındırır.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ by_name = db$^ (a, b -> a.isim > b.isim)  // isme göre azalan (>)
 >> by_age[0].isim ¶     // → Fatma
 >> by_name[0].isim ¶    // → Carla
 
-arr[1] = 99              // yerinde güncelleme
-arr = arr[1]$~ 99        // fonksiyonel güncelleme — yeni dizi döndürür
+// Elemanın doğrudan güncellenmesi (yalnızca diziler)
+arr[1] = 99              // atama
+arr[0] += 5              // bileşik: +=  -=  *=  /=  %=  ^=
+
+// Fonksiyonel güncelleme — yeni dizi döndürür; orijinal değişmez
+arr2 = arr[1]$~ 99
 ```
 
 > Tüm koleksiyon operatörleri **yeni bir dizi** döndürür. Yeniden atayın: `arr = arr$+ 4`.
 > Operatörler zincirlenemez — ara değişkenler kullanın.
 > `$^+` / `$^-` **ilkel dizileri** (sayılar, dizgeler) sıralar. Demet dizileri için `$^` karşılaştırıcı lambda ile kullanın.
+
+**Değer semantiği** — bir diziyi başka bir değişkene atamak bağımsız bir kopya oluşturur:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b etkilenmedi
+```
 
 ```zymbol
 // İç içe diziler
@@ -357,10 +373,15 @@ kişi = (isim: "Fatma", yaş: 25, şehir: "İstanbul")
 
 ## Demetler
 
+Demetler **değiştirilemez** sıralı kaplardır; **farklı tiplerden** değerler barındırabilir. Dizilerin aksine, oluşturulduktan sonra elemanlar değiştirilemez.
+
 ```zymbol
 // Konumsal
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+veri = (42, "hello", #1, 3.14)
+>> veri[2] ¶     // → #1
 
 // Adlandırılmış
 kişi = (isim: "Fatma", yaş: 25)
@@ -371,6 +392,29 @@ kişi = (isim: "Fatma", yaş: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, label: "köken")
 >> p.pos.x ¶        // → 10
+```
+
+**Değiştirilemezlik** — bir demet elemanını değiştirme girişimi çalışma zamanı hatasıdır:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ çalışma zamanı hatası: demetler değiştirilemez
+// t[0] += 5    // ❌ aynı hata
+```
+
+Değiştirilmiş bir değer elde etmek için `$~` (fonksiyonel güncelleme) kullanın — **yeni** bir demet döndürür:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← orijinal değişmedi
+>> t2 ¶    // → (10, 999, 30)
+
+// Adlandırılmış demet — açıkça yeniden oluşturun
+kişi = (isim: "Alice", yaş: 25)
+büyük  = (isim: kişi.isim, yaş: 26)
+>> kişi.yaş ¶    // → 25
+>> büyük.yaş ¶    // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _dahili_topla(a, b) { <~ a + b }
 
 ---
 
+## Sayı Sistemleri Modları
+
+Zymbol sayıları **69 Unicode rakam yazısında** görüntüleyebilir — Devanagari, Arapça-Hint, Tayca, Klingon pIqaD, Matematiksel Kalın, LCD segmentleri ve daha fazlası. Aktif mod yalnızca `>>`-çıktısını etkiler; dahili aritmetik her zaman ikilidir.
+
+### Bir yazı etkinleştirme
+
+Hedef yazının `0` ve `9` rakamını `#…#` arasına yazın:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arapça-Hint   (U+0660–U+0669)
+#๐๙#    // Tayca         (U+0E50–U+0E59)
+#09#    // ASCII'ye sıfırla
+```
+
+### Çıktı ve mantıksal değerler
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII varsayılan)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (ondalık nokta her zaman ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Mantıksal: # öneki her zaman ASCII, rakam uyum sağlar
+>> #1 ¶         // → #१   (Devanagari'de doğru)
+>> #0 ¶         // → #०   (yanlış — ०  tam sayı sıfırdan görsel olarak farklı)
+
+x = 28 > 4
+>> x ¶          // → #१   (karşılaştırma sonucu aktif modu takip eder)
+```
+
+### Kaynak kodunda yerel rakam değişmezleri
+
+Desteklenen herhangi bir yazının rakamları geçerli değişmezlerdir — aralıklarda, modulo, karşılaştırmalarda:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Herhangi bir yazıda mantıksal değişmezler
+
+Herhangi bir bloktan `#` + `0` veya `1` rakamı geçerli bir mantıksal değişmezdir:
+
+```zymbol
+#٠٩#
+نشط = #١        // #1 ile aynı
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **her zaman ASCII**'dir. `#0` (yanlış) her yazıda `0`'dan (tam sayı sıfır) her zaman görsel olarak farklıdır.
+
+---
+
 ## Veri Operatörleri
 
 ```zymbol
@@ -563,8 +671,9 @@ sınıfla(sayı) {
 | `@!`    | kes (break)            | `$>`       | map                          |
 | `@>`    | devam et (continue)    | `$\|`      | filter                       |
 | `->`    | Lambda                 | `$<`       | reduce                       |
-| `$^+`   | Artan sıralama (ilkel) | `$^-`      | Azalan sıralama (ilkel)      |
-| `$^`    | Karşılaştırıcı ile sırala |         |                              |
+| `arr[i] = val` | eleman güncelle (yalnızca diziler) | `arr[i] += val` | bileşik güncelleme |
+| `arr[i]$~` | fonksiyonel güncelleme (yeni kopya) | `$^+` | Artan sıralama (ilkel) |
+| `$^-`   | Azalan sıralama (ilkel) | `$^`       | Karşılaştırıcı ile sırala (demet) |
 | `<~`    | döndür (return)        | `!?`       | dene (try)                   |
 | `\|>`   | Boru (pipe)            | `:!`       | yakala (catch)               |
 | `#1`    | doğru                  | `:>`       | her zaman (finally)          |
@@ -574,8 +683,44 @@ sınıfla(sayı) {
 | `::`    | modül çağrısı          | `.`        | alan erişimi                 |
 | `#\|..\|` | Sayı ayrıştır        | `#?`       | Tip meta verisi              |
 | `#.N\|..\|` | Yuvarla            | `#!N\|..\|` | Kes                        |
-| `c\|..\|` | Virgüllü biçim       | `e\|..\|`  | Bilimsel biçim               |
+| `#,\|..\|` | Virgüllü biçim       | `#^\|..\|`  | Bilimsel biçim               |
+| `#d0d9#` | sayı modu değiştirici | `#09#` | ASCII'ye sıfırla |
 | `<\ ..\>` | Kabuk çalıştır       | `><`       | CLI argümanları              |
+
+## Sürüm Geçmişi
+
+### v0.0.3 — Unicode Sayı Sistemleri & LSP İyileştirmeleri _(Nisan 2026)_
+
+- **Eklendi** 69 Unicode rakam bloğu ve mod değiştirme tokeni `#d0d9#`
+- **Eklendi** Herhangi bir yazıda mantıksal değişmezler — `#१` / `#०`, `#١` / `#٠`, vb.
+- **Eklendi** Klingon pIqaD rakamları (CSUR PUA U+F8F0–U+F8F9)
+- **Eklendi** `SetNumeralMode` VM opkodu — tree-walker ile tam eşlik
+- **Eklendi** REPL, eko ve değişken görüntülemede aktif sayı moduna saygı gösterir
+- **Değiştirildi** Mantıksal değerlerin `>>` çıktısı artık tüm modlarda `#` önekini (`#0` / `#1`) içeriyor
+
+### v0.0.2_01 — Operatör Yeniden Adlandırma _(30 Mar 2026)_
+
+- **Değiştirildi** `c|..|` → `#,|..|` ve `e|..|` → `#^|..|` — `#` önek ailesiyle tutarlı
+- **Eklendi** Dışa aktarma takma adı: modül üyelerini farklı bir ad altında yeniden dışa aktarma
+
+### v0.0.2 — Koleksiyon API Yeniden Tasarımı & Yükleyiciler _(24 Mar 2026)_
+
+- **Eklendi** Diziler ve dizgiler için birleşik `$` operatör ailesi (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Eklendi** Diziler, demetler ve adlandırılmış demetler için parçalama
+- **Eklendi** Negatif dizinler (`arr[-1]` = son eleman)
+- **Eklendi** Yerel yükleyiciler — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Eklendi** Bileşik atama `^=`
+- **Düzeltildi** Aritmetik ayrıştırıcı uç durumları; belge düzeltmeleri
+
+### v0.0.1 — İlk Genel Sürüm _(22 Mar 2026)_
+
+- Tree-walker yorumlayıcı + yazmaç VM (`--vm`, ~4× daha hızlı, ~95% eşlik)
+- Tüm temel yapılar: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Tam Unicode tanımlayıcılar, modül sistemi, lambdalar, kapamalar, hata işleme
+- REPL, LSP, VS Code uzantısı, biçimlendirici (`zymbol fmt`)
 
 ---
 

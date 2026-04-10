@@ -291,6 +291,8 @@ ome = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Nembira
 
+Arrays are **mutable** and hold elements of the **same type**. _(Nembira **wẽra pari** dachi — kira pari ome wẽra nezara.)_
+
 ```zymbol
 dachi = [1, 2, 3, 4, 5]
 
@@ -320,13 +322,27 @@ by_nabi = db$^ (a, b -> a.nabi > b.nabi)
 >> by_kira[0].nabi ¶     // → Ana
 >> by_nabi[0].nabi ¶     // → Carla
 
-dachi[1] = 99              // kira wẽra
-dachi = dachi[1]$~ 99      // wẽra kira — bora nembira
+// Kira pari wẽra (nembira dachi kama)
+dachi[1] = 99              // kira wẽra (jünüin)
+dachi[0] += 5              // wẽra ome: +=  -=  *=  /=  %=  ^=
+
+// Kira ome wẽra — bora nembira dachi; nayc mana tikiti
+dachi2 = dachi[1]$~ 99
 ```
 
 > `$+`, `$-`, `$[..]` **kira wẽra** dachi — wẽra: `dachi = dachi$+ 4`.
 > Jã kira: peda wẽra kira ome.
 > `$^+` / `$^-` kira **naas solus**. Nabi Tuple — hut'unn `$^` mîna lambda.
+
+**Kira ome wẽra** — nembira dachi bora wẽra ome kira pari (kira ibac):
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b jã wẽra
+```
 
 ```zymbol
 // Nembira naasad
@@ -358,10 +374,15 @@ person = (nabi: "Ana", kira: 25, city: "Babará")
 
 ## Tuple
 
+Tuples are **immutable** ordered containers that can hold values of **different types**. Unlike arrays, elements cannot be changed after creation. _(Tuple **jã wẽra pari** ome kira dachi nezara — kira pari wẽra ome. Nembira dachi kama, kira jã wẽra pari lurasipxata qhipana.)_
+
 ```zymbol
 // Kira pari
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+kira_pë = (42, "kë embera", #1, 3.14)
+>> kira_pë[2] ¶     // → #1
 
 // Nabi
 nabi = (ome: "Alice", kira: 25)
@@ -372,6 +393,29 @@ nabi = (ome: "Alice", kira: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, label: "embera")
 >> p.pos.x ¶        // → 10
+```
+
+**Jã wẽra pari** — kira pari dachi wẽra ome kira pari nowë kami:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ kira pari: tuple jã wẽra pari
+// t[0] += 5    // ❌ kira pari wẽra ome
+```
+
+Kira ome wẽra pari `$~` apaykachaña (wẽra kira) — **bora** tuple dachi:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← nayc mana tikiti
+>> t2 ¶    // → (10, 999, 30)
+
+// Nabi tuple — bora kira wẽra
+nabi = (ome: "Alice", kira: 25)
+nabi2 = (ome: nabi.ome, kira: 26)
+>> nabi.kira ¶    // → 25
+>> nabi2.kira ¶   // → 26
 ```
 
 ---
@@ -483,6 +527,70 @@ _ibac_ewandó(a, b) { <~ a + b }
 
 ---
 
+## Dachi Jakhu Pari
+
+Zymbol jakhunaka uñjaña danañatawa **Unicode jakhu aru 69** — Devanagari, Arabi-India, Thai, Klingon pIqaD, Matemática Sasa, LCD ukanakaw. Kira aktivo `>>`-naka pari; jakhu binario.
+
+### Ome wẽra kira
+
+Jakhu `0` mîna `9` bëdë `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabi-India   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // ASCII dachi
+```
+
+### Peda mîna boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ASCII, jakhu yatiqawi
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Jakhu dachi kira
+
+Jakhu aru literal — range, modulo:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal
+
+`#` + `0` mîna `1` bloc boolean:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII**. `#0` (kami) `0` (dachi zero) uñjasiwa.
+
+---
+
 ## 📊⚙️
 
 ```zymbol
@@ -564,8 +672,9 @@ ewandó(nembi) {
 | `@!`    | Dachi (break)      | `$>`         | map                   |
 | `@>`    | Wẽra (continue)    | `$\|`        | filter                |
 | `->`    | Lambda             | `$<`         | reduce                |
-| `$^+`   | Kira jate          | `$^-`        | Kira nayc             |
-| `$^`    | Kira lambda        |              |                       |
+| `dachi[i] = val` | kira wẽra (nembira kama) | `dachi[i] += val` | wẽra ome kira |
+| `dachi[i]$~` | wẽra kira ome (bora copia) | `$^+` | Kira jate (naas solus) |
+| `$^-`   | Kira nayc (naas solus) | `$^`     | Kira lambda           |
 | `<~`    | Nezara (return)    | `!?`         | Jãni (try)            |
 | `\|>`   | Pipe               | `:!`         | Kira (catch)          |
 | `#1`    | Wẽra (#1)          | `:>`         | Dachi wẽra (finally)  |
@@ -575,8 +684,42 @@ ewandó(nembi) {
 | `::`    | Ome kira           | `.`          | Kira ome              |
 | `#\|..\|`| Kira jãni        | `#?`         | Kira ome naas         |
 | `#.N\|..\|`| Pari           | `#!N\|..\|`  | Kira                  |
-| `c\|..\|`| Ome kira comma   | `e\|..\|`    | Naas'ika              |
+| `#,\|..\|`| Ome kira comma   | `#^\|..\|`    | Naas'ika              |
+| `#d0d9#` | jakhu kira amtaña | `#09#` | ASCII dachi |
 | `<\ ..\>`| Shell ewandó     | `>\<`        | CLI kira              |
+
+## Dachi Versión
+
+### v0.0.3 — Unicode Jakhu & LSP _(Abril 2026)_
+
+- **Ida'ame** Unicode bloc 69 token `#d0d9#`
+- **Ida'ame** Boolean literals — `#१` / `#०`, `#١` / `#٠`
+- **Ida'ame** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Ida'ame** VM opcode `SetNumeralMode` — tree-walker
+- **Ida'ame** REPL jakhu echo variable
+- **Jijjiirame** `>>` boolean `#` (`#0` / `#1`)
+
+### v0.0.2_01 _(30 Mar 2026)_
+
+- **Jijjiirame** `c|..|` → `#,|..|` mîna `e|..|` → `#^|..|`
+- **Ida'ame** Export alias
+
+### v0.0.2 _(24 Mar 2026)_
+
+- **Ida'ame** `$` arrays mîna strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Ida'ame** Destructuring arrays, tuples
+- **Ida'ame** Index kami (`arr[-1]`)
+- **Ida'ame** Instalar — Linux, macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Ida'ame** `^=`
+
+### v0.0.1 _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4×, ~95%)
+- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

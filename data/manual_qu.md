@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Qipa
 
+Array **tikraykunam** (mutable) kankum **huk rikchaqtam** ima ima qipapi.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ sutipi      = db$^ (a, b -> a.suti > b.suti)
 >> watantinpi[0].suti ¶     // → Ana
 >> sutipi[0].suti ¶         // → Carla
 
-arr[1] = 99              // chanin tikray
-arr = arr[1]$~ 99        // musuq array kutichiy
+// Ñawpaqmanta tikray (arrays pim kama)
+arr[1] = 99              // churay
+arr[0] += 5              // compound: +=  -=  *=  /=  %=  ^=
+
+// Musuq array kutichiy — ñawpaq mana tikrasqachu
+arr2 = arr[1]$~ 99
 ```
 
 > Llapan colección ruwaqkuna **musuq array** kutichikankum. Yapuy: `arr = arr$+ 4`.
 > Mana huñichiyta — iskay churaypi ruway.
 > `$^+` / `$^-` **primitivo arrays** (yupay, simi) ordenan. Tupla arrayspi `$^` comparador lambdawan — ñanqa lambdapi churasqa (`<` = wichay, `>` = uray).
+
+**Chanin semantika** — array huk variableman churay musuq kopia ruwam:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b mana tikrasqachu
+```
 
 ```zymbol
 // Ukupi arrays
@@ -357,10 +373,15 @@ runa = (suti: "Ana", watantin: 25, llaqta: "Cusco")
 
 ## Tupla
 
+Tupla **mana tikrasqam** (immutable) kankum **huk huk rikchayniyuq** ima ima qipapi. Arrays mana hina, qipakunaqa mana tikrakuspa saqisqa.
+
 ```zymbol
 // Churanapim
 punto = (10, 20)
 >> punto[0] ¶    // → 10
+
+willayquna = (42, "allillanchu", #1, 3.14)
+>> willayquna[2] ¶     // → #1
 
 // Sutiyuq
 runa = (suti: "Alice", watantin: 25)
@@ -371,6 +392,29 @@ runa = (suti: "Alice", watantin: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, suti: "punta")
 >> p.pos.x ¶        // → 10
+```
+
+**Mana tikrasqa (Inmutabilidad)** — tupla qipanta tikrayta mask'ay pachapi pantaypin:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ pachapi pantay: tupla mana tikrasqachu
+// t[0] += 5    // ❌ huk pantay
+```
+
+`$~` (musuq kutichiy) yupaywan — **musuq tupla** kutichiy:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← ñawpaq mana tikrasqachu
+>> t2 ¶    // → (10, 999, 30)
+
+// Tupla sutiyuq — lliw tikray
+runa = (suti: "Alice", watantin: 25)
+runa2  = (suti: runa.suti, watantin: 26)
+>> runa.watantin ¶    // → 25
+>> runa2.watantin ¶   // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _internal_add(a, b) { <~ a + b }
 
 ---
 
+## Yupay Kawsay
+
+Zymbol yupaykunata rikuchin **Unicode yupay simi 69** — Devanagari, Arabe-India, Thai, Klingon pIqaD, Matemática Sinchi, LCD. Kawsay yupay `>>`-pi; yupay binary.
+
+### Simi llamk'achiy
+
+Yupay `0` hinallataq `9` `#…#` ukhupi:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabe-India   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // ASCII-man kutiy
+```
+
+### Rikuchiy hinallataq boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ASCII, yupay tikray
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Yupay asli kódigo ukhupi
+
+Yupay literal — rangu, modulo:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal simi ukhupi
+
+`#` + yupay `0` utaq `1` bloc boolean:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII**. `#0` (mana) `0` (yupay sifri) rikuchiy.
+
+---
+
 ## Willaykunapa Ruwaqkuna
 
 ```zymbol
@@ -563,8 +671,9 @@ riqsinchiy(yupay) {
 | `@!`    | tukuchiy          | `$>`       | map                |
 | `@>`    | rinqa             | `$\|`      | filter             |
 | `->`    | lambda            | `$<`       | reduce             |
-| `$^+`   | wichay orden (primitivos) | `$^-` | uray orden (primitivos) |
-| `$^`    | orden comparadorwan (tuplas) | | |
+| `arr[i] = val` | qipa tikray (arrays pim kama) | `arr[i] += val` | compound tikray |
+| `arr[i]$~` | musuq kutichiy (musuq kopia) | `$^+` | wichay orden (primitivos) |
+| `$^-` | uray orden (primitivos) | `$^` | orden comparadorwan (tuplas) |
 | `<~`    | kutimuy           | `!?`       | willachiy          |
 | `\|>`   | pipe              | `:!`       | hap'iy             |
 | `#1`    | chiqap            | `:>`       | llapanpi           |
@@ -574,8 +683,42 @@ riqsinchiy(yupay) {
 | `::`    | módulo waqaychay  | `.`        | campo taripay      |
 | `#\|..\|` | yupay tikray    | `#?`       | tipo metadata      |
 | `#.N\|..\|` | rutuy         | `#!N\|..\|` | cortay           |
-| `c\|..\|` | koma formato    | `e\|..\|`  | científico         |
+| `#,\|..\|` | koma formato    | `#^\|..\|`  | científico         |
+| `#d0d9#` | yupay kawsay tikray | `#09#` | ASCII-man kutiy |
 | `<\ ..\>` | shell ruwachiy  | `><`       | CLI argumentokuna  |
+
+## Versión Willakuy
+
+### v0.0.3 — Unicode Yupay & LSP _(Abril 2026)_
+
+- **Yapasqa** Unicode bloc 69 token `#d0d9#`
+- **Yapasqa** Boolean literals — `#१` / `#०`, `#١` / `#٠`
+- **Yapasqa** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Yapasqa** VM opcode `SetNumeralMode` — tree-walker
+- **Yapasqa** REPL yupay echo variable
+- **Tikrasqa** `>>` boolean `#` (`#0` / `#1`)
+
+### v0.0.2_01 _(30 Mar 2026)_
+
+- **Tikrasqa** `c|..|` → `#,|..|` hinallataq `e|..|` → `#^|..|`
+- **Yapasqa** Export alias
+
+### v0.0.2 _(24 Mar 2026)_
+
+- **Yapasqa** `$` arrays hinallataq strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Yapasqa** Destructuring arrays, tuples
+- **Yapasqa** Índice mana (`arr[-1]`)
+- **Yapasqa** Instalar — Linux, macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Yapasqa** `^=`
+
+### v0.0.1 _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4×, ~95%)
+- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

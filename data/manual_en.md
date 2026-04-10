@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Arrays
 
+Arrays are **mutable** and hold elements of the **same type**.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ by_name = db$^ (a, b -> a.name > b.name)  // descending by name (>)
 >> by_age[0].name ¶     // → Ana
 >> by_name[0].name ¶    // → Carla
 
-arr[1] = 99              // update in-place
-arr = arr[1]$~ 99        // functional update — returns new array
+// Direct element update (arrays only)
+arr[1] = 99              // assign
+arr[0] += 5              // compound: +=  -=  *=  /=  %=  ^=
+
+// Functional update — returns a new array; original unchanged
+arr2 = arr[1]$~ 99
 ```
 
 > All collection operators return a **new array**. Assign back: `arr = arr$+ 4`.
 > Operators cannot be chained — use intermediate assignments.
 > `$^+` / `$^-` sort **primitive arrays** (numbers, strings). For tuple arrays use `$^` with a comparator lambda — direction is encoded in the lambda (`<` = ascending, `>` = descending).
+
+**Value semantics** — assigning an array to another variable creates an independent copy:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b is unaffected
+```
 
 ```zymbol
 // Nested arrays
@@ -357,10 +373,16 @@ person = (name: "Ana", age: 25, city: "Madrid")
 
 ## Tuples
 
+Tuples are **immutable** ordered containers that can hold values of **different types**.
+Unlike arrays, elements cannot be changed after creation.
+
 ```zymbol
-// Positional
+// Positional — mixed types allowed
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+data = (42, "hello", #1, 3.14)
+>> data[2] ¶     // → #1
 
 // Named
 person = (name: "Alice", age: 25)
@@ -371,6 +393,29 @@ person = (name: "Alice", age: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, label: "origin")
 >> p.pos.x ¶        // → 10
+```
+
+**Immutability** — any attempt to modify a tuple element is a runtime error:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ runtime error: tuples are immutable
+// t[0] += 5    // ❌ same error
+```
+
+To derive a modified value use `$~` (functional update) — returns a **new** tuple:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← original unchanged
+>> t2 ¶    // → (10, 999, 30)
+
+// Named tuple — rebuild explicitly
+person = (name: "Alice", age: 25)
+older  = (name: person.name, age: 26)
+>> person.age ¶    // → 25
+>> older.age ¶     // → 26
 ```
 
 ---
@@ -482,6 +527,70 @@ _internal_add(a, b) { <~ a + b }
 
 ---
 
+## Numeral Modes
+
+Zymbol can display numbers in **69 Unicode digit scripts** — Devanagari, Arabic-Indic, Thai, Klingon pIqaD, Mathematical Bold, LCD segments, and more. The active mode only affects `>>` output; internal arithmetic is always binary.
+
+### Activating a script
+
+Write the `0` and `9` digit of the target script enclosed in `#…#`:
+
+```zymbol
+#०९#    // Devanagari   (U+0966–U+096F)
+#٠٩#    // Arabic-Indic (U+0660–U+0669)
+#๐๙#    // Thai         (U+0E50–U+0E59)
+#09#    // reset to ASCII
+```
+
+### Output and booleans
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII default)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (decimal point always ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Booleans: # prefix always ASCII, digit adapts
+>> #1 ¶         // → #१   (true  in Devanagari)
+>> #0 ¶         // → #०   (false — distinct from ०  integer zero)
+
+x = 28 > 4
+>> x ¶          // → #१   (comparison result follows active mode)
+```
+
+### Native digit literals in source
+
+Any supported script's digits are valid literals — in ranges, modulo, comparisons:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literals in any script
+
+`#` + digit `0` or `1` from any block is a valid boolean literal:
+
+```zymbol
+#٠٩#
+نشط = #١        // same as #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` is **always ASCII**. `#0` (false) is always visually distinct from `0` (integer zero) in every script.
+
+---
+
 ## Data Operators
 
 ```zymbol
@@ -563,8 +672,9 @@ classify(number) {
 | `@!` | break | `$>` | map |
 | `@>` | continue | `$\|` | filter |
 | `->` | lambda | `$<` | reduce |
-| `$^+` | sort ascending (primitives) | `$^-` | sort descending (primitives) |
-| `$^` | sort with comparator (tuples) | | |
+| `arr[i] = val` | update element (arrays only) | `arr[i] += val` | compound update |
+| `arr[i]$~` | functional update (new copy) | `$^+` | sort ascending (primitives) |
+| `$^-` | sort descending (primitives) | `$^` | sort with comparator (tuples) |
 | `<~` | return | `!?` | try |
 | `\|>` | pipe | `:!` | catch |
 | `#1` | true | `:>` | finally |
@@ -574,12 +684,50 @@ classify(number) {
 | `::` | module call | `.` | field access |
 | `#\|..\|` | parse number | `#?` | type metadata |
 | `#.N\|..\|` | round | `#!N\|..\|` | truncate |
-| `c\|..\|` | comma format | `e\|..\|` | scientific |
+| `#,\|..\|` | comma format | `#^\|..\|` | scientific |
+| `#d0d9#` | numeral mode switch | `#09#` | reset to ASCII |
 | `<\ ..\>` | shell exec | `>\<` | CLI args |
 
 ---
 
-*Zymbol-Lang — Symbolic. Universal. Immutable.*
+## Release Changelog
+
+### v0.0.3 — Unicode Numeral Systems & LSP Improvements _(April 2026)_
+
+- **Added** 69 Unicode digit blocks with mode-switch token `#d0d9#`
+- **Added** Boolean literals in any script — `#१` / `#०`, `#١` / `#٠`, etc.
+- **Added** Klingon pIqaD digits (CSUR PUA U+F8F0–U+F8F9)
+- **Added** `SetNumeralMode` VM opcode — full parity with tree-walker
+- **Added** REPL respects active numeral mode in echo and variable display
+- **Changed** Boolean `>>` output now includes `#` prefix (`#0` / `#1`) in all modes
+
+### v0.0.2_01 — Operator Rename _(30 Mar 2026)_
+
+- **Changed** `c|..|` → `#,|..|` and `e|..|` → `#^|..|` — consistent with `#` format prefix family
+- **Added** Export alias: re-export module members under a different name
+
+### v0.0.2 — Collection API Redesign & Installers _(24 Mar 2026)_
+
+- **Added** Unified `$` operator family for arrays and strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Added** Destructuring assignment for arrays, tuples, and named tuples
+- **Added** Negative indices (`arr[-1]` = last element)
+- **Added** Native installers — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Added** Compound assignment `^=`
+- **Fixed** Parser arithmetic edge cases; documentation corrections
+
+### v0.0.1 — Initial Public Release _(22 Mar 2026)_
+
+- Tree-walker interpreter + register VM (`--vm`, ~4× faster, ~95% parity)
+- All core constructs: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Full Unicode identifiers, module system, lambdas, closures, error handling
+- REPL, LSP, VS Code extension, formatter (`zymbol fmt`)
+
+---
+
+_Zymbol-Lang — Symbolic. Universal. Immutable._
 
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > The canonical reference is [MANUAL.md](https://github.com/zymbol-lang/interpreter) in the interpreter repository.

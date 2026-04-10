@@ -290,6 +290,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Array
 
+Arrays are **mutable** and hold elements of the **same type**. _(Mba'epuru **ijykekóva** ha ikatúva oñemboheryrã — mba'e peteĩ mba'epe añoite.)_
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -319,13 +321,27 @@ réramew = db$^ (a, b -> a.réra > b.réra)
 >> áramew[0].réra ¶     // → Ana
 >> réramew[0].réra ¶    // → Carla
 
-arr[1] = 99              // mboguata elemento
-arr = arr[1]$~ 99        // array pyahu oñemeẽ
+// Elemento ñemoambue pytúpe (array añoite)
+arr[1] = 99              // ñemoambue (asignar)
+arr[0] += 5              // ñemoambue ñembojoajú: +=  -=  *=  /=  %=  ^=
+
+// Ñemoambue funcional — oñemeẽ array pyahu; original ndoikuaái
+arr2 = arr[1]$~ 99
 ```
 
 > Opaite colección operador oñemeẽ **array pyahu** — oñembojupi: `arr = arr$+ 4`.
 > Ndojejokóiva: mbohapy peteĩ ndive.
 > `$^+` / `$^-` **primitivo array** (papapynak, ñe'ẽ). Tuple arraype `$^` comparador lambdawan — ñanqa lambdapi churasqa (`<` = wichay, `>` = oñemeẽva).
+
+**Mba'e oĩ semantics** — array peteĩva oñemboheryrãvo ambuéva variablepe oñemoĩ copia sapykueráva:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b ndoikuaái
+```
 
 ```zymbol
 // Ukupi array
@@ -357,10 +373,15 @@ ava = (réra: "Ana", ára: 25, tetã: "Paraguái")
 
 ## Tupla
 
+Tuples are **immutable** ordered containers that can hold values of **different types**. Unlike arrays, elements cannot be changed after creation. _(Tupla **ndijykekóiva** — ikatúva oñemboheryrã mba'e opaichagua. Ndaha'éi array — elementi ndahekóiva oñemboambue oñemohendárõ.)_
+
 ```zymbol
 // Papapy
 punto = (10, 20)
 >> punto[0] ¶    // → 10
+
+mba'eporu = (42, "maitei", #1, 3.14)
+>> mba'eporu[2] ¶     // → #1
 
 // Réra ndive
 ava = (réra: "Alice", ára: 25)
@@ -371,6 +392,29 @@ ava = (réra: "Alice", ára: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, réra: "punta")
 >> p.pos.x ¶        // → 10
+```
+
+**Ndijykekóiva** — ñemoambue tupla elementope mba'e vai oñemoĩ:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ mba'e vai: tupla ndijykekóiva
+// t[0] += 5    // ❌ avei mba'e vai
+```
+
+Mba'e ñemoambue oñemoĩ haguã `$~` (ñemoambue funcional) — oñemeẽ tupla **pyahu**:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← original ndoikuaái
+>> t2 ¶    // → (10, 999, 30)
+
+// Tupla réra — oñemoĩ pyahu
+ava = (réra: "Alice", ára: 25)
+ava2 = (réra: ava.réra, ára: 26)
+>> ava.ára ¶    // → 25
+>> ava2.ára ¶   // → 26
 ```
 
 ---
@@ -482,6 +526,70 @@ _internal_add(a, b) { <~ a + b }
 
 ---
 
+## Papapa Mba'eporu
+
+Zymbol ikuaa haguã papapa **Unicode papapa reko 69** — Devanagari, Arabe-India, Thai, Klingon pIqaD, Matemática Yvate, LCD ha ambuéva. Mba'eporu ojogua chupe `>>`-hendápe; papapa oĩporã binary rupive.
+
+### Mba'eporu mbohovái
+
+Emoñe'ẽ papapa `0` ha `9` mba'eporu apytégui `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabe-India   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // ASCII-pe ojevy
+```
+
+### Jehechaukaha ha boolean ñemombuku
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII rehe)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ASCII, papapa oñembosako'i
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Papapa asli kódigope
+
+Papapa mba'eporu oĩporã literal — rangope, modulo, ojejuhu haguãicha:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal mba'eporu rupi
+
+`#` + papapa `0` térã `1` bloc apytégui boolean literal oĩporã:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII** oĩporãva. `#0` (ñepyso) ojejuhu `0` (ñepyrusu papapa)gui.
+
+---
+
 ## Operador Mba'ekuaa
 
 ```zymbol
@@ -563,8 +671,9 @@ moñeẽ(papapy) {
 | `@!`    | opáva             | `$>`       | map                |
 | `@>`    | oñeguata          | `$\|`      | filter             |
 | `->`    | lambda            | `$<`       | reduce             |
-| `$^+`   | wichay (primitivos) | `$^-`    | oñemeẽva (primitivos) |
-| `$^`    | comparador (tuples) | | |
+| `arr[i] = val` | ñemoambue elemento (array añoite) | `arr[i] += val` | ñemoambue ñembojoajú |
+| `arr[i]$~` | ñemoambue funcional (copia pyahu) | `$^+` | wichay (primitivos) |
+| `$^-`   | oñemeẽva (primitivos) | `$^`   | comparador (tuples) |
 | `<~`    | oñemeẽ            | `!?`       | japoru             |
 | `\|>`   | pipe              | `:!`       | ñangarekouka       |
 | `#1`    | porã              | `:>`       | opavave            |
@@ -574,8 +683,44 @@ moñeẽ(papapy) {
 | `::`    | ojeiporeka        | `.`        | campo jeheka       |
 | `#\|..\|` | papapy tikray   | `#?`       | tipo metadata      |
 | `#.N\|..\|` | peteĩtĩ       | `#!N\|..\|` | ch'iqtaña        |
-| `c\|..\|` | kõma formato    | `e\|..\|`  | científico         |
+| `#,\|..\|` | kõma formato    | `#^\|..\|`  | científico         |
+| `#d0d9#` | papapa mba'eporu ombohasa | `#09#` | ASCII-pe ojevy |
 | `<\ ..\>` | shell ojaporu   | `><`       | CLI argumentonak   |
+
+## Versión Rehegua
+
+### v0.0.3 — Unicode Papapa & LSP Mbohovái _(Abril 2026)_
+
+- **Ojeguereko** Unicode bloc 69 token `#d0d9#`
+- **Ojeguereko** Boolean literals mba'eporu rupi — `#१` / `#०`, `#١` / `#٠`, ha ambuéva
+- **Ojeguereko** Klingon pIqaD papapa (CSUR PUA U+F8F0–U+F8F9)
+- **Ojeguereko** VM opcode `SetNumeralMode` — tree-walker ndive oñepyrũ
+- **Ojeguereko** REPL papapa mba'eporu echo ha variable rehechaukaha
+- **Oñembohasa** `>>` boolean `#` (`#0` / `#1`) mba'eporu oĩporãva rupi
+
+### v0.0.2_01 — Operador Ñe'ẽ Pyahu _(30 Mar 2026)_
+
+- **Oñembohasa** `c|..|` → `#,|..|` ha `e|..|` → `#^|..|`
+- **Ojeguereko** Export alias: module mba'egua oje'e ambue ñe'ẽ rupive
+
+### v0.0.2 — API Mbohovái & Mbosako'i _(24 Mar 2026)_
+
+- **Ojeguereko** `$` operador arrays ha strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Ojeguereko** Destructuring arrays, tuples ha tuples ñe'ẽ oĩva
+- **Ojeguereko** Índice ñepyso (`arr[-1]` = mba'e paha)
+- **Ojeguereko** Instalador — Linux (deb/rpm/pkg/musl), macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Ojeguereko** `^=`
+- **Oñemohenda** Parser; documentación
+
+### v0.0.1 — Pehẽ Mboyve _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4× pya'e, ~95%)
+- Oĩporãva: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Unicode, module, lambda, closure, jejapo'i
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

@@ -291,6 +291,8 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Rhaw
 
+Rhaw **cared** a ú — ilach tama lu **er dîn** eneth.
+
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
@@ -320,13 +322,24 @@ by_eneth = db$^ (a, b -> a.eneth > b.eneth)
 >> by_vin[0].eneth ¶     // → Ana
 >> by_eneth[0].eneth ¶   // → Carla
 
-arr[1] = 99              // update in-place
-arr = arr[1]$~ 99        // functional update — returns new array
+arr[1] = 99              // boe norn — update in-place
+arr[1] += 10             // tattanc boe — compound update
+arr2 = arr[1]$~ 99       // maded boe — naur rhaw norn
 ```
 
 > Hoch collection ta' — **naur rhaw** — boe: `arr = arr$+ 4`.
 > Ú-tanc: tattanc boe.
 > `$^+` / `$^-` sort **primitive arrays**. For tuple arrays use `$^` with a comparator lambda.
+
+**Dîn peth (value semantics):** Boe rhaw naur kopio — ú-tattanc eneth.
+
+```zymbol
+a = [1, 2, 3]
+b = a            // naur rhaw — ú-tattanc boe
+b[0] = 99
+>> a ¶           // → [1, 2, 3]  (ú-cared)
+>> b ¶           // → [99, 2, 3]
+```
 
 ```zymbol
 // Nested arrays
@@ -358,10 +371,15 @@ Ellon = (eneth: "Ana", vin: 25, tham: "Imladris")
 
 ## Tuple
 
+Tuple **ú-cared** — ilach rhaw boe, pol tama **úmë dîn** eneth.
+
 ```zymbol
 // Positional
 point = (10, 20)
 >> point[0] ¶    // → 10
+
+data = (42, "eneth", #1, 3.14)
+>> data[2] ¶     // → #1
 
 // Named
 Ellon = (eneth: "Alice", vin: 25)
@@ -372,6 +390,23 @@ Ellon = (eneth: "Alice", vin: 25)
 pos = (x: 10, y: 20)
 p = (pos: pos, eneth: "Imladris")
 >> p.pos.x ¶        // → 10
+```
+
+**Ú-cared (Immutability):** Tuple ú-pol cared — naeg aen tirith e-gohenam.
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ naeg aen tirith: tuple ú-cared
+// t[0] += 5    // ❌ naeg ai
+```
+
+**Maded boe ($~):** Naur tuple ú-cared — boe eneth.
+
+```zymbol
+Ellon = (eneth: "Alice", vin: 25)
+Ellon2 = (eneth: Ellon.eneth, vin: 26)  // naur tuple, vin boe
+>> Ellon2.vin ¶    // → 26
+>> Ellon.vin ¶     // → 25  (ú-cared)
 ```
 
 ---
@@ -483,6 +518,70 @@ _internal_anno(a, b) { <~ a + b }
 
 ---
 
+## Nœ Enni
+
+Zymbol pan nœ **Unicode nœ gwaith 69** — Devanagari, Arabi-India, Thai, Klingon pIqaD, Mathmeg, LCD. Gwaith nœ `>>`; nœ binary.
+
+### Gwaith achae
+
+Nœ `0` a `9` in `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabi-India   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // ASCII-nna
+```
+
+### Nœ a boolean
+
+```zymbol
+x = 42
+>> x ¶          // → 42
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४
+>> 1 + 2 ¶      // → ३
+
+// Boolean: # ASCII, nœ gwaith
+>> #1 ¶         // → #१
+>> #0 ¶         // → #०
+
+x = 28 > 4
+>> x ¶          // → #१
+```
+
+### Nœ asli côd
+
+Nœ gwaith literal — rhandir, modulo:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Boolean literal gwaith
+
+`#` + nœ `0` hain `1` bloc boolean:
+
+```zymbol
+#٠٩#
+نشط = #١
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> `#` **ASCII**. `#0` (ú) `0` (nœ sîdh) gwaith.
+
+---
+
 ## Pedhrim Penim
 
 ```zymbol
@@ -564,8 +663,9 @@ gerio(norn) {
 | `@!`     | câr (break)        | `$>`       | map                   |
 | `@>`     | trevad daur        | `$\|`      | filter                |
 | `->`     | Lambda             | `$<`       | reduce                |
-| `$^+`    | sort ascending     | `$^-`      | sort descending       |
-| `$^`     | sort comparator    |            |                       |
+| `arr[i] = val` | boe norn (update in-place) | `arr[i] +=` | tattanc boe (compound update) |
+| `arr[i]$~` | maded boe (functional update) | `$^+` | sort ascending       |
+| `$^-`    | sort descending    | `$^`       | sort comparator       |
 | `<~`     | anno               | `!?`       | provo (try)           |
 | `\|>`    | Pipe               | `:!`       | nurta (catch)         |
 | `#1`     | eithel             | `:>`       | ilach (finally)       |
@@ -575,8 +675,42 @@ gerio(norn) {
 | `::`     | tanwesta maded     | `.`        | field access          |
 | `#\|..\|` | parse number      | `#?`       | type metadata         |
 | `#.N\|..\|` | round           | `#!N\|..\|` | truncate            |
-| `c\|..\|` | comma format      | `e\|..\|`  | scientific            |
+| `#,\|..\|` | comma format      | `#^\|..\|`  | scientific            |
+| `#d0d9#` | nœ gwaith achae | `#09#` | ASCII-nna |
 | `<\ ..\>` | shell exec        | `>\<`      | CLI args              |
+
+## Versio Nœ
+
+### v0.0.3 — Unicode Nœ & LSP _(Abril 2026)_
+
+- **Pan** Unicode bloc 69 token `#d0d9#`
+- **Pan** Boolean literals — `#१` / `#०`, `#१` / `#٠`
+- **Pan** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Pan** VM opcode `SetNumeralMode` — tree-walker
+- **Pan** REPL nœ echo variable
+- **Achae** `>>` boolean `#` (`#0` / `#1`)
+
+### v0.0.2_01 _(30 Mar 2026)_
+
+- **Achae** `c|..|` → `#,|..|` a `e|..|` → `#^|..|`
+- **Pan** Export alias
+
+### v0.0.2 _(24 Mar 2026)_
+
+- **Pan** `$` arrays a strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Pan** Destructuring arrays, tuples
+- **Pan** Nœ ú (`arr[-1]`)
+- **Pan** Instalar — Linux, macOS, Windows
+
+### v0.0.1-patch _(25 Mar 2026)_
+
+- **Pan** `^=`
+
+### v0.0.1 _(22 Mar 2026)_
+
+- Tree-walker + register VM (`--vm`, ~4×, ~95%)
+- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 

@@ -288,6 +288,8 @@ műveletek = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Tömbök
 
+A tömbök **módosíthatók** és **azonos típusú** elemeket tartalmaznak.
+
 ```zymbol
 arr = [10, 20, 30, 40, 50]
 
@@ -309,11 +311,11 @@ idx = arr$?? 30              // → [1]   az érték összes indexe
 szelet = arr$[0..2]          // szelet [0,2): [20, 30]
 darab = arr$[0:3]            // darabszám-alapú: [20, 30, 40]
 
-// Elem frissítése
-arr[1] = 99
->> arr ¶    // → [20, 99, 40, 50, 60]
+// Közvetlen elemfrissítés (csak tömbök)
+arr[1] = 99              // hozzárendelés
+arr[0] += 5              // összetett: +=  -=  *=  /=  %=  ^=
 
-// Funkcionális frissítés (új tömböt ad vissza)
+// Funkcionális frissítés — új tömböt ad vissza; az eredeti nem változik
 arr2 = arr[1]$~ 77           // → [20, 77, 40, 50, 60]
 
 // Rendezés (primitívek)
@@ -337,6 +339,16 @@ mátrix = [[1,2],[3,4],[5,6]]
 > `$+`, `$-`, `$[..]` **új tömböt** adnak vissza — rendelj vissza: `arr = arr$+ 4`.
 > Láncolás nem lehetséges: használj két külön hozzárendelést.
 > `arr$??` és `arr$[s:n]` más szintaxist használnak, mint `arr$[s..e]` — lásd Szimbólumreferencia.
+
+**Értékszemantika** — egy tömb másik változóhoz rendelése független másolatot hoz létre:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[0] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b érintetlen
+```
 
 ---
 
@@ -365,11 +377,16 @@ személy = (név: "Alice", kor: 25)
 
 ## Tuple-ök
 
+A tuple-ök **megváltoztathatatlan** rendezett tárolók, amelyek **különböző típusú** értékeket tartalmazhatnak. A tömböktől eltérően az elemek a létrehozás után nem módosíthatók.
+
 ```zymbol
 // Pozicionális tuple
 pont = (10, 20)
 >> pont[0] ¶    // → 10
 >> pont[1] ¶    // → 20
+
+adatok = (42, "szia", #1, 3.14)
+>> adatok[2] ¶     // → #1
 
 // Nevesített tuple
 személy = (név: "Alice", kor: 25)
@@ -382,6 +399,29 @@ pos = (x: 3, y: 4)
 p = (pos: pos, cimke: "kezdőpont")
 >> p.cimke ¶    // → kezdőpont
 >> p.pos.x ¶    // → 3
+```
+
+**Megváltoztathatatlanság** — bármilyen kísérlet egy tuple elem módosítására futásidejű hibát okoz:
+
+```zymbol
+t = (10, 20, 30)
+// t[0] = 99    // ❌ futásidejű hiba: a tuple-ök megváltoztathatatlanok
+// t[0] += 5    // ❌ ugyanaz a hiba
+```
+
+Módosított érték levezetéséhez használd a `$~` operátort (funkcionális frissítés) — **új** tuple-t ad vissza:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[1]$~ 999
+>> t ¶     // → (10, 20, 30)   ← az eredeti változatlan
+>> t2 ¶    // → (10, 999, 30)
+
+// Nevesített tuple — explicit újraépítés
+személy = (név: "Alice", kor: 25)
+idősebb = (név: személy.név, kor: 26)
+>> személy.kor ¶    // → 25
+>> idősebb.kor ¶    // → 26
 ```
 
 ---
@@ -499,6 +539,70 @@ pi = sz::get_PI()
 
 ---
 
+## Számjegy Módok
+
+A Zymbol **69 Unicode számjegyírásban** képes számokat megjeleníteni — Devanagari, Arab-Indiai, Thai, Klingon pIqaD, Matematikai Félkövér, LCD-szegmensek stb. Az aktív mód csak a `>>`-kimenetet befolyásolja; a belső aritmetika mindig bináris.
+
+### Írás aktiválása
+
+Írja be a célírás `0` és `9` számjegyét `#…#` közé:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arab-Indiai   (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // visszaállítás ASCII-re
+```
+
+### Kimenet és logikai értékek
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (ASCII alapértelmezett)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (tizedes pont mindig ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Logikai értékek: # előtag mindig ASCII, számjegy alkalmazkodik
+>> #1 ¶         // → #१   (igaz Devanagari-ban)
+>> #0 ¶         // → #०   (hamis — eltér ०  egész szám nullától)
+
+x = 28 > 4
+>> x ¶          // → #१   (összehasonlítás eredménye követi az aktív módot)
+```
+
+### Natív számjegy-literálok a forráskódban
+
+Bármely támogatott írás számjegyei érvényes literálok — tartományokban, modulóban, összehasonlításokban:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Logikai literálok bármely írásban
+
+`#` + `0` vagy `1` számjegy bármely blokkból érvényes logikai literál:
+
+```zymbol
+#٠٩#
+نشط = #١        // ugyanaz mint #1
+>> نشط ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
+```
+
+> A `#` **mindig ASCII**. A `#0` (hamis) minden írásban vizuálisan mindig eltér a `0`-tól (egész szám nulla).
+
+---
+
 ## Adatoperátorok
 
 ```zymbol
@@ -581,24 +685,62 @@ osztályoz(szám) {
 | `@`         | ciklus               | `$>`         | leképezés                  |
 | `@!`        | kilépés              | `$\|`        | szűrés                     |
 | `@>`        | folytatás            | `$<`         | redukálás                  |
-| `->`        | lambda               | `$^+`        | növekvő rendezés           |
-| `<~`        | visszatérés          | `$^-`        | csökkenő rendezés          |
-| `\|>`       | csővezeték           | `$^`         | rendezés komparátorral     |
+| `->`        | lambda               | `$<`         | redukálás                  |
+| `arr[i] = val` | elem frissítése (csak tömbök) | `arr[i] += val` | összetett frissítés |
+| `arr[i]$~`  | funkcionális frissítés (új másolat) | `$^+` | növekvő rendezés (primitívek) |
+| `$^-`       | csökkenő rendezés (primitívek) | `$^` | rendezés komparátorral (tuple-ök) |
+| `<~`        | visszatérés          | `!?`         | próba (try)                |
+| `\|>`       | csővezeték           | `:!`         | elkapás (catch)            |
 | `#1`        | igaz                 | `$!`         | hiba-e                     |
 | `#0`        | hamis                | `$!!`        | hiba továbbterjesztése     |
-| `!?`        | próba (try)          | `#`          | modul deklaráció           |
-| `:!`        | elkapás (catch)      | `#>`         | export                     |
-| `:>`        | végül (finally)      | `<#`         | import                     |
+| `:>`        | végül (finally)      | `#`          | modul deklaráció           |
+| `<#`        | import               | `#>`         | export                     |
 | `.`         | mezőhozzáférés       | `::`         | modul hívás                |
 | `#\|..\|`   | értelmezés (parse)   | `#.N\|..\|`  | N tizedesre kerekítés      |
-| `#!N\|..\|` | N tizedesre csonkítás| `c\|..\|`    | ezreselválasztós formátum  |
-| `e\|..\|`   | tudományos jelölés   | `<\ \>`      | parancsértelmező parancs   |
+| `#!N\|..\|` | N tizedesre csonkítás| `#,\|..\|`    | ezreselválasztós formátum  |
+| `#d0d9#` | számjegy mód kapcsoló | `#09#` | visszaállítás ASCII-re |
+| `#^\|..\|`   | tudományos jelölés   | `<\ \>`      | parancsértelmező parancs   |
 | `><`        | parancsértelmező kim.| `$~~[..]`    | csere a karakterláncban    |
 | `[a,b]=arr` | destrukturálás       | `(x,y)=tup`  | tuple destrukturálás       |
 
 ---
 
 *Zymbol-Lang — Szimbolikus. Univerzális. Változhatatlan.*
+
+## Verzióelőzmények
+
+### v0.0.3 — Unicode Számrendszerek & LSP Fejlesztések _(2026. április)_
+
+- **Hozzáadva** 69 Unicode számjegybloкk a módváltó tokennel `#d0d9#`
+- **Hozzáadva** Logikai literálok bármely írásban — `#१` / `#०`, `#١` / `#٠`, stb.
+- **Hozzáadva** Klingon pIqaD számjegyek (CSUR PUA U+F8F0–U+F8F9)
+- **Hozzáadva** `SetNumeralMode` VM opkód — teljes paritás a tree-walkerrel
+- **Hozzáadva** A REPL tiszteletben tartja az aktív számjegy módot visszhangban és változók megjelenítésében
+- **Módosítva** A booleánok `>>`-kimenete mostantól tartalmazza a `#` előtagot (`#0` / `#1`) minden módban
+
+### v0.0.2_01 — Operátorok Átnevezése _(2026. márc. 30.)_
+
+- **Módosítva** `c|..|` → `#,|..|` és `e|..|` → `#^|..|` — konzisztens a `#` előtag-családdal
+- **Hozzáadva** Exportálási alias: modultagok újraexportálása más névvel
+
+### v0.0.2 — Gyűjtemény API Újratervezés & Telepítők _(2026. márc. 24.)_
+
+- **Hozzáadva** Egységesített `$` operátorcsalád tömbök és karakterláncok számára (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Hozzáadva** Destrukturálás tömbök, tuple-ok és nevesített tuple-ok számára
+- **Hozzáadva** Negatív indexek (`arr[-1]` = utolsó elem)
+- **Hozzáadva** Natív telepítők — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(2026. márc. 25.)_
+
+- **Hozzáadva** Összetett hozzárendelés `^=`
+- **Javítva** Aritmetikai elemző szélső esetei; dokumentációjavítások
+
+### v0.0.1 — Első Nyilvános Kiadás _(2026. márc. 22.)_
+
+- Tree-walker értelmező + regiszter VM (`--vm`, ~4× gyorsabb, ~95% paritás)
+- Minden alapkonstrukció: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Teljes Unicode azonosítók, modulrendszer, lambdák, lezárások, hibakezelés
+- REPL, LSP, VS Code bővítmény, formázó (`zymbol fmt`)
 
 ---
 
