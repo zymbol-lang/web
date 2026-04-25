@@ -1,0 +1,451 @@
+{{Infobox proglang
+|name = Zymbol-Lang
+|paradigms = [[Imperative]], [[Functional]], [[Procedural]]
+|author = [[User:Zymbol.Lang]]
+|year = 2026
+|typesystem = [[Dynamic typing|Dynamic]]
+|memsystem = Automatic (Rust-managed)
+|class = [[Turing complete]]
+|reference implementation = [https://github.com/zymbol-lang/interpreter Zymbol-Lang interpreter (Rust)]
+|dialects =
+|influenced by = [[Haskell]], [[Ruby]], [[Rust (programming language)|Rust]]
+|files = .zy
+}}
+
+'''Zymbol-Lang''' is a minimalist symbolic programming language designed to be completely language-agnostic. It uses no English keywords — every control structure, I/O operation, and type marker is a symbol. Identifiers (variable names, function names, comments) can be written in any human language or script, including full Unicode support for CJK, Arabic, Devanagari, Cyrillic, Cherokee Syllabics, Cree Syllabics, emoji, and fictional scripts such as Klingon pIqaD.
+
+The core philosophy: ''operators are universal, identifiers are yours''.
+
+== Overview ==
+
+Zymbol-Lang is currently in public alpha (v0.0.2). It is a working implementation open for use and feedback, with active development ongoing.
+
+The language has two execution backends:
+
+* A tree-walking interpreter written in Rust (default, fully featured)
+* A register-based virtual machine (optional via <code>--vm</code>, ~4× faster on recursive workloads)
+
+The language specification is defined in a formal EBNF grammar. Source files use the <code>.zy</code> extension.
+
+=== Design Principles ===
+
+# '''No keywords''' — <code>?</code> is if, <code>@</code> is loop, <code><~</code> is return. Nothing to translate.
+# '''Full Unicode''' — variable names, function names, comments, and string values accept any Unicode character.
+# '''Language-agnostic types''' — <code>#1</code> / <code>#0</code> instead of <code>true</code> / <code>false</code>; type tags use symbols (<code>###</code>, <code>##"</code>, <code>##?</code>...).
+# '''Consistent operators''' — the same symbol means the same thing in every human language.
+# '''Explicit over implicit''' — newlines in output, return values, and scope capture all require explicit syntax.
+
+== Syntax ==
+
+=== Variables and Mutability ===
+
+Zymbol-Lang distinguishes mutable variables (<code>=</code>) from immutable constants (<code>:=</code>) at the assignment level. Augmented assignment operators (<code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>%=</code>, <code>^=</code>) and increment/decrement (<code>++</code>, <code>--</code>) are supported. Attempting to reassign a constant is a runtime error.
+
+=== Operators Reference ===
+
+{| class="wikitable"
+|-
+! Category !! Operator !! Meaning !! Notes
+|-
+| Assignment || <code>=</code> || Mutable variable ||
+|-
+| Assignment || <code>:=</code> || Immutable constant || Reassignment raises <code>##Type</code>
+|-
+| Output || <code>>></code> || Print (no auto-newline) || Multiple values by juxtaposition
+|-
+| Newline || <code>¶</code> or <code>\</code> || Explicit newline in output || Newlines are never implicit
+|-
+| Input || <code><<</code> || Read from stdin || Accepts optional prompt string
+|-
+| If || <code>?</code> || Conditional || Braces required even for single statements
+|-
+| Else if || <code>_?</code> || Else-if branch ||
+|-
+| Else || <code>_</code> || Else branch || Also used as wildcard in <code>??</code>
+|-
+| Match || <code>??</code> || Pattern match / switch || Supports ranges, strings, guards, and block arms
+|-
+| Loop || <code>@</code> || Loop (while / range / for-each / infinite) || Range syntax: <code>i:0..N</code>, with step: <code>i:0..N:S</code>
+|-
+| Break || <code>@!</code> || Break out of loop || Supports labels for nested loops: <code>@! label</code>
+|-
+| Continue || <code>@></code> || Continue to next iteration ||
+|-
+| Lambda || <code>-></code> || Anonymous function (lambda) || Captures outer scope (closure)
+|-
+| Return || <code><~</code> || Return value || Also used for output parameters in function signatures
+|-
+| Pipe || <code>\|></code> || Pipe value into function || RHS must use <code>_</code> as placeholder for piped value
+|-
+| Not-equal || <code><></code> || Inequality || Intentionally distinct from <code>!=</code>
+|-
+| Exponentiation || <code>^</code> || Power || <code>a ^ b</code>; division between integers is integer division
+|-
+| Length || <code>$#</code> || Length of array or string ||
+|-
+| Append || <code>$+</code> || Append to array || Returns new array; use <code>$+[i]</code> to insert at index
+|-
+| Remove || <code>$-</code> || Remove first occurrence by value || <code>$--</code> removes all; <code>$-[i]</code> by index; <code>$-[i..j]</code> range
+|-
+| Update || <code>$~</code> || Functional update at index || Returns new array; use <code>arr[i] = v</code> for in-place
+|-
+| Contains || <code>$?</code> || Test membership || <code>$??</code> returns list of all matching indices
+|-
+| Slice || <code>$[s..e]</code> || Slice array or string || End-exclusive; also <code>$[s:count]</code> count-based form
+|-
+| Sort || <code>$^+</code> / <code>$^-</code> || Sort ascending / descending || Primitives only; use <code>$^</code> with comparator lambda for tuples
+|-
+| Map || <code>$></code> || Map over array || Requires inline lambda
+|-
+| Filter || <code>$\|</code> || Filter array || Requires inline lambda
+|-
+| Reduce || <code>$<</code> || Reduce array || Requires inline lambda
+|-
+| String split || <code>/</code> || Split string by delimiter || <code>"a,b,c" / ','</code> → <code>[a, b, c]</code>
+|-
+| String replace || <code>$~~</code> || Replace in string || Supports max-count: <code>$~~["old":"new":N]</code>
+|-
+| Try || <code>!?{ }</code> || Try block ||
+|-
+| Catch || <code>:! ##Type { }</code> || Catch specific error type || <code>:! { }</code> catches any error; <code>_err</code> holds message
+|-
+| Finally || <code>:>{ }</code> || Finally block || Always executes
+|-
+| Is error || <code>$!</code> || Check if value is an error ||
+|-
+| Propagate || <code>$!!</code> || Propagate error to caller ||
+|-
+| Module declare || <code>#</code> || Declare module name ||
+|-
+| Export || <code>#>{ }</code> || Export symbols || Exports must appear before definitions; supports renaming
+|-
+| Import || <code><#</code> || Import module ||
+|-
+| Alias || <code><=</code> || Import alias || Required — unaliased imports are not supported
+|-
+| Module call || <code>::</code> || Call module function ||
+|-
+| Field access || <code>.</code> || Access named tuple field or module member ||
+|-
+| Type metadata || <code>#?</code> || Type introspection (postfix) || Returns structured tuple <code>(type_tag, size, value)</code>
+|-
+| Parse number || <code>#\|..\|</code> || Parse string to Int or Float || Fail-safe: returns original string on failure
+|-
+| Round || <code>#.N\|..\|</code> || Round to N decimal places ||
+|-
+| Truncate || <code>#!N\|..\|</code> || Truncate to N decimal places ||
+|-
+| Shell exec || <code><\ cmd \></code> || Execute shell command, capture stdout || String interpolation supported in command
+|}
+
+=== Type System ===
+
+Types are dynamic. Type metadata is accessed via the postfix operator <code>#?</code>, which returns a structured tuple of the form <code>(type_tag, size_in_digits, value)</code> — allowing programs to inspect not just the type but the magnitude of a value.
+
+{| class="wikitable"
+|-
+! Type !! Literal Example !! Type Tag !! Notes
+|-
+| Integer || <code>42</code>, <code>-7</code>, <code>0xFF</code> || <code>###</code> || 64-bit signed; supports hex, binary, octal, decimal prefixes
+|-
+| Float || <code>3.14</code>, <code>1.5e10</code> || <code>##.</code> || Scientific notation; division between two integers yields integer
+|-
+| String || <code>"hello"</code> || <code>##"</code> || Interpolation: <code>"Hello {name}"</code>; juxtaposition in <code>>></code>
+|-
+| Char || <code>'A'</code> || <code>##'</code> || Single Unicode grapheme
+|-
+| Bool || <code>#1</code>, <code>#0</code> || <code>##?</code> || Not numeric — <code>#1 ≠ 1</code>
+|-
+| Array || <code>[1, 2, 3]</code> || <code>##]</code> || 0-indexed; negative indices supported (<code>arr[-1]</code> = last)
+|-
+| Tuple || <code>(a, b)</code>, <code>(x: 1, y: 2)</code> || <code>##)</code> || Named fields accessed by <code>.field</code> or by index
+|-
+| Unit || (no value) || <code>##_</code> || Returned by functions with no explicit return
+|}
+
+=== Scoping and Function Isolation ===
+
+Zymbol-Lang enforces a strict separation between named functions and their calling context. Named functions have fully isolated scopes — they cannot read or modify variables from the enclosing scope. This is an intentional design decision to prevent hidden state dependencies.
+
+Lambdas (<code>-></code>) behave differently: they capture the enclosing scope (closure semantics). Named functions that need to affect the caller's state do so through '''output parameters''', declared with <code><~</code> in the function signature:
+
+<pre>
+swap(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
+}
+x = 10
+y = 20
+swap(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+</pre>
+
+Blocks (<code>{ }</code>) use lexical scoping with automatic cleanup on exit.
+
+=== Named Functions and First-Class Values ===
+
+Named functions in Zymbol-Lang are '''not first-class values'''. They cannot be stored in variables, passed as arguments, or stored in arrays directly. To use a named function as a higher-order argument, it must be wrapped in a lambda:
+
+<pre>
+double(x) { <~ x * 2 }
+nums = [1, 2, 3, 4, 5]
+
+r = nums$> (x -> double(x))    // ✅  wrapped in lambda
+</pre>
+
+Lambdas, by contrast, are first-class and can be stored in variables, arrays, and passed freely.
+
+=== Destructuring ===
+
+Zymbol-Lang supports destructuring assignment for arrays and tuples. The rest-capture operator <code>*</code> collects remaining array elements, and <code>_</code> discards positions:
+
+<pre>
+arr = [10, 20, 30, 40, 50]
+[a, b, c] = arr              // a=10  b=20  c=30
+[first, *rest] = arr         // first=10  rest=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ discards
+
+person = (name: "Ana", age: 25, city: "Madrid")
+(name: n, age: a) = person   // n="Ana"  a=25
+</pre>
+
+=== Pipe Operator ===
+
+The pipe operator (<code>|></code>) passes a value into a function. Unlike most languages, Zymbol-Lang requires an explicit placeholder <code>_</code> on the right-hand side, making the injection point unambiguous when the function takes multiple arguments:
+
+<pre>
+add = (a, b) -> a + b
+
+5  |> add(_, 3)    // → 8   (_ is the piped value)
+5  |> add(2, _)    // → 7   (position matters)
+</pre>
+
+Pipes can be chained by assigning intermediates.
+
+=== Match Expression ===
+
+The <code>??</code> operator supports value matching, range matching, guard conditions, and block arms. Guards use the <code>_?</code> syntax inside a match:
+
+<pre>
+// Range match
+grade = ?? score {
+    90..100 : 'A'
+    80..89  : 'B'
+    _       : 'F'
+}
+
+// Guard match (condition-driven)
+state = ?? temp {
+    _? temp < 0  : "ice"
+    _? temp < 20 : "cold"
+    _            : "warm"
+}
+</pre>
+
+=== Shell Integration ===
+
+Zymbol-Lang can execute shell commands and capture their standard output via the <code><\ cmd \></code> construct. String interpolation works inside the command, enabling dynamic shell calls:
+
+<pre>
+date = <\ date +%Y-%m-%d \>
+file = "data.txt"
+content = <\ cat {file} \>
+</pre>
+
+This feature is available in the tree-walker backend only.
+
+== Examples ==
+
+=== Hello, World! ===
+
+<pre>
+>> "Hello, World!" ¶
+</pre>
+
+The same program in Japanese:
+
+<pre>
+>> "こんにちは、世界！" ¶
+</pre>
+
+In Arabic (right-to-left identifiers, same operators):
+
+<pre>
+تحية = "مرحبا، أيها العالم!"
+>> تحية ¶
+</pre>
+
+=== Control Flow ===
+
+<pre>
+x = 7
+
+? x > 100 {
+    >> "large" ¶
+} _? x > 0 {
+    >> "positive" ¶
+} _ {
+    >> "zero or negative" ¶
+}
+</pre>
+
+=== Loops ===
+
+<pre>
+@ i:0..4      { >> i " " }        // → 0 1 2 3 4  (range, inclusive)
+@ i:1..9:2    { >> i " " }        // → 1 3 5 7 9  (with step)
+@ i:5..0:1    { >> i " " }        // → 5 4 3 2 1 0  (reverse)
+
+fruits = ["apple", "banana", "mango"]
+@ item:fruits { >> item ¶ }       // for-each array
+
+@ {                               // infinite loop
+    i++
+    ? i >= 5 { @! }
+}
+</pre>
+
+Labeled breaks are supported for exiting nested loops:
+
+<pre>
+@ @outer {
+    @ @inner {
+        ? condition { @! outer }
+    }
+}
+</pre>
+
+=== Functions and Lambdas ===
+
+<pre>
+// Named function
+add(a, b) { <~ a + b }
+>> add(3, 4) ¶    // → 7
+
+// Lambda (implicit return)
+double = x -> x * 2
+>> double(5) ¶    // → 10
+
+// Higher-order functions
+nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+doubled = nums$> (x -> x * 2)
+evens   = nums$| (x -> x % 2 == 0)
+total   = nums$< (0, (acc, x) -> acc + x)
+>> total ¶    // → 55
+
+// Closure / factory
+make_adder(n) { <~ x -> x + n }
+add10 = make_adder(10)
+>> add10(5) ¶    // → 15
+</pre>
+
+=== FizzBuzz ===
+
+<pre>
+fizzbuzz(n) {
+    ? n % 15 == 0 { <~ "FizzBuzz" }
+    _? n % 3  == 0 { <~ "Fizz" }
+    _? n % 5  == 0 { <~ "Buzz" }
+    _ { <~ n }
+}
+
+@ i:1..20 { >> fizzbuzz(i) ¶ }
+</pre>
+
+=== Error Handling ===
+
+<pre>
+!? {
+    data = read_file("config.txt")
+} :! ##IO {
+    >> "File not found" ¶
+} :! ##Parse {
+    >> "Parse error" ¶
+} :! {
+    >> "Unknown error: " _err ¶
+} :> {
+    >> "Cleanup done" ¶
+}
+</pre>
+
+Error types: <code>##IO</code>, <code>##Network</code>, <code>##Parse</code>, <code>##Index</code>, <code>##Type</code>, <code>##Div</code>, <code>##_</code> (generic catch-all).
+
+=== Modules ===
+
+<pre>
+// lib/math.zy
+# math
+#> { add, get_PI }
+
+_PI := 3.14159
+add(a, b) { <~ a + b }
+get_PI()   { <~ _PI  }
+</pre>
+
+<pre>
+// main.zy
+<# ./lib/math <= m
+
+>> m::add(5, 3) ¶    // → 8
+pi = m::get_PI()
+>> pi ¶               // → 3.14159
+</pre>
+
+Exports must be declared before definitions. Exported symbols can be renamed at the export site with <code><=</code>.
+
+== Computational Class ==
+
+Zymbol-Lang is [[Turing complete]]. It supports:
+
+* Unbounded loops (<code>@</code> with arbitrary while-conditions)
+* Arbitrary recursion (with tail-call optimization in the VM backend)
+* Dynamic arrays of unlimited size
+* Integer arithmetic without fixed bounds (64-bit signed integers)
+
+== Internationalization ==
+
+Because Zymbol-Lang has no English keywords, programs written in any human language are syntactically identical to programs written in any other. Operators remain constant; only identifiers, string contents, and comments change.
+
+A program written entirely in Arabic, Japanese, Cherokee Syllabics, or Klingon pIqaD is structurally the same as one written in Latin script — no translation layer, no preprocessing. The Unicode grapheme cluster model ensures that scripts with complex glyph composition (Devanagari, Thai, Burmese, Cree Syllabics) are handled correctly at the lexer level.
+
+== Implementation ==
+
+The reference implementation is written in [[Rust (programming language)|Rust]] and consists of:
+
+* '''Lexer / Parser''' — produces an AST from <code>.zy</code> source; handles Unicode grapheme clusters natively
+* '''Semantic analyzer''' — type-checks, detects unused variables, circular imports
+* '''Tree-walking interpreter''' — default execution path, fully featured
+* '''Bytecode compiler + Register VM''' — optional backend (<code>--vm</code>), ~4× faster on recursive workloads; module system support is partial
+
+The interpreter is available as a CLI tool:
+
+<pre>
+zymbol run program.zy          # tree-walker (default)
+zymbol run --vm program.zy     # register VM
+zymbol repl                    # interactive REPL
+zymbol check program.zy        # syntax and semantic check
+zymbol fmt program.zy --write  # format in-place
+</pre>
+
+== See Also ==
+
+* [[Brainfuck]] — another language with a minimal operator set
+* [[Befunge]] — symbolic, stack-based esolang
+* [[Unlambda]] — purely functional with minimal syntax
+
+== External Links ==
+
+* [https://zymbol-lang.org Official website]
+* [https://github.com/zymbol-lang/interpreter Source code (GitHub)]
+* [https://github.com/zymbol-lang/interpreter/blob/main/zymbol.ebnf Formal EBNF grammar]
+
+[[Category:Languages]]
+[[Category:2026]]
+[[Category:Implemented]]
+[[Category:Turing complete]]
+[[Category:Functional]]
+[[Category:Imperative]]
+[[Category:Dynamic typing]]
+[[Category:Rust]]
+[[Category:Unicode]]

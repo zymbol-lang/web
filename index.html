@@ -3,8 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zymbol-Lang</title>
-  <meta name="description" content="A minimalist symbolic programming language. No keywords. Full Unicode. Every human language.">
+  <title>Zymbol — Programming Language in Any Human Language | No Keywords</title>
+  <meta name="description" content="Zymbol is a symbolic programming language with no keywords — write code using pure symbols in any human language: Spanish, Japanese, Arabic, Chinese, and 100+ more.">
+  <meta name="keywords" content="programming language, no keywords, symbolic language, code in Spanish, code in Japanese, code in Arabic, code in Chinese, multilingual programming, unicode programming, international programming language, lenguaje de programación, 日本語プログラミング, البرمجة بالعربية">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="Zymbol-Lang">
+  <link rel="canonical" href="https://zymbol-lang.dev/">
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website">
+  <meta property="og:url"         content="https://zymbol-lang.dev/">
+  <meta property="og:title"       content="Zymbol — Programming Language in Any Human Language">
+  <meta property="og:description" content="No keywords. Just symbols. Write code in Spanish, Japanese, Arabic, Chinese or any of 100+ human languages. Every identifier is yours.">
+  <meta property="og:image"       content="https://zymbol-lang.dev/zymbol_logo.png">
+  <meta property="og:locale"      content="en_US">
+  <meta property="og:site_name"   content="Zymbol-Lang">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="Zymbol — Programming Language in Any Human Language">
+  <meta name="twitter:description" content="No keywords. Just symbols. Code in Spanish, Japanese, Arabic, Chinese and 100+ languages.">
+  <meta name="twitter:image"       content="https://zymbol-lang.dev/zymbol_logo.png">
+
+  <!-- JSON-LD structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Zymbol",
+    "alternateName": "Zymbol-Lang",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Linux, macOS, Windows, Web",
+    "url": "https://zymbol-lang.dev/",
+    "description": "A minimalist symbolic programming language with no keywords. Write identifiers in any human language — Spanish, Japanese, Arabic, Chinese, and 100+ more. Every construct uses pure symbols.",
+    "keywords": "programming language, no keywords, symbolic, multilingual, unicode, international",
+    "inLanguage": ["en","es","ja","ar","zh","fr","de","pt","ru","ko","hi"],
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "license": "https://www.gnu.org/licenses/agpl-3.0.html"
+  }
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
@@ -16,11 +54,67 @@
     var light = s ? s === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
     if (light) document.documentElement.classList.add('light');
   })();
+  // Set <html lang> before first paint so Chrome detects the correct language
+  (function(){
+    var BCP47 = {
+      english:'en', spanish:'es', castellano:'es-ES', portuguese:'pt-BR',
+      portugues_eu:'pt-PT', french:'fr', german:'de', italian:'it',
+      dutch:'nl', polish:'pl', russian:'ru', ukrainian:'uk', bulgarian:'bg',
+      croatian:'hr', czech:'cs', slovak:'sk', romanian:'ro', hungarian:'hu',
+      finnish:'fi', estonian:'et', latvian:'lv', lithuanian:'lt',
+      norwegian:'no', danish:'da', swedish:'sv', icelandic:'is', greek:'el',
+      serbian:'sr', arabic:'ar', hebrew:'he', persian:'fa', urdu:'ur',
+      hindi:'hi', bengali:'bn', marathi:'mr', punjabi:'pa', gujarati:'gu',
+      tamil:'ta', telugu:'te', kannada:'kn', mandarin:'zh', japanese:'ja',
+      korean:'ko', indonesian:'id', vietnamese:'vi', thai:'th', tagalog:'tl',
+      swahili:'sw', hausa:'ha', yoruba:'yo', amharic:'am', turkish:'tr',
+      basque:'eu', welsh:'cy', irish:'ga', catalan:'ca', galician:'gl',
+      afrikaans:'af', zulu:'zu', xhosa:'xh', esperanto:'eo',
+      klingon:'tlh_hol', klingon_piqad:'tlh_piqad',
+    };
+    var LOCALE_MAP = {
+      en:'english', es:'spanish', 'es-es':'castellano', fr:'french', de:'german',
+      it:'italian', nl:'dutch', pl:'polish', ru:'russian', uk:'ukrainian',
+      bg:'bulgarian', hr:'croatian', cs:'czech', sk:'slovak', ro:'romanian',
+      hu:'hungarian', fi:'finnish', et:'estonian', lv:'latvian', lt:'lithuanian',
+      no:'norwegian', nb:'norwegian', da:'danish', sv:'swedish', is:'icelandic',
+      el:'greek', sr:'serbian', ar:'arabic', he:'hebrew', fa:'persian', ur:'urdu',
+      hi:'hindi', bn:'bengali', mr:'marathi', pa:'punjabi', gu:'gujarati',
+      ta:'tamil', te:'telugu', kn:'kannada', zh:'mandarin', 'zh-cn':'mandarin',
+      'zh-tw':'mandarin', cn:'mandarin', ja:'japanese', ko:'korean',
+      id:'indonesian', vi:'vietnamese', th:'thai', tl:'tagalog', sw:'swahili',
+      ha:'hausa', yo:'yoruba', am:'amharic', tr:'turkish', eu:'basque',
+      cy:'welsh', ga:'irish', ca:'catalan', gl:'galician', af:'afrikaans',
+      zu:'zulu', xh:'xhosa', eo:'esperanto',
+      tlh_hol:'klingon', tlh_piqad:'klingon_piqad',
+    };
+    function resolveBcp47() {
+      var raw = new URLSearchParams(window.location.search).get('lang');
+      if (raw) {
+        var code = raw.replace(/^["']|["']$/g, '').toLowerCase().trim();
+        var langId = BCP47[code] ? code : LOCALE_MAP[code] || LOCALE_MAP[code.split('-')[0]];
+        if (langId && BCP47[langId]) return BCP47[langId];
+        if (BCP47[code]) return BCP47[code];
+      }
+      var saved = localStorage.getItem('zy-lang');
+      if (saved && BCP47[saved]) return BCP47[saved];
+      return null;
+    }
+    var bcp47 = resolveBcp47();
+    if (bcp47) document.documentElement.lang = bcp47;
+  })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <style>
+    @font-face {
+      font-family: 'pIqaD qolqoS';
+      src: local('pIqaD qolqoS'), url('fonts/pIqaD-qolqoS.ttf') format('truetype');
+      font-display: swap;
+    }
+  </style>
 </head>
 <body>
 
@@ -59,7 +153,7 @@
   <div class="lang-chips" id="lang-chips"></div>
 </div>
 
-<!-- ═══ APRIL FOOLS BANNER ═══ -->
+<!-- ═══ APRIL FOOLS BANNER (disabled — reusable for future campaigns) ═══
 <div id="april-banner" class="visible">
   <div class="april-inner">
     <span class="april-rocket">🖖</span>
@@ -71,10 +165,11 @@
     <button id="april-dismiss" aria-label="Dismiss banner">✕</button>
   </div>
 </div>
+═══ END APRIL FOOLS BANNER ═══ -->
 
 <!-- ═══ ALPHA NOTICE ═══ -->
 <div class="alpha-notice">
-  <a href="changelog.html" style="text-decoration:none"><span class="alpha-badge">Public Alpha · v0.0.3</span></a>
+  <a href="changelog.html" style="text-decoration:none"><span class="alpha-badge">Public Alpha · v0.0.4</span></a>
   <span id="alpha-msg">Zymbol is in active development — this release is a concept validation of the language design. APIs, syntax, and features may change.</span>
   <a id="alpha-link" href="https://github.com/zymbol-lang/interpreter" target="_blank">Follow progress on GitHub →</a>
 </div>
@@ -117,7 +212,7 @@
     <div class="mascot-wrap">
       <img class="mascot-img" src="logo.png" alt="Zymbol-Lang mascot">
       <div class="mascot-download-card">
-        <div class="dl-version">v0.0.3 · Public Alpha</div>
+        <div class="dl-version">v0.0.4 · Public Alpha</div>
         <div class="dl-title">Get Zymbol</div>
         <a href="install.html" class="btn-primary dl-btn">
           <span>↓</span>&nbsp;Download &amp; Install
@@ -243,6 +338,10 @@
       <h2 class="section-title"><span id="manual-title" class="fade-target">Documentación</span></h2>
       <p class="section-sub"><span id="manual-sub" class="fade-target">Manual compacto de Zymbol-Lang</span></p>
     </div>
+    <div id="piqad-ref-link" hidden style="text-align:center;margin-bottom:2rem">
+      <a href="piqad-reference.html"
+         style="font-family:'pIqaD qolqoS',monospace;font-size:2.4rem;color:var(--green);text-decoration:none;letter-spacing:.05em;filter:drop-shadow(0 0 8px var(--green))">&#xF8E4;&#xF8D9;&#xF8D6;&#xF8DB;&#xF8D5;&#xF8D0;&#xF8DB; &#xF8D0;&#xF8DB;&#xF8DC;&#xF8E4;&#xF8D7;&#xF8DA;</a>
+    </div>
     <div id="manual-content" class="manual-body">
       <p style="color:var(--dim);text-align:center">Cargando…</p>
     </div>
@@ -268,6 +367,7 @@
 
 <script src="main.js"></script>
 
+<!-- APRIL FOOLS BANNER SCRIPT (disabled — reusable for future campaigns)
 <script>
 (function () {
   var STORAGE_KEY = 'zy-april-dismissed-2026';
@@ -290,5 +390,6 @@
   });
 }());
 </script>
+END APRIL FOOLS BANNER SCRIPT -->
 </body>
 </html>

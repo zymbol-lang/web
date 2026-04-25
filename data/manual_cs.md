@@ -1,40 +1,50 @@
+> **Upozornění:** Tato dokumentace byla vytvořena a přeložena umělou inteligencí (AI).
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Kanonická reference je **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** v repozitáři interpretru.
+
+---
+
 # Příručka Zymbol-Lang
 
-**Zymbol-Lang** je symbolický programovací jazyk. Nepoužívá klíčová slova — vše je symbol. Funguje stejně v každém lidském jazyce.
+**Zymbol-Lang** je symbolický programovací jazyk. Žádná klíčová slova — vše je symbol. Funguje stejně v každém lidském jazyce.
 
 - Žádné `if`, `while`, `return` — pouze `?`, `@`, `<~`
 - Plná podpora Unicode — identifikátory v libovolném jazyce nebo emoji
 - Nezávislý na lidském jazyce — kód je identický v každém jazyce
+
+**Verze interpretru**: v0.0.4 | **Pokrytí testy**: 393/393 (TW ↔ VM parita)
 
 ---
 
 ## Proměnné a Konstanty
 
 ```zymbol
-x = 10              // proměnná — měnitelná
-PI := 3.14159       // konstanta — chyba při opětovném přiřazení
-jméno = "Alice"
-aktivní = #1        // logická pravda
+x = 10              // měnitelná proměnná
+PI := 3.14159       // konstanta — opětovné přiřazení je chyba za běhu
+jméno = "Alžběta"
+aktivní = #1        // booleovská pravda
 👋 := "Ahoj"
 ```
 
 ```zymbol
-x = 10
+x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
 
 ---
 
 ## Datové Typy
 
-| Typ | Literál | Tag `#?` | Poznámka |
+| Typ | Literál | Tag `#?` | Poznámky |
 |-----|---------|----------|----------|
 | Int | `42`, `-7` | `###` | 64bitové se znaménkem |
 | Float | `3.14`, `1.5e10` | `##.` | Vědecká notace OK |
@@ -44,12 +54,14 @@ x--       // 4
 | Pole | `[1, 2, 3]` | `##]` | Homogenní prvky |
 | Tuple | `(a, b)` | `##)` | Poziční |
 | Pojmenovaný Tuple | `(x: 1, y: 2)` | `##)` | Pojmenovaná pole |
+| Funkce | ref. pojmenované funkce | `##()` | Hodnota první třídy; zobrazení `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Hodnota první třídy; zobrazení `<lambd/N>` |
 
 ```zymbol
-// Typ introspekce — vrací (typ, čísla, hodnota)
+// Typ introspekce — vrací (typ, číslice, hodnota)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
-t = meta[0]
+t = meta[1]
 >> t ¶            // → ###
 ```
 
@@ -60,7 +72,7 @@ t = meta[0]
 ```zymbol
 >> "Ahoj" ¶                      // ¶ nebo \\ pro explicitní nový řádek
 >> "a=" a " b=" b ¶               // juxtapozice — více hodnot
->> (arr$#) ¶                      // postfixové operátory vyžadují ( )
+>> (arr$#) ¶                      // postfixové operátory vyžadují ( ) v >>
 
 << jméno                          // čtení do proměnné (bez výzvy)
 << "Zadejte jméno: " jméno        // s výzvou
@@ -76,13 +88,20 @@ t = meta[0]
 // Aritmetika — používejte přiřazení; některé operátory mají zvláštnosti přímo v >>
 a = 10
 b = 3
-r1 = a + b    // 13     r2 = a - b    // 7
-r3 = a * b    // 30     r4 = a / b    // 3  (celočíselné dělení)
-r5 = a % b    // 1      r6 = a ^ b    // 1000  (umocnění)
+r1 = a + b    // 13     
+r2 = a - b    // 7
+r3 = a * b    // 30     
+r4 = a / b    // 3  (celočíselné dělení)
+r5 = a % b    // 1      
+r6 = a ^ b    // 1000  (umocnění)
 
 // Porovnání
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
+a == b    // #0    
+a <> b    // #1    
+a < b      // #0
+a <= b    // #0   
+a > b      // #1    
+a >= b     // #1
 
 // Logika
 #1 && #0    // #0
@@ -95,23 +114,22 @@ a <= b    // #0   a > b     // #1    a >= b   // #1
 ## Řetězce
 
 ```zymbol
-// Tři formy zřetězení
-jméno = "Alice"
+// Dvě formy zřetězení
+jméno = "Alžběta"
 n = 42
 
-msg = "Ahoj ", jméno, "!"            // čárka — v přiřazeních
 >> "Ahoj " jméno " máš " n ¶         // juxtapozice — v >>
-desc = "Ahoj {jméno}, máš {n}"       // interpolace — kdekoliv
+popis = "Ahoj {jméno}, máš {n}"      // interpolace — kdekoliv
 ```
 
 ```zymbol
 s = "Ahoj Světe"
-len = s$#                  // 10
-sub = s$[0..4]             // "Ahoj"  (konec exkluzivní)
-has = s$? "Světe"          // #1
-části = "a,b,c,d" / ','    // [a, b, c, d]
-rep = s$~~["a":"A"]        // nahradit všechny
-rep1 = s$~~["a":"A":1]     // nahradit první N
+délka = s$#                  // 10
+část = s$[1..4]              // "Ahoj"  (1-based, konec inkluzivní)
+obsahuje = s$? "Světe"       // #1
+části = "a,b,c,d"$/ ','      // [a, b, c, d]  (rozdělení oddělovačem)
+nahr = s$~~["o":"O"]         // "AhOj Světe"
+nahr1 = s$~~["o":"O":1]      // "AhOj Světe"  (pouze první N)
 ```
 
 > `+` je pouze pro čísla. Pro řetězce použijte `,`, juxtapozici nebo interpolaci.
@@ -161,13 +179,13 @@ kód = ?? barva {
     _         : "#000000"
 }
 
-// Stráže
+// Vzory porovnání
 teplota = -5
 stav = ?? teplota {
-    _? teplota < 0  : "led"
-    _? teplota < 20 : "chladno"
-    _? teplota < 35 : "teplo"
-    _               : "horko"
+    < 0  : "led"
+    < 20 : "chladno"
+    < 35 : "teplo"
+    _    : "horko"
 }
 >> stav ¶    // → led
 
@@ -215,12 +233,12 @@ i = 0
 >> ¶                          // → 1 2 3 4
 
 // Označená smyčka (vnořené přerušení)
-count = 0
-@ @vnejsi {
-    count++
-    ? count >= 3 { @! vnejsi }
+počet = 0
+@:vnější {
+    počet++
+    ? počet >= 3 { @:vnější! }
 }
->> count ¶                    // → 3
+>> počet ¶                    // → 3
 ```
 
 ---
@@ -252,7 +270,7 @@ vyměnit(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Pojmenované funkce nejsou hodnotami první třídy. Pro předání jako argument: `x -> fn(x)`.
+> Pojmenované funkce jsou **hodnotami první třídy** — předat přímo: `čísla$> zdvojit`. Pro zabalení: `x -> fn(x)` je také platné.
 
 ---
 
@@ -283,7 +301,7 @@ přidat10 = make_adder(10)
 
 // V polích
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[2](5) ¶    // → 25
+>> ops[3](5) ¶    // → 25
 ```
 
 ---
@@ -295,58 +313,59 @@ Pole jsou **měnitelná** a obsahují prvky **stejného typu**.
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
-arr[0]          // 1 — přístup (indexování od 0)
-arr[-1]         // 5 — záporný index (poslední)
+arr[1]          // 1 — přístup (indexování od 1: první prvek)
+arr[-1]         // 5 — záporný index (poslední prvek)
 arr$#           // 5 — délka (použijte (arr$#) v >>)
 
 arr = arr$+ 6            // přidat → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // vložit na index 2
+arr2 = arr$+[2] 99       // vložit na pozici 2 (1-based)
 arr3 = arr$- 3           // odebrat první výskyt hodnoty
 arr4 = arr$-- 3          // odebrat všechny výskyty
-arr5 = arr$-[0]          // odebrat na indexu
-arr6 = arr$-[1..3]       // odebrat rozsah (konec exkluzivní)
+arr5 = arr$-[1]          // odebrat na indexu 1 (první prvek)
+arr6 = arr$-[2..3]       // odebrat rozsah (1-based, konec inkluzivní)
 
 has = arr$? 3            // #1 — obsahuje
-pos = arr$?? 3           // [2] — všechny indexy hodnoty
-sl = arr$[0..3]          // [1,2,3] — výřez (konec exkluzivní)
-sl2 = arr$[0:3]          // [1,2,3] — totéž, syntaxe počtu
+pos = arr$?? 3           // [3] — všechny indexy hodnoty (1-based)
+sl = arr$[1..3]          // [1,2,3] — výřez (1-based, konec inkluzivní)
+sl2 = arr$[1:3]          // [1,2,3] — totéž, syntaxe počtu
 
 asc = arr$^+             // seřazeno vzestupně  (pouze primitiva)
 desc = arr$^-            // seřazeno sestupně   (pouze primitiva)
 
 // Tuple pole — použijte $^ s porovnávací lambdou
 db = [(jméno: "Carla", věk: 28), (jméno: "Ana", věk: 25), (jméno: "Bob", věk: 30)]
-podle_věku  = db$^ (a, b -> a.věk < b.věk)
-podle_jméno = db$^ (a, b -> a.jméno > b.jméno)
->> podle_věku[0].jméno ¶     // → Ana
->> podle_jméno[0].jméno ¶    // → Carla
+podle_věku  = db$^ (a, b -> a.věk < b.věk)    // vzestupně podle věku (<)
+podle_jméno = db$^ (a, b -> a.jméno > b.jméno)  // sestupně podle jména (>)
+>> podle_věku[1].jméno ¶     // → Ana
+>> podle_jméno[1].jméno ¶    // → Carla
 
 // Přímá aktualizace prvku (pouze pole)
 arr[1] = 99              // přiřadit
-arr[0] += 5              // složené: +=  -=  *=  /=  %=  ^=
+arr[2] += 5              // složené: +=  -=  *=  /=  %=  ^=
 
 // Funkční aktualizace — vrátí nové pole; originál beze změny
-arr2 = arr[1]$~ 99
+arr2 = arr[2]$~ 99
 ```
 
 > Všechny operátory kolekcí vrací **nové pole**. Přiřaďte zpět: `arr = arr$+ 4`.
-> Operátory nelze řetězit — použijte mezilehlá přiřazení.
-> `$^+` / `$^-` řadí **primitivní pole** (čísla, řetězce). Pro tuple pole použijte `$^` s porovnávací lambdou.
+> `$+` lze řetězit: `arr = arr$+ 5$+ 6$+ 7`. Ostatní operátory používají mezilehlá přiřazení.
+> **Indexování je 1-based**: `arr[1]` je první prvek; `arr[0]` je chyba za běhu.
+> `$^+` / `$^-` řadí **primitivní pole** (čísla, řetězce). Pro tuple pole použijte `$^` s porovnávací lambdou — směr je zakódován v lambdě (`<` = vzestupně, `>` = sestupně).
 
 **Hodnotová sémantika** — přiřazení pole do jiné proměnné vytvoří nezávislou kopii:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
 >> b ¶    // → [1, 2, 3]   ← b není ovlivněno
 ```
 
 ```zymbol
-// Vnořená pole
+// Vnořená pole (indexování od 1)
 matice = [[1,2,3],[4,5,6],[7,8,9]]
->> matice[1][2] ¶    // → 6
+>> matice[2][3] ¶    // → 6  (řádek 2, sloupec 3)
 ```
 
 ---
@@ -366,27 +385,28 @@ bod = (100, 200)
 
 // Pojmenovaný tuple
 osoba = (jméno: "Ana", věk: 25, město: "Madrid")
-(jméno: j, věk: v) = osoba  // j="Ana"  v=25
+(jméno: n, věk: a) = osoba  // n="Ana"  a=25
 ```
 
 ---
 
 ## Tuple
 
-Tuple jsou **neměnné** uspořádané kontejnery, které mohou obsahovat hodnoty **různých typů**. Na rozdíl od polí nelze prvky po vytvoření měnit.
+Tuple jsou **neměnné** uspořádané kontejnery, které mohou obsahovat hodnoty **různých typů**.
+Na rozdíl od polí nelze prvky po vytvoření měnit.
 
 ```zymbol
-// Poziční
+// Poziční — povoleny smíšené typy
 bod = (10, 20)
->> bod[0] ¶    // → 10
+>> bod[1] ¶    // → 10
 
 data = (42, "ahoj", #1, 3.14)
->> data[2] ¶     // → #1
+>> data[3] ¶     // → #1
 
 // Pojmenovaný
 osoba = (jméno: "Alice", věk: 25)
 >> osoba.jméno ¶    // → Alice
->> osoba[0] ¶       // → Alice  (index také funguje)
+>> osoba[1] ¶       // → Alice  (index také funguje, 1-based)
 
 // Vnořený
 pos = (x: 10, y: 20)
@@ -398,15 +418,15 @@ p = (pos: pos, popisek: "počátek")
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ chyba za běhu: tuple jsou neměnné
-// t[0] += 5    // ❌ stejná chyba
+// t[1] = 99    // ❌ chyba za běhu: tuple jsou neměnné
+// t[1] += 5    // ❌ stejná chyba
 ```
 
 Pro odvození změněné hodnoty použijte `$~` (funkční aktualizace) — vrátí **nový** tuple:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[1]$~ 999
+t2 = t[2]$~ 999
 >> t ¶     // → (10, 20, 30)   ← originál beze změny
 >> t2 ¶    // → (10, 999, 30)
 
@@ -421,8 +441,6 @@ starší  = (jméno: osoba.jméno, věk: 26)
 
 ## Funkce Vyššího Řádu
 
-> Operátory FVŘ vyžadují **inline lambdu** — přímé lambda proměnné nefungují.
-
 ```zymbol
 čísla = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
@@ -435,9 +453,11 @@ krok1 = čísla$| (x -> x > 3)
 krok2 = krok1$> (x -> x * x)
 >> krok2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Pojmenované funkce ve FVŘ — zabalit do lambdy
+// Pojmenované funkce lze předat přímo do FVŘ
 zdvojit(x) { <~ x * 2 }
-r = čísla$> (x -> zdvojit(x))    // ✅
+velké(x) { <~ x > 5 }
+r = čísla$> zdvojit       // ✅ přímá reference
+r = čísla$| velké         // ✅ přímá reference
 ```
 
 ---
@@ -491,14 +511,14 @@ r = 5 |> zdvojit(_) |> inc(_) |> zdvojit(_)
 ## Moduly
 
 ```zymbol
-// lib/vypocet.zy
-# vypocet
+// lib/vypocet.zy — tělo modulu je uzavřeno ve složených závorkách
+# vypocet {
+    #> { přidat, get_PI }
 
-#> { přidat, get_PI }    // exporty MUSÍ být před definicemi
-
-_PI := 3.14159
-přidat(a, b) { <~ a + b }
-get_PI() { <~ _PI }   // getter — přímý přístup ke konstantě přes alias není podporován
+    _PI := 3.14159
+    přidat(a, b) { <~ a + b }
+    get_PI() { <~ _PI }
+}
 ```
 
 ```zymbol
@@ -512,10 +532,11 @@ pi = v::get_PI()
 
 ```zymbol
 // Export pod jiným veřejným jménem
-# mojelib
-#> { _interní_přidat <= součet }
+# mojelib {
+    #> { _interní_přidat <= součet }
 
-_interní_přidat(a, b) { <~ a + b }
+    _interní_přidat(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
@@ -523,6 +544,8 @@ _interní_přidat(a, b) { <~ a + b }
 
 >> m::součet(3, 4) ¶    // → 7  (interní název _interní_přidat je skrytý)
 ```
+
+> **Pravidla modulů**: uvnitř `# název { }` jsou povoleny pouze `#>`, definice funkcí a doslovné inicializátory proměnných/konstant. Spustitelné příkazy (`>>`, `<<`, smyčky atd.) způsobí chybu E013.
 
 ---
 
@@ -593,6 +616,11 @@ x = 28 > 4
 ## Datové Operátory
 
 ```zymbol
+// Konverze typů
+##.42         // → 42.0  (na Float)
+###3.7        // → 4     (na Int, zaokrouhlení)
+##!3.7        // → 3     (na Int, zkrácení)
+
 // Parsovat řetězec na číslo
 v1 = #|"42"|      // → 42  (Int)
 v2 = #|"3.14"|    // → 3.14  (Float)
@@ -605,7 +633,7 @@ r4 = #.4|pi|      // → 3.1416
 t2 = #!2|pi|      // → 3.14  (zkrátit)
 
 // Formátování čísel
-fmt = #,|1234567|  // → 1 234 567  (oddělené mezerou)
+fmt = #,|1234567|  // → 1,234,567  (oddělené čárkou)
 sci = #^|12345.678|    // → 1.2345678e4  (vědecký zápis)
 
 // Základní literály
@@ -659,35 +687,61 @@ klasifikovat(číslo) {
 | Symbol | Operace | Symbol | Operace |
 |--------|---------|--------|---------|
 | `=` | proměnná | `$#` | délka |
-| `:=` | konstanta | `$+` | přidat |
-| `>>` | výstup | `$+[i]` | vložit na index |
-| `<<` | vstup | `$-` | odebrat první výskyt |
+| `:=` | konstanta | `$+` | přidat (lze řetězit) |
+| `>>` | výstup | `$+[i]` | vložit na index (1-based) |
+| `<<` | vstup | `$-` | odebrat první výskyt hodnoty |
 | `¶` / `\\` | nový řádek | `$--` | odebrat všechny výskyty |
-| `?` | pokud | `$-[i]` | odebrat na indexu |
-| `_?` | jinak-pokud | `$-[i..j]` | odebrat rozsah |
+| `?` | pokud | `$-[i]` | odebrat na indexu (1-based) |
+| `_?` | jinak-pokud | `$-[i..j]` | odebrat rozsah (1-based) |
 | `_` | jinak / zástupný | `$?` | obsahuje |
-| `??` | shoda | `$??` | najít všechny indexy |
-| `@` | smyčka | `$[s..e]` | výřez |
-| `@!` | přerušení | `$>` | mapování |
-| `@>` | pokračování | `$\|` | filtrování |
-| `->` | lambda | `$<` | redukce |
-| `arr[i] = val` | aktualizovat prvek (pouze pole) | `arr[i] += val` | složená aktualizace |
-| `arr[i]$~` | funkční aktualizace (nová kopie) | `$^+` | řadit vzestupně (primitiva) |
-| `$^-` | řadit sestupně (primitiva) | `$^` | řadit s porovnáním (tuple) |
-| `<~` | návrat | `!?` | zkusit |
-| `\|>` | roura | `:!` | zachytit |
-| `#1` | pravda | `:>` | nakonec |
-| `#0` | nepravda | `$!` | je chyba |
-| `<#` | importovat | `$!!` | propagovat chybu |
-| `#` | deklarovat modul | `#>` | exportovat |
-| `::` | volání modulu | `.` | přístup k poli |
-| `#\|..\|` | parsovat číslo | `#?` | metadata typu |
+| `??` | shoda | `$??` | najít všechny indexy (1-based) |
+| `@` | smyčka | `$[s..e]` | výřez (1-based) |
+| `@ N { }` | smyčka N-krát | `$>` | mapování |
+| `@!` | přerušení | `$\|` | filtrování |
+| `@>` | pokračování | `$<` | redukce |
+| `@:název { }` | označená smyčka | `$/ oddělovač` | rozdělení řetězce |
+| `@:název!` | přerušit označenou | `$++ a b c` | zřetězení více položek |
+| `@:název>` | pokračovat označenou | `arr[i>j>k]` | navigační index |
+| `->` | lambda | `arr[i] = val` | aktualizovat prvek (pouze pole) |
+| `arr[i] += val` | složená aktualizace | `arr[i]$~` | funkční aktualizace (nová kopie) |
+| `$^+` | řadit vzestupně (primitiva) | `$^-` | řadit sestupně (primitiva) |
+| `$^` | řadit s porovnáním (tuple) | `<~` | návrat |
+| `\|>` | roura | `!?` | zkusit |
+| `:!` | zachytit | `:>` | nakonec |
+| `#1` | pravda | `#0` | nepravda |
+| `$!` | je chyba | `$!!` | propagovat chybu |
+| `<#` | importovat | `#>` | exportovat |
+| `#` | deklarovat modul | `::` | volání modulu |
+| `.` | přístup k poli | `#?` | metadata typu |
+| `#\|..\|` | parsovat číslo | `##.` | přetypovat na Float |
+| `###` | přetypovat na Int (zaokrouhlení) | `##!` | přetypovat na Int (zkrácení) |
 | `#.N\|..\|` | zaokrouhlit | `#!N\|..\|` | zkrátit |
-| `#,\|..\|` | formát s oddělovačem | `#^\|..\|` | vědecký |
+| `#,\|..\|` | formát s čárkou | `#^\|..\|` | vědecký |
 | `#d0d9#` | přepnutí číselného módu | `#09#` | reset na ASCII |
-| `<\ ..\>` | spustit shell | `><` | argumenty CLI |
+| `<\ ..\>` | spustit shell | `>\<` | argumenty CLI |
+| `\ proměnná` | explicitní zničení proměnné | | |
+
+---
 
 ## Historie Verzí
+
+### v0.0.4 — Indexování od 1, Funkce první třídy & Blokové moduly _(Duben 2026)_
+
+- **Rozbíjející** Veškeré indexování přepnuto na **1-based** — `arr[1]` je první prvek; `arr[0]` je chyba za běhu
+- **Přidáno** Pojmenované funkce jsou **hodnotami první třídy** — předat přímo do FVŘ: `čísla$> zdvojit`
+- **Přidáno** **Bloková syntaxe modulů** povinná: `# název { ... }` — plochá syntaxe odstraněna
+- **Přidáno** Vícerozměrné indexování: `arr[i>j>k]` (navigace), `arr[p ; q]` (ploché extrahování)
+- **Přidáno** Konverze typů: `##.výraz` (Float), `###výraz` (Int zaokrouhlení), `##!výraz` (Int zkrácení)
+- **Přidáno** Rozdělení řetězce: `řetězec$/ oddělovač` — vrátí `Array(String)`
+- **Přidáno** Zřetězení více položek: `základ$++ a b c` — přidá více prvků
+- **Přidáno** Smyčka N-krát: `@ N { }` — opakovat přesně N-krát
+- **Přidáno** Syntaxe označené smyčky: `@:název { }`, `@:název!`, `@:název>` — nahrazuje `@ @název` / `@! název`
+- **Přidáno** Pravidla rozsahu proměnných: proměnné `_název` mají přesný blokový rozsah; `\ proměnná` zničí předčasně
+- **Přidáno** Vzory porovnání ve shodě: `< 0 :`, `> 5 :`, `== 42 :` atd.
+- **Přidáno** Chyba modulu E013: spustitelné příkazy v těle modulu jsou zakázány
+- **Opraveno** `take_variable` již nepoškozuje konstanty modulu při zpětzápisu
+- **Opraveno** `alias.KONSTANTA` se nyní správně rozlišuje; `#>` může být za definicemi funkcí
+- **VM** Plná parita: 393/393 testů prošlo
 
 ### v0.0.3 — Unicode Číselné Soustavy & Vylepšení LSP _(Duben 2026)_
 
@@ -706,7 +760,7 @@ klasifikovat(číslo) {
 ### v0.0.2 — Redesign API Kolekcí & Instalátory _(24 Mar 2026)_
 
 - **Přidáno** Sjednocená rodina operátorů `$` pro pole a řetězce (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Přidáno** Destrukturování pro pole, n-tice a pojmenované n-tice
+- **Přidáno** Destrukturování pro pole, tuple a pojmenované tuple
 - **Přidáno** Záporné indexy (`arr[-1]` = poslední prvek)
 - **Přidáno** Nativní instalátory — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
 
@@ -724,7 +778,4 @@ klasifikovat(číslo) {
 
 ---
 
-*Zymbol-Lang — Symbolický. Univerzální. Neměnný.*
-
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> The canonical reference is [MANUAL.md](https://github.com/zymbol-lang/interpreter) in the interpreter repository.
+_Zymbol-Lang — Symbolický. Univerzální. Neměnný._

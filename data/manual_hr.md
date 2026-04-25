@@ -1,3 +1,11 @@
+> **Napomena:** Ova dokumentacija je kreirana uz pomoć umjetne inteligencije (UI).
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Kanonska referenca je **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** u repozitoriju interpretera.
+
+---
+
 # Priručnik Zymbol-Lang
 
 **Zymbol-Lang** je simbolički programski jezik. Nema ključnih riječi — sve je simbol. Funkcionira jednako u svakom ljudskom jeziku.
@@ -6,20 +14,22 @@
 - Puna podrška za Unicode — identifikatori u bilo kojem jeziku ili emoji
 - Neovisno o ljudskom jeziku — kod je identičan u svim jezicima
 
+**Verzija interpretera**: v0.0.4 | **Pokrivenost testovima**: 393/393 (TW ↔ VM paritet)
+
 ---
 
 ## Varijable i Konstante
 
 ```zymbol
-x = 10              // varijabla — promjenjiva
-PI := 3.14159       // konstanta — greška pri ponovnom dodjeli
+x = 10              // promjenjiva varijabla
+PI := 3.14159       // konstanta — greška pri ponovnoj dodjeli
 ime = "Alice"
 aktivan = #1        // logička istina
 👋 := "Zdravo"
 ```
 
 ```zymbol
-x = 10
+x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
@@ -44,12 +54,14 @@ x--       // 4
 | Polje | `[1, 2, 3]` | `##]` | Homogeni elementi |
 | Tuple | `(a, b)` | `##)` | Pozicijsko |
 | Imenovani Tuple | `(x: 1, y: 2)` | `##)` | Imenovana polja |
+| Funkcija | ref na imenovanu funkciju | `##()` | Prva klasa; prikaz `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Prva klasa; prikaz `<lambd/N>` |
 
 ```zymbol
 // Introspekicija tipa — vraća (tip, znamenke, vrijednost)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
-t = meta[0]
+t = meta[1]
 >> t ¶            // → ###
 ```
 
@@ -76,13 +88,20 @@ t = meta[0]
 // Aritmetika — koristite dodjele; neki operatori imaju posebnosti izravno u >>
 a = 10
 b = 3
-r1 = a + b    // 13     r2 = a - b    // 7
-r3 = a * b    // 30     r4 = a / b    // 3  (cjelobrojno dijeljenje)
-r5 = a % b    // 1      r6 = a ^ b    // 1000  (potenciranje)
+r1 = a + b    // 13     
+r2 = a - b    // 7
+r3 = a * b    // 30     
+r4 = a / b    // 3  (cjelobrojno dijeljenje)
+r5 = a % b    // 1      
+r6 = a ^ b    // 1000  (potenciranje)
 
 // Usporedba
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
+a == b    // #0    
+a <> b    // #1    
+a < b      // #0
+a <= b    // #0   
+a > b      // #1    
+a >= b     // #1
 
 // Logika
 #1 && #0    // #0
@@ -95,21 +114,20 @@ a <= b    // #0   a > b     // #1    a >= b   // #1
 ## Nizovi
 
 ```zymbol
-// Tri oblika spajanja
+// Dva oblika spajanja
 ime = "Alice"
 n = 42
 
-msg = "Zdravo ", ime, "!"            // zarez — u dodjelama
->> "Zdravo " ime " imaš " n ¶        // juxtapozicija — u >>
-desc = "Zdravo {ime}, imaš {n}"      // interpolacija — svugdje
+>> "Zdravo " ime " imaš " n ¶    // juxtapozicija — u >>
+opis = "Zdravo {ime}, imaš {n}"  // interpolacija — svugdje
 ```
 
 ```zymbol
 s = "Zdravo Svijete"
 len = s$#                  // 14
-sub = s$[0..6]             // "Zdravo"  (kraj ekskluzivan)
+sub = s$[1..6]             // "Zdravo"  (od 1, kraj uključiv)
 has = s$? "Svijete"        // #1
-dijelovi = "a,b,c,d" / ',' // [a, b, c, d]
+dijelovi = "a,b,c,d"$/ ',' // [a, b, c, d]  (dijeljenje po odjelnici)
 rep = s$~~["a":"A"]        // zamijeni sve
 rep1 = s$~~["a":"A":1]     // zamijeni prvih N
 ```
@@ -161,13 +179,13 @@ kod = ?? boja {
     _         : "#000000"
 }
 
-// Čuvari
+// Uzorci usporedbe
 temp = -5
 stanje = ?? temp {
-    _? temp < 0  : "led"
-    _? temp < 20 : "hladno"
-    _? temp < 35 : "toplo"
-    _            : "vruće"
+    < 0  : "led"
+    < 20 : "hladno"
+    < 35 : "toplo"
+    _    : "vruće"
 }
 >> stanje ¶    // → led
 
@@ -216,9 +234,9 @@ i = 0
 
 // Označena petlja (ugniježđeno prekidanje)
 count = 0
-@ @vanjska {
+@:vanjska {
     count++
-    ? count >= 3 { @! vanjska }
+    ? count >= 3 { @:vanjska! }
 }
 >> count ¶                    // → 3
 ```
@@ -252,7 +270,7 @@ zamijeniti(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Imenovane funkcije nisu vrijednosti prve klase. Za prosljeđivanje kao argument: `x -> fn(x)`.
+> Imenovane funkcije su **vrijednosti prve klase** — prosljeđuje se izravno: `nums$> udvostruči`. Za omotavanje: `x -> fn(x)` je također valjano.
 
 ---
 
@@ -283,7 +301,7 @@ dodaj10 = make_adder(10)
 
 // U poljima
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[2](5) ¶    // → 25
+>> ops[3](5) ¶    // → 25
 ```
 
 ---
@@ -295,58 +313,59 @@ Polja su **promjenjiva** i sadrže elemente **istog tipa**.
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
-arr[0]          // 1 — pristup (indeksiranje od 0)
-arr[-1]         // 5 — negativni indeks (zadnji)
+arr[1]          // 1 — pristup (indeksiranje od 1: prvi element)
+arr[-1]         // 5 — negativni indeks (zadnji element)
 arr$#           // 5 — duljina (koristite (arr$#) u >>)
 
 arr = arr$+ 6            // dodaj → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // umetni na indeks 2
+arr2 = arr$+[2] 99       // umetni na poziciju 2 (od 1)
 arr3 = arr$- 3           // ukloni prvo pojavljivanje vrijednosti
 arr4 = arr$-- 3          // ukloni sva pojavljivanja
-arr5 = arr$-[0]          // ukloni na indeksu
-arr6 = arr$-[1..3]       // ukloni raspon (kraj ekskluzivan)
+arr5 = arr$-[1]          // ukloni na indeksu 1 (prvi element)
+arr6 = arr$-[2..3]       // ukloni raspon (od 1, kraj uključiv)
 
 has = arr$? 3            // #1 — sadrži
-pos = arr$?? 3           // [2] — svi indeksi vrijednosti
-sl = arr$[0..3]          // [1,2,3] — isječak (kraj ekskluzivan)
-sl2 = arr$[0:3]          // [1,2,3] — isto, sintaksa brojanja
+pos = arr$?? 3           // [3] — svi indeksi vrijednosti (od 1)
+sl = arr$[1..3]          // [1,2,3] — isječak (od 1, kraj uključiv)
+sl2 = arr$[1:3]          // [1,2,3] — isto, sintaksa brojanja
 
 asc = arr$^+             // sortirano uzlazno  (samo primitivi)
 desc = arr$^-            // sortirano silazno  (samo primitivi)
 
 // Tuple polja — koristite $^ s usporednom lambdom
 db = [(ime: "Carla", dob: 28), (ime: "Ana", dob: 25), (ime: "Bob", dob: 30)]
-po_dobi  = db$^ (a, b -> a.dob < b.dob)
-po_imenu = db$^ (a, b -> a.ime > b.ime)
->> po_dobi[0].ime ¶     // → Ana
->> po_imenu[0].ime ¶    // → Carla
+po_dobi  = db$^ (a, b -> a.dob < b.dob)    // uzlazno po dobi (<)
+po_imenu = db$^ (a, b -> a.ime > b.ime)    // silazno po imenu (>)
+>> po_dobi[1].ime ¶     // → Ana
+>> po_imenu[1].ime ¶    // → Carla
 
 // Izravno ažuriranje elementa (samo polja)
 arr[1] = 99              // dodijeli
-arr[0] += 5              // složeno: +=  -=  *=  /=  %=  ^=
+arr[2] += 5              // složeno: +=  -=  *=  /=  %=  ^=
 
 // Funkcionalno ažuriranje — vraća novo polje; original nepromijenjen
-arr2 = arr[1]$~ 99
+arr2 = arr[2]$~ 99
 ```
 
 > Svi operatori kolekcija vraćaju **novo polje**. Dodjeli natrag: `arr = arr$+ 4`.
-> Operatori se ne mogu ulančati — koristite međunje dodjele.
-> `$^+` / `$^-` sortiraju **primitivna polja** (brojevi, nizovi). Za tuple polja koristite `$^` s usporednom lambdom.
+> `$+` se može ulančati: `arr = arr$+ 5$+ 6$+ 7`. Ostali operatori koriste međunje dodjele.
+> **Indeksiranje je od 1**: `arr[1]` je prvi element; `arr[0]` je greška izvođenja.
+> `$^+` / `$^-` sortiraju **primitivna polja** (brojevi, nizovi). Za tuple polja koristite `$^` s usporednom lambdom — smjer je kodiran u lambdi (`<` = uzlazno, `>` = silazno).
 
 **Vrijednosna semantika** — dodjeljivanje polja drugoj varijabli stvara neovisnu kopiju:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
 >> b ¶    // → [1, 2, 3]   ← b nije pogođeno
 ```
 
 ```zymbol
-// Ugniježđena polja
+// Ugniježđena polja (indeksiranje od 1)
 matrica = [[1,2,3],[4,5,6],[7,8,9]]
->> matrica[1][2] ¶    // → 6
+>> matrica[2][3] ¶    // → 6  (red 2, stupac 3)
 ```
 
 ---
@@ -373,20 +392,21 @@ osoba = (ime: "Ana", dob: 25, grad: "Madrid")
 
 ## Tuple
 
-Tupleovi su **nepromjenjivi** uređeni kontejneri koji mogu sadržavati vrijednosti **različitih tipova**. Za razliku od polja, elementi se ne mogu mijenjati nakon stvaranja.
+Tupleovi su **nepromjenjivi** uređeni kontejneri koji mogu sadržavati vrijednosti **različitih tipova**.
+Za razliku od polja, elementi se ne mogu mijenjati nakon stvaranja.
 
 ```zymbol
-// Pozicijsko
+// Pozicijsko — miješani tipovi su dozvoljeni
 točka = (10, 20)
->> točka[0] ¶    // → 10
+>> točka[1] ¶    // → 10
 
 podatak = (42, "hello", #1, 3.14)
->> podatak[2] ¶     // → #1
+>> podatak[3] ¶     // → #1
 
 // Imenovano
 osoba = (ime: "Alice", dob: 25)
 >> osoba.ime ¶    // → Alice
->> osoba[0] ¶     // → Alice  (indeks također radi)
+>> osoba[1] ¶     // → Alice  (indeks također radi, od 1)
 
 // Ugniježđeno
 pos = (x: 10, y: 20)
@@ -398,15 +418,15 @@ p = (pos: pos, oznaka: "ishodište")
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ greška izvođenja: tupleovi su nepromjenjivi
-// t[0] += 5    // ❌ ista greška
+// t[1] = 99    // ❌ greška izvođenja: tupleovi su nepromjenjivi
+// t[1] += 5    // ❌ ista greška
 ```
 
 Za izvođenje izmijenjene vrijednosti koristite `$~` (funkcionalno ažuriranje) — vraća **novi** tuple:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[1]$~ 999
+t2 = t[2]$~ 999
 >> t ¶     // → (10, 20, 30)   ← original nepromijenjen
 >> t2 ¶    // → (10, 999, 30)
 
@@ -421,8 +441,6 @@ starija = (ime: osoba.ime, dob: 26)
 
 ## Funkcije Višeg Reda
 
-> Operatori FVR zahtijevaju **inline lambdu** — izravne lambda varijable ne rade.
-
 ```zymbol
 brojevi = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
@@ -435,9 +453,11 @@ korak1 = brojevi$| (x -> x > 3)
 korak2 = korak1$> (x -> x * x)
 >> korak2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Imenovane funkcije u FVR — omoti u lambdu
+// Imenovane funkcije se mogu izravno proslijediti HOF-u
 udvostruči(x) { <~ x * 2 }
-r = brojevi$> (x -> udvostruči(x))    // ✅
+je_velik(x) { <~ x > 5 }
+r = brojevi$> udvostruči       // ✅ izravna referenca
+r = brojevi$| je_velik         // ✅ izravna referenca
 ```
 
 ---
@@ -447,16 +467,16 @@ r = brojevi$> (x -> udvostruči(x))    // ✅
 Desna strana uvijek zahtijeva `_` kao zamjensko mjesto za proslijeđenu vrijednost:
 
 ```zymbol
-udvostruči = x -> x * 2
+dvostruki = x -> x * 2
 zbroji = (a, b) -> a + b
 inc = x -> x + 1
 
-5 |> udvostruči(_)     // → 10
-10 |> zbroji(_, 5)     // → 15
-5 |> zbroji(2, _)      // → 7
+5 |> dvostruki(_)     // → 10
+10 |> zbroji(_, 5)    // → 15
+5 |> zbroji(2, _)     // → 7
 
 // Lanac
-r = 5 |> udvostruči(_) |> inc(_) |> udvostruči(_)
+r = 5 |> dvostruki(_) |> inc(_) |> dvostruki(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
@@ -491,14 +511,14 @@ r = 5 |> udvostruči(_) |> inc(_) |> udvostruči(_)
 ## Moduli
 
 ```zymbol
-// lib/izracun.zy
-# izracun
+// lib/izracun.zy — tijelo modula je omeđeno vitičastim zagradama
+# izracun {
+    #> { zbrojiti, get_PI }
 
-#> { zbrojiti, get_PI }    // izvozi MORAJU biti prije definicija
-
-_PI := 3.14159
-zbrojiti(a, b) { <~ a + b }
-get_PI() { <~ _PI }   // getter — izravni pristup konstanti putem aliasa nije podržan
+    _PI := 3.14159
+    zbrojiti(a, b) { <~ a + b }
+    get_PI() { <~ _PI }
+}
 ```
 
 ```zymbol
@@ -512,10 +532,11 @@ pi = i::get_PI()
 
 ```zymbol
 // Izvoz pod drugim javnim imenom
-# mojalib
-#> { _interni_zbrojiti <= zbroj }
+# mojalib {
+    #> { _interni_zbrojiti <= zbroj }
 
-_interni_zbrojiti(a, b) { <~ a + b }
+    _interni_zbrojiti(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
@@ -523,6 +544,8 @@ _interni_zbrojiti(a, b) { <~ a + b }
 
 >> m::zbroj(3, 4) ¶    // → 7  (interni naziv _interni_zbrojiti je skriven)
 ```
+
+> **Pravila modula**: unutar `# naziv { }` su dozvoljeni samo `#>`, definicije funkcija i inicijalizatori varijabli/konstanti. Izvršne naredbe (`>>`, `<<`, petlje, itd.) podižu grešku E013.
 
 ---
 
@@ -593,6 +616,11 @@ Znamenke bilo kojeg podržanog pisma su valjani literali — u rasponima, modulo
 ## Operatori Podataka
 
 ```zymbol
+// Konverzija tipova
+##.42         // → 42.0  (u Float)
+###3.7        // → 4     (u Int, zaokruži)
+##!3.7        // → 3     (u Int, skrati)
+
 // Parsiranje niza u broj
 v1 = #|"42"|      // → 42  (Int)
 v2 = #|"3.14"|    // → 3.14  (Float)
@@ -605,7 +633,7 @@ r4 = #.4|pi|      // → 3.1416
 t2 = #!2|pi|      // → 3.14  (skrati)
 
 // Formatiranje brojeva
-fmt = #,|1234567|  // → 1.234.567  (odvojeno točkama)
+fmt = #,|1234567|  // → 1,234,567  (odvojeno zarezima)
 sci = #^|12345.678|    // → 1.2345678e4  (znanstveni zapis)
 
 // Bazni literali
@@ -659,34 +687,61 @@ klasificirati(broj) {
 | Simbol | Operacija | Simbol | Operacija |
 |--------|-----------|--------|-----------|
 | `=` | varijabla | `$#` | duljina |
-| `:=` | konstanta | `$+` | dodavanje |
-| `>>` | izlaz | `$+[i]` | umetanje na indeks |
+| `:=` | konstanta | `$+` | dodavanje (lančano) |
+| `>>` | izlaz | `$+[i]` | umetanje na indeks (od 1) |
 | `<<` | ulaz | `$-` | ukloni prvo pojavl. |
 | `¶` / `\\` | novi red | `$--` | ukloni sva pojavl. |
-| `?` | ako | `$-[i]` | ukloni na indeksu |
-| `_?` | inače-ako | `$-[i..j]` | ukloni raspon |
+| `?` | ako | `$-[i]` | ukloni na indeksu (od 1) |
+| `_?` | inače-ako | `$-[i..j]` | ukloni raspon (od 1) |
 | `_` | inače / zamjenski | `$?` | sadrži |
-| `??` | podudaranje | `$??` | pronađi sve indekse |
-| `@` | petlja | `$[s..e]` | isječak |
-| `@!` | prekid | `$>` | mapiranje |
-| `@>` | nastavak | `$\|` | filtriranje |
-| `->` | lambda | `$<` | redukcija |
+| `??` | podudaranje | `$??` | pronađi sve indekse (od 1) |
+| `@` | petlja | `$[s..e]` | isječak (od 1) |
+| `@ N { }` | petlja N puta (N iteracija) | `$>` | mapiranje |
+| `@!` | prekid | `$\|` | filtriranje |
+| `@>` | nastavak | `$<` | redukcija |
+| `@:naziv { }` | označena petlja | `$/ delim` | dijeljenje niza |
+| `@:naziv!` | prekid oznake | `$++ a b c` | izgradnja spajanjem |
+| `@:naziv>` | nastavak oznake | `arr[i>j>k]` | navigacijski indeks |
+| `->` | lambda | `arr[i] = val` | ažuriranje elementa (samo polja) |
+| `arr[i] += val` | složeno ažuriranje | `arr[i]$~` | funkcionalno ažuriranje (nova kopija) |
 | `$^+` | sortiraj uzlazno (primitivi) | `$^-` | sortiraj silazno (primitivi) |
-| `$^` | sortiraj s usporedbom (tuple) | | |
-| `<~` | povratak | `!?` | pokušaj |
-| `\|>` | cjevovod | `:!` | uhvati |
-| `#1` | istina | `:>` | na kraju |
-| `#0` | laž | `$!` | je greška |
-| `<#` | uvoz | `$!!` | propagiraj grešku |
-| `#` | deklariraj modul | `#>` | izvezi |
-| `::` | poziv modula | `.` | pristup polju |
-| `#\|..\|` | parsiraj broj | `#?` | metapodaci tipa |
+| `$^` | sortiraj s usporedbom (tuple) | `<~` | povratak |
+| `\|>` | cjevovod | `!?` | pokušaj |
+| `:!` | uhvati | `:>` | na kraju |
+| `#1` | istina | `#0` | laž |
+| `$!` | je greška | `$!!` | propagiraj grešku |
+| `<#` | uvoz | `#>` | izvozi |
+| `#` | deklariraj modul | `::` | poziv modula |
+| `.` | pristup polju | `#?` | metapodaci tipa |
+| `#\|..\|` | parsiraj broj | `##.` | pretvori u Float |
+| `###` | pretvori u Int (zaokruži) | `##!` | pretvori u Int (skrati) |
 | `#.N\|..\|` | zaokruži | `#!N\|..\|` | skrati |
 | `#,\|..\|` | format s odjelnicom | `#^\|..\|` | znanstveni |
 | `#d0d9#` | prekidač numeričkog načina | `#09#` | resetirati na ASCII |
-| `<\ ..\>` | izvršiti ljusku | `><` | argumenti CLI |
+| `<\ ..\>` | izvršiti ljusku | `>\<` | argumenti CLI |
+| `\ var` | eksplicitno uništi varijablu | | |
+
+---
 
 ## Povijest Verzija
+
+### v0.0.4 — Indeksiranje od 1, Funkcije Prve Klase i Blokovi Modula _(Travanj 2026)_
+
+- **Promjena** Svo indeksiranje prebačeno na **od 1** — `arr[1]` je prvi element; `arr[0]` je greška izvođenja
+- **Dodano** Imenovane funkcije su **vrijednosti prve klase** — prosljeđuju se izravno HOF-u: `nums$> udvostruči`
+- **Dodano** Sintaksa **bloka modula** obavezna: `# naziv { ... }` — ravna sintaksa uklonjena
+- **Dodano** Višedimenzionalno indeksiranje: `arr[i>j>k]` (navigacija), `arr[p ; q]` (ravno izlučivanje)
+- **Dodano** Konverzija tipova: `##.izraz` (Float), `###izraz` (Int zaokruži), `##!izraz` (Int skrati)
+- **Dodano** Dijeljenje niza: `niz$/ delim` — vraća `Array(String)`
+- **Dodano** Izgradnja spajanjem: `baza$++ a b c` — dodaje više stavki
+- **Dodano** Petlja N puta: `@ N { }` — ponavlja točno N puta
+- **Dodano** Sintaksa označene petlje: `@:naziv { }`, `@:naziv!`, `@:naziv>` — zamjenjuje `@ @naziv` / `@! naziv`
+- **Dodano** Pravila opsega varijabli: varijable `_naziv` imaju točan opseg bloka; `\ var` uništava rano
+- **Dodano** Uzorci usporedbe za podudaranje: `< 0 :`, `> 5 :`, `== 42 :` itd.
+- **Dodano** Greška E013 modula: izvršne naredbe u tijelu modula su zabranjene
+- **Ispravljeno** `take_variable` više ne kvari konstante modula pri pisanju natrag
+- **Ispravljeno** `alias.CONST` se sada ispravno razrješava; `#>` može biti iza definicija funkcija
+- **VM** Puni paritet: 393/393 testova prolaze
 
 ### v0.0.3 — Unicode Brojevni Sustavi & Poboljšanja LSP _(Travanj 2026)_
 
@@ -724,6 +779,3 @@ klasificirati(broj) {
 ---
 
 *Zymbol-Lang — Simbolički. Univerzalan. Nepromjenjiv.*
-
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> The canonical reference is [MANUAL.md](https://github.com/zymbol-lang/interpreter) in the interpreter repository.

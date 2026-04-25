@@ -1,3 +1,11 @@
+> **Babala:** Ang dokumentasyong ito ay nilikha na may tulong ng artipisyal na katalinuhan (AI). Maaaring maglaman ng mga pagkakamali sa pagsasalin o mga halimbawa.
+>
+> **Disclaimer:** This documentation was created with AI assistance and may contain translation errors.
+>
+> Ang kanonikong sanggunian ay ang [detalye ng Zymbol-Lang sa Ingles](https://github.com/zymbol-lang/interpreter).
+
+---
+
 # Maikling Gabay sa Zymbol-Lang
 
 **Zymbol-Lang** ay isang simbolikong wika ng programa. Walang mga keyword — lahat ay simbolo. Gumagana nang pareho sa anumang wikang pantao.
@@ -5,6 +13,8 @@
 - Walang mga keyword (`kung`, `habang`, `ibalik` ay hindi umiiral — simbolo lamang `?`, `@`, `<~`)
 - Buong Unicode — mga identifier sa anumang wika o emoji 👋
 - Hindi nakasalalay sa wikang pantao — ang code ay magkapareho sa bawat wika
+
+**Bersyon ng interpreter**: v0.0.4 | **Saklaw ng pagsubok**: 393/393 (TW ↔ VM parity)
 
 ---
 
@@ -44,12 +54,14 @@ x--       // 4
 | Array           | `[1, 2, 3]`          | `##]`           | Lahat ng elemento ay dapat parehong uri  |
 | Tuple           | `(a, b)`             | `##)`           | Pangkatang posisyon                      |
 | Pinangalanang Tuple | `(x: 1, y: 2)`  | `##)`           | Access sa pangalan o index               |
+| Function        | sanggunian ng pinangalanang function | `##()` | First-class; nagpapakita `<funct/N>` |
+| Lambda          | `x -> x * 2`        | `##->`          | First-class; nagpapakita `<lambd/N>`     |
 
 ```zymbol
 // Introspeksyon ng uri — nagbabalik ng (uri, digit, halaga)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
-t = meta[0]
+t = meta[1]
 >> t ¶            // → ###
 ```
 
@@ -94,33 +106,30 @@ a <= b    // #0   a > b     // #1    a >= b   // #1
 
 ## Mga String
 
-Tatlong wastong paraan — bawat isa para sa kontekstong nito:
+Dalawang wastong paraan — bawat isa para sa kontekstong nito:
 
 ```zymbol
 pangalan = "Ana"
 n = 25
 
-// 1. Kuwit — sa mga pagtatalaga gamit ang = o :=
-mensahe = "Kamusta ", pangalan, "!"       // → Kamusta Ana!
-
-// 2. Juxtaposition — sa >> output
+// Juxtaposition — sa >> output
 >> "Kamusta " pangalan " ikaw ay " n ¶    // → Kamusta Ana ikaw ay 25
 
-// 3. Interpolasyon — sa anumang konteksto
+// Interpolasyon — sa anumang konteksto
 paglalarawan = "Kamusta {pangalan}, ikaw ay {n}"    // → Kamusta Ana, ikaw ay 25
 ```
 
 ```zymbol
 s = "Kamusta Mundo"
 haba = s$#                  // 13
-bahagi = s$[0..7]           // "Kamusta"
+bahagi = s$[1..7]           // "Kamusta"  (base 1, katapusang inklusibo)
 mayroon = s$? "Mundo"       // #1
-hatiin = "a,b,c,d" / ','    // [a, b, c, d]
+hatiin = "a,b,c,d" $/ ','   // [a, b, c, d]  (hatiin sa delimiter)
 palitan = s$~~["a":"e"]      // palitan
 palitan1 = s$~~["a":"e":1]   // N unang
 ```
 
-> `+` para sa mga numero lamang. Para sa mga string gamitin ang `,`, juxtaposition, o interpolation.
+> `+` para sa mga numero lamang. Para sa mga string gamitin ang juxtaposition o interpolation.
 
 ---
 
@@ -170,10 +179,10 @@ code = ?? kulay {
 // Mga bantay
 temperatura = -5
 kalagayan = ?? temperatura {
-    _? temperatura < 0  : "yelo"
-    _? temperatura < 20 : "malamig"
-    _? temperatura < 35 : "mainit-init"
-    _                   : "mainit"
+    < 0  : "yelo"
+    < 20 : "malamig"
+    < 35 : "mainit-init"
+    _    : "mainit"
 }
 >> kalagayan ¶    // → yelo
 
@@ -222,9 +231,9 @@ i = 0
 
 // May label na loop (nested na paghinto)
 count = 0
-@ @labas {
+@:labas {
     count++
-    ? count >= 3 { @! labas }
+    ? count >= 3 { @:labas! }
 }
 >> count ¶                    // → 3
 ```
@@ -258,7 +267,7 @@ palitan(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Ang mga pinangalanang function ay hindi mga first-class na halaga. Upang ipasa bilang argumento, balutin: `x -> kabuuan(x)`.
+> Ang mga pinangalanang function ay **mga first-class na halaga** — maaaring direktang ipasa: `mga_bilang$> doblehin`. Para balutin: `x -> fn(x)` ay wasto rin.
 
 ---
 
@@ -289,7 +298,7 @@ dagdag10 = gumawa_ng_tagadagdag(10)
 
 // Sa mga array
 mga_operasyon = [x -> x+1, x -> x*2, x -> x*x]
->> mga_operasyon[2](5) ¶    // → 25
+>> mga_operasyon[3](5) ¶    // → 25
 ```
 
 ---
@@ -301,7 +310,7 @@ Ang mga hanay ay **nababago** at naglalaman ng mga elemento ng **parehong uri**.
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
-arr[0]          // 1 — access (0-indexed)
+arr[1]          // 1 — access (base 1 — unang elemento)
 arr[-1]         // 5 — negatibong index (huli)
 arr$#           // 5 — haba (gamitin ang (arr$#) sa >>)
 
@@ -309,13 +318,13 @@ arr = arr$+ 6            // idagdag → [1,2,3,4,5,6]
 arr2 = arr$+[2] 99       // ipasok sa index 2
 arr3 = arr$- 3           // alisin ang unang paglitaw ng halaga
 arr4 = arr$-- 3          // alisin ang lahat ng paglitaw
-arr5 = arr$-[0]          // alisin sa index
-arr6 = arr$-[1..3]       // alisin ang saklaw (eksklusibong katapusan)
+arr5 = arr$-[1]          // alisin sa index (unang elemento)
+arr6 = arr$-[2..3]       // alisin ang saklaw (base 1, inklusibong katapusan)
 
 mayroon = arr$? 3        // #1 — naglalaman
-pos = arr$?? 3           // [2] — lahat ng index ng halaga
-sl = arr$[0..3]          // [1,2,3] — hiwa (eksklusibong katapusan)
-sl2 = arr$[0:3]          // [1,2,3] — pareho, syntax na batay sa bilang
+pos = arr$?? 3           // [3] — lahat ng index ng halaga (base 1)
+sl = arr$[1..3]          // [1,2,3] — hiwa (base 1, inklusibong katapusan)
+sl2 = arr$[1:3]          // [1,2,3] — pareho, syntax na batay sa bilang
 
 pataas = arr$^+          // inayos pataas  (mga primitibo lamang)
 pababa = arr$^-          // inayos pababa  (mga primitibo lamang)
@@ -324,19 +333,20 @@ pababa = arr$^-          // inayos pababa  (mga primitibo lamang)
 db = [(pangalan: "Carla", edad: 28), (pangalan: "Ana", edad: 25), (pangalan: "Bob", edad: 30)]
 ayon_sa_edad   = db$^ (a, b -> a.edad < b.edad)     // pataas ayon sa edad  (<)
 ayon_sa_pangalan = db$^ (a, b -> a.pangalan > b.pangalan) // pababa ayon sa pangalan (>)
->> ayon_sa_edad[0].pangalan ¶     // → Ana
->> ayon_sa_pangalan[0].pangalan ¶ // → Carla
+>> ayon_sa_edad[1].pangalan ¶     // → Ana
+>> ayon_sa_pangalan[1].pangalan ¶ // → Carla
 
 // Direktang pag-update ng elemento (mga hanay lamang)
-arr[1] = 99              // italaga
-arr[0] += 5              // compound: +=  -=  *=  /=  %=  ^=
+arr[1] = 99              // italaga (base 1)
+arr[2] += 5              // compound: +=  -=  *=  /=  %=  ^=
 
 // Functional na update — nagbabalik ng bagong hanay; ang orihinal ay hindi nababago
-arr2 = arr[1]$~ 99
+arr2 = arr[2]$~ 99
 ```
 
 > Lahat ng mga operator ng koleksyon ay nagbabalik ng **bagong array**. Italaga ulit: `arr = arr$+ 4`.
-> Hindi maaaring i-chain ang mga operator — gumamit ng mga intermediate na pagtatalaga.
+> Maaaring i-chain ang `$+`: `arr = arr$+ 5$+ 6$+ 7`. Ang ibang mga operator ay gumagamit ng mga intermediate na pagtatalaga.
+> **Indexing base 1**: `arr[1]` ang unang elemento; `arr[0]` ay runtime error.
 > `$^+` / `$^-` nag-uuri ng **mga primitive array** (mga numero, string). Para sa mga tuple array gamitin ang `$^` na may comparator lambda — ang direksyon ay naka-encode sa lambda (`<` = pataas, `>` = pababa).
 
 **Semantika ng halaga** — ang pagtatalaga ng hanay sa ibang variable ay gumagawa ng independyenteng kopya:
@@ -344,15 +354,15 @@ arr2 = arr[1]$~ 99
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
 >> b ¶    // → [1, 2, 3]   ← hindi apektado ang b
 ```
 
 ```zymbol
-// Mga nested array
+// Mga nested array (indexing base 1)
 matris = [[1,2,3],[4,5,6],[7,8,9]]
->> matris[1][2] ¶    // → 6
+>> matris[2][3] ¶    // → 6  (row 2, column 3)
 ```
 
 ---
@@ -384,15 +394,15 @@ Ang mga tuple ay **hindi nababago** na mga nakaayos na lalagyan na maaaring magl
 ```zymbol
 // Posisyonal
 punto = (10, 20)
->> punto[0] ¶    // → 10
+>> punto[1] ¶    // → 10
 
 datos = (42, "hello", #1, 3.14)
->> datos[2] ¶     // → #1
+>> datos[3] ¶     // → #1
 
 // Pinangalanan
 tao = (pangalan: "Alisa", edad: 25)
 >> tao.pangalan ¶    // → Alisa
->> tao[0] ¶          // → Alisa  (gumagana rin ang index)
+>> tao[1] ¶          // → Alisa  (gumagana rin ang index, base 1)
 
 // Nested
 pos = (x: 10, y: 20)
@@ -404,15 +414,15 @@ p = (pos: pos, label: "simula")
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ runtime error: ang mga tuple ay hindi nababago
-// t[0] += 5    // ❌ parehong error
+// t[1] = 99    // ❌ runtime error: ang mga tuple ay hindi nababago
+// t[1] += 5    // ❌ parehong error
 ```
 
 Upang makuha ang nabagong halaga, gamitin ang `$~` (functional na update) — nagbabalik ng **bagong** tuple:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[1]$~ 999
+t2 = t[2]$~ 999
 >> t ¶     // → (10, 20, 30)   ← ang orihinal ay hindi nababago
 >> t2 ¶    // → (10, 999, 30)
 
@@ -427,8 +437,6 @@ masMatanda = (pangalan: tao.pangalan, edad: 26)
 
 ## Mataas na Antas na Mga Function
 
-> Ang mga operator ng HOF ay nangangailangan ng **inline lambda** — hindi isang direktang lambda variable.
-
 ```zymbol
 mga_bilang = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
@@ -441,9 +449,11 @@ hakbang1 = mga_bilang$| (x -> x > 3)
 hakbang2 = hakbang1$> (x -> x * x)
 >> hakbang2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Mga pinangalanang function sa loob ng HOF — balutin sa lambda
+// Maaaring direktang ipasa ang mga pinangalanang function sa HOF
 doblehin(x) { <~ x * 2 }
-r = mga_bilang$> (x -> doblehin(x))    // ✅
+malaki(x) { <~ x > 5 }
+r = mga_bilang$> doblehin       // ✅ direktang sanggunian
+r = mga_bilang$| malaki         // ✅ direktang sanggunian
 ```
 
 ---
@@ -497,14 +507,14 @@ resulta = 5 |> doble(_) |> dagdag_isa(_) |> doble(_)
 ## Mga Module
 
 ```zymbol
-// lib/calc.zy
-# calc
+// lib/calc.zy — ang katawan ng module ay nakapaloob sa mga brace
+# calc {
+    #> { kabuuan, kuha_PI }
 
-#> { kabuuan, kuha_PI }    // mga export BAGO ang mga kahulugan
-
-_PI := 3.14159
-kabuuan(a, b) { <~ a + b }
-kuha_PI() { <~ _PI }   // getter — hindi sinusuportahan ang direktang access sa constant sa pamamagitan ng alias
+    _PI := 3.14159
+    kabuuan(a, b) { <~ a + b }
+    kuha_PI() { <~ _PI }
+}
 ```
 
 ```zymbol
@@ -518,10 +528,11 @@ pi = c::kuha_PI()
 
 ```zymbol
 // I-export na may ibang pampublikong pangalan
-# mylib
-#> { _panloob_na_dagdag <= kabuuan }
+# mylib {
+    #> { _panloob_na_dagdag <= kabuuan }
 
-_panloob_na_dagdag(a, b) { <~ a + b }
+    _panloob_na_dagdag(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
@@ -529,6 +540,8 @@ _panloob_na_dagdag(a, b) { <~ a + b }
 
 >> m::kabuuan(3, 4) ¶    // → 7  (ang pangalang panloob _panloob_na_dagdag ay nakatago)
 ```
+
+> **Mga panuntunan ng module**: tanging `#>`, mga kahulugan ng function, at mga literal na variable/constant ang pinapayagan sa loob ng `# pangalan { }`. Ang mga executable na pahayag (`>>`, `<<`, mga loop, atbp.) ay nagdudulot ng error E013.
 
 ---
 
@@ -599,6 +612,11 @@ Ang mga digit mula sa anumang sinusuportahang script ay mga wastong literal — 
 ## Mga Operator ng Data
 
 ```zymbol
+// Mga conversion ng uri
+##.42         // → 42.0  (sa Float)
+###3.7        // → 4     (sa Int, bilugin)
+##!3.7        // → 3     (sa Int, putulin)
+
 // Pag-parse ng string sa numero
 v1 = #|"42"|      // → 42
 v2 = #|"3.14"|    // → 3.14
@@ -662,38 +680,62 @@ uriin(bilang) {
 
 ## Sanggunian ng Simbolo
 
-| Simbolo   | Operasyon                   | Simbolo      | Operasyon                        |
-|-----------|-----------------------------|--------------|----------------------------------|
-| `=`       | variable                    | `$#`         | haba                             |
-| `:=`      | konstante                   | `$+`         | idagdag                          |
-| `>>`      | output                      | `$+[i]`      | ipasok sa index                  |
-| `<<`      | input                       | `$-`         | alisin ang una ayon sa halaga    |
-| `¶` / `\\` | bagong linya               | `$--`        | alisin lahat ayon sa halaga      |
-| `?`       | kung (if)                   | `$-[i]`      | alisin sa index                  |
-| `_?`      | kung hindi (else-if)        | `$-[i..j]`   | alisin ang saklaw                |
-| `_`       | iba pa / wildcard           | `$?`         | naglalaman                       |
-| `??`      | tumugma (match)             | `$??`        | hanapin lahat ng index           |
-| `@`       | loop                        | `$[s..e]`    | hiwa                             |
-| `@!`      | ihinto (break)              | `$>`         | mapa (map)                       |
-| `@>`      | ituloy (continue)           | `$\|`        | salain (filter)                  |
-| `->`      | lambda                      | `$<`         | bawasan (reduce)                 |
-| `arr[i] = val` | i-update ang elemento (mga hanay lamang) | `arr[i] += val` | compound na update  |
-| `arr[i]$~` | functional na update (bagong kopya) | `$^+`  | ayusin pataas (primitibo)       |
-| `$^-`     | ayusin pababa (primitibo)   | `$^`         | ayusin na may comparator (tuple) |
-| `<~`      | ibalik (return)             | `!?`         | subukan (try)                    |
-| `\|>`     | tubo (pipe)                 | `:!`         | hulihin (catch)                  |
-| `#1`      | totoo (true)                | `:>`         | sa wakas (finally)               |
-| `#0`      | mali (false)                | `$!`         | ay error                         |
-| `<#`      | i-import                    | `$!!`        | ipalaganap ng error              |
-| `#`       | ideklara ang module         | `#>`         | i-export                         |
-| `::`      | tawag sa module             | `.`          | pag-access sa field              |
-| `#\|..\|` | mag-parse ng numero         | `#?`         | metadata ng uri                  |
-| `#.N\|..\|` | bilugan                   | `#!N\|..\|`  | putulin                          |
-| `#,\|..\|` | format na may kuwit         | `#^\|..\|`    | format na siyentipiko            |
-| `#d0d9#` | switch ng mode ng numero | `#09#` | i-reset sa ASCII |
-| `<\ ..\>` | pagpapatakbo ng shell       | `>\<`        | mga CLI argument                 |
+| Simbolo         | Operasyon                                   | Simbolo          | Operasyon                            |
+|-----------------|---------------------------------------------|------------------|--------------------------------------|
+| `=`             | variable                                    | `$#`             | haba                                 |
+| `:=`            | konstante                                   | `$+`             | idagdag (maaaring i-chain)           |
+| `>>`            | output                                      | `$+[i]`          | ipasok sa index (base 1)             |
+| `<<`            | input                                       | `$-`             | alisin ang una ayon sa halaga        |
+| `¶` / `\\`      | bagong linya                                | `$--`            | alisin lahat ayon sa halaga          |
+| `?`             | kung (if)                                   | `$-[i]`          | alisin sa index (base 1)             |
+| `_?`            | kung hindi (else-if)                        | `$-[i..j]`       | alisin ang saklaw (base 1)           |
+| `_`             | iba pa / wildcard                           | `$?`             | naglalaman                           |
+| `??`            | tumugma (match)                             | `$??`            | hanapin lahat ng index (base 1)      |
+| `@`             | loop                                        | `$[s..e]`        | hiwa (base 1)                        |
+| `@ N { }`       | loop ng bilang (N na ulit)                  | `$>`             | mapa (map)                           |
+| `@!`            | ihinto (break)                              | `$\|`            | salain (filter)                      |
+| `@>`            | ituloy (continue)                           | `$<`             | bawasan (reduce)                     |
+| `@:pangalan { }` | loop na may label                          | `$/ delim`       | hatiin ang string                    |
+| `@:pangalan!`   | break na may label                          | `$++ a b c`      | pagbuuo ng concatenation             |
+| `@:pangalan>`   | continue na may label                       | `arr[i>j>k]`     | navigation index                     |
+| `->`            | lambda                                      | `arr[i] = val`   | i-update ang elemento (hanay lamang) |
+| `arr[i] += val` | compound na update                          | `arr[i]$~`       | functional na update (bagong kopya)  |
+| `$^+`           | ayusin pataas (primitibo)                   | `$^-`            | ayusin pababa (primitibo)            |
+| `$^`            | ayusin na may comparator (tuple)            | `<~`             | ibalik (return)                      |
+| `\|>`           | tubo (pipe)                                 | `!?`             | subukan (try)                        |
+| `:!`            | hulihin (catch)                             | `:>`             | sa wakas (finally)                   |
+| `#1`            | totoo (true)                                | `#0`             | mali (false)                         |
+| `$!`            | ay error                                    | `$!!`            | ipalaganap ng error                  |
+| `<#`            | i-import                                    | `#>`             | i-export                             |
+| `#`             | ideklara ang module                         | `::`             | tawag sa module                      |
+| `.`             | pag-access sa field                         | `#?`             | metadata ng uri                      |
+| `#\|..\|`       | mag-parse ng numero                         | `##.`            | i-convert sa Float                   |
+| `###`           | i-convert sa Int (bilugin)                  | `##!`            | i-convert sa Int (putulin)           |
+| `#.N\|..\|`     | bilugan                                     | `#!N\|..\|`      | putulin                              |
+| `#,\|..\|`      | format na may kuwit                         | `#^\|..\|`       | format na siyentipiko                |
+| `#d0d9#`        | switch ng mode ng numero                    | `#09#`           | i-reset sa ASCII                     |
+| `<\ ..\>`       | pagpapatakbo ng shell                       | `>\<`            | mga CLI argument                     |
+| `\ var`         | sirain nang maaga ang variable              |                  |                                      |
 
 ## Kasaysayan ng Bersyon
+
+### v0.0.4 — Indexing Base 1, Mga First-Class na Function & Mga Bloke ng Module _(Abril 2026)_
+
+- **Pagbabago** Lahat ng indexing ay nagbago sa **base 1** — `arr[1]` ang unang elemento; `arr[0]` ay runtime error
+- **Idinagdag** Ang mga pinangalanang function ay **mga first-class na halaga** — direktang ipasa sa HOF: `mga_bilang$> doblehin`
+- **Idinagdag** Kinakailangan ang **block syntax** ng module: `# pangalan { ... }` — ang flat syntax ay tinanggal
+- **Idinagdag** Multi-dimensional indexing: `arr[i>j>k]` (navigation), `arr[p ; q]` (flat extraction)
+- **Idinagdag** Mga conversion ng uri: `##.expr` (Float), `###expr` (Int bilugin), `##!expr` (Int putulin)
+- **Idinagdag** Paghahati ng string: `str$/ delim` — nagbabalik ng `Array(String)`
+- **Idinagdag** Pagbuuo ng concatenation: `base$++ a b c` — nagdaragdag ng maraming item
+- **Idinagdag** Times loop: `@ N { }` — ulitin nang eksakto N beses
+- **Idinagdag** Labeled loop syntax: `@:pangalan { }`, `@:pangalan!`, `@:pangalan>` — pinapalitan ang `@ @pangalan` / `@! pangalan`
+- **Idinagdag** Mga panuntunan ng saklaw ng variable: ang mga `_pangalan` na variable ay may eksaktong block scope; `\ var` ay sinasamahan nang maaga
+- **Idinagdag** Mga pattern ng paghahambing sa match: `< 0 :`, `> 5 :`, `== 42 :`, atbp.
+- **Idinagdag** Error E013 ng module: ang mga executable na pahayag sa katawan ng module ay ipinagbabawal
+- **Naayos** Ang `take_variable` ay hindi na nagkokorumpo ng mga module constant sa write-back
+- **Naayos** Ang `alias.CONST` ay nireresolta na nang tama; ang `#>` ay maaaring lumitaw pagkatapos ng mga kahulugan ng function
+- **VM** Buong parity: 393/393 na pagsubok ang pumasa
 
 ### v0.0.3 — Mga Sistema ng Numero ng Unicode & Mga Pagpapabuti ng LSP _(Abril 2026)_
 
@@ -730,11 +772,4 @@ uriin(bilang) {
 
 ---
 
-*Zymbol-Lang — Simboliko. Pandaigdig. Hindi Nagbabago.*
-
-> **Babala:** Ang dokumentasyong ito ay nilikha at isinalin ng artipisyal na katalinuhan (AI).
-> Ang lahat ng pagsisikap ay ginawa upang matiyak ang katumpakan, ngunit ang ilang pagsasalin o halimbawa ay maaaring maglaman ng mga pagkakamali.
-> Ang kanonikong sanggunian ay ang [detalye ng Zymbol-Lang](https://github.com/zymbol-lang/interpreter).
->
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
+_Zymbol-Lang — Simboliko. Pandaigdig. Hindi Nagbabago._

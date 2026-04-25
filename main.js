@@ -30,11 +30,32 @@
     'sr':'serbian', 'ar':'arabic', 'he':'hebrew', 'fa':'persian',
     'ur':'urdu', 'hi':'hindi', 'bn':'bengali', 'mr':'marathi',
     'pa':'punjabi', 'zh':'mandarin', 'zh-cn':'mandarin', 'zh-tw':'mandarin',
-    'ja':'japanese', 'ko':'korean', 'id':'indonesian', 'vi':'vietnamese',
-    'th':'thai', 'tl':'tagalog', 'sw':'swahili', 'ha':'hausa',
-    'yo':'yoruba', 'am':'amharic', 'tr':'turkish',
+    'cn':'mandarin', 'ja':'japanese', 'ko':'korean', 'id':'indonesian',
+    'vi':'vietnamese', 'th':'thai', 'tl':'tagalog', 'sw':'swahili',
+    'ha':'hausa', 'yo':'yoruba', 'am':'amharic', 'tr':'turkish',
+    'eu':'basque', 'cy':'welsh', 'ga':'irish', 'ca':'catalan',
+    'gl':'galician', 'af':'afrikaans', 'zu':'zulu', 'xh':'xhosa',
+    'eo':'esperanto', 'tlh_hol':'klingon', 'tlh_piqad':'klingon_piqad',
   };
   const LANG_STORAGE_KEY = 'zy-lang';
+
+  // BCP47 codes for <html lang=""> — lets Chrome/browser translator detect the language
+  const LANG_BCP47 = {
+    english:'en', spanish:'es', castellano:'es-ES', portuguese:'pt-BR',
+    portugues_eu:'pt-PT', french:'fr', german:'de', italian:'it',
+    dutch:'nl', polish:'pl', russian:'ru', ukrainian:'uk', bulgarian:'bg',
+    croatian:'hr', czech:'cs', slovak:'sk', romanian:'ro', hungarian:'hu',
+    finnish:'fi', estonian:'et', latvian:'lv', lithuanian:'lt',
+    norwegian:'no', danish:'da', swedish:'sv', icelandic:'is', greek:'el',
+    serbian:'sr', arabic:'ar', hebrew:'he', persian:'fa', urdu:'ur',
+    hindi:'hi', bengali:'bn', marathi:'mr', punjabi:'pa', gujarati:'gu',
+    tamil:'ta', telugu:'te', kannada:'kn', mandarin:'zh', japanese:'ja',
+    korean:'ko', indonesian:'id', vietnamese:'vi', thai:'th', tagalog:'tl',
+    swahili:'sw', hausa:'ha', yoruba:'yo', amharic:'am', turkish:'tr',
+    basque:'eu', welsh:'cy', irish:'ga', catalan:'ca', galician:'gl',
+    afrikaans:'af', zulu:'zu', xhosa:'xh', esperanto:'eo',
+    klingon:'tlh_hol', klingon_piqad:'tlh_piqad',
+  };
 
   function detectBrowserLang() {
     // Walk the full preferred-languages list for the best match
@@ -49,7 +70,22 @@
     return 'english';
   }
 
+  function resolveUrlLang() {
+    const raw = new URLSearchParams(window.location.search).get('lang');
+    if (!raw) return null;
+    // Strip surrounding quotes that some tools add: ?land="cn"
+    const code = raw.replace(/^["']|["']$/g, '').toLowerCase().trim();
+    if (!code) return null;
+    // Direct match against i18n keys (e.g. ?land=mandarin)
+    if (i18n[code]) return code;
+    // Locale-code match via BROWSER_LANG_MAP (e.g. ?land=cn, ?land=zh-cn)
+    return BROWSER_LANG_MAP[code] || BROWSER_LANG_MAP[code.split('-')[0]] || null;
+  }
+
   function resolveInitialLang() {
+    // URL param takes highest priority (allows deep-linking and sharing)
+    const fromUrl = resolveUrlLang();
+    if (fromUrl) return fromUrl;
     const saved = localStorage.getItem(LANG_STORAGE_KEY);
     // Only trust saved value if it exists in i18n data
     if (saved && i18n[saved]) return saved;
@@ -361,6 +397,14 @@
   function selectLang(langId, persist = true) {
     currentLang = langId;
     if (persist) localStorage.setItem(LANG_STORAGE_KEY, langId);
+    // Keep URL in sync so the inline <head> script sets the right lang on reload
+    const bcp47 = LANG_BCP47[langId] || langId;
+    document.documentElement.lang = bcp47;
+    const url = new URL(window.location.href);
+    url.searchParams.set('lang', bcp47);
+    history.replaceState(null, '', url.toString());
+    const piqadLink = document.getElementById('piqad-ref-link');
+    if (piqadLink) piqadLink.hidden = (langId !== 'klingon_piqad');
     collapseChips();
     loadManual(langId);
 
