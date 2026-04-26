@@ -1,23 +1,35 @@
-# Dokumentatsioon | Kompaktne Zymbol-Lang käsiraamat
+> **Märkus:** See dokumentatsioon on loodud tehisintellekti (TI) abil.
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Kanooniline viide on **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** interpretaatori hoidlas.
 
-**Zymbol-Lang** on sümboolne programmeerimiskeel. See ei kasuta märksõnu — kõik on sümbol. See toimib ühtmoodi igas inimkeeles. Märksõnu pole (`kui`, `tsükkel`, `tagastus` ei eksisteeri — ainult sümbolid `?`, `@`, `<~`). Täielik Unicode tugi — identifikaatorid igas keeles või emojis 👋
+---
+
+# Zymbol-Lang Käsiraamat
+
+**Zymbol-Lang** on sümboolne programmeerimiskeel. Märksõnu pole — kõik on sümbol. Töötab ühtmoodi igas inimkeeles.
+
+- Pole `if`, `while`, `return` — ainult `?`, `@`, `<~`
+- Täielik Unicode tugi — identifikaatorid igas keeles või emojis
+- Inimkeelest sõltumatu — kood on kõikjal identne
+
+**Interpretaatori versioon**: v0.0.4 | **Testide katvus**: 393/393 (TW ↔ VM pariteet)
 
 ---
 
 ## Muutujad ja Konstandid
 
 ```zymbol
-x = 10           // muutuja (muudetav)
-PI := 3.14159    // konstant (muutumatu — viga taasomistamisel)
-nimi = "Ana"
-aktiivne = #1    // tõeväärtus true
+x = 10              // muutuja — muudetav
+PI := 3.14159       // konstant — uuesti omistamine on viga
+nimi = "Alice"
+aktiivne = #1        // tõeväärtus tõene
 👋 := "Tere"
 ```
 
-### Liitomistamine
-
 ```zymbol
-x = 10    // 10
+x = 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
@@ -32,103 +44,105 @@ x--       // 4
 
 ## Andmetüübid
 
-| Tüüp           | Näide               | `#?` Sümbol | Märkused                              |
-|----------------|---------------------|-------------|---------------------------------------|
-| Täisarv        | `42`, `-7`          | `###`       | 64-bitine märgiga                     |
-| Ujukoma        | `3.14`, `1.5e10`    | `##.`       | Teadusliku notatsiooni tugi           |
-| String         | `"tere"`            | `##"`       | Interpolatsioon: `"Tere {nimi}"`      |
-| Märk           | `'A'`               | `##'`       | Üks Unicode märk                      |
-| Tõeväärtus     | `#1`, `#0`          | `##?`       | EI ole arvuline 1 ja 0                |
-| Massiiv        | `[1, 2, 3]`         | `##]`       | Kõik elemendid peavad olema sama tüüpi|
-| Tuple          | `(a, b)`            | `##)`       | Positsioonipõhine                     |
-| Nimega Tuple   | `(x: 1, y: 2)`      | `##)`       | Ligipääs nime või indeksi järgi       |
+| Tüüp | Literaal | Märgend `#?` | Märkused |
+|------|---------|--------------|---------|
+| Int | `42`, `-7` | `###` | 64-bitine märgiga |
+| Float | `3.14`, `1.5e10` | `##.` | Teaduslik notatsioon OK |
+| String | `"tekst"` | `##"` | Interpolatsioon: `"Tere {nimi}"` |
+| Char | `'A'` | `##'` | Üks Unicode märk |
+| Bool | `#1`, `#0` | `##?` | EI ole arvuline — `#1 ≠ 1` |
+| Massiiv | `[1, 2, 3]` | `##]` | Homogeensed elemendid |
+| Korteež | `(a, b)` | `##)` | Positsiooniline |
+| Nimega Korteež | `(x: 1, y: 2)` | `##)` | Nimega väljad |
+| Funktsioon | viide nimega funktsioonile | `##()` | Esmaklassiline; kuvatakse `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Esmaklassiline; kuvatakse `<lambd/N>` |
+
+```zymbol
+// Tüübi introspektsioon — tagastab (tüüp, numbrid, väärtus)
+meta = 42#?
+>> meta ¶         // → (###, 2, 42)
+t = meta[1]
+>> t ¶            // → ###
+```
 
 ---
 
 ## Väljund ja Sisend
 
 ```zymbol
-// Väljund — EI lisa automaatselt reavahetust
->> "Tere" ¶                          // ¶ või \\ annab selgesõnalise reavahetuse
->> "a=" a " b=" b ¶                  // mitu väärtust juxtapositsiooni abil
->> "summa=" liida(2, 3) ¶            // funktsioonikutsed mis tahes positsioonis
->> (arr$#) ¶                         // postfiks-operaatorid vajavad sulge
+>> "Tere" ¶                      // ¶ või \\ selgesõnaliseks reavahetuseks
+>> "a=" a " b=" b ¶              // juxtapositsioon — mitu väärtust
+>> (massiiv$#) ¶                 // postfiks-operaatorid vajavad ( ) >>-s
 
-// Sisend
-<< nimi                              // ilma viipata — loeb muutujasse
-<< "Teie nimi? " nimi                // viipaga
+<< nimi                          // lugemine muutujasse (ilma viipata)
+<< "Sisesta nimi: " nimi         // vihjeküsimusega
 ```
 
-> `¶` või `\\` on reavahetus ekvivalendid.
+> `¶` (AltGr+R Hispaania klaviatuuril) ja `\\` on samaväärsed reavahetused.
 
 ---
 
 ## Operaatorid
 
 ```zymbol
-// Aritmeetika
-5 + 2    // → 7
-5 - 2    // → 3
-5 * 2    // → 10
-5 / 2    // → 2.5
-5 % 2    // → 1
-5 ^ 2    // → 25   (astendamine)
+// Aritmeetika — kasuta omistamisi; mõnel operaatoril on eripärad otse >>-s
+a = 10
+b = 3
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (täisarvu jagamine)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (astendamine)
 
-// Võrdlus (tagastab #1 või #0)
-5 == 5   // → #1
-5 != 4   // → #1
-5 > 4    // → #1
-5 < 4    // → #0
-5 >= 5   // → #1
-5 <= 4   // → #0
+// Võrdlus
+a == b    // #0
+a <> b    // #1
+a < b      // #0
+a <= b    // #0
+a > b      // #1
+a >= b     // #1
 
-// Loogilised
-#1 && #0    // → #0   (ja)
-#1 || #0    // → #1   (või)
-!#1         // → #0   (mitte)
+// Loogika
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
 ```
 
 ---
 
-## Stringid
-
-Kolm kehtivat vormi — igaüks oma konteksti jaoks:
+## Sõned
 
 ```zymbol
-nimi = "Ana"
-arv = 25
+// Kaks konkatenatsiooniviisi
+nimi = "Alice"
+n = 42
 
-// 1. Koma — omistamisel = või :=
-teade = "Tere ", nimi, "!"              // → Tere Ana!
-PEALKIRI := "Kasutaja: ", nimi
-
-// 2. Juxtapositsioon — >> väljundis
->> "Tere " nimi " sul on " arv ¶        // → Tere Ana sul on 25
-
-// 3. Interpolatsioon — mis tahes kontekstis
-kirjeldus = "Tere {nimi}, sul on {arv}" // → Tere Ana, sul on 25
+>> "Tere " nimi " sul on " n ¶        // juxtapositsioon — >>-s
+kirjeldus = "Tere {nimi}, sul on {n}"  // interpolatsioon — kõikjal
 ```
 
 ```zymbol
-// Asenda — s$~~["vana":"uus"]
-s = "tere maailm"
-s = s$~~["maailm":"maa"]        // → "tere maa"
-s = s$~~["e":"E":1]             // → "tErE maa"   asenda esimesed N esinemist
+s = "Tere Maailm"
+pikkus = s$#                  // 11
+alamsõne = s$[1..4]           // "Tere"  (indeks 1-st, lõpp kaasav)
+sisaldab = s$? "Maailm"       // #1
+osad = "a,b,c,d"$/ ','        // [a, b, c, d]  (jaga eraldaja järgi)
+asend = s$~~["a":"A"]         // asenda kõik
+asend1 = s$~~["a":"A":1]      // asenda esimesed N
 ```
 
-> **Märkus**: `+` on ainult arvude jaoks. Kasutamine stringidega genereerib hoiatuse.
+> `+` on ainult arvude jaoks. Sõnede jaoks kasuta juxtapositsiooni või interpolatsiooni.
 
 ---
 
-## Juhtimisstruktuur
+## Voo Juhtimine
 
 ```zymbol
 x = 7
 
-// Lihtne tingimus
 ? x > 0 { >> "positiivne" ¶ }
 
-// tingimus / muidu-tingimus / muidu
 ? x > 100 {
     >> "suur" ¶
 } _? x > 0 {
@@ -140,14 +154,14 @@ x = 7
 }
 ```
 
-Plokid `{ }` on **kohustuslikud** isegi ühe rea puhul.
+> Loogelised sulud `{ }` on **kohustuslikud** isegi ühe lause puhul.
 
 ---
 
-## Vastavus
+## Sobitamine
 
 ```zymbol
-// Vastavus vahemikega
+// Vahemikud
 punktid = 85
 hinne = ?? punktid {
     90..100 : 'A'
@@ -157,24 +171,30 @@ hinne = ?? punktid {
 }
 >> hinne ¶    // → B
 
-// Vastavus tingimustega (suvalised tingimused)
-temperatuur = -5
-seisund = ?? temperatuur {
-    _? temperatuur < 0  : "jää"
-    _? temperatuur < 20 : "külm"
-    _? temperatuur < 35 : "soe"
-    _                   : "kuum"
-}
->> seisund ¶    // → jää
-
-// Vastavus stringidega
+// Sõned
 värv = "punane"
 kood = ?? värv {
     "punane"   : "#FF0000"
     "roheline" : "#00FF00"
     _          : "#000000"
 }
->> kood ¶
+
+// Võrdlusmustrid
+temp = -5
+olek = ?? temp {
+    < 0  : "jää"
+    < 20 : "külm"
+    < 35 : "soe"
+    _    : "kuum"
+}
+>> olek ¶    // → jää
+
+// Lause vorm (ploki harud)
+?? n {
+    0       : { >> "null" ¶ }
+    _? n < 0: { >> "negatiivne" ¶ }
+    _       : { >> "positiivne" ¶ }
+}
 ```
 
 ---
@@ -182,38 +202,43 @@ kood = ?? värv {
 ## Tsüklid
 
 ```zymbol
-// Kaasav vahemik: 0..4 itereerib 0,1,2,3,4
-@ i:0..4 { >> i " " }
->> ¶    // → 0 1 2 3 4
+@ i:0..4  { >> i " " }        // vahemik kaasav:    0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // sammuga:           1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // tagurpidi:         5 4 3 2 1 0
 
-// Vahemik sammuga
-@ i:1..9:2 { >> i " " }
->> ¶    // → 1 3 5 7 9
+n = 1
+@ n <= 64 { n *= 2 }
+>> n ¶                        // → 128  (while)
 
-// Pööratud vahemik
-@ i:5..0:1 { >> i " " }
->> ¶    // → 5 4 3 2 1 0
+puuviljad = ["õun", "pirn", "viinamari"]
+@ f:puuviljad { >> f ¶ }      // for-each massiiv
 
-// Kuni tsükkel
-arv = 1
-@ arv <= 64 { arv *= 2 }
->> arv ¶    // → 128
+@ c:"maailm" { >> c "-" }
+>> ¶                          // → m-a-a-i-l-m-  (for-each sõne)
 
-// Iga massiivi elemendi jaoks
-puuvili = ["õun", "pirn", "viinamari"]
-@ f:puuvili { >> f ¶ }
-
-// Stringi märkide üle
-@ c:"tere" { >> c "-" }
->> ¶    // → t-e-r-e-
-
-// Katkestus ja Jätka
 @ i:1..10 {
-    ? i % 2 == 0 { @> }    // @> jätka
-    ? i > 7 { @! }          // @! katkesta
+    ? i % 2 == 0 { @> }       // @> jätka
+    ? i > 7 { @! }             // @! katkesta
     >> i " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Lõpmatu tsükkel
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Sildistatud tsükkel (pesastatud katkestused)
+loendur = 0
+@:välimine {
+    loendur++
+    ? loendur >= 3 { @:välimine! }
+}
+>> loendur ¶                 // → 3
 ```
 
 ---
@@ -221,133 +246,125 @@ puuvili = ["õun", "pirn", "viinamari"]
 ## Funktsioonid
 
 ```zymbol
-// Deklaratsioon ja kutsumine
 liida(a, b) { <~ a + b }
 >> liida(3, 4) ¶    // → 7
 
-// Rekursioon
-faktoriaal(arv) {
-    ? arv <= 1 { <~ 1 }
-    <~ arv * faktoriaal(arv - 1)
+faktoriaal(n) {
+    ? n <= 1 { <~ 1 }
+    <~ n * faktoriaal(n - 1)
 }
 >> faktoriaal(5) ¶    // → 120
-
-// Funktsioonidel on isoleeritud ulatus — välistele muutujatele juurdepääs puudub
-globaalne = 100
-testida() {
-    x = 42    // ainult kohalik
-    <~ x
-}
->> testida() ¶    // → 42
 ```
 
-> **Oluline**: Nimega funktsioonid `nimi(params){ }` ei ole esimese klassi väärtused.
-> Argumendina edastamiseks mähkige: `x -> nimi(x)`.
+Funktsioonidel on **isoleeritud ulatus** — ei saa lugeda väliseid muutujaid. Kasuta väljundparameetreid `<~` kutsuva funktsiooni muutujate muutmiseks:
+
+```zymbol
+vaheta(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
+}
+x = 10
+y = 20
+vaheta(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> Nimega funktsioonid on **esmaklassilised väärtused** — edasta otse: `arvud$> kahekorda`. Mähis: `x -> fn(x)` on samuti õige.
 
 ---
 
-## Lambdad ja Sulgemised
+## Lambdad ja Sulundid
 
 ```zymbol
-// Lihtne lambda (kaudne tagastus)
-kahekordne = x -> x * 2
+kahekorda = x -> x * 2
 summa = (a, b) -> a + b
->> kahekordne(5) ¶    // → 10
->> summa(3, 7) ¶      // → 10
+>> kahekorda(5) ¶    // → 10
+>> summa(3, 7) ¶   // → 10
 
-// Ploki lambda (selgesõnaline tagastus)
+// Ploki lambda
 klassifitseeri = x -> {
     ? x > 0 { <~ "positiivne" }
     _? x < 0 { <~ "negatiivne" }
     <~ "null"
 }
->> klassifitseeri(5) ¶     // → positiivne
->> klassifitseeri(0) ¶     // → null
->> klassifitseeri(-5) ¶    // → negatiivne
 
-// Sulgemised — lambdad hõivavad välise ulatuse muutujaid
-tegur = 3
-kolmekordne = x -> x * tegur    // hõivab 'tegur'
->> kolmekordne(7) ¶    // → 21
+// Sulund — haarab välise ulatuse
+kordaja = 3
+kolmekorda = x -> x * kordaja
+>> kolmekorda(7) ¶    // → 21
 
-// Funktsioonide tehas
-tee_liitja(n) { <~ x -> x + n }
-lisa10 = tee_liitja(10)
-lisa20 = tee_liitja(20)
->> lisa10(5) ¶    // → 15
->> lisa20(5) ¶    // → 25
+// Tehase
+make_adder(n) { <~ x -> x + n }
+liida10 = make_adder(10)
+>> liida10(5) ¶    // → 15
 
-// Lambdad väärtustena: salvestatakse massiividesse
-toimingud = [x -> x+1, x -> x*2, x -> x*x]
->> toimingud[0](5) ¶    // → 6
->> toimingud[1](5) ¶    // → 10
->> toimingud[2](5) ¶    // → 25
+// Massiivides
+ops = [x -> x+1, x -> x*2, x -> x*x]
+>> ops[3](5) ¶    // → 25
 ```
 
 ---
 
 ## Massiivid
 
-Massiivid on **muudetavad** ja hoiavad **sama tüüpi** elemente.
+Massiivid on **muudetavad** ja sisaldavad **sama tüübi** elemente.
 
 ```zymbol
-arr = [10, 20, 30, 40, 50]
+massiiv = [1, 2, 3, 4, 5]
 
-// Juurdepääs (0-põhine indeks)
->> arr[0] ¶    // → 10
->> arr[2] ¶    // → 30
->> arr[-1] ¶   // → 50   negatiivne indeks
+massiiv[1]          // 1 — juurdepääs (indeks 1-st: esimene element)
+massiiv[-1]         // 5 — negatiivne indeks (viimane element)
+massiiv$#           // 5 — pikkus (kasuta (massiiv$#) >>-s)
 
-// Pikkus (vajab sulge >>-s)
-arv = arr$#
->> arv ¶           // → 5
->> (arr$#) ¶       // → 5
+massiiv = massiiv$+ 6            // lisa → [1,2,3,4,5,6]
+massiiv2 = massiiv$+[2] 99       // sisesta positsioonile 2 (indeks 1-st)
+massiiv3 = massiiv$- 3           // eemalda väärtuse esimene esinemine
+massiiv4 = massiiv$-- 3          // eemalda kõik esinemised
+massiiv5 = massiiv$-[1]          // eemalda indeksil 1 (esimene element)
+massiiv6 = massiiv$-[2..3]       // eemalda vahemik (indeks 1-st, lõpp kaasav)
 
-// Lisa, eemalda, sisaldab, lõige
-arr = arr$+ 60               // [10, 20, 30, 40, 50, 60]
-arr = arr$- 0                // indeks 0 eemaldamine: [20, 30, 40, 50, 60]
-on_olemas = arr$? 30         // → #1
-idx = arr$?? 30              // → [1]   kõik indeksid väärtusele
-lõige = arr$[0..2]           // lõige [0,2): [20, 30]
-arv_põhine = arr$[0:3]       // arvupõhine: [20, 30, 40]
+sisaldab = massiiv$? 3         // #1 — sisaldab
+pos = massiiv$?? 3             // [3] — kõik väärtuse indeksid (indeks 1-st)
+viil = massiiv$[1..3]          // [1,2,3] — viil (indeks 1-st, lõpp kaasav)
+viil2 = massiiv$[1:3]          // [1,2,3] — sama, arvestamissüntaks
 
-// Otsene elemendi uuendamine (ainult massiivid)
-arr[1] = 99              // omistada
-arr[0] += 5              // liit: +=  -=  *=  /=  %=  ^=
+kasv = massiiv$^+              // sorteeritud kasvavalt  (ainult primitiivid)
+lang = massiiv$^-              // sorteeritud kahanevalt (ainult primitiivid)
 
-// Funktsionaalne uuendamine — tagastab uue massiivi; originaal muutumatu
-arr2 = arr[1]$~ 77           // → [20, 77, 40, 50, 60]
+// Korteežide massiivid — kasuta $^ võrdlusega lambda
+db = [(nimi: "Carla", vanus: 28), (nimi: "Ana", vanus: 25), (nimi: "Bob", vanus: 30)]
+vanuse_järgi = db$^ (a, b -> a.vanus < b.vanus)
+nime_järgi   = db$^ (a, b -> a.nimi > b.nimi)
+>> vanuse_järgi[1].nimi ¶     // → Ana
+>> nime_järgi[1].nimi ¶       // → Carla
 
-// Sorteeri (primitiivid)
-num = [3, 1, 4, 1, 5]
-kasvav   = num$^+            // → [1, 1, 3, 4, 5]
-kahanev  = num$^-            // → [5, 4, 3, 1, 1]
+// Elemendi otsene uuendamine (ainult massiivid)
+massiiv[1] = 99              // omista
+massiiv[2] += 5              // liit: +=  -=  *=  /=  %=  ^=
 
-// Sorteeri tupleid komparaator-lambdaga
-paarid = [(2,"b"), (1,"a"), (3,"c")]
-sorditud = paarid$^ ((a,b) -> a[0] - b[0])    // sorteeri esimese elemendi järgi
-
-// Pesastatud massiivid
-maatriks = [[1,2],[3,4],[5,6]]
->> maatriks[1][0] ¶    // → 3
-
-// Iga elemendi jaoks
-@ x:arr { >> x " " }
->> ¶
+// Funktsionaalne uuendamine — tagastab uue massiivi; originaal muutmatu
+massiiv2 = massiiv[2]$~ 99
 ```
 
-> `$+`, `$-`, `$[..]` tagastavad **uue massiivi** — omistage tagasi: `arr = arr$+ 4`.
-> Ei saa ahelada: kasutage kahte eraldi omistamist.
-> `arr$??` ja `arr$[s:n]` kasutavad teist süntaksit kui `arr$[s..e]` — vt Sümbolite Viide.
+> Kõik kogumioperaatorid tagastavad **uue massiivi**. Omista tagasi: `massiiv = massiiv$+ 4`.
+> `$^+` / `$^-` sorteerivad **primitiivide massiive** (arvud, sõned). Korteežide massiivide jaoks kasuta `$^` võrdlusega lambda.
+> **Indekseerimine 1-st**: `massiiv[1]` on esimene element; `massiiv[0]` on käivitusviga.
 
-**Väärtusse semantika** — massiivi omistamine teisele muutujale loob sõltumatu koopia:
+**Väärtuse semantika** — massiivi omistamine teisele muutujale loob sõltumatu koopia:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
 >> b ¶    // → [1, 2, 3]   ← b ei ole mõjutatud
+```
+
+```zymbol
+// Pesastatud massiivid (indekseerimine 1-st)
+maatriks = [[1,2,3],[4,5,6],[7,8,9]]
+>> maatriks[2][3] ¶    // → 6  (rida 2, veerg 3)
 ```
 
 ---
@@ -355,206 +372,197 @@ a[0] = 99
 ## Destruktureerimine
 
 ```zymbol
-// Massiivi destruktureerimine
-arr = [10, 20, 30]
-[a, b, c] = arr
->> a ¶    // → 10
->> b ¶    // → 20
+// Massiiv
+massiiv = [10, 20, 30, 40, 50]
+[a, b, c] = massiiv              // a=10  b=20  c=30
+[esimene, *ülejäänud] = massiiv  // esimene=10  ülejäänud=[20,30,40,50]
+[x, _, z] = [1, 2, 3]            // _ hülgab
 
-// Positsioonilise tuple destruktureerimine
-pt = (3, 4)
-(x, y) = pt
->> x ¶    // → 3
+// Positsiooniline korteež
+punkt = (100, 200)
+(px, py) = punkt                 // px=100  py=200
 
-// Nimega tuple destruktureerimine
-isik = (nimi: "Alice", vanus: 25)
-(nimi: n, vanus: v) = isik
->> n ¶    // → Alice
->> v ¶    // → 25
+// Nimega korteež
+isik = (nimi: "Ana", vanus: 25, linn: "Madrid")
+(nimi: n, vanus: v) = isik       // n="Ana"  v=25
 ```
 
 ---
 
-## Tuplid
+## Korteežid
 
-Tuplid on **muutumatud** järjestatud konteinerid, mis võivad hoida **erinevat tüüpi** väärtusi. Erinevalt massiividest ei saa elemente pärast loomist muuta.
+Korteežid on **muutmatud** järjestatud konteinerid, mis võivad sisaldada **erinevat tüüpi** väärtusi. Erinevalt massiividest ei saa elemente pärast loomist muuta.
 
 ```zymbol
-// Positsioonipõhine tuple
+// Positsiooniline — lubatud segatud tüübid
 punkt = (10, 20)
->> punkt[0] ¶    // → 10
->> punkt[1] ¶    // → 20
+>> punkt[1] ¶    // → 10
 
 andmed = (42, "tere", #1, 3.14)
->> andmed[2] ¶     // → #1
+>> andmed[3] ¶     // → #1
 
-// Nimega tuple
+// Nimega
 isik = (nimi: "Alice", vanus: 25)
->> isik.nimi ¶     // → Alice
->> isik.vanus ¶    // → 25
->> isik[0] ¶       // → Alice (indeks töötab ka)
+>> isik.nimi ¶    // → Alice
+>> isik[1] ¶      // → Alice  (indeks töötab ka, 1-st)
 
 // Pesastatud
-pos = (x: 3, y: 4)
-p = (pos: pos, silt: "alguspunkt")
->> p.silt ¶    // → alguspunkt
->> p.pos.x ¶   // → 3
+asukoht = (x: 10, y: 20)
+p = (asukoht: asukoht, märgend: "algus")
+>> p.asukoht.x ¶        // → 10
 ```
 
-**Muutumatus** — igasugune katse muuta tuple elementi on käitusaegne viga:
+**Muutmatus** — iga katse muuta korteeži elementi on käivitusviga:
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ käitusaegne viga: tuplid on muutumatud
-// t[0] += 5    // ❌ sama viga
+// t[1] = 99    // ❌ käivitusviga: korteežid on muutmatud
+// t[1] += 5    // ❌ sama viga
 ```
 
-Muudetud väärtuse saamiseks kasutage `$~` (funktsionaalne uuendamine) — tagastab **uue** tupli:
+Muudetud väärtuse saamiseks kasuta `$~` (funktsionaalne uuendamine) — tagastab **uue** korteeži:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[1]$~ 999
->> t ¶     // → (10, 20, 30)   ← originaal muutumatu
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← originaal muutmatu
 >> t2 ¶    // → (10, 999, 30)
 
-// Nimega tuple — rekonstrueerige eksplicitiivselt
+// Nimega korteež — taasloomine eksplitsiitselt
 isik = (nimi: "Alice", vanus: 25)
-vanem = (nimi: isik.nimi, vanus: 26)
+vanem  = (nimi: isik.nimi, vanus: 26)
 >> isik.vanus ¶    // → 25
 >> vanem.vanus ¶   // → 26
 ```
 
 ---
 
-## Kõrgema Astme Funktsioonid
-
-HOF operaatorid nõuavad **sisseehitatud lambdat** — mitte otsest lambda muutujat.
+## Kõrgema Järgu Funktsioonid
 
 ```zymbol
-numbrid = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+arvud = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Kaardistamine ($>)
-kahekordistatud = numbrid$> (x -> x * 2)
->> kahekordistatud ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+kahekordistatud = arvud$> (x -> x * 2)                // map  → [2,4,6…20]
+paarisarvud     = arvud$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
+kokku           = arvud$< (0, (acc, x) -> acc + x)     // reduce → 55
 
-// Filtreerimine ($|)
-paaris = numbrid$| (x -> x % 2 == 0)
->> paaris ¶    // → [2, 4, 6, 8, 10]
-
-// Vähendamine ($<) — (algväärtus, (acc, elem) -> avaldis)
-kokku = numbrid$< (0, (acc, x) -> acc + x)
->> kokku ¶    // → 55
-
-// Ei saa otseselt ahelada — kasutage vaheväärtusi
-samm1 = numbrid$| (x -> x > 5)
+// Ahel ajutiste muutujate kaudu
+samm1 = arvud$| (x -> x > 3)
 samm2 = samm1$> (x -> x * x)
->> samm2 ¶    // → [36, 49, 64, 81, 100]
+>> samm2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+
+// Nimega funktsioone saab otse KJF-le edastada
+kahekorda(x) { <~ x * 2 }
+on_suur(x) { <~ x > 5 }
+r = arvud$> kahekorda       // ✅ otse viide
+r = arvud$| on_suur         // ✅ otse viide
 ```
 
 ---
 
-## Toru-operaator
+## Torujuhe Operaator
+
+Parem pool nõuab alati `_` edastatava väärtuse kohatäitena:
 
 ```zymbol
-// |> edastab vasaku väärtuse _ paremas avaldises
-tulemus = 5 |> _ * 2 |> _ + 1
->> tulemus ¶    // → 11
+kahekorda = x -> x * 2
+liida = (a, b) -> a + b
+suurenda = x -> x + 1
 
-// Ahelatud teisendused
-sõnad = ["tere", "maailm"]
-väljund = sõnad
-    |> _$> (w -> w$#)              // kaardista pikkusteks: [4, 6]
-    |> _$< (0, (a,x) -> a+x)      // summeeri: 10
->> väljund ¶    // → 10
+5 |> kahekorda(_)        // → 10
+10 |> liida(_, 5)    // → 15
+5 |> liida(2, _)     // → 7
+
+// Ahel
+r = 5 |> kahekorda(_) |> suurenda(_) |> kahekorda(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## Vigade Käsitlemine
+## Veakäsitlus
 
 ```zymbol
-// Proovi / Püüa / Lõpuks
 !? {
     x = 10 / 0
 } :! ##Div {
-    >> "nulliga jagamine" ¶
-} :! ##IO {
-    >> "I/O viga" ¶
+    >> "jagamine nulliga" ¶
 } :! {
-    >> "muu viga: " _err ¶    // _err sisaldab veateadet
+    >> "muu: " _err ¶    // _err sisaldab veateadet
 } :> {
-    >> "käivitub alati" ¶
-}
-
-// Püüdmine indeksitüübil
-!? {
-    arr = [1, 2, 3]
-    v = arr[10]
-} :! ##Index {
-    >> "indeks väljaspool piire" ¶
+    >> "täidetakse alati" ¶
 }
 ```
 
-### Vealiigid
-
-| Tüüp        | Millal tekib             |
-|-------------|--------------------------|
-| `##Div`     | Nulliga jagamine         |
-| `##IO`      | Fail / süsteem           |
-| `##Index`   | Indeks väljaspool piire  |
-| `##Type`    | Tüübiviga                |
-| `##Parse`   | Andmete sõelumine        |
-| `##Network` | Võrgu vead               |
-| `##_`       | Ükskõik milline viga     |
+| Tüüp | Millal |
+|------|--------|
+| `##Div` | Jagamine nulliga |
+| `##IO` | Fail / süsteem |
+| `##Index` | Indeks väljaspool piire |
+| `##Type` | Tüübide mittevastavus |
+| `##Parse` | Andmete sõelumine |
+| `##Network` | Võrgu vead |
+| `##_` | Iga viga (catch-all) |
 
 ---
 
 ## Moodulid
 
 ```zymbol
-// Fail: lib/calc.zy
-# calc                    // deklaratsioon — alati üleval
+// lib/arvutused.zy — mooduli keha on suletud loogeliste sulgudega
+# arvutused {
+    #> { liida, get_PI }
 
-#> {                      // eksportid — PEAB olema enne definitsioone
-    liida
-    get_PI
+    _PI := 3.14159
+    liida(a, b) { <~ a + b }
+    get_PI() { <~ _PI }
 }
-
-_PI := 3.14159
-
-liida(a, b) { <~ a + b }
-get_PI() { <~ _PI }       // konstandi getter (vajalik kõrvalekalle)
 ```
 
 ```zymbol
-// Fail: main.zy
-<# ./lib/calc <= c         // alias on kohustuslik
+// main.zy
+<# ./lib/arvutused <= a    // pseudonüüm on kohustuslik
 
->> c::liida(5, 3) ¶        // → 8  — kutsumine ::
-pi = c::get_PI()
->> pi ¶                    // → 3.14159
+>> a::liida(5, 3) ¶        // → 8
+pi = a::get_PI()
+>> pi ¶               // → 3.14159
 ```
 
-> **Märkus**: `alias.NIMI` konstantidele ei tööta — kasutage getter-funktsiooni.
+```zymbol
+// Eksport teise avaliku nime all
+# minulib {
+    #> { _sise_liida <= summa }
+
+    _sise_liida(a, b) { <~ a + b }
+}
+```
+
+```zymbol
+<# ./minulib <= m
+
+>> m::summa(3, 4) ¶    // → 7  (sisemine nimi _sise_liida on peidetud)
+```
+
+> **Mooduli reeglid**: ainult `#>`, funktsioonidefinitsioonid ja literaalsete muutujate/konstantide initsialisaatorid on lubatud `# name { }` sees. Täidetavad avaldused (`>>`, `<<`, tsüklid jne) põhjustavad viga E013.
 
 ---
 
 ## Arvurežiimid
 
-Zymbol saab kuvada numbreid **69 Unicode numbrikirjas** — Devanagari, Araabia-India, Tai, Klingon pIqaD, matemaatiline rasvane, LCD-segmendid jne. Aktiivne režiim mõjutab ainult `>>`-väljundit; sisemine aritmeetika on alati binaarne.
+Zymbol suudab kuvada numbreid **69 Unicode numbrimärkide blokis** — Devanaagari, Araabia-India, Tai, Klingoni pIqaD, matemaatiline paksus, LCD-numbrid ja palju muud. Aktiivne režiim mõjutab ainult `>>` väljundit; sisemine aritmeetika on alati binaarne.
 
-### Kirja aktiveerimine
+### Režiimi aktiveerimine
 
-Kirjutage sihtkirja number `0` ja `9` vahemärgi `#…#` sisse:
+Kirjuta sihtkirja `0` ja `9` numbrid `#…#` vahele:
 
 ```zymbol
-#०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // Araabia-India (U+0660–U+0669)
-#๐๙#    // Tai           (U+0E50–U+0E59)
+#०९#    // Devanaagari       (U+0966–U+096F)
+#٠٩#    // Araabia-India     (U+0660–U+0669)
+#๐๙#    // Tai               (U+0E50–U+0E59)
 #09#    // lähtesta ASCII-le
 ```
 
-### Väljund ja tõeväärtused
+### Väljund ja loogikaväärtused
 
 ```zymbol
 x = 42
@@ -565,93 +573,95 @@ x = 42
 >> 3.14 ¶       // → ३.१४   (kümnendpunkt alati ASCII)
 >> 1 + 2 ¶      // → ३
 
-// Tõeväärtused: # eesliide alati ASCII, number kohandub
->> #1 ¶         // → #१   (tõene Devanagaris)
->> #0 ¶         // → #०   (väär — erineb ०  täisarv nullist)
+// Tõeväärtused: eesliide # alati ASCII, number kohandub
+>> #1 ¶         // → #१   (tõene Devanaagaris)
+>> #0 ¶         // → #०   (väär — erineb ०  täisarvu nullist)
 
 x = 28 > 4
->> x ¶          // → #१   (võrdlustulemus järgib aktiivset režiimi)
+>> x ¶          // → #१   (võrdlustulem järgib aktiivset režiimi)
 ```
 
-### Kohalikud numbriliteraalid lähtekoodis
+### Sisseehitatud arvuliteraalid lähtekoodis
 
-Mis tahes toetatud kirja numbrid on kehtivad literaalid — vahemikes, modulo, võrdlustes:
+Iga toetatud süsteemi numbrid on kehtivad literaalid — vahemikes, modulol, võrdlustes:
 
 ```zymbol
-#०९#
+#٠٩#
 
-@ i:१..१५ {
-    ? i % १५ == ० { >> "FizzBuzz" ¶ }
-    _? i % ३  == ० { >> "Fizz" ¶ }
-    _? i % ५  == ० { >> "Buzz" ¶ }
+@ i:١..١٥ {
+    ? i % ١٥ == ٠ { >> "FizzBuzz" ¶ }
+    _? i % ٣  == ٠ { >> "Fizz" ¶ }
+    _? i % ٥  == ٠ { >> "Buzz" ¶ }
     _ { >> i ¶ }
 }
 ```
 
-### Tõeväärtuse literaalid mis tahes kirjas
+### Loogilised literaalid kõigis süsteemides
 
-`#` + number `0` või `1` mis tahes blokist on kehtiv tõeväärtuse literaal:
+`#` + number `0` või `1` mis tahes toetatud plokist on kehtiv loogiline literaal:
 
 ```zymbol
 #٠٩#
-نشط = #١        // sama mis #1
->> نشط ¶        // → #١
->> (#١ && #٠) ¶ // → #٠
+aktiivne = #١        // sama mis #1
+>> aktiivne ¶        // → #١
+>> (#١ && #٠) ¶     // → #٠
 ```
 
-> `#` on **alati ASCII**. `#0` (väär) erineb visuaalselt `0`-st (täisarv null) igas kirjas.
+> `#` on **alati ASCII**. `#0` (väär) erineb alati visuaalselt `0`-st (täisarvu null) igas süsteemis.
 
 ---
 
 ## Andmeoperaatorid
 
 ```zymbol
-// Parsi string arvuks
-x = #|"42"|          // → 42    (täisarv)
-y = #|"3.14"|        // → 3.14  (ujukoma)
+// Tüübi teisendused
+##.42         // → 42.0  (Float-iks)
+###3.7        // → 4     (Int-iks, ümardamine)
+##!3.7        // → 3     (Int-iks, kärpimine)
 
-// Ümarda / kärbi
-r = #.2|3.14159|     // → 3.14   ümarda 2 komakohani
-t = #!2|3.14159|     // → 3.14   kärbi 2 komakohani
+// Sõne sõelumine arvuks
+v1 = #|"42"|      // → 42  (Int)
+v2 = #|"3.14"|    // → 3.14  (Float)
+v3 = #|"abc"|     // → "abc"  (ohutu ebaõnnestumine, viga puudub)
 
-// Vorminda arv
-s = #,|1234567.89|    // → "1,234,567.89"  komavormingus
-e = #^|0.00042|       // → "4.2e-4"        teaduslik notatsioon
+// Ümardamine / kärpimine
+pi = 3.14159265
+r2 = #.2|pi|      // → 3.14  (ümarda 2 komakohani)
+r4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14  (kärbi)
 
-// Alusliteraalid
-h = 0xFF             // → 255  heksadetsimaalne
-b = 0b1010           // → 10   binaarne
-o = 0o17             // → 15   oktaalne
+// Arvude vormindamine
+fmt = #,|1234567|  // → 1,234,567  (eraldajatega)
+sci = #^|12345.678|    // → 1.2345678e4  (teaduslik notatsioon)
 
-// Aluse teisendus
-hex = 255$>>"16"     // → "FF"
-bin = 10$>>"2"       // → "1010"
+// Literaalid erinevates alussüsteemides
+a = 0x41         // → 'A'  (heksadetsimaal)
+b = 0b01000001   // → 'A'  (binaarne)
+c = 0o101        // → 'A'  (oktaal)
+
+// Väljund aluse teisendusega
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
 ```
 
 ---
 
-## Kestaintegrering
+## Kesta Integratsioon
 
 ```zymbol
-// Käivita kesta käsk ja püüa väljund
-väljund = <\ ls -la \>
->> väljund ¶
+kuupäev = <\ date +%Y-%m-%d \>       // hõivab stdout (sisaldab \n)
+>> "Täna: " kuupäev
 
-// Interpolatsioon käskudes
-kaust = "/tmp"
-failid = <\ ls {kaust} \>
+fail = "data.txt"
+sisu = <\ cat {fail} \>              // interpolatsioon käskudes
 
-// Mitmerealine skriptiplokk
-tulemus = </
-    echo "tere"
-    pwd
-/>
-
-// Suuna väljund kesta (ilma püüdmata)
->< "echo tere"
+tulemus = </"./alaskript.zy"/>       // käivita teine Zymbol skript, hõivab väljundi
+>> tulemus
 ```
 
-> `><` saadab väljundi kesta ilma seda püüdmata.
+> `>\<` hõivab CLI argumendid sõnede massiivina (ainult tree-walker).
 
 ---
 
@@ -659,11 +669,12 @@ tulemus = </
 
 ```zymbol
 klassifitseeri(arv) {
-    ? arv % 15 == 0 { <~ "SissSumm" }
-    _? arv % 3  == 0 { <~ "Siss" }
-    _? arv % 5  == 0 { <~ "Summ" }
+    ? arv % 15 == 0 { <~ "FizzBuzz" }
+    _? arv % 3  == 0 { <~ "Fizz" }
+    _? arv % 5  == 0 { <~ "Buzz" }
     _ { <~ arv }
 }
+
 @ i:1..20 { >> klassifitseeri(i) ¶ }
 ```
 
@@ -671,81 +682,98 @@ klassifitseeri(arv) {
 
 ## Sümbolite Viide
 
-| Sümbol      | Toiming              | Sümbol       | Toiming                    |
-|-------------|----------------------|--------------|----------------------------|
-| `=`         | muutuja              | `$#`         | pikkus                     |
-| `:=`        | konstant             | `$+`         | lisamine (append)          |
-| `>>`        | väljund              | `$+[i]`      | lisamine indeksile         |
-| `<<`        | sisend               | `$--`        | viimase eemaldamine        |
-| `¶`/`\`     | reavahetus           | `$-[i]`      | eemaldamine indeksil       |
-| `?`         | kui (if)             | `$-[i..j]`   | vahemiku eemaldamine       |
-| `_?`        | muidu-kui (elif)     | `$?`         | sisaldab                   |
-| `_`         | muidu / universaalne | `$??`        | kõik indeksid väärtusele   |
-| `??`        | vastavus             | `$[s..e]`    | lõige                      |
-| `@`         | tsükkel              | `$>`         | kaardistamine              |
-| `@!`        | katkesta             | `$\|`        | filtreerimine              |
-| `@>`        | jätka                | `$<`         | vähendamine                |
-| `->`        | lambda               | `$<`         | vähendamine                |
-| `arr[i] = val` | uuenda element (ainult massiivid) | `arr[i] += val` | liituuendamine |
-| `arr[i]$~`  | funktsionaalne uuendamine (uus koopia) | `$^+` | sorteeri kasvavalt (primitiivid) |
-| `$^-`       | sorteeri kahanevalt (primitiivid) | `$^` | sorteeri komparaatoriga (tuplid) |
-| `<~`        | tagasta              | `!?`         | proovi (try)               |
-| `\|>`       | toru                 | `:!`         | püüa (catch)               |
-| `#1`        | tõene                | `$!`         | on viga                    |
-| `#0`        | väär                 | `$!!`        | levi viga                  |
-| `:>`        | lõpuks (finally)     | `#`          | deklareeri moodul          |
-| `<#`        | impordi              | `#>`         | ekspordi                   |
-| `.`         | väljapääs            | `::`         | mooduli kutse              |
-| `#\|..\|`   | parsi (parse)        | `#.N\|..\|`  | ümarda N kohani            |
-| `#!N\|..\|` | kärbi N kohani       | `#,\|..\|`    | komavormingus              |
+| Sümbol | Operatsioon | Sümbol | Operatsioon |
+|--------|-------------|--------|-------------|
+| `=` | muutuja | `$#` | pikkus |
+| `:=` | konstant | `$+` | lisa (ahel) |
+| `>>` | väljund | `$+[i]` | sisesta indeksile (1-st) |
+| `<<` | sisend | `$-` | eemalda esimene väärtuse järgi |
+| `¶` / `\\` | reavahetust | `$--` | eemalda kõik väärtuse järgi |
+| `?` | kui | `$-[i]` | eemalda indeksil (1-st) |
+| `_?` | muidu-kui | `$-[i..j]` | eemalda vahemik (1-st) |
+| `_` | muidu / kohatäide | `$?` | sisaldab |
+| `??` | sobitamine | `$??` | leia kõik indeksid (1-st) |
+| `@` | tsükkel | `$[s..e]` | viil (1-st) |
+| `@ N { }` | tsükkel N korda | `$>` | kaardistamine |
+| `@!` | katkesta | `$\|` | filtreerimine |
+| `@>` | jätka | `$<` | redutseerimine |
+| `@:name { }` | sildistatud tsükkel | `$/ delim` | jaga sõne |
+| `@:name!` | katkesta sildiga | `$++ a b c` | ehita liitmisega |
+| `@:name>` | jätka sildiga | `massiiv[i>j>k]` | navigatsiooni indeks |
+| `->` | lambda | `massiiv[i] = val` | uuenda element (ainult massiivid) |
+| `massiiv[i] += val` | liit-uuendus | `massiiv[i]$~` | funktsionaalne uuendus (uus koopia) |
+| `$^+` | sorteeri kasvavalt (primitiivid) | `$^-` | sorteeri kahanevalt (primitiivid) |
+| `$^` | sorteeri võrdlusega (korteežid) | `<~` | tagasta |
+| `\|>` | torujuhe | `!?` | proovi |
+| `:!` | püüa | `:>` | lõpuks |
+| `#1` | tõene | `#0` | väär |
+| `$!` | on viga | `$!!` | levi viga |
+| `<#` | impordi | `#>` | ekspordi |
+| `#` | deklareeri moodul | `::` | mooduli kutse |
+| `.` | välja juurdepääs | `#?` | tüübi metaandmed |
+| `#\|..\|` | sõelu arv | `##.` | teisenda Float-iks |
+| `###` | teisenda Int-iks (ümardus) | `##!` | teisenda Int-iks (kärpimine) |
+| `#.N\|..\|` | ümarda | `#!N\|..\|` | kärbi |
+| `#,\|..\|` | vorming eraldajatega | `#^\|..\|` | teaduslik |
 | `#d0d9#` | arvurežiimi lüliti | `#09#` | lähtesta ASCII-le |
-| `#^\|..\|`   | teaduslik not.       | `<\ \>`      | kesta käsk                 |
-| `><`        | kesta väljund        | `$~~[..]`    | asenda stringis            |
-| `[a,b]=arr` | destruktureerimine   | `(x,y)=tup`  | tuple destruktureerimine   |
+| `<\ ..\>` | käivita kest | `>\<` | CLI argumendid |
+| `\ var` | hävita muutuja | | |
 
 ---
 
-*Zymbol-Lang — Sümboolne. Universaalne. Muutumatu.*
-
 ## Versiooniajalugu
 
-### v0.0.3 — Unicode Arvusüsteemid & LSP Täiustused _(Aprill 2026)_
+### v0.0.4 — Indekseerimine 1-st, Esmaklassilised Funktsioonid ja Mooduliplokid _(aprill 2026)_
 
-- **Lisatud** 69 Unicode numbribloки режиими lülitustokeniga `#d0d9#`
-- **Lisatud** Tõeväärtuse literaalid mis tahes kirjas — `#१` / `#०`, `#١` / `#٠` jne.
-- **Lisatud** Klingon pIqaD numbrid (CSUR PUA U+F8F0–U+F8F9)
-- **Lisatud** VM opkood `SetNumeralMode` — täielik pariteет tree-walkeriga
-- **Lisatud** REPL austab aktiivset arvurežiimi kaja ja muutujate kuvamisel
-- **Muudetud** `>>` tõeväärtuste väljund sisaldab nüüd eesliidet `#` (`#0` / `#1`) kõigis režiimides
+- **Muudetud** Kogu indekseerimine teisendati **1-st** — `massiiv[1]` on esimene element; `massiiv[0]` on käivitusviga
+- **Lisatud** Nimega funktsioonid on **esmaklassilised väärtused** — edasta otse KJF-le: `arvud$> kahekorda`
+- **Lisatud** Kohustuslik **ploki süntaks** moodulitele: `# name { ... }` — tasane süntaks eemaldatud
+- **Lisatud** Mitmemõõtmeline indekseerimine: `massiiv[i>j>k]` (navigatsioon), `massiiv[p ; q]` (tasane ekstraheerimine)
+- **Lisatud** Tüübi teisendused: `##.expr` (Float), `###expr` (Int ümardus), `##!expr` (Int kärpimine)
+- **Lisatud** Sõne jagamine: `str$/ delim` — tagastab `Array(String)`
+- **Lisatud** Ehitamine liitmisega: `base$++ a b c` — lisab mitu elementi
+- **Lisatud** Tsükkel N korda: `@ N { }` — korda täpselt N korda
+- **Lisatud** Sildistatud tsükli süntaks: `@:name { }`, `@:name!`, `@:name>` — asendab `@ @name` / `@! name`
+- **Lisatud** Ulatusreeglid: `_name` muutujatel on täpne ploki ulatus; `\ var` hävitab varem
+- **Lisatud** Võrdlusmustrid sobitamises: `< 0 :`, `> 5 :`, `== 42 :` jne
+- **Lisatud** Mooduli viga E013: täidetavad avaldused mooduli kehas on keelatud
+- **Parandatud** `take_variable` ei riku enam mooduli konstante tagasikirjutamisel
+- **Parandatud** `alias.CONST` lahendub nüüd korrektselt; `#>` võib ilmuda pärast funktsioonidefinitsioone
+- **VM** Täielik pariteet: 393/393 testi läbib
 
-### v0.0.2_01 — Operaatorite Ümbernimetamine _(30 Mar 2026)_
+### v0.0.3 — Unicode Arvusüsteemid ja LSP Täiustused _(aprill 2026)_
 
-- **Muudetud** `c|..|` → `#,|..|` ja `e|..|` → `#^|..|` — kooskõlas `#`-eesliidete perekonnaga
-- **Lisatud** Ekspordi alias: mooduli liikmete taaseksportimine teise nimega
+- **Lisatud** 69 Unicode numbrimärkide blokki lülitusmärgiga `#d0d9#`
+- **Lisatud** Tõeväärtuse literaalid kõigis süsteemides — `#१` / `#०`, `#١` / `#٠` jne
+- **Lisatud** Klingoni pIqaD numbrid (CSUR PUA U+F8F0–U+F8F9)
+- **Lisatud** VM-opkood `SetNumeralMode` — täielik pariteet tree-walkeriga
+- **Lisatud** REPL järgib aktiivset arvurežiimi kaja kuvamisel ja muutujate vaatamisel
+- **Muudetud** Boole'i väljund `>>` sisaldab nüüd eesliidet `#` (`#0` / `#1`) kõigis režiimides
 
-### v0.0.2 — Kollektsioonide API Ümberkujundamine & Installijad _(24 Mar 2026)_
+### v0.0.2_01 — Operaatorite Ümbernimetamine _(30. märts 2026)_
 
-- **Lisatud** Ühtne `$`-operaatorite perekond massiividele ja stringidele (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Lisatud** Destruktureerimine massiividele, tuupelitele ja nimega tuupelitele
-- **Lisatud** Negatiivsed indeksid (`arr[-1]` = viimane element)
-- **Lisatud** Kohalikud installijad — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+- **Muudetud** `c|..|` → `#,|..|` ja `e|..|` → `#^|..|` — kooskõlas `#` eesliite perekonnaga
+- **Lisatud** Ekspordi pseudonüüm: mooduli liikmete taaseksport teise nime all
 
-### v0.0.1-patch _(25 Mar 2026)_
+### v0.0.2 — Kogumike Ümberdisain ja Installerid _(24. märts 2026)_
 
-- **Lisatud** Liitomistamine `^=`
-- **Parandatud** Aritmeetilise parseri äärejuhud; dokumentatsiooniparandused
+- **Lisatud** Ühtne `$` operaatorite perekond massiivide ja sõnede jaoks (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Lisatud** Destruktureerimine massiivide, korteežide ja nimega korteežide jaoks
+- **Lisatud** Negatiivsed indeksid (`massiiv[-1]` = viimane element)
+- **Lisatud** Natiivsed installerid — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
 
-### v0.0.1 — Esimene Avalik Väljaanne _(22 Mar 2026)_
+### v0.0.1-patch _(25. märts 2026)_
 
-- Tree-walker tõlk + registri VM (`--vm`, ~4× kiirem, ~95% pariteет)
-- Kõik põhikonstruktid: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Täielikud Unicode-identifikaatorid, moodulisüsteem, lambdad, sulundid, veakäsitlus
+- **Lisatud** Liit-omistamine `^=`
+- **Parandatud** Parseri aritmeetika servaolukorrad; dokumentatsiooni parandused
+
+### v0.0.1 — Esimene Avalik Väljalase _(22. märts 2026)_
+
+- Tree-walker interpretaator + register-VM (`--vm`, ~4× kiirem, ~95% pariteet)
+- Kõik põhikonstruktsioonid: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Täielikud Unicode identifikaatorid, moodulisüsteem, lambdad, sulundid, veakäsitlus
 - REPL, LSP, VS Code laiendus, vormindaja (`zymbol fmt`)
 
 ---
 
-**Märkus:** See dokumentatsioon loodi ja tõlgiti tehisintellekti (TI) abil. On tehtud kõik jõupingutused täpsuse tagamiseks, kuid mõned tõlked või näited võivad sisaldada vigu. Autoriteetne viide on [Zymbol-Lang spetsifikatsioon](https://github.com/zymbol-lang/interpreter).
-
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-> The canonical reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).
+_Zymbol-Lang — Sümboolne. Universaalne. Muutumatu._

@@ -34,10 +34,6 @@
 |--------|---------|--------|
 | ✅ | manual_en.md | English (reference) |
 | ✅ | manual_es.md | Español (reference) |
-| ✅ | manual_fr.md | Français |
-| ✅ | manual_de.md | Deutsch |
-| ✅ | manual_it.md | Italiano |
-| ✅ | manual_pt.md | Português (BR) |
 
 ---
 
@@ -45,6 +41,10 @@
 
 | Estado | Archivo | Idioma |
 |--------|---------|--------|
+| ✅ | manual_fr.md | Français |
+| ✅ | manual_de.md | Deutsch |
+| ✅ | manual_it.md | Italiano |
+| ✅ | manual_pt.md | Português (BR) |
 | ✅ | manual_ca.md | Català |
 | ✅ | manual_gl.md | Galego |
 | ✅ | manual_ro.md | Română |
@@ -72,56 +72,56 @@
 | ✅ | manual_ru.md | Русский |
 | ✅ | manual_sk.md | Slovenčina |
 | ✅ | manual_sl.md | Slovenščina |
-| ❌ | manual_sr.md | Српски |
-| ❌ | manual_uk.md | Українська |
+| ✅ | manual_sr.md | Српски |
+| ✅ | manual_uk.md | Українська |
 
 ## Lote 4 — Bálticas + Finesas (5)
 
 | Estado | Archivo | Idioma |
 |--------|---------|--------|
-| ❌ | manual_et.md | Eesti |
-| ❌ | manual_eu.md | Euskara |
-| ❌ | manual_fi.md | Suomi |
-| ❌ | manual_lv.md | Latviešu |
-| ❌ | manual_lt.md | Lietuvių |
+| ✅ | manual_et.md | Eesti |
+| ✅ | manual_eu.md | Euskara |
+| ✅ | manual_fi.md | Suomi |
+| ✅ | manual_lv.md | Latviešu |
+| ✅ | manual_lt.md | Lietuvių |
 
 ## Lote 5 — Griego, Turco, Caucásicas (5)
 
 | Estado | Archivo | Idioma |
 |--------|---------|--------|
-| ❌ | manual_az.md | Azərbaycanca |
-| ❌ | manual_el.md | Ελληνικά |
-| ❌ | manual_hy.md | Հայերեն |
-| ❌ | manual_ka.md | ქართული |
-| ❌ | manual_tr.md | Türkçe |
+| ✅ | manual_az.md | Azərbaycanca |
+| ✅ | manual_el.md | Ελληνικά |
+| ✅ | manual_hy.md | Հայերեն |
+| ✅ | manual_ka.md | ქართული |
+| ✅ | manual_tr.md | Türkçe |
 
 ## Lote 6 — Semíticas + Persa (7)
 
 | Estado | Archivo | Idioma |
 |--------|---------|--------|
-| ❌ | manual_am.md | አማርኛ |
-| ❌ | manual_ar.md | العربية  ★ numerales árabes |
-| ❌ | manual_fa.md | فارسی  ★ numerales árabes-persas |
-| ❌ | manual_he.md | עברית |
-| ❌ | manual_ti.md | ትግርኛ |
-| ❌ | manual_ur.md | اردو |
-| ❌ | manual_ku.md | Kurdî |
+| ✅ | manual_am.md | አማርኛ |
+| ✅ | manual_ar.md | العربية  ★ numerales árabes ✔️ |
+| ✅ | manual_fa.md | فارسی  ★ numerales árabes-persas ✔️ |
+| ✅ | manual_he.md | עברית |
+| ✅ | manual_ti.md | ትግርኛ |
+| ✅ | manual_ur.md | اردو |
+| ✅ | manual_ku.md | Kurdî |
 
 ## Lote 7 — Sur de Asia — Índicas (11)
 
 | Estado | Archivo | Idioma | Nota |
 |--------|---------|--------|------|
-| ❌ | manual_bn.md | বাংলা | ★ numerales bengalíes |
-| ❌ | manual_gu.md | ગુજરાતી | ★ numerales gujarati |
-| ❌ | manual_hi.md | हिन्दी | ★ Devanagari |
-| ❌ | manual_kn.md | ಕನ್ನಡ | ★ numerales kannada |
-| ❌ | manual_ml.md | മലയാളം | ★ numerales malayalam |
-| ❌ | manual_mr.md | मराठी | ★ Devanagari |
-| ❌ | manual_ne.md | नेपाली | ★ Devanagari |
-| ❌ | manual_pa.md | ਪੰਜਾਬੀ | ★ numerales gurmukhi |
-| ❌ | manual_si.md | සිංහල | ★ numerales sinhala |
-| ❌ | manual_ta.md | தமிழ் | ★ numerales tamil |
-| ❌ | manual_te.md | తెలుగు | ★ numerales telugu |
+| ✅ | manual_bn.md | বাংলা | ★ numerales bengalíes ✔️ |
+| ✅ | manual_gu.md | ગુજરાતી | ★ numerales gujarati ✔️ |
+| ✅ | manual_hi.md | हिन्दी | ★ Devanagari ✔️ |
+| ✅ | manual_kn.md | ಕನ್ನಡ | ★ numerales kannada ✔️ |
+| ✅ | manual_ml.md | മലയാളം | ★ numerales malayalam ✔️ |
+| ✅ | manual_mr.md | मराठी | ★ Devanagari ✔️ |
+| ✅ | manual_ne.md | नेपाली | ★ Devanagari ✔️ |
+| ✅ | manual_pa.md | ਪੰਜਾਬੀ | ★ numerales gurmukhi ✔️ |
+| ✅ | manual_si.md | සිංහල | ★ numerales sinhala ✔️ |
+| ✅ | manual_ta.md | தமிழ் | ★ numerales tamil ✔️ |
+| ✅ | manual_te.md | తెలుగు | ★ numerales telugu ✔️ |
 
 ## Lote 8 — Este y Sureste de Asia (8)
 
@@ -134,7 +134,7 @@
 | ❌ | manual_my.md | မြန်မာဘာသာ | ★ Myanmar |
 | ❌ | manual_th.md | ภาษาไทย | ★ Thai |
 | ❌ | manual_vi.md | Tiếng Việt | |
-| ❌ | manual_zh.md | 中文 | |
+| ✅ | manual_zh.md | 中文 | |
 
 ## Lote 9 — Africanas (14)
 
