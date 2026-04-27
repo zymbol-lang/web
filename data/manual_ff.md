@@ -1,90 +1,113 @@
-# Zymbol-Lang Dokkol Ɓurɗo Famɗude
-
-**Zymbol-Lang** ko haala ngal winndirtoo e tiimooje. Ngal alaa keɓɓinooje — fof ko tiimorde. Ngal golloroo haa gooto e kala haala aadee.
-
-- Alaa keɓɓinooje (`if`, `while`, `return` wonaa ko woodi — ko tiimooje tan `?`, `@`, `<~`)
-- Unicode himmude — innde e kala haala aadee walla Emoji 👋
-- Golloroo e kala haala — koodhol ngol ko gooto e kala haala
+> **Boytaŋgal:** Dewtere ndee ko e ballal miijotooɗo dañaa (AI) waɗaa.
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Ɗerewol kanonikun ko **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** nder defterdu firoore.
 
 ---
 
-## Coccorde e Waɗande
+# Zymbol-Lang haalpitaare
+
+**Zymbol-Lang** ko ɗemngal fijirde tiitoonde. Alkulal ngartol alaa — ŋarɗuyeeji fow ko tiitoonde. Ngal golloo ko wooturu e kala ɗemngal neɗɗanke.
+
+- Ala `if`, `while`, `return` — heen tawaade `?`, `@`, `<~`
+- Unicode timmunde — hinle buutinɗe e kala ɗemngal walla emoji
+- Ngaɗaaki e ɗemngal neɗɗanke — koode nden ko wootere e kala nokku
+
+**Firoore diɗɗal**: v0.0.4 | **Barmal jarruɓe**: 393/393 (lootogol TW ↔ VM)
+
+---
+
+## Waylotooɗe e luttuɗe
 
 ```zymbol
-x = 10              // Coccorde (waɗande)
-PI := 3.14159       // Waɗande (waɗande — juumre so waɗoynoo)
-innde = "Ana"
-goonga = #1         // goonga booleen
-👋 := "Jaama"
+x = 10              // waylotoojo waylotoo
+PI := 3.14159       // lutto — lintinoowo keso ko jewte jokkondirɗe
+innde = "Aaliisa"
+huuɓtinde = #1      // Booliyaan goonga
+👋 := "A jaaraama"
 ```
 
 ```zymbol
-x = 10
+x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
 
 ---
 
-## Juuɗe Ɗee
+## Sifaaji data
 
-| Juuɗe           | Misaale              | Tiimorde `#?` | Tindinnde                           |
-|-----------------|----------------------|---------------|-------------------------------------|
-| Limre Jaajre    | `42`, `-7`           | `###`         | 64-bit waɗaama                      |
-| Limre Dottirde  | `3.14`, `1.5e10`     | `##.`         | Windannde siyantiifik OK            |
-| Winndannde      | `"jaama"`            | `##"`         | Interpolasion: `"Innde {innde}"`    |
-| Binndi          | `'A'`                | `##'`         | Unicode keefu gooto                 |
-| Booleen         | `#1`, `#0`           | `##?`         | WONAA limre 1 e 0                   |
-| Sarɗi           | `[1, 2, 3]`          | `##]`         | Fof ko juuɗe gooto                  |
-| Tupili          | `(a, b)`             | `##)`         | Binndi e goɗɗe                      |
-| Tupili Inndiraaɗe | `(x: 1, y: 2)`     | `##)`         | Naatee e innde walla binndi         |
+| Sifa | Kirol | Taggo `#?` | Maanduɗi |
+|------|-------|------------|----------|
+| Limoore timmunde | `42`, `-7` | `###` | 64-bit siynanoongal |
+| Limoore lodda | `3.14`, `1.5e10` | `##.` | Binndi ganndal hoolaama |
+| Haalol | `"binndi"` | `##"` | Naanirgol: `"A jaaraama {innde}"` |
+| Alfaa | `'A'` | `##'` | Alfaa Unicode gooto |
+| Booliyaan | `#1`, `#0` | `##?` | Hina limoore — `#1 ≠ 1` |
+| Moofu | `[1, 2, 3]` | `##]` | Ŋarɗuyaaji kawraaɗi |
+| Tupli | `(a, b)` | `##)` | Jogorgal |
+| Tupli inniraaɗo | `(x: 1, y: 2)` | `##)` | Gese inniraaɗe |
+| Golle | ciimtol golle inniraaɗe | `##()` | Ɓonndi aranere; hollirta `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Ɓonndi aranere; hollirta `<lambd/N>` |
 
 ```zymbol
-// Weltaare juuɗe — hollana (juuɗe, limre, nyaawka)
-meta = 42#?
->> meta ¶         // → (###, 2, 42)
-t = meta[0]
+// Caarugol sifa — hollirta (sifa, limle, njeendi)
+meeta = 42#?
+>> meeta ¶         // → (###, 2, 42)
+t = meeta[1]
 >> t ¶            // → ###
 ```
 
 ---
 
-## Hollinde e Naatinde
+---
+
+## Njeñtudi e Naatirgol
 
 ```zymbol
->> "Jaama" ¶                    // ¶ walla \\ hollina njaajeende
->> "a=" a " b=" b ¶             // keɓɓe keewɗe e juxtaposition
->> (arr$#) ¶                    // tiimooje postfix foti keɓɓe naange
+>> "A jaaraama" ¶                       // ¶ walla \\ ngam faddere kesiriere haqiiqa
+>> "a=" a " b=" b ¶                    // fawaade — njeendiiji keewɗi
+>> (arr$#) ¶                           // gollorɗi postfix njiɗɗi ( ) nder >> gila
 
-<< innde                        // alaa hiɓɓinooje — windana coccorde
-<< "Innde maa? " innde          // e hiɓɓinooje
+<< innde                           // jangude e nder waylotoojo (ɓaawo yaqtu)
+<< "Naate innde: " innde            // e yaqtu
 ```
 
-> `¶` (AltGr+R clavier espagnol) walla `\\` ko gooto ko hollinta njaajeende.
+> `¶` (AltGr+R e kala ekeyeere ispañol) e `\\` ko gooto ngam faddere kesiriire.
 
 ---
 
-## Kuutooɓe
+---
+
+## Kuutorɗe
 
 ```zymbol
-// Limreeji — waɗanee e coccorɗe; diiɗi maa waɗee ko juumre e >>
+// limle — kuutorɗe limtooje; gollorɗe goɗɗe ina ngondi e nder >> fawa
 a = 10
 b = 3
-r1 = a + b    // 13     r2 = a - b    // 7
-r3 = a * b    // 30     r4 = a / b    // 3  (feccude limreeje)
-r5 = a % b    // 1      r6 = a ^ b    // 1000  (fewnude)
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (limoore timmunde feccugol)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (limoore ndarnde)
 
-// Safaara
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
+// Yondinnde
+a == b    // #0    
+a <> b    // #1    
+a < b      // #0
+a <= b    // #0   
+a > b      // #1    
+a >= b    // #1
 
-// Miijo
+// Hakkilantaaku
 #1 && #0    // #0
 #1 || #0    // #1
 !#1         // #0
@@ -92,120 +115,123 @@ a <= b    // #0   a > b     // #1    a >= b   // #1
 
 ---
 
-## Ɓatakon
+---
+
+## Haalol
 
 ```zymbol
-// Naatooje tato ngonɗe — fof e nokku mum
-innde = "Ana"
-limre = 42
+// No ɗiɗi njuɓɓinirgol
+innde = "Aaliisa"
+n = 42
 
-ndiyam = "Jaama ", innde, "!"                // virgule — e waɗande = walla :=
->> "Jaama " innde " aan nanndi " limre ¶     // juxtaposition — e hollinde >>
-binndi = "Jaama {innde}, aan nanndi {limre}" // interpolasion — e nokku fof
+>> "A jaaraama " innde " a woodi " n ¶       // fawaade — nder >> gila
+bayyinoore = "A jaaraama {innde}, a woodi {n}"   // naanirgol — e nokku kala
 ```
 
 ```zymbol
-s = "Jaama Fulɓe"
-fiɓɓinannde = s$#                  // 11
-ndiyam = s$[0..5]                  // "Jaama"  (cakkitaare wiɗteede)
-njeyaa = s$? "Fulɓe"               // #1
-binnɗi = "a,b,c,d" / ','           // [a, b, c, d]
-yiɗtaare = s$~~["a":"A"]           // binndi yiɗtaare fof
-yiɗta1 = s$~~["a":"A":1]           // yiɗtaare adannde tan
+s = "A jaaraama Aduna"
+njuuteendi = s$#                  // 11 (e dow font)
+cukkol = s$[1..5]                 // "A jaa"  (ɓullere-1, hannde fawii)
+woodi = s$? "Aduna"               // #1
+feccuɗe = "a,b,c,d"$/ ','         // [a, b, c, d]  (feccugol e njuɓɓotoojo)
+looti = s$~~["a":"o"]             // "A joaaraama Aduno"
+looti1 = s$~~["a":"o":1]          // "A joaaraama Aduna" (gootanɗe n tan)
 ```
 
-> `+` ko ngam limreeje tan. E winndannde, hollinan virgule, juxtaposition walla interpolasion.
+> `+` woni e limooje tan. Ngam haalol, kuutor `,`, fawaade, walla naanirgol.
 
 ---
 
-## Jaɓɓinde Njeeygu
+## Luural jawdi
 
 ```zymbol
 x = 7
 
-? x > 0 { >> "nanondiri" ¶ }
+? x > 0 { >> "ko bam" ¶ }
 
 ? x > 100 {
-    >> "mawnde" ¶
+    >> "mawngu" ¶
 } _? x > 0 {
-    >> "nanondiri" ¶
+    >> "ko bam" ¶
 } _? x == 0 {
-    >> "nul" ¶
+    >> "re'e" ¶
 } _ {
-    >> "famɗude" ¶
+    >> "ko bamtu" ¶
 }
 ```
 
-> Jokkorde `{ }` ko **waajibii**, haa binndi gooto tan.
+> Ŋirɗe buubɗe `{ }` **ko boddii** hay ngam haalngu gootungu.
 
 ---
 
-## Match
+---
+
+## Hawrugol
 
 ```zymbol
-// Binndi himmude
-limre = 85
-sarɗi = ?? limre {
+// Jahe
+limle = 85
+leltol = ?? limle {
     90..100 : 'A'
     80..89  : 'B'
     70..79  : 'C'
     _       : 'F'
 }
->> sarɗi ¶    // → B
+>> leltol ¶     // → B
 
-// Winndannde
-ranwal = "ɓaleeri"
-koodhol = ?? ranwal {
-    "ɓaleeri" : "#FF0000"
-    "daneeri"  : "#00FF00"
+// Haaluje
+ndiiƴre = "boɗeeru"
+koodu = ?? ndiiƴre {
+    "boɗeeru"  : "#FF0000"
+    "haako"    : "#00FF00"
     _          : "#000000"
 }
 
-// Sarɗi (keeɗe fof)
-temp = -5
-ciiƴe = ?? temp {
-    _? temp < 0  : "congol"
-    _? temp < 20 : "daneere"
-    _? temp < 35 : "hiɓɓunde"
-    _            : "weendu"
+// mbaydiiji yondindirɗi
+ngulee = -5
+haala = ?? ngulee {
+    < 0  : "leydi"
+    < 20 : "dabbude"
+    < 35 : "tunna"
+    _    : "ulee"
 }
->> ciiƴe ¶    // → congol
+>> haala ¶       // → leydi
 
-// Gure jokkorde
+// Faamu haalngu (foccaaɗi)
 ?? n {
-    0       : { >> "nul" ¶ }
-    _? n < 0: { >> "famɗude" ¶ }
-    _       : { >> "nanondiri" ¶ }
+    0        : { >> "re'e" ¶ }
+    _? n < 0 : { >> "ko bamtu" ¶ }
+    _        : { >> "ko bam" ¶ }
 }
 ```
 
 ---
 
-## Woƴƴude
+## Haylagol
 
 ```zymbol
-@ i:0..4  { >> i " " }        // binndi: 0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // e aduna: 1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // huwtiinde: 5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // jaha heewi:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // e daande:     1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // waylitugol:   5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
 >> n ¶                        // → 128  (haa)
 
-liɓɓe = ["mango", "lemon", "orange"]
-@ f:liɓɓe { >> f ¶ }          // e kala keɓɓe
+lekku = ["poma", "peeru", "weneere"]
+@ l:lekku { >> l ¶ }            // ngam kala feccere moofu
 
-@ c:"jaama" { >> c "-" }
->> ¶                          // → j-a-a-m-a-
+@ k:"a jaaraama" { >> k "-" }
+>> ¶                          // → a- -j-a-a-r-a-a-m-a-  (ngam kala alfaa e haalol)
 
 @ i:1..10 {
-    ? i % 2 == 0 { @> }       // @> jokkude
-    ? i > 7 { @! }             // @! dankude
+    ? i % 2 == 0 { @> }       // @> jokku
+    ? i > 7 { @! }            // @> haaɓtu
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
 
-// Woƴƴude moƴƴaani
+// Haylagol joppaniingol
 i = 0
 @ {
     i++
@@ -214,349 +240,370 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Woƴƴude inndiraaɗe (dankude fewnude)
-count = 0
-@ @outer {
-    count++
-    ? count >= 3 { @! outer }
+// Haylagol inniraangol (haaɓtugol hawtaangol)
+lomtirɗe = 0
+@:yaasi {
+    lomtirɗe++
+    ? lomtirɗe >= 3 { @:yaasi! }
 }
->> count ¶                    // → 3
+>> lomtirɗe ¶                 // → 3
 ```
 
 ---
 
-## Tiiɗe
+## Golle
 
 ```zymbol
-suudude(a, b) { <~ a + b }
->> suudude(3, 4) ¶    // → 7
+Ɓeydogol(a, b) { <~ a + b }
+>> Ɓeydogol(3, 4) ¶   // → 7
 
-neɗɗo(n) {
+Faktooriyal(n) {
     ? n <= 1 { <~ 1 }
-    <~ n * neɗɗo(n - 1)
+    <~ n * Faktooriyal(n - 1)
 }
->> neɗɗo(5) ¶    // → 120
+>> Faktooriyal(5) ¶    // → 120
 ```
 
-Tiiɗe ngonɗe e scope moƴƴe — alaa naatgol e coccorɗe ɓurɗe. Waɗanee coccorɗe `<~` ngam waɗde:
+Golle ina ngoodi **koŋkol keeringal** — ɗe nganndoo waylotooɗe yaasi. Kuutor njeñtudi parameteeruuji `<~>` ngam laɓɓinde waylotooɗe noddotooɗo:
 
 ```zymbol
-fewnitaare(a<~, b<~) {
-    tmp = a
+loo(a<~, b<~) {
+    ɓundu = a
     a = b
-    b = tmp
+    b = ɓundu
 }
 x = 10
 y = 20
-fewnitaare(x, y)
+loo(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Tiiɗe inndiraaɗe wonaa keɓɓe cewndaaje. Ngam nawde ko teddingol: `x -> innde(x)`.
+> Golle inniraaɗe ko **Ɓonndi aranere njeendiiji** — neldu fawa: `nums$> hitilgo`. `x -> fn(x)` kadi ko laawɗuɗo.
 
 ---
 
-## Lambda e Binndi
+---
+
+## Lambdaaji e daande winndude
 
 ```zymbol
-doppelt = x -> x * 2
-jumloore = (a, b) -> a + b
->> doppelt(5) ¶       // → 10
->> jumloore(3, 7) ¶   // → 10
+hitilgo = x -> x * 2
+Ɓeydogol = (a, b) -> a + b
+>> hitilgo(5) ¶   // → 10
+>> Ɓeydogol(3, 7) ¶ // → 10
 
-// Lambda e jokkorde
-suudude = x -> {
-    ? x > 0 { <~ "nanondiri" }
-    _? x < 0 { <~ "famɗude" }
-    <~ "nul"
+// Foccaato lambda
+feccugol = x -> {
+    ? x > 0 { <~ "ko bam" }
+    _? x < 0 { <~ "ko bamtu" }
+    <~ "re'e"
 }
 
-// Binndi — Lambdas nanndi coccorɗe ɓurɗe
-faktor = 3
-tati = x -> x * faktor
->> tati(7) ¶    // → 21
+// Daande winndude — nangi koŋkol yaasi
+fokkal = 3
+hitirgol tati = x -> x * fokkal
+>> hitirgol tati(7) ¶   // → 21
 
-// Laaboratoore tiiɗe
-make_adder(n) { <~ x -> x + n }
-add10 = make_adder(10)
->> add10(5) ¶    // → 15
+// Duungal
+waɓtu_Ɓeydiwol(n) { <~ x -> x + n }
+Ɓeydu sappo = waɓtu_Ɓeydiwol(10)
+>> Ɓeydu sappo(5) ¶   // → 15
 
-// Lambdas ko keɓɓe: sarɗi njeyaa
-ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[2](5) ¶    // → 25
+// E nder moofu
+gollaade = [x -> x+1, x -> x*2, x -> x*x]
+>> gollaade[3](5) ¶   // → 25
 ```
 
 ---
 
-## Sarɗi
+## Moofu
 
-Sarɗi ngonɗe **waɗandeeji** kadi ndumi àwọn èròjà **juuɗe gooto**.
+Moofu **ko waylo** e ina jogoo **sifa gootol** ŋarɗuyaaji.
 
 ```zymbol
-arr = [1, 2, 3, 4, 5]
+moofu = [1, 2, 3, 4, 5]
 
-arr[0]          // 1 — naatgol (binndi fawaando 0)
-arr[-1]         // 5 — binndi famɗuɗe (cakkitaare)
-arr$#           // 5 — fiɓɓinannde (waɗanee (arr$#) e >>)
+moofu[1]          // 1 — naatugol (ɓullere-1: ŋarɗuyaango aranere)
+moofu[-1]         // 5 — cuusalan gobbo (ŋarɗuyaango hande)
+moofu$#           // 5 — njuuteendi (kuutor (moofu$#) nder >> gila)
 
-arr = arr$+ 6            // ɓeyɗude → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // naatgol e binndi 2
-arr3 = arr$- 3           // feccude adannde e nyaawka
-arr4 = arr$-- 3          // feccude fof e nyaawka
-arr5 = arr$-[0]          // feccude e binndi
-arr6 = arr$-[1..3]       // feccude binndi (cakkitaare wiɗteede)
+moofu = moofu$+ 6            // ɓeydoo → [1,2,3,4,5,6]
+moofu2 = moofu$+[2] 99       // naato e cuusalan 2 (ɓullere-1)
+moofu3 = moofu$- 3           // ittu feccere aranere njeendi
+moofu4 = moofu$-- 3          // ittu feccere ɗe fow
+moofu5 = moofu$-[1]          // ittu e cuusalan 1 (ŋarɗuyaango aranere)
+moofu6 = moofu$-[2..3]       // ittu jaha (ɓullere-1, hannde fawii)
 
-njeyaa = arr$? 3         // #1 — njeyaa
-binnɗi = arr$?? 3        // [2] — binnɗi fof e nyaawka
-ndiyam = arr$[0..3]      // [1,2,3] — ndiyam (cakkitaare wiɗteede)
-sl2 = arr$[0:3]          // [1,2,3] — fiɓɓinannde-kama
+woodi = moofu$? 3            // #1 — ina woodi
+cuuɗe = moofu$?? 3           // [3] — cuuɗe ɗe fow njeendi (ɓullere-1)
+riiwol = moofu$[1..3]        // [1,2,3] — riiwol (ɓullere-1, hannde fawii)
+riiwol2 = moofu$[1:3]        // [1,2,3} — gootol, haalngu cuusalan
 
-asc = arr$^+             // dartinde mawnde (limreeje tan)
-desc = arr$^-            // dartinde famɗude (limreeje tan)
+yahrude = moofu$^+           // tolnude yahrude (ko adanɗe faw)
+wartude = moofu$^-           // tolnude wartude (ko adanɗe faw)
 
-// Tupili inndiraaɗe — waɗanee $^ e lambda safaara
-db = [(innde: "Karla", jimre: 28), (innde: "Ana", jimre: 25), (innde: "Buba", jimre: 30)]
-jimre_kama  = db$^ (a, b -> a.jimre < b.jimre)    // dartinde mawnde e jimre (<)
-innde_kama = db$^ (a, b -> a.innde > b.innde)     // dartinde famɗude e innde (>)
->> jimre_kama[0].innde ¶     // → Ana
->> innde_kama[0].innde ¶    // → Karla
+// Tupli inniraaɗo/cuusalan moofu — kuutor $^ e lambda yondinnde
+daata = [(innde: "Kaarla", duuɓi: 28), (innde: "Aana", duuɓi: 25), (innde: "Bob", duuɓi: 30)]
+duuɓi_faw   = daata$^ (a, b -> a.duuɓi < b.duuɓi)     // yahrude e duuɓi (<)
+innde_faw   = daata$^ (a, b -> a.innde > b.innde)     // wartude e innde (>)
+>> duuɓi_faw[1].innde ¶    // → Aana
+>> innde_faw[1].innde ¶     // → Kaarla
 
-// Waɗde binndi taaɗtinde (sarɗi tan)
-arr[1] = 99              // siifde
-arr[0] += 5              // nde waɗi: +=  -=  *=  /=  %=  ^=
+// Laɓɓingol ŋarɗuyaango fawa (moofu tan)
+moofu[1] = 99              // lintin
+moofu[2] += 5              // doon: +=  -=  *=  /=  %=  ^=
 
-// Waɗde tiiɗungal — hollana sarɗi kesel; asli yottaaki waylude
-arr2 = arr[1]$~ 99
+// Laɓɓingol kuuɓtidinngol — hollirta moofu keso; fuɗɗorol gaggaaka
+moofu2 = moofu[2]$~ 99
 ```
 
-> Tiimooje fof ngollana **sarɗi kesel**. Waɗanaa: `arr = arr$+ 4`.
-> Alaa jokkude — waɗande ɗiɗi jaɓɓinee.
-> `$^+` / `$^-` ngollana **sarɗi limreeje** (limreeje, winndannde). Tupili waɗanee `$^` e lambda safaara.
+> Kuutorɗe moofu fow ko **moofu keso** hollirta. Lintin ɓaawo: `moofu = moofu$+ 4`.
+> `$+` kaɲey ana waawi: `moofu = moofu$+ 5$+ 6$+ 7`. Kuutorɗe goɗɗe kuutor lintinooɗe hakkukor.
+> **Cuusalan noon ko ɓullere-1**: `moofu[1]` ko ŋarɗuyaango aranere; `moofu[0]` ko ewte jokkondirɗe.
+> `$^+` / `$^-` **moofu adanɗe** faw (limooje, haaluje). Ngam moofu tupli, kuutor $^ e lambda yondinnde — laawol ngol ko e lambda winndaa (`<` = yahrude, `>` = wartude).
 
-**Miijo iye** — siifde sarɗi coccorde welnde ɗiɗi waɗa ɗiɗi gere:
+**Njeendi hakkilantaaku** — lintin moofu e waylotoojo goɗɗo ina waɗa koppi keeriiɗo:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b waɗaaka
+>> b ¶    // → [1, 2, 3]   ← b handaaka
 ```
 
 ```zymbol
-// Sarɗi ɗiɗiɗe
-matris = [[1,2,3],[4,5,6],[7,8,9]]
->> matris[1][2] ¶    // → 6
+// Moofu hawtaaɗi (cuusalan ɓullere-1)
+fadaaru = [[1,2,3],[4,5,6],[7,8,9]]
+>> fadaaru[2][3] ¶    // → 6  (taƴre 2, haatere 3)
 ```
 
 ---
 
-## Ukkitaare
+## Torra ko'e
 
 ```zymbol
-// Sarɗi
-arr = [10, 20, 30, 40, 50]
-[a, b, c] = arr              // a=10  b=20  c=30
-[adannde, *goɗɗe] = arr      // adannde=10  goɗɗe=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ feccude innde
+// Moofu
+moofu = [10, 20, 30, 40, 50]
+[a, b, c] = moofu              // a=10  b=20  c=30
+[ɓooyɗo, *hettiiɗe] = moofu    // ɓooyɗo=10  hettiiɗe=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ rewnii
 
-// Tupili e goɗɗe
-nokku = (100, 200)
-(px, py) = nokku             // px=100  py=200
+// Tupli cuusalan
+tufto = (100, 200)
+(px, py) = tufto              // px=100  py=200
 
-// Tupili inndiraaɗe
-neɗɗo = (innde: "Ana", jimre: 25, wuro: "Dakar")
-(innde: n, jimre: a) = neɗɗo // n="Ana"  a=25
+// Tupli inniraaɗo
+neɗɗo = (innde: "Aana", duuɓi: 25, saare: "Madriid")
+(innde: i, duuɓi: d) = neɗɗo   // i="Aana"  d=25
 ```
 
 ---
 
-## Tupili
+## Tupli
 
-Àwọn tupili ko àwọn àpótí tí a tò **tí ngonɗe waɗataa** tí waɗi àwọn ìye **juuɗe goorɗe**. Sarɗi fenaali, binndi ngonaa waɗanteeji ɗiɗi ɓenndii.
+Tupli ko ronooji **gaɗaani** dorndirɗi ɗi mbaawi jogude njeendiiji **sifaaji sarija**.
+Wakkaati moofu, ŋarɗuyaaji mbaawi laɓɓineede caggal raɓɓugol.
 
 ```zymbol
-// E goɗɗe
-nokku = (10, 20)
->> nokku[0] ¶    // → 10
-kunnafoniw = (42, "jaama", #1, 3.14)
->> kunnafoniw[2] ¶     // → #1
+// Cuusalan — sifaaji hawtirɗi horiima
+tufto = (10, 20)
+>> tufto[1] ¶      // → 10
 
-// Inndiraaɗe
-neɗɗo = (innde: "Alice", jimre: 25)
->> neɗɗo.innde ¶    // → Alice
->> neɗɗo[0] ¶       // → Alice  (binndi jokkata haa)
+daata = (42, "a jaaraama", #1, 3.14)
+>> daata[3] ¶      // → #1
 
-// Fewnude
-weeyo = (x: 10, y: 20)
-p = (weeyo: weeyo, innde: "adannde")
->> p.weeyo.x ¶      // → 10
+// Inniraaɗo
+neɗɗo = (innde: "Aaliisa", duuɓi: 25)
+>> neɗɗo.innde ¶    // → Aaliisa
+>> neɗɗo[1] ¶      // → Aaliisa  (cuusalan kadi golloo, ɓullere-1)
+
+// Hawtaaɗo
+nokku = (x: 10, y: 20)
+p = (nokku: nokku, tiitoonde: "fuɗɗorii")
+>> p.nokku.x ¶       // → 10
 ```
 
-**Ngonaa waɗanteeji** — tupili ngonaa waɗanteeji; haɗndanaa tiimooje:
+**Gagaagol** — kala haaarugo laɓɓinde ŋarɗuyaango tupli ko ewte jokkondirɗe:
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99      // ❌ Juumre: tupili ngonaa waɗanteeji
-// t[0] += 5      // ❌ Juumre: tupili ngonaa waɗanteeji
+// t[1] = 99    // ❌ ewte jokkondirɗe: tupli ko gaɗaani
+// t[1] += 5    // ❌ ewte gootol
+
+// Tupli inniraaɗo — mahugo haqiiqa
+neɗɗo = (innde: "Aaliisa", duuɓi: 25)
+mawngu = (innde: neɗɗo.innde, duuɓi: 26)
+>> neɗɗo.duuɓi ¶    // → 25
+>> mawngu.duuɓi ¶    // → 26
 ```
 
-Waɗdu binndi kesel e `$~`:
+Ngam heɓugo njeendi laɓɓinaa, kuutor `$~` (laɓɓingol kuuɓtidinngol) — hollirta tupli **keso**:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[0]$~ 99    // → (99, 20, 30)  — t yottaaki waylude
-
-// Tupili inndiraaɗe — waɗdu binndi e innde
-mawɗo = (innde: neɗɗo.innde, jimre: 26)
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← fuɗɗorol gaggaaka
+>> t2 ¶    // → (10, 999, 30)
 ```
 
 ---
 
-## Tiiɗe Mawnde
-
-> Tiimooje HOF foti **lambda hiɓɓinnde** — alaa coccorde lambda toɗɗaande.
+## Golle tolno toowngo
 
 ```zymbol
-nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+limooji = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-doppele  = nums$> (x -> x * 2)                // map  → [2,4,6…20]
-jaaɓniɗi = nums$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
-jumlol   = nums$< (0, (acc, x) -> acc + x)    // reduce → 55
+hiɗaaɗi = limooji$> (x -> x * 2)                // mappi → [2,4,6…20]
+fotooji   = limooji$| (x -> x % 2 == 0)          // raɓɓoo → [2,4,6,8,10]
+firo   = limooji$< (0, (buuɗe, x) -> buuɗe + x) // uste → 55
 
-// Jokkude e waɗande
-gure1 = nums$| (x -> x > 3)
-gure2 = gure1$> (x -> x * x)
->> gure2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+// Hawrogol e gese hakkunde
+daande1 = limooji$| (x -> x > 3)
+daande2 = daande1$> (x -> x * x)
+>> daande2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Tiiɗe inndiraaɗe e HOF — naatanee e lambda
-doppelt(x) { <~ x * 2 }
-r = nums$> (x -> doppelt(x))    // ✅
+// Golle inniraaɗe mbaawi neldeede fawa to golle tolno toowngo
+hiɗugo(x) { <~ x * 2 }
+mawngu_ngoo(x) { <~ x > 5 }
+r = limooji$> hiɗugo       // ✅ ciimtol fawa
+r = limooji$| mawngu_ngoo   // ✅ ciimtol fawa
 ```
 
 ---
 
-## Kuutorde Kaaƴndi
+## Kuutorgol piiw
 
-Baɗtorde kaa foti `_` lokola toɗɗaande nyaawka piipirde:
+Joŋge ñaamo njiɗɗo `_` haa woto ngam jogorgol njeendi ndi piipaaka:
 
 ```zymbol
-doppelt = x -> x * 2
-jumlol = (a, b) -> a + b
-ɓeyɗude = x -> x + 1
+hiɗugo = x -> x * 2
+Ɓeydogol = (a, b) -> a + b
+Ɓeydu = x -> x + 1
 
-5 |> doppelt(_)        // → 10
-10 |> jumlol(_, 5)     // → 15
-5 |> jumlol(2, _)      // → 7
+5 |> hiɗugo(_)        // → 10
+10 |> Ɓeydogol(_, 5)   // → 15
+5 |> Ɓeydogol(2, _)    // → 7
 
-// Jokkude
-r = 5 |> doppelt(_) |> ɓeyɗude(_) |> doppelt(_)
+// Hawraa
+r = 5 |> hiɗugo(_) |> Ɓeydu(_) |> hiɗugo(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## Jaɓɓinde Juumre
+## Jogingol ewte
 
 ```zymbol
 !? {
     x = 10 / 0
 } :! ##Div {
-    >> "Feccude e nul" ¶
+    >> "feccugol e re'e" ¶
 } :! {
-    >> "juumre goɗɗo: " _err ¶    // _err nanndi ɓatakon juumre
+    >> "ewte woɗɗunde: " _err ¶    // _err jogii haalngu ewte
 } :> {
-    >> "woɗɗi fof golloroo" ¶
+    >> "wanaa wootere" ¶
 }
 ```
 
-| Juuɗe       | Tuma ngal jokkata           |
-|-------------|------------------------------|
-| `##Div`     | Feccude e nul                |
-| `##IO`      | Dosiye / Coodaari            |
-| `##Index`   | Binndi ɓuri binndi sarɗi     |
-| `##Type`    | Juumre juuɗe                 |
-| `##Parse`   | Juumre parse                 |
-| `##Network` | Juumre reseew                |
-| `##_`       | Juumre fof (catch-all)       |
+| Faamu | Jaman |
+|-------|-------|
+| `##Div` | Feccugol e re'e |
+| `##IO` | Deftere / njuɓɓudi |
+| `##Index` | Cuusalan kaɓɓiti balɗe |
+| `##Type` | Faamu lunndi |
+| `##Parse` | Caarugol daata |
+| `##Network` | Ewte je'e | 
+| `##_` | Ewte kala (nanga fow) |
 
 ---
 
-## Modiiji
+---
+
+## Bajji
 
 ```zymbol
-// Dosiye: lib/calc.zy
-# calc
+// lib/calc.zy — baali modulu ndi e nder ŋirɗe buubɗe
+# calc {
+    #> { Ɓeydogol, get_PI }
 
-#> { suudude, get_PI }    // Sarɗi ƁURI faayre
-
-_PI := 3.14159
-suudude(a, b) { <~ a + b }
-get_PI() { <~ _PI }   // naatande — naatgol toon toon alaa
+    _PI := 3.14159
+    Ɓeydogol(a, b) { <~ a + b }
+    get_PI() { <~ _PI }
+}
 ```
 
 ```zymbol
-// Dosiye: main.zy
-<# ./lib/calc <= c    // Innde foti
+// main.zy
+<# ./lib/calc <= c    // innde woɗɗunde boddii
 
->> c::suudude(5, 3) ¶  // → 8
+>> c::Ɓeydogol(5, 3) ¶   // → 8
 pi = c::get_PI()
->> pi ¶                // → 3.14159
+>> pi ¶              // → 3.14159
 ```
 
 ```zymbol
-// Hollinde e innde goɗɗo
-# mylib
-#> { _jumlol_katin <= jumlol }
+// Yaltinde e innde fahde woɗɗunde
+# defterdu_am {
+    #> { _Ɓeydogol_nderu <= lewru }
 
-_jumlol_katin(a, b) { <~ a + b }
+    _Ɓeydogol_nderu(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
-<# ./mylib <= m
+<# ./defterdu_am <= m
 
->> m::jumlol(3, 4) ¶    // → 7  (innde katin _jumlol_katin suuɗaama)
+>> m::lewru(3, 4) ¶    // → 7  (innde nderu _Ɓeydogol_nderu suuɗaama)
+```
+
+> **Laabi bajji**: nder `# innde { }`, `#>`, bayyini golle, e daɓɓinooɗe waylotoojo/lutto kirol tan horiima. Haalnguuji huutoraaɗi (`>>`, `<<`, haylagol, woɗɗuɗi) neddina ewte E013.
+
+---
+
+---
+
+## Kuugal limooji
+
+Zymbol mbaawi hollirde limooji e **69 foccataa limle Unicode** — Dewanaagari, Aruuba-Hindu, Taylande, Kilingon pIqaD, Limle semmbiɗe, bojjeeji LCD, e woɗɗuɗi. Kuugol kuutortee ngol hollirta e njeñtudi `>>` tan; limle nderu ko ɗiɗaɓere wanaa wootere.
+
+### Teenugol binndi
+
+Windugol `0` e `9` binndi ngi fotoo nder `#…#`:
+
+```zymbol
+#०९#    // Dewanaagari    (U+0966–U+096F)
+#٠٩#    // Aruuba-Hindu   (U+0660–U+0669)
+#๐๙#    // Taylande       (U+0E50–U+0E59)
+#09#    // huccintinoo ASCII
 ```
 
 ---
 
-## Haaɓe Limooje
-
-Zymbol waawi yiytude limooje e **Unicode ɗemɗe limooje 69** — Devanagari, Arabi-Indiya, Tayilaandi, Klingon pIqaD, Matemetik Ɓamɓam, segiman LCD e go'i. Haaɓere gollorde hollitata tan hakkunde `>>`-yiytirde; aritmetik dow huunde fof ko binaari.
-
-### Suɓugol ɗemngal
-
-Winndude limoore `0` e `9` e nder `#…#`:
-
-```zymbol
-#०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // Arabic-Indic  (U+0660–U+0669)
-#๐๙#    // Thai          (U+0E50–U+0E59)
-#09#    // reset to ASCII
-```
-
-### Yiytirde e ñiiɓirɗe goonga
+### Njeñtudi e Booliyaanuuji
 
 ```zymbol
 x = 42
->> x ¶          // → 42   (ASCII default)
+>> x ¶          // → 42   (ko ɓuri heewde ASCII)
 
 #०९#
 >> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४
+>> 3.14 ¶       // → ३.१४   (nokku cappannde ko ASCII wanaa wootere)
 >> 1 + 2 ¶      // → ३
 
-// Ñiiɓirɗe goonga: # dow huunde fof ko ASCII, limoore yoɓii
->> #1 ¶         // → #१
->> #0 ¶         // → #०
+// Booliyaanuuji: fottorgol # ko ASCII wanaa wootere, limol ngal hawrotana
+>> #1 ¶         // → #१   (goonga e Dewanaagari)
+>> #0 ¶         // → #०   (hay — wayi e ० limoore timmunde re'e)
 
 x = 28 > 4
->> x ¶          // → #१
+>> x ¶          // → #१   (lootogol yondinnde jokki kuugol kuutortee ngol)
 ```
 
-### Limooje asliije e kodu asli
+---
 
-Limooje e kala ɗemngal piɗtuɗo ko limooje ɓurɗe — e faandaare, modulo, suɓude:
+## Kiroloji limle adanɗe nder koode ɓundu
+
+Limle binndi fow ɗi ballitaa ko kiroloji laawɗuɗi — e jahe, e modulo, e yondinnde:
 
 ```zymbol
 #०९#
@@ -569,160 +616,192 @@ Limooje e kala ɗemngal piɗtuɗo ko limooje ɓurɗe — e faandaare, modulo, su
 }
 ```
 
-### Ñiiɓirɗe goonga e kala ɗemngal
+---
 
-`#` + limoore `0` walla `1` e kala keɓirde ko ñiiɓere goonga ɓurde:
+### Kiroloji Booliyaanuuji e kala binndi
+
+`#` + limol `0` walla `1` binndi foccataa kala ko kirol Booliyaan laawɗuɗo:
 
 ```zymbol
-#٠٩#
-نشط = #١
->> نشط ¶        // → #١
->> (#١ && #٠) ¶ // → #٠
+#०९#
+huuɓtinde = #१        // gootol e #1
+>> huuɓtinde ¶        // → #१
+>> (#१ && #०) ¶       // → #०
 ```
 
-> `#` ko **dow huunde fof ASCII**. `#0` (feere) ko huunde yiɗde fof fawaade hakkunde `0` (limoore ɓaawo) e kala ɗemngal.
+> `#` **ko ASCII wanaa wootere**. `#0` (hay) ko wayi e `0` (limoore timmunde re'e) e kala binndi.
 
 ---
 
-## Kuutooɓe Jaati
+---
+
+## Kuutorɗe daata
 
 ```zymbol
-// Feccude winndannde e limre
-v1 = #|"42"|      // → 42  (Limre Jaajre)
-v2 = #|"3.14"|    // → 3.14  (Limre Dottirde)
-v3 = #|"abc"|     // → "abc"  (juumre alaa)
+// Waylude faamu
+##.42         // → 42.0  (ngam Lodda)
+###3.7        // → 4     (ngam Limoore timmunde, wondru)
+##!3.7        // → 3     (ngam Limoore timmunde, ittugol)
 
-// Dartinde / feccude
+// Caarugol haalol ngam limoore
+v1 = #|"42"|      // → 42  (Limoore timmunde)
+v2 = #|"3.14"|    // → 3.14  (Lodda)
+v3 = #|"abc"|     // → "abc"  (deeƴanɗum, ewte alaa)
+
+// Wondrude / Ittugol
 pi = 3.14159265
-r2 = #.2|pi|      // → 3.14  (dartinde e binndi 2)
-r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14  (feccude)
+wondru2 = #.2|pi|      // → 3.14  (wondrude e cuusalan 2 loppi)
+wondru4 = #.4|pi|      // → 3.1416
+ittu2 = #!2|pi|        // → 3.14  (ittugol)
 
-// Windannde limre
-fmt = #,|1234567|      // → 1,234,567  (virgule fewnirde)
-sci = #^|12345.678|    // → 1.2345678e4  (siyantiifik)
+// Waɗtugol limoore
+waɗtugol = #,|1234567|   // → 1,234,567  (feccagol e loppol)
+ganndal = #^|12345.678|  // → 1.2345678e4  (ganndal)
 
-// Limreeji tondiraaɗi
-a = 0x41         // → 'A'  (hex)
-b = 0b01000001   // → 'A'  (binaari)
+// Kiroloji kalluŋge
+a = 0x41         // → 'A'  (heksadesimaal)
+b = 0b01000001   // → 'A'  (binari)
 c = 0o101        // → 'A'  (oktal)
 
-// Hollinde tondirde
-hex = 0x|255|    // → "0x00FF"
+// Njeñtudi waylugol kalluŋge
+heks = 0x|255|   // → "0x00FF"
 bin = 0b|65|     // → "0b1000001"
-oct = 0o|8|      // → "0o10"
-dec = 0d|255|    // → "0d0255"
+okt = 0o|8|      // → "0o10"
+des = 0d|255|    // → "0d0255"
 ```
 
 ---
 
-## Lekki Shell
+---
+
+## Hawroogol Shella
 
 ```zymbol
-wontere = <\ date +%Y-%m-%d \>     // nanndi stdout (e njaajeende)
->> "Hannde: " wontere
+taariika = <\ date +%Y-%m-%d \>     // nanga stdout (e \n nder hande)
+>> "Hannde: " taariika
 
-dosiye = "data.txt"
-mbinndanndee = <\ cat {dosiye} \>      // interpolasion e kuutooɗe
+deftere = "daata.txt"
+ko_ngoo = <\ cat {deftere} \>        // naanirgol e nder yamirooje
 
-binndi = </"./subscript.zy"/>   // golloroo zymbol goɗɗo, nanndi binndi
->> binndi
+njeñtudi = </"./subscript.zy"/>      // huutora goɗɗo Zymbol binndi, nanga njeñtudi
+>> njeñtudi
 ```
 
-> `><` nanndi kuutooɗe CLI lokola sarɗi (tree-walker tan).
+> `><` nanga CLI jaɓuɗe wa haalol moofu (tree-walker tan).
 
 ---
 
-## Misaale Humpitanɗe: FizzBuzz
+## Maandol timmungol: FizzBuzz
 
 ```zymbol
-suudude(limorde) {
-    ? limorde % 15 == 0 { <~ "BinndoFizzBuzz" }
-    _? limorde % 3  == 0 { <~ "BinndoFizz" }
-    _? limorde % 5  == 0 { <~ "BinndoBuzz" }
-    _ { <~ limorde }
+feccugol(limol) {
+    ? limol % 15 == 0 { <~ "FizzBuzz" }
+    _? limol % 3  == 0 { <~ "Fizz" }
+    _? limol % 5  == 0 { <~ "Buzz" }
+    _ { <~ limol }
 }
 
-@ i:1..20 { >> suudude(i) ¶ }
+@ i:1..20 { >> feccugol(i) ¶ }
 ```
 
 ---
 
-## Tiimooje Ɗee
+---
 
-| Tiimorde | Gollal             | Tiimorde   | Gollal                |
-|----------|--------------------|------------|-----------------------|
-| `=`      | Coccorde           | `$#`       | Fiɓɓinannde           |
-| `:=`     | Waɗande            | `$+`       | Ɓeyɗude               |
-| `>>`     | Hollinde           | `$+[i]`    | Naatgol e binndi      |
-| `<<`     | Naatinde           | `$-`       | Feccude adannde       |
-| `¶`/`\\` | Njaajeende         | `$--`      | Feccude fof e nyaawka |
-| `?`      | so (if)            | `$-[i]`    | Feccude e binndi      |
-| `_?`     | _so (_elif)        | `$-[i..j]` | Feccude binnɗi        |
-| `_`      | _tan / toɗɗaare    | `$?`       | Njeyaa                |
-| `??`     | match              | `$??`      | Binnɗi fof e nyaawka  |
-| `@`      | Woƴƴude            | `$[s..e]`  | Ndiyam                |
-| `@!`     | dankude (break)    | `$>`       | map                   |
-| `@>`     | jokkude (continue) | `$\|`      | filter                |
-| `->`     | Lambda             | `$<`       | reduce                |
-| `arr[i] = val` | Siifde (sarɗi tan) | `arr[i] += val` | Siifde e kuutorde  |
-| `arr[i]$~`| Waɗdu binndi kesel | `$^+`      | Dartinde mawnde       |
-| `$^-`    | Dartinde famɗude   | `$^`       | Dartinde e lambda     |
-| `<~`     | jooɗaare           | `!?`       | ɗannude (try)         |
-| `\|>`    | Pipe               | `:!`       | jaɓɓude (catch)       |
-| `#1`     | goonga             | `:>`       | fof (finally)         |
-| `#0`     | fenaande           | `$!`       | ko juumre             |
-| `<#`     | naatinde (import)  | `$!!`      | nawde juumre          |
-| `#`      | hollude modul      | `#>`       | sarɗude (export)      |
-| `::`     | nodde modul        | `.`        | naatgol binndi        |
-| `#\|..\|` | feccude limre    | `#?`       | weltaare juuɗe        |
-| `#.N\|..\|` | dartinde       | `#!N\|..\|` | feccude            |
-| `#,\|..\|` | windannde virgule | `#^\|..\|` | siyantiifik           |
-| `#d0d9#` | suɓugol haaɓere limooje | `#09#` | ruttugol ASCII |
-| `<\ ..\>` | shell golloroo  | `>\<`      | kuutooɗe CLI          |
+## Ciimtol tiitoonde
 
-## Taarikuure Yamirooje
-
-### v0.0.3 — Unicode Limooje & Laatinooji LSP _(Avrili 2026)_
-
-- **Felludaa** Unicode keɓirɗe limooje 69 e toɓɓere suɓugol haaɓere `#d0d9#`
-- **Felludaa** Ñiiɓirɗe goonga e kala ɗemngal — `#१` / `#०`, `#١` / `#٠`, e go'i
-- **Felludaa** Klingon pIqaD limooje (CSUR PUA U+F8F0–U+F8F9)
-- **Felludaa** VM opcode `SetNumeralMode` — nafoore gaa tree-walker
-- **Felludaa** REPL yoɓii haaɓere limooje dow huunde fof e yiytirde e hollude ciiñal
-- **Waynitaa** `>>` ñiiɓirɗe hollit `#` dow (`#0` / `#1`) e kala haaɓere
-
-### v0.0.2_01 — Innde Kuutooɓe Waynitaama _(30 Mar 2026)_
-
-- **Waynitaa** `c|..|` → `#,|..|` e `e|..|` → `#^|..|` — taƴondiral e dow `#`
-- **Felludaa** Export innde: ruttugol innde modiila e innde woɗnde
-
-### v0.0.2 — Laatinooji API Jaati & Nelnooɓe _(24 Mar 2026)_
-
-- **Felludaa** `$` kuutooɓe koolol dow arrays e strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Felludaa** Feccugol dow arrays, tuples e tuples e innde
-- **Felludaa** Limooje koroya (`arr[-1]` = jawɗe timmunde)
-- **Felludaa** Nelnooɓe asliiji — Linux (deb/rpm/pkg/musl), macOS, Windows
-
-### v0.0.1-patch _(25 Mar 2026)_
-
-- **Felludaa** Suɓugol rewindaandu `^=`
-- **Dɓitaama** Keerol aritmetik; laatinooji binndol
-
-### v0.0.1 — Yamirde Gadane _(22 Mar 2026)_
-
-- Tree-walker + register VM (`--vm`, ~4× gaɗɗa, ~95% nafoore)
-- Kala cogciɗi: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Unicode, modiila, lambda, uddungol, dɓitde juumre
-- REPL, LSP, VS Code, formater (`zymbol fmt`)
+| Tiitoonde | Gollal | Tiitoonde | Gollal |
+|-----------|--------|-----------|--------|
+| `=` | waylotoojo | `$#` | njuuteendi |
+| `:=` | lutto | `$+` | Ɓeydoo (ana waawi hawre) |
+| `>>` | njeñtudi | `$+[i]` | naato e cuusalan (ɓullere-1) |
+| `<<` | naatirgol | `$-` | ittu aranere e njeendi |
+| `¶` / `\\` | faddere kesiriire | `$--` | ittu ɗe fow e njeendi |
+| `?` | si | `$-[i]` | ittu e cuusalan (ɓullere-1) |
+| `_?` | ma si | `$-[i..j]` | ittu jaha (ɓullere-1) |
+| `_` | ma / gaafal | `$?` | woodi |
+| `??` | hawrugol | `$??` | yiytu cuuɗe ɗe fow (ɓullere-1) |
+| `@` | haylagol | `$[s..e]` | riiwol (ɓullere-1) |
+| `@ N { }` | haylagol N laabi | `$>` | mappi |
+| `@!` | haaɓtu | `$|` | raɓɓoo |
+| `@>` | jokku | `$<` | uste |
+| `@:innde { }` | haylagol inniraangol | `$/ njuɓɓotoojo` | feccugol haalol |
+| `@:innde!` | haaɓtugol inniraangol | `$++ a b c` | mahugol hawrogol |
+| `@:innde>` | jokku inniraangol | `moofu[i>j>k]` | cuusalan lewru |
+| `->` | lambda | `moofu[i] = njeendi` | laɓɓin ŋarɗuyaango (moofu tan) |
+| `moofu[i] += njeendi` | laɓɓinndo doon | `moofu[i]$~` | laɓɓingol kuuɓtidinngol (koppi keso) |
+| `$^+` | tolnude yahrude (adanɗe) | `$^-` | tolnude wartude (adanɗe) |
+| `$^` | tolnude e yondinnde (tupli) | `<~` | hollir |
+| `|>` | piiw | `!?` | jarribo |
+| `:!` | nangu | `:>` | wattan |
+| `#1` | goonga | `#0` | hay |
+| `$!` | ko ewte | `$!!` | mbaɗa ewte |
+| `<#` | huutora | `#>` | yaltin |
+| `#` | bayyina modulu | `::` | noddu modulu |
+| `.` | naatugol gese | `#?` | metadaata faamu |
+| `#\|..\|` | caaru limol | `##.` | waylu ngam Lodda |
+| `###` | waylu ngam Limoore timmunde (wondru) | `##!` | waylu ngam Limoore timmunde (ittu) |
+| `#.N\|..\|` | wondru | `#!N\|..\|` | ittu |
+| `#,\|..\|` | waɗtugol loppol | `#^\|..\|` | ganndal |
+| `#d0d9#` | waylu kuugal limooji | `#09#` | huccintinoo ASCII |
+| `<\ ..\>` | huutora shell | `>\<` | Jaɓuɗe CLI |
+| `\ var` | ittu waylotoojo haqiiqa | | |
 
 ---
 
-*Zymbol-Lang — Tiimorde. Himmude. Waɗande.*
+## Bayyinol wayluɗe cuɓaaɗe
 
-> **Tindinnde:** Dokkol ngol winndaama e jannginaa e Hakkilantaagal (AI).
-> Gollal fof waɗaama ngam saaktinde goonga, kono winndannde walla misaale ɗiɗi maa ngontoy ballal.
-> Dokkol humpitanngal ko [Zymbol-Lang deftere](https://github.com/zymbol-lang/interpreter).
->
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
+### v0.0.4 — Cuusalan ɓullere-1, Golle ɓonndi aranere & Foccaaɗi modulu _(Abriil 2026)_
+
+- **Bonngu** Cuuɗe ɗe fow waylitii **ɓullere-1** — `moofu[1]` ko ŋarɗuyaango aranere; `moofu[0]` ko ewte jokkondirɗe
+- **Ɓeydi** Golle inniraaɗe ko **ɓonndi aranere njeendiiji** — neldu fawa ngam golle tolno toowngo: `nums$> hiɗugo`
+- **Ɓeydi** **Haalngu foccaato** ngam modulu boddii: `# innde { ... }` — haalngu fottugol ittaama
+- **Ɓeydi** Cuusalan dinariiji keewɗi: `moofu[i>j>k]` (lewru), `moofu[p ; q]` (fottugol)
+- **Ɓeydi** Waylude faamu: `##.haala` (Lodda), `###haala` (Limoore timmunde wondru), `##!haala` (Limoore timmunde ittu)
+- **Ɓeydi** Feccugol haalol: `haalol$/ njuɓɓotoojo` — hollirta `Array(Haalol)`
+- **Ɓeydi** Mahugol hawrogol: `koore$++ a b c` — Ɓeyda ŋarɗuyaaji keewɗi
+- **Ɓeydi** Haylagol N laabi: `@ N { }` — jaabitol N laabi haa woto
+- **Ɓeydi** Haalngu haylagol inniraangol: `@:innde { }`, `@:innde!`, `@:innde>` — lomtana `@ @innde` / `@! innde`
+- **Ɓeydi** Laabi koŋkol waylotoojo: waylotooɗe `_innde` ina ngoodi koŋkol foccaato haqiiqa; `\ var` ittata ko adan
+- **Ɓeydi** Mbaydiiji yondinnde hawrugol: `< 0 :`, `> 5 :`, `== 42 :` woɗɗuɗi
+- **Ɓeydi** Ewte modulu E013: haalnguuji huutoraaɗi e baali modulu ko haɗaa
+- **Ɓeydoo** `take_variable` hayfataa luttuɗe modulu e nder winndugol ɓaawo
+- **Ɓeydoo** `alias.LUTTO` jooni cuuxata haqiiqa; `#>` mbaawi waɗde caggal bayyini golle
+- **VM** Lootogol timmungol: 393/393 jarruɓe feƴƴi
+
+### v0.0.3 — Kuugal limooji Unicode & Ɓeydagol LSP _(Abriil 2026)_
+
+- **Ɓeydi** 69 foccataa limle Unicode e tiitoonde waylugol kuugal `#d0d9#`
+- **Ɓeydi** Kiroloji Booliyaanuuji e kala binndi — `#१` / `#०`, `#१` / `#०`, woɗɗuɗi
+- **Ɓeydi** Limle Kilingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Ɓeydi** `SetNumeralMode` VM opkoode — lootogol timmungol e tree-walker
+- **Ɓeydi** REPL teddina kuugal limooji kuutortee ngol e woonditaare e hollirgol waylotoojo
+- **Wayli** Booliyaan `>>` njeñtudi jooni ina jogii fottorgol `#` (`#0` / `#1`) e kuugal kala
+
+### v0.0.2_01 — Lirtugol innde kuutor _(30 Mars 2026)_
+
+- **Wayli** `c|..|` → `#,|..|` e `e|..|` → `#^|..|` — hawru e galle fottorgol waɗtugol `#`
+- **Ɓeydi** Innde woɗɗunde yaltinde: yaltin modulu terɗe e innde woɗɗunde
+
+### v0.0.2 — Ciimtol API moofu & Kuutorɗe _(24 Mars 2026)_
+
+- **Ɓeydi** Galle kuutor `$` hawruɗo ngam moofu e haalol (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Ɓeydi** Lintinol torra ko'e ngam moofu, tupli, e tupli inniraaɗi
+- **Ɓeydi** Cuuɗe gobɓe (`arr[-1]` = ŋarɗuyaango hande)
+- **Ɓeydi** Kuutorɗe asli — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mars 2026)_
+
+- **Ɓeydi** Lintinol doon `^=`
+- **Ɓeydoo** Bojjeeji caarugol limle; ɓeydagol winndannde
+
+### v0.0.1 — Cuɓagol aranere saa'i _(22 Mars 2026)_
+
+- Firoore tree-walker + VM regista (`--vm`, ~4× yaawde, ~95% lootogol)
+- Mahudiiji fow: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Hinle buutinɗe Unicode timmude, njuɓɓudi modulu, lambdaaji, daande winndude, jogingol ewte
+- REPL, LSP, ɓeydagol VS Code, waɗtuɗo (zymbol fmt)
+
+---
+
+_Zymbol-Lang — Tiitoonde. Winndereere. Gaɗaande._

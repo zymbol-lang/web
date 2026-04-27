@@ -1,90 +1,111 @@
-# Jëfandikukat yu Woyof Zymbol-Lang
-
-**Zymbol-Lang** dafa ko làmbi ci sa pirogram bu xam xam yu signa. Dañu ko def te amul dem-dem xam-xam — dëkk bu nekk signa la. Dafa liggéey fi ci këlë ëllëk jëm ak koo.
-
-- Amul dem-dem xam-xam (`if`, `while`, `return` amul fi — signa rekk `?`, `@`, `<~`)
-- Unicode bu xëy — tur ci bëgg-bëgg làkk walla emoji 👋
-- Du làkk bu dëkk — kodu bi dafa nu sa ci bëgg-bëgg làkk
+> **Xibaar:** Kàddugóoruwaay bii somaan lees koy defale ak nosukaay xelal bu ñuy wax Intelligence Artificielle (IA).
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Réewum nosukaay mooy **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** ci samańse bi tànnaleefukaay bi.
 
 ---
 
-## Jumtukat ak Dëkku Yëgël
+# Zymbol-Lang Kàddugóor
+
+**Zymbol-Lang** la wónn li wóor wàllug kàddugóor yi. Xam-xam kenn xam-xam du ci ànd — nekk ne ci wóor wàll. Mungi liggéey wu yam ci kàddugóor bees xam.
+
+- Amul `if`, `while`, `return` — dafa nekk ne ci `?`, `@`, `<~`
+- Unicode su weex — xam-xam yi ci kàdduug bees xam mbaa emoji
+- Dafa bàyyikoo ci kàddugóor — kode gi nekk ne ci penku yépp
+
+**Tànnaleefukaay sig**: v0.0.4 | **Nattal**: 393/393 (TW ↔ VM wiri)
+
+---
+
+## Wutti ak wuutee
 
 ```zymbol
-x = 10              // Jumtukat (mën a yokku)
-PI := 3.14159       // Dëkku yëgël — lañu jël sañu bëgg-bëgg
-tur = "Ana"
-aktif = #1          // wér bu dëgg
-👋 := "Salaam"
+x = 10              // wuutee di xam
+PI := 3.14159       // wuutee — boo ko defate nekk na wunu ci liiy
+turu = "Alice"
+tudd ci liggéey = #1       // Boolaŋ bu nekk
+👋 := "Noo"
 ```
 
 ```zymbol
-x = 10
+x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
 
 ---
 
-## Xëtu Dati
+## Xam-xamug Dente
 
-| Xëtu         | Misaal               | Signa `#?` | Xibaar                              |
-|--------------|----------------------|------------|-------------------------------------|
-| Nomerkat     | `42`, `-7`           | `###`      | 64-bit bu am giskat                 |
-| Nomer bu yeg | `3.14`, `1.5e10`     | `##.`      | Notation bu siyantifik dafa baax    |
-| Wolu          | `"salaam"`           | `##"`      | Interpolasion: `"Xam {tur}"`        |
-| Bireew        | `'A'`                | `##'`      | Bireew bu nekk ak Unicode           |
-| Wér           | `#1`, `#0`           | `##?`      | DU nomer 1 ak 0                     |
-| Wàllu         | `[1, 2, 3]`          | `##]`      | Xëtu yi nekk ci kër                 |
-| Tuple         | `(a, b)`             | `##)`      | Ci nomer                            |
-| Tuple bu tur  | `(x: 1, y: 2)`       | `##)`      | Jëfandikoo tur walla nomer          |
+| Xam-xam | Lu dug | Laabi `#?` | Tudd ci dugub |
+|---------|--------|------------|---------------|
+| Lu toll | `42`, `-7` | `###` | 64-bit bu toll u siin |
+| Tàggu | `3.14`, `1.5e10` | `##.` | Mbindug xam-xam du nekk |
+| Wóor | `"wóor"` | `##"` | Ci mét: `"Noo {turu}"` |
+| Xare | `'A'` | `##'` | Unicode xare bu bees |
+| Boolaŋ | `#1`, `#0` | `##?` | Du lu toll — `#1 ≠ 1` |
+| Fepp | `[1, 2, 3]` | `##]` | Ndaxali yu nekk |
+| Tuplat | `(a, b)` | `##)` | Ci yoon |
+| Tuplat bu ñu tudd | `(x: 1, y: 2)` | `##)` | Ay jàng bu ñu tudd |
+| Liggéey | tudd ci liggéey bu ñu tudd | `##()` | Lu toll bu njëkk; mu néew `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Lu toll bu njëkk; mu néew `<lambd/N>` |
 
 ```zymbol
-// Sakantal xëtu — (xëtu, nomer, xëy) may
+// Xam-xamug digg — mu fekk (xam-xam, xaaj, lu néew)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
-t = meta[0]
+t = meta[1]
 >> t ¶            // → ###
 ```
 
 ---
 
-## Dem ak Dugub
+---
+
+## Tàkk ci baatale
 
 ```zymbol
->> "Salaam" ¶                    // ¶ walla \\ dafa dem ci dëkk wëpp
->> "a=" a " b=" b ¶              // xëy ak yëgël ci këy bi
->> (deret$#) ¶                   // operatör yu kanam dañu soxor ko ci (...)
+>> "Noo" ¶                       // ¶ mbaa \\ ci liy tàkk ci wéttu
+>> "a=" a " b=" b ¶               // tàkk ci wetu — lu néew yi
+>> (arr$#) ¶                      // mbir yiy liggéey postfix soxla ( ) ci biir >>,..
 
-<< tur                           // dañu jox — jël ci jumtukat
-<< "Sa tur? " tur                // ak baskël
+<< turu                           // tàkk ci wutti (ngir nuy liggéey)
+<< "Turu la: " turu              // ngir nuy liggéey
 ```
 
-> `¶` walla `\\` dañu nu dëgg rekk ci dëkk wëpp.
+> `¶` (AltGr+R ci klavye Spaañ) ak `\\` benn la ci wéttu.
 
 ---
 
-## Jëfandikukaay
+## Liggéey yi
 
 ```zymbol
-// Xam-xam — jëfandikoo ci jëfandikoo; operatör yi am benn benn ci >> bu yëgël
+// Xaaj — jëfandikoo ci aki; ay liggéey yi nekk nañu ci biir >>,..
 a = 10
 b = 3
-r1 = a + b    // 13     r2 = a - b    // 7
-r3 = a * b    // 30     r4 = a / b    // 3  (jëfandikoo nomer bu dëkk)
-r5 = a % b    // 1      r6 = a ^ b    // 1000  (puissance)
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (xééy lu toll)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (mag)
 
-// Xëy-bu-xëy
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
+// Wec
+a == b    // #0    
+a <> b    // #1    
+a < b     // #0
+a <= b    // #0   
+a > b     // #1    
+a >= b    // #1
 
-// Lojiik
+// Lexique
 #1 && #0    // #0
 #1 || #0    // #1
 !#1         // #0
@@ -92,120 +113,124 @@ a <= b    // #0   a > b     // #1    a >= b   // #1
 
 ---
 
-## Xettub-Rab
+---
+
+## Wóor yi
 
 ```zymbol
-// Ñett yëgël wallu wolu
-tur = "Ana"
+// Benn ci ñaari seen aki
+turu = "Alice"
 n = 42
 
-wolu = "Salaam, ", tur, "!"               // virgul — ci jëfandikoo
->> "Salaam " tur " nga am " n ¶           // ku-xigeenka — ci dem >>
-xër = "Salaam {tur}, nga am {n}"          // interpolasion — ci jëm wëpp
+>> "Noo " turu " la am na " n ¶       // tàkk ci wetu — ci biir >>
+fan = "Noo {turu}, la am na {n}"   // ci mét — penku bees
+
 ```
 
 ```zymbol
-s = "Salaam Addinaa"
-len = s$#                  // 14
-sub = s$[0..6]             // "Salaam"  (dëkku dañu ko wàcc)
-has = s$? "Addinaa"        // #1
-parts = "a,b,c,d" / ','    // [a, b, c, d]
-rep = s$~~["a":"A"]        // "SAlAAm AddinAA"
-rep1 = s$~~["a":"A":1]     // "SAlaam Addinaa"  (N bu njëkk rekk)
+s = "Noo suuf"
+guddi = s$#                  // 7
+bu ndaw = s$[1..4]           // "Noo " (mbeg-1, bu ko gën)
+nekk = s$? "suuf"            // #1
+taf = "a,b,c,d"$/ ','        // [a, b, c, d]  (taf ak jafe-jafe)
+wécc = s$~~["o":"a"]         // "Naa suuf"
+wécc1 = s$~~["o":"a":1]      // "Naa suuf" (N bu njëkk rekk)
 ```
 
-> `+` ci nomer rekk. Ci wolu jëfandikoo `,`, ku-xigeenka, walla interpolasion.
+> `+` moo xare ci lu toll. Ci wóor yi, jëfandikoo `,`, tàkk ci wetu, mbaa ci mét.
 
 ---
 
-## Dëkku Jëm
+## Liggéey bi
 
 ```zymbol
 x = 7
 
-? x > 0 { >> "bu nekkee kanam" ¶ }
+? x > 0 { >> "baax" ¶ }
 
 ? x > 100 {
-    >> "xëy" ¶
+    >> "mag" ¶
 } _? x > 0 {
-    >> "bu nekkee kanam" ¶
+    >> "baax" ¶
 } _? x == 0 {
-    >> "ñaareel" ¶
+    >> "tus" ¶
 } _ {
-    >> "bu nekkee kanam du" ¶
+    >> "bax" ¶
 }
 ```
 
-> Blok `{ }` **waajuul**, bëgg ci dëkk bu yëgël.
+> `{ }` **sama la** soo waxet benn baat.
 
 ---
 
-## Match
+---
+
+## Bennoo
 
 ```zymbol
-// Rang
-nomer_xëy = 85
-penc = ?? nomer_xëy {
+// Ay taf
+point = 85
+grade = ?? point {
     90..100 : 'A'
     80..89  : 'B'
     70..79  : 'C'
     _       : 'F'
 }
->> penc ¶    // → B
+>> grade ¶     // → B
 
-// Wolu
-rëdd = "xonq"
-kood = ?? rëdd {
-    "xonq"  : "#FF0000"
-    "wert"  : "#00FF00"
-    _       : "#000000"
+// Wóor yi
+nga = "xees"
+kood = ?? nga {
+    "xees"   : "#FF0000"
+    "werte"  : "#00FF00"
+    _        : "#000000"
 }
 
-// Yëgël
-tamp = -5
-dëkk = ?? tamp {
-    _? tamp < 0  : "dëgg"
-    _? tamp < 20 : "sedd"
-    _? tamp < 35 : "tanq"
-    _            : "tang"
+// Ay wec
+loolu = -5
+etat = ?? loolu {
+    < 0  : "penda"
+    < 20 : "tàng"
+    < 35 : "tàngaan"
+    _    : "tàng"
 }
->> dëkk ¶    // → dëgg
+>> etat ¶      // → penda
 
-// Qaab xëy (gacce blok)
+// Baat (blok)
 ?? n {
-    0       : { >> "ñaareel" ¶ }
-    _? n < 0: { >> "bu nekkee kanam du" ¶ }
-    _       : { >> "bu nekkee kanam" ¶ }
+    0        : { >> "tus" ¶ }
+    _? n < 0 : { >> "bax" ¶ }
+    _        : { >> "baax" ¶ }
 }
 ```
 
 ---
 
-## Ànd-ànd
+## Toll
 
 ```zymbol
-@ i:0..4  { >> i " " }        // rang bu dëkk: 0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // ak kanam: 1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // bu wëccëf: 5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // taf moo am:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // ak wéttu:   1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // wécc:       5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶                        // → 128  (solange)
+>> n ¶                        // → 128  (waay)
 
-mbir = ["Mànggo", "Ditax", "Jaxatu"]
-@ b:mbir { >> b ¶ }
+lége = ["pom", "pire", "risin"]
+@ l:lége { >> l ¶ }           // ci lu nekk mbooloom
 
-@ c:"salaam" { >> c "-" }
->> ¶                          // → s-a-l-a-a-m-
+@ x:"noo" { >> x "-" }
+>> ¶                          // → n-o-o-  (ci xare bees ci wóor)
 
 @ i:1..10 {
-    ? i % 2 == 0 { @> }       // @> dem kanam
-    ? i > 7 { @! }             // @! jël dem
+    ? i % 2 == 0 { @> }       // @> tàkk
+    ? i > 7 { @! }            // @! fátt
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
 
-// Ànd-ànd bu dëkk
+// Toll bu amul ne
 i = 0
 @ {
     i++
@@ -214,355 +239,374 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Ànd-ànd bu tur (jël dem bu xidid)
-count = 0
-@ @outer {
-    count++
-    ? count >= 3 { @! outer }
+// Toll bu ñu tudd (fátt bu feye)
+xot = 0
+@:biir {
+    xot++
+    ? xot >= 3 { @:biir! }
 }
->> count ¶                    // → 3
+>> xot ¶                      // → 3
 ```
 
 ---
 
-## Liggéey
+## Liggéey yi
 
 ```zymbol
-yokku(a, b) { <~ a + b }
->> yokku(3, 4) ¶    // → 7
+toll(a, b) { <~ a + b }
+>> toll(3, 4) ¶   // → 7
 
-faktorial(n) {
+factoreel(n) {
     ? n <= 1 { <~ 1 }
-    <~ n * faktorial(n - 1)
+    <~ n * factoreel(n - 1)
 }
->> faktorial(5) ¶    // → 120
+>> factoreel(5) ¶    // → 120
 ```
 
-Liggéey yi am **jëm yëgël** — du jëfandikoo jumtukat yu kanam. Jëfandikoo `<~` ngir soppati jumtukat yu waamkat:
+Liggéey yi **am na yees** — du xam wuttiy biti. Jëfandikoo paramètre `<~` ci liy wécc wuttiy bi:
 
 ```zymbol
-soppal(a<~, b<~) {
-    tmp = a
+tàkkale(a<~, b<~) {
+    temp = a
     a = b
-    b = tmp
+    b = temp
 }
 x = 10
 y = 20
-soppal(x, y)
+tàkkale(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Liggéey yu tur du xëy bu kanam. Ci jox ci xëy: `x -> tur(x)`.
+> Liggéey bu ñu tudd **am na lu toll bu njëkk** — wi réer: `nums$> ñaar`. `x -> fn(x)` ba noppi.
 
 ---
 
-## Lambda ak Fitu
+---
+
+## Lambda ak du
 
 ```zymbol
-ñaareel = x -> x * 2
-yokku = (a, b) -> a + b
->> ñaareel(5) ¶    // → 10
->> yokku(3, 7) ¶   // → 10
+ñaar = x -> x * 2
+toll = (a, b) -> a + b
+>> ñaar(5) ¶   // → 10
+>> toll(3, 7) ¶ // → 10
 
-// Lambda ak blok
-penc = x -> {
-    ? x > 0 { <~ "bu nekkee kanam" }
-    _? x < 0 { <~ "bu nekkee kanam du" }
-    <~ "ñaareel"
+// Lambda blok
+def = x -> {
+    ? x > 0 { <~ "baax" }
+    _? x < 0 { <~ "bax" }
+    <~ "tus"
 }
 
-// Fitu — lambda yi jëfandikoo jumtukat yu kanam
-faktër = 3
-ñett = x -> x * faktër
+// Du — daa jël yeesu biti
+facteur = 3
+ñett = x -> x * facteur
 >> ñett(7) ¶    // → 21
 
-// Fabrik liggéey
-make_yokku(n) { <~ x -> x + n }
-yokk10 = make_yokku(10)
->> yokk10(5) ¶    // → 15
+// Atelier
+def_tollale(n) { <~ x -> x + n }
+toll_fukk = def_tollale(10)
+>> toll_fukk(5) ¶   // → 15
 
-// Ci array
-ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[2](5) ¶    // → 25
+// Ci mbootaayu
+liggéey = [x -> x+1, x -> x*2, x -> x*x]
+>> liggéey[3](5) ¶   // → 25
 ```
 
 ---
 
-## Wàllu
+## Fepp yi
 
-Wàllu **yi soppi** (mutable) ak ëlëm yi **bu xëtu dati bu dëkk**.
+Fepp yi **dañuy wax** ak am na **ndaxali yu ñu toll**.
 
 ```zymbol
-deret = [1, 2, 3, 4, 5]
+fepp = [1, 2, 3, 4, 5]
 
-deret[0]          // 1 — jëfal (index bu tànn ci 0)
-deret[-1]         // 5 — index tasan (dëkkël)
-deret$#           // 5 — paxar (soxor ci (...) ci >>)
+fepp[1]          // 1 — ànd (mbeg-1: ndaxal bu njëkk)
+fepp[-1]         // 5 — index bu rax (ndaxal bu gën)
+fepp$#           // 5 — guddi (jëfandikoo (fepp$#) ci biir >>)
 
-deret = deret$+ 6            // yokku → [1,2,3,4,5,6]
-deret2 = deret$+[2] 99       // jox ci index 2
-deret3 = deret$- 3           // tëj njëkk ci xëy bi
-deret4 = deret$-- 3          // tëj lépp
-deret5 = deret$-[0]          // tëj ci index
-deret6 = deret$-[1..3]       // tëj rang (dëkkël wàccuul)
+fepp = fepp$+ 6            // toll → [1,2,3,4,5,6]
+fepp2 = fepp$+[2] 99       // dugal ci bu 2 (mbeg-1)
+fepp3 = fepp$- 3           // far lu njëkk ci lu néew
+fepp4 = fepp$-- 3          // far lépp
+fepp5 = fepp$-[1]          // far ci index 1 (ndaxal bu njëkk)
+fepp6 = fepp$-[2..3]       // far taf (mbeg-1, gën bi nekk)
 
-am = deret$? 3            // #1 — am
-pos = deret$?? 3          // [2] — index yi lépp
-ànd = deret$[0..3]        // [1,2,3] — ànd (dëkkël wàccuul)
-ànd2 = deret$[0:3]        // [1,2,3] — syntax bu nomer
+nekk = fepp$? 3           // #1 — nekk
+xóot = fepp$?? 3          // [3] — index yépp ci lu néew (mbeg-1)
+xet = fepp$[1..3]         // [1,2,3] — xet (mbeg-1, gën bi nekk)
+xet2 = fepp$[1:3]         // [1,2,3] — benn, syntax ci xaaj
 
-ol = deret$^+             // tartiib ol (primitives rekk)
-sëf = deret$^-            // tartiib sëf (primitives rekk)
+dëgg = fepp$^+            // wëccu ndaw (primitif rekk)
+wàrr = fepp$^-            // wëccu mag (primitif rekk)
 
-// Tuple bu tur/nomer — jëfandikoo $^ ak lambda bu xëy-bu-xëy
-db = [(tur: "Carla", at: 28), (tur: "Ana", at: 25), (tur: "Bob", at: 30)]
-ci_at   = db$^ (a, b -> a.at < b.at)
-ci_tur  = db$^ (a, b -> a.tur > b.tur)
->> ci_at[0].tur ¶     // → Ana
->> ci_tur[0].tur ¶    // → Carla
+// Mbootaayu tuple bu ñu tudd/ci yoon — jëfandikoo $^ ak lambda ci wec
+data = [(turu: "Carla", at: 28), (turu: "Ana", at: 25), (turu: "Bob", at: 30)]
+ci_at   = data$^ (a, b -> a.at < b.at)     // ndaw ci at (<)
+ci_turu   = data$^ (a, b -> a.turu > b.turu)     // mag ci turu (>)
+>> ci_at[1].turu ¶     // → Ana
+>> ci_turu[1].turu ¶   // → Carla
 
-// Jox ci biir (wàllu rekk)
-deret[1] = 99              // jox
-deret[0] += 5              // compound: +=  -=  *=  /=  %=  ^=
+// Wécc ndaxal bi nit (fepp rekk)
+fepp[1] = 99              // aki
+fepp[2] += 5              // aki: +=  -=  *=  /=  %=  ^=
 
-// Yokku bu liggéey — def wàllu bu bees; njëkk bi du soppi
-deret2 = deret[1]$~ 99
+// Wéccu liggéey — dafa fekk fepp bu bees; diggu du wécc
+fepp2 = fepp[2]$~ 99
 ```
 
-> Operatör uru yi lépp dañu jox **array bu bees**. Jëfandikoo ci: `deret = deret$+ 4`.
-> Du soxor ñaar — jëfandikoo jëfandikoo dhexee.
-> `$^+` / `$^-` dañu tartiib **array yu primitive**. Tuple array jëfandikoo `$^` ak lambda.
+> Lépp liggéey yi ñu jël dañuy fekk **fepp bu bees**. Aki: `fepp = fepp$+ 4`.
+> `$+` daa xàll: `fepp = fepp$+ 5$+ 6$+ 7`. Liggéey yi nekk ci biir dañuy jëfandikoo aki (aki).
 
-**Semantik xëy** — jox wàllu ci jëfandikukaay bees di def kopi bu yombal:
+> **Index bu mbeg-1**: `fepp[1]` moo xam ndaxal bu njëkk; `fepp[0]` moo xam wunu ci liiy.
+
+> `$^+` / `$^-` dañuy wëccu **fepp yi ci primitif** (xaaj, wóor). Ci fepp yi ci tuple, jëfandikoo $^ ak lambda ci wec — tay bu ñu xam daa nekk ci lambda (`<` = ndaw, `>` = mag).
+
+**Xam-xamug lu nekk** — lees aki fepp ci wutti gu bees daa xam copie bu ñu ngi.
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b du soppi
+>> b ¶    // → [1, 2, 3]   ← b du wécc
 ```
 
 ```zymbol
-// Array yu xidid
-matriks = [[1,2,3],[4,5,6],[7,8,9]]
->> matriks[1][2] ¶    // → 6
-```
-
----
-
-## Décomposition
-
-```zymbol
-// Wàllu
-deret = [10, 20, 30, 40, 50]
-[a, b, c] = deret              // a=10  b=20  c=30
-[njëkk, *dëkkël] = deret       // njëkk=10  dëkkël=[20,30,40,50]
-[x, _, z] = [1, 2, 3]          // _ wàcc ko
-
-// Tuple bu nomer
-dhibic = (100, 200)
-(px, py) = dhibic              // px=100  py=200
-
-// Tuple bu tur
-nit = (tur: "Ana", at: 25, dëkk: "Ndakaaru")
-(tur: t, at: a) = nit          // t="Ana"  a=25
+// Fepp yi ñu ngi (index bu mbeg-1)
+matrix = [[1,2,3],[4,5,6],[7,8,9]]
+>> matrix[2][3] ¶    // → 6  (réew 2, colonne 3)
 ```
 
 ---
 
-## Tuple
+---
 
-Tuple yi **du soppi** (immutable) — dañu am elemang **yu bëgg-bëgg**. Àkku wàllu yi, elemang yi du soppi juqël yi créé.
+## Taf
 
 ```zymbol
-// Bu nomer
-dhibic = (10, 20)
->> dhibic[0] ¶    // → 10
+// Fepp
+fepp = [10, 20, 30, 40, 50]
+[a, b, c] = fepp               // a=10  b=20  c=30
+[njëkk, *yeen] = fepp          // njëkk=10  yeen=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ nekk na
 
-xëyu = (42, "salam", #1, 3.14)
->> xëyu[2] ¶     // → #1
+// Tuplat ci yoon
+point = (100, 200)
+(px, py) = point              // px=100  py=200
 
-// Bu tur
-nit = (tur: "Alice", at: 25)
->> nit.tur ¶    // → Alice
->> nit[0] ¶     // → Alice (index dafa liggéey)
-
-// Xidid
-pos = (x: 10, y: 20)
-p = (pos: pos, summad: "origine")
->> p.pos.x ¶        // → 10
+// Tuplat bu ñu tudd
+nit = (turu: "Ana", at: 25, dëkk: "Madrid")
+(turu: t, at: a) = nit        // t="Ana"  a=25
 ```
 
-**Du soppi (Immutabilité)** — soppi ci elemang bi tuple dafa am dëgg ci waktu:
+---
+
+## Tuplat
+
+Tuplat dañuy **du wax** daanaka ci mbir yi ñu toll, dañuy **xam xam yi bees**.
+Fepp yi, ndaxali du wax.
+
+```zymbol
+// Ci yoon — toll bokk ci xam xam
+point = (10, 20)
+>> point[1] ¶     // → 10
+
+data = (42, "noo", #1, 3.14)
+>> data[3] ¶      // → #1
+
+// Bu ñu tudd
+nit = (turu: "Alice", at: 25)
+>> nit.turu ¶      // → Alice
+>> nit[1] ¶        // → Alice  (index daa jële, mbeg-1)
+
+// Bu ñu ngi
+bu = (x: 10, y: 20)
+p = (bu: bu, labe: "jëmm")
+>> p.bu.x ¶        // → 10
+```
+
+**Du wax** — booy xame def ci tuplat, moo xam wunu ci liiy:
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ dëgg ci waktu: tuple du soppi
-// t[0] += 5    // ❌ dëgg bii rekk
+// t[1] = 99    // ❌ wunu ci liiy: tuplat du wax
+// t[1] += 5    // ❌ wunu bu nekk
+
+// Tuplat bu ñu tudd — def ci yoon
+nit = (turu: "Alice", at: 25)
+mag = (turu: nit.turu, at: 26)
+>> nit.at ¶       // → 25
+>> mag.at ¶       // → 26
 ```
 
-Jëfandikoo `$~` (yokku bu liggéey) — def **Tuple bu bees**:
+Loo xame lu néew ci tuplat bu bees, jëfandikoo `$~` (liggéey wécc) — dafa fekk **tuplat bu bees**:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[1]$~ 999
->> t ¶     // → (10, 20, 30)   ← njëkk bi du soppi
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← diggi du wécc
 >> t2 ¶    // → (10, 999, 30)
-
-// Tuple bu tur — def mees ci biir
-nit = (tur: "Alice", at: 25)
-nit2  = (tur: nit.tur, at: 26)
->> nit.at ¶    // → 25
->> nit2.at ¶   // → 26
 ```
 
 ---
 
-## Liggéey yu Rang bu Kanam
-
-> Operatör HOF yi waajuul **lambda bu inline** — du variable lambda ci dëkk.
+## Liggéey yu mag
 
 ```zymbol
-nomeryi = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+xaaj = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-ñaareelyi  = nomeryi$> (x -> x * 2)                // map  → [2,4,6…20]
-paari      = nomeryi$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
-jàmm       = nomeryi$< (0, (acc, x) -> acc + x)     // reduce → 55
+ñaar = xaaj$> (x -> x * 2)                // carte → [2,4,6…20]
+xare   = xaaj$| (x -> x % 2 == 0)        // filtrage → [2,4,6,8,10]
+yépp    = xaaj$< (0, (xàll, x) -> xàll + x) // réduction → 55
 
-// Silsilaa dhexee
-etap1 = nomeryi$| (x -> x > 3)
-etap2 = etap1$> (x -> x * x)
->> etap2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+// Xàll ak yees
+tay1 = xaaj$| (x -> x > 3)
+tay2 = tay1$> (x -> x * x)
+>> tay2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Liggéey yu tur ci HOF — bëgg ci lambda
-ñaareel_l(x) { <~ x * 2 }
-r = nomeryi$> (x -> ñaareel_l(x))    // ✅
+// Liggéey bu ñu tudd dañuy réer ci liggéey yu mag
+ñaar(x) { <~ x * 2 }
+mag(x) { <~ x > 5 }
+r = xaaj$> ñaar       // ✅ référenc bi nit
+r = xaaj$| mag        // ✅ référenc bi nit
 ```
 
 ---
 
-## Operatër Tuyël
+---
 
-RHS waajuul `_` bu placeholder ci xëy bi darr bi:
+## Liggéeyu tuyau
+
+Biir boy daa soxla `_` nit fepp:
 
 ```zymbol
-ñaareel = x -> x * 2
-yokku = (a, b) -> a + b
-yokk1 = x -> x + 1
+ñaar = x -> x * 2
+toll = (a, b) -> a + b
+toll_ben = x -> x + 1
 
-5 |> ñaareel(_)        // → 10
-10 |> yokku(_, 5)      // → 15
-5 |> yokku(2, _)       // → 7
+5 |> ñaar(_)        // → 10
+10 |> toll(_, 5)    // → 15
+5 |> toll(2, _)     // → 7
 
-// Silsilaa
-r = 5 |> ñaareel(_) |> yokk1(_) |> ñaareel(_)
+// Xàll
+r = 5 |> ñaar(_) |> toll_ben(_) |> ñaar(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## Solu Njëkk
+## Ci màndarga
 
 ```zymbol
 !? {
     x = 10 / 0
 } :! ##Div {
-    >> "Xam-xam ci ñaareel" ¶
+    >> "xééy tus" ¶
 } :! {
-    >> "solu bees: " _err ¶    // _err am xibaar solu bi
+    >> "wunu wi: " _err ¶    // _err nekk na ci màndarga
 } :> {
-    >> "dafa dem ndaw" ¶
+    >> "tàkk na ba noppi" ¶
 }
 ```
 
-| Xëtu       | Kañ dafa am                         |
-|------------|-------------------------------------|
-| `##Div`    | Xam-xam ci ñaareel                  |
-| `##IO`     | Fisel / Sistëm                      |
-| `##Index`  | Index bu kanam ci rang              |
-| `##Type`   | Solu xëtu                           |
-| `##Parse`  | Solu parsing                        |
-| `##Network`| Solu réseau                         |
-| `##_`      | Solu wëpp (catch-all)               |
+| Xam-xam | Kan la |
+|---------|--------|
+| `##Div` | Xééy tus |
+| `##IO` | Feele / Système |
+| `##Index` | Index bi nekk penku |
+| `##Type` | Xam-xam du toll |
+| `##Parse` | Xam dente |
+| `##Network` | Wunu ci réseau |
+| `##_` | Wunu bees (jël lépp) |
 
 ---
 
 ## Modul
 
 ```zymbol
-// Fisel: lib/kalkil.zy
-# kalkil
+// lib/calc.zy — modul bi nekk ci biir mbir yi
+# calc {
+    #> { toll, get_PI }
 
-#> { yokku, get_PI }    // Eksportasion KANAM définisyonyi
-
-_PI := 3.14159
-yokku(a, b) { <~ a + b }
-get_PI() { <~ _PI }
+    _PI := 3.14159
+    toll(a, b) { <~ a + b }
+    get_PI() { <~ _PI }
+}
 ```
 
 ```zymbol
-// Fisel: main.zy
-<# ./lib/kalkil <= k    // Alias waajuul
+// main.zy
+<# ./lib/calc <= c    // alias moo soxla
 
->> k::yokku(5, 3) ¶     // → 8
-pi = k::get_PI()
->> pi ¶                  // → 3.14159
+>> c::toll(5, 3) ¶    // → 8
+pi = c::get_PI()
+>> pi ¶              // → 3.14159
 ```
 
 ```zymbol
-// Eksportasion ak tur yëgël
-# mylib
-#> { _internal_add <= yokku_bi }
+// Tàkk ci benn turu gu bees
+# sàfara_ma {
+    #> { _toll_biir <= jàpp }
 
-_internal_add(a, b) { <~ a + b }
+    _toll_biir(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
-<# ./mylib <= m
+<# ./sàfara_ma <= m
 
->> m::yokku_bi(3, 4) ¶    // → 7  (tur bu biir _internal_add planqe)
+>> m::jàpp(3, 4) ¶    // → 7  (turu biir _toll_biir nekk na ci suuf)
+```
+
+> **Xam-xamug modul**: ci biir `# turu { }`, `#>`, xam-xamug liggéey, ak liy def wuutee du dul nekk. Liy wax ci biir (`>>`, `<<`, toll, ...) daanaka nekk wunu E013.
+
+---
+
+---
+
+## Lu toll
+
+Zymbol daa xam xaaj ci **69 blok xaaj yu Unicode** — Devanagari, Araab-End, Thay, Klingon pIqaD, Xaaj bu mag, LCD, ak bees. Ci biir daa liy wax `>>` rekk; xaaj ci biir, nekk na ci base 2 waaye.
+
+### Def ci xam
+
+Dugal xaaj yi `0` ak `9` ci biir `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Araab-End     (U+0660–U+0669)
+#๐๙#    // Thay          (U+0E50–U+0E59)
+#09#    // def ci ASCII
 ```
 
 ---
 
-## Yoon yi Ciif
-
-Zymbol mën na yëgël ciif ci **Unicode bëj-gànnaar yi 69** — Devanagari, Arabi-Inde, Taayilaand, Klingon pIqaD, Xam-xam bu Dëkk, segment LCD ak yeneen. Yoon bu am njëkk bi dëkk ak loxo `>>`-bi rekk; xam-xam bi ci tëgg dëkk binary la.
-
-### Jëfandiku bëj-gànnaar
-
-Bind ciif `0` ak `9` bëj-gànnaar bi ci `#…#`:
-
-```zymbol
-#०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // Arabic-Indic  (U+0660–U+0669)
-#๐๙#    // Thai          (U+0E50–U+0E59)
-#09#    // reset to ASCII
-```
-
-### Yëgël ak xaritu yëgëlëef
+### Tàkk ak Boolaŋ
 
 ```zymbol
 x = 42
->> x ¶          // → 42   (ASCII default)
+>> x ¶          // → 42   (ASCII bi nekk)
 
 #०९#
 >> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४
+>> 3.14 ¶       // → ३.१४   (point décimal daa nekk ASCII)
 >> 1 + 2 ¶      // → ३
 
-// Yëgëlëef: # kanam dëkk ASCII, ciif yi jaaxle
->> #1 ¶         // → #१
->> #0 ¶         // → #०
+// Boolaŋ: # daa nekk ASCII, xaaj daa toll
+>> #1 ¶         // → #१   (dëgg Devanagari)
+>> #0 ¶         // → #०   (fàww — ० nekk na ci 0)
 
 x = 28 > 4
->> x ¶          // → #१
+>> x ¶          // → #१   (lu fekk ci wec daa jël ci lu nekk)
 ```
 
-### Ciif asli ci kood source
+---
 
-Ciif bëj-gànnaar bu ëlëek yi am ngëm — ci suufu, modulo, taaxuleen:
+## Xaaj yi jamono ci code
+
+Xaaj yi ci xam bi nekk dañuy xam:
 
 ```zymbol
 #०९#
@@ -575,45 +619,54 @@ Ciif bëj-gànnaar bu ëlëek yi am ngëm — ci suufu, modulo, taaxuleen:
 }
 ```
 
-### Yëgëlëef ci bëj-gànnaar
+---
 
-`#` + ciif `0` walla `1` ci bloc ci fi xam ngëm yëgëlëef:
+### Boolaŋ ci xam bees
+
+`#` + xaaj `0` mbaa `1` ci blok bi nekk moo xam Boolaŋ bu nekk:
 
 ```zymbol
-#٠٩#
-نشط = #١
->> نشط ¶        // → #١
->> (#١ && #٠) ¶ // → #٠
+#०९#
+tudd ci liggéey = #१        // benn ak #1
+>> tudd ci liggéey ¶        // → #१
+>> (#१ && #०) ¶             // → #०
 ```
 
-> `#` dëkk **ASCII**. `#0` (fànaan) dëkk feebar `0` (ciif zero) ci bëj-gànnaar bëgg.
+> `#` **daa nekk ASCII**. `#0` (fàww) daa nekk benn ak `0` (xaaj bu tus) ci xam bees.
 
 ---
 
-## Jëfandikukaay Data
+---
+
+## Liggéey yi ci dente
 
 ```zymbol
-// Soppati wolu nomer
-v1 = #|"42"|      // → 42  (Int)
-v2 = #|"3.14"|    // → 3.14  (Float)
-v3 = #|"abc"|     // → "abc"  (solu-baax)
+// Wéccu xam-xam
+##.42         // → 42.0  (Tàggu)
+###3.7        // → 4     (Lu toll, rond)
+##!3.7        // → 3     (Lu toll, far)
 
-// Waxtaanal / tëj
+// Wóor bi ci xaaj
+v1 = #|"42"|      // → 42  (Lu toll)
+v2 = #|"3.14"|    // → 3.14  (Tàggu)
+v3 = #|"abc"|     // → "abc"  (jënd na, wunu du)
+
+// Rond / far
 pi = 3.14159265
-r2 = #.2|pi|      // → 3.14  (waxtaanal ci 2 ci kanam)
-r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14  (tëj)
+rond2 = #.2|pi|     // → 3.14  (rond ci xaaj 2 bi)
+rond4 = #.4|pi|     // → 3.1416
+far2 = #!2|pi|      // → 3.14  (far)
 
-// Qaab nomer
-fmt = #,|1234567|      // → 1,234,567  (comma-separe)
-sci = #^|12345.678|    // → 1.2345678e4  (siyantifik)
+// Cosaanu xaaj
+cosaan = #,|1234567|   // → 1,234,567  (wécc ci virgule)
+xam_xam = #^|12345.678| // → 1.2345678e4  (xam_xam)
 
-// Base literals
-a = 0x41         // → 'A'  (hex)
-b = 0b01000001   // → 'A'  (binary)
+// Base lu toll
+a = 0x41         // → 'A'  (hexa)
+b = 0b01000001   // → 'A'  (binaire)
 c = 0o101        // → 'A'  (octal)
 
-// Soppati base
+// Base wécc
 hex = 0x|255|    // → "0x00FF"
 bin = 0b|65|     // → "0b1000001"
 oct = 0o|8|      // → "0o10"
@@ -622,114 +675,138 @@ dec = 0d|255|    // → "0d0255"
 
 ---
 
-## Danku ak Shell
+---
+
+## Shell
 
 ```zymbol
-bés = <\ date +%Y-%m-%d \>     // dox stdout (ak \n dëkkël)
+bés = <\ date +%Y-%m-%d \>     // dafa jël stdout (ci \n)
 >> "Tey: " bés
 
-fisel = "data.txt"
-yëgël = <\ cat {fisel} \>      // interpolasion ci jëfandikoo yi
+feele = "den.te.txt"
+ci biir = <\ cat {feele} \>       // ci mét ci commande
 
-output = </"./subscript.zy"/>   // dox script Zymbol bees, dox output
->> output
+tàkk = </"./subscript.zy"/>     // tàkk Zymbol gu bees, jël tàkk
+>> tàkk
 ```
 
-> `><` dox CLI yi ak array wolu (tree-walker rekk).
+> `><` dafa jël CLI argument yi ci fepp bu wóor (tree-walker rekk).
 
 ---
 
-## Tënk bu Xóólóólu: FizzBuzz
+---
+
+## Lu nekk: FizzBuzz
 
 ```zymbol
-setal(nomer) {
-    ? nomer % 15 == 0 { <~ "FizzBuzz" }
-    _? nomer % 3  == 0 { <~ "Fizz" }
-    _? nomer % 5  == 0 { <~ "Buzz" }
-    _ { <~ nomer }
+def(xaaj) {
+    ? xaaj % 15 == 0 { <~ "FizzBuzz" }
+    _? xaaj % 3  == 0 { <~ "Fizz" }
+    _? xaaj % 5  == 0 { <~ "Buzz" }
+    _ { <~ xaaj }
 }
 
-@ i:1..20 { >> setal(i) ¶ }
+@ i:1..20 { >> def(i) ¶ }
 ```
 
 ---
 
-## Taatef Signa
+## Tudd ci référence
 
-| Signa | Liggéey | Signa | Liggéey |
+| Signe | Liggéey | Signe | Liggéey |
 |-------|---------|-------|---------|
-| `=` | Jumtukat | `$#` | Paxar |
-| `:=` | Dëkku yëgël | `$+` | Yokku |
-| `>>` | Dem | `$+[i]` | Jox ci index |
-| `<<` | Dugub | `$-` | Tëj njëkk ci xëy |
-| `¶` / `\\` | Dëkk wëpp | `$--` | Tëj lépp ci xëy |
-| `?` | Jëm (if) | `$-[i]` | Tëj ci index |
-| `_?` | Walla jëm (elif) | `$-[i..j]` | Tëj rang |
-| `_` | Walla / yëgël | `$?` | Am |
-| `??` | match | `$??` | Index yi lépp |
-| `@` | Ànd-ànd | `$[s..e]` | Ànd |
-| `@!` | Jël dem (break) | `$>` | map |
-| `@>` | Dem kanam (continue) | `$\|` | filter |
-| `->` | Lambda | `$<` | reduce |
-| `deret[i] = val` | Jox elemang (wàllu rekk) | `deret[i] += val` | compound jox |
-| `deret[i]$~` | yokku bu liggéey (kopi bu bees) | `$^+` | Tartiib ol (primitives) |
-| `$^-` | Tartiib sëf (primitives) | `$^` | Tartiib ak comparator (tuples) |
-| `<~` | Màggal (return) | `!?` | Solu (try) |
-| `\|>` | Pipe | `:!` | Jëfal (catch) |
-| `#1` | Wér | `:>` | Ndaw (finally) |
-| `#0` | Xam-xam du wér | `$!` | Solu bi am |
-| `<#` | Importasion | `$!!` | Dem solu bi |
-| `#` | Setal modul | `#>` | Eksportasion |
-| `::` | Jëfal modul | `.` | Jëfal biir |
-| `#\|..\|` | Parse nomer | `#?` | Metadata xëtu |
-| `#.N\|..\|` | Waxtaanal | `#!N\|..\|` | Tëj |
-| `#,\|..\|` | Qaab comma | `#^\|..\|` | Siyantifik |
-| `#d0d9#` | soppi yoon yi ciif | `#09#` | dellu ASCII |
-| `<\ ..\>` | shell exec | `>\<` | Doodaa CLI |
-
-## Tariix Wersiyon yi
-
-### v0.0.3 — Unicode Bëj-gànnaar Ciif & Yaatal LSP _(Awril 2026)_
-
-- **Yokk** Unicode bloc ciif 69 ak caloon soppi yoon `#d0d9#`
-- **Yokk** Yëgëlëef ci bëj-gànnaar — `#१` / `#०`, `#١` / `#٠`, ak yeneen
-- **Yokk** Klingon pIqaD ciif (CSUR PUA U+F8F0–U+F8F9)
-- **Yokk** VM opcode `SetNumeralMode` — pareeti ak tree-walker
-- **Yokk** REPL soxoroon yoon ciif ci echo ak yëgëlëef variables
-- **Soppi** Yëgël `>>` yëgëlëef am `#` kanam (`#0` / `#1`) ci yoon yëpp
-
-### v0.0.2_01 — Soppi Turu Jëfandikukaay _(30 Mar 2026)_
-
-- **Soppi** `c|..|` → `#,|..|` ak `e|..|` → `#^|..|` — rafetoon ak waa-kër `#`
-- **Yokk** Alias export: export mujjeel module ci turu yeneen
-
-### v0.0.2 — Yokk API Collection & Instalateur _(24 Mar 2026)_
-
-- **Yokk** Waa-kër jëfandikukaay `$` arrays ak strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Yokk** Destructuring arrays, tuples ak tuples bu turu
-- **Yokk** Index yu tàng (`arr[-1]` = element yu dëkk)
-- **Yokk** Instalateur asli — Linux (deb/rpm/pkg/musl), macOS, Windows
-
-### v0.0.1-patch _(25 Mar 2026)_
-
-- **Yokk** Attribution `^=`
-- **Dëgël** Kees border parser xam-xam; dëggël documents
-
-### v0.0.1 — Yëgël bu Njëkk _(22 Mar 2026)_
-
-- Tree-walker interpreter + register VM (`--vm`, ~4× gaaw, ~95% pareeti)
-- Constructions yëpp: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Unicode identifiants, système module, lambda, fermeture, dëggël njëjjëef
-- REPL, LSP, extension VS Code, formatter (`zymbol fmt`)
+| `=` | wutti | `$#` | guddi |
+| `:=` | wutti bu nekk | `$+` | toll (xàll) |
+| `>>` | tàkk | `$+[i]` | dugal ci index (mbeg-1) |
+| `<<` | dug | `$-` | far bu njëkk ci lu néew |
+| `¶` / `\\` | wéttu | `$--` | far lépp ci lu néew |
+| `?` | soo | `$-[i]` | far ci index (mbeg-1) |
+| `_?` | soo du, soo | `$-[i..j]` | far taf (mbeg-1) |
+| `_` | soo du / lu nekk | `$?` | nekk |
+| `??` | bennoo | `$??` | gis index lépp (mbeg-1) |
+| `@` | toll | `$[s..e]` | xet (mbeg-1) |
+| `@ N { }` | toll N waay | `$>` | carte |
+| `@!` | fátt | `$|` | filtrage |
+| `@>` | tàkk | `$<` | réduction |
+| `@:turu { }` | toll bu ñu tudd | `$/ jafe` | taf wóor |
+| `@:turu!` | fátt bu ñu tudd | `$++ a b c` | def xàll |
+| `@:turu>` | tàkk bu ñu tudd | `fepp[i>j>k]` | index bu xam |
+| `->` | lambda | `fepp[i] = lu neew` | wécc ndaxal (fepp rekk) |
+| `fepp[i] += lu neew` | wécc aki | `fepp[i]$~` | wécc liggéey (copie bees) |
+| `$^+` | wëcc ndaw (primitif) | `$^-` | wëcc mag (primitif) |
+| `$^` | wëcc ak comparateur (tuple) | `<~` | fekk |
+| `|>` | tuyau | `!?` | xam |
+| `:!` | jël | `:>` | gan |
+| `#1` | dëgg | `#0` | fàww |
+| `$!` | nekk wunu | `$!!` | xàll wunu |
+| `<#` | jël | `#>` | tàkk |
+| `#` | wax modul | `::` | dénk modul |
+| `.` | ànd ci jàng | `#?` | xam-xamug xam-xam |
+| `#\|..\|` | xam xaaj | `##.` | def Tàggu |
+| `###` | def Lu toll (rond) | `##!` | def Lu toll (far) |
+| `#.N\|..\|` | rond | `#!N\|..\|` | far |
+| `#,\|..\|` | cosaan virgule | `#^\|..\|` | xam_xam |
+| `#d0d9#` | wécc lu toll | `#09#` | def ci ASCII |
+| `<\ ..\>` | shell | `>\<` | CLI arguments |
+| `\ var` | far wutti ci yoon | | |
 
 ---
 
-*Zymbol-Lang — Signa. Àddina. Du saf.*
+---
 
-> **Xibaar:** Dokkumantasion bii dañu ko def ak jëfandikoo xam-xam bu otomatik (IA).
-> Dañu wàcc gëm ci xëy bi, waaye ay jëfandikoo walla misaal mën a am solu.
-> Xiibaar bu dëgg moo nekk ci [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).
->
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-> The authoritative reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).
+## Lu wécc ci version
+
+### v0.0.4 — Index mbeg-1, Liggéey yu mag ak Blok modul _(Avril 2026)_
+
+- **Fátt** Index lépp daa nekk **mbeg-1** — `fepp[1]` moo xam ndaxal bu njëkk; `fepp[0]` nekk wunu
+- **Toll** Liggéey bu ñu tudd **am na lu toll bu njëkk** — wi réer: `nums$> ñaar`
+- **Toll** **Syntax biir** modul soxla: `# turu { ... }` — syntax bu xënt nekk na ci
+- **Toll** Index bu xam: `fepp[i>j>k]` (xam), `fepp[p ; q]` (far)
+- **Toll** Wécc ci xam-xam: `##.expression` (Tàggu), `###expression` (Lu toll rond), `##!expression` (Lu toll far)
+- **Toll** Taf wóor: `wóor$/ jafe` — fekk `Array(Wóor)`
+- **Toll** Def xàll: `mbeg$++ a b c` — toll ndaxali yu bees
+- **Toll** N waay: `@ N { }` — def N waay
+- **Toll** Syntax yu toll bu ñu tudd: `@:turu { }`, `@:turu!`, `@:turu>` — nekk ci `@ @turu` / `@! turu`
+- **Toll** Xam-xamug wutti: wutti `_turu` am na xam; `\ var` nekk na
+- **Toll** Wec ci bennoo: `< 0 :`, `> 5 :`, `== 42 :`
+- **Toll** Wunu modul E013: liy wax ci biir modul du nekk
+- **Wécc** `take_variable` du def wunu
+- **Wécc** `alias.CONST` nekk na ci yoon; `#>` daa nekk ci liggéey
+- **VM** Noppi: 393/393 nattal nekk
+
+### v0.0.3 — Xaaj Unicode ak LSP _(Avril 2026)_
+
+- **Toll** 69 blok xaaj Unicode ak `#d0d9#`
+- **Toll** Boolaŋ ci xam bees — `#१` / `#०`, `#१` / `#०`, ak bees
+- **Toll** Xaaj Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Toll** `SetNumeralMode` opcode VM — noppi ak tree-walker
+- **Toll** REPL daa jël ci lu nekk ci écho ak wutti
+- **Wécc** Boolaŋ `>>` tàkk nekk na ak `#` (`#0` / `#1`) ci lu nekk
+
+### v0.0.2_01 — Turu liggéey wécc _(30 Mars 2026)_
+
+- **Wécc** `c|..|` → `#,|..|` ak `e|..|` → `#^|..|` — benn ak `#`
+- **Toll** alias export — tàkk modul ci benn turu gu bees
+
+### v0.0.2 — API collection ak installateur _(24 Mars 2026)_
+
+- **Toll** Liggéey `$` ci fepp ak wóor (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Toll** Aki far ci fepp, tuple, ak tuple bu ñu tudd
+- **Toll** Index bu rax (`fepp[-1]` = ndaxal bu gën)
+- **Toll** Installateur — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mars 2026)_
+
+- **Toll** Aki `^=`
+- **Wécc** Wunu ci xaaj; kàddugóor
+
+### v0.0.1 — Tàkk bu njëkk _(22 Mars 2026)_
+
+- Tree-walker interpreter + VM (`--vm`, ~4× mag, ~95% noppi)
+- Lépp: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Unicode, modul, lambda, du, wunu
+- REPL, LSP, VS Code, format (`zymbol fmt`)
+
+---
+
+_Zymbol-Lang — Signe. Aduna. Du wax._

@@ -1,90 +1,111 @@
-# Zymbol-Lang Sɛbɛnni Guekoro
-
-**Zymbol-Lang** ye kumakan ye min bɛ sɛbɛn ka kɛ ni tiilenw ye. A tɛ baara kan kɛ — bɛɛ ye tiilen. A bɛ kɛ fɔlɔ ɲɔgɔn ye kanw bɛɛ la.
-
-- Baara kan tɛ yen (`if`, `while`, `return` tɛ yen — tiilenw dɔrɔn `?`, `@`, `<~`)
-- Unicode tilennin — tɔgɔw kɛ kan o kan walima emoji 👋
-- Kan bɛɛ kɛlen — code kɛlen do kanw bɛɛ la
+> **Hakilinatigɛ:** Nin sɛbɛnnen bɛɛ dilanna ni hakili miiri (AI) dɛmɛ ye.
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Seere kaɲuman ye **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** ye interpreter ka mara la.
 
 ---
 
-## Nɔmɔrɔw ni Waatilenw
+# Zymbol-Lang Kalan
+
+**Zymbol-Lang** ye kalan sigilan ye. Daɲɛ jateminɛ tɛ — o bɛɛ ye jateminɛ ye. A bɛ baara kɛ cogo kelen na ani ani ani cɛmancɛ la.
+
+- `if`, `while`, `return` tɛ — `?`, `@`, `<~` le bɛ yen
+- Unicode dafalen — jaatiɲɔgɔnw bɛ kalan bee la ani emoji bee la
+- Mɔgɔ kan na kɛrɛnkɛrɛnnen tɛ — kɔdɛ ye kelen ye i n'a fɔ min na
+
+**Interpreter ka sigilan**: v0.0.4 | **Surukuyaw ka kariyɛrɛ**: 393/393 (TW ↔ VM kelenyali)
+
+---
+
+---
+
+## Fɛnniw ni ladilanw
 
 ```zymbol
-x = 10              // Nɔmɔrɔ (se ka yɛlɛma)
-PI := 3.14159       // Waatilen (tɛ se ka yɛlɛma — ni a fɔlen tun ka yɛlɛma, fili bɛ kɛ)
-tɔgɔ = "Ana"
-aw = #1             // boole tiɲɛ
-👋 := "I ni ce"
+x = 10              // fɛnni min bɛ se ka caya
+PI := 3.14159       // ladilan — a ka caya laban ye baara waati fati ye
+tɔgɔ = "Alisi"
+kaaba = #1          // Booli kaɲuman
+👋 := "Aw ni baara"
 ```
 
 ```zymbol
-x = 10
+x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
 
 ---
 
-## Kunnafoniw Sugu
+## Wuliw ka jate
 
-| Suguba          | Misali              | Tiilen `#?` | Kunnafoni                           |
-|-----------------|---------------------|-------------|-------------------------------------|
-| Jate tilennen   | `42`, `-7`          | `###`       | 64-Bit signed                       |
-| Jate fɛnfɛnnen  | `3.14`, `1.5e10`    | `##.`       | Kɛfɔlen siɲɛ sɛbɛn OK              |
-| Kumakan         | `"i ni ce"`         | `##"`       | Jɔyɔrɔ: `"I ni ce {tɔgɔ}"`        |
-| Sɛbɛn kelen     | `'A'`               | `##'`       | Unicode sɛbɛn kelen                 |
-| Boole           | `#1`, `#0`          | `##?`       | Jate 1 ni 0 TƐ                      |
-| Array           | `[1, 2, 3]`         | `##]`       | Fɛnw bɛɛ suguba kelen              |
-| Tupil           | `(a, b)`            | `##)`       | Yɔrɔ kɔnɔ                          |
-| Tupil tɔgɔlen   | `(x: 1, y: 2)`      | `##)`       | Se ka sɔrɔ tɔgɔ walima jate ni    |
+| Jate | Tariku | `#?` taagi | Hakilina |
+|------|--------|------------|----------|
+| Jalan ye | `42`, `-7` | `###` | 64-bit daɲɛw ye |
+| Sigiyɔrɔ ye | `3.14`, `1.5e10` | `##.` | Dɔnko tariku bɛ se |
+| Kuma | `"sɛbɛn"` | `##"` | A ka kɔn: `"Aw ni baara {tɔgɔ}"` |
+| Sɛbɛn ye | `'A'` | `##'` | Unicode sɛbɛn kelen |
+| Booli | `#1`, `#0` | `##?` | Jalan tɛ — `#1 ≠ 1` |
+| Jatebɔ | `[1, 2, 3]` | `##]` | Fɛnw ka kelen ye |
+| Tupulu | `(a, b)` | `##)` | Sigida la |
+| Tɔgɔ tupulu | `(x: 1, y: 2)` | `##)` | Tɔgɔ bɛ min na |
+| Baarakɛcogo | tɔgɔ baarakɛcogo lajɛlen | `##()` | Danbe ye fɔlɔ; a bɛ jira `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Danbe ye fɔlɔ; a bɛ jira `<lambd/N>` |
 
 ```zymbol
-// Suguba lɛsɛli — bɛ di (suguba, jate, baarakɛ)
+// Jate ka ɲɛnajɛ — a bɛ segin (jate, jateminɛw, sɔngɔ)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
-t = meta[0]
+t = meta[1]
 >> t ¶            // → ###
 ```
 
 ---
 
-## Bɔ ni Don
+## Bɔli ni donli
 
 ```zymbol
->> "I ni ce" ¶                      // ¶ walima \\ bɛ sariya lafilenw di
->> "a=" a " b=" b ¶                 // Kunnafoni caaman ɲɔgɔn kɔnɔ
->> (arr$#) ¶                        // Postfix tiilenw bi gɛrɛfɛn dɔrɔn
+>> "Aw ni baara" ¶                       // ¶ wali \\ bɔli ye kɛɲɛ fanga ye
+>> "a=" a " b=" b ¶                    // ɲɔgɔn fɛ la — sɔngɔ caman
+>> (arr$#) ¶                           // postfix baarakɛcogow ka kan ni ( ) ye >> kɔnɔ
 
-<< tɔgɔ                            // Fɛndi tɛ — kɔnɔ yɔrɔ la bɛ kalan
-<< "I tɔgɔ? " tɔgɔ                 // Ni fɛndi ye
+<< tɔgɔ                           // kalan fɛnni la (tɛ ɲinin fɔli ye)
+<< "Tɔgɔ sɛbɛn: " tɔgɔ            // ni ɲinin fɔli ye
 ```
 
-> `¶` (AltGr+R español clavier) walima `\\` bɛ kɛ kelen ye sariya lafilenw kama.
+> `¶` (AltGr+R Spatulu kibaritigi kan) ani `\\` ye kelen ye i n'a fɔ ɲɛgɛn ye.
 
 ---
 
-## Baara kɛcogo
+## Baarakɛcogow
 
 ```zymbol
-// Jate baara — kotow bɛ baara kɛ tuma bɛɛ; dɔw bɛ se ka fili kɛ >> kɔnɔ
+// Jalanw — kɛ donw; baarakɛcogo dɔw ka nɔgɔya bɛ a la u sigi >> kɔnɔ
 a = 10
 b = 3
-r1 = a + b    // 13     r2 = a - b    // 7
-r3 = a * b    // 30     r4 = a / b    // 3  (jate kɔrɔtalen)
-r5 = a % b    // 1      r6 = a ^ b    // 1000  (jate kunba)
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (jalan ye tigɛli)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (kungo)
 
-// Ɲɔgɔn lɛsɛli
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
+// Ladon
+a == b    // #0    
+a <> b    // #1    
+a < b     // #0
+a <= b    // #0   
+a > b     // #1    
+a >= b    // #1
 
-// Logiki
+// Hakili
 #1 && #0    // #0
 #1 || #0    // #1
 !#1         // #0
@@ -92,120 +113,121 @@ a <= b    // #0   a > b     // #1    a >= b   // #1
 
 ---
 
-## Sɛbɛnni
+## Kumaw
 
 ```zymbol
-// Fɔrɔ bisaba dɔrɔnw tilen — o bɛɛ ni a yɔrɔ
-tɔgɔ = "Ana"
+// Kuma ka duuru cogo fila
+tɔgɔ = "Alisi"
 n = 42
 
-msg = "I ni ce ", tɔgɔ, "!"            // zapiya — fɛn dilan la = walima :=
->> "I ni ce " tɔgɔ " e ye " n ¶        // ɲɔgɔn kɔnɔ — bɔ la >>
-kɔlɔsi = "I ni ce {tɔgɔ}, e ye {n}"   // jɔyɔrɔ — yɔrɔ o yɔrɔ
+>> "Aw ni baara " tɔgɔ " i bɛ " n ¶       // ɲɔgɔn fɛ la — >> kɔnɔ
+jatilanni = "Aw ni baara {tɔgɔ}, i bɛ {n}"   // kɔn — min bɛ o min na
 ```
 
 ```zymbol
-s = "I ni ce Diina"
-jatelɔn = s$#                  // 14
-gɛrɛfɛn = s$[0..5]             // "I ni c"  (baw bɛ wili)
-bɛ yen = s$? "Diina"           // #1
-bɔlen = "a,b,c,d" / ','        // [a, b, c, d]
-yɛlɛmanen = s$~~["i":"I"]      // kumakan yɛlɛma bɛɛ
-yɛlɛma1 = s$~~["i":"I":1]      // yɛlɛma fɔlɔ dɔrɔn
+s = "Aw ni baara Duniɲɛ"
+jan = s$#                  // 12
+dugukolo = s$[1..5]        // "Aw ni"  (firilan-1, laban bɛ yen)
+bɛ = s$? "Duniɲɛ"          // #1
+fara = "a,b,c,d"$/ ','     // [a, b, c, d]  (tigɛli ni faralan ye)
+falili = s$~~["a":"o"]      // "Aw ni boaro Duniɲɛ"
+falili1 = s$~~["a":"o":1]   // "Aw ni boaro Duniɲɛ" (N fɔlɔw doro)
 ```
 
-> `+` bɛ kɛ jatew dɔrɔn ye. Kumakaw la, zapiya, ɲɔgɔn kɔnɔ, walima jɔyɔrɔ kɔlɔsi.
+> `+` ye jalanw le ye. Kuma caman la, kɛ `,`, ɲɔgɔn fɛ la, wali kɔn.
 
 ---
 
-## Talikɛlaw
+---
+
+## Marali jɔyɔrɔ
 
 ```zymbol
 x = 7
 
-? x > 0 { >> "ɲɔgɔn" ¶ }
+? x > 0 { >> "faaba" ¶ }
 
 ? x > 100 {
     >> "ba" ¶
 } _? x > 0 {
-    >> "ɲɔgɔn" ¶
+    >> "faaba" ¶
 } _? x == 0 {
-    >> "nul" ¶
+    >> "fɛrɛ" ¶
 } _ {
-    >> "nɔgɔnin" ¶
+    >> "finitɛ" ¶
 }
 ```
 
-> Dabaliw `{ }` **wajibi don**, fiɲɛ kelen bɛ na tuma bɛɛ.
+> `{ }` binbaw ka kan **niɲɛ** i n'a fɔ daɲɛ kelen na.
 
 ---
 
-## Match
+## Ladonu (Match)
 
 ```zymbol
-// Yɔrɔw
-kunnafoniw = 85
-baaraden = ?? kunnafoniw {
+// Danw
+mɔgɔman = 85
+jateminɛ = ?? mɔgɔman {
     90..100 : 'A'
     80..89  : 'B'
     70..79  : 'C'
     _       : 'F'
 }
->> baaraden ¶    // → B
+>> jateminɛ ¶     // → B
 
-// Kumakaw
-kulɛ = "ja"
-code = ?? kulɛ {
-    "ja"    : "#FF0000"
-    "gwɛ"   : "#00FF00"
-    _       : "#000000"
+// Kumaw
+jɛ = "bilen"
+kɔdi = ?? jɛ {
+    "bilen"  : "#FF0000"
+    "binkɛn" : "#00FF00"
+    _        : "#000000"
 }
 
-// Sariyaw
-temp = -5
-cogoyɔrɔ = ?? temp {
-    _? temp < 0  : "kongolo"
-    _? temp < 20 : "jɛni"
-    _? temp < 35 : "teliman"
-    _            : "tiɲɛ"
+// Ladon jateminɛw
+funteni = -5
+ɲɛnajɛ = ?? funteni {
+    < 0  : "nɛgɛ"
+    < 20 : "nɛnɛ"
+    < 35 : "funteni"
+    _    : "funteni ba"
 }
->> cogoyɔrɔ ¶    // → kongolo
+>> ɲɛnajɛ ¶     // → nɛgɛ
 
-// Kalama ni dabaliw
+// Daɲɛ sigilan (dalansɛmɛw)
 ?? n {
-    0       : { >> "nul" ¶ }
-    _? n < 0: { >> "nɔgɔnin" ¶ }
-    _       : { >> "ɲɔgɔn" ¶ }
+    0        : { >> "fɛrɛ" ¶ }
+    _? n < 0 : { >> "finitɛ" ¶ }
+    _        : { >> "faaba" ¶ }
 }
 ```
 
 ---
 
-## Sirilimaw
+## Jɛgɛw
 
 ```zymbol
-@ i:0..4  { >> i " " }        // yɔrɔ: 0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // ni gafe: 1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // segin kɔ: 5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // dan bɛ yen:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // ni tɛmɛn ye:   1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // kɛnɛma:        5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
 >> n ¶                        // → 128  (waati)
 
-furu = ["Mango", "Nɛrɛ", "Tulu"]
-@ f:furu { >> f ¶ }           // fɛnw bɛɛ kama
+abolo = ["pɔm", "pɛri", "rɛzɛ̃"]
+@ a:abolo { >> a ¶ }          // fɛn bɛɛ la jatebɔ kɔnɔ
 
-@ c:"i ni ce" { >> c "-" }
->> ¶                          // → i-  -n-i-  -c-e-
+@ s:"aw ni baara" { >> s "-" }
+>> ¶                          // → a-w- -n-i- -b-a-a-r-a-  (kuma kɔnɔ sɛbɛn bɛɛ la)
 
 @ i:1..10 {
-    ? i % 2 == 0 { @> }       // @> taa ɲɔgɔn
-    ? i > 7 { @! }             // @! dɔgɔtɔ
+    ? i % 2 == 0 { @> }       // @> tɛmɛ
+    ? i > 7 { @! }            // @! kiri
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
 
-// Sirilikɛ bɛ tuma bɛɛ
+// Jɛgɛ laban tɛ
 i = 0
 @ {
     i++
@@ -214,355 +236,362 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Tɔgɔlen sirilikɛ (ɲɔgɔn kɔnɔ dɔgɔtɔ)
-count = 0
-@ @outer {
-    count++
-    ? count >= 3 { @! outer }
+// Jɛgɛ tɔgɔ bɛ min na (kiri lajɛgɛnyalen)
+jate = 0
+@:kɛnɛma {
+    jate++
+    ? jate >= 3 { @:kɛnɛma! }
 }
->> count ¶                    // → 3
+>> jate ¶                     // → 3
 ```
 
 ---
 
-## Baaraw
+## Baarakɛcogow
 
 ```zymbol
-sɛgɛsɛgɛ(a, b) { <~ a + b }
->> sɛgɛsɛgɛ(3, 4) ¶    // → 7
+fara(a, b) { <~ a + b }
+>> fara(3, 4) ¶   // → 7
 
-mɔgɔjate(n) {
+jateminɛlann (n) {
     ? n <= 1 { <~ 1 }
-    <~ n * mɔgɔjate(n - 1)
+    <~ n * jateminɛlann (n - 1)
 }
->> mɔgɔjate(5) ¶    // → 120
+>> jateminɛlann (5) ¶    // → 120
 ```
 
-Baaraw bɛ yɔrɔ wɛrɛ kɔnɔ — tɛ se ka kunnafoniw cɛkɔrɔw sɔrɔ. Kunnafoniw bɔ `<~` ka baara kɛ:
+Baarakɛcogow ka **sigida kɛlɛma** bɛ — u tɛ se ka fɛnniw kalan kɛnɛma la. Kɛ baarakɛla ka fɛnniw falen, kɛ bɔli paramɛtɛriw `<~`:
 
 ```zymbol
-yɛlɛma(a<~, b<~) {
-    tmp = a
+bilisi(a<~, b<~) {
+    tɛmp = a
     a = b
-    b = tmp
+    b = tɛmp
 }
 x = 10
 y = 20
-yɛlɛma(x, y)
+bilisi(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Baaraw tɔgɔlen tɛ kɛ fɛn fɔlɔ ye. Ka di kuma kama: `x -> tɔgɔ(x)`.
+> Tɔgɔ baarakɛcogow ye **danbe ye fɔlɔ sɔngɔw** le ye — ka di tagi la: `nums$> fɔlɔ`. `x -> fn(x)` fan fana bɛ se.
 
 ---
 
-## Lambda ni Tɔnw
+## Lambdaw ani dalanw
 
 ```zymbol
-fila = x -> x * 2
-lajɛlen = (a, b) -> a + b
->> fila(5) ¶         // → 10
->> lajɛlen(3, 7) ¶   // → 10
+fɔlɔ = x -> x * 2
+fara = (a, b) -> a + b
+>> fɔlɔ(5) ¶   // → 10
+>> fara(3, 7) ¶  // → 10
 
-// Lambda ni dabali ye
-baarakɛ = x -> {
-    ? x > 0 { <~ "ɲɔgɔn" }
-    _? x < 0 { <~ "nɔgɔnin" }
-    <~ "nul"
+// Dalansɛmɛ lambda
+jateminɛ = x -> {
+    ? x > 0 { <~ "faaba" }
+    _? x < 0 { <~ "finitɛ" }
+    <~ "fɛrɛ"
 }
 
-// Tɔnw — lambdaw bɛ kunnafoniw cɛkɔrɔw sɔrɔ
-factor = 3
-saba = x -> x * factor
->> saba(7) ¶    // → 21
+// Dalan — a bɛ kɛnɛma sigida minɛ
+jateminɛba = 3
+fɔlɔ saba = x -> x * jateminɛba
+>> fɔlɔ saba(7) ¶   // → 21
 
-// Baara dilan
-make_adder(n) { <~ x -> x + n }
-add10 = make_adder(10)
->> add10(5) ¶    // → 15
+// Baarakɛyɔrɔ
+fara baga da (n) { <~ x -> x + n }
+fara tan = fara baga da (10)
+>> fara tan(5) ¶    // → 15
 
-// Lambdaw kɛ fɛn ye: bɛ bila array la
-ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[2](5) ¶    // → 25
+// Jatebɔ kɔnɔ
+baarakɛw = [x -> x+1, x -> x*2, x -> x*x]
+>> baarakɛw[3](5) ¶   // → 25
 ```
 
 ---
 
-## Siraw
+## Jatebɔw
 
-Siraw bɛ **yɛlɛma** ani bɛ fɛnw **suguba kelen** kɔnɔ.
+Jatebɔw **bɛ se ka caya** ani u bɛ fɛn **jate kelen** bɛɛ mara.
 
 ```zymbol
-arr = [1, 2, 3, 4, 5]
+jatebɔ = [1, 2, 3, 4, 5]
 
-arr[0]          // 1 — sɔrɔ (0 kɔnɔ)
-arr[-1]         // 5 — jate nɔgɔnin (laban)
-arr$#           // 5 — jatelɔn (kɛ (arr$#) >> la)
+jatebɔ[1]          // 1 — a lajɛ (firilan-1: fɛn fɔlɔ)
+jatebɔ[-1]         // 5 — jateli jugu (fɛn laban)
+jatebɔ$#           // 5 — jan (kɛ (jatebɔ$#) >> kɔnɔ)
 
-arr = arr$+ 6            // fara kan → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // bila yɔrɔ 2 la
-arr3 = arr$- 3           // bɔ baaralen fɔlɔ
-arr4 = arr$-- 3          // bɔ baaralenw bɛɛ
-arr5 = arr$-[0]          // bɔ yɔrɔ 0 la
-arr6 = arr$-[1..3]       // bɔ yɔrɔw (baw bɛ wili)
+jatebɔ = jatebɔ$+ 6            // fara → [1,2,3,4,5,6]
+jatebɔ2 = jatebɔ$+[2] 99       // don sigida 2 la (firilan-1)
+jatebɔ3 = jatebɔ$- 3           // sɔngɔ fɔlɔ bɔ
+jatebɔ4 = jatebɔ$-- 3          // sɔngɔ bɛɛ bɔ
+jatebɔ5 = jatebɔ$-[1]          // bɔ jateli 1 la (fɛn fɔlɔ)
+jatebɔ6 = jatebɔ$-[2..3]       // dan bɔ (firilan-1, laban bɛ yen)
 
-bɛ yen = arr$? 3         // #1 — bɛ yen
-yɔrɔw = arr$?? 3         // [2] — yɔrɔw bɛɛ
-gɛrɛfɛn = arr$[0..3]     // [1,2,3] — gɛrɛfɛn (baw bɛ wili)
-sl2 = arr$[0:3]          // [1,2,3] — jatelɔn kama
+bɛ = jatebɔ$? 3            // #1 — a bɛ yen
+sigidaw = jatebɔ$?? 3      // [3] — sɔngɔ ka jateli bɛɛ (firilan-1)
+tigɛ = jatebɔ$[1..3]       // [1,2,3] — tigɛ (firilan-1, laban bɛ yen)
+tigɛ2 = jatebɔ$[1:3]       // [1,2,3] — kelen ye, jate la daɲɛ
 
-fara = arr$^+            // jate bila (jate dɔrɔn)
-gɛlɛya = arr$^-          // jate bilanen (jate dɔrɔn)
+sɛgɛn = jatebɔ$^+          // sɛgɛn sɔrɔ (firilan bɛɛ la, jateminɛw doro)
+jigi = jatebɔ$^-           // jigi sɔrɔ (firilan bɛɛ la, jateminɛw doro)
 
-// Tupilw ni tɔgɔw — $^ ni ɲɔgɔn kɔnɔ kɛ
-db = [(tɔgɔ: "Kala", saan: 28), (tɔgɔ: "Ana", saan: 25), (tɔgɔ: "Buba", saan: 30)]
-saan_kama  = db$^ (a, b -> a.saan < b.saan)    // fara kama saan  (<)
-tɔgɔ_kama = db$^ (a, b -> a.tɔgɔ > b.tɔgɔ)   // gɛlɛya kama tɔgɔ (>)
->> saan_kama[0].tɔgɔ ¶     // → Ana
->> tɔgɔ_kama[0].tɔgɔ ¶    // → Kala
+// Tɔgɔ tupulu/jateminɛ tupulu jatebɔw — kɛ $^ ni ladon lambda ye
+db = [(tɔgɔ: "Karla", sanni: 28), (tɔgɔ: "Ana", sanni: 25), (tɔgɔ: "Bob", sanni: 30)]
+sanni la   = db$^ (a, b -> a.sanni < b.sanni)     // sɛgɛn sanni la (<)
+tɔgɔ la   = db$^ (a, b -> a.tɔgɔ > b.tɔgɔ)      // jigi tɔgɔ la (>)
+>> sanni la[1].tɔgɔ ¶     // → Ana
+>> tɔgɔ la[1].tɔgɔ ¶      // → Karla
 
-// Yɛlɛma yɔrɔ kelen la (siraw dɔrɔn)
-arr[1] = 99              // dilan
-arr[0] += 5              // kafo: +=  -=  *=  /=  %=  ^=
+// Fɛn falen tilennen (jatebɔw doro)
+jatebɔ[1] = 99              // don
+jatebɔ[2] += 5              // falen: +=  -=  *=  /=  %=  ^=
 
-// Yɛlɛma ni baara ye — array kura di; kɔrɔ bɛ to ka se
-arr2 = arr[1]$~ 99
+// Baarakɛcogo falen — a bɛ jatebɔ kura segin; fɔlɔ mana caya
+jatebɔ2 = jatebɔ[2]$~ 99
 ```
 
-> Array yɔrɔlenw bɛɛ bɛ **array kura** di. Segin kɔ: `arr = arr$+ 4`.
-> Tɛ se ka ɲɔgɔn kɔnɔ: fɛn dilan fila wɛrɛ wɛrɛ la kɛ.
-> `$^+` / `$^-` bɛ **jate dɔrɔn** bila (jatew, kumakaw). Tupilw kama `$^` ni ɲɔgɔn kɔnɔ kɛ.
+> Jateminɛ baarakɛcogow bɛɛ ye **jatebɔ kura** le segin. Segin don: `jatebɔ = jatebɔ$+ 4`.
+> `$+` bɛ se ka kɛ kɛrɛfɛ: `jatebɔ = jatebɔ$+ 5$+ 6$+ 7`. Baarakɛcogow tɛ kɛ ni tɛmɛn kɛrɛfɛw ye.
+> **Jateli sigilan ye firilan-1 ye**: `jatebɔ[1]` ye fɛn fɔlɔ ye; `jatebɔ[0]` ye baara waati fati ye.
+> `$^+` / `$^-` bɛ **jateminɛ jatebɔw** sɔrɔ (jalaniw, kumaw). Tupulu jatebɔw la kɛ `$^` ni ladon lambda ye — ajugu bɛ lambda kɔnɔ kɔdɛni (`<` = sɛgɛn, `>` = jigi).
 
-**Baarakɛ kunnafoni** — array fɛn wɛrɛ ma ni ka yɛlɛmalen kɛ, ɲɔgɔn kelen bɛ kɛ:
+**Sɔngɔ hakili** — jatebɔ don fɛnni wɛrɛ la a bɛ kɔpi kura da:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b ma yɛlɛma
+>> b ¶    // → [1, 2, 3]   ← b mana caya
 ```
 
 ```zymbol
-// Siraw ɲɔgɔn kɔnɔ
-matirisi = [[1,2,3],[4,5,6],[7,8,9]]
->> matirisi[1][2] ¶    // → 6
+// Jatebɔw lajɛgɛnyalen (firilan-1 jateli)
+matrisi = [[1,2,3],[4,5,6],[7,8,9]]
+>> matrisi[2][3] ¶    // → 6  (rɔn 2, tɛrɛw 3)
 ```
 
 ---
 
-## Fara fara kɛ
+## Falifalen don
 
 ```zymbol
-// Array
-arr = [10, 20, 30, 40, 50]
-[a, b, c] = arr              // a=10  b=20  c=30
-[fɔlɔ, *tɔw] = arr           // fɔlɔ=10  tɔw=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ bɛ tɔgɔ bali
+// Jatebɔ
+jatebɔ = [10, 20, 30, 40, 50]
+[a, b, c] = jatebɔ              // a=10  b=20  c=30
+[fɔlɔ, *seginw] = jatebɔ        // fɔlɔ=10  seginw=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ bɛ fɛn mɛ
 
-// Tupil yɔrɔ kɔnɔ
+// Sigida tupulu
 yɔrɔ = (100, 200)
-(px, py) = yɔrɔ             // px=100  py=200
+(px, py) = yɔrɔ              // px=100  py=200
 
-// Tupil tɔgɔlen
-mɔgɔ = (tɔgɔ: "Ana", saan: 25, dugu: "Bamako")
-(tɔgɔ: n, saan: a) = mɔgɔ  // n="Ana"  a=25
+// Tɔgɔ tupulu
+mɔgɔ = (tɔgɔ: "Ana", sanni: 25, dugu: "Madrid")
+(tɔgɔ: t, sanni: s) = mɔgɔ   // t="Ana"  s=25
 ```
 
 ---
 
-## Tupilw
+## Tupuluw
 
-Tupilw bɛ **yɛlɛma tɛ** ani bɛ se ka **suguba dɔw** ta. Siraw i kɔ, fɛnw tɛ se ka yɛlɛma fara kan.
+Tupuluw ye **min mana se ka caya** bɔnsɔgɛw ye, ani u bɛ se ka **jate sirilanw** mara.
+Jatebɔw kɛrɛfɛ la, fɛnw tɛ se ka caya u ka bɔ laban na.
 
 ```zymbol
-// Yɔrɔ kɔnɔ
+// Sigida la — jate falen bɛ se
 yɔrɔ = (10, 20)
->> yɔrɔ[0] ¶    // → 10
+>> yɔrɔ[1] ¶     // → 10
 
-kunnafoniw = (42, "i ni ce", #1, 3.14)
->> kunnafoniw[2] ¶     // → #1
+dati = (42, "aw ni baara", #1, 3.14)
+>> dati[3] ¶     // → #1
 
-// Tɔgɔlen
-mɔgɔ = (tɔgɔ: "Alice", saan: 25)
->> mɔgɔ.tɔgɔ ¶    // → Alice
->> mɔgɔ[0] ¶      // → Alice  (jate ni bɛ baara kɛ)
+// Tɔgɔ min bɛ
+mɔgɔ = (tɔgɔ: "Alisi", sanni: 25)
+>> mɔgɔ.tɔgɔ ¶    // → Alisi
+>> mɔgɔ[1] ¶      // → Alisi  (jateli fan fana bɛ baara, firilan-1)
 
-// Ɲɔgɔn kɔnɔ
-bɔkɔ = (x: 10, y: 20)
-p = (bɔkɔ: bɔkɔ, tɔgɔ: "kɔrɔ")
->> p.bɔkɔ.x ¶        // → 10
+// Lajɛgɛnyalen
+sigida = (x: 10, y: 20)
+p = (sigida: sigida, taagi: "dɔrɔn")
+>> p.sigida.x ¶     // → 10
 ```
 
-**Yɛlɛma tɛ** — tupili fɛn yɛlɛma sɔrɔ bɛ fili bɔ tuma bɛɛ:
+**Min mana se ka caya** — tupulu fɛn don o don bɛ se ka caya, o ye baara waati fati ye:
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ fili: tupilw tɛ yɛlɛma
-// t[0] += 5    // ❌ fili kelen
+// t[1] = 99    // ❌ baara waati fati: tupuluw tɛ se ka caya
+// t[1] += 5    // ❌ fati kelen ye
+
+// Tɔgɔ tupulu — a falen tilennen
+mɔgɔ = (tɔgɔ: "Alisi", sanni: 25)
+ba = (tɔgɔ: mɔgɔ.tɔgɔ, sanni: 26)
+>> mɔgɔ.sanni ¶    // → 25
+>> ba.sanni ¶       // → 26
 ```
 
-Ka ɲɛnajɛlen sɔrɔ jɔyɔrɔ fɛ jiri `$~` (yɛlɛma ni baara ye) — tupili kura di:
+Ni a caya, kɛ `$~` (baarakɛcogo falen) — a bɛ tupulu **kura** le segin:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[1]$~ 999
->> t ¶     // → (10, 20, 30)   ← kɔrɔ bɛ to ka se
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← fɔlɔ mana caya
 >> t2 ¶    // → (10, 999, 30)
-
-// Tupili tɔgɔlen — fara kan kura kɛ
-mɔgɔ = (tɔgɔ: "Alice", saan: 25)
-kɔrɔba  = (tɔgɔ: mɔgɔ.tɔgɔ, saan: 26)
->> mɔgɔ.saan ¶    // → 25
->> kɔrɔba.saan ¶      // → 26
 ```
 
 ---
 
-## Baaraw Kɔrɔbaw
-
-> HOF tiilenw bi **lambda inline** — Lambda yɔrɔ tɛ ka kɛ.
+## Baarakɛcogow ɲɛmanya
 
 ```zymbol
-nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+jalenw = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-filalen  = nums$> (x -> x * 2)                // map  → [2,4,6…20]
-ɲɔgɔnw   = nums$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
-lajɛ     = nums$< (0, (acc, x) -> acc + x)    // reduce → 55
+fɔlɔlenw = jalenw$> (x -> x * 2)                // karata → [2,4,6…20]
+bɛnɛnw   = jalenw$| (x -> x % 2 == 0)           // sɛbɛn → [2,4,6,8,10]
+bɛɛ     = jalenw$< (0, (bɔn, x) -> bɔn + x)     // bɔn → 55
 
-// Ɲɔgɔn kɔnɔ ni fɛn dilan
-gafe1 = nums$| (x -> x > 3)
-gafe2 = gafe1$> (x -> x * x)
->> gafe2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+// Kɛrɛfɛ ni tɛmɛnw ye
+tɛmɛn1 = jalenw$| (x -> x > 3)
+tɛmɛn2 = tɛmɛn1$> (x -> x * x)
+>> tɛmɛn2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Baaraw tɔgɔlenw HOF kɔnɔ — lambda kɔnɔ bila
-fila(x) { <~ x * 2 }
-r = nums$> (x -> fila(x))    // ✅
+// Tɔgɔ baarakɛcogow bɛ se ka di tagi la baarakɛcogow ɲɛmanya la
+fɔlɔ(x) { <~ x * 2 }
+ba_yɛlɛma(x) { <~ x > 5 }
+r = jalenw$> fɔlɔ       // ✅ lajɛlen tilennen
+r = jalenw$| ba_yɛlɛma   // ✅ lajɛlen tilennen
 ```
 
 ---
 
-## Pipe Baara kɛcogo
+## Piyibu baarakɛcogo
 
-RHS tuma bɛɛ bi `_` fɛn lafilenw kama:
+Bolo fɛ a la bɛ se ka `_` kɛ sigida ye i n'a fɔ sɔngɔ min bɛ piyibu la:
 
 ```zymbol
-fila = x -> x * 2
-lajɛ = (a, b) -> a + b
-ɲɔgɔn = x -> x + 1
+fɔlɔ = x -> x * 2
+fara = (a, b) -> a + b
+tɔbɔ = x -> x + 1
 
-5 |> fila(_)        // → 10
-10 |> lajɛ(_, 5)    // → 15
-5 |> lajɛ(2, _)     // → 7
+5 |> fɔlɔ(_)        // → 10
+10 |> fara(_, 5)    // → 15
+5 |> fara(2, _)     // → 7
 
-// Ɲɔgɔn kɔnɔ
-r = 5 |> fila(_) |> ɲɔgɔn(_) |> fila(_)
+// Kɛrɛfɛ
+r = 5 |> fɔlɔ(_) |> tɔbɔ(_) |> fɔlɔ(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## Fili Mara
+## Fatiw ka mara
 
 ```zymbol
 !? {
     x = 10 / 0
 } :! ##Div {
-    >> "Kɔrɔtalen bila nul la" ¶
+    >> "tigɛli ni fɛrɛ ye" ¶
 } :! {
-    >> "fili wɛrɛ: " _err ¶    // _err bɛ fili kuma mara
+    >> "fati wɛrɛ: " _err ¶    // _err bɛ fati kuma minɛ
 } :> {
-    >> "tuma bɛɛ bɛ bɔ" ¶
+    >> "a bɛ baara o waati bɛɛ" ¶
 }
 ```
 
-| Suguba      | Tuma min              |
-|-------------|----------------------|
-| `##Div`     | Kɔrɔtalen bila nul la |
-| `##IO`      | Dosiye / Baara        |
-| `##Index`   | Jate tɛ yɔrɔ la      |
-| `##Type`    | Suguba fili           |
-| `##Parse`   | Kalan fili            |
-| `##Network` | Interneti fili        |
-| `##_`       | Fili o fili (bɛɛ)     |
+| Jate | Waati |
+|------|-------|
+| `##Div` | Tigɛli ni fɛrɛ ye |
+| `##IO` | Fiyeli / jatebɔ |
+| `##Index` | Jateli ka tɛmɛ danw kan |
+| `##Type` | Jate tɛ kelen ye |
+| `##Parse` | Dati ka kalan |
+| `##Network` | Jalakadaw ka fati |
+| `##_` | Fati o fati (a bɛ bɛɛ minɛ) |
 
 ---
 
-## Modiilw
+## Modulu
 
 ```zymbol
-// Dosiye: lib/calc.zy
-# calc
+// lib/calc.zy — modulu ka yɔrɔ bɛ binba kɔnɔ
+# calc {
+    #> { fara, get_PI }
 
-#> { sɛgɛsɛgɛ, get_PI }    // Bɔ tiilenw KALANDEN don k'a ɲɛsin dafaliw ma
-
-_PI := 3.14159
-sɛgɛsɛgɛ(a, b) { <~ a + b }
-get_PI() { <~ _PI }   // sɔrɔkɛ — constant sɔrɔ tuma la tɛ se ka kɛ
+    _PI := 3.14159
+    fara(a, b) { <~ a + b }
+    get_PI() { <~ _PI }
+}
 ```
 
 ```zymbol
-// Dosiye: main.zy
-<# ./lib/calc <= c    // Alias wajibi
+// main.zy
+<# ./lib/calc <= c    // tɔgɔ wɛrɛ ka kan
 
->> c::sɛgɛsɛgɛ(5, 3) ¶  // → 8
+>> c::fara(5, 3) ¶   // → 8
 pi = c::get_PI()
->> pi ¶                  // → 3.14159
+>> pi ¶              // → 3.14159
 ```
 
 ```zymbol
-// Bɔ ni tɔgɔ wɛrɛ ye
-# mylib
-#> { _sɛgɛsɛgɛ_kɔnɔ <= lajɛ }
+// Bɔli ni tɔgɔ wɛrɛ ye
+# n ka gafe {
+    #> { _kɔnɔ_fara <= bɛɛ }
 
-_sɛgɛsɛgɛ_kɔnɔ(a, b) { <~ a + b }
+    _kɔnɔ_fara(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
-<# ./mylib <= m
+<# ./n ka gafe <= m
 
->> m::lajɛ(3, 4) ¶    // → 7  (tɔgɔ kɔnɔ _sɛgɛsɛgɛ_kɔnɔ bɛɲɔgɔn)
+>> m::bɛɛ(3, 4) ¶    // → 7  (kɔnɔ tɔgɔ _kɔnɔ_fara dogolen)
 ```
+
+> **Modulu ka ɲɛminɛw**: `# tɔgɔ { }` kɔnɔ, `#>`, baarakɛcogo jatilaw, ani tariku fɛnni/ladilan daminɛw le bɛ se. Baarakɛ se daɲɛw (`>>`, `<<`, jɛgɛw, wɛrɛw) bɛ fati E130 kɛ.
 
 ---
 
-## Kɛlɛnnali Jateminɛw
+## Jateminɛ sigidaw
 
-Zymbol bɛ se ka jateminɛw jira **Unicode jateminɛ sɛbɛnniw 69** kɔnɔ — Devanagari, Arabi-Indiya, Tayilandi, Klingon pIqaD, Matematiki Bon, LCD segimɛntw ani wɛrɛw. Kɛlɛnnali minɛ bɛ `>>`-bɔlaw kɔnɔ dɔrɔn; kɔnɔ jate tuma bɛɛ ye binaari ye.
+Zymbol bɛ se ka jateminɛw jira **69 Unicode jateminɛ dalanw** la — Dewanagari, Arabu-Hinduku, Tayilandi, Klingon pIqaD, Matematiki ba, LCD sigidaw, ani wɛrɛw. Sigida min bɛ baara, o bɛ bɔli `>>` le la; kɔnɔ jateminɛ ye binari ye o waati bɛɛ.
 
-### Sɛbɛnni daminɛ
+### Sɛbɛn baga da
 
-Jateminɛ `0` ni `9` sɛbɛn `#…#` cɛ:
+Sɛbɛn baga da ka `0` ani `9` jateminɛw sɛbɛn `#…#` kɔnɔ:
 
 ```zymbol
-#०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // Arabic-Indic  (U+0660–U+0669)
-#๐๙#    // Thai          (U+0E50–U+0E59)
-#09#    // reset to ASCII
+#०९#    // Dewanagari    (U+0966–U+096F)
+#٠٩#    // Arabu-Hinduku  (U+0660–U+0669)
+#๐๙#    // Tayilandi      (U+0E50–U+0E59)
+#09#    // segin ASCII ma
 ```
 
-### Bɔlaw ni tiɲɛ-galon
+### Bɔli ani Booliw
 
 ```zymbol
 x = 42
->> x ¶          // → 42   (ASCII default)
+>> x ¶          // → 42   (ASCII a fɔlɔ)
 
 #०९#
 >> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४
+>> 3.14 ¶       // → ३.१४   (tigitigi sigida ye ASCII ye o waati bɛɛ)
 >> 1 + 2 ¶      // → ३
 
-// Tiɲɛ-galon: # ka tɔgɔ tuma bɛɛ ye ASCII ye, jateminɛ bɛ yɛlɛma
->> #1 ¶         // → #१
->> #0 ¶         // → #०
+// Booliw: # fɔlɔlen ye ASCII ye o waati bɛɛ, jateminɛ bɛ sigi
+>> #1 ¶         // → #१   (kaɲuman Dewanagari la)
+>> #0 ¶         // → #०   (fanin — a bɛ fara ० jalan fɛrɛ kan)
 
 x = 28 > 4
->> x ¶          // → #१
+>> x ¶          // → #१   (ladon laban bɛ sigida min bɛ baara o la)
 ```
 
-### Jateminɛ fɔlɔw sɔrɔ kɔdɔ kɔnɔ
+---
 
-Cogoya minɛ jateminɛw bɛ valid ye — hakɛw, modulo, sɛgɛsɛgɛliw kɔnɔ:
+## Tariku jateminɛw kɔdɛ kɔnɔ
+
+Sɛbɛn baga da o baga da ka jateminɛw ye tariku jateminɛ bɛɛ ye — danw la, modulo la, ladonw la:
 
 ```zymbol
 #०९#
@@ -575,160 +604,186 @@ Cogoya minɛ jateminɛw bɛ valid ye — hakɛw, modulo, sɛgɛsɛgɛliw kɔnɔ:
 }
 ```
 
-### Tiɲɛ-galon fɔlɔw sɛbɛnniw kɔnɔ
+### Booli tarikuw sɛbɛn o sɛbɛn baga da la
 
-`#` + jateminɛ `0` walima `1` sɛbɛnni o sɛbɛnni la ye valid tiɲɛ-galon ye:
+`#` + jateminɛ `0` wali `1` dalan o dalan la ye booli tariku min bɛ se:
 
 ```zymbol
-#٠٩#
-نشط = #١
->> نشط ¶        // → #١
->> (#١ && #٠) ¶ // → #٠
+#०९#
+kaaba = #१        // kelen ye #1 ye
+>> kaaba ¶        // → #१
+>> (#१ && #०) ¶   // → #०
 ```
 
-> `#` **tuma bɛɛ ye ASCII ye**. `#0` (galon) tuma bɛɛ bɛ `0` (jateminɛ zero) kɛ wɛrɛ ye sɛbɛnni o sɛbɛnni kɔnɔ.
+> `#` ye **ASCII ye o waati bɛɛ**. `#0` (fanin) bɛ se ka fara `0` (jalan fɛrɛ) kan i n'a fɔ sɛbɛn baga da o baga da la.
 
 ---
 
-## Data Baara kɛcogo
+## Dati baarakɛcogow
 
 ```zymbol
-// Kumakan yɛlɛma jate ma
-v1 = #|"42"|      // → 42  (Jate tilennen)
-v2 = #|"3.14"|    // → 3.14  (Jate fɛnfɛnnen)
-v3 = #|"abc"|     // → "abc"  (fili tɛ)
+// Jate falen
+##.42         // → 42.0  (Sigiyɔrɔ ma)
+###3.7        // → 4     (Jalan ye ma, ka lan)
+##!3.7        // → 3     (Jalan ye ma, ka kiri)
 
-// Telen / bɔsen
+// Kuma kalan ni jalan ye
+v1 = #|"42"|      // → 42  (Jalan ye)
+v2 = #|"3.14"|    // → 3.14  (Sigiyɔrɔ)
+v3 = #|"abc"|     // → "abc"  (a bɛ se, fati tɛ)
+
+// Ka lan / ka kiri
 pi = 3.14159265
-r2 = #.2|pi|      // → 3.14  (telen jate 2 ma)
-r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14  (bɔsen)
+lan2 = #.2|pi|     // → 3.14  (lan sigida 2 ɲɛfɛli la)
+lan4 = #.4|pi|     // → 3.1416
+kiri2 = #!2|pi|    // → 3.14  (ka kiri)
 
-// Jate sɛbɛnni
-fmt = #,|1234567|      // → 1,234,567  (zapiya kɔnɔ)
-sci = #^|12345.678|    // → 1.2345678e4  (kɛfɔlen siɲɛ)
+// Jateminɛ sigilan
+sigilan = #,|1234567|   // → 1,234,567  (koma la)
+dɔnko = #^|12345.678| // → 1.2345678e4  (dɔnko la)
 
-// Jate tɔnɔw
-a = 0x41         // → 'A'  (hex)
-b = 0b01000001   // → 'A'  (binɛri)
-c = 0o101        // → 'A'  (oktal)
+// Firilan tarikuw
+a = 0x41         // → 'A'  (heksadesimali)
+b = 0b01000001   // → 'A'  (binari)
+c = 0o101        // → 'A'  (oktali)
 
-// Jate tɔnɔ bɔ
-hex = 0x|255|    // → "0x00FF"
+// Firilan falen bɔli
+heks = 0x|255|   // → "0x00FF"
 bin = 0b|65|     // → "0b1000001"
-oct = 0o|8|      // → "0o10"
-dec = 0d|255|    // → "0d0255"
+okt = 0o|8|      // → "0o10"
+des = 0d|255|    // → "0d0255"
 ```
 
 ---
 
-## Shell Dɔgɔtɔrɔya
+## Sheli lajɛgɛn
 
 ```zymbol
-don = <\ date +%Y-%m-%d \>     // stdout sɔrɔ (sariya lafilenw ni)
+don = <\ date +%Y-%m-%d \>     // a bɛ stdout minɛ (a bɛ \n don laban na)
 >> "Bi: " don
 
-dosiye = "data.txt"
-kunnafoni = <\ cat {dosiye} \>      // jɔyɔrɔ ni kuma kɔnɔ
+fiyeli = "dati.txt"
+kɔnɔ = <\ cat {fiyeli} \>       // kɔn don marali la
 
-bɔlen = </"./subscript.zy"/>   // Zymbol script wɛrɛ kɛ, stdout sɔrɔ
->> bɔlen
+bɔli = </"./subscript.zy"/>    // Zymbol sɛbɛn wɛrɛ baga da, a ka bɔli minɛ
+>> bɔli
 ```
 
-> `><` bɛ CLI kuma kɔnɔw sɔrɔ lokola array (tree-walker dɔrɔn).
+> `><` bɛ CLI maraliw minɛ kuma jatebɔ ye (tree-walker le yɔrɔ).
 
 ---
 
-## Misali Tilennen: FizzBuzz
+## Jateminɛ dafalen: FizzBuzz
 
 ```zymbol
-sɛgɛsɛgɛ(jate) {
-    ? jate % 15 == 0 { <~ "FiziFilɛBuzuFilɛ" }
-    _? jate % 3  == 0 { <~ "FiziFilɛ" }
-    _? jate % 5  == 0 { <~ "BuzuFilɛ" }
-    _ { <~ jate }
+jateminɛ(jalan) {
+    ? jalan % 15 == 0 { <~ "FizzBuzz" }
+    _? jalan % 3  == 0 { <~ "Fizz" }
+    _? jalan % 5  == 0 { <~ "Buzz" }
+    _ { <~ jalan }
 }
 
-@ i:1..20 { >> sɛgɛsɛgɛ(i) ¶ }
+@ i:1..20 { >> jateminɛ(i) ¶ }
 ```
 
 ---
 
-## Tiilenw Waleliw
+## Jateminɛw ka tigɛli
 
-| Tiilen  | Baara              | Tiilen     | Baara                 |
-|---------|--------------------|------------|-----------------------|
-| `=`     | Nɔmɔrɔ            | `$#`       | Jatelɔn               |
-| `:=`    | Waatilen           | `$+`       | Fara kan              |
-| `>>`    | Bɔ                 | `$+[i]`    | Bila yɔrɔ la          |
-| `<<`    | Don                | `$-`       | Bɔ (baaralen fɔlɔ)   |
-| `¶`/`\\` | Sariya lafilenw   | `$--`      | Bɔ baaralenw bɛɛ     |
-| `?`     | ? (if)             | `$-[i]`    | Bɔ yɔrɔ la            |
-| `_?`    | _? (elif)          | `$-[i..j]` | Bɔ yɔrɔw              |
-| `_`     | _ / yɔrɔ           | `$?`       | Bɛ yen                |
-| `??`    | match              | `$??`      | Yɔrɔw bɛɛ sɔrɔ       |
-| `@`     | Sirilikɛ           | `$[s..e]`  | Gɛrɛfɛn               |
-| `@!`    | Dɔgɔtɔ (break)     | `$>`       | map                   |
-| `@>`    | Taa ɲɔgɔn          | `$\|`      | filter                |
-| `->`    | Lambda             | `$<`       | reduce                |
-| `arr[i] = val` | Yɛlɛma yɔrɔ (siraw dɔrɔn) | `arr[i] += val` | Yɛlɛma kafo |
-| `arr[i]$~` | Yɛlɛma ni baara (kura) | `$^+`   | Bila fara (jatew)  |
-| `$^-`   | Bila gɛlɛya (jatew) | `$^`      | Bila ni ɲɔgɔn (tupilw) |
-| `<~`    | Segin kɔ           | `!?`       | sɛbɛn (try)           |
-| `\|>`   | Pipe               | `:!`       | minɛ (catch)          |
-| `#1`    | tiɲɛ               | `:>`       | tuma bɛɛ (finally)    |
-| `#0`    | galon              | `$!`       | fili ye wa            |
-| `<#`    | don (import)       | `$!!`      | fili nɛnɛ             |
-| `#`     | Modiil sɛbɛn       | `#>`       | bɔ (export)           |
-| `::`    | Modiil wele        | `.`        | yɔrɔ sɔrɔ            |
-| `#\|..\|` | Jate kalan      | `#?`       | Suguba lɛsɛli         |
-| `#.N\|..\|` | Telen         | `#!N\|..\|` | Bɔsen              |
-| `#,\|..\|` | Zapiya sɛbɛnni  | `#^\|..\|`  | Kɛfɔlen siɲɛ          |
-| `#d0d9#` | kɛlɛnnali jateminɛ yɛlɛmali | `#09#` | ASCII ma segin |
-| `<\ ..\>` | Shell kɛ        | `>\<`      | CLI kumaw             |
-
-## Verisiyon Taarixi
-
-### v0.0.3 — Unicode Jateminɛ Hɔrɔnya & LSP Ɲɛsɔrɔli _(Avrili 2026)_
-
-- **Fara** Unicode jateminɛ blɔki 69 ni kɛlɛnnali yɛlɛmali tɔgɔ `#d0d9#`
-- **Fara** Tiɲɛ-galon fɔlɔw sɛbɛnni o sɛbɛnni kɔnɔ — `#१` / `#०`, `#١` / `#٠`, ani wɛrɛw
-- **Fara** Klingon pIqaD jateminɛw (CSUR PUA U+F8F0–U+F8F9)
-- **Fara** VM opcode `SetNumeralMode` — tree-walker ni kɔfɔlen ye
-- **Fara** REPL bɛ kɛlɛnnali minɛ tɔ kunnafoni ni jateminɛ yira kɔnɔ
-- **Yɛlɛmana** Boolean `>>` bɔlaw bɛ `#` tɔgɔ ta sisan (`#0` / `#1`) kɛlɛnnaliw bɛɛ kɔnɔ
-
-### v0.0.2_01 — Baara kɛcogola Tɔgɔ Yɛlɛmali _(30 Mar 2026)_
-
-- **Yɛlɛmana** `c|..|` → `#,|..|` ani `e|..|` → `#^|..|` — `#` tɔgɔ jɛkuluw ni kɔfɔlen
-- **Fara** Jɔ-tɔgɔ export: modiili kɔnɔ tɔgɔw ka jɔ tɔgɔ wɛrɛ la
-
-### v0.0.2 — Jɛkulu API Kura & Sɛtɔw _(24 Mar 2026)_
-
-- **Fara** `$` baara kɛcogola jɛkulu kelen array ni string ɲɔgɔn na (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Fara** Hiikkuu arrays, tuples ani tuples ni tɔgɔw ye
-- **Fara** Index koroba (`arr[-1]` = laban fɛn)
-- **Fara** Sɛtɔ fɔlɔw — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
-
-### v0.0.1-patch _(25 Mar 2026)_
-
-- **Fara** Sɔsɔnafɛnna `^=`
-- **Kɛrɛnnana** Jate parser kɔrɔkɛw; sɛbɛnni kɛrɛnnali
-
-### v0.0.1 — Fɔlɔ Yɛrɛ Bɔ _(22 Mar 2026)_
-
-- Tree-walker kalan + register VM (`--vm`, ~4× teliman, ~95% kɔfɔlen)
-- Kɔnɔ cogoya bɛɛ: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Unicode tɔgɔw bɛɛ, modiili hɔrɔnya, lambda, kogɛnw, fili kɛcogo
-- REPL, LSP, VS Code taarikɛ, formater (`zymbol fmt`)
+| Jateminɛ | Baarakɛ | Jateminɛ | Baarakɛ |
+|----------|---------|----------|---------|
+| `=` | fɛnni | `$#` | jan |
+| `:=` | ladilan | `$+` | fara (bɛ se ka kɛrɛfɛ) |
+| `>>` | bɔli | `$+[i]` | don jateli la (firilan-1) |
+| `<<` | donli | `$-` | fɔlɔ bɔ sɔngɔ la |
+| `¶` / `\\` | ɲɛgɛn | `$--` | bɛɛ bɔ sɔngɔ la |
+| `?` | ni | `$-[i]` | bɔ jateli la (firilan-1) |
+| `_?` | ni tɛ, ni | `$-[i..j]` | dan bɔ (firilan-1) |
+| `_` | ni tɛ / jateminɛ bɛɛ | `$?` | a bɛ yen |
+| `??` | ladonu | `$??` | jateli bɛɛ ɲini (firilan-1) |
+| `@` | jɛgɛ | `$[s..e]` | tigɛ (firilan-1) |
+| `@ N { }` | jɛgɛ N tɛmɛn | `$>` | karata |
+| `@!` | kiri | `$|` | sɛbɛn |
+| `@>` | tɛmɛ | `$<` | bɔn |
+| `@:tɔgɔ { }` | jɛgɛ min tɔgɔ bɛ | `$/ faralan` | kuma tigɛ |
+| `@:tɔgɔ!` | kiri min tɔgɔ bɛ | `$++ a b c` | kuma duuru baara |
+| `@:tɔgɔ>` | tɛmɛ min tɔgɔ bɛ | `jatebɔ[i>j>k]` | ɲɛbɔ jateli |
+| `->` | lambda | `jatebɔ[i] = sɔngɔ` | fɛn falen (jatebɔw doro) |
+| `jatebɔ[i] += sɔngɔ` | falen falen | `jatebɔ[i]$~` | baarakɛcogo falen (kɔpi kura) |
+| `$^+` | sɛgɛn falen (jateminɛw) | `$^-` | jigi falen (jateminɛw) |
+| `$^` | falen ni ladonlambda ye (tupuluw) | `<~` | segin |
+| `|>` | piyibu | `!?` | kɛ k'a lajɛ |
+| `:!` | minɛ | `:>` | laban na |
+| `#1` | kaɲuman | `#0` | fanin |
+| `$!` | fati ye | `$!!` | fati jigi |
+| `<#` | don | `#>` | bɔ |
+| `#` | modulu jatera | `::` | modulu wele |
+| `.` | lajɛ fɛn | `#?` | jate hakili dɔ |
+| `#\|..\|` | jalan kalan | `##.` | falen Sigiyɔrɔ ma |
+| `###` | falen Jalan ye ma (ka lan) | `##!` | falen Jalan ye ma (ka kiri) |
+| `#.N\|..\|` | ka lan | `#!N\|..\|` | ka kiri |
+| `#,\|..\|` | koma sigilan | `#^\|..\|` | dɔnko |
+| `#d0d9#` | jateminɛ sigida falen | `#09#` | segin ASCII ma |
+| `<\ ..\>` | sheli baga da | `>\<` | CLI maraliw |
+| `\ var` | fɛnni bɔ tilennen | | |
 
 ---
 
-*Zymbol-Lang — Tiilen. Kan Bɛɛ. Kelen.*
+---
 
-> **Kunnafoni:** Sɛbɛnni nin ye AI (segin hakili) ye min sɛbɛnna ani u wilila.
-> Tilennen kɛra ka kɛ, nga mɔgɔ dɔw ka wilili walima misaaliw bɛ se ka fili kɛ.
-> Jɔyɔrɔ tilennen ye [Zymbol-Lang dafali](https://github.com/zymbol-lang/interpreter) ye.
->
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
+## Bɔli falen mara
+
+### v0.0.4 — Firilan-1 Jateli, Danbe ye Fɔlɔ Baarakɛcogow ani Modulu Dalansɛmɛw _(Awirili 2026)_
+
+- **Falenba** Jateli bɛɛ firilan-1 ye — `arr[1]` ye fɛn fɔlɔ ye; `arr[0]` ye baara waati fati ye
+- **Don** Tɔgɔ baarakɛcogow **danbe ye fɔlɔ sɔngɔw** le ye — kɛ tagi tilennen ɲɛmanya baarakɛcogow ma: `nums$> fɔlɔ`
+- **Don** Modulu **dalansɛmɛ sigilan ka kan**: `# tɔgɔ { ... }` — kalan danyoro bɔra
+- **Don** Jateli caman: `arr[i>j>k]` (ɲɛbɔ), `arr[p ; q]` (danyoro bɔ)
+- **Don** Jate falen: `##.kuma` (Sigiyɔrɔ), `###kuma` (Jalan ye lan), `##!kuma` (Jalan ye kiri)
+- **Don** Kuma tigɛli: `kuma$/ faralan` — a bɛ segin `Array(Kuma)`
+- **Don** Kuma duuru baara: `firilan$++ a b c` — a bɛ fɛn caman fara
+- **Don** Jɛgɛ N tɛmɛn: `@ N { }` — a bɛ kɛ N tɛmɛn tilennen
+- **Don** Jɛgɛ min tɔgɔ bɛ sigilan: `@:tɔgɔ { }`, `@:tɔgɔ!`, `@:tɔgɔ>` — a bɛ falen `@ @tɔgɔ` / `@! tɔgɔ` yɔrɔ
+- **Don** Fɛnni sigida ɲɛminɛw: Fɛnni `_tɔgɔ` bɛ sigida dalansɛmɛ tilennen la; `\ var` bɛ bɔ waati fɔlɔ
+- **Don** Ladonu ladon jateminɛw: `< 0 :`, `> 5 :`, `== 42 :` wɛrɛw
+- **Don** Modulu fati E130: baarakɛ se daɲɛw tɛ se ka kɛ modulu kɔnɔ
+- **Sɛnɛ** `take_variable` tɛ fɛn falen na modulu ladilanw kɔnɔ
+- **Sɛnɛ** `alias.LADILAN` bɛ kɛ tilennen; `#>` bɛ se ka kɛ baarakɛcogo jatilaw laban na
+- **VM** Kelenyali dafalen: 393/393 surukuyaw bɛ tɛmɛ
+
+### v0.0.3 — Unicode Jateminɛ Sigidaw ani LSP ɲɛmɛnw _(Awirili 2026)_
+
+- **Don** 69 Unicode jateminɛ dalanw ni sigida falen taagi `#d0d9#`
+- **Don** Booli tarikuw sɛbɛn o sɛbɛn baga da la — `#१` / `#०`, `#१` / `#०`, wɛrɛw
+- **Don** Klingon pIqaD jateminɛw (CSUR PUA U+F8F0–U+F8F9)
+- **Don** `SetNumeralMode` VM baarakɛcogo — kelenyali dafalen tree-walker ye
+- **Don** REPL bɛ sigida min bɛ baara o la ɲɛfɛli la ani fɛnni jira la
+- **Falen** Booli `>>` bɔli bɛ `#` fɔlɔlen (`#0` / `#1`) don sigida bɛɛ la
+
+### v0.0.2_01 — Baarakɛcogo tɔgɔ falen _(30 Marsi 2026)_
+
+- **Falen** `c|..|` → `#,|..|` ani `e|..|` → `#^|..|` — kelen ye `#` sigilan fɔlɔlen balo ye
+- **Don** Bɔli tɔgɔ wɛrɛ: modulu kɔnɔ fɛnw bɔ tɔgɔ wɛrɛ la
+
+### v0.0.2 — Jateminɛ API falen ani ladonw _(24 Marsi 2026)_
+
+- **Don** `$` baarakɛcogo balo kelen ye jatebɔw ni kumaw la (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Don** Falifalen don jatebɔw, tupuluw, ani tɔgɔ tupuluw la
+- **Don** Jateli juguw (`arr[-1]` = fɛn laban)
+- **Don** Ladonw min dɔn — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Marsi 2026)_
+
+- **Don** Falen don `^=`
+- **Sɛnɛ** Jateminɛ kumakanw ɲɛmɛn; sɛbɛnnenw falen
+
+### v0.0.1 — Bɔli fɔlɔ _(22 Marsi 2026)_
+
+- Tree-walker baarakɛcogo + register VM (`--vm`, ~4× gɛlɛn, ~95% kelenyali)
+- Baarakɛcogo bɛɛ fɔlɔ: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Unicode jaatiɲɔgɔnw dafalen, modulu jateminɛw, lambdaw, dalanw, fati mara
+- REPL, LSP, VS Code ladon, sigilan cɛn (`zymbol fmt`)
+
+---
+
+_Zymbol-Lang — Jateminɛ ye. Duniɲɛ bɛɛ la. Tɛ se ka caya._

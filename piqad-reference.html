@@ -21,6 +21,17 @@
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
+<script>
+(function(){
+  var s = localStorage.getItem('zy-theme');
+  var light = s ? s === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+  if (light) document.documentElement.classList.add('light');
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 <style>
   @font-face {
     font-family: 'pIqaD qolqoS';
@@ -30,29 +41,31 @@
   }
 
   :root {
-    --bg:       #0a0e1a;
-    --panel:    #111827;
-    --border:   #1f2d47;
-    --gold:     #c9a84c;
-    --red:      #8b1a1a;
-    --text:     #d4c5a9;
-    --dim:      #6b7280;
-    --piqad:    'pIqaD qolqoS', monospace;
-    --mono:     'Courier New', monospace;
+    --pf:     'pIqaD qolqoS', monospace;
+    --gold:   #c9a84c;
+    --kr:     #8b1a1a;
+    /* alias shared vars so existing rules keep working */
+    --panel:  var(--bg2);
+    --border: var(--line);
+    --dim:    var(--mid);
+    --mono:   'Courier New', monospace;
+  }
+
+  html.light {
+    --gold: #9a6a1a;
+    --kr:   #b52020;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    background: var(--bg);
-    color: var(--text);
     font-family: Georgia, serif;
     line-height: 1.6;
     padding: 2rem;
   }
 
   h1 {
-    font-family: var(--piqad);
+    font-family: var(--pf);
     font-size: 3rem;
     color: var(--gold);
     text-align: center;
@@ -68,9 +81,7 @@
     font-family: var(--mono);
   }
 
-  .subtitle span {
-    color: var(--gold);
-  }
+  .subtitle span { color: var(--gold); }
 
   h2 {
     color: var(--gold);
@@ -83,7 +94,7 @@
   }
 
   .h2-piqad {
-    font-family: var(--piqad);
+    font-family: var(--pf);
     font-size: 1.8rem;
     font-weight: normal;
     color: var(--gold);
@@ -108,16 +119,14 @@
     transition: border-color 0.15s;
   }
 
-  .char-card:hover {
-    border-color: var(--gold);
-  }
+  .char-card:hover { border-color: var(--gold); }
 
   .char-card.vowel   { border-left: 3px solid #4a7c59; }
   .char-card.digraph { border-left: 3px solid #4a6a8c; }
-  .char-card.special { border-left: 3px solid var(--red); }
+  .char-card.special { border-left: 3px solid var(--kr); }
 
   .glyph {
-    font-family: var(--piqad);
+    font-family: var(--pf);
     font-size: 2.8rem;
     display: block;
     color: #e8dcc8;
@@ -125,6 +134,8 @@
     min-height: 3.5rem;
     line-height: 1.2;
   }
+
+  html.light .glyph { color: #2a1000; }
 
   .roman {
     font-family: var(--mono);
@@ -163,6 +174,8 @@
     color: #d4b896;
   }
 
+  html.light .digit-card .glyph { color: #2a1000; }
+
   .digit-val {
     font-family: var(--mono);
     font-size: 1.1rem;
@@ -183,6 +196,12 @@
     color: #c4b48a;
   }
 
+  html.light .note {
+    background: #fdf5e4;
+    border-color: #d4a830;
+    color: #6b4a20;
+  }
+
   .note strong { color: var(--gold); }
 
   /* ── HEX TABLE ── */
@@ -195,7 +214,7 @@
   }
 
   .hex-table th {
-    background: var(--red);
+    background: var(--kr);
     color: #e8d5c0;
     padding: 0.6rem 1rem;
     text-align: left;
@@ -210,12 +229,15 @@
   }
 
   .hex-table tr:hover td { background: #141c2e; }
+  html.light .hex-table tr:hover td { background: var(--bg3); }
 
   .hex-glyph {
-    font-family: var(--piqad);
+    font-family: var(--pf);
     font-size: 1.8rem;
     color: #e8dcc8;
   }
+
+  html.light .hex-glyph { color: #2a1000; }
 
   .hex-label {
     color: var(--gold);
@@ -240,13 +262,15 @@
   }
 
   .demo-piqad {
-    font-family: var(--piqad);
+    font-family: var(--pf);
     font-size: 2rem;
     color: #e8dcc8;
     display: block;
     margin-bottom: 0.5rem;
     letter-spacing: 0.15em;
   }
+
+  html.light .demo-piqad { color: #2a1000; }
 
   .demo-roman {
     font-family: var(--mono);
@@ -279,7 +303,7 @@
   .dot-vowel   { background: #4a7c59; }
   .dot-digraph { background: #4a6a8c; }
   .dot-cons    { background: var(--border); }
-  .dot-special { background: var(--red); }
+  .dot-special { background: var(--kr); }
 
   /* ── SEGMENT NOTE ── */
   .segment-note {
@@ -293,7 +317,14 @@
     color: #a0c4a0;
   }
 
+  html.light .segment-note {
+    background: #f0faf0;
+    border-color: #4a9c5a;
+    color: #2a5a2a;
+  }
+
   .segment-note strong { color: #6dbd6d; }
+  html.light .segment-note strong { color: #2a7a3a; }
 
   footer {
     margin-top: 3rem;
@@ -306,7 +337,7 @@
   }
 
   footer .piqad-footer {
-    font-family: var(--piqad);
+    font-family: var(--pf);
     font-size: 1.4rem;
     display: block;
     color: var(--gold);
@@ -316,6 +347,24 @@
 </style>
 </head>
 <body>
+
+<header>
+  <a href="index.html" class="logo">
+    <img src="logo.png" alt="Zymbol-Lang">
+    <span class="logo-code">
+      <span class="logo-sym">@{</span>
+      <span class="logo-op">&gt;&gt;</span><span class="logo-str">" Zymbol-Lang "</span>
+      <span class="logo-sym">}</span>
+    </span>
+  </a>
+  <div class="header-right">
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="playground.html" class="nav-cta">Try Online</a>
+    </nav>
+    <button id="theme-toggle" aria-label="Toggle theme" title="Toggle light/dark">☀️</button>
+  </div>
+</header>
 
 <!-- ── TITLE ── -->
 <h1>&#xF8E4;&#xF8D9;&#xF8D6;&#xF8DB;&#xF8D5;&#xF8D0;&#xF8DB;</h1>
@@ -663,5 +712,21 @@
   pIqaD De' · CSUR U+F8D0–U+F8FF · pIqaD qolqoS ngutlhwI' · zymbol-lang nab
 </footer>
 
+<script>
+(function() {
+  var btn = document.getElementById('theme-toggle');
+  function applyTheme(light) {
+    document.documentElement.classList.toggle('light', light);
+    btn.textContent = light ? '🌙' : '☀️';
+    localStorage.setItem('zy-theme', light ? 'light' : 'dark');
+  }
+  var saved = localStorage.getItem('zy-theme');
+  var isLight = saved ? saved === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+  applyTheme(isLight);
+  btn.addEventListener('click', function() {
+    applyTheme(!document.documentElement.classList.contains('light'));
+  });
+})();
+</script>
 </body>
 </html>

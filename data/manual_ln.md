@@ -1,90 +1,115 @@
-# Zymbol-Lang Mokanda ya Mokuse
-
-**Zymbol-Lang** ezali monkɔtɔ ya programasio ya bilembo. Esalelaka te maloba ya mboto — nyonso ezali lilembo. Esalaka ndenge moko na monkɔtɔ nyonso ya bato.
-
-- Maloba ya mboto te (`if`, `while`, `return` ezalaka te — bilembo kaka `?`, `@`, `<~`)
-- Unicode ya mobimba — bakombo na monkɔtɔ nyonso to emoji 👋
-- Ebotamaki te na monkɔtɔ moko — code ezali ndenge moko na minɔkɔ nyonso
+> **Boyebisi:** Mokanda oyo esalemi na lisalisi ya mayele ya sika (AI).
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Ndakisa ya nsango ezali **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** na ebombi ya mobalisi.
 
 ---
 
-## Bintoko mpe Biloko Ezangi Kobongwana
+# Mikanda ya Zymbol-Lang
+
+**Zymbol-Lang** ezali monoko ya kompiprograma ya bilembo. Nkótá ya motó ezali te — nyonso ezali elembo. Esalaka ndenge moko na monoko nyonso ya bato.
+
+- Ntina `if`, `while`, `return` ezali te — kaka `?`, `@`, `<~`
+- Unicode mobimba — bamakani na monoko nyonso to na emoji nyonso
+- Etikalaka na monoko ya bato te — kode ezali ndenge moko na bisika nyonso
+
+**Versio ya mobalisi**: v0.0.4 | **Bobongi ya bomekano**: 393/393 (kokani TW ↔ VM)
+
+---
+
+## Bivarie mpi Bilellé
 
 ```zymbol
-x = 10              // bintoko (ekoki kobongwana)
-PI := 3.14159       // biloko ezangi kobongwana (ekoki te kobongwana — ekolela soki obongwani)
-nkombo = "Ana"
-solo = #1           // solo ya booléen
+x = 10              // bivarie oyo ekoki kobongwana
+PI := 3.14159       // biloko libela — kopésa lisusu ezali mbongwana ya tango ya kosala
+kombo = "Alice"
+mosala = #1         // Booleano solo
 👋 := "Mbote"
 ```
 
 ```zymbol
-x = 10
+x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
 
 ---
 
-## Mitindo ya Makambo
+---
 
-| Motindo          | Ndakisa             | Lilembo `#?` | Makombo                              |
-|------------------|---------------------|--------------|--------------------------------------|
-| Motango mobimba  | `42`, `-7`          | `###`        | Bit 64 na elembo                     |
-| Motango ya koma  | `3.14`, `1.5e10`    | `##.`        | Notation ya kisayansi ekatanaka      |
-| Nsango           | `"mbote"`           | `##"`        | Interpolasio: `"Mbote {nkombo}"`     |
-| Mokanda           | `'A'`               | `##'`        | Mokanda moko ya Unicode              |
-| Solo ya booléen  | `#1`, `#0`          | `##?`        | Ezali te motango 1 to 0              |
-| Mitanda          | `[1, 2, 3]`         | `##]`        | Biloko nyonso ya motindo moko        |
-| Tupeli           | `(a, b)`            | `##)`        | Na esika                             |
-| Tupeli na nkombo | `(x: 1, y: 2)`      | `##)`        | Kokɔta na nkombo to index            |
+## Bilesa ya Donnée
+
+| Lolenge | Lilakala | Etiqeti ya `#?` | Makambo ya koyeba |
+|---------|----------|-----------------|-------------------|
+| Motángo molayi | `42`, `-7` | `###` | 64-bit na nzela |
+| Motángo oyo ekolamaka | `3.14`, `1.5e10` | `##.` | Makomi ya siansi endimami |
+| Nkómbó | `"makomi"` | `##"` | Kotisa kati: `"Mbote {kombo}"` |
+| Mokanda | `'A'` | `##'` | Mokanda moko ya Unicode |
+| Booleano | `#1`, `#0` | `##?` | NON motángo — `#1 ≠ 1` |
+| Lilongo | `[1, 2, 3]` | `##]` | Binama ya lolenge moko |
+| Napolo | `(a, b)` | `##)` | Bisika |
+| Napolo na kombo | `(x: 1, y: 2)` | `##)` | Bileki oyo ezali na kombo |
+| Fonksyo | likanisi ya fonksyo oyo ezali na kombo | `##()` | Etuluku ya liboso; emonisaka `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Etuluku ya liboso; emonisaka `<lambd/N>` |
 
 ```zymbol
-// Kotala motindo — ezongisaka (motindo, nambolo, motuya)
+// Boyebi ya lolenge — ekozongisa (lolenge, bamonzomi, motuya)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
-t = meta[0]
+t = meta[1]
 >> t ¶            // → ###
 ```
 
 ---
 
-## Koloba mpe Kozwa
+---
+
+## Ekateli mpe Bokoti
 
 ```zymbol
->> "Mbote" ¶                       // ¶ to \\ epesi motindo ya mpe
->> "a=" a " b=" b ¶                // bintoko mingi na esika moko
->> (arr$#) ¶                       // binto ya nsuka esengeli parenthèse
+>> "Mbote" ¶                       // ¶ to \\ mpo na nzela ya sika ya polele
+>> "a=" a " b=" b ¶               // kotya pembeni — bamotuya ebele
+>> (arr$#) ¶                      // basaleli ya posfixe bali na mposa ya ( ) na kati ya >>
 
-<< nkombo                          // kozwa nzela — tia na bintoko
-<< "Nkombo na yo? " nkombo         // na mibeko ya kozwa
+<< kombo                           // tanga na kati ya bivarie (sanso numéro)
+<< "Koma kombo na yo: " kombo      // elongo na numéro
 ```
 
-> `¶` (AltGr+R clavier espagnol) to `\\` ezali ndenge moko lokola motindo ya mpe.
+> `¶` (AltGr+R na klavie ya Espagne) mpe `\\` bazali ndenge moko mpo na nzela ya sika.
 
 ---
 
-## Bato ya misala
+---
+
+## Basaleli
 
 ```zymbol
-// Barithmétique — salelaka na kotya; mosusu mpe ekokela na >>
+// Molongo ya motango — sala péné; basaleli mosusu bazali na makambo ndenge moko nzoto na kati ya >>
 a = 10
 b = 3
-r1 = a + b    // 13     r2 = a - b    // 7
-r3 = a * b    // 30     r4 = a / b    // 3  (bokaboli ya motango mobimba)
-r5 = a % b    // 1      r6 = a ^ b    // 1000  (pɔwɛrɛ)
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (bokabi ya motángo molayi)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (kotombola)
 
-// Kotala
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
+// Bokokanisi
+a == b    // #0    
+a <> b    // #1    
+a < b      // #0
+a <= b    // #0   
+a > b      // #1    
+a >= b    // #1
 
-// Boyebeli
+// Ya mayele
 #1 && #0    // #0
 #1 || #0    // #1
 !#1         // #0
@@ -92,120 +117,125 @@ a <= b    // #0   a > b     // #1    a >= b   // #1
 
 ---
 
-## Nsinga
+## Mikoló
 
 ```zymbol
-// Ndenge misato ya malamu — mokomoko na ntina na ye
-nkombo = "Ana"
-motango = 42
+// Bileko mibale ya kosangisa
+kombo = "Alice"
+n = 42
 
-msg = "Mbote ", nkombo, "!"                    // virgule — na kotya na = to :=
->> "Mbote " nkombo " ozali " motango ¶         // esika moko — na koloba >>
-bosembo = "Mbote {nkombo}, ozali {motango}"    // interpolasio — na ntina nyonso
+>> "Mbote " kombo " ozali na " n ¶       // kotya pembeni — na kati ya >>
+lilimbola = "Mbote {kombo}, ozali na {n}"   // kotisa kati — bisika nyonso
 ```
 
 ```zymbol
-s = "Mbote Bato"
-molai = s$#                  // 10
-tiolo = s$[0..5]             // "Mbote"  (nsuka ekatanaka)
-azali = s$? "Bato"           // #1
-bintoko = "a,b,c,d" / ','    // [a, b, c, d]
-bobongwani = s$~~["o":"O"]   // kobongola nyonso
-bobong1 = s$~~["o":"O":1]    // kobongola ya liboso kaka
+s = "Mbote Mokili"
+bolai = s$#                  // 11
+kati = s$[1..5]              // "Mbote"  (fondasio-1, suka ezali na kati)
+ezali = s$? "Mokili"         // #1
+biteni = "a,b,c,d"$/ ','      // [a, b, c, d]  (kokabola na bokaboli)
+ebongwana = s$~~["a":"o"]     // "Mboto Mokilo"
+ebongwana1 = s$~~["a":"o":1]  // "Mboto Mokili" (N yambo kaka)
 ```
 
-> `+` ezali kaka mpo na baminotango. Na mibeko, salelaka virgule, esika moko, to interpolasio.
+> `+` mpo na motángo kaka. Mpo na mikoló, salela `,`, kotya pembeni, to kotisa kati.
 
 ---
 
-## Kotambola ya Mosala
+---
+
+## Kontrole Ekelamutu
 
 ```zymbol
 x = 7
 
-? x > 0 { >> "ya likolo" ¶ }
+? x > 0 { >> "kitoko" ¶ }
 
 ? x > 100 {
     >> "monene" ¶
 } _? x > 0 {
-    >> "ya likolo" ¶
+    >> "kitoko" ¶
 } _? x == 0 {
     >> "zéro" ¶
 } _ {
-    >> "ya nse" ¶
+    >> "mabe" ¶
 }
 ```
 
-> Bilembo `{ }` **esengeli**, ata mpo na mwa mpe moko.
+> Bikalo ya zonzon `{ }` **ezali ya ntina** ata mpo na liloba moko.
 
 ---
 
-## Match
+---
+
+## Kokokana
 
 ```zymbol
-// Ntalo ya ntango
-motango = 85
-ndango = ?? motango {
+// Bafandi
+monya = 85
+noti = ?? monya {
     90..100 : 'A'
     80..89  : 'B'
     70..79  : 'C'
     _       : 'F'
 }
->> ndango ¶    // → B
+>> noti ¶      // → B
 
-// Mibeko
-lango = "motane"
-code = ?? lango {
+// Mikoló
+lángi = "motane"
+kode = ?? lángi {
     "motane"  : "#FF0000"
-    "ya pɛpɛ" : "#00FF00"
+    "pólo"    : "#00FF00"
     _         : "#000000"
 }
 
-// Bayard
-temp = -5
-etat = ?? temp {
-    _? temp < 0  : "Nzoto ya mayi"
-    _? temp < 20 : "mpio"
-    _? temp < 35 : "moto ndeke"
-    _            : "moto mingi"
+// Bileko ya kokokanisa
+tángo ya moto = -5
+etat = ?? tángo ya moto {
+    < 0  : "grési"
+    < 20 : "malili"
+    < 35 : "moláli"
+    _    : "solo"
 }
->> etat ¶    // → Nzoto ya mayi
+>> etat ¶       // → grési
 
-// Ndakisa ya block
+// Bolenge ya liloba (ba blocs)
 ?? n {
-    0       : { >> "zéro" ¶ }
-    _? n < 0: { >> "ya nse" ¶ }
-    _       : { >> "ya likolo" ¶ }
+    0        : { >> "zéro" ¶ }
+    _? n < 0 : { >> "mabe" ¶ }
+    _        : { >> "kitoko" ¶ }
 }
 ```
 
 ---
 
-## Koluka Mbala Mingi
+---
+
+## Kobalukabuka
 
 ```zymbol
-@ i:0..4  { >> i " " }        // ntalo: 0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // na etinda: 1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // ya liboso: 5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // likebisi ezali na kati:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // elongo na etape:         1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // ndenge misusu:           5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
 >> n ¶                        // → 128  (tango)
 
-mbuma = ["pasiflore", "mangele", "nzala"]
-@ f:mbuma { >> f ¶ }          // na biloko nyonso
+mbuma = ["pomme", "poire", "raisin"]
+@ m:mbuma { >> m ¶ }          // mpo na binama binso na lilongo
 
-@ c:"mbote" { >> c "-" }
->> ¶                          // → m-b-o-t-e-
+@ m:"mbote" { >> m "-" }
+>> ¶                          // → m-b-o-t-e-  (mpo na mokanda moko na kati ya nkómbó)
 
 @ i:1..10 {
-    ? i % 2 == 0 { @> }       // @> tɔlɔlɔ
-    ? i > 7 { @! }             // @! simba
+    ? i % 2 == 0 { @> }       // @> koba
+    ? i > 7 { @! }            // @! kokata
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
 
-// Koluka ya libela
+// Kobalukabuka oyo ekoka te
 i = 0
 @ {
     i++
@@ -214,348 +244,380 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Koluka na nkombo (simba ya kati)
-count = 0
-@ @outer {
-    count++
-    ? count >= 3 { @! outer }
+// Kobalukabuka oyo ezali na nkombo (kokata oyo ekomonanaka)
+motali = 0
+@:ngámbo {
+    motali++
+    ? motali >= 3 { @:ngámbo! }
 }
->> count ¶                    // → 3
+>> motali ¶                   // → 3
 ```
 
 ---
 
-## Misala
+---
+
+## Fonksyo
 
 ```zymbol
-kotanga(a, b) { <~ a + b }
->> kotanga(3, 4) ¶    // → 7
+kobakisa(a, b) { <~ a + b }
+>> kobakisa(3, 4) ¶   // → 7
 
-factorial(n) {
+masolo(n) {
     ? n <= 1 { <~ 1 }
-    <~ n * factorial(n - 1)
+    <~ n * masolo(n - 1)
 }
->> factorial(5) ¶    // → 120
+>> masolo(5) ¶       // → 120
 ```
 
-Misala ezali na esika ya bango moko — ekoki te kokɔta na bintoko ya libanda. Salelaka bintoko ya kobimi `<~` mpo na kobongisa:
+Fonksyo ezali na **esika oyo ekesenami** — ekoki kotánga bivarie ya ngámbo te. Salela paramètres ya kobima `<~>` mpo na kobongola bivarie ya mongambi:
 
 ```zymbol
-kobongola(a<~, b<~) {
-    tmp = a
+kokesana(a<~, b<~) {
+    ya moke = a
     a = b
-    b = tmp
+    b = ya moke
 }
 x = 10
 y = 20
-kobongola(x, y)
+kokesana(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Misala ya nkombo ezali te biloko ya liboso. Mpo na kopesa lokola eloko: `x -> misala(x)`.
+> Fonksyo oyo ezali na nkombo ezali **motuya ya etuluku ya liboso** — tinda ndenge moko: `nums$> kopisa mbala mibale`. `x -> fn(x)` mpé ezali ya solo.
 
 ---
 
-## Lambda mpe Bozali
+---
+
+## Lambda mpe Bokangami
 
 ```zymbol
-mbala_mibale = x -> x * 2
-lisangisi = (a, b) -> a + b
->> mbala_mibale(5) ¶    // → 10
->> lisangisi(3, 7) ¶    // → 10
+kopisa mbala mibale = x -> x * 2
+kobakisa = (a, b) -> a + b
+>> kopisa mbala mibale(5) ¶   // → 10
+>> kobakisa(3, 7) ¶       // → 10
 
-// Lambda na block
-kopesa_ndango = x -> {
-    ? x > 0 { <~ "ya likolo" }
-    _? x < 0 { <~ "ya nse" }
+// Bloc lambda
+kokabola = x -> {
+    ? x > 0 { <~ "kitoko" }
+    _? x < 0 { <~ "mabe" }
     <~ "zéro"
 }
 
-// Bozali — lambda ekanga bintoko ya libanda
-factor = 3
-mbala_tatu = x -> x * factor
->> mbala_tatu(7) ¶    // → 21
+// Bokangami — ezali kozwa esika ya ngámbo
+elembo = 3
+kopisa mbala misato = x -> x * elemo
+>> kopisa mbala misato(7) ¶   // → 21
 
-// Fabrika ya misala
-make_adder(n) { <~ x -> x + n }
-add10 = make_adder(10)
->> add10(5) ¶    // → 15
+// Masano
+kosala_na_bakisa(n) { <~ x -> x + n }
+bakisa zomi = kosala_na_bakisa(10)
+>> bakisa douze (5) ¶   // → 15
 
-// Lambda lokola biloko: ebatelama na mitanda
-ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[2](5) ¶    // → 25
+// Na kati ya lilongo
+basali = [x -> x+1, x -> x*2, x -> x*x]
+>> basali[3](5) ¶       // → 25
 ```
 
 ---
 
-## Mitanda
+## Lilongo
 
-Mitanda ezali **ya kobongwana** mpe ebateli biloko ya **motindo moko** kaka.
+Lilongo **ekoki kobongwana** mpe ezali na binama **ya lolenge moko**.
 
 ```zymbol
-arr = [1, 2, 3, 4, 5]
+lilongo = [1, 2, 3, 4, 5]
 
-arr[0]          // 1 — kokɔta (index ya liboso = 0)
-arr[-1]         // 5 — index ya nse (ya nsuka)
-arr$#           // 5 — molai (salelaka (arr$#) na >>)
+lilongo[1]          // 1 — bokoti (fondasio-1: binama ya yambo)
+lilongo[-1]         // 5 — index mabe (binama ya suka)
+lilongo$#           // 5 — bolai (sala (lilongo$#) na kati ya >>)
 
-arr = arr$+ 6            // kobakisa → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // kotia na index 2
-arr3 = arr$- 3           // kolongola ya liboso na motuya
-arr4 = arr$-- 3          // kolongola nyonso na motuya
-arr5 = arr$-[0]          // kolongola na index
-arr6 = arr$-[1..3]       // kolongola ntalo (nsuka ekatanaka)
+lilongo = lilongo$+ 6            // bakisa → [1,2,3,4,5,6]
+lilongo2 = lilongo$+[2] 99       // kotya na esika 2 (fondasio-1)
+lilongo3 = lilongo$- 3           // kolongola monano ya yambo ya motuya
+lilongo4 = lilongo$-- 3          // kolongola banano nyonso
+lilongo5 = lilongo$-[1]          // kolongola na index 1 (binama ya yambo)
+lilongo6 = lilongo$-[2..3]       // kolongola likebisi (fondasio-1, suka ezali na kati)
 
-azali = arr$? 3          // #1 — azali na kati
-bisika = arr$?? 3        // [2] — bisika nyonso na motuya
-tiolo = arr$[0..3]       // [1,2,3] — tiolo (nsuka ekatanaka)
-sl2 = arr$[0:3]          // [1,2,3] — kama-nambolo
+ezali = lilongo$? 3            // #1 — ezali na kati
+bisika = lilongo$?? 3          // [3] — indexes nyonso ya motuya (fondasio-1)
+etsili = lilongo$[1..3]        // [1,2,3] — etsili (fondasio-1, suka ezali na kati)
+etsili2 = lilongo$[1:3]        // [1,2,3] — ndenge moko, gramere ya motango
 
-asc = arr$^+             // kobeba na mokolo (biloko ya mboto kaka)
-desc = arr$^-            // kobeba na nse (biloko ya mboto kaka)
+kolela = lilongo$^+           // kolongisa kolela (basaleli ya liboso kaka)
+kokita = lilongo$^-           // kolongisa kokita (basaleli ya liboso kaka)
 
-// Tupeli na nkombo — salelaka $^ na lambda ya kotala
-db = [(nkombo: "Karla", mibu: 28), (nkombo: "Ana", mibu: 25), (nkombo: "Buba", mibu: 30)]
-mibu_kama  = db$^ (a, b -> a.mibu < b.mibu)      // kobeba na mibu (<)
-nkombo_kama = db$^ (a, b -> a.nkombo > b.nkombo) // kobeba nse na nkombo (>)
->> mibu_kama[0].nkombo ¶     // → Ana
->> nkombo_kama[0].nkombo ¶   // → Karla
+// Lilongo ya napolo oyo ezali na kombo/esika — sala $^ elongo na lambda ya kokokanisa
+data = [(kombo: "Carla", mbula: 28), (kombo: "Ana", mbula: 25), (kombo: "Bob", mbula: 30)]
+na_ndimbola_ya mbula   = data$^ (a, b -> a.mbula < b.mbula)   // kolela na ndimbola ya mbula (<)
+na_ndimbola_ya kombo   = data$^ (a, b -> a.kombo > b.kombo)    // kokita na ndimbola ya kombo (>)
+>> na_ndimbola_ya mbula[1].kombo ¶   // → Ana
+>> na_ndimbola_ya kombo[1].kombo ¶   // → Carla
 
-// Kobongisa elemá moko na esika (mitanda kaka)
-arr[1] = 99
-arr[0] += 5              // esalaka mpe: +=  -=  *=  /=  %=  ^=
-// Kobongisa ya mosala — ezongisaka mitanda mipe; original ebongwani te
-arr2 = arr[1]$~ 99
+// Kobongola binama nzoto (lilongo kaka)
+lilongo[1] = 99              // pésa
+lilongo[2] += 5              // ekomoni: +=  -=  *=  /=  %=  ^=
+
+// Kobongola ya misala — ekozongisa lilongo ya sika; ya liboto ebongwanaka te
+lilongo2 = lilongo[2]$~ 99
 ```
 
-> Bato nyonso ya kolekta ezongisaka **mitanda mipe**. Tya lisusu: `arr = arr$+ 4`.
-> Kokatisa te — salelaka kotya mibale ya semba.
-> `$^+` / `$^-` ebeba **mitanda ya mboto** (baminotango, mibeko). Mpo na tupeli salelaka `$^` na lambda ya kotala.
+> Basaleli nyonso ya kosangisa bazali kozongisa **lilongo ya sika**. Pésa lisusu: `lilongo = lilongo$+ 4`.
+> `$+` ekoki kozala na monoko: `lilongo = lilongo$+ 5$+ 6$+ 7`. Basaleli misusu basaleli bapésa ya kati na kati.
+> **Index fondasio-1**: `lilongo[1]` ezali binama ya yambo; `lilongo[0]` ezali mbongwana ya tango ya kosala.
+> `$^+` / `$^-` ezali kolongisa **lilongo ya liboso** (batango, bakoló). Mpo na lilongo ya napolo, sala $^ elongo na lambda ya kokokanisa — nzela ekomami na kati ya lambda (`<` = kolela, `>` = kokita).
 
-**Motindo ya motuya** — kotia mitanda na bintoko mibale esalaka mitanda mibale ya semba:
+**Ndimbola ya motuya** — kopésa lilongo na bivarie mosusu ezali kosala kopi mosusu oyo ekokani na yango te:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b ebongwani te
+>> b ¶    // → [1, 2, 3]   ← b ebongwanaka te
 ```
 
 ```zymbol
-// Mitanda ya kati
-matris = [[1,2,3],[4,5,6],[7,8,9]]
->> matris[1][2] ¶    // → 6
+// Lilongo oyo ekomonanaka (index fondasio-1)
+matrice = [[1,2,3],[4,5,6],[7,8,9]]
+>> matrice[2][3] ¶    // → 6  (molɔngɔ 2, nzete 3)
 ```
 
 ---
 
-## Kobikisa
+---
+
+## Kosakola
 
 ```zymbol
-// Mitanda
-arr = [10, 20, 30, 40, 50]
-[a, b, c] = arr              // a=10  b=20  c=30
-[liboso, *misusu] = arr      // liboso=10  misusu=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ ekatisa nkombo
+// Lilongo
+lilongo = [10, 20, 30, 40, 50]
+[a, b, c] = lilongo              // a=10  b=20  c=30
+[yambo, *nzela] = lilongo        // yambo=10  nzela=[20,30,40,50]
+[x, _, z] = [1, 2, 3]           // _ etyambaka te
 
-// Tupeli ya esika
-esika = (100, 200)
-(px, py) = esika             // px=100  py=200
+// Napolo ya esika
+pole = (100, 200)
+(px, py) = pole                // px=100  py=200
 
-// Tupeli na nkombo
-moto = (nkombo: "Ana", mibu: 25, mboka: "Kinshasa")
-(nkombo: n, mibu: a) = moto  // n="Ana"  a=25
+// Napolo oyo ezali na kombo
+motu = (kombo: "Ana", mbula: 25, engumba: "Madrid")
+(kombo: k, mbula: m) = motu    // k="Ana"  m=25
 ```
 
 ---
 
-## Tupeli
+## Napolo
 
-Tupeli ezali bitanga ya **ezangi kobongwana** ebateli biloko ya **mitindo ndenge ndenge**.
+Napolo ezali ba contenele oyo **babongwanaka te** mpe bakoki kotya motuya ya **lolenge ndenge na ndenge**.
+Kokani na lilongo, binama ekozongwanaka te nsima ya bokeli.
 
 ```zymbol
-// Ya esika
-esika = (10, 20)
->> esika[0] ¶    // → 10
-eloko = (42, "mbote", #1, 3.14)
->> eloko[2] ¶     // → #1
+// Bisika — lolenge misusu endimami
+pole = (10, 20)
+>> pole[1] ¶     // → 10
 
-// Na nkombo
-moto = (nkombo: "Alice", mibu: 25)
->> moto.nkombo ¶    // → Alice
->> moto[0] ¶        // → Alice  (index esalaka mpe)
+data = (42, "mbote", #1, 3.14)
+>> data[3] ¶     // → #1
 
-// Ya kati
-bɔkɔ = (x: 10, y: 20)
-p = (bɔkɔ: bɔkɔ, etikɛtɛ: "ebandeli")
->> p.bɔkɔ.x ¶      // → 10
+// Na kombo
+motu = (kombo: "Alice", mbula: 25)
+>> motu.kombo ¶   // → Alice
+>> motu[1] ¶      // → Alice  (index mpé esalaka, fondasio-1)
+
+// Oyo ekomonanaka
+esika = (x: 10, y: 20)
+p = (esika: esika, nkombo: "ebandeli")
+>> p.esika.x ¶     // → 10
 ```
 
-**Ezangi kobongwana** — tupeli ekoki kobongwana te; bato bapekisami:
+**Kopekisa kobongwana** — komeka nyonso ya kobongola binama ya napolo ezali mbongwana ya tango ya kosala:
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99      // ❌ Bosembo: tupeli ekoki kobongwana te
-// t[0] += 5      // ❌ Bosembo: tupeli ekoki kobongwana te
+// t[1] = 99    // ❌ mbongwana ya tango ya kosala: napolo ebongwanaka te
+// t[1] += 5    // ❌ mbongwana ndenge moko
+
+// Napolo oyo ezali na kombo — kosala lisusu polele
+motu = (kombo: "Alice", mbula: 25)
+monene = (kombo: motu.kombo, mbula: 26)
+>> motu.mbula ¶    // → 25
+>> monene.mbula ¶  // → 26
 ```
 
-Sala kopi ya mipe na `$~`:
+Mpo na kozwa motuya oyo ebongwanami, salela `$~` (kobongola ya misala) — ekozongisa napolo **ya sika**:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[0]$~ 99    // → (99, 20, 30)  — t ebongwani te
-
-// Tupeli na nkombo — sala kopi na kosilisa nkombo
-moto_ya_kala = (nkombo: moto.nkombo, mibu: 26)
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← ya liboto ebongwanaka te
+>> t2 ¶    // → (10, 999, 30)
 ```
 
 ---
 
-## Misala ya Nkoto
+---
 
-> Binto ya HOF esengeli **lambda ya kati** — te bintoko ya lambda ya semba.
+## Fonksyo ya Molongo Molai
 
 ```zymbol
-nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+motángo = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-mbala_mibale = nums$> (x -> x * 2)                // map  → [2,4,6…20]
-ya_mibale    = nums$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
-mobimba      = nums$< (0, (acc, x) -> acc + x)    // reduce → 55
+bakisa mbala mibale = motángo$> (x -> x * 2)                // carte → [2,4,6…20]
+páre   = motángo$| (x -> x % 2 == 0)                      // filter → [2,4,6,8,10]
+molongani   = motángo$< (0, (accum, x) -> accum + x)       // réduire → 55
 
-// Kokatisa na kotya
-etape1 = nums$| (x -> x > 3)
+// Kokangisa na nzela ya kati
+etape1 = motángo$| (x -> x > 3)
 etape2 = etape1$> (x -> x * x)
 >> etape2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Misala ya nkombo na HOF — tia na lambda
-mbala_mibale_fn(x) { <~ x * 2 }
-r = nums$> (x -> mbala_mibale_fn(x))    // ✅
+// Fonksyo oyo ezali na nkombo ekoki kotindama nzoto na fonksyo ya molongo molai
+kopisa mbala mibale(x) { <~ x * 2 }
+monene_te(x) { <~ x > 5 }
+r = motángo$> kopisa mbala mibale     // ✅ likanisi nzoto
+r = motángo$| monene_te              // ✅ likanisi nzoto
 ```
 
 ---
 
-## Operatɛrɛ ya Tuyau
+---
 
-Baɗtorde kaa esengeli `_` lokola eloko ya nzela:
+## Mosali ya pipe
+
+Ngambo ya mobali ezali na mposa ya `_` ndenge mosangisi ya esika mpo na motuya oyo ezuami na pipe:
 
 ```zymbol
-mbala_mibale = x -> x * 2
-lisangisi = (a, b) -> a + b
-kobakisa = x -> x + 1
+kopisa mbala mibale = x -> x * 2
+kobakisa = (a, b) -> a + b
+kopisa moko = x -> x + 1
 
-5 |> mbala_mibale(_)        // → 10
-10 |> lisangisi(_, 5)        // → 15
-5 |> lisangisi(2, _)         // → 7
+5 |> kopisa mbala mibale(_)        // → 10
+10 |> kobakisa(_, 5)              // → 15
+5 |> kobakisa(2, _)               // → 7
 
-// Kokatisa
-r = 5 |> mbala_mibale(_) |> kobakisa(_) |> mbala_mibale(_)
+// Kangisama
+r = 5 |> kopisa mbala mibale(_) |> kopisa moko(_) |> kopisa mbala mibale(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## Kobatela Makambo ya Mabe
+---
+
+## Kosala na Mbongwana
 
 ```zymbol
 !? {
     x = 10 / 0
 } :! ##Div {
-    >> "Bokaboli na zéro" ¶
+    >> "kokabola na zéro" ¶
 } :! {
-    >> "mabe mosusu: " _err ¶    // _err ebatelaka molayi ya mabe
+    >> "mbongwana misusu: " _err ¶    // _err ezali na nsango ya mbongwana
 } :> {
-    >> "etambola ntango nyonso" ¶
+    >> "ekosalama ntango nyonso" ¶
 }
 ```
 
-| Motindo     | Ntango ezalaka                         |
-|-------------|----------------------------------------|
-| `##Div`     | Bokaboli na zéro                       |
-| `##IO`      | Fiche / Système                        |
-| `##Index`   | Index elongi nsuka ya mitanda          |
-| `##Type`    | Mabe ya motindo                        |
-| `##Parse`   | Mabe ya kobengela                      |
-| `##Network` | Mabe ya réseau                         |
-| `##_`       | Mabe nyonso (catch-all)                |
+| Lolenge | Ntango |
+|---------|--------|
+| `##Div` | Kokabola na zéro |
+| `##IO` | Fichier / kompipo |
+| `##Index` | Index na libanda ya ndelo |
+| `##Type` | Lolenge ekokani te |
+| `##Parse` | Kotánga data |
+| `##Network` | Mbongwana ya réseau |
+| `##_` | Mbongwana nyonso (ezali kozwa nyonso) |
 
 ---
 
-## Mamoduli
+---
+
+## Modules
 
 ```zymbol
-// Fiche: lib/calc.zy
-# calc
+// lib/calc.zy — nzoto ya module ezali na kati ya bikalo ya zonzon
+# calc {
+    #> { kobakisa, get_PI }
 
-#> { kotanga, get_PI }    // Binto ya libanda LIBOSO ya bonsomi
-
-_PI := 3.14159
-kotanga(a, b) { <~ a + b }
-get_PI() { <~ _PI }   // mobimisi — kokɔta toon toon na nkombo ekoki te
+    _PI := 3.14159
+    kobakisa(a, b) { <~ a + b }
+    get_PI() { <~ _PI }
+}
 ```
 
 ```zymbol
-// Fiche: main.zy
-<# ./lib/calc <= c    // nkombo ya mbano esengeli
+// main.zy
+<# ./lib/calc <= c    // alias ezali na ntina
 
->> c::kotanga(5, 3) ¶  // → 8
+>> c::kobakisa(5, 3) ¶   // → 8
 pi = c::get_PI()
->> pi ¶                // → 3.14159
+>> pi ¶               // → 3.14159
 ```
 
 ```zymbol
-// Kolongola na nkombo mosusu
-# mylib
-#> { _kotanga_kati <= lisangisi }
+// Kobimisa na kombo misusu ya public
+# librerie na ngai {
+    #> { _kobakisa_na_kati <= motuya }
 
-_kotanga_kati(a, b) { <~ a + b }
+    _kobakisa_na_kati(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
-<# ./mylib <= m
+<# ./librerie na ngai <= m
 
->> m::lisangisi(3, 4) ¶    // → 7  (nkombo ya kati _kotanga_kati esuudamaki)
+>> m::motuya(3, 4) ¶    // → 7  (kombo ya kati _kobakisa_na_kati ezipami)
 ```
+
+> **Mibeko ya module**: na kati ya `# kombo { }`, `#>`, ndimbola ya fonksyo, mpe babandisi ya bivarie/libele ya lilakala kaka endimami. Maloba oyo ekosalama (`>>`, `<<`, kobalukabuka, wana nyonso) efulusaka mbongwana E013.
 
 ---
 
-## Mikano ya Manomero
+---
 
-Zymbol ekoki kolakisa manomero na **Unicode système ya manomero 69** — Devanagari, Arabi-India, Thai, Klingon pIqaD, Matematik ya Makasi, segment LCD na mosusu. Mikano oyo etali kaka kobima `>>`; kalikile ya kati ezali binary ntango nyonso.
+## Mode ya Motángo
 
-### Kotia système
+Zymbol ekoki kolakisa motángo na **69 bloc ya bamonzomi ya Unicode** — Devanagari, Arab-Indic, Thai, Klingon pIqaD, Mathematical bold, ba segmente ya LCD, mpe wana nyonso. Mode oyo esalaka ekosala na ekateli ya `>>` kaka; motango ya kati ezali binaire ntango nyonso.
 
-Koma nomero `0` na `9` ya système olingi na kati ya `#…#`:
+### Kotya mosala makomi ya nzoto
+
+Koma bamonzomi `0` mpe `9` ya makomi oyo olingi na kati ya `#…#`:
 
 ```zymbol
 #०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // Arabic-Indic  (U+0660–U+0669)
+#٠٩#    // Arab-Indic    (U+0660–U+0669)
 #๐๙#    // Thai          (U+0E50–U+0E59)
-#09#    // reset to ASCII
+#09#    // kozongisa na ASCII
 ```
 
-### Kobima na valeur boolean
+---
+
+### Ekateli mpe ba Booleano
 
 ```zymbol
 x = 42
->> x ¶          // → 42   (ASCII default)
+>> x ¶          // → 42   (ASCII ya liboso)
 
 #०९#
 >> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४
+>> 3.14 ¶       // → ३.१४   (point decimal ezali ASCII ntango nyonso)
 >> 1 + 2 ¶      // → ३
 
-// Boolean: # liboso ntango nyonso ASCII, nomero etali
->> #1 ¶         // → #१
->> #0 ¶         // → #०
+// Booleano: prefixe # ezali ASCII ntango nyonso, monzomi ekomipesaka
+>> #1 ¶         // → #१   (solo na Devanagari)
+>> #0 ¶         // → #०   (lokuta — ekokani te na ० motángo zéro)
 
 x = 28 > 4
->> x ¶          // → #१
+>> x ¶          // → #१   (litomba ya kokokanisa ezali kolanda mode oyo esalaka)
 ```
 
-### Manomero ya asali na kode source
+---
 
-Manomero ya système nyonso oyo esalisami ezali literals ya solo — na zétendue, modulo, kotala:
+## Bamonzomi ya liboto na kode ya source
+
+Bamonzomi ya makomi nyonso oyo endimami ezali lilakala ya solo — na bafandi, na modulo, na bokokanisi:
 
 ```zymbol
 #०९#
@@ -568,45 +630,54 @@ Manomero ya système nyonso oyo esalisami ezali literals ya solo — na zétendu
 }
 ```
 
-### Boolean literals na système nyonso
+---
 
-`#` + nomero `0` to `1` uta na bloc nyonso ezali literal boolean ya solo:
+### Lilakala ya Booleano na makomi nyonso
+
+`#` + monzomi `0` to `1` na bloc nyonso ezali lilakala ya Booleano oyo ezali solo:
 
 ```zymbol
-#٠٩#
-نشط = #١
->> نشط ¶        // → #١
->> (#١ && #٠) ¶ // → #٠
+#०९#
+mosala = #१        // ndenge moko na #1
+>> mosala ¶        // → #१
+>> (#१ && #०) ¶    // → #०
 ```
 
-> `#` **ntango nyonso ASCII**. `#0` (lokuta) ntango nyonso etondi na `0` (nomero zéro) na système nyonso.
+> `#` **ezali ASCII ntango nyonso**. `#0` (lokuta) ezalaka ndenge moko na miso mpe esanganaka te na `0` (motángo zéro) na makomi nyonso.
 
 ---
 
-## Bato ya misala ya data
+---
+
+## Basaleli ya Donnée
 
 ```zymbol
-// Kobongola nsango na motango
-v1 = #|"42"|      // → 42  (Motango mobimba)
-v2 = #|"3.14"|    // → 3.14  (Motango ya koma)
-v3 = #|"abc"|     // → "abc"  (mabe te)
+// Kobongola lolenge
+##.42         // → 42.0  (mpo na Motángo oyo ekolamaka)
+###3.7        // → 4     (mpo na Motángo molayi, kopusola)
+##!3.7        // → 3     (mpo na Motángo molayi, kokáta)
 
-// Kotondo / kobeba
+// Kotánga nkómbó mpo na motángo
+v1 = #|"42"|      // → 42  (Motángo molayi)
+v2 = #|"3.14"|    // → 3.14  (Motángo oyo ekolamaka)
+v3 = #|"abc"|     // → "abc"  (ya limpinga, mbongwana te)
+
+// Kopusola / kokáta
 pi = 3.14159265
-r2 = #.2|pi|      // → 3.14  (kotondo na binndi 2)
-r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14  (kobeba)
+kopusola2 = #.2|pi|     // → 3.14  (kopusula tii na bisika 2 ya decimal)
+kopusola4 = #.4|pi|     // → 3.1416
+kokáta2 = #!2|pi|        // → 3.14  (kokáta)
 
-// Ndakisa ya motango
-fmt = #,|1234567|      // → 1,234,567  (virgule ya kosemba)
-sci = #^|12345.678|    // → 1.2345678e4  (kisayansi)
+// Komisa motángo na form
+forme = #,|1234567|   // → 1,234,567  (bokeseni na virgule)
+siantifi = #^|12345.678| // → 1.2345678e4  (siantifi)
 
-// Biloko ya baze
-a = 0x41         // → 'A'  (hex)
-b = 0b01000001   // → 'A'  (binairi)
-c = 0o101        // → 'A'  (oktal)
+// Lilakala ya fondasion
+a = 0x41         // → 'A'  (hexadécimal)
+b = 0b01000001   // → 'A'  (binaire)
+c = 0o101        // → 'A'  (octal)
 
-// Kobongola baze na kobimi
+// Ekateli ya kobongola fondasion
 hex = 0x|255|    // → "0x00FF"
 bin = 0b|65|     // → "0b1000001"
 oct = 0o|8|      // → "0o10"
@@ -615,113 +686,138 @@ dec = 0d|255|    // → "0d0255"
 
 ---
 
-## Kotanganaki na Shell
+---
+
+## Kosangisa na Shell
 
 ```zymbol
-lelo = <\ date +%Y-%m-%d \>     // kokanga stdout (na motindo ya mpe)
->> "Lelo: " lelo
+liso = <\ date +%Y-%m-%d \>     // ekozwa stdout (ezali na \n na suka)
+>> "Lelo: " liso
 
-fiche = "data.txt"
-tembe = <\ cat {fiche} \>       // interpolasio na mitindo
+fichie = "data.txt"
+nkombo na kati = <\ cat {fichie} \>       // kotisa kati na ba commandes
 
-bimi = </"./subscript.zy"/>    // kosala zymbol mosusu, kokanga bimi
->> bimi
+ekateli = </"./subscript.zy"/>      // kosalisa script Zymbol mosusu, kozwa ekateli
+>> ekateli
 ```
 
-> `><` ekangaka mitindo ya CLI lokola mitanda ya nsinga (tree-walker kaka).
+> `><` ekozwa ba arguments CLI lokola lilongo ya mikoló (kaka tree-walker).
 
 ---
 
-## Ndakisa ya Momesano: FizzBuzz
+---
+
+## Ndakisa ya Malamu: FizzBuzz
 
 ```zymbol
-kotanga(nomboro) {
-    ? nomboro % 15 == 0 { <~ "FiiziBuuzi" }
-    _? nomboro % 3  == 0 { <~ "Fiizi" }
-    _? nomboro % 5  == 0 { <~ "Buuzi" }
-    _ { <~ nomboro }
+kokabola(motángo) {
+    ? motángo % 15 == 0 { <~ "FizzBuzz" }
+    _? motángo % 3  == 0 { <~ "Fizz" }
+    _? motángo % 5  == 0 { <~ "Buzz" }
+    _ { <~ motángo }
 }
 
-@ i:1..20 { >> kotanga(i) ¶ }
+@ i:1..20 { >> kokabola(i) ¶ }
 ```
 
 ---
 
-## Kotalela Bilembo
+## Référence ya Bilembo
 
-| Lilembo  | Mosala             | Lilembo    | Mosala                |
-|----------|--------------------|------------|-----------------------|
-| `=`      | Bintoko            | `$#`       | Molai                 |
-| `:=`     | Biloko ezangi      | `$+`       | kobakisa              |
-| `>>`     | Koloba             | `$+[i]`    | kotia na index        |
-| `<<`     | Kozwa              | `$-`       | kolongola ya liboso   |
-| `¶`/`\\` | Motindo ya mpe     | `$--`      | kolongola nyonso      |
-| `?`      | soki (if)          | `$-[i]`    | kolongola na index    |
-| `_?`     | soki mosusu (elif) | `$-[i..j]` | kolongola ntalo       |
-| `_`      | soki te / esika    | `$?`       | azali na kati         |
-| `??`     | match              | `$??`      | bisika nyonso         |
-| `@`      | Koluka mbala mingi | `$[s..e]`  | Tiolo                 |
-| `@!`     | simba (break)      | `$>`       | map                   |
-| `@>`     | tɔlɔlɔ (continue)  | `$\|`      | filter                |
-| `->`     | Lambda             | `$<`       | reduce                |
-| `arr[i] = val` | Kobongisa (mitanda kaka) | `arr[i] += val` | Kobongisa na misala  |
-| `arr[i]$~`| Mitanda mipe          | `$^+`      | kobeba na mokolo      |
-| `$^-`    | kobeba na nse          | `$^`       | kobeba na lambda      |
-| `<~`     | kozongisa          | `!?`       | luka (try)            |
-| `\|>`    | Pipe               | `:!`       | kanga (catch)         |
-| `#1`     | solo               | `:>`       | ntango nyonso (finally)|
-| `#0`     | lokuta             | `$!`       | azali mabe            |
-| `<#`     | zwa (import)       | `$!!`      | tinda mabe            |
-| `#`      | bongisa moduli     | `#>`       | longola libanda       |
-| `::`     | benga moduli       | `.`        | kokɔta esika          |
-| `#\|..\|` | kobongola motango | `#?`       | kotala motindo        |
-| `#.N\|..\|` | kotondo        | `#!N\|..\|` | kobeba             |
-| `#,\|..\|` | virgule ya ndakisa | `#^\|..\|` | kisayansi             |
-| `#d0d9#` | kobongola mikano ya manomero | `#09#` | kozonga na ASCII |
-| `<\ ..\>` | shell kosala     | `>\<`      | mitindo ya CLI        |
-
-## Makambo ya Versions
-
-### v0.0.3 — Unicode Système ya Manomero & Bolamu LSP _(Avril 2026)_
-
-- **Ebakisami** Bloc 69 ya manomero Unicode na token ya kobongola mikano `#d0d9#`
-- **Ebakisami** Boolean literals na système nyonso — `#१` / `#०`, `#١` / `#٠`, na mosusu
-- **Ebakisami** Klingon pIqaD manomero (CSUR PUA U+F8F0–U+F8F9)
-- **Ebakisami** VM opcode `SetNumeralMode` — parité ya mobimba na tree-walker
-- **Ebakisami** REPL etosi mikano oyo esali na echo na kolakisa variables
-- **Ebongolami** Kobima `>>` ya boolean ezali na `#` liboso (`#0` / `#1`) na mikano nyonso
-
-### v0.0.2_01 — Kobongola Nkombo ya Misala _(30 Mar 2026)_
-
-- **Ebongolami** `c|..|` → `#,|..|` na `e|..|` → `#^|..|` — kolanda libota ya prefix `#`
-- **Ebakisami** Alias ya export: kobimisa lisusu membres ya module na nkombo mosusu
-
-### v0.0.2 — Transformation ya API ya Collections & Instalateurs _(24 Mar 2026)_
-
-- **Ebakisami** Libota ya misala `$` moko mpo na arrays na strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Ebakisami** Destructuring mpo na arrays, tuples na tuples ya nkombo
-- **Ebakisami** Index ya négatif (`arr[-1]` = élément ya nsuka)
-- **Ebakisami** Instalateurs ya asali — Linux (deb/rpm/pkg/musl), macOS, Windows
-
-### v0.0.1-patch _(25 Mar 2026)_
-
-- **Ebakisami** Attribution composée `^=`
-- **Ebongolami** Likambo ya parser aritmetik; kobongola documents
-
-### v0.0.1 — Kobima ya Liboso _(22 Mar 2026)_
-
-- Tree-walker interpreter + register VM (`--vm`, ~4× ya ngai, ~95% parité)
-- Constructions nyonso ya miboko: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Unicode identifiants mobimba, système ya module, lambda, fermeture, kobatela bosembo
-- REPL, LSP, extension VS Code, formatter (`zymbol fmt`)
+| Elembo | Mosala | Elembo | Mosala |
+|--------|--------|--------|--------|
+| `=` | bivarie | `$#` | bolai |
+| `:=` | biloko libela | `$+` | basisa (ekoki kokangama) |
+| `>>` | ekateli | `$+[i]` | kotya na index (fondasio-1) |
+| `<<` | bokoti | `$-` | kolongola ya yambo ndenge motuya |
+| `¶` / `\\` | nzela ya sika | `$--` | kolongola nyonso ndenge motuya |
+| `?` | soki | `$-[i]` | kolongola na index (fondasio-1) |
+| `_?` | soki te soki | `$-[i..j]` | kolongola likebisi (fondasio-1) |
+| `_` | soki te / nyonso | `$?` | ezali na kati |
+| `??` | kokokana | `$??` | koluka ba index nyonso (fondasio-1) |
+| `@` | kobalukabuka | `$[s..e]` | etsili (fondasio-1) |
+| `@ N { }` | kobalukabuka N mbala | `$>` | carte |
+| `@!` | kokata | `$|` | filtre |
+| `@>` | koba | `$<` | réduire |
+| `@:kombo { }` | kobalukabuka na nkombo | `$/ bokaboli` | kokabola nkómbó |
+| `@:kombo!` | kokata na nkombo | `$++ a b c` | kosala kangama |
+| `@:kombo>` | koba na nkombo | `lilongo[i>j>k]` | index ya kotambola |
+| `->` | lambda | `lilongo[i] = motuya` | kobongola binama (lilongo kaka) |
+| `lilongo[i] += motuya` | kobongola ekomoni | `lilongo[i]$~` | kobongola ya misala (kopi ya sika) |
+| `$^+` | kolongisa kolela (liboso) | `$^-` | kolongisa kokita (liboso) |
+| `$^` | kolongisa na comparateur (napolo) | `<~` | kozongisa |
+| `|>` | pipe | `!?` | komeka |
+| `:!` | kozwa | `:>` | nsuka |
+| `#1` | solo | `#0` | lokuta |
+| `$!` | ezali mbongwana | `$!!` | ebale ya mbongwana |
+| `<#` | kotya | `#>` | kobimisa |
+| `#` | kobinisa module | `::` | kobenga module |
+| `.` | bokoti ya esika | `#?` | métadonnée ya lolenge |
+| `#\|..\|` | kotánga motángo | `##.` | kobongola mpo na Motángo oyo ekolamaka |
+| `###` | kobongola mpo na Motángo molayi (kopusola) | `##!` | kobongola mpo na Motángo molayi (kokáta) |
+| `#.N\|..\|` | kopusola | `#!N\|..\|` | kokáta |
+| `#,\|..\|` | forme na virgule | `#^\|..\|` | siantifi |
+| `#d0d9#` | kobongola mode ya motángo | `#09#` | kozongisa na ASCII |
+| `<\ ..\>` | kosalisa shell | `>\<` | ba arguments ya ligne na commande |
+| `\ var` | koboma bivarie polele | | |
 
 ---
 
-*Zymbol-Lang — Ya Bilembo. Ya Bato Nyonso. Ezangi Kobongwana.*
+---
 
-> **Litatoli:** Mokanda oyo esalamaki mpe ekopiamaki na Mayele ya Makinini (AI).
-> Misala nyonso esalamaki mpo na kotala malamu, kasi miteya misusu to ndakisa zingi mpe kolala na makambo ya mabe.
-> Toli ya solo ezali [Zymbol-Lang specifications](https://github.com/zymbol-lang/interpreter).
->
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
+## Journal ya Changement ya Version
+
+### v0.0.4 — Index Fondasio-1, Fonksyo ya Etuluku ya Liboso & Bloc ya Module _(Avril 2026)_
+
+- **Elekisi** Ba index nyonso babongwani na **fondasio-1** — `arr[1]` ezali binama ya yambo; `arr[0]` ezali mbongwana ya tango ya kosala
+- **Bakisi** Fonksyo oyo ezali na nkombo ezali **motuya ya etuluku ya liboso** — tinda nzoto mpo na fonksyo ya molongo molai: `nums$> kopisa mbala mibale`
+- **Bakisi** **Gramere ya bloc** ya module ezali na ntina: `# kombo { ... }` — gramere ya plate ebungisami
+- **Bakisi** Index ya ba dimensions ebele: `arr[i>j>k]` (kotambola), `arr[p ; q]` (kosala plate)
+- **Bakisi** Kobongola lolenge: `##.super` (Motángo oyo ekolamaka), `###super` (Motángo molayi kopusola), `##!super` (Motángo molayi kokáta)
+- **Bakisi** Kokabola nkómbó: `nkómbó$/ bokaboli` — ekozongisa `Array(Nkómbó)`
+- **Bakisi** Kosala kangama: `fondasio$++ a b c` — ezali kobakisa bikelamu ebele
+- **Bakisi** Kobalukabuka N mbala: `@ N { }` — kozongisa mbala N kaka
+- **Bakisi** Gramere ya kobalukabuka na nkombo: `@:kombo { }`, `@:kombo!`, `@:kombo>` — ekolongola `@ @kombo` / `@! kombo`
+- **Bakisi** Mibeko ya esika ya bivarie: bivarie `_kombo` ezali na esika ya bloc ya solo; `\ var` ebomaka liboso
+- **Bakisi** Bileko ya bokokanisi ya kokokana: `< 0 :`, `> 5 :`, `== 42 :`, wana nyonso
+- **Bakisi** Mbongwana ya module E013: maloba oyo ekosalama na nzoto ya module epekisami
+- **Kobongisi** `take_variable` ebebisaka lisusu biloko libela ya module tango ezali kokoma lisusu te
+- **Kobongisi** `alias.CONST` sikoyo ekolongolama ndenge ya solo; `#>` ekoki komonana nsima ya ndimbola ya fonksyo
+- **VM** Kokani ya nyonso: 393/393 ba test ekoki
+
+### v0.0.3 — Ba Système ya Motángo ya Unicode & Ba Amélioration ya LSP _(Avril 2026)_
+
+- **Bakisi** 69 bloc ya bamonzomi ya Unicode elongo na jeton ya kobongola mode `#d0d9#`
+- **Bakisi** Lilakala ya Booleano na makomi nyonso — `#१` / `#०`, `#१` / `#०`, wana nyonso
+- **Bakisi** Bamonzomi ya Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Bakisi** `SetNumeralMode` opcode ya VM — kokani ya nyonso na tree-walker
+- **Bakisi** REPL ezali koyoka mode ya motángo oyo esalaka na echo na na elakisi ya bivarie
+- **Bongoli** Ekateli ya Booleano `>>` sikoyo ezali komema prefixe `#` (`#0` / `#1`) na ba mode nyonso
+
+### v0.0.2_01 — Kobongola Kombo ya Mosali _(30 Marsi 2026)_
+
+- **Bongoli** `c|..|` → `#,|..|` mpe `e|..|` → `#^|..|` — kolandana na libota ya prefixe ya forme `#`
+- **Bakisi** Alias ya kobimisa: kobimisa lisusu bamembres ya module na kombo misusu
+
+### v0.0.2 — Kokesana API ya Collection & Ba Installateur _(24 Marsi 2026)_
+
+- **Bakisi** Libota ya mosali `$` oyo esangisami mpo na lilongo mpe mikoló (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Bakisi** Pésa ya kosakola mpo na lilongo, napolo, mpe napolo oyo ezali na kombo
+- **Bakisi** Ba index mabe (`arr[-1]` = binama ya suka)
+- **Bakisi** Ba installateur ya liboto — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Marsi 2026)_
+
+- **Bakisi** Pésa ekomoni `^=`
+- **Kobongisi** Makambo ya ndelo ya parser; mabongisi ya mikanda
+
+### v0.0.1 — Ekateli ya Liboso ya Public _(22 Marsi 2026)_
+
+- Mobalisi ya tree-walker + VM ya registre (`--vm`, ~4× noki, ~95% kokani)
+- Bileko nyonso ya motó: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Ba identifiants ya Unicode mobimba, système ya module, lambda, bokangami, kosala na mbongwana
+- REPL, LSP, Extension ya VS Code, formateur (`zymbol fmt`)
+
+---
+
+_Zymbol-Lang — Elembo. Mokili mobimba. Ekobongwana te._

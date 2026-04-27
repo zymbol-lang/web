@@ -64,7 +64,7 @@ function makeModuleResolver(baseDir) {
 async function runWeb(file, src) {
   let out = '';
   try {
-    await runZymbol(src, async () => '', text => { out += text; }, makeModuleResolver(dirname(resolve(file))));
+    await runZymbol(src, async () => '', text => { out += text; }, makeModuleResolver(dirname(resolve(file))), file);
   } catch (e) {
     out += `[ERROR] ${e.message ?? e}`;
   }

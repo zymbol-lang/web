@@ -188,8 +188,23 @@ export class Lexer {
             tok('DATA_OP', { kind, prec }); continue;
           }
         }
-        // # followed by space/letter/dot = script name comment, skip to EOL
-        if (c1 === ' ' || c1 === '.' || /[A-Za-z_]/.test(c1)) {
+        // # followed by space/letter/dot: module block `# name {` or old-style comment
+        if (c1 === ' ' || c1 === '.' || /[\p{L}_]/u.test(c1)) {
+          // Lookahead: check for # [.] name { (new module block syntax)
+          let _j = this.pos + 1;
+          while (_j < this.src.length && (this.src[_j] === ' ' || this.src[_j] === '\t')) _j++;
+          if (_j < this.src.length && this.src[_j] === '.') _j++; // optional leading dot
+          const _idStart = _j;
+          while (_j < this.src.length && /[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(this.src[_j])) _j++;
+          if (_j > _idStart) {
+            let _k = _j;
+            while (_k < this.src.length && (this.src[_k] === ' ' || this.src[_k] === '\t')) _k++;
+            if (_k < this.src.length && this.src[_k] === '{') {
+              this.consume(); // consume #
+              tok('HASH', '#'); continue;
+            }
+          }
+          // Old-style header: skip to EOL
           while (this.pos < this.src.length && this.src[this.pos] !== '\n') this.consume();
           continue;
         }
@@ -445,6 +460,17 @@ export class Parser {
     return stmts;
   }
 
+  parseModuleBlock() {
+    this.adv(); // consume HASH
+    let name = '';
+    if (this.check('DOT')) { this.adv(); name += '.'; }
+    name += this.eat('IDENT').value;
+    this.eat('LBRACE');
+    const body = this.parseStmtList();
+    this.eat('RBRACE');
+    return { type: 'ModuleBlock', name, body };
+  }
+
   parseImport() {
     this.adv(); // consume <#
     // Parse path: ./name, ../name, ./dir/name, or string literal
@@ -523,6 +549,7 @@ export class Parser {
     if (t.type === 'IDENT')    return this.parseIdentStmt();
     if (t.type === 'SEMI')     { this.adv(); return null; }
     if (t.type === 'PILCROW')  { this.adv(); return { type: 'Output', items: [], newline: true }; }
+    if (t.type === 'HASH')     return this.parseModuleBlock();
 
     return { type: 'ExprStmt', expr: this.parseExpr() };
   }
@@ -1423,13 +1450,18 @@ export class Interpreter {
     const modEnv = new Env();
     modInterp.globalEnv = modEnv;
 
+    // Support both old-style (bare top-level statements) and new block syntax # name { ... }
+    const modBody = (ast.body.length === 1 && ast.body[0].type === 'ModuleBlock')
+      ? ast.body[0].body
+      : ast.body;
+
     // Collect exported names from ExportDecl nodes before execution
     const exportPairs = [];
-    for (const s of ast.body) {
+    for (const s of modBody) {
       if (s.type === 'ExportDecl') for (const p of s.names) exportPairs.push(p);
     }
 
-    await modInterp.execBlock(ast.body, modEnv);
+    await modInterp.execBlock(modBody, modEnv);
 
     // Bind all module-level functions to modEnv so intra-module calls work
     for (const val of modEnv.vars.values()) {
@@ -1477,9 +1509,20 @@ export class Interpreter {
     this.outputFn(text);
   }
 
-  async run(program) {
+  async run(program, filePath = null) {
     const env = new Env();
     this.globalEnv = env;
+    if (program.body.length >= 1 && program.body[0].type === 'ModuleBlock') {
+      const mb = program.body[0];
+      const modName = mb.name; // preserve as declared (e.g. '.module' or 'matematicas')
+      const pathStr = filePath ? `'${filePath}'` : `'${modName}.zy'`;
+      // Use filename stem for import hint (matches CLI for mismatched names)
+      const importHint = filePath
+        ? filePath.replace(/^.*[/\\]/, '').replace(/\.zy$/, '')
+        : modName.replace(/^\./, '');
+      this.emit(`warning: ${pathStr} is a module file and cannot be run directly\n  = help: module '${modName}' is meant to be imported with <# ./${importHint} <= alias`);
+      return;
+    }
     await this.execBlock(program.body, env);
   }
 
@@ -1497,6 +1540,7 @@ export class Interpreter {
     switch (stmt.type) {
       case 'Noop': return;
       case 'ExportDecl': return;
+      case 'ModuleBlock': return;
 
       case 'Import': {
         const modVal = await this.loadModule(stmt.path);
@@ -2620,11 +2664,11 @@ export class Interpreter {
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-export async function runZymbol(src, inputFn, onOutput, moduleResolver = null) {
+export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, filePath = null) {
   const tokens = new Lexer(src).tokenize();
   const ast    = new Parser(tokens).parse();
   try {
-    await new Interpreter(onOutput, inputFn, moduleResolver).run(ast);
+    await new Interpreter(onOutput, inputFn, moduleResolver).run(ast, filePath);
   } catch (e) {
     if (e instanceof ZyStaticError)
       onOutput(`Runtime error: ${e.message}`);

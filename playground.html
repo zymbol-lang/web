@@ -849,9 +849,9 @@ const EXAMPLES = {
     { title: 'Basic lambda',   code: 'double = x -> x * 2\n>> double(5) ¶\n>> double(12) ¶' },
     { title: 'Multi-param',    code: 'add = (a, b) -> a + b\n>> add(3, 4) ¶\n>> add(10, 20) ¶' },
     { title: 'Block body',     code: 'clamp = (v, lo, hi) -> {\n    ? v < lo { <~ lo }\n    ? v > hi { <~ hi }\n    <~ v\n}\n>> clamp(5, 1, 10) ¶\n>> clamp(-3, 0, 100) ¶\n>> clamp(150, 0, 100) ¶' },
-    { title: '$> with lambda', code: 'nums = [1, 2, 3, 4, 5]\n>> nums$> (x -> x * x) ¶' },
-    { title: '$| with lambda', code: 'nums = [1, 2, 3, 4, 5, 6]\n>> nums$| (x -> x % 2 == 0) ¶' },
-    { title: '$< with lambda', code: 'nums = [1, 2, 3, 4, 5]\n>> nums$< (0, (acc, x) -> acc + x) ¶' },
+    { title: '$> with lambda 1', code: 'nums = [1, 2, 3, 4, 5]\n>> nums$> (x -> x * x) ¶' },
+    { title: '$| with lambda 2', code: 'nums = [1, 2, 3, 4, 5, 6]\n>> nums$| (x -> x % 2 == 0) ¶' },
+    { title: '$< with lambda 3', code: 'nums = [1, 2, 3, 4, 5]\n>> nums$< (0, (acc, x) -> acc + x) ¶' },
     { title: 'Closure',        code: 'make_adder(n) {\n    <~ x -> x + n\n}\nadd5  = make_adder(5)\nadd10 = make_adder(10)\n>> add5(3) ¶\n>> add10(3) ¶' },
     { title: 'Pipe |>',        code: 'double = x -> x * 2\ninc    = x -> x + 1\nresult = 5 |> double(_) |> inc(_)\n>> result ¶' },
     { title: 'Pipe w/ args',   code: 'add = (a, b) -> a + b\n>> 10 |> add(_, 5) ¶\n>> 3  |> add(7, _) ¶' },
@@ -906,7 +906,7 @@ const EXAMPLES = {
     { title: 'தமிழ் — Tamil',  code: '// FizzBuzz — தமிழ்\n// தமிழில் அடையாளங்காட்டிகள். இயக்கிகள் எப்போதும் குறியீட்டு.\n\n>> "வணக்கம், உலகம்!" ¶\n\nவகைப்படுத்து(எண்) {\n    ? எண் % 15 == 0 { <~ "குமிழ்சத்தம்" }\n    _? எண் % 3  == 0 { <~ "குமிழ்" }\n    _? எண் % 5  == 0 { <~ "சத்தம்" }\n    _ { <~ எண் }\n}\n\n@ ந:1..15 {\n    >> வகைப்படுத்து(ந) ¶\n}' },
     { title: 'አማርኛ — Amharic',  code: '// FizzBuzz — አማርኛ\n// መለያዎች በአማርኛ። ኦፕሬተሮች ሁልጊዜ ምሳሌያዊ።\n\n>> "ሰላም፣ አማርኛ ተናጋሪ ዓለም!" ¶\n\nምደባ(ቁጥር) {\n    ? ቁጥር % 15 == 0 { <~ "ቡርቡርዝምዝም" }\n    _? ቁጥር % 3  == 0 { <~ "ቡርቡር" }\n    _? ቁጥር % 5  == 0 { <~ "ዝምዝም" }\n    _ { <~ ቁጥር }\n}\n\n@ ን:1..15 {\n    >> ምደባ(ን) ¶\n}' },
 
-    { title: 'தமிழ் ௦-௯ — Tamil',
+    { title: 'தமிழ் ௦-௯ — Tamil 2',
       code: '// FizzBuzz — தமிழ் + Tamil numerals (௦-௯)\n// Loop range, modulo checks, and output all use Tamil digits.\n\n>> "வணக்கம், தமிழ் உலகம்!" ¶\n\n#௦௯#\n\nவகைப்படுத்தல்(எண்) {\n    ? எண் % ௧௫ == ௦ { <~ "குமிழிசலசலப்பு" }\n    _? எண் % ௩  == ௦ { <~ "குமிழி" }\n    _? எண் % ௫  == ௦ { <~ "சலசலப்பு" }\n    _ { <~ எண் }\n}\n\n@ ந:௧..௧௫ {\n    >> வகைப்படுத்தல்(ந) ¶\n}' },
 
     { title: 'తెలుగు — Telugu',
@@ -922,28 +922,28 @@ const EXAMPLES = {
       code: "// FizzBuzz \u2014 \uf8e4\uf8d7\uf8dc\uf8d0\uf8db \uf8de\uf8d7\uf8df\uf8d0\uf8d3\n// pIqaD digits: CSUR PUA U+F8F0\u2013U+F8F9\n// pIqaD letters: CSUR PUA U+F8D0\u2013U+F8EF\n// Requires a pIqaD font (e.g. pIqaD-qolqoS) to render visually.\n\n#\uf8f0\uf8f9#\n\n>> \"\uf8db\uf8e5\uf8df\uf8db\uf8d4\uf8d6\" \u00b6\n\n\uf8e7\uf8d7\uf8e6(\uf8da\uf8d7\uf8e9) {\n    ? \uf8da\uf8d7\uf8e9 % \uf8f1\uf8f5 == 0 { <~ \"\uf8e0\uf8d0\uf8de\uf8d9\uf8d0\uf8e9\uf8d6\uf8dd\uf8d6\" }\n    _? \uf8da\uf8d7\uf8e9 % \uf8f3  == 0 { <~ \"\uf8e0\uf8d0\uf8de\uf8d9\uf8d0\uf8e9\" }\n    _? \uf8da\uf8d7\uf8e9 % \uf8f5  == 0 { <~ \"\uf8d6\uf8dd\uf8d6\" }\n    _ { <~ \uf8da\uf8d7\uf8e9 }\n}\n\n@ \uf8d3:\uf8f1..\uf8f1\uf8f5 {\n    >> \uf8e7\uf8d7\uf8e6(\uf8d3) \u00b6\n}" },
   ],
 
-  'Módulos <#': [
+  'Modules <#': [
     {
       title: 'Matemáticas',
       files: [
         {
           name: 'matematicas.zy',
           code:
-`# matematicas
+`# matematicas {
+    #> { sumar, restar, multiplicar, dividir, potencia, factorial, PI }
 
-#> { sumar, restar, multiplicar, dividir, potencia, factorial, PI }
+    PI := 3.14159265
 
-PI := 3.14159265
+    sumar(a, b)       { <~ a + b }
+    restar(a, b)      { <~ a - b }
+    multiplicar(a, b) { <~ a * b }
+    dividir(a, b)     { <~ a / b }
+    potencia(b, e)    { <~ b ^ e }
 
-sumar(a, b)       { <~ a + b }
-restar(a, b)      { <~ a - b }
-multiplicar(a, b) { <~ a * b }
-dividir(a, b)     { <~ a / b }
-potencia(b, e)    { <~ b ^ e }
-
-factorial(n) {
-    ? n <= 1 { <~ 1 }
-    <~ n * factorial(n - 1)
+    factorial(n) {
+        ? n <= 1 { <~ 1 }
+        <~ n * factorial(n - 1)
+    }
 }`
         },
         {
@@ -984,40 +984,40 @@ factorial(n) {
         {
           name: 'module.zy',
           code:
-`# .matematicas_module
+`# module {
+    #> {
+        sumar
+        restar
+        multiplicar
+        dividir
+        PI
+        E
+    }
 
-#> {
-    sumar
-    restar
-    multiplicar
-    dividir
-    PI
-    E
-}
+    PI := 3.14159
+    E  := 2.71828
 
-PI := 3.14159
-E  := 2.71828
-
-sumar(a, b)        { <~ a + b }
-restar(a, b)       { <~ a - b }
-multiplicar(a, b)  { <~ a * b }
-dividir(a, b)      { <~ a / b }`
+    sumar(a, b)        { <~ a + b }
+    restar(a, b)       { <~ a - b }
+    multiplicar(a, b)  { <~ a * b }
+    dividir(a, b)      { <~ a / b }
+}`
         },
         {
           name: 'ελληνικά.zy',
           code:
-`# .matematicas_ελληνικά
+`# ελληνικά {
+    <# ./module <= mat
 
-#> {
-    mat::sumar       <= προσθέτω
-    mat::restar      <= αφαιρώ
-    mat::multiplicar <= πολλαπλασιάζω
-    mat::dividir     <= διαιρώ
-    mat.PI           <= ΠΙ
-    mat.E            <= Ε
-}
-
-<# ./module <= mat`
+    #> {
+        mat::sumar       <= προσθέτω
+        mat::restar      <= αφαιρώ
+        mat::multiplicar <= πολλαπλασιάζω
+        mat::dividir     <= διαιρώ
+        mat.PI           <= ΠΙ
+        mat.E            <= Ε
+    }
+}`
         },
         {
           name: 'Ελληνική_εφαρμογή.zy',
@@ -1046,40 +1046,40 @@ dividir(a, b)      { <~ a / b }`
         {
           name: 'module.zy',
           code:
-`# .matematicas_module
+`# module {
+    #> {
+        sumar
+        restar
+        multiplicar
+        dividir
+        PI
+        E
+    }
 
-#> {
-    sumar
-    restar
-    multiplicar
-    dividir
-    PI
-    E
-}
+    PI := 3.14159
+    E  := 2.71828
 
-PI := 3.14159
-E  := 2.71828
-
-sumar(a, b)        { <~ a + b }
-restar(a, b)       { <~ a - b }
-multiplicar(a, b)  { <~ a * b }
-dividir(a, b)      { <~ a / b }`
+    sumar(a, b)        { <~ a + b }
+    restar(a, b)       { <~ a - b }
+    multiplicar(a, b)  { <~ a * b }
+    dividir(a, b)      { <~ a / b }
+}`
         },
         {
           name: 'עִברִית.zy',
           code:
-`# .matematicas_עִברִית
+`# עִברִית {
+    <# ./module <= mat
 
-#> {
-    mat::sumar       <= חיבור
-    mat::restar      <= חיסור
-    mat::multiplicar <= כפל
-    mat::dividir     <= חילוק
-    mat.PI           <= פאי
-    mat.E            <= אי
-}
-
-<# ./module <= mat`
+    #> {
+        mat::sumar       <= חיבור
+        mat::restar      <= חיסור
+        mat::multiplicar <= כפל
+        mat::dividir     <= חילוק
+        mat.PI           <= פאי
+        mat.E            <= אי
+    }
+}`
         },
         {
           name: 'אפליקציית_מתמטיקה.zy',
@@ -1108,40 +1108,40 @@ dividir(a, b)      { <~ a / b }`
         {
           name: 'module.zy',
           code:
-`# .matematicas_module
+`# module {
+    #> {
+        sumar
+        restar
+        multiplicar
+        dividir
+        PI
+        E
+    }
 
-#> {
-    sumar
-    restar
-    multiplicar
-    dividir
-    PI
-    E
-}
+    PI := 3.14159
+    E  := 2.71828
 
-PI := 3.14159
-E  := 2.71828
-
-sumar(a, b)        { <~ a + b }
-restar(a, b)       { <~ a - b }
-multiplicar(a, b)  { <~ a * b }
-dividir(a, b)      { <~ a / b }`
+    sumar(a, b)        { <~ a + b }
+    restar(a, b)       { <~ a - b }
+    multiplicar(a, b)  { <~ a * b }
+    dividir(a, b)      { <~ a / b }
+}`
         },
         {
           name: '中文.zy',
           code:
-`# .matematicas_中文
+`# 中文 {
+    <# ./module <= mat
 
-#> {
-    mat::sumar       <= 相加
-    mat::restar      <= 相减
-    mat::multiplicar <= 相乘
-    mat::dividir     <= 相除
-    mat.PI           <= 圆周率
-    mat.E            <= 自然常数
-}
-
-<# ./module <= mat`
+    #> {
+        mat::sumar       <= 相加
+        mat::restar      <= 相减
+        mat::multiplicar <= 相乘
+        mat::dividir     <= 相除
+        mat.PI           <= 圆周率
+        mat.E            <= 自然常数
+    }
+}`
         },
         {
           name: '中文_应用.zy',
@@ -1170,40 +1170,40 @@ dividir(a, b)      { <~ a / b }`
         {
           name: 'module.zy',
           code:
-`# .matematicas_module
+`# module {
+    #> {
+        sumar
+        restar
+        multiplicar
+        dividir
+        PI
+        E
+    }
 
-#> {
-    sumar
-    restar
-    multiplicar
-    dividir
-    PI
-    E
-}
+    PI := 3.14159
+    E  := 2.71828
 
-PI := 3.14159
-E  := 2.71828
-
-sumar(a, b)        { <~ a + b }
-restar(a, b)       { <~ a - b }
-multiplicar(a, b)  { <~ a * b }
-dividir(a, b)      { <~ a / b }`
+    sumar(a, b)        { <~ a + b }
+    restar(a, b)       { <~ a - b }
+    multiplicar(a, b)  { <~ a * b }
+    dividir(a, b)      { <~ a / b }
+}`
         },
         {
           name: '한국인.zy',
           code:
-`# .matematicas_한국인
+`# 한국인 {
+    <# ./module <= mat
 
-#> {
-    mat::sumar       <= 더하다
-    mat::restar      <= 빼다
-    mat::multiplicar <= 곱하다
-    mat::dividir     <= 나누다
-    mat.PI           <= 파이
-    mat.E            <= 이
-}
-
-<# ./module <= mat`
+    #> {
+        mat::sumar       <= 더하다
+        mat::restar      <= 빼다
+        mat::multiplicar <= 곱하다
+        mat::dividir     <= 나누다
+        mat.PI           <= 파이
+        mat.E            <= 이
+    }
+}`
         },
         {
           name: '한국_앱.zy',
@@ -1308,6 +1308,23 @@ function highlightLine(line, inBlockComment) {
       while (j < len && /[A-Za-z0-9_]/.test(s[j])) j++;
       out += `<span class="t-kw">${esc(s.slice(i,j))}</span>`;
       i = j; continue;
+    }
+
+    // # name { — module block declaration: highlight # as keyword
+    if (s[i] === '#' && i+1 < len && (s[i+1] === ' ' || s[i+1] === '\t' || /[\p{L}_]/u.test(s[i+1]))) {
+      let _j = i + 1;
+      while (_j < len && (s[_j] === ' ' || s[_j] === '\t')) _j++;
+      if (_j < len && s[_j] === '.') _j++;
+      const _idStart = _j;
+      while (_j < len && /[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(s[_j])) _j++;
+      if (_j > _idStart) {
+        let _k = _j;
+        while (_k < len && (s[_k] === ' ' || s[_k] === '\t')) _k++;
+        if (_k < len && s[_k] === '{') {
+          out += `<span class="t-kw">#</span>`;
+          i++; continue;
+        }
+      }
     }
 
     // Numeral mode: #XY# where X and Y are the '0' and '9' digits of any Unicode digit
@@ -1563,17 +1580,68 @@ function addFile(name, code) {
   return f;
 }
 
+// Derive a .zy filename from an example title
+function titleToFilename(title) {
+  let base = title;
+  // For "NonASCII — ASCII" titles, prefer the ASCII part as the filename
+  const parts = title.split(/\s*[—–]+\s*/);
+  const asciiPart = parts.find(p => /^[\x20-\x7E]+$/.test(p.trim()) && p.trim().length > 0);
+  if (asciiPart && asciiPart.trim() !== title.trim()) base = asciiPart.trim();
+  const slug = base
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, '_')
+    .replace(/^_+|_+$/g, '')
+    .replace(/_+/g, '_') || 'example';
+  return slug + '.zy';
+}
+
+// Load a single-file example: find-or-create a tab by derived filename
+function loadSingleFileExample(ex) {
+  const filename = titleToFilename(ex.title);
+  const existing = files.find(f => f.name === filename);
+  if (existing) {
+    if (existing.dirty) {
+      if (!window.confirm(`'${filename}' has been modified.\nOverwrite with the original example?`)) {
+        switchTo(existing.id);
+        return;
+      }
+    }
+    existing.code = ex.code;
+    existing.dirty = false;
+    if (existing.id === activeId) {
+      editor.value = ex.code;
+      syncHighlight();
+      clearOutput();
+      saveStore();
+      renderFileTabs();
+    } else {
+      switchTo(existing.id);
+    }
+  } else {
+    newFile(filename, ex.code);
+  }
+}
+
 // Load a multi-file example: add support files, switch to last (main program)
 function loadMultiFileExample(exFiles) {
-  // Add all files except the last without switching
   for (let i = 0; i < exFiles.length - 1; i++) {
     addFile(exFiles[i].name, exFiles[i].code);
   }
-  // Switch to (or create) the last file — the main program
   const last = exFiles[exFiles.length - 1];
   const existing = files.find(f => f.name === last.name);
   if (existing) {
-    if (!existing.dirty) existing.code = last.code;
+    if (existing.dirty) {
+      if (!window.confirm(`'${existing.name}' has been modified.\nOverwrite with the original example?`)) {
+        switchTo(existing.id);
+        return;
+      }
+      existing.code = last.code;
+      existing.dirty = false;
+      saveStore();
+      renderFileTabs();
+    } else {
+      existing.code = last.code;
+    }
     switchTo(existing.id);
   } else {
     newFile(last.name, last.code);
@@ -1872,18 +1940,8 @@ function renderGrid() {
     card.addEventListener('click', () => {
       if (ex.files) {
         loadMultiFileExample(ex.files);
-        return;
-      }
-      const f = activeFile();
-      if (f && f.dirty) {
-        // Active file was modified → open example in a new tab
-        newFile(nextName('exam'), ex.code);
       } else {
-        // Pristine tab → load in place
-        editor.value = ex.code;
-        syncHighlight();
-        clearOutput();
-        if (f) { f.code = ex.code; f.dirty = false; saveStore(); renderFileTabs(); }
+        loadSingleFileExample(ex);
       }
     });
     gridEl.appendChild(card);

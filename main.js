@@ -669,7 +669,7 @@
     // Cinema fictional languages
     navi:         'nav',
     // Klingon pIqaD script
-    klingon_piqad:'tlh_iq',
+    klingon_piqad:'piqad',
     // Cross-references (shared manuals)
     castellano:   'es',      // Spain Spanish → same as Spanish
     portugues_eu: 'pt_eu',   // European Portuguese → own manual

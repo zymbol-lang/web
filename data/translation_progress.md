@@ -16,12 +16,21 @@
 
 ## Flujo de trabajo por idioma
 ```
-1. Lee manual_en.md
-2. Lee manual_es.md líneas 1-7 (referencia disclaimer bilingüe)
-3. Traduce y escribe el archivo
-4. python3 manual_compare.py manual_XX.md
-5. Corregir si hay errores
-6. Reportar resultado → esperar confirmación
+1. Borrar el archivo existente si lo hay: rm web/data/manual_XX.md
+2. Leer manual_en.md (contenido a traducir)
+3. Leer manual_es.md líneas 1-5 (patrón del disclaimer bilingüe)
+4. Crear el archivo nuevo traduciendo TODO:
+   - Disclaimer al INICIO: idioma destino + inglés
+   - Texto narrativo → traducido
+   - Strings en código → "Alice" → equivalente en idioma
+   - Comentarios en bloques de código → traducidos
+   - Nombres de variable → equivalentes en idioma
+   - Nombres de tipo en tabla → traducidos si aplica
+   - Números en sección Numeral Modes → si el idioma tiene sistema numérico propio
+   - Misma estructura exacta: 23 H2, 10 H3, mismos bloques con igual número de líneas
+5. python3 manual_compare.py manual_XX.md
+6. Corregir si hay errores
+7. Reportar resultado → esperar confirmación
 ```
 
 ---
@@ -127,34 +136,34 @@
 
 | Estado | Archivo | Idioma | Nota |
 |--------|---------|--------|------|
-| ❌ | manual_id.md | Bahasa Indonesia | |
-| ❌ | manual_ja.md | 日本語 | |
-| ❌ | manual_ko.md | 한국어 | |
-| ❌ | manual_ms.md | Bahasa Melayu | |
-| ❌ | manual_my.md | မြန်မာဘာသာ | ★ Myanmar |
-| ❌ | manual_th.md | ภาษาไทย | ★ Thai |
-| ❌ | manual_vi.md | Tiếng Việt | |
+| ✅ | manual_id.md | Bahasa Indonesia | |
+| ✅ | manual_ja.md | 日本語 | |
+| ✅ | manual_ko.md | 한국어 | |
+| ✅ | manual_ms.md | Bahasa Melayu | |
+| ✅ | manual_my.md | မြန်မာဘာသာ | ★ Myanmar ⚠️ |
+| ✅ | manual_th.md | ภาษาไทย | ★ Thai ⚠️ |
+| ✅ | manual_vi.md | Tiếng Việt | |
 | ✅ | manual_zh.md | 中文 | |
 
 ## Lote 9 — Africanas (14)
 
 | Estado | Archivo | Idioma |
 |--------|---------|--------|
-| ❌ | manual_af.md | Afrikaans |
-| ❌ | manual_bm.md | Bamanankan |
-| ❌ | manual_ff.md | Fulfulde |
-| ❌ | manual_ha.md | Hausa |
-| ❌ | manual_ig.md | Igbo |
-| ❌ | manual_ln.md | Lingála |
-| ❌ | manual_om.md | Oromoo |
-| ❌ | manual_sn.md | chiShona |
-| ❌ | manual_so.md | Soomaali |
-| ❌ | manual_sq.md | Shqip |
-| ❌ | manual_sw.md | Kiswahili |
-| ❌ | manual_wo.md | Wolof |
-| ❌ | manual_xh.md | isiXhosa |
-| ❌ | manual_yo.md | Yorùbá |
-| ❌ | manual_zu.md | isiZulu |
+| ✅ | manual_af.md | Afrikaans |
+| ✅ | manual_bm.md | Bamanankan |
+| ✅ | manual_ff.md | Fulfulde |
+| ✅ | manual_ha.md | Hausa |
+| ✅ | manual_ig.md | Igbo |
+| ✅ | manual_ln.md | Lingála |
+| ✅ | manual_om.md | Oromoo |
+| ✅ | manual_sn.md | chiShona |
+| ✅ | manual_so.md | Soomaali |
+| ✅ | manual_sq.md | Shqip |
+| ✅ | manual_sw.md | Kiswahili |
+| ✅ | manual_wo.md | Wolof |
+| ✅ | manual_xh.md | isiXhosa |
+| ✅ | manual_yo.md | Yorùbá |
+| ✅ | manual_zu.md | isiZulu |
 
 ## Lote 10 — Indígenas Américas (7)
 
@@ -193,8 +202,8 @@
 | ❌ | manual_hval.md | High Valyrian | |
 | ❌ | manual_mando.md | Mando'a | |
 | ❌ | manual_myn.md | Maya numerals | ★ numerales mayas |
-| ❌ | manual_tlh.md | Klingon (Latin) | |
-| ❌ | manual_tlh_iq.md | Klingon (pIqaD) | ★ chars pIqaD reales |
+| ✅ | manual_tlh.md | Klingon Hol (Latin) | |
+| ✅ | manual_piqad.md | Klingon (pIqaD) | ★ chars pIqaD reales · web→piqad ✔️ |
 | ❌ | manual_way.md | Warlpiri | |
 | ❌ | manual_yno.md | Yiddish | |
 

@@ -1,4 +1,4 @@
-> **הצהרה:** תיעוד זה נוצר בסיוע בינה מלאכותית (AI).
+> .(AI) **הצהרה:** תיעוד זה נוצר בסיוע בינה מלאכותית 
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 >
