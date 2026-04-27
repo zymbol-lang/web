@@ -1,74 +1,617 @@
-# Ingcaciso Emfutshane ye-Zymbol-Lang
-
-**Zymbol-Lang** lulwimi lwekhompyutha lweempawu. Ayisebenzisi amagama angundoqo — yonke into yimpawu. Isebenza ngendlela efanayo kuyo nayiphi na ilwimi loluntu.
-
-- Akukho magama angundoqo (`if`, `while`, `return` akakho — iimpawu kuphela `?`, `@`, `<~`)
-- Unicode epheleleyo — amagama kulo naliphi na ulwimi okanye i-emoji 👋
-- Ulwimi-agnostiki — ikhodi ifana kuzo zonke iilwimi
+> **Isaziso:** Olu xwebhu lwenziwe ngoncedo lwengqondo eyenziweyo (AI).
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Isalathiso esisemthethweni yi **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** kwindawo yokugcina itoliki.
 
 ---
 
-## Iinguqu neziConstant
+# Isikhokelo seZymbol-Lang
+
+**Zymbol-Lang** lulwimi lwenkqubo olusemqondweni. Akukho magama angundoqo — yonke into luphawu. Lusebenza ngendlela efanayo kulo naluphi na ulwimi lomntu.
+
+- Akukho `if`, `while`, `return` — kuphela `?`, `@`, `<~`
+- Unicode epheleleyo — izichongi kulo naluphi na ulwimi okanye i-emoji
+- Ayixhomekanga kulwimi lomntu — ikhowudi iyafana kuyo yonke indawo
+
+**Uguqulelo lwetoliki**: v0.0.4 | **Ukugubungela uvavanyo**: 393/393 (ukulingana kweTW ↔ VM)
+
+---
+
+---
+
+## Izinto eziguquguqukayo neziZinzileyo
 
 ```zymbol
-x = 10              // inguqu (iyatshintsha)
-PI := 3.14159       // constant — impazamo ukuphinda unikezele
-igama = "Ana"
-iyasebenza = #1     // ubunyaniso be-boolean
+x = 10              // into eguquguqukayo eguqukayo
+PI := 3.14159       // into ezingaguqukiyo — ukwabela kwakhona yimpazamo yexesha lokusebenza
+igama = "Alice"
+isebenzayo = #1      // Boolean eyinyani
 👋 := "Molo"
 ```
 
 ```zymbol
-x = 10
+x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
 
 ---
 
-## Iimodi Zenombolo
+## Iindidi Zedatha
 
-I-Zymbol inokubonakalisa amanani kwi**Unicode yezinhlobo zenombolo ezingama-69** — Devanagari, Arabic-Indian, Thai, Klingon pIqaD, Mathematics Eluqilima, izicubu ze-LCD nazo ezinye. Imodi esebenzayo ithinta kuphela i-output ye-`>>`; i-arithmetic yangaphakathi ihlala iyibinary.
-
-### Ukuvula uhlobo
-
-Bhala inombolo `0` ne-`9` yohlobo oluqondiweyo ngaphakathi kwe-`#…#`:
+| Uhlobo | Ubhalo oluqhelekileyo | Ithegi `#?` | Amanqaku |
+|--------|------------------------|-------------|----------|
+| Inani elipheleleyo | `42`, `-7` | `###` | 64-bit esayiniweyo |
+| Inani elidadayo | `3.14`, `1.5e10` | `##.` | Ubhalo lwenzululwazi luvumelekile |
+| Umtya | `"umbhalo"` | `##"` | Ukufakelwa: `"Molo {igama}"` |
+| Uhambo | `'A'` | `##'` | Uhambo olunye lweUnicode |
+| Boolean | `#1`, `#0` | `##?` | ASIngamanani — `#1 ≠ 1` |
+| Uluhlu | `[1, 2, 3]` | `##]` | Izinto ezifanayo |
+| Ityuphu | `(a, b)` | `##)` | Ngokwendawo |
+| Ityuphu enegama | `(x: 1, y: 2)` | `##)` | Amasimi anegama |
+| Umsebenzi | isalathiso somsebenzi onedigama | `##()` | Inqanaba lokuqala; ibonisa `<funct/N>` |
+| Iambda | `x -> x * 2` | `##->` | Inqanaba lokuqala; ibonisa `<lambd/N>` |
 
 ```zymbol
-#०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // Arabic-Indic  (U+0660–U+0669)
-#๐๙#    // Thai          (U+0E50–U+0E59)
-#09#    // reset to ASCII
+// Uhlolo lobuchule — ibuyisela (uhlobo, amanani, ixabiso)
+imeta = 42#?
+>> imeta ¶         // → (###, 2, 42)
+t = imeta[1]
+>> t ¶            // → ###
 ```
 
-### I-output namanani e-boolean
+---
+
+---
+
+## Imveliso kunye neNgeniso
+
+```zymbol
+>> "Molo" ¶                       // ¶ okanye \\ kumgca omtsha ocacileyo
+>> "a=" a " b=" b ¶               // ukubeka ecaleni — amaxabiso amaninzi
+>> (arr$#) ¶                      // abasebenzi be-postfix bafuna ( ) ngaphakathi >>
+
+<< igama                           // funda kwinto eguquguqukayo (ngaphandle kwesicelo)
+<< "Faka igama lakho: " igama      // ngesicelo
+```
+
+> `¶` (AltGr+R kwibhodi yezitshixo yaseSpain) kunye `\\` ziyafana kumgca omtsha.
+
+---
+
+## Abasebenzi
+
+```zymbol
+// Izibalo — sebenzisa izabelo; abasebenzi abathile banezinto ezingaqhelekanga ngokuthe ngqo ngaphakathi >>
+a = 10
+b = 3
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (ukwahlulahlula inani elipheleleyo)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (ukunyusela amandla)
+
+// Ukuthelekisa
+a == b    // #0    
+a <> b    // #1    
+a < b     // #0
+a <= b    // #0   
+a > b     // #1    
+a >= b    // #1
+
+// Ingqiqo
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
+```
+
+---
+
+## Imitya
+
+```zymbol
+// Iindlela ezimbini zokudibanisa
+igama = "Alice"
+n = 42
+
+>> "Molo " igama " unayo " n ¶       // ukubeka ecaleni — ngaphakathi >>
+inkcazo = "Molo {igama}, unayo {n}"   // ukufakelwa — naphi na
+```
+
+```zymbol
+s = "Molo Lizwe"
+ubude = s$#                  // 9
+isahluko = s$[1..4]          // "Molo"  (isiseko-1, isiphelo siqukiwe)
+ikhona = s$? "Lizwe"         // #1
+iziqwenga = "a,b,c,d"$/ ','  // [a, b, c, d]  (sahlula ngesahluli)
+itshintshiwe = s$~~["a":"o"] // "Molo Lizwo"
+itshintshiwe1 = s$~~["a":"o":1] // "Molo Lizwo" (ii-N zokuqala kuphela)
+```
+
+> `+` yeyamanani kuphela. Kwimitya, sebenzisa `,`, ukubeka ecaleni, okanye ukufakelwa.
+
+---
+
+---
+
+## Ukuhamba kolawulo
+
+```zymbol
+x = 7
+
+? x > 0 { >> "ulungile" ¶ }
+
+? x > 100 {
+    >> "ikhulu" ¶
+} _? x > 0 {
+    >> "ulungile" ¶
+} _? x == 0 {
+    >> "uziro" ¶
+} _ {
+    >> "ugwenxa" ¶
+}
+```
+
+> Iibrachethi ezigobileyo `{ }` **ziyanyanzeleka** nokuba kwingxelo enye.
+
+---
+
+---
+
+## Ukudibanisa (Match)
+
+```zymbol
+// Imida
+amanqaku = 85
+ibakala = ?? amanqaku {
+    90..100 : 'A'
+    80..89  : 'B'
+    70..79  : 'C'
+    _       : 'F'
+}
+>> ibakala ¶     // → B
+
+// Imitya
+umbala = "bomvu"
+ikhowudi = ?? umbala {
+    "bomvu"  : "#FF0000"
+    "luhlaza" : "#00FF00"
+    _        : "#000000"
+}
+
+// Iipatheni zokuthelekisa
+ubushushu = -5
+imeko = ?? ubushushu {
+    < 0  : "umkhenkce"
+    < 20 : "ingqele"
+    < 35 : "kufudumele"
+    _    : "kushushu"
+}
+>> imeko ¶       // → umkhenkce
+
+// Uhlobo lwengxelo (iibhloko)
+?? n {
+    0        : { >> "uziro" ¶ }
+    _? n < 0 : { >> "ugwenxa" ¶ }
+    _        : { >> "ulungile" ¶ }
+}
+```
+
+---
+
+## Imijikelo
+
+```zymbol
+@ i:0..4  { >> i " " }        // umda obandakanyiweyo:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // ngenyathelo:          1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // umva:                 5 4 3 2 1 0
+
+n = 1
+@ n <= 64 { n *= 2 }
+>> n ¶                        // → 128  (ngoxa)
+
+iziqhamo = ["apile", "ipeyile", "umdiliya"]
+@ i:iziqhamo { >> i ¶ }       // kwinto nganye kuluhlu
+
+@ u:"molo" { >> u "-" }
+>> ¶                          // → m-o-l-o-  (kuhambo ngalunye kumtya)
+
+@ i:1..10 {
+    ? i % 2 == 0 { @> }       // @> qhubeka
+    ? i > 7 { @! }            // @! yaphula
+    >> i " "
+}
+>> ¶                          // → 1 3 5 7
+
+// Umjikelo ongapheliyo
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Umjikelo oneleyibhile (ukwaphula okuzinzileyo)
+isibali = 0
+@:ngaphandle {
+    isibali++
+    ? isibali >= 3 { @:ngaphandle! }
+}
+>> isibali ¶                  // → 3
+```
+
+---
+
+---
+
+## Imisebenzi
+
+```zymbol
+dibanisa(a, b) { <~ a + b }
+>> dibanisa(3, 4) ¶   // → 7
+
+i-factor(n) {
+    ? n <= 1 { <~ 1 }
+    <~ n * i-factor(n - 1)
+}
+>> i-factor(5) ¶      // → 120
+```
+
+Imisebenzi in **umda owahlukileyo** — ayikwazi ukufunda izinto ezigugileyo zangaphandle. Sebenzisa iiparamitha zemveliso `<~>` ukuguqula izinto eziguquguqukayo zomenzi wefoni:
+
+```zymbol
+tshintshana(a<~, b<~) {
+    okwethutyana = a
+    a = b
+    b = okwethutyana
+}
+x = 10
+y = 20
+tshintshana(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> Imisebenzi enegama **ngamaxabiso enqanaba lokuqala** — thumela ngokuthe ngqo: `amanani$> phinda kabini`. `x -> fn(x)` nayo isebenza.
+
+---
+
+---
+
+## Iambda kunye nokuValwa
+
+```zymbol
+phinda kabini = x -> x * 2
+dibanisa = (a, b) -> a + b
+>> phinda kabini(5) ¶   // → 10
+>> dibanisa(3, 7) ¶     // → 10
+
+// Ibhloko yeambda
+hlela = x -> {
+    ? x > 0 { <~ "ulungile" }
+    _? x < 0 { <~ "ugwenxa" }
+    <~ "uziro"
+}
+
+// Ukuvalwa — ibamba umda wangaphandle
+into = 3
+phinda kathathu = x -> x * into
+>> phinda kathathu(7) ¶   // → 21
+
+// Umzi-mveliso
+yenza-isidityanisi(n) { <~ x -> x + n }
+dibanisa-ishumi = yenza-isidityanisi(10)
+>> dibanisa-ishumi(5) ¶    // → 15
+
+// Kuluhlu
+imisebenzi = [x -> x+1, x -> x*2, x -> x*x]
+>> imisebenzi[3](5) ¶      // → 25
+```
+
+---
+
+## Uluhlu
+
+Uluhlu **luyaguquguquka** kwaye luqulethe izinto **zohlobo olufanayo**.
+
+```zymbol
+uluhlu = [1, 2, 3, 4, 5]
+
+uluhlu[1]          // 1 — ukufikelela (isiseko-1: into yokuqala)
+uluhlu[-1]         // 5 — isalathiso esingalunganga (into yokugqibela)
+uluhlu$#           // 5 — ubude (sebenzisa (uluhlu$#) ngaphakathi >>)
+
+uluhlu = uluhlu$+ 6            // dibanisa → [1,2,3,4,5,6]
+uluhlu2 = uluhlu$+[2] 99       // faka kwindawo yesi-2 (isiseko-1)
+uluhlu3 = uluhlu$- 3           // susa ukubonakala kokuqala kwexabiso
+uluhlu4 = uluhlu$-- 3          // susa konke ukubonakala
+uluhlu5 = uluhlu$-[1]          // susa kwisalathiso 1 (into yokuqala)
+uluhlu6 = uluhlu$-[2..3]       // susa umda (isiseko-1, isiphelo siqukiwe)
+
+ikhona = uluhlu$? 3            // #1 — inayo
+izikhundla = uluhlu$?? 3       // [3] — zonke izalathiso zexabiso (isiseko-1)
+isiqwenga = uluhlu$[1..3]      // [1,2,3] — isiqwenga (isiseko-1, isiphelo siqukiwe)
+isiqwenga2 = uluhlu$[1:3]      // [1,2,3] — kuyafana, isintaksi esekwe kwinani
+
+ukunyuka = uluhlu$^+           // cwangcisa ukunyuka (izinto ezisisiseko kuphela)
+ukuhla = uluhlu$^-             // cwangcisa ukuhla (izinto ezisisiseko kuphela)
+
+// Uluhlu lweetyuphu ezinamagama/ngokwendawo — sebenzisa $^ ngeambda yokuthelekisa
+idatha = [(igama: "Carla", iminyaka: 28), (igama: "Ana", iminyaka: 25), (igama: "Bob", iminyaka: 30)]
+ngokweminyaka   = idatha$^ (a, b -> a.iminyaka < b.iminyaka)   // ukunyuka ngokweminyaka (<)
+ngokwegama   = idatha$^ (a, b -> a.igama > b.igama)         // ukuhla ngokwegama (>)
+>> ngokweminyaka[1].igama ¶   // → Ana
+>> ngokwegama[1].igama ¶      // → Carla
+
+// Uhlaziyo oluthe ngqo lwento (uluhlu kuphela)
+uluhlu[1] = 99              // yabela
+uluhlu[2] += 5              // oludityanisiweyo: +=  -=  *=  /=  %=  ^=
+
+// Uhlaziyo olusebenzayo — ibuyisela uluhlu olutsha; eyokuqala ayitshintshi
+uluhlu2 = uluhlu[2]$~ 99
+```
+
+> Bonke abasebenzi bengqokelela babuyisela **uluhlu olutsha**. Yabela kwakhona: `uluhlu = uluhlu$+ 4`.
+> `$+` ingadityaniswa: `uluhlu = uluhlu$+ 5$+ 6$+ 7`. Abanye abasebenzi basebenzisa izabelo eziphakathi.
+> **Isalathiso sisiseko-1**: `uluhlu[1]` yinto yokuqala; `uluhlu[0]` yimpazamo yexesha lokusebenza.
+> `$^+` / `$^-` icwangcisa **uluhlu lwezinto ezisisiseko** (amanani, imitya). Kuluhlu lweetyuphu, sebenzisa $^ ngeambda yokuthelekisa — isalathiso sifakwe kwiiambda (`<` = ukunyuka, `>` = ukuhla).
+
+**Isemantiki yexabiso** — ukwabela uluhlu kwenye into eguquguqukayo kudala ikopi ezimeleyo:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[1] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b ayichaphazelekanga
+```
+
+```zymbol
+// Uluhlu oluzinzileyo (isalathiso sisiseko-1)
+imatrix = [[1,2,3],[4,5,6],[7,8,9]]
+>> imatrix[2][3] ¶    // → 6  (umqolo 2, ikholamu 3)
+```
+
+---
+
+---
+
+## Ukuqhawulwa
+
+```zymbol
+// Uluhlu
+uluhlu = [10, 20, 30, 40, 50]
+[a, b, c] = uluhlu               // a=10  b=20  c=30
+[eyokuqala, *intsalela] = uluhlu // eyokuqala=10  intsalela=[20,30,40,50]
+[x, _, z] = [1, 2, 3]          // _ iyayikhangela
+
+// Ityuphu ngokwendawo
+inqaku = (100, 200)
+(px, py) = inqaku              // px=100  py=200
+
+// Ityuphu enegama
+umntu = (igama: "Ana", iminyaka: 25, isixeko: "Madrid")
+(igama: i, iminyaka: im) = umntu   // i="Ana"  im=25
+```
+
+---
+
+## Iityuphu
+
+Iityuphu zizikhongozeli **ezingagungqiyo** ezilandelelaneyo ezinokugcina amaxabiso **eendidi ezahlukeneyo**.
+Ngokwahlukileyo kuluhlu, izinto azinakuguqulwa emva kokudalwa.
+
+```zymbol
+// Ngokwendawo — iindidi ezixubeneyo zivumelekile
+inqaku = (10, 20)
+>> inqaku[1] ¶     // → 10
+
+idatha = (42, "molo", #1, 3.14)
+>> idatha[3] ¶      // → #1
+
+// Enegama
+umntu = (igama: "Alice", iminyaka: 25)
+>> umntu.igama ¶     // → Alice
+>> umntu[1] ¶        // → Alice  (isalathiso nayo iyasebenza, isiseko-1)
+
+// Ezizinzileyo
+indawo = (x: 10, y: 20)
+p = (indawo: indawo, ileyibhile: "imvelaphi")
+>> p.indawo.x ¶      // → 10
+```
+
+**Ukungaguquguquki** — nayiphi na imizamo yokuguqula into yetyuphu yimpazamo yexesha lokusebenza:
+
+```zymbol
+t = (10, 20, 30)
+// t[1] = 99    // ❌ impazamo yexesha lokusebenza: iityuphu aziguquki
+// t[1] += 5    // ❌ impazamo efanayo
+
+// Ityuphu enegama — yakha kwakhona ngokucacileyo
+umntu = (igama: "Alice", iminyaka: 25)
+ukhulu = (igama: umntu.igama, iminyaka: 26)
+>> umntu.iminyaka ¶   // → 25
+>> ukhulu.iminyaka ¶  // → 26
+```
+
+Ukufumana ixabiso eligqibeleleyo, sebenzisa `$~` (uhlaziyo olusebenzayo) — ibuyisela ityuphu **entsha**:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← eyokuqala ayitshintshanga
+>> t2 ¶    // → (10, 999, 30)
+```
+
+---
+
+---
+
+## Imisebenzi yenqanaba eliphezulu
+
+```zymbol
+amanani = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+ziphindwe kabini = amanani$> (x -> x * 2)               // imephu → [2,4,6…20]
+amanani-juu   = amanani$| (x -> x % 2 == 0)            // isihluzi → [2,4,6,8,10]
+izonke    = amanani$< (0, (uqokelelo, x) -> uqokelelo + x) // ukunciphisa → 55
+
+// Ukudibanisa ngeendlela eziphakathi
+inyathelo1 = amanani$| (x -> x > 3)
+inyathelo2 = inyathelo1$> (x -> x * x)
+>> inyathelo2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+
+// Imisebenzi enegama ingathunyelwa ngokuthe ngqo kwimisebenzi yenqanaba eliphezulu
+phinda kabini(x) { <~ x * 2 }
+ngaba ikhulu(x) { <~ x > 5 }
+r = amanani$> phinda kabini       // ✅ isalathiso esithe ngqo
+r = amanani$| ngaba ikhulu        // ✅ isalathiso esithe ngqo
+```
+
+---
+
+---
+
+## Umsebenzi wombhobho
+
+Icala lasekunene lihlala lifuna `_` njengendawo yokubamba yexabiso elibhobhileyo:
+
+```zymbol
+phinda kabini = x -> x * 2
+dibanisa = (a, b) -> a + b
+yongeza = x -> x + 1
+
+5 |> phinda kabini(_)        // → 10
+10 |> dibanisa(_, 5)         // → 15
+5 |> dibanisa(2, _)          // → 7
+
+// Ukudityaniswa
+r = 5 |> phinda kabini(_) |> yongeza(_) |> phinda kabini(_)
+>> r ¶    // → 22  (5→10→11→22)
+```
+
+---
+
+## Ukuphathwa kweempazamo
+
+```zymbol
+!? {
+    x = 10 / 0
+} :! ##Div {
+    >> "ukwahlulahlula ngo-zero" ¶
+} :! {
+    >> "enye impazamo: " _err ¶    // _err igcina umyalezo wempazamo
+} :> {
+    >> "ihlala isebenza" ¶
+}
+```
+
+| Uhlobo | Nini |
+|--------|------|
+| `##Div` | Ukwahlulahlula ngo-zero |
+| `##IO` | Ifayile / inkqubo |
+| `##Index` | Isalathiso ngaphandle kwemida |
+| `##Type` | Ukungangqinelani kohlobo |
+| `##Parse` | Ukuhlalutya idatha |
+| `##Network` | Iimpazamo zenethiwekhi |
+| `##_` | Nayiphi na impazamo (ibamba zonke) |
+
+---
+
+---
+
+## Iimodyuli
+
+```zymbol
+// lib/calc.zy — umzimba wemodyuli ungaphakathi kwebhrakethi
+# calc {
+    #> { dibanisa, get_PI }
+
+    _PI := 3.14159
+    dibanisa(a, b) { <~ a + b }
+    get_PI() { <~ _PI }
+}
+```
+
+```zymbol
+// main.zy
+<# ./lib/calc <= c    // isiteketiso siyanyanzeleka
+
+>> c::dibanisa(5, 3) ¶   // → 8
+pi = c::get_PI()
+>> pi ¶               // → 3.14159
+```
+
+```zymbol
+// Thumela ngegama elahlukileyo loluntu
+# ilayibrari_yam {
+    #> { _dibanisa_ngaphakathi <= isishwankathelo }
+
+    _dibanisa_ngaphakathi(a, b) { <~ a + b }
+}
+```
+
+```zymbol
+<# ./ilayibrari_yam <= m
+
+>> m::isishwankathelo(3, 4) ¶    // → 7  (igama langaphakathi _dibanisa_ngaphakathi lifihliwe)
+```
+
+> **Imigaqo yemodyuli**: ngaphakathi `# igama { }`, kuphela `#>`, iinkcazelo zomsebenzi, kunye neziqalisi zezinto eziguquguqukayo/ezingaguqukiyo eziqhelekileyo zivumelekile. Iinkcazo eziphunyezwayo (`>>`, `<<`, imijikelo, njl.) zibangela impazamo E013.
+
+---
+
+---
+
+## Iimowudi zamanani
+
+IZymbol ingabonisa amanani **kwiibhloko ezingama-69 zedijithi zeUnicode** — i-Devanagari, isiArabhu-Indiya, isiThai, i-Klingon pIqaD, iMathematika enobunkunkqele, amacandelo e-LCD, nokunye. Imowudi esebenzayo ichaphazela kuphela imveliso `>>`; izibalo zangaphakathi zihlala ziyi-binary.
+
+### Ukusebenzisa iskripthi
+
+Bhala iidijithi `0` kunye `9` zescript ekujoliswe kuyo ngaphakathi `#…#`:
+
+```zymbol
+#०९#    // i-Devanagari   (U+0966–U+096F)
+#٠٩#    // isiArabhu-Indiya (U+0660–U+0669)
+#๐๙#    // isiThai        (U+0E50–U+0E59)
+#09#    // setha kwakhona kwi-ASCII
+```
+
+---
+
+### Imveliso kunye neeBoolean
 
 ```zymbol
 x = 42
->> x ¶          // → 42   (ASCII default)
+>> x ¶          // → 42   (i-ASCII emiselweyo)
 
 #०९#
 >> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४
+>> 3.14 ¶       // → ३.१४   (ichaphaza lokwahlulahlula lihlala liyi-ASCII)
 >> 1 + 2 ¶      // → ३
 
-// Boolean: # i-prefix ihlala iyiASCII, inombolo iyazisebenzela
->> #1 ¶         // → #१
->> #0 ¶         // → #०
+// IiBoolean: isimaphambili # sihlala siyi-ASCII, idijithi iyazilungisa
+>> #1 ¶         // → #१   (inyani kwi-Devanagari)
+>> #0 ¶         // → #०   (ubuxoki — yahlukile ku ० inani elipheleleyo uziro)
 
 x = 28 > 4
->> x ¶          // → #१
+>> x ¶          // → #१   (isiphumo sokuthelekisa silandela imowudi esebenzayo)
 ```
 
-### Izinombolo zomthombo kwikhodi yomthombo
+---
 
-Izinombolo zohlobo oluphina oluxhaswayo zizinhlobo ezivumelekileyo — kwizivingci, modulo, uthelekiso:
+## Iidijithi zemveli kwikhowudi yemvelaphi
+
+Iidijithi zayo nayiphi na iskripthi exhaswayo zizibhalo ezisemthethweni — kwimida, kwimodyuli, ekuthelekisweni:
 
 ```zymbol
 #०९#
@@ -81,572 +624,91 @@ Izinombolo zohlobo oluphina oluxhaswayo zizinhlobo ezivumelekileyo — kwiziving
 }
 ```
 
-### Izinhlobo ze-boolean kwihlobo elihluphekilayo
+---
 
-`#` + inombolo `0` okanye `1` kwibloko iphina iyinhlobo ye-boolean evumelekileyo:
+### Izibhalo eziqhelekileyo zeBoolean kuyo nayiphi na iskripthi
+
+`#` + idijithi `0` okanye `1` kuyo nayiphi na ibhloko sisibhalo esisemthethweni seBoolean:
 
 ```zymbol
-#٠٩#
-نشط = #١
->> نشط ¶        // → #١
->> (#١ && #٠) ¶ // → #٠
+#०९#
+isebenzayo = #१        // iyafana ne #1
+>> isebenzayo ¶        // → #१
+>> (#१ && #०) ¶        // → #०
 ```
 
-> `#` ihlala **iyiASCII**. `#0` (amanga) ihlala yahluke ngokubonakala kwi-`0` (zero yenombolo yonke) kuyo yonke imodi.
+> `#` **siyi-ASCII ngamaxesha onke**. `#0` (ubuxoki) sihlala sahluke ngokubonakalayo ku `0` (inani elipheleleyo uziro) kuyo yonke iskripthi.
 
 ---
 
-## Iintlobo zeData
+---
 
-| Uhlobo | Umzekelo | Impawu `#?` | Amanothi |
-|--------|----------|-------------|----------|
-| Inombolo yonke | `42`, `-7` | `###` | I-64-bit enengqinamba |
-| Inombolo enxibe | `3.14`, `1.5e10` | `##.` | Uhlobo lwesayensi luyamkelwa |
-| Umxholo | `"molo"` | `##"` | Ukuphinda: `"Molo {igama}"` |
-| Unobumba | `'A'` | `##'` | Unobumba omnye we-Unicode |
-| Ubunyaniso | `#1`, `#0` | `##?` | AYIZO iinombolo 1 no-0 |
-| Uluhlu | `[1, 2, 3]` | `##]` | Zonke izinto zohlobo olufanayo |
-| Tupel | `(a, b)` | `##)` | Ngomgangatho |
-| Tupel enegama | `(x: 1, y: 2)` | `##)` | Ukufikelela ngegama okanye ngenombolo |
+## Abasebenzi beDatha
 
 ```zymbol
-// Ukuhlola uhlobo — ibuya (uhlobo, iinombolo, ixabiso)
-meta = 42#?
->> meta ¶         // → (###, 2, 42)
-t = meta[0]
->> t ¶            // → ###
+// Uguqulo lohlobo
+##.42         // → 42.0  (kwiDada)
+###3.7        // → 4     (kwiNani elipheleleyo, songela)
+##!3.7        // → 3     (kwiNani elipheleleyo, sika)
+
+// Hlalutya umtya ube linani
+v1 = #|"42"|      // → 42  (Inani elipheleleyo)
+v2 = #|"3.14"|    // → 3.14  (Idada)
+v3 = #|"abc"|     // → "abc"  (ikhuselekile, akukho mpazamo)
+
+// Songela / sika
+i-pi = 3.14159265
+songe i-2 = #.2|i-pi|     // → 3.14  (songela kwiindawo ezi-2 zokwahlulahlula)
+songe i-4 = #.4|i-pi|     // → 3.1416
+sika i-2 = #!2|i-pi|       // → 3.14  (sika)
+
+// Ukufomatha amanani
+ifomathi = #,|1234567|   // → 1,234,567  (yahlulwe ngekoma)
+inzululwazi = #^|12345.678| // → 1.2345678e4  (inzululwazi)
+
+// Izibhalo eziqhelekileyo zesiseko
+a = 0x41         // → 'A'  (i-hexadecimal)
+b = 0b01000001   // → 'A'  (i-binary)
+c = 0o101        // → 'A'  (i-octal)
+
+// Imveliso yoguqulo lwesiseko
+i-hex = 0x|255|   // → "0x00FF"
+i-bin = 0b|65|    // → "0b1000001"
+i-oct = 0o|8|     // → "0o10"
+i-dec = 0d|255|   // → "0d0255"
 ```
 
 ---
-
-## Umxholo nokuNgenisa
-
-```zymbol
->> "Molo" ¶                       // ¶ okanye \\ unika umgca omtsha obhaliweyo
->> "a=" a " b=" b ¶               // izihloko ezininzi ngokubekana
->> (uluhlu$#) ¶                   // ii-operator zokugqibela zifuna izibiyeli
-
-<< igama                          // ngaphandle kwesikhokelo — ifunda kwinguqu
-<< "Igama lakho? " igama          // nesikhokelo
-```
-
-> `¶` okanye `\\` zilingana njengomgca omtsha.
-
----
-
-## Abaqhubi
-
-```zymbol
-// Izibalo — sebenzisa ukumiselwa; ezinye ii-operator zinazo iingxaki ngqo ku->>
-a = 10
-b = 3
-r1 = a + b    // 13     r2 = a - b    // 7
-r3 = a * b    // 30     r4 = a / b    // 3  (ukwahlula kwezinombolo ezipheleleyo)
-r5 = a % b    // 1      r6 = a ^ b    // 1000  (amandla)
-
-// Ukuthelekisa
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
-
-// Ingqiqo
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
-```
-
----
-
-## Iimigca
-
-```zymbol
-// Iindlela ezintathu zokudibana
-igama = "Ana"
-n = 42
-
-umyalezo = "Molo ", igama, "!"            // ikoma — kwimithetho
->> "Molo " igama " uneminyaka " n ¶       // ukubekana — ku->>
-incaciso = "Molo {igama}, uneminyaka {n}" // ukuphinda — kwimeko nayiphi na
-```
-
-```zymbol
-s = "Molo Hlabathi"
-ubude = s$#                  // 13
-ingxenye = s$[0..4]          // "Molo"  (ukuphela akufakiwe)
-unayo = s$? "Hlabathi"       // #1
-izahlulo = "a,b,c,d" / ','   // [a, b, c, d]
-tshintsha = s$~~["o":"O"]    // tshintsha zonke
-tshintsha1 = s$~~["o":"O":1] // N yokuqala kuphela
-```
-
-> `+` iyasetyenziswa kwiinombolo kuphela. Sebenzisa `,`, ukubekana, okanye ukuphinda kwizigama.
-
----
-
-## uLawulo lweSikhephe
-
-```zymbol
-x = 7
-
-? x > 0 { >> "ngenxa" ¶ }
-
-? x > 100 {
-    >> "nkulu" ¶
-} _? x > 0 {
-    >> "ngenxa" ¶
-} _? x == 0 {
-    >> "iqanda" ¶
-} _ {
-    >> "ngesantya" ¶
-}
-```
-
-> Iibhloko `{ }` **ziyafuneka**, nangona ngokomgca omnye.
-
----
-
-## Match
-
-```zymbol
-// Izikhala
-inombolo = 85
-uvavanyo = ?? inombolo {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
-}
->> uvavanyo ¶    // → B
-
-// Iimigca
-umbala = "bomvu"
-ikhodi = ?? umbala {
-    "bomvu"   : "#FF0000"
-    "luhlaza" : "#00FF00"
-    _         : "#000000"
-}
-
-// Izikhuseli
-ubushushu = -5
-imeko = ?? ubushushu {
-    _? ubushushu < 0  : "qabaka"
-    _? ubushushu < 20 : "banda"
-    _? ubushushu < 35 : "fudumele"
-    _                 : "shushu"
-}
->> imeko ¶    // → qabaka
-
-// Uhlobo lwentetho (iingalo zebhloko)
-?? n {
-    0       : { >> "iqanda" ¶ }
-    _? n < 0: { >> "ngesantya" ¶ }
-    _       : { >> "ngenxa" ¶ }
-}
-```
-
----
-
-## Izijikelezi
-
-```zymbol
-@ i:0..4  { >> i " " }        // isikhala esithe qelele: 0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // enyathelo: 1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // esibuyayo: 5 4 3 2 1 0
-
-n = 1
-@ n <= 64 { n *= 2 }
->> n ¶                        // → 128  (ngelixa)
-
-iziqhamo = ["Apile", "Umcimbi", "Igilivane"]
-@ isiqhamo:iziqhamo { >> isiqhamo ¶ }  // kwinto nganye
-
-@ u:"molo" { >> u "-" }
->> ¶                          // → m-o-l-o-  (kwinobumba nganye)
-
-@ i:1..10 {
-    ? i % 2 == 0 { @> }       // @> qhubeka
-    ? i > 7 { @! }             // @! yeka
-    >> i " "
-}
->> ¶                          // → 1 3 5 7
-
-// Isijikelezi esingenakuphela
-i = 0
-@ {
-    i++
-    ? i >= 5 { @! }
-    >> i " "
-}
->> ¶                          // → 1 2 3 4
-
-// Isijikelezi segama (yeka ngaphakathi)
-isibalwa = 0
-@ @ngaphandle {
-    isibalwa++
-    ? isibalwa >= 3 { @! ngaphandle }
-}
->> isibalwa ¶                 // → 3
-```
-
----
-
-## IiNto eziSebenzayo
-
-```zymbol
-hlela(a, b) { <~ a + b }
->> hlela(3, 4) ¶    // → 7
-
-isixa(inombolo) {
-    ? inombolo <= 1 { <~ 1 }
-    <~ inombolo * isixa(inombolo - 1)
-}
->> isixa(5) ¶    // → 120
-```
-
-Imisebenzi inamazwe ahlukanisiweyo — ayifikeleli iziguqu zangaphandle. Sebenzisa iipharamitha eziphuma `<~` ukuguqula iziguqu zomemezeli:
-
-```zymbol
-tshintsha(a<~, b<~) {
-    ixeshana = a
-    a = b
-    b = ixeshana
-}
-x = 10
-y = 20
-tshintsha(x, y)
->> "x=" x " y=" y ¶    // → x=20 y=10
-```
-
-> Imisebenzi enegama ayizizo izixhobo zexabiso lokuqala. Ukudlulisa njengempikiswano: `x -> igama(x)`.
-
----
-
-## Lambda neziValo
-
-```zymbol
-kabini = x -> x * 2
-isums = (a, b) -> a + b
->> kabini(5) ¶    // → 10
->> isums(3, 7) ¶  // → 10
-
-// Lambda enebhloko
-ukuhlela = x -> {
-    ? x > 0 { <~ "ngenxa" }
-    _? x < 0 { <~ "ngesantya" }
-    <~ "iqanda"
-}
-
-// IziValo — athatha iziguqu zangaphandle
-umlinganiselo = 3
-kathathu = x -> x * umlinganiselo
->> kathathu(7) ¶    // → 21
-
-// Ifektri yemisebenzi
-yenza_umdibanisi(n) { <~ x -> x + n }
-dibanisa10 = yenza_umdibanisi(10)
->> dibanisa10(5) ¶    // → 15
-
-// Kuluhlu
-imienzo = [x -> x+1, x -> x*2, x -> x*x]
->> imienzo[2](5) ¶    // → 25
-```
-
----
-
-## Uluhlu
-
-Uluhlu **luyaguquleka** kwaye lugcina izinto ze**uhlobo olufanayo**.
-
-```zymbol
-uluhlu = [1, 2, 3, 4, 5]
-
-uluhlu[0]          // 1 — ukufikelela (inombolo esiqalweni ngu-0)
-uluhlu[-1]         // 5 — inombolo emva (yokugqibela)
-uluhlu$#           // 5 — ubude (sebenzisa (uluhlu$#) ku->>)
-
-uluhlu = uluhlu$+ 6            // ukongeza → [1,2,3,4,5,6]
-uluhlu2 = uluhlu$+[2] 99       // faka kwi-inombolo 2
-uluhlu3 = uluhlu$- 3           // susa ukuvela kokuqala kwexabiso
-uluhlu4 = uluhlu$-- 3          // susa konke ukuvela
-uluhlu5 = uluhlu$-[0]          // susa kwi-inombolo
-uluhlu6 = uluhlu$-[1..3]       // susa isikhala (ukuphela akufakiwe)
-
-kukhona = uluhlu$? 3            // #1 — uqulathe
-iindawo = uluhlu$?? 3           // [2] — zonke iinombolo zexabiso
-sl = uluhlu$[0..3]              // [1,2,3] — isiqephu (ukuphela akufakiwe)
-sl2 = uluhlu$[0:3]              // [1,2,3] — uhlobo lwenani
-
-enyuka = uluhlu$^+              // ihlelelwe kwe-ascending (primitives kuphela)
-yehlela = uluhlu$^-             // ihlelelwe kwe-descending (primitives kuphela)
-
-// Uluhlu lwetupel — sebenzisa $^ nelelembu lokuthelekisa
-idatha = [(igama: "Carla", iminyaka: 28), (igama: "Ana", iminyaka: 25), (igama: "Bob", iminyaka: 30)]
-ngeminyaka  = idatha$^ (a, b -> a.iminyaka < b.iminyaka)    // ascending ngeminyaka
-negama = idatha$^ (a, b -> a.igama > b.igama)               // descending negama
->> ngeminyaka[0].igama ¶     // → Ana
->> negama[0].igama ¶         // → Carla
-
-// Buyekeza into ngqo (uluhlu kuphela)
-uluhlu[1] = 99              // nikela
-uluhlu[0] += 5              // intlanganiselo: +=  -=  *=  /=  %=  ^=
-
-// Buyekeza ngomsebenzi — ibuya uluhlu olutsha; owokuqala awuguquki
-uluhlu2 = uluhlu[1]$~ 99
-```
-
-> Zonke ii-operator zokuqokelela zibuya **uluhlu olutsha**. Phinda unikezele: `uluhlu = uluhlu$+ 4`.
-> Ii-operator azikwazi ukuxhomeka — sebenzisa imibophelelo emibini ehlukanisiweyo.
-> `$^+` / `$^-` zihlela **izinhlu zamaprimitive** (iinombolo, imigca). Kwizinhlu zetupel sebenzisa `$^` nelelembu lokuthelekisa — inhloso ikhona kulelembu (`<` = ascending, `>` = descending).
-
-**Izincwadi zexabiso** — ukumiselwa uluhlu kwenguqu yenye kukhiqiza ikopi ezimeleyo:
-
-```zymbol
-a = [1, 2, 3]
-b = a
-a[0] = 99
->> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b ayiguquki
-```
-
-```zymbol
-// Uluhlu olufakwe phakathi
-imetriksi = [[1,2,3],[4,5,6],[7,8,9]]
->> imetriksi[1][2] ¶    // → 6
-```
-
----
-
-## Ukuhlula
-
-```zymbol
-// Uluhlu
-uluhlu = [10, 20, 30, 40, 50]
-[a, b, c] = uluhlu               // a=10  b=20  c=30
-[lokuqala, *elinye] = uluhlu     // lokuqala=10  elinye=[20,30,40,50]
-[x, _, z] = [1, 2, 3]            // _ ilahliwe
-
-// Tupel wendawo
-iqhwelo = (100, 200)
-(px, py) = iqhwelo               // px=100  py=200
-
-// Tupel enegama
-umntu = (igama: "Ana", iminyaka: 25, isixeko: "Gqeberha")
-(igama: g, iminyaka: m) = umntu  // g="Ana"  m=25
-```
-
----
-
-## Tupel
-
-I-Tupel **ayiguquki** iikhonteyina ezihlelelwe ezinokuqukumbela amanani **ezinhlobo ezihlukeneyo**. Hayi njengezinhlu, izinto azikwazi ukuguqulwa emva kokudaliwa.
-
-```zymbol
-// Ngomgangatho
-iqhwelo = (10, 20)
->> iqhwelo[0] ¶    // → 10
-
-idatha = (42, "molo", #1, 3.14)
->> idatha[2] ¶     // → #1
-
-// Enegama
-umntu = (igama: "Alice", iminyaka: 25)
->> umntu.igama ¶    // → Alice
->> umntu[0] ¶       // → Alice  (inombolo iyasebenza nawe)
-
-// Efakwe phakathi
-indawo = (x: 10, y: 20)
-p = (indawo: indawo, isihloko: "izikhala")
->> p.indawo.x ¶    // → 10
-```
-
-**Ukungaguquki** — naliphi na izame zokuguqula into ye-tupel yimpazamo yexesha lokusebenza:
-
-```zymbol
-t = (10, 20, 30)
-// t[0] = 99    // ❌ impazamo yexesha lokusebenza: ii-tupel aziguquleki
-// t[0] += 5    // ❌ impazamo efanayo
-```
-
-Ukufumana ixabiso eliguquliweyo sebenzisa `$~` (buyekeza ngomsebenzi) — ibuya i-tupel **entsha**:
-
-```zymbol
-t = (10, 20, 30)
-t2 = t[1]$~ 999
->> t ¶     // → (10, 20, 30)   ← owokuqala awuguquki
->> t2 ¶    // → (10, 999, 30)
-
-// I-tupel enegama — yakha ngokucacileyo
-umntu = (igama: "Alice", iminyaka: 25)
-omdala  = (igama: umntu.igama, iminyaka: 26)
->> umntu.iminyaka ¶    // → 25
->> omdala.iminyaka ¶      // → 26
-```
-
----
-
-## IiNto eziSebenzayo zeNqanaba eliPhezulu
-
-> Ii-operator ze-HOF zifuna **i-lambda ye-inline** — akukho inguqu ye-lambda ethe ngqo.
-
-```zymbol
-iinombolo = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
-kabini      = iinombolo$> (x -> x * 2)                // map  → [2,4,6…20]
-amaphepha   = iinombolo$| (x -> x % 2 == 0)            // filter → [2,4,6,8,10]
-isums       = iinombolo$< (0, (uqokeleli, x) -> uqokeleli + x)  // reduce → 55
-
-// Ukuxhuma ngezigaba
-isigaba1 = iinombolo$| (x -> x > 3)
-isigaba2 = isigaba1$> (x -> x * x)
->> isigaba2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
-
-// Imisebenzi enegama ku-HOF — ibiyela ku-lambda
-kabini_f(x) { <~ x * 2 }
-r = iinombolo$> (x -> kabini_f(x))    // ✅
-```
-
----
-
-## Umqhubi Wepayiphi
-
-Uhlangothi lwesokudla luhlala ludinga `_` njengesibambelo sexabiso elidlulisiweyo:
-
-```zymbol
-kabini = x -> x * 2
-dibanisa = (a, b) -> a + b
-dibanisa_ibe = x -> x + 1
-
-5 |> kabini(_)              // → 10
-10 |> dibanisa(_, 5)        // → 15
-5 |> dibanisa(2, _)         // → 7
-
-// Ukuxhuma
-r = 5 |> kabini(_) |> dibanisa_ibe(_) |> kabini(_)
->> r ¶    // → 22  (5→10→11→22)
-```
-
----
-
-## uLawulo lweNgxaki
-
-```zymbol
-!? {
-    x = 10 / 0
-} :! ##Div {
-    >> "ukwahlula ngo-qanda" ¶
-} :! {
-    >> "enye impazamo: " _err ¶    // _err ibambe umlayezo wempazamo
-} :> {
-    >> "ihlala isebenza" ¶
-}
-```
-
-| Uhlobo | Xa kwenzeka |
-|--------|-------------|
-| `##Div` | Ukwahlula ngo-qanda |
-| `##IO` | Ifayile / Uhlelo |
-| `##Index` | Inombolo ingaphandle |
-| `##Type` | Impazamo yohlobo |
-| `##Parse` | Impazamo yokufunda |
-| `##Network` | Impazamo yenethiwekhi |
-| `##_` | Nayiphi na impazamo (catch-all) |
-
----
-
-## IiModyuli
-
-```zymbol
-// lib/calc.zy
-# calc
-
-#> { hlela, fumana_PI }    // Ukuthumela NGAPHAMBI kwezinto ezichaziweyo
-
-_PI := 3.14159
-hlela(a, b) { <~ a + b }
-fumana_PI() { <~ _PI }
-```
-
-```zymbol
-// main.zy
-<# ./lib/calc <= c    // I-alias iyafuneka
-
->> c::hlela(5, 3) ¶   // → 8
-pi = c::fumana_PI()
->> pi ¶               // → 3.14159
-```
-
-```zymbol
-// Thumela negama lomphakathi elikhethiweyo
-# umtapo_wolwazi
-#> { _hlela_ngaphakathi <= isums }
-
-_hlela_ngaphakathi(a, b) { <~ a + b }
-```
-
-```zymbol
-<# ./umtapo_wolwazi <= u
-
->> u::isums(3, 4) ¶    // → 7  (igama langaphakathi _hlela_ngaphakathi lifihlwe)
-```
-
----
-
-## Abaqhubi Bedata
-
-```zymbol
-// Guqula umxholo ube inombolo
-v1 = #|"42"|      // → 42  (Int)
-v2 = #|"3.14"|    // → 3.14  (Float)
-v3 = #|"abc"|     // → "abc"  (okhuselekileyo, akukho mpazamo)
-
-// Yenqamla / sika
-pi = 3.14159265
-r2 = #.2|pi|      // → 3.14  (yenqamla kwiindawo ezimbini zamadesimu)
-r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14  (sika)
-
-// Ukwakheka kwenombolo
-fmt = #,|1234567|      // → 1,234,567  (yahlulwa ngekhoma)
-sci = #^|12345.678|    // → 1.2345678e4  (sayensi)
-
-// Izinombolo zomsonto
-a = 0x41         // → 'A'  (hex)
-b = 0b01000001   // → 'A'  (binary)
-c = 0o101        // → 'A'  (octal)
-
-// Ukukhuphulelwa kokuguqulwa komsonto
-hex = 0x|255|    // → "0x00FF"
-bin = 0b|65|     // → "0b1000001"
-oct = 0o|8|      // → "0o10"
-dec = 0d|255|    // → "0d0255"
-```
 
 ---
 
 ## Ukudityaniswa kweShell
 
 ```zymbol
-umhla = <\ date +%Y-%m-%d \>     // ibamba i-stdout (equkethe \n yokugqibela)
+umhla = <\ date +%Y-%m-%d \>     // ibamba i-stdout (iquka \n ekugqibeleni)
 >> "Namhlanje: " umhla
 
-ifayile = "data.txt"
-okuqulethwe = <\ cat {ifayile} \>  // ukuphinda kwimiyalelo
+ifayile = "idatha.txt"
+umxholo = <\ cat {ifayile} \>      // ukufakelwa kwimiyalelo
 
-okuphuma = </"./iskripthi_elincinci.zy"/>  // qalisa iskripthi se-Zymbol elinye, bamba okuphuma
->> okuphuma
+imveliso = </"./subscript.zy"/>    // sebenzisa esinye iskripthi seZymbol, ibambe imveliso
+>> imveliso
 ```
 
-> `><` ibamba iimpikiswano ze-CLI njengesohlu lwemigca (tree-walker kuphela).
+> `><` ibamba iimpikiswano zeCLI njengoluhlu lwemitya (kuphela kumhambi womthi).
+
+---
 
 ---
 
 ## Umzekelo opheleleyo: FizzBuzz
 
 ```zymbol
-hlela(inombolo) {
-    ? inombolo % 15 == 0 { <~ "FizzBuzz" }
-    _? inombolo % 3  == 0 { <~ "Fizz" }
-    _? inombolo % 5  == 0 { <~ "Buzz" }
-    _ { <~ inombolo }
+hlela(inani) {
+    ? inani % 15 == 0 { <~ "FizzBuzz" }
+    _? inani % 3  == 0 { <~ "Fizz" }
+    _? inani % 5  == 0 { <~ "Buzz" }
+    _ { <~ inani }
 }
 
 @ i:1..20 { >> hlela(i) ¶ }
@@ -654,81 +716,104 @@ hlela(inombolo) {
 
 ---
 
-## Isalathisi seeMpawu
+---
 
-| Impawu | Umsebenzi | Impawu | Umsebenzi |
+## Isalathiso seMpawu
+
+| Uphawu | Umsebenzi | Uphawu | Umsebenzi |
 |--------|-----------|--------|-----------|
-| `=` | inguqu | `$#` | ubude |
-| `:=` | constant | `$+` | ukongeza |
-| `>>` | ukukhipha | `$+[i]` | faka kwi-inombolo |
-| `<<` | ukungena | `$-` | susa okuqala ngexabiso |
-| `¶` / `\\` | umgca omtsha | `$--` | susa konke ngexabiso |
-| `?` | ukuba (if) | `$-[i]` | susa kwi-inombolo |
-| `_?` | ukuba enye (elif) | `$-[i..j]` | susa isikhala |
-| `_` | enye / indawo | `$?` | uqulathe |
-| `??` | match | `$??` | fumana zonke iinombolo |
-| `@` | isijikelezi | `$[s..e]` | isiqephu |
-| `@!` | yeka (break) | `$>` | map |
-| `@>` | qhubeka (continue) | `$\|` | filter |
-| `->` | lambda | `$<` | reduce |
-| `uluhlu[i] = val` | buyekeza into (uluhlu kuphela) | `uluhlu[i] += val` | buyekeza intlanganiselo |
-| `uluhlu[i]$~` | buyekeza ngomsebenzi (ikopi entsha) | `$^+` | hlela kwe-ascending (primitives) |
-| `$^-` | hlela kwe-descending (primitives) | `$^` | hlela ngokuthelekisa (tupel) |
-| `<~` | buyela (return) | `!?` | zama (try) |
-| `\|>` | payiphi | `:!` | bamba (catch) |
-| `#1` | unyaniso (true) | `:>` | hlala (finally) |
-| `#0` | ubuxoki (false) | `$!` | yimpazamo |
-| `<#` | ngenisa (import) | `$!!` | sasa impazamo |
-| `#` | xela imodyuli | `#>` | thumela (export) |
-| `::` | biza imodyuli | `.` | fikelela intsimi |
-| `#\|..\|` | guqula inombolo | `#?` | metadata yohlobo |
-| `#.N\|..\|` | yenqamla | `#!N\|..\|` | sika |
-| `#,\|..\|` | ukwakheka kwekhoma | `#^\|..\|` | sayensi |
-| `#d0d9#` | ukushintsha imodi yenombolo | `#09#` | buyisela kwi-ASCII |
-| `<\ ..\>` | qalisa i-shell | `>\<` | iimpikiswano ze-CLI |
-
-## Imbali Yemikhuphelo
-
-### v0.0.3 — Unicode Izinhlobo Zenombolo & Ukulungiswa kwe-LSP _(Epreli 2026)_
-
-- **Yongezwa** Iibhloko ezingama-69 ze-Unicode zenombolo ngetoken yokushintsha imodi `#d0d9#`
-- **Yongezwa** Izinhlobo ze-boolean kwihlobo elihluphekilayo — `#१` / `#०`, `#١` / `#٠`, njalo njalo
-- **Yongezwa** Izinombolo ze-Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
-- **Yongezwa** I-VM opcode `SetNumeralMode` — ukulingana okugcweleyo ne-tree-walker
-- **Yongezwa** I-REPL ihlonela imodi yenombolo esebenzayo kwi-echo nakubonisa iziguquli
-- **Yalungiswa** I-output ye-`>>` ye-boolean ngoku ibandakanya `#` i-prefix (`#0` / `#1`) kwimodi zonke
-
-### v0.0.2_01 — Ukuphinda Igama Lezixhobo _(30 Mar 2026)_
-
-- **Yalungiswa** `c|..|` → `#,|..|` ne-`e|..|` → `#^|..|` — ngokuhambelana nosapho lwe-`#`
-- **Yongezwa** I-alias yokuthumela: ukuthumela kwakhona amalungu emoduli ngegama elahlukileyo
-
-### v0.0.2 — Ukuphinda Ukwakhiwa kwe-API yeZikhwama & Amaseti okufakela _(24 Mar 2026)_
-
-- **Yongezwa** Usapho lwezixhobo `$` oluhlangeneyo kwamarrays namagama (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Yongezwa** Ukuqhekeza kwamarrays, amatuples namatuples anegama
-- **Yongezwa** Amaziso amahle (`arr[-1]` = into yokugqibela)
-- **Yongezwa** Amaseti okufakela omthombo — Linux (deb/rpm/pkg/musl), macOS, Windows
-
-### v0.0.1-patch _(25 Mar 2026)_
-
-- **Yongezwa** Ukufakwa okuhlanganisiweyo `^=`
-- **Yalungiswa** Imeko yomda we-parser yezibalo; ukulungiswa kwamaxwebhu
-
-### v0.0.1 — Ukukhutshwa Kokuqala Kokulawuleka _(22 Mar 2026)_
-
-- Tree-walker interpreter + register VM (`--vm`, ~4× ngokukhawuleza, ~95% ukulingana)
-- Zonke izakhiwo zesiseko: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Izichazi ze-Unicode ezigcweleyo, inkqubo yemoduli, lambda, ukuvalwa, ukulawula iimpazamo
-- REPL, LSP, i-VS Code extension, formatter (`zymbol fmt`)
+| `=` | into eguquguqukayo | `$#` | ubude |
+| `:=` | into ezingaguqukiyo | `$+` | dibanisa (iyadityaniswa) |
+| `>>` | imveliso | `$+[i]` | faka kwisalathiso (isiseko-1) |
+| `<<` | ingeniso | `$-` | susa eyokuqala ngokwexabiso |
+| `¶` / `\\` | umgca omtsha | `$--` | susa zonke ngokwexabiso |
+| `?` | ukuba | `$-[i]` | susa kwisalathiso (isiseko-1) |
+| `_?` | ukungenjalo ukuba | `$-[i..j]` | susa umda (isiseko-1) |
+| `_` | ukungenjalo / i-wildcard | `$?` | inayo |
+| `??` | dibanisa | `$??` | fumana zonke izalathiso (isiseko-1) |
+| `@` | umjikelo | `$[s..e]` | isiqwenga (isiseko-1) |
+| `@ N { }` | umjikelo wama-N amaxesha | `$>` | imephu |
+| `@!` | yaphula | `$|` | isihluzi |
+| `@>` | qhubeka | `$<` | nciphisa |
+| `@:igama { }` | umjikelo oneleyibhile | `$/ isahluli` | ukwahlulahlula umtya |
+| `@:igama!` | yaphula eneleyibhile | `$++ a b c` | ukwakha ukudibanisa |
+| `@:igama>` | qhubeka eneleyibhile | `uluhlu[i>j>k]` | isalathiso sokukhangela |
+| `->` | iambda | `uluhlu[i] = ixabiso` | hlaziya into (uluhlu kuphela) |
+| `uluhlu[i] += ixabiso` | uhlaziyo oludityanisiweyo | `uluhlu[i]$~` | uhlaziyo olusebenzayo (ikopi entsha) |
+| `$^+` | cwangcisa ukunyuka (izinto ezisisiseko) | `$^-` | cwangcisa ukuhla (izinto ezisisiseko) |
+| `$^` | cwangcisa ngesithelekisi (iityuphu) | `<~` | buyisela |
+| `|>` | umbhobho | `!?` | zama |
+| `:!` | bamba | `:>` | ekugqibeleni |
+| `#1` | inyani | `#0` | ubuxoki |
+| `$!` | yimpazamo | `$!!` | sasaza impazamo |
+| `<#` | ngenisa | `#>` | thumela |
+| `#` | chaza imodyuli | `::` | bniza imodyuli |
+| `.` | ukufikelela kwindawo | `#?` | imethadatha yohlobo |
+| `#\|..\|` | hlalutya inani | `##.` | guqula kwiDada |
+| `###` | guqula kwiNani elipheleleyo (songela) | `##!` | guqula kwiNani elipheleleyo (sika) |
+| `#.N\|..\|` | songela | `#!N\|..\|` | sika |
+| `#,\|..\|` | ifomathi yekoma | `#^\|..\|` | inzululwazi |
+| `#d0d9#` | tshintsha imowudi yamanani | `#09#` | setha kwakhona kwi-ASCII |
+| `<\ ..\>` | sebenzisa ishell | `>\<` | iimpikiswano zeCLI |
+| `\ var` | tshabalalisa into eguquguqukayo ngokucacileyo | | |
 
 ---
 
-*Zymbol-Lang — Iimpawu. YeHlabathi. Ayitshintshi.*
+---
 
-> **Ingxelo:** Le ncwadi yenziwe yahunyushwa ngubuchule bobuchwephesha be-AI.
-> Ngokukhulu ukuzinikela kwenziwa ukuqinisekisa ukuchaneka, kodwa amanye amagama okanye imizekelo angazinza iimpazamo.
-> Isalathisi esibalulekiyo si-[MANUAL.md](https://github.com/zymbol-lang/interpreter) ku-interpreter repository.
->
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> The canonical reference is [MANUAL.md](https://github.com/zymbol-lang/interpreter) in the interpreter repository.
+## Ingxelo yoTshintsho loKhupho
+
+### v0.0.4 — Isalathiso sesiSeko-1, Imisebenzi yeNqanaba lokuQala & Iibhloko zeModyuli _(Epreli 2026)_
+
+- **Ukwaphula** Zonke izalathiso zatshintshwa zaba **sisiseko-1** — `uluhlu[1]` yinto yokuqala; `uluhlu[0]` yimpazamo yexesha lokusebenza
+- **Yongezwe** Imisebenzi enegama **ngamaxabiso enqanaba lokuqala** — thumela ngokuthe ngqo kwimisebenzi yenqanaba eliphezulu: `amanani$> phinda kabini`
+- **Yongezwe** **Isintaksi yebhloko** yemodyuli iyanyanzeleka: `# igama { ... }` — isintaksi ethe tyaba isusiwe
+- **Yongezwe** Isalathiso esinemilinganiselo emininzi: `uluhlu[i>j>k]` (ukukhangela), `uluhlu[p ; q]` (ukutsalwa okuthe tyaba)
+- **Yongezwe** Uguqulo lohlobo: `##.intetho` (Idada), `###intetho` (Inani elipheleleyo songela), `##!intetho` (Inani elipheleleyo sika)
+- **Yongezwe** Ukwahlulahlula umtya: `umtya$/ isahluli` — ibuyisela `Array(Umtya)`
+- **Yongezwe** Ukwakha ukudibanisa: `isiseko$++ a b c` — yongeza izinto ezininzi
+- **Yongezwe** Umjikelo wama-N amaxesha: `@ N { }` — phinda-phinda amaxesha N kanye
+- **Yongezwe** Isintaksi yemijikelo eneleyibhile: `@:igama { }`, `@:igama!`, `@:igama>` — ithatha indawo ye `@ @igama` / `@! igama`
+- **Yongezwe** Imigaqo yomda wento eguquguqukayo: izinto eziguquguqukayo `_igama` zinomda webhloko ochanekileyo; `\ var` itshabalalisa kwangoko
+- **Yongezwe** Iipatheni zokuthelekisa zokudibanisa: `< 0 :`, `> 5 :`, `== 42 :`, njl.
+- **Yongezwe** Impazamo yemodyuli E013: iinkcazo eziphunyezwayo kumzimba wemodyuli azivumelekanga
+- **Yilungisiwe** `take_variable` ayisakonakalisi izinto ezingaguqukiyo zemodyuli ngexesha lokubhala umva
+- **Yilungisiwe** `alias.CONST` ngoku isonjululwa ngokuchanekileyo; `#>` ingabonakala emva kweenkcazelo zomsebenzi
+- **VM** Ukulingana okupheleleyo: iimvavanyo ezingama-393/393 ziyaphumelela
+
+### v0.0.3 — Iinkqubo zeDijithi zeUnicode kunye nokuPhuculwa kweLSP _(Epreli 2026)_
+
+- **Yongezwe** Iibhloko ezingama-69 zedijithi zeUnicode ezinophawu lokutshintsha imowudi `#d0d9#`
+- **Yongezwe** Izibhalo eziqhelekileyo zeBoolean kuyo nayiphi na iskripthi — `#१` / `#०`, `#१` / `#०`, njl.
+- **Yongezwe** Iidijithi zeKlingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Yongezwe** `SetNumeralMode` i-opcode yeVM — ukulingana okupheleleyo nomhambi womthi
+- **Yongezwe** I-REPL iyayihlonipha imowudi yamanani esebenzayo kwi-echo kunye nokuboniswa kwezinto eziguquguqukayo
+- **Itshintshiwe** Imveliso yeBoolean `>>` ngoku ibandakanya isimaphambili `#` (`#0` / `#1`) kuzo zonke iimowudi
+
+### v0.0.2_01 — Ukubizwa ngokutsha komsebenzi _(30 Matshi 2026)_
+
+- **Itshintshiwe** `c|..|` → `#,|..|` kunye `e|..|` → `#^|..|` — ingqinelana nosapho lwesimaphambili sefomathi `#`
+- **Yongezwe** Isiteketiso sokuthumela — thumela kwakhona amalungu emodyuli phantsi kwegama elahlukileyo
+
+### v0.0.2 — Uyilo loTshintsho lwe-API yokuQokelela & abaFakeli _(24 Matshi 2026)_
+
+- **Yongezwe** Usapho olumanyanisiweyo lomsebenzi `$` woluhlu kunye nemitya (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Yongezwe** Isabelo sokudiliza kuluhlu, iityuphu, kunye neetyuphu ezinamagama
+- **Yongezwe** Izalathiso ezingalunganga (`uluhlu[-1]` = into yokugqibela)
+- **Yongezwe** Abafakeli bomthonyama — iLinux (deb/rpm/pkg/musl), i-macOS (Intel + Apple Silicon), iWindows (MSI, winget)
+
+### v0.0.1-patch _(25 Matshi 2026)_
+
+- **Yongezwe** Isabelo esidityanisiweyo `^=`
+- **Yilungisiwe** Iimeko ezisecaleni zezibalo zomhlalutyi; uhlengahlengiso loxwebhu
+
+### v0.0.1 — Ukuphuma kokuQala koLuntu _(22 Matshi 2026)_
+
+- Itoliki yomhambi womthi + i-VM yerejista (`--vm`, ~4× ngokukhawuleza, ~95% ukulingana)
+- Zonke izakhiwo ezingundoqo: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Izichongi zeUnicode ezipheleleyo, inkqubo yemodyuli, iiambda, ukuvalwa, ukuphathwa kwempazamo
+- I-REPL, i-LSP, ulwandiso lwe-VS Code, umbhali wefomathi (`zymbol fmt`)
+
+---
+
+_Zymbol-Lang — Isimboli. Jikelele. Ayiguquki._

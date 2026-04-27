@@ -49,10 +49,22 @@ function runCLI(file) {
 }
 
 // ─── Run one file with web interpreter ───────────────────────────────────────
-async function runWeb(src) {
+function makeModuleResolver(baseDir) {
+  return async (importPath) => {
+    try {
+      const absPath = resolve(baseDir, importPath + '.zy');
+      const src = readFileSync(absPath, 'utf8');
+      return { src, resolver: makeModuleResolver(dirname(absPath)) };
+    } catch {
+      return null;
+    }
+  };
+}
+
+async function runWeb(file, src) {
   let out = '';
   try {
-    await runZymbol(src, async () => '', text => { out += text; });
+    await runZymbol(src, async () => '', text => { out += text; }, makeModuleResolver(dirname(resolve(file))), file);
   } catch (e) {
     out += `[ERROR] ${e.message ?? e}`;
   }
@@ -79,7 +91,7 @@ for (const file of allFiles) {
   const relPath = file.replace(TEST_ROOT + '/', '');
 
   const cliOut  = normalize(runCLI(file));
-  const webOut  = normalize(await runWeb(src));
+  const webOut  = normalize(await runWeb(file, src));
 
   if (cliOut === webOut) {
     passed++;

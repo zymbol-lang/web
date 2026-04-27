@@ -1,21 +1,31 @@
+> **Uwaga:** Ta dokumentacja została stworzona przy pomocy sztucznej inteligencji (AI).
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Kanonicznym odniesieniem jest **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** w repozytorium interpretera.
+
+---
+
 # Podręcznik Zymbol-Lang
 
-**Zymbol-Lang** to symboliczny język programowania. Nie używa słów kluczowych — wszystko jest symbolem. Działa tak samo w każdym języku ludzkim.
+**Zymbol-Lang** to symboliczny język programowania. Bez słów kluczowych — wszystko jest symbolem. Działa identycznie w każdym języku ludzkim.
 
 - Brak `if`, `while`, `return` — tylko `?`, `@`, `<~`
 - Pełna obsługa Unicode — identyfikatory w dowolnym języku lub emoji
-- Niezależny od języka ludzkiego — kod jest identyczny w każdym języku
+- Niezależny od języka ludzkiego — kod jest identyczny wszędzie
+
+**Wersja interpretera**: v0.0.4 | **Pokrycie testami**: 393/393 (TW ↔ VM parytet)
 
 ---
 
 ## Zmienne i Stałe
 
 ```zymbol
-x = 10              // zmienna modyfikowalna
-PI := 3.14159       // stała — błąd przy ponownym przypisaniu
-nazwa = "Alice"
-aktywny = #1        // logiczna prawda
-👋 := "Witaj"
+x = 10              // zmienna — mutowalna
+PI := 3.14159       // stała — ponowne przypisanie jest błędem wykonania
+imie = "Alice"
+aktywny = #1        // prawda logiczna
+👋 := "Cześć"
 ```
 
 ```zymbol
@@ -36,20 +46,22 @@ x--       // 4
 
 | Typ | Literał | Tag `#?` | Uwagi |
 |-----|---------|----------|-------|
-| Int | `42`, `-7` | `###` | 64-bitowy ze znakiem |
+| Int | `42`, `-7` | `###` | 64-bitowa liczba ze znakiem |
 | Float | `3.14`, `1.5e10` | `##.` | Notacja naukowa OK |
-| String | `"tekst"` | `##"` | Interpolacja: `"Witaj {nazwa}"` |
-| Char | `'A'` | `##'` | Jeden znak Unicode |
-| Bool | `#1`, `#0` | `##?` | NIE numeryczne — `#1 ≠ 1` |
-| Array | `[1, 2, 3]` | `##]` | Jednorodne elementy |
+| String | `"tekst"` | `##"` | Interpolacja: `"Cześć {imie}"` |
+| Char | `'A'` | `##'` | Pojedynczy znak Unicode |
+| Bool | `#1`, `#0` | `##?` | NIE jest liczbowy — `#1 ≠ 1` |
+| Tablica | `[1, 2, 3]` | `##]` | Jednorodne elementy |
 | Krotka | `(a, b)` | `##)` | Pozycyjna |
-| Nazwana Krotka | `(x: 1, y: 2)` | `##)` | Nazwane pola |
+| Krotka Nazwana | `(x: 1, y: 2)` | `##)` | Nazwane pola |
+| Funkcja | referencja do nazwanej funkcji | `##()` | Pierwszoklasowa; wyświetlanie `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Pierwszoklasowa; wyświetlanie `<lambd/N>` |
 
 ```zymbol
-// Introspekcja typów — zwraca (typ, cyfry, wartość)
+// Introspekcja typu — zwraca (typ, cyfry, wartość)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
-t = meta[0]
+t = meta[1]
 >> t ¶            // → ###
 ```
 
@@ -58,33 +70,40 @@ t = meta[0]
 ## Wyjście i Wejście
 
 ```zymbol
->> "Witaj" ¶                      // ¶ lub \\ dla jawnej nowej linii
->> "a=" a " b=" b ¶               // zestawienie — wiele wartości
->> (arr$#) ¶                      // operatory postfiksowe wymagają ( )
+>> "Cześć" ¶                      // ¶ lub \\ dla jawnego nowego wiersza
+>> "a=" a " b=" b ¶               // juxtapozycja — wiele wartości
+>> (tab$#) ¶                      // operatory postfiksowe wymagają ( ) w >>
 
-<< nazwa                          // odczyt do zmiennej (bez promptu)
-<< "Podaj nazwę: " nazwa          // z promptem
+<< imie                           // odczyt do zmiennej (bez podpowiedzi)
+<< "Podaj imie: " imie            // z podpowiedzią
 ```
 
-> `¶` (AltGr+R na klawiaturze hiszpańskiej) i `\\` są równoważnymi znakami nowej linii.
+> `¶` (AltGr+R na klawiaturze hiszpańskiej) i `\\` są równoważnymi znakami nowego wiersza.
 
 ---
 
 ## Operatory
 
 ```zymbol
-// Arytmetyczne — używaj przypisań; niektóre operatory mają osobliwości bezpośrednio w >>
+// Arytmetyka — używaj przypisań; niektóre operatory mają osobliwości bezpośrednio w >>
 a = 10
 b = 3
-r1 = a + b    // 13     r2 = a - b    // 7
-r3 = a * b    // 30     r4 = a / b    // 3  (dzielenie całkowite)
-r5 = a % b    // 1      r6 = a ^ b    // 1000  (potęgowanie)
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (dzielenie całkowite)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (potęgowanie)
 
 // Porównanie
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
+a == b    // #0
+a <> b    // #1
+a < b      // #0
+a <= b    // #0
+a > b      // #1
+a >= b     // #1
 
-// Logiczne
+// Logika
 #1 && #0    // #0
 #1 || #0    // #1
 !#1         // #0
@@ -92,51 +111,50 @@ a <= b    // #0   a > b     // #1    a >= b   // #1
 
 ---
 
-## Ciągi Znaków
+## Łańcuchy
 
 ```zymbol
-// Trzy formy łączenia
-nazwa = "Alice"
+// Dwie formy łączenia
+imie = "Alice"
 n = 42
 
-msg = "Witaj ", nazwa, "!"            // przecinek — w przypisaniach
->> "Witaj " nazwa " masz " n ¶        // zestawienie — w >>
-desc = "Witaj {nazwa}, masz {n}"      // interpolacja — wszędzie
+>> "Cześć " imie " masz " n ¶        // juxtapozycja — w >>
+opis = "Cześć {imie}, masz {n}"      // interpolacja — wszędzie
 ```
 
 ```zymbol
 s = "Witaj Świecie"
-len = s$#                  // 13
-sub = s$[0..5]             // "Witaj"  (koniec wyłączny)
-has = s$? "Świecie"        // #1
-części = "a,b,c,d" / ','   // [a, b, c, d]
-rep = s$~~["a":"A"]        // zamień wszystkie
-rep1 = s$~~["a":"A":1]     // zamień pierwsze N
+dlugosc = s$#                  // 13
+pod = s$[1..5]                 // "Witaj"  (indeks od 1, koniec włącznie)
+czy = s$? "Świecie"            // #1
+czesci = "a,b,c,d"$/ ','       // [a, b, c, d]  (podziel według ogranicznika)
+zam = s$~~["i":"I"]            // zastąp wszystkie
+zam1 = s$~~["i":"I":1]         // zastąp pierwsze N
 ```
 
-> `+` jest tylko dla liczb. Używaj `,`, zestawienia lub interpolacji dla ciągów znaków.
+> `+` jest tylko dla liczb. Dla łańcuchów używaj juxtapozycji lub interpolacji.
 
 ---
 
-## Przepływ Sterowania
+## Sterowanie Przepływem
 
 ```zymbol
 x = 7
 
-? x > 0 { >> "dodatni" ¶ }
+? x > 0 { >> "dodatnie" ¶ }
 
 ? x > 100 {
-    >> "duży" ¶
+    >> "duże" ¶
 } _? x > 0 {
-    >> "dodatni" ¶
+    >> "dodatnie" ¶
 } _? x == 0 {
     >> "zero" ¶
 } _ {
-    >> "ujemny" ¶
+    >> "ujemne" ¶
 }
 ```
 
-> Nawiasy klamrowe `{ }` są **wymagane** nawet dla jednego wyrażenia.
+> Nawiasy klamrowe `{ }` są **obowiązkowe** nawet dla jednej instrukcji.
 
 ---
 
@@ -144,8 +162,8 @@ x = 7
 
 ```zymbol
 // Zakresy
-wynik = 85
-ocena = ?? wynik {
+punkty = 85
+ocena = ?? punkty {
     90..100 : 'A'
     80..89  : 'B'
     70..79  : 'C'
@@ -153,25 +171,25 @@ ocena = ?? wynik {
 }
 >> ocena ¶    // → B
 
-// Ciągi znaków
+// Łańcuchy
 kolor = "czerwony"
 kod = ?? kolor {
-    "czerwony" : "#FF0000"
-    "zielony"  : "#00FF00"
-    _          : "#000000"
+    "czerwony"  : "#FF0000"
+    "zielony"   : "#00FF00"
+    _           : "#000000"
 }
 
-// Strażnicy
+// Wzorce porównań
 temp = -5
 stan = ?? temp {
-    _? temp < 0  : "lód"
-    _? temp < 20 : "zimno"
-    _? temp < 35 : "ciepło"
-    _            : "gorąco"
+    < 0  : "lód"
+    < 20 : "zimno"
+    < 35 : "ciepło"
+    _    : "gorąco"
 }
 >> stan ¶    // → lód
 
-// Forma wyrażeniowa (blokowe ramiona)
+// Forma instrukcji (bloki ramion)
 ?? n {
     0       : { >> "zero" ¶ }
     _? n < 0: { >> "ujemne" ¶ }
@@ -184,23 +202,23 @@ stan = ?? temp {
 ## Pętle
 
 ```zymbol
-@ i:0..4  { >> i " " }        // zakres włączny:  0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // z krokiem:        1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // wstecz:           5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // zakres włącznie:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // z krokiem:         1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // wstecz:            5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
 >> n ¶                        // → 128  (while)
 
 owoce = ["jabłko", "gruszka", "winogrono"]
-@ f:owoce { >> f ¶ }          // for-each po tablicy
+@ f:owoce { >> f ¶ }          // for-each tablica
 
-@ c:"cześć" { >> c "-" }
->> ¶                          // → c-z-e-ś-ć-  (for-each po ciągu)
+@ c:"witaj" { >> c "-" }
+>> ¶                          // → w-i-t-a-j-  (for-each łańcuch)
 
 @ i:1..10 {
-    ? i % 2 == 0 { @> }       // @> kontynuacja
-    ? i > 7 { @! }             // @! przerwanie
+    ? i % 2 == 0 { @> }       // @> kontynuuj
+    ? i > 7 { @! }             // @! przerwij
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
@@ -214,13 +232,13 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Etykietowana pętla (zagnieżdżone przerwanie)
-count = 0
-@ @zewnetrzna {
-    count++
-    ? count >= 3 { @! zewnetrzna }
+// Pętla oznakowana (zagnieżdżone przerywanie)
+licznik = 0
+@:zewnetrzna {
+    licznik++
+    ? licznik >= 3 { @:zewnetrzna! }
 }
->> count ¶                    // → 3
+>> licznik ¶                    // → 3
 ```
 
 ---
@@ -238,7 +256,7 @@ silnia(n) {
 >> silnia(5) ¶    // → 120
 ```
 
-Funkcje mają **izolowany zakres** — nie mogą odczytywać zmiennych zewnętrznych. Używaj parametrów wyjściowych `<~` do modyfikowania zmiennych wywołującego:
+Funkcje mają **izolowany zakres** — nie mogą odczytywać zewnętrznych zmiennych. Używaj parametrów wyjściowych `<~` do modyfikowania zmiennych wywołującego:
 
 ```zymbol
 zamien(a<~, b<~) {
@@ -252,29 +270,29 @@ zamien(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Nazwane funkcje nie są wartościami pierwszej klasy. Aby przekazać jako argument: `x -> fn(x)`.
+> Nazwane funkcje są **wartościami pierwszoklasowymi** — przekazuj bezpośrednio: `liczby$> podwoj`. Opakowanie: `x -> fn(x)` jest również prawidłowe.
 
 ---
 
 ## Lambdy i Domknięcia
 
 ```zymbol
-podwojony = x -> x * 2
+podwoj = x -> x * 2
 suma = (a, b) -> a + b
->> podwojony(5) ¶    // → 10
->> suma(3, 7) ¶      // → 10
+>> podwoj(5) ¶    // → 10
+>> suma(3, 7) ¶   // → 10
 
 // Blokowa lambda
 klasyfikuj = x -> {
-    ? x > 0 { <~ "dodatni" }
-    _? x < 0 { <~ "ujemny" }
+    ? x > 0 { <~ "dodatnie" }
+    _? x < 0 { <~ "ujemne" }
     <~ "zero"
 }
 
-// Domknięcie — przechwytuje zakres zewnętrzny
-czynnik = 3
-potrojony = x -> x * czynnik
->> potrojony(7) ¶    // → 21
+// Domknięcie — przechwytuje zewnętrzny zakres
+wspolczynnik = 3
+potrojne = x -> x * wspolczynnik
+>> potrojne(7) ¶    // → 21
 
 // Fabryka
 make_adder(n) { <~ x -> x + n }
@@ -283,70 +301,70 @@ dodaj10 = make_adder(10)
 
 // W tablicach
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[2](5) ¶    // → 25
+>> ops[3](5) ¶    // → 25
 ```
 
 ---
 
 ## Tablice
 
-Tablice są **mutowalne** i przechowują elementy tego **samego typu**.
+Tablice są **mutowalne** i przechowują elementy **tego samego typu**.
 
 ```zymbol
-arr = [1, 2, 3, 4, 5]
+tab = [1, 2, 3, 4, 5]
 
-arr[0]          // 1 — dostęp (indeksacja od 0)
-arr[-1]         // 5 — ujemny indeks (ostatni)
-arr$#           // 5 — długość (używaj (arr$#) w >>)
+tab[1]          // 1 — dostęp (indeks od 1: pierwszy element)
+tab[-1]         // 5 — ujemny indeks (ostatni element)
+tab$#           // 5 — długość (używaj (tab$#) w >>)
 
-arr = arr$+ 6            // dołącz → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // wstaw na indeks 2
-arr3 = arr$- 3           // usuń pierwsze wystąpienie wartości
-arr4 = arr$-- 3          // usuń wszystkie wystąpienia
-arr5 = arr$-[0]          // usuń na indeksie
-arr6 = arr$-[1..3]       // usuń zakres (koniec wyłączny)
+tab = tab$+ 6            // dołącz → [1,2,3,4,5,6]
+tab2 = tab$+[2] 99       // wstaw na pozycję 2 (indeks od 1)
+tab3 = tab$- 3           // usuń pierwsze wystąpienie wartości
+tab4 = tab$-- 3          // usuń wszystkie wystąpienia
+tab5 = tab$-[1]          // usuń na indeksie 1 (pierwszy element)
+tab6 = tab$-[2..3]       // usuń zakres (indeks od 1, koniec włącznie)
 
-has = arr$? 3            // #1 — zawiera
-pos = arr$?? 3           // [2] — wszystkie indeksy wartości
-sl = arr$[0..3]          // [1,2,3] — wycinek (koniec wyłączny)
-sl2 = arr$[0:3]          // [1,2,3] — to samo, składnia oparta na liczbie
+czy = tab$? 3            // #1 — zawiera
+poz = tab$?? 3           // [3] — wszystkie indeksy wartości (indeks od 1)
+wycinek = tab$[1..3]     // [1,2,3] — wycinek (indeks od 1, koniec włącznie)
+wycinek2 = tab$[1:3]     // [1,2,3] — to samo, składnia zliczania
 
-asc = arr$^+             // posortowane rosnąco  (tylko typy prymitywne)
-desc = arr$^-            // posortowane malejąco (tylko typy prymitywne)
+rosnaco = tab$^+         // posortowano rosnąco  (tylko typy proste)
+malejaco = tab$^-        // posortowano malejąco (tylko typy proste)
 
-// Tablice krotek — użyj $^ z lambdą porównującą
-db = [(nazwa: "Carla", wiek: 28), (nazwa: "Ana", wiek: 25), (nazwa: "Bob", wiek: 30)]
-wg_wieku  = db$^ (a, b -> a.wiek < b.wiek)
-wg_nazwy  = db$^ (a, b -> a.nazwa > b.nazwa)
->> wg_wieku[0].nazwa ¶     // → Ana
->> wg_nazwy[0].nazwa ¶     // → Carla
+// Tablice krotek — używaj $^ z lambdą komparatora
+db = [(imie: "Carla", wiek: 28), (imie: "Ana", wiek: 25), (imie: "Bob", wiek: 30)]
+wg_wieku   = db$^ (a, b -> a.wiek < b.wiek)
+wg_imienia = db$^ (a, b -> a.imie > b.imie)
+>> wg_wieku[1].imie ¶     // → Ana
+>> wg_imienia[1].imie ¶   // → Carla
 
 // Bezpośrednia aktualizacja elementu (tylko tablice)
-arr[1] = 99              // przypisz
-arr[0] += 5              // złożone: +=  -=  *=  /=  %=  ^=
+tab[1] = 99              // przypisz
+tab[2] += 5              // złożone: +=  -=  *=  /=  %=  ^=
 
-// Aktualizacja funkcyjna — zwraca nową tablicę; oryginał bez zmian
-arr2 = arr[1]$~ 99
+// Aktualizacja funkcyjna — zwraca nową tablicę; oryginał niezmieniony
+tab2 = tab[2]$~ 99
 ```
 
-> Wszystkie operatory kolekcji zwracają **nową tablicę**. Przypisz z powrotem: `arr = arr$+ 4`.
-> Operatory nie mogą być łączone — używaj przypisań pośrednich.
-> `$^+` / `$^-` sortują **tablice prymitywne** (liczby, ciągi). Dla tablic krotek używaj `$^` z lambdą porównującą.
+> Wszystkie operatory kolekcji zwracają **nową tablicę**. Przypisz z powrotem: `tab = tab$+ 4`.
+> `$^+` / `$^-` sortują **tablice typów prostych** (liczby, łańcuchy). Dla tablic krotek używaj `$^` z lambdą komparatora.
+> **Indeksowanie od 1**: `tab[1]` jest pierwszym elementem; `tab[0]` jest błędem wykonania.
 
 **Semantyka wartości** — przypisanie tablicy do innej zmiennej tworzy niezależną kopię:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b nie zostaje zmienione
+>> b ¶    // → [1, 2, 3]   ← b nie jest dotknięte
 ```
 
 ```zymbol
-// Tablice zagnieżdżone
+// Zagnieżdżone tablice (indeksowanie od 1)
 macierz = [[1,2,3],[4,5,6],[7,8,9]]
->> macierz[1][2] ¶    // → 6
+>> macierz[2][3] ¶    // → 6  (wiersz 2, kolumna 3)
 ```
 
 ---
@@ -355,64 +373,64 @@ macierz = [[1,2,3],[4,5,6],[7,8,9]]
 
 ```zymbol
 // Tablica
-arr = [10, 20, 30, 40, 50]
-[a, b, c] = arr              // a=10  b=20  c=30
-[pierwsza, *reszta] = arr    // pierwsza=10  reszta=[20,30,40,50]
+tab = [10, 20, 30, 40, 50]
+[a, b, c] = tab              // a=10  b=20  c=30
+[pierwsza, *reszta] = tab    // pierwsza=10  reszta=[20,30,40,50]
 [x, _, z] = [1, 2, 3]        // _ odrzuca
 
 // Krotka pozycyjna
 punkt = (100, 200)
 (px, py) = punkt             // px=100  py=200
 
-// Nazwana krotka
-osoba = (nazwa: "Ana", wiek: 25, miasto: "Madryt")
-(nazwa: n, wiek: w) = osoba  // n="Ana"  w=25
+// Krotka nazwana
+osoba = (imie: "Ana", wiek: 25, miasto: "Madrid")
+(imie: i, wiek: w) = osoba   // i="Ana"  w=25
 ```
 
 ---
 
 ## Krotki
 
-Krotki są **niezmiennymi** kontenerami porządkowanymi, które mogą przechowywać wartości **różnych typów**. W przeciwieństwie do tablic, elementy nie mogą być zmieniane po utworzeniu.
+Krotki są **niezmiennymi** uporządkowanymi kontenerami, które mogą przechowywać wartości **różnych typów**. W przeciwieństwie do tablic, elementów nie można zmieniać po utworzeniu.
 
 ```zymbol
-// Pozycyjna
+// Pozycyjna — dozwolone typy mieszane
 punkt = (10, 20)
->> punkt[0] ¶    // → 10
+>> punkt[1] ¶    // → 10
 
-dane = (42, "cześć", #1, 3.14)
->> dane[2] ¶     // → #1
+dane = (42, "hello", #1, 3.14)
+>> dane[3] ¶     // → #1
 
 // Nazwana
-osoba = (nazwa: "Alice", wiek: 25)
->> osoba.nazwa ¶    // → Alice
->> osoba[0] ¶       // → Alice  (indeks też działa)
+osoba = (imie: "Alice", wiek: 25)
+>> osoba.imie ¶    // → Alice
+>> osoba[1] ¶      // → Alice  (indeks też działa, od 1)
 
 // Zagnieżdżona
-pos = (x: 10, y: 20)
-p = (pos: pos, etykieta: "poczatek")
->> p.pos.x ¶        // → 10
+poz = (x: 10, y: 20)
+p = (poz: poz, etykieta: "poczatek")
+>> p.poz.x ¶        // → 10
 ```
 
-**Niezmienność** — każda próba modyfikacji elementu krotki jest błędem czasu wykonania:
+**Niezmienność** — każda próba zmodyfikowania elementu krotki jest błędem wykonania:
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ błąd czasu wykonania: krotki są niezmienne
-// t[0] += 5    // ❌ ten sam błąd
+// t[1] = 99    // ❌ błąd wykonania: krotki są niezmienne
+// t[1] += 5    // ❌ ten sam błąd
 ```
 
 Aby uzyskać zmodyfikowaną wartość, użyj `$~` (aktualizacja funkcyjna) — zwraca **nową** krotkę:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[1]$~ 999
->> t ¶     // → (10, 20, 30)   ← oryginał bez zmian
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← oryginał niezmieniony
 >> t2 ¶    // → (10, 999, 30)
 
-// Nazwana krotka — przebuduj jawnie
-osoba = (nazwa: "Alice", wiek: 25)
-starsza  = (nazwa: osoba.nazwa, wiek: 26)
+// Krotka nazwana — przebuduj jawnie
+osoba = (imie: "Alice", wiek: 25)
+starsza  = (imie: osoba.imie, wiek: 26)
 >> osoba.wiek ¶    // → 25
 >> starsza.wiek ¶  // → 26
 ```
@@ -421,42 +439,42 @@ starsza  = (nazwa: osoba.nazwa, wiek: 26)
 
 ## Funkcje Wyższego Rzędu
 
-> Operatory FWR wymagają **inline lambdy** — zmienne lambda przekazane bezpośrednio nie działają.
-
 ```zymbol
 liczby = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 podwojone  = liczby$> (x -> x * 2)                // map  → [2,4,6…20]
-parzyste   = liczby$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
-razem      = liczby$< (0, (acc, x) -> acc + x)     // reduce → 55
+parzyste   = liczby$| (x -> x % 2 == 0)           // filtr → [2,4,6,8,10]
+suma_all   = liczby$< (0, (acc, x) -> acc + x)     // redukcja → 55
 
-// Łańcuch przez pośrednie
+// Łańcuch przez zmienne pośrednie
 krok1 = liczby$| (x -> x > 3)
 krok2 = krok1$> (x -> x * x)
 >> krok2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Nazwane funkcje w FWR — opakuj w lambdę
+// Nazwane funkcje mogą być przekazywane bezpośrednio do FWR
 podwoj(x) { <~ x * 2 }
-r = liczby$> (x -> podwoj(x))    // ✅
+jest_duze(x) { <~ x > 5 }
+r = liczby$> podwoj       // ✅ bezpośrednia referencja
+r = liczby$| jest_duze    // ✅ bezpośrednia referencja
 ```
 
 ---
 
 ## Operator Potoku
 
-Prawa strona zawsze wymaga `_` jako miejsca zastępczego dla przekazanej wartości:
+Prawa strona zawsze wymaga `_` jako zastępnika przekazywanej wartości:
 
 ```zymbol
-podwojony = x -> x * 2
+podwoj = x -> x * 2
 dodaj = (a, b) -> a + b
 inc = x -> x + 1
 
-5 |> podwojony(_)      // → 10
-10 |> dodaj(_, 5)      // → 15
-5 |> dodaj(2, _)       // → 7
+5 |> podwoj(_)        // → 10
+10 |> dodaj(_, 5)     // → 15
+5 |> dodaj(2, _)      // → 7
 
 // Łańcuch
-r = 5 |> podwojony(_) |> inc(_) |> podwojony(_)
+r = 5 |> podwoj(_) |> inc(_) |> podwoj(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
@@ -481,7 +499,7 @@ r = 5 |> podwojony(_) |> inc(_) |> podwojony(_)
 | `##Div` | Dzielenie przez zero |
 | `##IO` | Plik / system |
 | `##Index` | Indeks poza zakresem |
-| `##Type` | Błąd typu |
+| `##Type` | Niezgodność typów |
 | `##Parse` | Parsowanie danych |
 | `##Network` | Błędy sieciowe |
 | `##_` | Dowolny błąd (catch-all) |
@@ -491,53 +509,56 @@ r = 5 |> podwojony(_) |> inc(_) |> podwojony(_)
 ## Moduły
 
 ```zymbol
-// lib/oblicz.zy
-# oblicz
+// lib/obliczenia.zy — ciało modułu jest ujęte w nawiasy klamrowe
+# obliczenia {
+    #> { dodaj, get_PI }
 
-#> { dodaj, get_PI }    // eksporty MUSZĄ być przed definicjami
-
-_PI := 3.14159
-dodaj(a, b) { <~ a + b }
-get_PI() { <~ _PI }   // getter — bezpośredni dostęp do stałej przez alias nie jest obsługiwany
+    _PI := 3.14159
+    dodaj(a, b) { <~ a + b }
+    get_PI() { <~ _PI }
+}
 ```
 
 ```zymbol
 // main.zy
-<# ./lib/oblicz <= o    // alias wymagany
+<# ./lib/obliczenia <= o    // alias jest wymagany
 
->> o::dodaj(5, 3) ¶     // → 8
+>> o::dodaj(5, 3) ¶         // → 8
 pi = o::get_PI()
 >> pi ¶               // → 3.14159
 ```
 
 ```zymbol
 // Eksport pod inną publiczną nazwą
-# mojalib
-#> { _wewnetrzne_dodaj <= suma }
+# mojalib {
+    #> { _wewn_dodaj <= suma }
 
-_wewnetrzne_dodaj(a, b) { <~ a + b }
+    _wewn_dodaj(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
 <# ./mojalib <= m
 
->> m::suma(3, 4) ¶    // → 7  (wewnętrzna nazwa _wewnetrzne_dodaj jest ukryta)
+>> m::suma(3, 4) ¶    // → 7  (wewnętrzna nazwa _wewn_dodaj jest ukryta)
 ```
+
+> **Zasady modułów**: tylko `#>`, definicje funkcji i inicjalizatory zmiennych/stałych literalnych są dozwolone wewnątrz `# name { }`. Instrukcje wykonywalne (`>>`, `<<`, pętle itp.) powodują błąd E013.
 
 ---
 
-## Tryby Numeryczne
+## Systemy Numeryczne
 
-Zymbol może wyświetlać liczby w **69 pismach cyfrowych Unicode** — Devanagari, Arabsko-Indyjskim, Tajskim, Klingon pIqaD, Matematycznym Pogrubieniu, segmentach LCD i innych. Aktywny tryb wpływa tylko na wyjście `>>`; wewnętrzna arytmetyka jest zawsze binarna.
+Zymbol może wyświetlać liczby w **69 blokach cyfr Unicode** — Devanagari, Arabsko-Indyjski, Tajski, Klingon pIqaD, matematycznie pogrubiony, cyfry LCD i inne. Aktywny tryb wpływa tylko na wyjście `>>`; wewnętrzna arytmetyka jest zawsze binarna.
 
-### Aktywacja pisma
+### Aktywowanie systemu
 
-Zapisz cyfrę `0` i `9` docelowego pisma między `#…#`:
+Zapisz cyfry `0` i `9` docelowego pisma między `#…#`:
 
 ```zymbol
-#०९#    // Devanagari     (U+0966–U+096F)
-#٠٩#    // Arabsko-Ind.   (U+0660–U+0669)
-#๐๙#    // Tajskie        (U+0E50–U+0E59)
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabsko-Indyjski (U+0660–U+0669)
+#๐๙#    // Tajski        (U+0E50–U+0E59)
 #09#    // reset do ASCII
 ```
 
@@ -545,75 +566,80 @@ Zapisz cyfrę `0` i `9` docelowego pisma między `#…#`:
 
 ```zymbol
 x = 42
->> x ¶          // → 42   (domyślnie ASCII)
+>> x ¶          // → 42   (ASCII domyślnie)
 
 #०९#
 >> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४   (przecinek dziesiętny zawsze ASCII)
+>> 3.14 ¶       // → ३.१४   (punkt dziesiętny zawsze ASCII)
 >> 1 + 2 ¶      // → ३
 
-// Wartości logiczne: prefiks # zawsze ASCII, cyfra dostosowuje się
+// Wartości logiczne: prefiks # zawsze ASCII, cyfra się dostosowuje
 >> #1 ¶         // → #१   (prawda w Devanagari)
->> #0 ¶         // → #०   (fałsz — różne od ०  całkowitego zera)
+>> #0 ¶         // → #०   (fałsz — różni się od ०  całkowitego zera)
 
 x = 28 > 4
 >> x ¶          // → #१   (wynik porównania podąża za aktywnym trybem)
 ```
 
-### Natywne literały cyfrowe w kodzie źródłowym
+### Natywne literały cyfr w kodzie źródłowym
 
-Cyfry z dowolnego obsługiwanego pisma są poprawnymi literałami — w zakresach, modulo, porównaniach:
+Cyfry dowolnego obsługiwanego systemu są prawidłowymi literałami — w zakresach, modulo, porównaniach:
 
 ```zymbol
-#०९#
+#٠٩#
 
-@ i:१..१५ {
-    ? i % १५ == ० { >> "FizzBuzz" ¶ }
-    _? i % ३  == ० { >> "Fizz" ¶ }
-    _? i % ५  == ० { >> "Buzz" ¶ }
+@ i:١..١٥ {
+    ? i % ١٥ == ٠ { >> "FizzBuzz" ¶ }
+    _? i % ٣  == ٠ { >> "Fizz" ¶ }
+    _? i % ٥  == ٠ { >> "Buzz" ¶ }
     _ { >> i ¶ }
 }
 ```
 
-### Literały logiczne w dowolnym piśmie
+### Logiczne literały w dowolnym systemie
 
-`#` + cyfra `0` lub `1` z dowolnego bloku jest poprawnym literałem logicznym:
+`#` + cyfra `0` lub `1` z dowolnego obsługiwanego bloku jest prawidłowym literałem logicznym:
 
 ```zymbol
 #٠٩#
-نشط = #١        // to samo co #1
->> نشط ¶        // → #١
->> (#١ && #٠) ¶ // → #٠
+aktywny = #١        // to samo co #1
+>> aktywny ¶        // → #١
+>> (#١ && #٠) ¶     // → #٠
 ```
 
-> `#` jest **zawsze ASCII**. `#0` (fałsz) jest zawsze wizualnie różne od `0` (całkowitego zera) w każdym piśmie.
+> `#` jest **zawsze ASCII**. `#0` (fałsz) jest zawsze wizualnie różne od `0` (całkowite zero) w każdym systemie.
 
 ---
 
 ## Operatory Danych
 
 ```zymbol
-// Parsowanie ciągu do liczby
+// Rzutowania typów
+##.42         // → 42.0  (na Float)
+###3.7        // → 4     (na Int, zaokrąglij)
+##!3.7        // → 3     (na Int, obetnij)
+
+// Parsowanie łańcucha do liczby
 v1 = #|"42"|      // → 42  (Int)
 v2 = #|"3.14"|    // → 3.14  (Float)
-v3 = #|"abc"|     // → "abc"  (bezpieczna awaria, bez błędu)
+v3 = #|"abc"|     // → "abc"  (bezpieczna porażka, bez błędu)
 
-// Zaokrąglanie / obcinanie
+// Zaokrąglenie / obcięcie
 pi = 3.14159265
 r2 = #.2|pi|      // → 3.14  (zaokrąglij do 2 miejsc dziesiętnych)
 r4 = #.4|pi|      // → 3.1416
 t2 = #!2|pi|      // → 3.14  (obetnij)
 
 // Formatowanie liczb
-fmt = #,|1234567|  // → 1 234 567  (oddzielony spacją)
-sci = #^|12345.678|    // → 1.2345678e4  (naukowy)
+fmt = #,|1234567|  // → 1,234,567  (rozdzielone przecinkami)
+sci = #^|12345.678|    // → 1.2345678e4  (notacja naukowa)
 
-// Literały bazowe
+// Literały w różnych podstawach
 a = 0x41         // → 'A'  (szesnastkowy)
 b = 0b01000001   // → 'A'  (binarny)
 c = 0o101        // → 'A'  (ósemkowy)
 
-// Wyjście z konwersją bazy
+// Wyjście z konwersją podstawy
 hex = 0x|255|    // → "0x00FF"
 bin = 0b|65|     // → "0b1000001"
 oct = 0o|8|      // → "0o10"
@@ -622,24 +648,24 @@ dec = 0d|255|    // → "0d0255"
 
 ---
 
-## Integracja z Shell
+## Integracja z Powłoką
 
 ```zymbol
-data = <\ date +%Y-%m-%d \>     // przechwytuje stdout (zawiera \n)
+data = <\ date +%Y-%m-%d \>      // przechwytuje stdout (zawiera \n)
 >> "Dzisiaj: " data
 
 plik = "data.txt"
-zawartosc = <\ cat {plik} \>    // interpolacja w poleceniach
+zawartosc = <\ cat {plik} \>     // interpolacja w poleceniach
 
-wynik = </"./podskrypt.zy"/>    // wykonaj inny skrypt Zymbol, przechwyć wyjście
+wynik = </"./podskrypt.zy"/>     // wykonaj inny skrypt Zymbol, przechwytuje wyjście
 >> wynik
 ```
 
-> `><` przechwytuje argumenty CLI jako tablicę ciągów (tylko tree-walker).
+> `>\<` przechwytuje argumenty CLI jako tablicę łańcuchów (tylko tree-walker).
 
 ---
 
-## Pełny Przykład: FizzBuzz
+## Kompletny Przykład: FizzBuzz
 
 ```zymbol
 klasyfikuj(liczba) {
@@ -654,77 +680,100 @@ klasyfikuj(liczba) {
 
 ---
 
-## Odniesienie do Symboli
+## Skorowidz Symboli
 
 | Symbol | Operacja | Symbol | Operacja |
 |--------|----------|--------|----------|
 | `=` | zmienna | `$#` | długość |
-| `:=` | stała | `$+` | dołączanie |
-| `>>` | wyjście | `$+[i]` | wstawianie na indeks |
-| `<<` | wejście | `$-` | usuń pierwsze wyst. |
-| `¶` / `\\` | nowy wiersz | `$--` | usuń wszystkie wyst. |
-| `?` | jeśli | `$-[i]` | usuń na indeksie |
-| `_?` | jeśli-inaczej | `$-[i..j]` | usuń zakres |
-| `_` | inaczej / joker | `$?` | zawiera |
-| `??` | dopasowanie | `$??` | znajdź wszystkie indeksy |
-| `@` | pętla | `$[s..e]` | wycinek |
-| `@!` | przerwanie | `$>` | mapowanie |
-| `@>` | kontynuacja | `$\|` | filtrowanie |
-| `->` | lambda | `$<` | redukcja |
-| `arr[i] = val` | aktualizuj element (tylko tablice) | `arr[i] += val` | aktualizacja złożona |
-| `arr[i]$~` | aktualizacja funkcyjna (nowa kopia) | `$^+` | sortuj rosnąco (prymitywy) |
-| `$^-` | sortuj malejąco (prymitywy) | `$^` | sortuj z porównaniem (krotki) |
-| `<~` | powrót | `!?` | próba |
-| `\|>` | potok | `:!` | przechwycenie |
-| `#1` | prawda | `:>` | na końcu |
-| `#0` | fałsz | `$!` | czy błąd |
-| `<#` | import | `$!!` | propagacja błędu |
-| `#` | deklaracja modułu | `#>` | eksport |
-| `::` | wywołanie modułu | `.` | dostęp do pola |
-| `#\|..\|` | parsuj liczbę | `#?` | metadane typu |
+| `:=` | stała | `$+` | dołącz (łańcuchowalne) |
+| `>>` | wyjście | `$+[i]` | wstaw na indeksie (od 1) |
+| `<<` | wejście | `$-` | usuń pierwsze wyst. wg wartości |
+| `¶` / `\\` | nowy wiersz | `$--` | usuń wszystkie wyst. wg wartości |
+| `?` | jeśli | `$-[i]` | usuń na indeksie (od 1) |
+| `_?` | jeśli-inaczej | `$-[i..j]` | usuń zakres (od 1) |
+| `_` | inaczej / symbol wieloznaczny | `$?` | zawiera |
+| `??` | dopasowanie | `$??` | znajdź wszystkie indeksy (od 1) |
+| `@` | pętla | `$[s..e]` | wycinek (od 1) |
+| `@ N { }` | pętla N razy | `$>` | mapowanie |
+| `@!` | przerwij | `$\|` | filtrowanie |
+| `@>` | kontynuuj | `$<` | redukcja |
+| `@:name { }` | pętla oznakowana | `$/ delim` | podziel łańcuch |
+| `@:name!` | przerwij z etykietą | `$++ a b c` | zbuduj złączenie |
+| `@:name>` | kontynuuj z etykietą | `tab[i>j>k]` | indeks nawigacyjny |
+| `->` | lambda | `tab[i] = val` | aktualizuj element (tylko tablice) |
+| `tab[i] += val` | złożona aktualizacja | `tab[i]$~` | aktualizacja funkcyjna (nowa kopia) |
+| `$^+` | sortuj rosnąco (typy proste) | `$^-` | sortuj malejąco (typy proste) |
+| `$^` | sortuj z komparatorem (krotki) | `<~` | zwróć |
+| `\|>` | potok | `!?` | próbuj |
+| `:!` | złap | `:>` | na końcu |
+| `#1` | prawda | `#0` | fałsz |
+| `$!` | jest błędem | `$!!` | propaguj błąd |
+| `<#` | importuj | `#>` | eksportuj |
+| `#` | deklaruj moduł | `::` | wywołanie modułu |
+| `.` | dostęp do pola | `#?` | metadane typu |
+| `#\|..\|` | parsuj liczbę | `##.` | rzutuj na Float |
+| `###` | rzutuj na Int (zaokrąglij) | `##!` | rzutuj na Int (obetnij) |
 | `#.N\|..\|` | zaokrąglij | `#!N\|..\|` | obetnij |
-| `#,\|..\|` | format z separatorem | `#^\|..\|` | naukowy |
-| `#d0d9#` | przełącznik trybu numerycznego | `#09#` | reset do ASCII |
-| `<\ ..\>` | wykonaj shell | `><` | argumenty CLI |
+| `#,\|..\|` | format z przecinkami | `#^\|..\|` | naukowy |
+| `#d0d9#` | przełączanie trybu numerycznego | `#09#` | reset do ASCII |
+| `<\ ..\>` | wykonaj powłokę | `>\<` | argumenty CLI |
+| `\ var` | zniszcz zmienną | | |
+
+---
 
 ## Historia Wersji
 
-### v0.0.3 — Systemy Numeryczne Unicode & Ulepszenia LSP _(Kwiecień 2026)_
+### v0.0.4 — Indeksowanie od 1, Funkcje Pierwszoklasowe i Bloki Modułów _(kwiecień 2026)_
+
+- **Zmiana** Całe indeksowanie przełączone na **od 1** — `tab[1]` jest pierwszym elementem; `tab[0]` jest błędem wykonania
+- **Dodano** Nazwane funkcje są **wartościami pierwszoklasowymi** — przekazuj bezpośrednio do FWR: `liczby$> podwoj`
+- **Dodano** Wymagana **składnia blokowa** modułu: `# name { ... }` — składnia płaska usunięta
+- **Dodano** Wielowymiarowe indeksowanie: `tab[i>j>k]` (nawigacja), `tab[p ; q]` (płaska ekstrakcja)
+- **Dodano** Rzutowania typów: `##.expr` (Float), `###expr` (Int zaokrąglij), `##!expr` (Int obetnij)
+- **Dodano** Podział łańcucha: `str$/ delim` — zwraca `Array(String)`
+- **Dodano** Budowanie złączenia: `base$++ a b c` — dołącza wiele elementów
+- **Dodano** Pętla N razy: `@ N { }` — powtórz dokładnie N razy
+- **Dodano** Składnia pętli oznakowanej: `@:name { }`, `@:name!`, `@:name>` — zastępuje `@ @name` / `@! name`
+- **Dodano** Zasady zakresu zmiennych: zmienne `_name` mają dokładny zakres bloku; `\ var` niszczy wcześniej
+- **Dodano** Wzorce porównań w dopasowaniu: `< 0 :`, `> 5 :`, `== 42 :` itp.
+- **Dodano** Błąd E013 modułu: instrukcje wykonywalne w ciele modułu są zabronione
+- **Naprawiono** `take_variable` nie uszkadza już stałych modułu przy zapisie z powrotem
+- **Naprawiono** `alias.CONST` rozwiązuje się teraz poprawnie; `#>` może pojawiać się po definicjach funkcji
+- **VM** Pełny parytet: 393/393 testów przechodzi
+
+### v0.0.3 — Systemy Numeryczne Unicode i Ulepszenia LSP _(kwiecień 2026)_
 
 - **Dodano** 69 bloków cyfr Unicode z tokenem przełączania trybu `#d0d9#`
-- **Dodano** Literały logiczne w dowolnym piśmie — `#१` / `#०`, `#١` / `#٠`, itp.
+- **Dodano** Literały logiczne w dowolnym systemie — `#१` / `#०`, `#١` / `#٠` itp.
 - **Dodano** Cyfry Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
-- **Dodano** Opkod VM `SetNumeralMode` — pełna parytét z tree-walkerem
-- **Dodano** REPL respektuje aktywny tryb numeryczny w echo i wyświetlaniu zmiennych
-- **Zmieniono** Wyjście `>>` wartości logicznych zawiera teraz prefiks `#` (`#0` / `#1`) we wszystkich trybach
+- **Dodano** Opcode VM `SetNumeralMode` — pełny parytet z tree-walker
+- **Dodano** REPL respektuje aktywny tryb numeryczny w echach i wyświetlaniu zmiennych
+- **Zmieniono** Wyjście boolowskie `>>` zawiera teraz prefiks `#` (`#0` / `#1`) we wszystkich trybach
 
-### v0.0.2_01 — Zmiana Nazw Operatorów _(30 Mar 2026)_
+### v0.0.2_01 — Zmiana Nazw Operatorów _(30 mar 2026)_
 
 - **Zmieniono** `c|..|` → `#,|..|` i `e|..|` → `#^|..|` — spójne z rodziną prefiksów `#`
 - **Dodano** Alias eksportu: ponowny eksport członków modułu pod inną nazwą
 
-### v0.0.2 — Przeprojektowanie API Kolekcji & Instalatory _(24 Mar 2026)_
+### v0.0.2 — Przeprojektowanie Kolekcji i Instalatory _(24 mar 2026)_
 
-- **Dodano** Ujednolicona rodzina operatorów `$` dla tablic i ciągów (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Dodano** Ujednolicona rodzina operatorów `$` dla tablic i łańcuchów (`$#`, `$+`, `$?`, `$-`, `$[..]`)
 - **Dodano** Destrukturyzacja dla tablic, krotek i nazwanych krotek
-- **Dodano** Ujemne indeksy (`arr[-1]` = ostatni element)
+- **Dodano** Ujemne indeksy (`tab[-1]` = ostatni element)
 - **Dodano** Natywne instalatory — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
 
-### v0.0.1-patch _(25 Mar 2026)_
+### v0.0.1-patch _(25 mar 2026)_
 
 - **Dodano** Złożone przypisanie `^=`
-- **Naprawiono** Przypadki brzegowe parsera arytmetycznego; korekty dokumentacji
+- **Naprawiono** Przypadki graniczne arytmetyki parsera; poprawki dokumentacji
 
-### v0.0.1 — Pierwsze Publiczne Wydanie _(22 Mar 2026)_
+### v0.0.1 — Pierwsze Publiczne Wydanie _(22 mar 2026)_
 
-- Interpreter tree-walker + rejestrowy VM (`--vm`, ~4× szybszy, ~95% parytetu)
-- Wszystkie podstawowe konstrukty: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Interpreter tree-walker + rejestrowy VM (`--vm`, ~4× szybszy, ~95% parytet)
+- Wszystkie podstawowe konstrukcje: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
 - Pełne identyfikatory Unicode, system modułów, lambdy, domknięcia, obsługa błędów
-- REPL, LSP, rozszerzenie VS Code, formater (`zymbol fmt`)
+- REPL, LSP, rozszerzenie VS Code, formatter (`zymbol fmt`)
 
 ---
 
-*Zymbol-Lang — Symboliczny. Uniwersalny. Niezmienny.*
-
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> The canonical reference is [MANUAL.md](https://github.com/zymbol-lang/interpreter) in the interpreter repository.
+_Zymbol-Lang — Symboliczny. Uniwersalny. Niezmienny._

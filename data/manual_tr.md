@@ -1,55 +1,67 @@
-# Zymbol-Lang Kompakt Kılavuzu
+> **Bildirim:** Bu dokümantasyon yapay zeka (AI) yardımıyla oluşturulmuştur.
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Kanonik referans, yorumlayıcı deposundaki **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** dosyasıdır.
 
-**Zymbol-Lang** sembolik bir programlama dilidir. Hiç anahtar kelime kullanmaz — her şey bir semboldür. Her insan dilinde aynı şekilde çalışır.
+---
 
-- Anahtar kelime yok (`if`, `while`, `return` diye bir şey yok — yalnızca semboller `?`, `@`, `<~`)
-- Tam Unicode desteği — herhangi bir dilde veya emoji ile tanımlayıcı 👋
-- Dilden bağımsız — kod tüm dillerde özdeştir
+# Zymbol-Lang Kılavuzu
+
+**Zymbol-Lang** sembolik bir programlama dilidir. Anahtar kelime yok — her şey bir semboldür. Herhangi bir insan dilinde aynı şekilde çalışır.
+
+- `if`, `while`, `return` yok — sadece `?`, `@`, `<~`
+- Tam Unicode — herhangi bir dilde veya emojide tanımlayıcılar
+- İnsan dilinden bağımsız — kod her yerde aynıdır
+
+**Yorumlayıcı sürümü**: v0.0.4 | **Test kapsamı**: 393/393 (TW ↔ VM eşitliği)
 
 ---
 
 ## Değişkenler ve Sabitler
 
 ```zymbol
-x = 10           // Değişken (değiştirilebilir)
-PI := 3.14159    // Sabit (değiştirilemez — yeniden atama hatası verir)
-isim = "Ali"
-aktif = #1       // mantıksal doğru
+x = 10              // değiştirilebilir değişken
+PI := 3.14159       // sabit — yeniden atama çalışma zamanı hatasıdır
+isim = "Alice"
+aktif = #1          // Boolean doğru
 👋 := "Merhaba"
 ```
 
 ```zymbol
-x = 10
+x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
 
 ---
 
 ## Veri Tipleri
 
-| Tip              | Örnek               | Sembol `#?` | Notlar                               |
-|------------------|---------------------|-------------|--------------------------------------|
-| Tam Sayı         | `42`, `-7`          | `###`       | 64-bit işaretli                      |
-| Ondalıklı Sayı   | `3.14`, `1.5e10`    | `##.`       | Bilimsel gösterim desteklenir        |
-| Dizge            | `"merhaba"`         | `##"`       | Enterpolasyon: `"Merhaba {isim}"`   |
-| Karakter         | `'A'`               | `##'`       | Tek bir Unicode karakteri            |
-| Mantıksal        | `#1`, `#0`          | `##?`       | 1 ve 0 sayısı DEĞİL                  |
-| Dizi             | `[1, 2, 3]`         | `##]`       | Tüm elemanlar aynı tipten            |
-| Demet            | `(a, b)`            | `##)`       | Konumsal                             |
-| Adlandırılmış Demet | `(x: 1, y: 2)`  | `##)`       | İsim veya indis ile erişim           |
+| Tip | Literal | `#?` etiketi | Notlar |
+|-----|---------|--------------|--------|
+| Tam Sayı | `42`, `-7` | `###` | 64-bit işaretli |
+| Kayan Nokta | `3.14`, `1.5e10` | `##.` | Bilimsel gösterim izinli |
+| Dizi | `"metin"` | `##"` | Enterpolasyon: `"Merhaba {isim}"` |
+| Karakter | `'A'` | `##'` | Tek Unicode karakteri |
+| Boolean | `#1`, `#0` | `##?` | Sayısal DEĞİL — `#1 ≠ 1` |
+| Dizi | `[1, 2, 3]` | `##]` | Homojen elemanlar |
+| Demet | `(a, b)` | `##)` | Konumsal |
+| İsimlendirilmiş demet | `(x: 1, y: 2)` | `##)` | İsimlendirilmiş alanlar |
+| Fonksiyon | isimlendirilmiş fonksiyon referansı | `##()` | Birinci sınıf; `<funct/N>` gösterir |
+| Lambda | `x -> x * 2` | `##->` | Birinci sınıf; `<lambd/N>` gösterir |
 
 ```zymbol
-// Tip iç gözlemi — (tip, basamak, değer) döndürür
+// Tip içgözlemi — döndürür (tip, basamaklar, değer)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
-t = meta[0]
+t = meta[1]
 >> t ¶            // → ###
 ```
 
@@ -58,31 +70,38 @@ t = meta[0]
 ## Çıktı ve Girdi
 
 ```zymbol
->> "Merhaba" ¶                    // ¶ veya \\ açık satır sonu verir
->> "a=" a " b=" b ¶               // birden fazla değer yan yana yazılır
->> (arr$#) ¶                      // sonek operatörler parantez gerektirir
+>> "Merhaba" ¶                       // ¶ veya \\ açık satır sonu için
+>> "a=" a " b=" b ¶                  // yan yana koyma — çoklu değerler
+>> (arr$#) ¶                         // postfix operatörleri >> içinde ( ) gerektirir
 
-<< isim                           // istemi olmadan — değişkene okur
-<< "Adınız? " isim                // istemli
+<< isim                              // değişkene oku (istem yok)
+<< "İsim girin: " isim               // istem ile
 ```
 
-> `¶` veya `\\` satır sonu olarak eşdeğerdir.
+> `¶` (İspanyol klavyede AltGr+R) ve `\\` satır sonu olarak eşdeğerdir.
 
 ---
 
 ## Operatörler
 
 ```zymbol
-// Aritmetik
+// Aritmetik — atamaları kullanın; bazı operatörlerin doğrudan >> içinde tuhaflıkları vardır
 a = 10
 b = 3
-s1 = a + b    // 13     s2 = a - b    // 7
-s3 = a * b    // 30     s4 = a / b    // 3  (tam bölme)
-s5 = a % b    // 1      s6 = a ^ b    // 1000  (üs alma)
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (tam sayı bölmesi)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (üs alma)
 
 // Karşılaştırma
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
+a == b    // #0    
+a <> b    // #1    
+a < b     // #0
+a <= b    // #0   
+a > b     // #1    
+a >= b    // #1
 
 // Mantıksal
 #1 && #0    // #0
@@ -92,29 +111,28 @@ a <= b    // #0   a > b     // #1    a >= b   // #1
 
 ---
 
-## Dizeler
+## Dizgiler
 
 ```zymbol
-// Üç birleştirme biçimi
-isim = "Ayşe"
+// İki birleştirme biçimi
+isim = "Alice"
 n = 42
 
-mesaj = "Merhaba ", isim, "!"            // virgül — atamalarda
->> "Merhaba " isim " yaşındasın " n ¶   // yan yana — >> çıktısında
-açıklama = "Merhaba {isim}, {n} yaşındasın"   // enterpolasyon — her yerde
+>> "Merhaba " isim " şu kadarınız var: " n ¶       // yan yana koyma — >> içinde
+açıklama = "Merhaba {isim}, şu kadarınız var: {n}"  // enterpolasyon — her yerde
 ```
 
 ```zymbol
-s = "Hello World"
-uzunluk = s$#              // 11
-alt = s$[0..5]             // "Hello"  (son hariç)
-var_mı = s$? "World"       // #1
-parç = "a,b,c,d" / ','     // [a, b, c, d]
-değiş = s$~~["l":"L"]      // "HeLLo WorLd"
-değiş1 = s$~~["l":"L":1]   // "HeLlo World"  (ilk N)
+s = "Merhaba Dünya"
+uzunluk = s$#                  // 12
+alt = s$[1..7]                 // "Merhaba"  (1-tabanlı, bitiş dahil)
+var_mı = s$? "Dünya"           // #1
+parçalar = "a,b,c,d"$/ ','     // [a, b, c, d]  (ayırıcı ile böl)
+değiş = s$~~["a":"e"]          // "Merhebe Dünye"
+değiş1 = s$~~["a":"e":1]       // "Merheba Dünya"  (yalnızca ilk N)
 ```
 
-> `+` yalnızca sayılar içindir. Dizeler için `,`, yan yana yazım veya enterpolasyon kullanın.
+> `+` yalnızca sayılar içindir. Dizgiler için `,`, yan yana koyma veya enterpolasyon kullanın.
 
 ---
 
@@ -136,24 +154,24 @@ x = 7
 }
 ```
 
-> `{ }` blokları **zorunludur**, tek satır için bile.
+> `{ }` süslü parantezler **zorunludur** tek bir ifade için bile.
 
 ---
 
-## Match
+## Eşleme (Match)
 
 ```zymbol
 // Aralıklar
-not = 85
-değerlendirme = ?? not {
+puan = 85
+harf_notu = ?? puan {
     90..100 : 'A'
     80..89  : 'B'
     70..79  : 'C'
     _       : 'F'
 }
->> değerlendirme ¶    // → B
+>> harf_notu ¶    // → B
 
-// Dizeler
+// Dizgiler
 renk = "kırmızı"
 kod = ?? renk {
     "kırmızı" : "#FF0000"
@@ -161,21 +179,21 @@ kod = ?? renk {
     _         : "#000000"
 }
 
-// Koruyucular
+// Karşılaştırma kalıpları
 sıcaklık = -5
 durum = ?? sıcaklık {
-    _? sıcaklık < 0  : "buz"
-    _? sıcaklık < 20 : "soğuk"
-    _? sıcaklık < 35 : "ılık"
-    _                : "sıcak"
+    < 0  : "buz"
+    < 20 : "soğuk"
+    < 35 : "ılık"
+    _    : "sıcak"
 }
 >> durum ¶    // → buz
 
-// Deyim biçimi (blok kolları)
+// İfade biçimi (bloklar)
 ?? n {
-    0       : { >> "sıfır" ¶ }
-    _? n < 0: { >> "negatif" ¶ }
-    _       : { >> "pozitif" ¶ }
+    0        : { >> "sıfır" ¶ }
+    _? n < 0 : { >> "negatif" ¶ }
+    _        : { >> "pozitif" ¶ }
 }
 ```
 
@@ -184,23 +202,23 @@ durum = ?? sıcaklık {
 ## Döngüler
 
 ```zymbol
-@ i:0..4  { >> i " " }        // kapsayıcı aralık: 0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // adımlı: 1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // ters: 5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // aralık dahil:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // adımlı:        1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // ters:          5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
 >> n ¶                        // → 128  (while)
 
 meyveler = ["elma", "armut", "üzüm"]
-@ m:meyveler { >> m ¶ }       // for-each dizi üzerinde
+@ m:meyveler { >> m ¶ }       // dizideki her eleman için
 
 @ c:"merhaba" { >> c "-" }
->> ¶                          // → m-e-r-h-a-b-a-  (for-each dizge)
+>> ¶                          // → m-e-r-h-a-b-a-  (dizgideki her karakter için)
 
 @ i:1..10 {
     ? i % 2 == 0 { @> }       // @> devam et
-    ? i > 7 { @! }             // @! kes
+    ? i > 7 { @! }            // @! kır
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
@@ -214,22 +232,22 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Etiketli döngü (iç içe kesmek)
-count = 0
-@ @outer {
-    count++
-    ? count >= 3 { @! outer }
+// Etiketli döngü (iç içe kırma)
+sayıcı = 0
+@:dış {
+    sayıcı++
+    ? sayıcı >= 3 { @:dış! }
 }
->> count ¶                    // → 3
+>> sayıcı ¶                   // → 3
 ```
 
 ---
 
-## İşlevler
+## Fonksiyonlar
 
 ```zymbol
 topla(a, b) { <~ a + b }
->> topla(3, 4) ¶    // → 7
+>> topla(3, 4) ¶   // → 7
 
 faktöriyel(n) {
     ? n <= 1 { <~ 1 }
@@ -238,31 +256,33 @@ faktöriyel(n) {
 >> faktöriyel(5) ¶    // → 120
 ```
 
-İşlevler **yalıtılmış kapsama** sahiptir — dış değişkenlere erişemez. Çağıranın değişkenlerini değiştirmek için `<~` çıkış parametrelerini kullanın:
+Fonksiyonlar **izole edilmiş kapsama** sahiptir — dış değişkenleri okuyamazlar. Çağıranın değişkenlerini değiştirmek için `<~` çıktı parametrelerini kullanın:
 
 ```zymbol
-değiştir(a<~, b<~) {
+takas(a<~, b<~) {
     tmp = a
     a = b
     b = tmp
 }
 x = 10
 y = 20
-değiştir(x, y)
+takas(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Adlandırılmış işlevler birinci sınıf değer değildir. Argüman olarak iletmek için sarılayın: `x -> topla(x)`.
+> İsimlendirilmiş fonksiyonlar **birinci sınıf değerlerdir** — doğrudan aktarın: `nums$> iki_kat`. `x -> fn(x)` de geçerlidir.
 
 ---
 
-## Lambda'lar ve Closure'lar
+---
+
+## Lambdalar ve Kapanımlar
 
 ```zymbol
-iki_katı = x -> x * 2
-toplam = (a, b) -> a + b
->> iki_katı(5) ¶    // → 10
->> toplam(3, 7) ¶   // → 10
+iki_kat = x -> x * 2
+topla = (a, b) -> a + b
+>> iki_kat(5) ¶   // → 10
+>> topla(3, 7) ¶  // → 10
 
 // Blok lambda
 sınıflandır = x -> {
@@ -271,204 +291,206 @@ sınıflandır = x -> {
     <~ "sıfır"
 }
 
-// Closure — lambda dış değişkenleri yakalar
+// Kapanım — dış kapsamı yakalar
 çarpan = 3
-üç_katı = x -> x * çarpan
->> üç_katı(7) ¶    // → 21
+üç_kat = x -> x * çarpan
+>> üç_kat(7) ¶    // → 21
 
-// İşlev fabrikası
-toplayıcı_yap(n) { <~ x -> x + n }
-on_ekle = toplayıcı_yap(10)
+// Fabrika
+toplayıcı_yarat(n) { <~ x -> x + n }
+on_ekle = toplayıcı_yarat(10)
 >> on_ekle(5) ¶    // → 15
 
-// Dizide
+// Dizilerde
 işlemler = [x -> x+1, x -> x*2, x -> x*x]
->> işlemler[2](5) ¶    // → 25
+>> işlemler[3](5) ¶   // → 25
 ```
 
 ---
 
 ## Diziler
 
-Diziler **değiştirilebilirdir** ve **aynı tipteki** elemanları barındırır.
+Diziler **değiştirilebilirdir** ve **aynı türde** elemanlar içerir.
 
 ```zymbol
-arr = [1, 2, 3, 4, 5]
+dizi = [1, 2, 3, 4, 5]
 
-arr[0]          // 1 — erişim (0 tabanlı indis)
-arr[-1]         // 5 — negatif indis (son)
-arr$#           // 5 — uzunluk (>> içinde (arr$#) kullanın)
+dizi[1]          // 1 — erişim (1-tabanlı: ilk eleman)
+dizi[-1]         // 5 — negatif indeks (son eleman)
+dizi$#           // 5 — uzunluk (>> içinde (dizi$#) kullanın)
 
-arr = arr$+ 6            // ekle → [1,2,3,4,5,6]
-a2 = arr$+[2] 99         // indis 2'ye daxil et
-a3 = arr$- 3             // değerin ilk tekrarını kaldır
-a4 = arr$-- 3            // tüm tekrarları kaldır
-a5 = arr$-[0]            // indisle kaldır
-a6 = arr$-[1..3]         // aralığı kaldır (son hariç)
+dizi = dizi$+ 6            // ekle → [1,2,3,4,5,6]
+dizi2 = dizi$+[2] 99       // 2. konuma ekle (1-tabanlı)
+dizi3 = dizi$- 3           // değerin ilk bulunmasını kaldır
+dizi4 = dizi$-- 3          // tüm bulunmaları kaldır
+dizi5 = dizi$-[1]          // 1 indeksindekini kaldır (ilk eleman)
+dizi6 = dizi$-[2..3]       // aralığı kaldır (1-tabanlı, bitiş dahil)
 
-var_mı = arr$? 3         // #1 — içerir
-pos = arr$?? 3           // [2] — tüm indisler
-dilim = arr$[0..3]       // [1,2,3] — dilim (son hariç)
-dilim2 = arr$[0:3]       // [1,2,3] — aynı, sayıma dayalı sözdizimi
+var_mı = dizi$? 3          // #1 — içeriyor
+konumlar = dizi$?? 3       // [3] — değerin tüm indeksleri (1-tabanlı)
+dilim = dizi$[1..3]        // [1,2,3] — dilim (1-tabanlı, bitiş dahil)
+dilim2 = dizi$[1:3]        // [1,2,3] — aynı, miktar sözdizimi
 
-asc = arr$^+             // artan sıralama  (yalnız ilkeller)
-desc = arr$^-            // azalan sıralama (yalnız ilkeller)
+artan = dizi$^+            // artan sırala (yalnızca ilkeller)
+azalan = dizi$^-           // azalan sırala (yalnızca ilkeller)
 
-// Adlandırılmış/konumsal demet dizileri — $^ karşılaştırıcı lambda ile
-db = [(isim: "Carla", yaş: 28), (isim: "Fatma", yaş: 25), (isim: "Bob", yaş: 30)]
-by_age  = db$^ (a, b -> a.yaş < b.yaş)    // yaşa göre artan  (<)
-by_name = db$^ (a, b -> a.isim > b.isim)  // isme göre azalan (>)
->> by_age[0].isim ¶     // → Fatma
->> by_name[0].isim ¶    // → Carla
+// İsimlendirilmiş/konumsal demet dizileri — karşılaştırma lambdası ile $^ kullanın
+veri = [(isim: "Carla", yaş: 28), (isim: "Ana", yaş: 25), (isim: "Bob", yaş: 30)]
+yaşa_göre   = veri$^ (a, b -> a.yaş < b.yaş)      // yaşa göre artan (<)
+isme_göre   = veri$^ (a, b -> a.isim > b.isim)    // isme göre azalan (>)
+>> yaşa_göre[1].isim ¶     // → Ana
+>> isme_göre[1].isim ¶     // → Carla
 
-// Elemanın doğrudan güncellenmesi (yalnızca diziler)
-arr[1] = 99              // atama
-arr[0] += 5              // bileşik: +=  -=  *=  /=  %=  ^=
+// Doğrudan eleman güncelleme (yalnızca diziler)
+dizi[1] = 99              // ata
+dizi[2] += 5              // bileşik: +=  -=  *=  /=  %=  ^=
 
-// Fonksiyonel güncelleme — yeni dizi döndürür; orijinal değişmez
-arr2 = arr[1]$~ 99
+// Fonksiyonel güncelleme — yeni bir dizi döndürür; orijinal değişmez
+dizi2 = dizi[2]$~ 99
 ```
 
-> Tüm koleksiyon operatörleri **yeni bir dizi** döndürür. Yeniden atayın: `arr = arr$+ 4`.
-> Operatörler zincirlenemez — ara değişkenler kullanın.
-> `$^+` / `$^-` **ilkel dizileri** (sayılar, dizgeler) sıralar. Demet dizileri için `$^` karşılaştırıcı lambda ile kullanın.
+> Tüm koleksiyon operatörleri **yeni bir dizi** döndürür. Geri atayın: `dizi = dizi$+ 4`.
+> `$+` zincirlenebilir: `dizi = dizi$+ 5$+ 6$+ 7`. Diğer operatörler ara atamalar kullanır.
+> **İndeksleme 1-tabanlıdır**: `dizi[1]` ilk elemandır; `dizi[0]` çalışma zamanı hatasıdır.
+> `$^+` / `$^-` **ilkel dizileri** sıralar (sayılar, dizgiler). Demet dizileri için karşılaştırma lambdasıyla `$^` kullanın — yön lambda'da kodlanır (`<` = artan, `>` = azalan).
 
 **Değer semantiği** — bir diziyi başka bir değişkene atamak bağımsız bir kopya oluşturur:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b etkilenmedi
+>> b ¶    // → [1, 2, 3]   ← b etkilenmez
 ```
 
 ```zymbol
-// İç içe diziler
+// İç içe diziler (1-tabanlı indeksleme)
 matris = [[1,2,3],[4,5,6],[7,8,9]]
->> matris[1][2] ¶    // → 6
+>> matris[2][3] ¶    // → 6  (2. satır, 3. sütun)
 ```
 
 ---
 
-## Yıkım Ataması
+## Yıkıcı Atama
 
 ```zymbol
 // Dizi
-arr = [10, 20, 30, 40, 50]
-[a, b, c] = arr              // a=10  b=20  c=30
-[first, *rest] = arr         // first=10  rest=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ yok sayar
+dizi = [10, 20, 30, 40, 50]
+[a, b, c] = dizi              // a=10  b=20  c=30
+[ilk, *geri_kalan] = dizi     // ilk=10  geri_kalan=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ atar
 
 // Konumsal demet
-point = (100, 200)
-(px, py) = point             // px=100  py=200
+nokta = (100, 200)
+(px, py) = nokta              // px=100  py=200
 
-// Adlandırılmış demet
-kişi = (isim: "Fatma", yaş: 25, şehir: "İstanbul")
-(isim: n, yaş: a) = kişi    // n="Fatma"  a=25
+// İsimlendirilmiş demet
+kişi = (isim: "Ana", yaş: 25, şehir: "Madrid")
+(isim: i, yaş: y) = kişi      // i="Ana"  y=25
 ```
 
 ---
 
 ## Demetler
 
-Demetler **değiştirilemez** sıralı kaplardır; **farklı tiplerden** değerler barındırabilir. Dizilerin aksine, oluşturulduktan sonra elemanlar değiştirilemez.
+Demetler **değiştirilemez** sıralı kaplardır ve **farklı türlerde** değerler tutabilirler.
+Dizilerden farklı olarak, elemanlar oluşturulduktan sonra değiştirilemez.
 
 ```zymbol
-// Konumsal
-point = (10, 20)
->> point[0] ¶    // → 10
+// Konumsal — karışık türlere izin verilir
+nokta = (10, 20)
+>> nokta[1] ¶    // → 10
 
-veri = (42, "hello", #1, 3.14)
->> veri[2] ¶     // → #1
+veri = (42, "merhaba", #1, 3.14)
+>> veri[3] ¶     // → #1
 
-// Adlandırılmış
-kişi = (isim: "Fatma", yaş: 25)
->> kişi.isim ¶    // → Fatma
->> kişi[0] ¶      // → Fatma  (indis de çalışır)
+// İsimlendirilmiş
+kişi = (isim: "Alice", yaş: 25)
+>> kişi.isim ¶    // → Alice
+>> kişi[1] ¶      // → Alice  (indeks de çalışır, 1-tabanlı)
 
 // İç içe
-pos = (x: 10, y: 20)
-p = (pos: pos, label: "köken")
->> p.pos.x ¶        // → 10
+konum = (x: 10, y: 20)
+p = (konum: konum, etiket: "orijin")
+>> p.konum.x ¶    // → 10
 ```
 
 **Değiştirilemezlik** — bir demet elemanını değiştirme girişimi çalışma zamanı hatasıdır:
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ çalışma zamanı hatası: demetler değiştirilemez
-// t[0] += 5    // ❌ aynı hata
+// t[1] = 99    // ❌ çalışma zamanı hatası: demetler değiştirilemez
+// t[1] += 5    // ❌ aynı hata
 ```
 
 Değiştirilmiş bir değer elde etmek için `$~` (fonksiyonel güncelleme) kullanın — **yeni** bir demet döndürür:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[1]$~ 999
->> t ¶     // → (10, 20, 30)   ← orijinal değişmedi
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← orijinal değişmez
 >> t2 ¶    // → (10, 999, 30)
 
-// Adlandırılmış demet — açıkça yeniden oluşturun
+// İsimlendirilmiş demet — açıkça yeniden oluştur
 kişi = (isim: "Alice", yaş: 25)
-büyük  = (isim: kişi.isim, yaş: 26)
+daha_yaşlı = (isim: kişi.isim, yaş: 26)
 >> kişi.yaş ¶    // → 25
->> büyük.yaş ¶    // → 26
+>> daha_yaşlı.yaş ¶ // → 26
 ```
 
 ---
 
-## Yüksek Mertebeli İşlevler
-
-> HOF operatörleri **satır içi lambda** gerektirir — doğrudan lambda değişkeni kullanılamaz.
+## Yüksek Dereceli Fonksiyonlar
 
 ```zymbol
 sayılar = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-iki_katları = sayılar$> (x -> x * 2)                // map  → [2,4,6…20]
-çiftler     = sayılar$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
-toplam      = sayılar$< (0, (birikt, x) -> birikt + x) // reduce → 55
+iki_katlanmış  = sayılar$> (x -> x * 2)                // haritalama → [2,4,6…20]
+çiftler   = sayılar$| (x -> x % 2 == 0)               // filtreleme → [2,4,6,8,10]
+toplam    = sayılar$< (0, (birikim, x) -> birikim + x) // indirgeme → 55
 
-// Ara değişkenler ile zincir
-step1 = sayılar$| (x -> x > 3)
-step2 = step1$> (x -> x * x)
->> step2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+// Ara adımlarla zincirleme
+adım1 = sayılar$| (x -> x > 3)
+adım2 = adım1$> (x -> x * x)
+>> adım2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// HOF içinde adlandırılmış işlevler — lambda içine sarın
-double(x) { <~ x * 2 }
-r = sayılar$> (x -> double(x))    // ✅
+// İsimlendirilmiş fonksiyonlar doğrudan YDF'ye aktarılabilir
+iki_kat(x) { <~ x * 2 }
+büyük_mü(x) { <~ x > 5 }
+r = sayılar$> iki_kat       // ✅ doğrudan referans
+r = sayılar$| büyük_mü      // ✅ doğrudan referans
 ```
 
 ---
 
 ## Boru Operatörü
 
-Sağ taraf her zaman `_` yer tutucusunu gerektirir:
+Sağ taraf, borulanan değer için her zaman bir yer tutucu olarak `_` gerektirir:
 
 ```zymbol
-double = x -> x * 2
-add = (a, b) -> a + b
-inc = x -> x + 1
+iki_kat = x -> x * 2
+topla = (a, b) -> a + b
+arttır = x -> x + 1
 
-5 |> double(_)        // → 10
-10 |> add(_, 5)       // → 15
-5 |> add(2, _)        // → 7
+5 |> iki_kat(_)        // → 10
+10 |> topla(_, 5)      // → 15
+5 |> topla(2, _)       // → 7
 
-// Zincirlenmiş
-r = 5 |> double(_) |> inc(_) |> double(_)
+// Zincirli
+r = 5 |> iki_kat(_) |> arttır(_) |> iki_kat(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## Hata İşleme
+## Hata Yönetimi
 
 ```zymbol
 !? {
     x = 10 / 0
 } :! ##Div {
-    >> "Sıfıra bölme" ¶
+    >> "sıfıra bölme" ¶
 } :! {
     >> "diğer hata: " _err ¶    // _err hata mesajını tutar
 } :> {
@@ -476,72 +498,75 @@ r = 5 |> double(_) |> inc(_) |> double(_)
 }
 ```
 
-| Tip         | Ne zaman oluşur                  |
-|-------------|----------------------------------|
-| `##Div`     | Sıfıra bölme                     |
-| `##IO`      | Dosya / Sistem                   |
-| `##Index`   | İndis aralık dışında             |
-| `##Type`    | Tip hatası                       |
-| `##Parse`   | Ayrıştırma hatası                |
-| `##Network` | Ağ hatası                        |
-| `##_`       | Herhangi bir hata (catch-all)    |
+| Tip | Ne zaman |
+|-----|----------|
+| `##Div` | Sıfıra bölme |
+| `##IO` | Dosya / sistem |
+| `##Index` | İndeks sınırların dışında |
+| `##Type` | Tip uyuşmazlığı |
+| `##Parse` | Veri ayrıştırma |
+| `##Network` | Ağ hataları |
+| `##_` | Herhangi bir hata (hepsini yakalar) |
 
 ---
 
 ## Modüller
 
 ```zymbol
-// Dosya: lib/hesap.zy
-# hesap
+// lib/calc.zy — modül gövdesi süslü parantezler içindedir
+# calc {
+    #> { topla, get_PI }
 
-#> { topla, get_PI }    // Tanımlamalardan ÖNCE dışa aktarımlar
-
-_PI := 3.14159
-topla(a, b) { <~ a + b }
-get_PI() { <~ _PI }
+    _PI := 3.14159
+    topla(a, b) { <~ a + b }
+    get_PI() { <~ _PI }
+}
 ```
 
 ```zymbol
-// Dosya: ana.zy
-<# ./lib/hesap <= h    // Takma ad zorunludur
+// main.zy
+<# ./lib/calc <= c    // takma ad zorunludur
 
->> h::topla(5, 3) ¶   // → 8
-pi = h::get_PI()
->> pi ¶                // → 3.14159
+>> c::topla(5, 3) ¶   // → 8
+pi = c::get_PI()
+>> pi ¶               // → 3.14159
 ```
 
 ```zymbol
-// Farklı genel adla dışa aktar
-# mylib
-#> { _dahili_topla <= toplam }
+// Farklı bir genel adla dışa aktar
+# benim_kitaplığım {
+    #> { _iç_toplama <= sum }
 
-_dahili_topla(a, b) { <~ a + b }
+    _iç_toplama(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
-<# ./mylib <= m
+<# ./benim_kitaplığım <= m
 
->> m::toplam(3, 4) ¶    // → 7  (dahili ad _dahili_topla gizlenir)
+>> m::sum(3, 4) ¶    // → 7  (_iç_toplama iç adı gizlidir)
 ```
+
+> **Modül kuralları**: `# isim { }` içinde yalnızca `#>`, fonksiyon tanımları ve literal değişken/sabit başlatıcılarına izin verilir. Yürütülebilir ifadeler (`>>`, `<<`, döngüler vb.) E013 hatası verir.
 
 ---
 
-## Sayı Sistemleri Modları
+## Sayısal Modlar
 
-Zymbol sayıları **69 Unicode rakam yazısında** görüntüleyebilir — Devanagari, Arapça-Hint, Tayca, Klingon pIqaD, Matematiksel Kalın, LCD segmentleri ve daha fazlası. Aktif mod yalnızca `>>`-çıktısını etkiler; dahili aritmetik her zaman ikilidir.
+Zymbol, sayıları **69 Unicode basamak bloğunda** görüntüleyebilir — Devanagari, Arap-Hint, Tay, Klingon pIqaD, Matematiksel Kalın, LCD segmentleri ve daha fazlası. Aktif mod yalnızca `>>` çıktısını etkiler; iç aritmetik her zaman ikilidir.
 
-### Bir yazı etkinleştirme
+### Bir yazı sistemini etkinleştirme
 
-Hedef yazının `0` ve `9` rakamını `#…#` arasına yazın:
+Hedef yazı sisteminin `0` ve `9` rakamlarını `#…#` içine yazın:
 
 ```zymbol
 #०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // Arapça-Hint   (U+0660–U+0669)
-#๐๙#    // Tayca         (U+0E50–U+0E59)
+#٠٩#    // Arap-Hint     (U+0660–U+0669)
+#๐๙#    // Tay           (U+0E50–U+0E59)
 #09#    // ASCII'ye sıfırla
 ```
 
-### Çıktı ve mantıksal değerler
+### Çıktı ve Boolean'lar
 
 ```zymbol
 x = 42
@@ -552,17 +577,17 @@ x = 42
 >> 3.14 ¶       // → ३.१४   (ondalık nokta her zaman ASCII)
 >> 1 + 2 ¶      // → ३
 
-// Mantıksal: # öneki her zaman ASCII, rakam uyum sağlar
+// Boolean'lar: # öneki her zaman ASCII, basamak uyum sağlar
 >> #1 ¶         // → #१   (Devanagari'de doğru)
->> #0 ¶         // → #०   (yanlış — ०  tam sayı sıfırdan görsel olarak farklı)
+>> #0 ¶         // → #०   (yanlış — ० tam sayı sıfırından farklıdır)
 
 x = 28 > 4
->> x ¶          // → #१   (karşılaştırma sonucu aktif modu takip eder)
+>> x ¶          // → #१   (karşılaştırma sonucu aktif modu izler)
 ```
 
-### Kaynak kodunda yerel rakam değişmezleri
+### Kaynak kodunda yerel basamak litarelleri
 
-Desteklenen herhangi bir yazının rakamları geçerli değişmezlerdir — aralıklarda, modulo, karşılaştırmalarda:
+Desteklenen herhangi bir yazı sisteminin rakamları geçerli litarellerdir — aralıklarda, modülde, karşılaştırmalarda:
 
 ```zymbol
 #०९#
@@ -575,45 +600,50 @@ Desteklenen herhangi bir yazının rakamları geçerli değişmezlerdir — aral
 }
 ```
 
-### Herhangi bir yazıda mantıksal değişmezler
+### Herhangi bir yazı sisteminde Boolean litarelleri
 
-Herhangi bir bloktan `#` + `0` veya `1` rakamı geçerli bir mantıksal değişmezdir:
+`#` + herhangi bir bloktan `0` veya `1` rakamı geçerli bir Boolean literalıdır:
 
 ```zymbol
 #٠٩#
-نشط = #١        // #1 ile aynı
->> نشط ¶        // → #١
->> (#١ && #٠) ¶ // → #٠
+aktif = #١        // #1 ile aynı
+>> aktif ¶        // → #१
+>> (#١ && #٠) ¶   // → #०
 ```
 
-> `#` **her zaman ASCII**'dir. `#0` (yanlış) her yazıda `0`'dan (tam sayı sıfır) her zaman görsel olarak farklıdır.
+> `#` **her zaman ASCII'dir**. `#0` (yanlış) her yazı sisteminde her zaman `0`'dan (tam sayı sıfırı) görsel olarak ayırt edilebilir.
 
 ---
 
 ## Veri Operatörleri
 
 ```zymbol
-// Dizeyi sayıya dönüştür
-v1 = #|"42"|      // → 42  (Int)
-v2 = #|"3.14"|    // → 3.14  (Float)
-v3 = #|"abc"|     // → "abc"  (güvenli)
+// Tip dönüşümü
+##.42         // → 42.0  (Kayan Noktaya)
+###3.7        // → 4     (Tam Sayıya, yuvarla)
+##!3.7        // → 3     (Tam Sayıya, kırp)
 
-// Yuvarlama / kesme
+// Dizgiyi sayıya ayrıştır
+v1 = #|"42"|      // → 42  (Tam Sayı)
+v2 = #|"3.14"|    // → 3.14  (Kayan Nokta)
+v3 = #|"abc"|     // → "abc"  (güvenli, hata yok)
+
+// Yuvarla / kırp
 pi = 3.14159265
-r2 = #.2|pi|      // → 3.14
-r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14
+y2 = #.2|pi|      // → 3.14  (2 ondalık basamağa yuvarla)
+y4 = #.4|pi|      // → 3.1416
+k2 = #!2|pi|      // → 3.14  (kırp)
 
 // Sayı biçimlendirme
-fmt = #,|1234567|      // → 1,234,567
-sci = #^|12345.678|    // → 1.2345678e4
+biçim = #,|1234567|   // → 1,234,567  (virgülle ayrılmış)
+bilim = #^|12345.678| // → 1.2345678e4  (bilimsel)
 
-// Taban değişmezleri
-a = 0x41         // → 'A'
-b = 0b01000001   // → 'A'
-c = 0o101        // → 'A'
+// Taban litarelleri
+a = 0x41         // → 'A'  (onaltılık)
+b = 0b01000001   // → 'A'  (ikili)
+c = 0o101        // → 'A'  (sekizli)
 
-// Taban dönüştürme
+// Taban dönüşümü çıktısı
 hex = 0x|255|    // → "0x00FF"
 bin = 0b|65|     // → "0b1000001"
 oct = 0o|8|      // → "0o10"
@@ -625,111 +655,129 @@ dec = 0d|255|    // → "0d0255"
 ## Kabuk Entegrasyonu
 
 ```zymbol
-date = <\ date +%Y-%m-%d \>     // stdout'u yakalar
->> "Bugün: " date
+tarih = <\ date +%Y-%m-%d \>     // stdout'u yakalar (sonunda \n içerir)
+>> "Bugün: " tarih
 
-file = "data.txt"
-content = <\ cat {file} \>      // komutlarda enterpolasyon
+dosya = "veri.txt"
+içerik = <\ cat {dosya} \>       // komutlarda enterpolasyon
 
-output = </"./subscript.zy"/>   // Zymbol betiği çalıştırır
->> output
+çıktı = </"./subscript.zy"/>     // başka bir Zymbol betiği çalıştır, çıktıyı yakala
+>> çıktı
 ```
 
-> `><` CLI argümanlarını dizge dizisi olarak yakalar (yalnızca tree-walker).
+> `><` CLI argümanlarını bir dizi dizgi olarak yakalar (yalnızca tree-walker).
 
 ---
 
 ## Tam Örnek: FizzBuzz
 
 ```zymbol
-sınıfla(sayı) {
-    ? sayı % 15 == 0 { <~ "CızVız" }
-    _? sayı % 3  == 0 { <~ "Cız" }
-    _? sayı % 5  == 0 { <~ "Vız" }
+sınıflandır(sayı) {
+    ? sayı % 15 == 0 { <~ "FizzBuzz" }
+    _? sayı % 3  == 0 { <~ "Fizz" }
+    _? sayı % 5  == 0 { <~ "Buzz" }
     _ { <~ sayı }
 }
 
-@ i:1..20 { >> sınıfla(i) ¶ }
+@ i:1..20 { >> sınıflandır(i) ¶ }
 ```
 
 ---
 
 ## Sembol Referansı
 
-| Sembol  | İşlem                  | Sembol     | İşlem                        |
-|---------|------------------------|------------|------------------------------|
-| `=`     | Değişken               | `$#`       | Uzunluk                      |
-| `:=`    | Sabit                  | `$+`       | Ekle                         |
-| `>>`    | Çıktı                  | `$+[i]`    | İndise ekle                  |
-| `<<`    | Girdi                  | `$-`       | İlkini değerle kaldır        |
-| `¶`/`\\`| Satır sonu             | `$--`      | Hepsini değerle kaldır       |
-| `?`     | koşul (if)             | `$-[i]`    | İndisle kaldır               |
-| `_?`    | yoksa koşul (elif)     | `$-[i..j]` | Aralığı kaldır               |
-| `_`     | yoksa / joker          | `$?`       | İçerir                       |
-| `??`    | eşle (match)           | `$??`      | Tüm indisleri bul            |
-| `@`     | Döngü                  | `$[s..e]`  | Dilim                        |
-| `@!`    | kes (break)            | `$>`       | map                          |
-| `@>`    | devam et (continue)    | `$\|`      | filter                       |
-| `->`    | Lambda                 | `$<`       | reduce                       |
-| `arr[i] = val` | eleman güncelle (yalnızca diziler) | `arr[i] += val` | bileşik güncelleme |
-| `arr[i]$~` | fonksiyonel güncelleme (yeni kopya) | `$^+` | Artan sıralama (ilkel) |
-| `$^-`   | Azalan sıralama (ilkel) | `$^`       | Karşılaştırıcı ile sırala (demet) |
-| `<~`    | döndür (return)        | `!?`       | dene (try)                   |
-| `\|>`   | Boru (pipe)            | `:!`       | yakala (catch)               |
-| `#1`    | doğru                  | `:>`       | her zaman (finally)          |
-| `#0`    | yanlış                 | `$!`       | hata mı                      |
-| `<#`    | içe aktar              | `$!!`      | hatayı ilet                  |
-| `#`     | modül tanımla          | `#>`       | dışa aktar                   |
-| `::`    | modül çağrısı          | `.`        | alan erişimi                 |
-| `#\|..\|` | Sayı ayrıştır        | `#?`       | Tip meta verisi              |
-| `#.N\|..\|` | Yuvarla            | `#!N\|..\|` | Kes                        |
-| `#,\|..\|` | Virgüllü biçim       | `#^\|..\|`  | Bilimsel biçim               |
-| `#d0d9#` | sayı modu değiştirici | `#09#` | ASCII'ye sıfırla |
-| `<\ ..\>` | Kabuk çalıştır       | `><`       | CLI argümanları              |
-
-## Sürüm Geçmişi
-
-### v0.0.3 — Unicode Sayı Sistemleri & LSP İyileştirmeleri _(Nisan 2026)_
-
-- **Eklendi** 69 Unicode rakam bloğu ve mod değiştirme tokeni `#d0d9#`
-- **Eklendi** Herhangi bir yazıda mantıksal değişmezler — `#१` / `#०`, `#١` / `#٠`, vb.
-- **Eklendi** Klingon pIqaD rakamları (CSUR PUA U+F8F0–U+F8F9)
-- **Eklendi** `SetNumeralMode` VM opkodu — tree-walker ile tam eşlik
-- **Eklendi** REPL, eko ve değişken görüntülemede aktif sayı moduna saygı gösterir
-- **Değiştirildi** Mantıksal değerlerin `>>` çıktısı artık tüm modlarda `#` önekini (`#0` / `#1`) içeriyor
-
-### v0.0.2_01 — Operatör Yeniden Adlandırma _(30 Mar 2026)_
-
-- **Değiştirildi** `c|..|` → `#,|..|` ve `e|..|` → `#^|..|` — `#` önek ailesiyle tutarlı
-- **Eklendi** Dışa aktarma takma adı: modül üyelerini farklı bir ad altında yeniden dışa aktarma
-
-### v0.0.2 — Koleksiyon API Yeniden Tasarımı & Yükleyiciler _(24 Mar 2026)_
-
-- **Eklendi** Diziler ve dizgiler için birleşik `$` operatör ailesi (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Eklendi** Diziler, demetler ve adlandırılmış demetler için parçalama
-- **Eklendi** Negatif dizinler (`arr[-1]` = son eleman)
-- **Eklendi** Yerel yükleyiciler — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
-
-### v0.0.1-patch _(25 Mar 2026)_
-
-- **Eklendi** Bileşik atama `^=`
-- **Düzeltildi** Aritmetik ayrıştırıcı uç durumları; belge düzeltmeleri
-
-### v0.0.1 — İlk Genel Sürüm _(22 Mar 2026)_
-
-- Tree-walker yorumlayıcı + yazmaç VM (`--vm`, ~4× daha hızlı, ~95% eşlik)
-- Tüm temel yapılar: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Tam Unicode tanımlayıcılar, modül sistemi, lambdalar, kapamalar, hata işleme
-- REPL, LSP, VS Code uzantısı, biçimlendirici (`zymbol fmt`)
+| Sembol | İşlem | Sembol | İşlem |
+|--------|-------|--------|-------|
+| `=` | değişken | `$#` | uzunluk |
+| `:=` | sabit | `$+` | ekle (zincirlenebilir) |
+| `>>` | çıktı | `$+[i]` | indekse ekle (1-tabanlı) |
+| `<<` | girdi | `$-` | değere göre ilkini kaldır |
+| `¶` / `\\` | satır sonu | `$--` | değere göre tümünü kaldır |
+| `?` | eğer | `$-[i]` | indeksten kaldır (1-tabanlı) |
+| `_?` | değilse eğer | `$-[i..j]` | aralığı kaldır (1-tabanlı) |
+| `_` | değilse / joker | `$?` | içeriyor |
+| `??` | eşleme | `$??` | tüm indeksleri bul (1-tabanlı) |
+| `@` | döngü | `$[s..e]` | dilim (1-tabanlı) |
+| `@ N { }` | N kez döngü | `$>` | haritalama |
+| `@!` | kır | `$|` | filtreleme |
+| `@>` | devam et | `$<` | indirgeme |
+| `@:isim { }` | etiketli döngü | `$/ ayır` | dizi bölme |
+| `@:isim!` | etiketli kır | `$++ a b c` | birleştirme oluşturma |
+| `@:isim>` | etiketli devam et | `dizi[i>j>k]` | gezinme indeksi |
+| `->` | lambda | `dizi[i] = değer` | eleman güncelle (yalnızca diziler) |
+| `dizi[i] += değer` | bileşik güncelleme | `dizi[i]$~` | fonksiyonel güncelleme (yeni kopya) |
+| `$^+` | artan sırala (ilkeller) | `$^-` | azalan sırala (ilkeller) |
+| `$^` | karşılaştırıcı ile sırala (demetler) | `<~` | döndür |
+| `|>` | boru | `!?` | dene |
+| `:!` | yakala | `:>` | sonunda |
+| `#1` | doğru | `#0` | yanlış |
+| `$!` | hatadır | `$!!` | hatayı yay |
+| `<#` | içe aktar | `#>` | dışa aktar |
+| `#` | modül bildir | `::` | modülü çağır |
+| `.` | alana erişim | `#?` | tip metaverisi |
+| `#\|..\|` | sayıyı ayrıştır | `##.` | Kayan Noktaya dönüştür |
+| `###` | Tam Sayıya dönüştür (yuvarla) | `##!` | Tam Sayıya dönüştür (kırp) |
+| `#.N\|..\|` | yuvarla | `#!N\|..\|` | kırp |
+| `#,\|..\|` | virgül biçimi | `#^\|..\|` | bilimsel |
+| `#d0d9#` | sayısal mod değiştir | `#09#` | ASCII'ye sıfırla |
+| `<\ ..\>` | kabuk çalıştır | `>\<` | CLI argümanları |
+| `\ var` | değişkeni açıkça yok et | | |
 
 ---
 
-*Zymbol-Lang — Sembolik. Evrensel. Değişmez.*
+## Sürüm Değişiklik Günlüğü
 
-> **Uyarı:** Bu belge yapay zeka (YZ) tarafından oluşturulmuş ve çevrilmiştir.
-> Doğruluğu sağlamak için her türlü çaba gösterilmiş olmakla birlikte, bazı çeviriler veya örnekler hata içerebilir.
-> Kanonik referans [Zymbol-Lang spesifikasyonudur](https://github.com/zymbol-lang/interpreter).
->
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-> For authoritative reference, consult the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).
+### v0.0.4 — 1-Tabanlı İndeksleme, Birinci Sınıf Fonksiyonlar ve Modül Blokları _(Nisan 2026)_
+
+- **Kırılan** Tüm indeksleme **1-tabanlı** olarak değiştirildi — `arr[1]` ilk elemandır; `arr[0]` çalışma zamanı hatasıdır
+- **Eklendi** İsimlendirilmiş fonksiyonlar **birinci sınıf değerlerdir** — doğrudan YDF'ye aktarın: `nums$> iki_kat`
+- **Eklendi** Modüller için **blok sözdizimi zorunludur**: `# isim { ... }` — düz sözdizimi kaldırıldı
+- **Eklendi** Çok boyutlu indeksleme: `arr[i>j>k]` (gezinme), `arr[p ; q]` (düz çıkarma)
+- **Eklendi** Tip dönüşümü: `##.ifade` (Kayan Nokta), `###ifade` (Tam Sayı yuvarla), `##!ifade` (Tam Sayı kırp)
+- **Eklendi** Dizi bölme: `str$/ ayır` — `Array(Dizi)` döndürür
+- **Eklendi** Birleştirme oluşturma: `taban$++ a b c` — birden çok öğe ekler
+- **Eklendi** N kez döngü: `@ N { }` — tam olarak N kez tekrarla
+- **Eklendi** Etiketli döngü sözdizimi: `@:isim { }`, `@:isim!`, `@:isim>` — `@ @isim` / `@! isim` yerine geçer
+- **Eklendi** Değişken kapsam kuralları: `_isim` değişkenleri tam blok kapsamına sahiptir; `\ var` erken yok eder
+- **Eklendi** Eşleme karşılaştırma kalıpları: `< 0 :`, `> 5 :`, `== 42 :` vb.
+- **Eklendi** Modül E013 hatası: modül gövdesinde yürütülebilir ifadeler yasaktır
+- **Düzeltildi** `take_variable` artık geri yazarken modül sabitlerini bozmaz
+- **Düzeltildi** `alias.CONST` artık doğru çözümlenir; `#>` fonksiyon tanımlarından sonra görünebilir
+- **VM** Tam eşitlik: 393/393 test geçer
+
+### v0.0.3 — Unicode Sayısal Sistemler ve LSP İyileştirmeleri _(Nisan 2026)_
+
+- **Eklendi** 69 Unicode basamak bloğu, mod değiştirme tokenı `#d0d9#` ile
+- **Eklendi** Herhangi bir yazı sisteminde Boolean litarelleri — `#१` / `#०`, `#١` / `#٠`, vb.
+- **Eklendi** Klingon pIqaD rakamları (CSUR PUA U+F8F0–U+F8F9)
+- **Eklendi** `SetNumeralMode` VM opkodu — tree-walker ile tam eşitlik
+- **Eklendi** REPL, yankı ve değişken görüntülemede aktif sayısal moda saygı gösterir
+- **Değiştirildi** Boolean `>>` çıktısı artık tüm modlarda `#` önekini içerir (`#0` / `#1`)
+
+### v0.0.2_01 — Operatör Yeniden Adlandırma _(30 Mart 2026)_
+
+- **Değiştirildi** `c|..|` → `#,|..|` ve `e|..|` → `#^|..|` — `#` biçim öneki ailesiyle tutarlı
+- **Eklendi** Dışa aktarma takma adı: modül üyelerini farklı bir adla yeniden dışa aktar
+
+### v0.0.2 — Koleksiyon API'si Yeniden Tasarımı ve Yükleyiciler _(24 Mart 2026)_
+
+- **Eklendi** Diziler ve dizgiler için birleşik `$` operatör ailesi (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Eklendi** Diziler, demetler ve isimlendirilmiş demetler için yıkıcı atama
+- **Eklendi** Negatif indeksler (`arr[-1]` = son eleman)
+- **Eklendi** Yerel yükleyiciler — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Mart 2026)_
+
+- **Eklendi** Bileşik atama `^=`
+- **Düzeltildi** Ayrıştırıcı aritmetik köşe durumları; dokümantasyon düzeltmeleri
+
+### v0.0.1 — İlk Halka Açık Sürüm _(22 Mart 2026)_
+
+- Tree-walker yorumlayıcı + kayıt VM (`--vm`, ~4× daha hızlı, ~95% eşitlik)
+- Tüm çekirdek yapılar: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Tam Unicode tanımlayıcılar, modül sistemi, lambdalar, kapanımlar, hata yönetimi
+- REPL, LSP, VS Code eklentisi, biçimlendirici (`zymbol fmt`)
+
+---
+
+_Zymbol-Lang — Sembolik. Evrensel. Değişmez._

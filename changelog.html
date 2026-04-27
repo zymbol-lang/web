@@ -269,11 +269,64 @@
 <!-- ═══ TIMELINE ═══ -->
 <div class="cl-timeline">
 
+  <!-- ── v0.0.4 ── -->
+  <div class="cl-entry">
+    <div class="cl-entry-head">
+      <span class="cl-version">v0.0.4</span>
+      <span class="cl-badge-latest">latest</span>
+      <span class="cl-date">April 2026</span>
+    </div>
+    <div class="cl-title">1-Based Indexing, Multi-Dim Access &amp; Tooling Improvements</div>
+
+    <div class="cl-groups">
+
+      <div class="cl-group">
+        <span class="cl-group-label added">Added</span>
+        <ul class="cl-change-list">
+          <li><strong>Multi-dimensional indexing</strong> — <code>arr[i&gt;j&gt;k]</code> scalar deep access, <code>arr[p;q]</code> flat extraction, <code>arr[[g];[g]]</code> structured extraction</li>
+          <li><strong>Type conversion casts</strong> — <code>##.expr</code> to Float, <code>###expr</code> to Int (round), <code>##!expr</code> to Int (truncate)</li>
+          <li><strong>String split</strong> — <code>string$/ delim</code> returns an Array of parts</li>
+          <li><strong>Concat-build</strong> — <code>base$++ a b c</code> appends multiple items in one expression</li>
+          <li><strong>Closed block module syntax</strong> — <code># name { … }</code> required; E013 raised on executable statements at module top-level</li>
+          <li><strong>Circular import detection</strong> — clear <code>CircularImport</code> error instead of stack overflow</li>
+          <li><strong>E001 enforcement</strong> — module declaration name must match the filename stem; <code>zymbol check</code> always verifies this</li>
+          <li><strong>REPL</strong> — raw-mode output fix (bare <code>\n</code> → <code>\r\n</code> in raw mode); <code>&lt;&lt;</code> input temporarily disables raw mode; expressions typed at the prompt display with quoted <code>repr</code> formatting</li>
+          <li><strong>Formatter</strong> — multi-line block-comment tracking and re-indentation; module export-block layout; handles <code>DeepIndexExpr</code>, <code>FlatExtractExpr</code>, and <code>StructuredExtractExpr</code> nodes; idempotent on all 393 parity test files</li>
+          <li><strong>VM full parity</strong> — 320/320 tests pass; <code>LoadGlobal</code>/<code>StoreGlobal</code> for module private mutable state; lambda HOF; list-pattern compilation</li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label changed">Changed</span>
+        <ul class="cl-change-list">
+          <li><strong>1-based indexing across all collections</strong> — <code>arr[1]</code> is the first element; index <code>0</code> raises a runtime error. Negative indices preserved: <code>arr[-1]</code> is still the last element</li>
+          <li>CLI flag order corrected — <code>zymbol run --vm file.zy</code> (flag before file)</li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label fixed">Fixed</span>
+        <ul class="cl-change-list">
+          <li><code>alias.CONST</code> — module constant access via dot notation now resolves correctly</li>
+          <li><code>\ var</code> explicit lifetime end was a no-op — now calls <code>destroy_variable()</code> and prevents post-destroy use at compile time</li>
+          <li>Cast error messages unified between tree-walker and VM — both emit <code>"##. requires a numeric value, got String"</code></li>
+          <li>Module constants no longer corrupted on write-back (<code>take_variable</code> fix)</li>
+          <li>Formatter: 52/52 unit tests pass after correcting loop and foreach test inputs</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="cl-actions">
+      <a href="https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.4" target="_blank" class="btn-ghost">↗ GitHub</a>
+      <a href="install.html" class="btn-ghost">↓ Download</a>
+    </div>
+  </div>
+
   <!-- ── v0.0.3 ── -->
   <div class="cl-entry">
     <div class="cl-entry-head">
       <span class="cl-version">v0.0.3</span>
-      <span class="cl-badge-latest">latest</span>
       <span class="cl-date">April 2026</span>
     </div>
     <div class="cl-title">Unicode Numeral Systems &amp; LSP Improvements</div>

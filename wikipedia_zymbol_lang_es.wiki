@@ -1,0 +1,421 @@
+{{Ficha de lenguaje de programación
+|nombre                    = Zymbol
+|logo                      =
+|captura                   =
+|tamaño_captura            =
+|pie                       =
+|extensiones_comunes       = <code>.zy</code>
+|paradigma                 = [[Lenguaje de programación multiparadigma|multiparadigma]], [[Programación imperativa|imperativo]], [[Programación por procedimientos|procedural]], [[Programación funcional|funcional]]
+|año                       = 2026
+|diseñador                 = Proyecto Zymbol-Lang
+|desarrollador             = Colaboradores de Zymbol-Lang
+|última_versión            = 0.0.2
+|fecha_última_versión      = {{fecha de lanzamiento|2026}}
+|tipo_dato                 = [[Tipado dinámico|dinámico]]
+|implementaciones          =
+|dialectos                 =
+|influido_por              = [[Haskell]], [[Ruby]], [[Rust (lenguaje de programación)|Rust]], [[Perl]], [[ABAP]]
+|ha_influido               =
+|sistema_operativo         = [[Multiplataforma]]
+|sitio_web                 = [https://zymbol-lang.org Sitio web oficial]
+|licencia                  = [[GNU Affero General Public License|AGPL-3.0 o posterior]]
+}}
+
+'''Zymbol''' (también conocido como '''Zymbol-Lang''') es un [[esoteric programming language|lenguaje de programación esotérico]] de [[open-source software|código abierto]] e [[interpreter (computing)|interpretado]], diseñado para estar completamente libre de palabras clave en lenguaje humano. Toda estructura de control, operación de E/S y marcador de tipo se expresa mediante un símbolo, lo que permite escribir programas usando identificadores en cualquier escritura [[Unicode]] — incluyendo [[Latin script|latino]], [[Arabic script|árabe]], [[CJK characters|CJK]], [[Devanagari]], [[Cyrillic script|cirílico]], [[Cherokee syllabary|silabario cheroqui]], [[Unified Canadian Aboriginal Syllabics|silabario cree]] y el pIqaD [[Klingon language|klingon]].<ref>{{Cita web |título=Zymbol-Lang |url=https://esolangs.org/wiki/Zymbol-Lang |sitioweb=Esolangs |fechaacceso=2 de abril de 2026}}</ref>
+
+El principio de diseño central de Zymbol es que ''los operadores son universales, los identificadores son tuyos'': la gramática simbólica es fija e independiente del idioma, mientras que toda la nomenclatura queda en manos del programador, quien puede usar su lengua materna.
+
+La implementación de referencia está escrita en [[Rust (programming language)|Rust]] y se encuentra actualmente en alfa pública (versión 0.0.2).<ref>{{Cita web |título=zymbol-lang/interpreter |url=https://github.com/zymbol-lang/interpreter |sitioweb=GitHub |fechaacceso=2 de abril de 2026}}</ref>
+
+== Antecedentes ==
+
+La mayoría de los lenguajes de programación usan palabras reservadas en inglés como palabras clave (p. ej., <code>if</code>, <code>while</code>, <code>return</code>, <code>true</code>). Esto genera una dependencia implícita en el conocimiento del inglés para cualquier persona que aprenda a programar. Zymbol aborda esto reemplazando cada palabra clave con un símbolo, haciendo que la capa sintáctica sea independiente de cualquier lengua natural.
+
+Zymbol está clasificado como un [[esoteric programming language|lenguaje de programación esotérico]] debido a su sintaxis no convencional, pero a diferencia de la mayoría de los esolangs, está diseñado para uso práctico: incluye un sistema de módulos, manejo de errores, una implementación de [[language server protocol|Language Server Protocol]] (LSP), un [[REPL]], un formateador de código y dos backends de ejecución.
+
+== Principios de diseño ==
+
+# '''Sin palabras clave''' — <code>?</code> es ''if'', <code>@</code> es ''loop'', <code><~</code> es ''return''. Sin dependencia de ningún lenguaje natural.
+# '''Unicode completo''' — los nombres de variables, funciones, comentarios y valores de cadena aceptan cualquier carácter Unicode o clúster de grafemas.
+# '''Literales de tipo independientes del idioma''' — <code>#1</code> / <code>#0</code> en lugar de <code>true</code> / <code>false</code>; las etiquetas de tipo usan símbolos (<code>###</code>, <code>##"</code>, <code>##?</code>).
+# '''Operadores consistentes''' — el mismo símbolo tiene el mismo significado independientemente del idioma humano usado para los identificadores.
+# '''Explícito sobre implícito''' — los saltos de línea en la salida, los valores de retorno y la captura de ámbito requieren sintaxis explícita.
+
+== Sintaxis ==
+
+=== Variables y mutabilidad ===
+
+Zymbol distingue las variables mutables (declaradas con <code>=</code>) de las constantes inmutables (declaradas con <code>:=</code>). Se admiten operadores de asignación aumentada (<code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>%=</code>, <code>^=</code>) e incremento/decremento (<code>++</code>, <code>--</code>). Intentar reasignar una constante produce un error de ejecución de tipo <code>##Type</code>.
+
+=== Referencia de operadores ===
+
+{| class="wikitable sortable"
+|-
+! Categoría !! Operador !! Significado !! Notas
+|-
+| Asignación || <code>=</code> || Variable mutable ||
+|-
+| Asignación || <code>:=</code> || Constante inmutable || La reasignación lanza <code>##Type</code>
+|-
+| Salida || <code>>></code> || Imprimir (sin salto de línea automático) || Múltiples valores por yuxtaposición
+|-
+| Salto de línea || <code>¶</code> o <code>\\</code> || Salto de línea explícito en la salida || Los saltos de línea nunca son implícitos
+|-
+| Entrada || <code><<</code> || Leer de la entrada estándar || Acepta cadena de prompt opcional
+|-
+| Si || <code>?</code> || Rama condicional || Las llaves son obligatorias incluso para sentencias simples
+|-
+| Si no, si || <code>_?</code> || Rama else-if ||
+|-
+| Si no || <code>_</code> || Rama else || También se usa como comodín en <code>??</code>
+|-
+| Coincidencia || <code>??</code> || Coincidencia de patrones / switch || Admite rangos, cadenas, guardas y ramas de bloque
+|-
+| Bucle || <code>@</code> || Bucle (while / rango / for-each / infinito) || Sintaxis de rango: <code>i:0..N</code>; con paso: <code>i:0..N:S</code>
+|-
+| Romper || <code>@!</code> || Salir del bucle || Admite etiquetas para bucles anidados: <code>@! etiqueta</code>
+|-
+| Continuar || <code>@></code> || Continuar a la siguiente iteración ||
+|-
+| Lambda || <code>-></code> || Función anónima || Captura el ámbito exterior (semántica de clausura)
+|-
+| Retorno || <code><~</code> || Devolver valor desde una función || También marca parámetros de salida en firmas de función
+|-
+| Tubería || <code>&#124;></code> || Pasar valor a una función || El lado derecho debe usar <code>_</code> como marcador del valor enviado
+|-
+| Distinto de || <code><></code> || Desigualdad || Intencionalmente distinto de <code>!=</code>
+|-
+| Exponenciación || <code>^</code> || Potencia || La división entera entre dos enteros produce un entero
+|-
+| Longitud || <code>$#</code> || Longitud de un array o cadena ||
+|-
+| Agregar || <code>$+</code> || Agregar al array || Devuelve un nuevo array; <code>$+[i]</code> inserta en el índice
+|-
+| Eliminar || <code>$-</code> || Eliminar primera ocurrencia por valor || <code>$--</code> elimina todas; <code>$-[i]</code> por índice; <code>$-[i..j]</code> por rango
+|-
+| Actualizar || <code>$~</code> || Actualización funcional en índice || Devuelve nuevo array; <code>arr[i] = v</code> muta en lugar
+|-
+| Contiene || <code>$?</code> || Comprobar pertenencia || <code>$??</code> devuelve lista de todos los índices coincidentes
+|-
+| Rebanada || <code>$[s..e]</code> || Rebanar array o cadena || Extremo final exclusivo; forma basada en cuenta: <code>$[s:cuenta]</code>
+|-
+| Ordenar || <code>$^+</code> / <code>$^-</code> || Ordenar ascendente / descendente || <code>$^</code> con lambda comparador para orden personalizado
+|-
+| Mapear || <code>$></code> || Mapear sobre array || Requiere una lambda en línea
+|-
+| Filtrar || <code>$&#124;</code> || Filtrar array || Requiere una lambda en línea
+|-
+| Reducir || <code>$<</code> || Reducir array || Requiere una lambda en línea
+|-
+| Dividir cadena || <code>/</code> || Dividir cadena por delimitador || <code>"a,b,c" / ','</code> → <code>[a, b, c]</code>
+|-
+| Reemplazar cadena || <code>$~~</code> || Reemplazar subcadena || Admite máximo de reemplazos: <code>$~~["viejo":"nuevo":N]</code>
+|-
+| Intentar || <code>!?{ }</code> || Bloque try ||
+|-
+| Capturar || <code>:! ##Tipo { }</code> || Capturar tipo de error específico || <code>:! { }</code> captura cualquier error; <code>_err</code> contiene el mensaje
+|-
+| Finalmente || <code>:>{ }</code> || Bloque finally || Siempre se ejecuta
+|-
+| Es error || <code>$!</code> || Comprobar si un valor es un error ||
+|-
+| Propagar || <code>$!!</code> || Propagar error al llamador ||
+|-
+| Declarar módulo || <code>#</code> || Declarar nombre de módulo ||
+|-
+| Exportar || <code>#>{ }</code> || Exportar símbolos || Las exportaciones deben preceder a las definiciones; admite renombrado
+|-
+| Importar || <code><#</code> || Importar módulo ||
+|-
+| Alias || <code><=</code> || Alias de importación || Las importaciones sin alias no están soportadas
+|-
+| Llamada a módulo || <code>::</code> || Llamar a una función de un módulo ||
+|-
+| Acceso a campo || <code>.</code> || Acceder a un campo de tupla con nombre o miembro de módulo ||
+|-
+| Introspección de tipo || <code>#?</code> || Consulta de tipo postfija || Devuelve una tupla <code>(etiqueta_tipo, dígitos, valor)</code>
+|-
+| Parsear número || <code>#&#124;..&#124;</code> || Parsear cadena a entero o flotante || Devuelve la cadena original en caso de fallo
+|-
+| Redondear || <code>#.N&#124;..&#124;</code> || Redondear a N decimales ||
+|-
+| Truncar || <code>#!N&#124;..&#124;</code> || Truncar a N decimales ||
+|-
+| Ejecutar shell || <code><\ cmd \></code> || Ejecutar comando shell, capturar stdout || Admite interpolación de cadenas dentro del comando
+|}
+
+=== Sistema de tipos ===
+
+Zymbol usa [[dynamic typing|tipado dinámico]]. El tipo de cualquier valor puede inspeccionarse en tiempo de ejecución con el operador postfijo <code>#?</code>, que devuelve una tupla estructurada de la forma <code>(etiqueta_tipo, dígitos, valor)</code>.
+
+{| class="wikitable"
+|-
+! Tipo !! Ejemplo literal !! Etiqueta de tipo !! Notas
+|-
+| Entero || <code>42</code>, <code>-7</code>, <code>0xFF</code> || <code>###</code> || Entero con signo de 64 bits; admite literales hexadecimal, binario, octal y decimal
+|-
+| Flotante || <code>3.14</code>, <code>1.5e10</code> || <code>##.</code> || Notación científica admitida; entero ÷ entero produce entero
+|-
+| Cadena || <code>"hola"</code> || <code>##"</code> || Interpolación: <code>"Hola {nombre}"</code>
+|-
+| Carácter || <code>'A'</code> || <code>##'</code> || Clúster de grafema Unicode individual
+|-
+| Booleano || <code>#1</code>, <code>#0</code> || <code>##?</code> || No numérico: <code>#1 ≠ 1</code>
+|-
+| Array || <code>[1, 2, 3]</code> || <code>##]</code> || Con índice cero; se admiten índices negativos (<code>arr[-1]</code> es el último elemento)
+|-
+| Tupla || <code>(a, b)</code>, <code>(x: 1, y: 2)</code> || <code>##)</code> || Campos con nombre accesibles por <code>.campo</code> o por índice posicional
+|-
+| Unidad || (sin valor) || <code>##_</code> || Devuelto por funciones sin valor de retorno explícito
+|}
+
+=== Ámbito y aislamiento de funciones ===
+
+Las funciones con nombre en Zymbol tienen ámbitos completamente aislados: no pueden leer ni escribir variables del contexto envolvente. Esta es una decisión de diseño intencional para evitar dependencias de estado ocultas.
+
+Las [[Anonymous function|lambdas]] (<code>-></code>) usan semántica de [[closure (computer programming)|clausura]] y capturan el ámbito envolvente. Las funciones con nombre que necesitan modificar las variables del llamador lo hacen a través de '''parámetros de salida''', declarados con <code><~</code> en la firma de la función:
+
+<syntaxhighlight lang="text">
+swap(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
+}
+x = 10
+y = 20
+swap(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+</syntaxhighlight>
+
+=== Funciones de primera clase ===
+
+Las funciones con nombre en Zymbol no son [[first-class function|valores de primera clase]]: no pueden almacenarse en variables ni pasarse como argumentos directamente. Para usar una función con nombre como [[higher-order function|argumento de orden superior]], debe envolverse en una lambda:
+
+<syntaxhighlight lang="text">
+double(x) { <~ x * 2 }
+nums = [1, 2, 3, 4, 5]
+
+result = nums$> (x -> double(x))    // envuelta en una lambda
+</syntaxhighlight>
+
+Las lambdas son de primera clase y pueden almacenarse en variables, arrays y pasarse libremente.
+
+=== Desestructuración ===
+
+Zymbol admite asignación por [[destructuring|desestructuración]] para arrays y tuplas. El operador de captura de resto <code>*</code> recoge los elementos restantes del array; <code>_</code> descarta una posición:
+
+<syntaxhighlight lang="text">
+arr = [10, 20, 30, 40, 50]
+[a, b, c]      = arr          // a=10  b=20  c=30
+[first, *rest] = arr          // first=10  rest=[20,30,40,50]
+[x, _, z]      = [1, 2, 3]   // _ descarta la posición 2
+
+person = (name: "Ana", age: 25, city: "Madrid")
+(name: n, age: a) = person   // n="Ana"  a=25
+</syntaxhighlight>
+
+=== Operador tubería ===
+
+El operador tubería (<code>|></code>) pasa un valor a una función. A diferencia de operadores similares en otros lenguajes, Zymbol requiere un marcador explícito <code>_</code> en el lado derecho, haciendo que el punto de inyección sea inequívoco cuando la función recibe múltiples argumentos:
+
+<syntaxhighlight lang="text">
+add = (a, b) -> a + b
+
+5 |> add(_, 3)    // → 8   (_ es el valor enviado)
+5 |> add(2, _)    // → 7   (la posición importa)
+</syntaxhighlight>
+
+=== Coincidencia de patrones ===
+
+El operador <code>??</code> admite coincidencia por valor, por rango, con condiciones de guarda y ramas de bloque:
+
+<syntaxhighlight lang="text">
+// Coincidencia por rango
+grade = ?? score {
+    90..100 : 'A'
+    80..89  : 'B'
+    _       : 'F'
+}
+
+// Coincidencia con guarda
+state = ?? temp {
+    _? temp < 0  : "hielo"
+    _? temp < 20 : "frío"
+    _            : "cálido"
+}
+</syntaxhighlight>
+
+=== Integración con el shell ===
+
+Zymbol puede ejecutar comandos del shell y capturar su salida estándar mediante la construcción <code><\ cmd \></code>. Se admite [[String interpolation|interpolación de cadenas]] dentro del comando. Esta función está disponible únicamente en el backend de árbol de ejecución.
+
+<syntaxhighlight lang="text">
+date    = <\ date +%Y-%m-%d \>
+file    = "datos.txt"
+content = <\ cat {file} \>
+</syntaxhighlight>
+
+== Ejemplos de código ==
+
+=== ¡Hola, mundo! ===
+
+<syntaxhighlight lang="text">
+>> "Hello, World!" ¶
+</syntaxhighlight>
+
+El mismo programa escrito con identificadores y contenido de cadena en árabe:
+
+<syntaxhighlight lang="text">
+تحية = "مرحبا، أيها العالم!"
+>> تحية ¶
+</syntaxhighlight>
+
+=== FizzBuzz ===
+
+<syntaxhighlight lang="text">
+fizzbuzz(n) {
+    ? n % 15 == 0 { <~ "FizzBuzz" }
+    _? n % 3  == 0 { <~ "Fizz"     }
+    _? n % 5  == 0 { <~ "Buzz"     }
+    _ { <~ n }
+}
+
+@ i:1..20 { >> fizzbuzz(i) ¶ }
+</syntaxhighlight>
+
+=== Fibonacci (recursivo) ===
+
+<syntaxhighlight lang="text">
+fib(n) {
+    ? n <= 1 { <~ n }
+    <~ fib(n - 1) + fib(n - 2)
+}
+
+@ i:0..9 { >> fib(i) " " }   // → 0 1 1 2 3 5 8 13 21 34
+</syntaxhighlight>
+
+=== Funciones de orden superior ===
+
+<syntaxhighlight lang="text">
+nums    = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+doubled = nums$> (x -> x * 2)
+evens   = nums$| (x -> x % 2 == 0)
+total   = nums$< (0, (acc, x) -> acc + x)
+>> total ¶    // → 55
+</syntaxhighlight>
+
+=== Manejo de errores ===
+
+<syntaxhighlight lang="text">
+!? {
+    data = read_file("config.txt")
+} :! ##IO {
+    >> "Archivo no encontrado" ¶
+} :! ##Parse {
+    >> "Error de parseo" ¶
+} :! {
+    >> "Error desconocido: " _err ¶
+} :> {
+    >> "Limpieza completada" ¶
+}
+</syntaxhighlight>
+
+Tipos de error: <code>##IO</code>, <code>##Network</code>, <code>##Parse</code>, <code>##Index</code>, <code>##Type</code>, <code>##Div</code>, <code>##_</code> (captura genérica).
+
+=== Sistema de módulos ===
+
+<syntaxhighlight lang="text">
+// lib/math.zy
+# math
+#> { add, get_PI }
+
+_PI := 3.14159
+add(a, b) { <~ a + b }
+get_PI()   { <~ _PI  }
+</syntaxhighlight>
+
+<syntaxhighlight lang="text">
+// main.zy
+<# ./lib/math <= m
+
+>> m::add(5, 3) ¶    // → 8
+pi = m::get_PI()
+>> pi ¶               // → 3.14159
+</syntaxhighlight>
+
+== Internacionalización ==
+
+Como Zymbol no tiene palabras clave en inglés, los programas escritos en cualquier [[writing system|sistema de escritura]] son sintácticamente idénticos a los escritos en cualquier otro. Los operadores permanecen constantes; solo varían los identificadores, el contenido de las cadenas y los comentarios.
+
+Un programa escrito completamente en [[Arabic script|árabe]], [[Japanese writing system|japonés]], [[Cherokee syllabary|silabario cheroqui]] o pIqaD [[Klingon language|klingon]] es estructuralmente equivalente a uno escrito en escritura latina — no se requiere capa de traducción ni preprocesamiento. El modelo de [[Unicode]] de [[grapheme cluster|clúster de grafemas]] garantiza que las escrituras con composición de glifos compleja ([[Devanagari]], [[Thai script|tailandés]], [[Burmese script|birmano]], [[Unified Canadian Aboriginal Syllabics|silabario cree]]) se gestionen correctamente a nivel del analizador léxico.
+
+== Clase computacional ==
+
+Zymbol es [[Turing completeness|Turing completo]]. Proporciona:
+
+* Bucles sin límite (<code>@</code> con condiciones while arbitrarias)
+* [[recursion (computer science)|Recursión]] arbitraria (con optimización de [[tail call|llamada de cola]] en el backend VM)
+* Arrays dinámicos de tamaño ilimitado
+* Aritmética entera con signo de 64 bits
+
+== Implementación ==
+
+La implementación de referencia está escrita en [[Rust (programming language)|Rust]] y estructurada como un workspace de 17 crates:
+
+{| class="wikitable"
+|-
+! Componente !! Función
+|-
+| Lexer / Parser || Produce un [[abstract syntax tree|AST]] a partir del código fuente <code>.zy</code>; gestiona clústeres de grafemas Unicode de forma nativa
+|-
+| Analizador semántico || [[Type checking|Comprobación de tipos]], análisis de variables no usadas, detección de importaciones circulares
+|-
+| Intérprete de árbol || Ruta de ejecución predeterminada; admite todas las características del lenguaje
+|-
+| Compilador de bytecode + VM de registros || Backend opcional (invocado con <code>--vm</code>); aproximadamente 4× más rápido en cargas de trabajo recursivas; soporte parcial del sistema de módulos
+|-
+| Servidor LSP || Implementación de [[Language Server Protocol]] mediante tower-lsp y Tokio
+|-
+| Formateador || Formateador de código con indentación configurable
+|-
+| REPL || [[read–eval–print loop|Bucle interactivo de lectura-evaluación-impresión]] con historial de comandos
+|}
+
+Los dos backends de ejecución pueden seleccionarse en tiempo de ejecución:
+
+<syntaxhighlight lang="text">
+zymbol run program.zy           # árbol de ejecución (predeterminado, completo)
+zymbol run --vm program.zy      # VM de registros (~4× más rápido)
+zymbol repl                     # REPL interactivo
+zymbol check program.zy         # solo comprobación sintáctica y semántica
+zymbol fmt program.zy --write   # formatear archivo fuente en su lugar
+</syntaxhighlight>
+
+== Véase también ==
+
+* [[Brainfuck]] — lenguaje minimalista con un pequeño conjunto de operadores
+* [[Befunge]] — lenguaje esotérico simbólico basado en pila
+* [[Unlambda]] — lenguaje puramente funcional con sintaxis mínima
+* [[Esoteric programming language|Lenguaje de programación esotérico]]
+* [[Unicode in programming languages|Unicode en lenguajes de programación]]
+
+== Enlaces externos ==
+
+* [https://zymbol-lang.org Sitio web oficial]
+* [https://github.com/zymbol-lang/interpreter Código fuente del intérprete (GitHub)]
+* [https://github.com/zymbol-lang/interpreter/blob/main/zymbol.ebnf Gramática EBNF formal]
+* [https://esolangs.org/wiki/Zymbol-Lang Zymbol-Lang en la wiki de Esolangs]
+
+== Referencias ==
+
+{{listaref}}
+
+[[Categoría:Lenguajes de programación esotéricos]]
+[[Categoría:Lenguajes de programación creados en 2026]]
+[[Categoría:Lenguajes de programación de tipo dinámico]]
+[[Categoría:Rust (lenguaje de programación)]]
+[[Categoría:Unicode]]
+[[Categoría:Lenguajes de programación funcionales]]
+[[Categoría:Lenguajes de programación imperativos]]
+[[Categoría:Software libre programado en Rust]]
+[[Categoría:Lenguajes de programación con intérprete]]

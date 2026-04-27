@@ -1,55 +1,67 @@
-# Panduan Ringkas Zymbol-Lang
+> **Pemberitahuan:** Dokumentasi ini dibuat dengan bantuan kecerdasan buatan (AI).
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Referensi kanonik adalah **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** di repositori interpreter.
 
-**Zymbol-Lang** adalah bahasa pemrograman simbolis. Tidak menggunakan kata kunci — semuanya adalah simbol. Bekerja dengan cara yang sama di semua bahasa manusia.
+---
 
-- Tidak ada kata kunci (`if`, `while`, `return` tidak ada — hanya simbol `?`, `@`, `<~`)
-- Dukungan Unicode penuh — pengenal dalam bahasa atau emoji apa pun 👋
-- Bebas bahasa — kode identik di semua bahasa
+# Manual Zymbol-Lang
+
+**Zymbol-Lang** adalah bahasa pemrograman simbolik. Tanpa kata kunci — semuanya adalah simbol. Bekerja sama persis dalam bahasa manusia apa pun.
+
+- Tanpa `if`, `while`, `return` — hanya `?`, `@`, `<~`
+- Unicode penuh — pengenal dalam bahasa atau emoji apa pun
+- Agnostik terhadap bahasa manusia — kodenya sama di mana pun
+
+**Versi interpreter**: v0.0.4 | **Cakupan tes**: 393/393 (paritas TW ↔ VM)
 
 ---
 
 ## Variabel dan Konstanta
 
 ```zymbol
-x = 10           // Variabel (dapat diubah)
-PI := 3.14159    // Konstanta (tidak dapat diubah — kesalahan jika ditugaskan ulang)
-nama = "Ani"
-aktif = #1       // boolean benar
+x = 10              // variabel yang dapat diubah
+PI := 3.14159       // konstanta — penugasan ulang adalah error runtime
+nama = "Alice"
+aktif = #1          // Boolean benar
 👋 := "Halo"
 ```
 
 ```zymbol
-x = 10
+x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
 
 ---
 
-## Tabel Tipe Data
+## Tipe Data
 
-| Tipe             | Contoh              | Simbol `#?` | Catatan                                |
-|------------------|---------------------|-------------|----------------------------------------|
-| Bilangan Bulat   | `42`, `-7`          | `###`       | 64-bit bertanda                        |
-| Bilangan Desimal | `3.14`, `1.5e10`    | `##.`       | Notasi ilmiah didukung                 |
-| String           | `"halo"`            | `##"`       | Interpolasi: `"Halo {nama}"`           |
-| Karakter         | `'A'`               | `##'`       | Satu karakter Unicode                  |
-| Boolean          | `#1`, `#0`          | `##?`       | BUKAN angka 1 dan 0                    |
-| Larik            | `[1, 2, 3]`         | `##]`       | Semua elemen bertipe sama              |
-| Tupel            | `(a, b)`            | `##)`       | Berdasarkan posisi                     |
-| Tupel Bernama    | `(x: 1, y: 2)`      | `##)`       | Akses dengan nama atau indeks          |
+| Tipe | Literal | Tag `#?` | Catatan |
+|------|---------|----------|---------|
+| Integer | `42`, `-7` | `###` | 64-bit bertanda |
+| Float | `3.14`, `1.5e10` | `##.` | Notasi ilmiah diperbolehkan |
+| String | `"teks"` | `##"` | Interpolasi: `"Halo {nama}"` |
+| Karakter | `'A'` | `##'` | Satu karakter Unicode |
+| Boolean | `#1`, `#0` | `##?` | BUKAN numerik — `#1 ≠ 1` |
+| Array | `[1, 2, 3]` | `##]` | Elemen homogen |
+| Tuple | `(a, b)` | `##)` | Posisional |
+| Tuple bernama | `(x: 1, y: 2)` | `##)` | Bidang bernama |
+| Fungsi | referensi fungsi bernama | `##()` | Kelas satu; tampilkan `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Kelas satu; tampilkan `<lambd/N>` |
 
 ```zymbol
-// Introspeksi tipe — mengembalikan (tipe, digit, nilai)
+// Instrospeksi tipe — mengembalikan (tipe, digit, nilai)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
-t = meta[0]
+t = meta[1]
 >> t ¶            // → ###
 ```
 
@@ -58,31 +70,38 @@ t = meta[0]
 ## Keluaran dan Masukan
 
 ```zymbol
->> "Halo" ¶                    // ¶ atau \\ untuk baris baru eksplisit
->> "a=" a " b=" b ¶            // beberapa nilai ditulis berdampingan
->> (larik$#) ¶                 // operator postfix memerlukan tanda kurung
+>> "Halo" ¶                       // ¶ atau \\ untuk baris baru eksplisit
+>> "a=" a " b=" b ¶               // juxtaposisi — banyak nilai
+>> (arr$#) ¶                      // operator postfix memerlukan ( ) di >>
 
-<< nilai                       // tanpa perintah — membaca ke variabel
-<< "Masukkan nama: " nama      // dengan perintah
+<< nama                           // baca ke variabel (tanpa prompt)
+<< "Masukkan nama: " nama         // dengan prompt
 ```
 
-> `¶` atau `\\` setara sebagai baris baru.
+> `¶` (AltGr+R pada keyboard Spanyol) dan `\\` setara untuk baris baru.
 
 ---
 
 ## Operator
 
 ```zymbol
-// Aritmatika
+// Aritmetika — gunakan penugasan; beberapa operator memiliki keanehan langsung di >>
 a = 10
 b = 3
-r1 = a + b    // 13     r2 = a - b    // 7
-r3 = a * b    // 30     r4 = a / b    // 3  (pembagian integer)
-r5 = a % b    // 1      r6 = a ^ b    // 1000  (perpangkatan)
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (pembagian integer)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (perpangkatan)
 
 // Perbandingan
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
+a == b    // #0    
+a <> b    // #1    
+a < b     // #0
+a <= b    // #0   
+a > b     // #1    
+a >= b    // #1
 
 // Logika
 #1 && #0    // #0
@@ -94,37 +113,30 @@ a <= b    // #0   a > b     // #1    a >= b   // #1
 
 ## String
 
-Tiga bentuk yang valid — masing-masing untuk konteksnya sendiri:
-
 ```zymbol
-nama = "Ani"
-n = 25
+// Dua bentuk penggabungan
+nama = "Alice"
+n = 42
 
-// 1. Koma — dalam penugasan dengan = atau :=
-pesan = "Halo ", nama, "!"            // → Halo Ani!
-
-// 2. Penjajaran — dalam keluaran >>
->> "Halo " nama " berusia " n ¶       // → Halo Ani berusia 25
-
-// 3. Interpolasi — dalam konteks apa pun
-keterangan = "Halo {nama}, usia {n}"  // → Halo Ani, usia 25
+>> "Halo " nama " Anda memiliki " n ¶       // juxtaposisi — di >>
+deskripsi = "Halo {nama}, Anda memiliki {n}"  // interpolasi — di mana saja
 ```
 
 ```zymbol
 s = "Halo Dunia"
-pjg = s$#                  // 10
-sub = s$[0..4]             // "Halo"  (akhir eksklusif)
-ada = s$? "Dunia"          // #1
-bagi = "a,b,c,d" / ','     // [a, b, c, d]
-ganti = s$~~["a":"e"]       // ganti
-ganti1 = s$~~["a":"e":1]    // N pertama
+panjang = s$#                  // 10
+sub = s$[1..4]                 // "Halo"  (basis-1, akhir termasuk)
+ada = s$? "Dunia"              // #1
+bagian = "a,b,c,d"$/ ','       // [a, b, c, d]  (pisah dengan pemisah)
+ganti = s$~~["a":"o"]          // "Holo Dunio"
+ganti1 = s$~~["a":"o":1]       // "Holo Dunia"  (hanya N pertama)
 ```
 
-> `+` hanya untuk angka. Untuk string gunakan `,`, penjajaran, atau interpolasi.
+> `+` hanya untuk angka. Gunakan `,`, juxtaposisi, atau interpolasi untuk string.
 
 ---
 
-## Kendali Aliran
+## Aliran Kontrol
 
 ```zymbol
 x = 7
@@ -142,14 +154,14 @@ x = 7
 }
 ```
 
-> Blok `{ }` **wajib**, bahkan untuk satu baris.
+> Kurung kurawal `{ }` **wajib** bahkan untuk satu pernyataan.
 
 ---
 
-## Pencocokan
+## Pencocokan (Match)
 
 ```zymbol
-// Pencocokan dengan rentang
+// Rentang
 skor = 85
 nilai = ?? skor {
     90..100 : 'A'
@@ -159,7 +171,7 @@ nilai = ?? skor {
 }
 >> nilai ¶    // → B
 
-// Pencocokan dengan string
+// String
 warna = "merah"
 kode = ?? warna {
     "merah"  : "#FF0000"
@@ -167,21 +179,21 @@ kode = ?? warna {
     _        : "#000000"
 }
 
-// Pencocokan dengan penjaga
+// Pola perbandingan
 suhu = -5
-kondisi = ?? suhu {
-    _? suhu < 0  : "beku"
-    _? suhu < 20 : "dingin"
-    _? suhu < 35 : "hangat"
-    _            : "panas"
+keadaan = ?? suhu {
+    < 0  : "es"
+    < 20 : "dingin"
+    < 35 : "hangat"
+    _    : "panas"
 }
->> kondisi ¶    // → beku
+>> keadaan ¶    // → es
 
-// Bentuk pernyataan (lengan blok)
+// Bentuk pernyataan (blok)
 ?? n {
-    0       : { >> "nol" ¶ }
-    _? n < 0: { >> "negatif" ¶ }
-    _       : { >> "positif" ¶ }
+    0        : { >> "nol" ¶ }
+    _? n < 0 : { >> "negatif" ¶ }
+    _        : { >> "positif" ¶ }
 }
 ```
 
@@ -190,23 +202,23 @@ kondisi = ?? suhu {
 ## Perulangan
 
 ```zymbol
-@ i:0..4  { >> i " " }        // rentang inklusif:  0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // dengan langkah:     1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // terbalik:           5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // rentang termasuk:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // dengan langkah:    1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // terbalik:          5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶                        // → 128  (while)
+>> n ¶                        // → 128  (selama)
 
-buah = ["apel", "mangga", "jeruk"]
-@ b:buah { >> b ¶ }           // untuk setiap larik
+buah = ["apel", "pir", "anggur"]
+@ b:buah { >> b ¶ }           // untuk setiap elemen array
 
 @ c:"halo" { >> c "-" }
->> ¶                          // → h-a-l-o-  (untuk setiap string)
+>> ¶                          // → h-a-l-o-  (untuk setiap karakter string)
 
 @ i:1..10 {
-    ? i % 2 == 0 { @> }       // @> lanjut
-    ? i > 7 { @! }             // @! henti
+    ? i % 2 == 0 { @> }       // @> lanjutkan
+    ? i > 7 { @! }            // @! hentikan
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
@@ -220,13 +232,13 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Perulangan berlabel (henti bersarang)
-count = 0
-@ @luar {
-    count++
-    ? count >= 3 { @! luar }
+// Perulangan berlabel (hentikan bersarang)
+penghitung = 0
+@:luar {
+    penghitung++
+    ? penghitung >= 3 { @:luar! }
 }
->> count ¶                    // → 3
+>> penghitung ¶               // → 3
 ```
 
 ---
@@ -234,8 +246,8 @@ count = 0
 ## Fungsi
 
 ```zymbol
-jumlah(a, b) { <~ a + b }
->> jumlah(3, 4) ¶    // → 7
+tambah(a, b) { <~ a + b }
+>> tambah(3, 4) ¶   // → 7
 
 faktorial(n) {
     ? n <= 1 { <~ 1 }
@@ -244,7 +256,7 @@ faktorial(n) {
 >> faktorial(5) ¶    // → 120
 ```
 
-Fungsi memiliki **cakupan terisolasi** — tidak dapat membaca variabel luar. Gunakan parameter keluaran `<~` untuk memodifikasi variabel pemanggil:
+Fungsi memiliki **lingkup terisolasi** — mereka tidak dapat membaca variabel luar. Gunakan parameter keluaran `<~` untuk memodifikasi variabel pemanggil:
 
 ```zymbol
 tukar(a<~, b<~) {
@@ -258,7 +270,7 @@ tukar(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Fungsi bernama bukan nilai kelas pertama. Untuk meneruskannya sebagai argumen, bungkus: `x -> jumlah(x)`.
+> Fungsi bernama adalah **nilai kelas satu** — kirim langsung: `nums$> ganda`. `x -> fn(x)` juga valid.
 
 ---
 
@@ -266,93 +278,94 @@ tukar(x, y)
 
 ```zymbol
 ganda = x -> x * 2
-jumlah = (a, b) -> a + b
+tambah = (a, b) -> a + b
 >> ganda(5) ¶    // → 10
->> jumlah(3, 7) ¶  // → 10
+>> tambah(3, 7) ¶ // → 10
 
 // Lambda blok
-klasifikasi_nilai = x -> {
+klasifikasi = x -> {
     ? x > 0 { <~ "positif" }
     _? x < 0 { <~ "negatif" }
     <~ "nol"
 }
 
-// Penutupan — menangkap cakupan luar
+// Penutupan — menangkap lingkup luar
 faktor = 3
 tiga_kali = x -> x * faktor
 >> tiga_kali(7) ¶    // → 21
 
-// Pabrik fungsi
+// Pabrik
 buat_penambah(n) { <~ x -> x + n }
-tambah_sepuluh = buat_penambah(10)
->> tambah_sepuluh(5) ¶    // → 15
+tambah10 = buat_penambah(10)
+>> tambah10(5) ¶     // → 15
 
-// Dalam larik
-operasi = [x -> x+1, x -> x*2, x -> x*x]
->> operasi[2](5) ¶    // → 25
+// Dalam array
+ops = [x -> x+1, x -> x*2, x -> x*x]
+>> ops[3](5) ¶       // → 25
 ```
 
 ---
 
-## Larik
+## Array
 
-Larik bersifat **mutable** dan menyimpan elemen dengan **tipe yang sama**.
+Array bersifat **dapat diubah** dan berisi elemen dengan **tipe yang sama**.
 
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
-arr[0]          // 1 — akses (berbasis 0)
-arr[-1]         // 5 — indeks negatif (terakhir)
-arr$#           // 5 — panjang (gunakan (arr$#) dalam >>)
+arr[1]          // 1 — akses (basis-1: elemen pertama)
+arr[-1]         // 5 — indeks negatif (elemen terakhir)
+arr$#           // 5 — panjang (gunakan (arr$#) di >>)
 
 arr = arr$+ 6            // tambah → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // sisipkan di indeks 2
+arr2 = arr$+[2] 99       // sisip di posisi 2 (basis-1)
 arr3 = arr$- 3           // hapus kemunculan pertama nilai
 arr4 = arr$-- 3          // hapus semua kemunculan
-arr5 = arr$-[0]          // hapus di indeks
-arr6 = arr$-[1..3]       // hapus rentang (akhir eksklusif)
+arr5 = arr$-[1]          // hapus di indeks 1 (elemen pertama)
+arr6 = arr$-[2..3]       // hapus rentang (basis-1, akhir termasuk)
 
 ada = arr$? 3            // #1 — mengandung
-pos = arr$?? 3           // [2] — semua indeks nilai
-sl = arr$[0..3]          // [1,2,3] — irisan (akhir eksklusif)
-sl2 = arr$[0:3]          // [1,2,3] — sama, sintaks berbasis hitungan
+posisi = arr$?? 3        // [3] — semua indeks nilai (basis-1)
+irisan = arr$[1..3]      // [1,2,3] — irisan (basis-1, akhir termasuk)
+irisan2 = arr$[1:3]      // [1,2,3] — sama, sintaksis berbasis jumlah
 
-naik = arr$^+            // diurutkan naik  (primitif saja)
-turun = arr$^-           // diurutkan turun (primitif saja)
+naik = arr$^+            // urutkan naik (hanya primitif)
+turun = arr$^-           // urutkan turun (hanya primitif)
 
-// Larik tupel bernama/posisional — gunakan $^ dengan lambda pembanding
-db = [(nama: "Carla", usia: 28), (nama: "Ana", usia: 25), (nama: "Bob", usia: 30)]
-urut_usia  = db$^ (a, b -> a.usia < b.usia)    // naik berdasarkan usia  (<)
-urut_nama  = db$^ (a, b -> a.nama > b.nama)    // turun berdasarkan nama (>)
->> urut_usia[0].nama ¶     // → Ana
->> urut_nama[0].nama ¶     // → Carla
+// Array tuple bernama/posisional — gunakan $^ dengan lambda pembanding
+db = [(nama: "Carla", umur: 28), (nama: "Ana", umur: 25), (nama: "Bob", umur: 30)]
+menurut_umur  = db$^ (a, b -> a.umur < b.umur)     // naik menurut umur (<)
+menurut_nama  = db$^ (a, b -> a.nama > b.nama)     // turun menurut nama (>)
+>> menurut_umur[1].nama ¶    // → Ana
+>> menurut_nama[1].nama ¶    // → Carla
 
-// Pembaruan elemen langsung (larik saja)
-arr[1] = 99              // tetapkan
-arr[0] += 5              // gabungan: +=  -=  *=  /=  %=  ^=
+// Pembaruan elemen langsung (hanya array)
+arr[1] = 99              // tugaskan
+arr[2] += 5              // gabungan: +=  -=  *=  /=  %=  ^=
 
-// Pembaruan fungsional — mengembalikan larik baru; aslinya tidak berubah
-arr2 = arr[1]$~ 99
+// Pembaruan fungsional — mengembalikan array baru; asli tidak berubah
+arr2 = arr[2]$~ 99
 ```
 
-> Semua operator koleksi mengembalikan **larik baru**. Tugaskan kembali: `arr = arr$+ 4`.
-> Operator tidak dapat dirantai — gunakan penugasan sementara.
-> `$^+` / `$^-` mengurutkan **larik primitif** (angka, string). Untuk larik tupel gunakan `$^` dengan lambda pembanding — arah dikodekan dalam lambda (`<` = naik, `>` = turun).
+> Semua operator koleksi mengembalikan **array baru**. Tugaskan kembali: `arr = arr$+ 4`.
+> `$+` dapat dirantai: `arr = arr$+ 5$+ 6$+ 7`. Operator lain menggunakan penugasan perantara.
+> **Pengindeksan berbasis 1**: `arr[1]` adalah elemen pertama; `arr[0]` adalah error runtime.
+> `$^+` / `$^-` mengurutkan **array primitif** (angka, string). Untuk array tuple gunakan `$^` dengan lambda pembanding — arah dikodekan dalam lambda (`<` = naik, `>` = turun).
 
-**Semantik nilai** — menugaskan larik ke variabel lain membuat salinan independen:
+**Semantik nilai** — menugaskan array ke variabel lain membuat salinan independen:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
 >> b ¶    // → [1, 2, 3]   ← b tidak terpengaruh
 ```
 
 ```zymbol
-// Larik bersarang
+// Array bersarang (pengindeksan basis-1)
 matriks = [[1,2,3],[4,5,6],[7,8,9]]
->> matriks[1][2] ¶    // → 6
+>> matriks[2][3] ¶    // → 6  (baris 2, kolom 3)
 ```
 
 ---
@@ -363,195 +376,199 @@ matriks = [[1,2,3],[4,5,6],[7,8,9]]
 // Array
 arr = [10, 20, 30, 40, 50]
 [a, b, c] = arr              // a=10  b=20  c=30
-[pertama, *sisa] = arr        // pertama=10  sisa=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ diabaikan
+[pertama, *sisanya] = arr    // pertama=10  sisanya=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ mengabaikan
 
 // Tuple posisional
 titik = (100, 200)
 (px, py) = titik             // px=100  py=200
 
 // Tuple bernama
-orang = (nama: "Ana", usia: 25, kota: "Jakarta")
-(nama: n, usia: u) = orang   // n="Ana"  u=25
+orang = (nama: "Ana", umur: 25, kota: "Madrid")
+(nama: n, umur: u) = orang   // n="Ana"  u=25
 ```
 
 ---
 
-## Tupel
+## Tuple
 
-Tupel adalah wadah terurut yang **tidak dapat diubah** yang dapat menyimpan nilai dengan **tipe berbeda**. Tidak seperti larik, elemen tidak dapat diubah setelah dibuat.
+Tuple adalah wadah berurutan **tidak dapat diubah** yang dapat menyimpan nilai dari **tipe yang berbeda**.
+Tidak seperti array, elemen tidak dapat diubah setelah pembuatan.
 
 ```zymbol
-// Posisional
+// Posisional — tipe campuran diperbolehkan
 titik = (10, 20)
->> titik[0] ¶    // → 10
+>> titik[1] ¶    // → 10
 
-data = (42, "hello", #1, 3.14)
->> data[2] ¶     // → #1
+data = (42, "halo", #1, 3.14)
+>> data[3] ¶     // → #1
 
 // Bernama
-orang = (nama: "Alisa", usia: 25)
->> orang.nama ¶    // → Alisa
->> orang[0] ¶      // → Alisa  (indeks juga berfungsi)
+orang = (nama: "Alice", umur: 25)
+>> orang.nama ¶    // → Alice
+>> orang[1] ¶      // → Alice  (indeks juga berfungsi, basis-1)
 
 // Bersarang
 pos = (x: 10, y: 20)
 p = (pos: pos, label: "asal")
->> p.pos.x ¶        // → 10
+>> p.pos.x ¶       // → 10
 ```
 
-**Ketidakbisaan diubah** — upaya apa pun untuk memodifikasi elemen tupel adalah kesalahan waktu jalan:
+**Ketidakubahan** — setiap upaya untuk memodifikasi elemen tuple adalah error runtime:
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ kesalahan waktu jalan: tupel tidak dapat diubah
-// t[0] += 5    // ❌ kesalahan yang sama
+// t[1] = 99    // ❌ error runtime: tuple tidak dapat diubah
+// t[1] += 5    // ❌ error yang sama
+
+// Tuple bernama — bangun ulang secara eksplisit
+orang = (nama: "Alice", umur: 25)
+lebih_tua = (nama: orang.nama, umur: 26)
+>> orang.umur ¶    // → 25
+>> lebih_tua.umur ¶ // → 26
 ```
 
-Untuk mendapatkan nilai yang dimodifikasi, gunakan `$~` (pembaruan fungsional) — mengembalikan tupel **baru**:
+Untuk mendapatkan nilai yang dimodifikasi gunakan `$~` (pembaruan fungsional) — mengembalikan tuple **baru**:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[1]$~ 999
->> t ¶     // → (10, 20, 30)   ← aslinya tidak berubah
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← asli tidak berubah
 >> t2 ¶    // → (10, 999, 30)
-
-// Tupel bernama — bangun ulang secara eksplisit
-orang = (nama: "Alisa", usia: 25)
-lebihTua = (nama: orang.nama, usia: 26)
->> orang.usia ¶    // → 25
->> lebihTua.usia ¶ // → 26
 ```
 
 ---
 
-## Fungsi Tingkat Tinggi
-
-> Operator HOF memerlukan **lambda inline** — variabel lambda langsung tidak dapat digunakan.
+## Fungsi Orde Tinggi
 
 ```zymbol
 angka = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-gandaan  = angka$> (x -> x * 2)                // map  → [2,4,6…20]
-genap    = angka$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
-total    = angka$< (0, (akum, x) -> akum + x)  // reduce → 55
+digandakan = angka$> (x -> x * 2)                 // peta → [2,4,6…20]
+genap   = angka$| (x -> x % 2 == 0)              // filter → [2,4,6,8,10]
+total   = angka$< (0, (akum, x) -> akum + x)      // reduksi → 55
 
-// Berantai melalui perantara
+// Rantai melalui perantara
 langkah1 = angka$| (x -> x > 3)
 langkah2 = langkah1$> (x -> x * x)
 >> langkah2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Fungsi bernama di dalam HOF — bungkus dalam lambda
-gandakan(x) { <~ x * 2 }
-r = angka$> (x -> gandakan(x))    // ✅
+// Fungsi bernama dapat dikirim langsung ke HOF
+ganda(x) { <~ x * 2 }
+besar(x) { <~ x > 5 }
+r = angka$> ganda       // ✅ referensi langsung
+r = angka$| besar       // ✅ referensi langsung
 ```
 
 ---
 
-## Operator Pipa
+## Operator Pipe
 
-Sisi kanan selalu membutuhkan `_` sebagai penanda:
+Sisi kanan selalu memerlukan `_` sebagai placeholder untuk nilai yang dipipe:
 
 ```zymbol
-dua_kali = x -> x * 2
+ganda = x -> x * 2
 tambah = (a, b) -> a + b
-tambah_satu = x -> x + 1
+inc = x -> x + 1
 
-5 |> dua_kali(_)        // → 10
-10 |> tambah(_, 5)      // → 15
-5 |> tambah(2, _)       // → 7
+5 |> ganda(_)        // → 10
+10 |> tambah(_, 5)   // → 15
+5 |> tambah(2, _)    // → 7
 
-// Berantai
-hasil = 5 |> dua_kali(_) |> tambah_satu(_) |> dua_kali(_)
->> hasil ¶    // → 22  (5→10→11→22)
+// Dirantai
+r = 5 |> ganda(_) |> inc(_) |> ganda(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## Penanganan Kesalahan
+## Penanganan Error
 
 ```zymbol
 !? {
     x = 10 / 0
 } :! ##Div {
-    >> "Pembagian dengan nol" ¶
+    >> "pembagian dengan nol" ¶
 } :! {
-    >> "kesalahan lain: " _err ¶    // _err menyimpan pesan kesalahan
+    >> "error lain: " _err ¶    // _err menyimpan pesan error
 } :> {
-    >> "selalu berjalan" ¶
+    >> "selalu dijalankan" ¶
 }
 ```
 
-| Tipe        | Kapan terjadi                      |
-|-------------|------------------------------------|
-| `##Div`     | Pembagian dengan nol               |
-| `##IO`      | File / Sistem                      |
-| `##Index`   | Indeks di luar batas               |
-| `##Type`    | Kesalahan tipe                     |
-| `##Parse`   | Kesalahan penguraian               |
-| `##Network` | Kesalahan jaringan                 |
-| `##_`       | Kesalahan apa pun (tangkap semua)  |
+| Tipe | Kapan |
+|------|-------|
+| `##Div` | Pembagian dengan nol |
+| `##IO` | File / sistem |
+| `##Index` | Indeks di luar batas |
+| `##Type` | Ketidakcocokan tipe |
+| `##Parse` | Penguraian data |
+| `##Network` | Error jaringan |
+| `##_` | Error apa pun (menangkap semua) |
 
 ---
 
 ## Modul
 
 ```zymbol
-// lib/matematika.zy
-# matematika
+// lib/calc.zy — badan modul berada dalam kurung kurawal
+# calc {
+    #> { tambah, get_PI }
 
-#> { tambah, get_PI }    // ekspor SEBELUM definisi
-
-_PI := 3.14159
-tambah(a, b) { <~ a + b }
-get_PI() { <~ _PI }   // getter — akses konstanta langsung via alias tidak didukung
+    _PI := 3.14159
+    tambah(a, b) { <~ a + b }
+    get_PI() { <~ _PI }
+}
 ```
 
 ```zymbol
-// utama.zy
-<# ./lib/matematika <= m    // alias wajib
+// main.zy
+<# ./lib/calc <= c    // alias wajib
 
->> m::tambah(5, 3) ¶   // → 8
-pi = m::get_PI()
->> pi ¶                // → 3.14159
+>> c::tambah(5, 3) ¶   // → 8
+pi = c::get_PI()
+>> pi ¶               // → 3.14159
 ```
 
 ```zymbol
 // Ekspor dengan nama publik berbeda
-# mylib
-#> { _tambah_internal <= jumlah }
+# perpustakaan_saya {
+    #> { _tambah_internal <= jumlah }
 
-_tambah_internal(a, b) { <~ a + b }
+    _tambah_internal(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
-<# ./mylib <= m
+<# ./perpustakaan_saya <= m
 
 >> m::jumlah(3, 4) ¶    // → 7  (nama internal _tambah_internal tersembunyi)
 ```
 
+> **Aturan modul**: hanya `#>`, definisi fungsi, dan penginisialisasi variabel/konstanta literal yang diizinkan di dalam `# nama { }`. Pernyataan yang dapat dieksekusi (`>>`, `<<`, perulangan, dll.) memicu error E013.
+
 ---
 
-## Mode Angka
+## Mode Numerik
 
-Zymbol dapat menampilkan angka dalam **69 skrip digit Unicode** — Devanagari, Arab-India, Thai, Klingon pIqaD, Matematika Tebal, segmen LCD, dan lainnya. Mode aktif hanya memengaruhi output `>>`; aritmetika internal selalu biner.
+Zymbol dapat menampilkan angka dalam **69 blok digit Unicode** — Dewanagari, Arab-India, Thai, Klingon pIqaD, Tebal Matematika, segmen LCD, dan lainnya. Mode aktif hanya mempengaruhi keluaran `>>`; aritmetika internal selalu biner.
 
-### Mengaktifkan skrip
+### Mengaktifkan sebuah aksara
 
-Tulis digit `0` dan `9` dari skrip target di dalam `#…#`:
+Tulis digit `0` dan `9` dari aksara target di dalam `#…#`:
 
 ```zymbol
-#०९#    // Devanagari    (U+0966–U+096F)
+#०९#    // Dewanagari    (U+0966–U+096F)
 #٠٩#    // Arab-India    (U+0660–U+0669)
 #๐๙#    // Thai          (U+0E50–U+0E59)
-#09#    // kembalikan ke ASCII
+#09#    // reset ke ASCII
 ```
 
-### Output dan nilai boolean
+### Keluaran dan Boolean
 
 ```zymbol
 x = 42
->> x ¶          // → 42   (ASCII bawaan)
+>> x ¶          // → 42   (default ASCII)
 
 #०९#
 >> x ¶          // → ४२
@@ -559,8 +576,8 @@ x = 42
 >> 1 + 2 ¶      // → ३
 
 // Boolean: awalan # selalu ASCII, digit menyesuaikan
->> #1 ¶         // → #१   (benar dalam Devanagari)
->> #0 ¶         // → #०   (salah — berbeda dari ०  nol bilangan bulat)
+>> #1 ¶         // → #१   (benar dalam Dewanagari)
+>> #0 ¶         // → #०   (salah — berbeda dari ० integer nol)
 
 x = 28 > 4
 >> x ¶          // → #१   (hasil perbandingan mengikuti mode aktif)
@@ -568,7 +585,7 @@ x = 28 > 4
 
 ### Literal digit asli dalam kode sumber
 
-Digit dari skrip yang didukung mana pun adalah literal yang valid — dalam rentang, modulo, perbandingan:
+Digit dari aksara yang didukung adalah literal yang valid — dalam rentang, modulo, perbandingan:
 
 ```zymbol
 #०९#
@@ -581,49 +598,54 @@ Digit dari skrip yang didukung mana pun adalah literal yang valid — dalam rent
 }
 ```
 
-### Literal boolean dalam skrip apa pun
+### Literal Boolean dalam aksara apa pun
 
-`#` + digit `0` atau `1` dari blok mana pun adalah literal boolean yang valid:
+`#` + digit `0` atau `1` dari blok mana pun adalah literal Boolean yang valid:
 
 ```zymbol
-#٠٩#
-نشط = #١        // sama dengan #1
->> نشط ¶        // → #١
->> (#١ && #٠) ¶ // → #٠
+#०९#
+aktif = #१        // sama dengan #1
+>> aktif ¶        // → #१
+>> (#१ && #०) ¶   // → #०
 ```
 
-> `#` **selalu ASCII**. `#0` (salah) selalu berbeda secara visual dari `0` (nol bilangan bulat) dalam setiap skrip.
+> `#` **selalu ASCII**. `#0` (salah) selalu berbeda secara visual dari `0` (integer nol) dalam setiap aksara.
 
 ---
 
 ## Operator Data
 
 ```zymbol
-// Parsing string ke angka
-v1 = #|"42"|      // → 42
-v2 = #|"3.14"|    // → 3.14
-v3 = #|"abc"|     // → "abc"
+// Konversi tipe
+##.42         // → 42.0  (ke Float)
+###3.7        // → 4     (ke Int, bulatkan)
+##!3.7        // → 3     (ke Int, potong)
 
-// Pembulatan / pemotongan
+// Parse string ke angka
+v1 = #|"42"|      // → 42  (Int)
+v2 = #|"3.14"|    // → 3.14  (Float)
+v3 = #|"abc"|     // → "abc"  (aman, tanpa error)
+
+// Bulatkan / potong
 pi = 3.14159265
-r2 = #.2|pi|      // → 3.14
-r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14
+b2 = #.2|pi|      // → 3.14  (bulatkan ke 2 desimal)
+b4 = #.4|pi|      // → 3.1416
+p2 = #!2|pi|      // → 3.14  (potong)
 
-// Format angka
-fmt = #,|1234567|       // → 1,234,567
-sains = #^|12345.678|   // → 1.2345678e4
+// Pemformatan angka
+fmt = #,|1234567|  // → 1,234,567  (dipisah koma)
+sci = #^|12345.678| // → 1.2345678e4  (ilmiah)
 
 // Literal basis
-a = 0x41         // → 'A'
-b = 0b01000001   // → 'A'
-c = 0o101        // → 'A'
+a = 0x41         // → 'A'  (heksadesimal)
+b = 0b01000001   // → 'A'  (biner)
+c = 0o101        // → 'A'  (oktal)
 
-// Konversi basis
-heks = 0x|255|    // → "0x00FF"
-biner = 0b|65|    // → "0b1000001"
-oktal = 0o|8|     // → "0o10"
-desimal = 0d|255| // → "0d0255"
+// Keluaran konversi basis
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
 ```
 
 ---
@@ -631,13 +653,13 @@ desimal = 0d|255| // → "0d0255"
 ## Integrasi Shell
 
 ```zymbol
-tanggal = <\ date +%Y-%m-%d \>     // tangkap stdout
+tanggal = <\ date +%Y-%m-%d \>     // menangkap stdout (termasuk \n di akhir)
 >> "Hari ini: " tanggal
 
-berkas = "data.txt"
-isi = <\ cat {berkas} \>           // interpolasi dalam perintah
+file = "data.txt"
+konten = <\ cat {file} \>          // interpolasi dalam perintah
 
-keluaran = </"./subscript.zy"/>    // jalankan skrip Zymbol
+keluaran = </"./subscript.zy"/>    // jalankan skrip Zymbol lain, tangkap keluaran
 >> keluaran
 ```
 
@@ -649,9 +671,9 @@ keluaran = </"./subscript.zy"/>    // jalankan skrip Zymbol
 
 ```zymbol
 klasifikasi(angka) {
-    ? angka % 15 == 0 { <~ "DesisDengung" }
-    _? angka % 3  == 0 { <~ "Desis" }
-    _? angka % 5  == 0 { <~ "Dengung" }
+    ? angka % 15 == 0 { <~ "FizzBuzz" }
+    _? angka % 3  == 0 { <~ "Fizz" }
+    _? angka % 5  == 0 { <~ "Buzz" }
     _ { <~ angka }
 }
 
@@ -662,79 +684,98 @@ klasifikasi(angka) {
 
 ## Referensi Simbol
 
-| Simbol    | Operasi                  | Simbol     | Operasi                       |
-|-----------|--------------------------|------------|-------------------------------|
-| `=`       | variabel                 | `$#`       | panjang                       |
-| `:=`      | konstanta                | `$+`       | tambah                        |
-| `>>`      | keluaran                 | `$+[i]`    | sisipkan di indeks            |
-| `<<`      | masukan                  | `$-`       | hapus pertama berdasarkan nilai |
-| `¶` / `\\` | baris baru              | `$--`      | hapus semua berdasarkan nilai |
-| `?`       | kondisi (if)             | `$-[i]`    | hapus di indeks               |
-| `_?`      | jika tidak (else-if)     | `$-[i..j]` | hapus rentang                 |
-| `_`       | lainnya / wildcard       | `$?`       | mengandung                    |
-| `??`      | cocokkan (match)         | `$??`      | temukan semua indeks          |
-| `@`       | perulangan               | `$[s..e]`  | irisan                        |
-| `@!`      | henti (break)            | `$>`       | map                           |
-| `@>`      | lanjut (continue)        | `$\|`      | filter                        |
-| `->`      | lambda                   | `$<`       | reduce                        |
-| `arr[i] = val` | perbarui elemen (larik saja) | `arr[i] += val` | pembaruan gabungan  |
-| `arr[i]$~` | pembaruan fungsional (salinan baru) | `$^+` | urutkan naik (primitif) |
-| `$^-`     | urutkan turun (primitif) | `$^`       | urutkan dengan pembanding (tupel) |
-| `<~`      | kembalikan (return)      | `!?`       | coba (try)                    |
-| `\|>`     | pipa (pipe)              | `:!`       | tangkap (catch)               |
-| `#1`      | benar                    | `:>`       | selalu (finally)              |
-| `#0`      | salah                    | `$!`       | periksa kesalahan             |
-| `<#`      | impor                    | `$!!`      | teruskan kesalahan            |
-| `#`       | deklarasi modul          | `#>`       | ekspor                        |
-| `::`      | pemanggilan modul        | `.`        | akses field                   |
-| `#\|..\|` | parsing angka            | `#?`       | metadata tipe                 |
-| `#.N\|..\|` | pembulatan             | `#!N\|..\|` | pemotongan                 |
-| `#,\|..\|` | format koma              | `#^\|..\|`  | format ilmiah                 |
-| `#d0d9#` | sakelar mode angka | `#09#` | kembalikan ke ASCII |
-| `<\ ..\>` | eksekusi shell           | `>\<`      | argumen CLI                   |
+| Simbol | Operasi | Simbol | Operasi |
+|--------|---------|--------|---------|
+| `=` | variabel | `$#` | panjang |
+| `:=` | konstanta | `$+` | tambah (dapat dirantai) |
+| `>>` | keluaran | `$+[i]` | sisip di indeks (basis-1) |
+| `<<` | masukan | `$-` | hapus pertama berdasarkan nilai |
+| `¶` / `\\` | baris baru | `$--` | hapus semua berdasarkan nilai |
+| `?` | jika | `$-[i]` | hapus di indeks (basis-1) |
+| `_?` | jika tidak jika | `$-[i..j]` | hapus rentang (basis-1) |
+| `_` | jika tidak / wildcard | `$?` | mengandung |
+| `??` | cocok | `$??` | temukan semua indeks (basis-1) |
+| `@` | perulangan | `$[s..e]` | irisan (basis-1) |
+| `@ N { }` | perulangan N kali | `$>` | peta |
+| `@!` | hentikan | `$|` | filter |
+| `@>` | lanjutkan | `$<` | reduksi |
+| `@:nama { }` | perulangan berlabel | `$/ pemisah` | pemisahan string |
+| `@:nama!` | hentikan berlabel | `$++ a b c` | bangun penggabungan |
+| `@:nama>` | lanjutkan berlabel | `arr[i>j>k]` | indeks navigasi |
+| `->` | lambda | `arr[i] = nilai` | perbarui elemen (hanya array) |
+| `arr[i] += nilai` | pembaruan gabungan | `arr[i]$~` | pembaruan fungsional (salinan baru) |
+| `$^+` | urutkan naik (primitif) | `$^-` | urutkan turun (primitif) |
+| `$^` | urutkan dengan pembanding (tuple) | `<~` | kembali |
+| `|>` | pipe | `!?` | coba |
+| `:!` | tangkap | `:>` | akhirnya |
+| `#1` | benar | `#0` | salah |
+| `$!` | adalah error | `$!!` | sebarkan error |
+| `<#` | impor | `#>` | ekspor |
+| `#` | deklarasikan modul | `::` | panggil modul |
+| `.` | akses bidang | `#?` | metadata tipe |
+| `#\|..\|` | parse angka | `##.` | konversi ke Float |
+| `###` | konversi ke Int (bulatkan) | `##!` | konversi ke Int (potong) |
+| `#.N\|..\|` | bulatkan | `#!N\|..\|` | potong |
+| `#,\|..\|` | format koma | `#^\|..\|` | ilmiah |
+| `#d0d9#` | ubah mode numerik | `#09#` | reset ke ASCII |
+| `<\ ..\>` | jalankan shell | `>\<` | argumen CLI |
+| `\ var` | hancurkan variabel secara eksplisit | | |
 
-## Riwayat Versi
+---
+
+## Log Perubahan Rilis
+
+### v0.0.4 — Pengindeksan Basis-1, Fungsi Kelas Satu & Blok Modul _(April 2026)_
+
+- **Melanggar** Semua pengindeksan diubah menjadi **basis-1** — `arr[1]` adalah elemen pertama; `arr[0]` adalah error runtime
+- **Ditambahkan** Fungsi bernama adalah **nilai kelas satu** — kirim langsung ke HOF: `nums$> ganda`
+- **Ditambahkan** **Sintaks blok** modul wajib: `# nama { ... }` — sintaks datar dihapus
+- **Ditambahkan** Pengindeksan multidimensi: `arr[i>j>k]` (navigasi), `arr[p ; q]` (ekstraksi datar)
+- **Ditambahkan** Konversi tipe: `##.expr` (Float), `###expr` (Int bulatkan), `##!expr` (Int potong)
+- **Ditambahkan** Pemisahan string: `str$/ pemisah` — mengembalikan `Array(String)`
+- **Ditambahkan** Bangun penggabungan: `basis$++ a b c` — menambahkan beberapa item
+- **Ditambahkan** Perulangan N kali: `@ N { }` — ulangi tepat N kali
+- **Ditambahkan** Sintaks perulangan berlabel: `@:nama { }`, `@:nama!`, `@:nama>` — menggantikan `@ @nama` / `@! nama`
+- **Ditambahkan** Aturan lingkup variabel: variabel `_nama` memiliki lingkup blok yang tepat; `\ var` menghancurkan lebih awal
+- **Ditambahkan** Pola perbandingan pencocokan: `< 0 :`, `> 5 :`, `== 42 :` dll.
+- **Ditambahkan** Error modul E013: pernyataan yang dapat dieksekusi di badan modul dilarang
+- **Diperbaiki** `take_variable` tidak lagi merusak konstanta modul saat menulis kembali
+- **Diperbaiki** `alias.CONST` sekarang diselesaikan dengan benar; `#>` dapat muncul setelah definisi fungsi
+- **VM** Paritas penuh: 393/393 tes lulus
 
 ### v0.0.3 — Sistem Angka Unicode & Peningkatan LSP _(April 2026)_
 
-- **Ditambahkan** 69 blok digit Unicode dengan token pengalih mode `#d0d9#`
-- **Ditambahkan** Literal boolean dalam skrip apa pun — `#१` / `#०`, `#١` / `#٠`, dll.
+- **Ditambahkan** 69 blok digit Unicode dengan token switch mode `#d0d9#`
+- **Ditambahkan** Literal Boolean dalam aksara apa pun — `#१` / `#०`, `#१` / `#०`, dll.
 - **Ditambahkan** Digit Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
-- **Ditambahkan** Opkode VM `SetNumeralMode` — paritas penuh dengan tree-walker
-- **Ditambahkan** REPL menghormati mode angka aktif dalam gema dan tampilan variabel
-- **Diubah** Output `>>` boolean kini menyertakan awalan `#` (`#0` / `#1`) dalam semua mode
+- **Ditambahkan** Opcode VM `SetNumeralMode` — paritas penuh dengan tree-walker
+- **Ditambahkan** REPL menghormati mode numerik aktif dalam gema dan tampilan variabel
+- **Diubah** Keluaran Boolean `>>` sekarang menyertakan awalan `#` (`#0` / `#1`) di semua mode
 
 ### v0.0.2_01 — Penggantian Nama Operator _(30 Mar 2026)_
 
-- **Diubah** `c|..|` → `#,|..|` dan `e|..|` → `#^|..|` — konsisten dengan keluarga awalan `#`
-- **Ditambahkan** Alias ekspor: mengekspor ulang anggota modul dengan nama berbeda
+- **Diubah** `c|..|` → `#,|..|` dan `e|..|` → `#^|..|` — konsisten dengan keluarga awalan format `#`
+- **Ditambahkan** Alias ekspor: re-ekspor anggota modul dengan nama berbeda
 
-### v0.0.2 — Perancangan Ulang API Koleksi & Penginstal _(24 Mar 2026)_
+### v0.0.2 — Desain Ulang API Koleksi & Penginstal _(24 Mar 2026)_
 
 - **Ditambahkan** Keluarga operator `$` terpadu untuk array dan string (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Ditambahkan** Destrukturisasi untuk array, tuple, dan tuple bernama
+- **Ditambahkan** Penugasan destrukturisasi untuk array, tuple, dan tuple bernama
 - **Ditambahkan** Indeks negatif (`arr[-1]` = elemen terakhir)
 - **Ditambahkan** Penginstal asli — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
 
 ### v0.0.1-patch _(25 Mar 2026)_
 
 - **Ditambahkan** Penugasan gabungan `^=`
-- **Diperbaiki** Kasus tepi parser aritmetika; koreksi dokumentasi
+- **Diperbaiki** Kasus tepi aritmetika parser; koreksi dokumentasi
 
-### v0.0.1 — Rilis Publik Pertama _(22 Mar 2026)_
+### v0.0.1 — Rilis Publik Perdana _(22 Mar 2026)_
 
 - Interpreter tree-walker + VM register (`--vm`, ~4× lebih cepat, ~95% paritas)
 - Semua konstruk inti: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Pengenal Unicode lengkap, sistem modul, lambda, closure, penanganan kesalahan
+- Pengenal Unicode penuh, sistem modul, lambda, penutupan, penanganan error
 - REPL, LSP, ekstensi VS Code, pemformat (`zymbol fmt`)
 
 ---
 
-*Zymbol-Lang — Simbolis. Universal. Tak Berubah.*
-
-> **Peringatan:** Dokumentasi ini dibuat dan diterjemahkan oleh kecerdasan buatan (AI).
-> Segala upaya telah dilakukan untuk memastikan keakuratan, namun beberapa terjemahan atau contoh mungkin mengandung kesalahan.
-> Referensi kanonik adalah [spesifikasi Zymbol-Lang](https://github.com/zymbol-lang/interpreter).
->
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
+_Zymbol-Lang — Simbolik. Universal. Tidak Dapat Diubah._

@@ -3,9 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zymbol Playground</title>
-  <meta name="description" content="Interactive Zymbol playground — try the language in your browser.">
+  <title>Zymbol Playground — Try Symbolic Programming in Your Language</title>
+  <meta name="description" content="Interactive online editor for Zymbol. Write and run code in any human language — Spanish, Japanese, Arabic, Chinese and 100+ more. No keywords, just symbols.">
+  <meta name="keywords" content="online code editor, programming playground, code in Spanish, code in Japanese, symbolic programming, try programming language, multilingual code">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://zymbol-lang.dev/playground.html">
+  <meta property="og:type"        content="website">
+  <meta property="og:url"         content="https://zymbol-lang.dev/playground.html">
+  <meta property="og:title"       content="Zymbol Playground — Code in Any Human Language">
+  <meta property="og:description" content="Try Zymbol in your browser. Write code using Spanish, Japanese, Arabic, Chinese identifiers. No keywords — pure symbols.">
+  <meta property="og:image"       content="https://zymbol-lang.dev/zymbol_logo.png">
+  <meta name="twitter:card"       content="summary_large_image">
+  <meta name="twitter:title"      content="Zymbol Playground — Code in Any Human Language">
+  <meta name="twitter:description" content="Try Zymbol online. Write code in Spanish, Japanese, Arabic and 100+ languages.">
   <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="favicon.png">
   <script>
     (function(){
       var s = localStorage.getItem('zy-theme');
@@ -443,7 +456,25 @@
       color: var(--green);
       padding: 0.35rem 0.6rem 0.2rem;
       flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
     }
+
+    .ex-card-badge {
+      font-size: 0.58rem;
+      font-weight: 500;
+      letter-spacing: 0;
+      text-transform: none;
+      color: var(--mid);
+      background: var(--bg4);
+      border: 1px solid var(--muted);
+      border-radius: 3px;
+      padding: 0.05rem 0.3rem;
+      font-family: var(--mono);
+    }
+    .ex-card:hover .ex-card-badge { color: var(--text); border-color: var(--green-mid); }
 
     .ex-card-code {
       flex: 1;
@@ -560,6 +591,89 @@
       transition: background .15s;
     }
     #pg-notice-ok:hover { background: var(--green2); }
+
+    /* ─── File tabs ─── */
+    #file-tabs {
+      display: flex;
+      align-items: stretch;
+      background: var(--bg3);
+      border-bottom: 1px solid var(--line);
+      overflow-x: auto;
+      flex-shrink: 0;
+      scrollbar-width: none;
+    }
+    #file-tabs::-webkit-scrollbar { display: none; }
+
+    .ftab {
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.3rem 0.5rem 0.3rem 0.75rem;
+      font-size: 0.72rem;
+      font-family: var(--mono);
+      color: var(--mid);
+      border-right: 1px solid var(--line);
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      user-select: none;
+      transition: color 0.12s, background 0.12s;
+    }
+    .ftab:hover { color: var(--hi); background: var(--bg4); }
+    .ftab.active { color: var(--hi); background: var(--bg); border-bottom: 2px solid var(--green); }
+    .ftab.active .ftab-name { color: var(--green); }
+
+    .ftab-name { pointer-events: none; max-width: 18ch; overflow: hidden; text-overflow: ellipsis; }
+
+    .ftab-dot {
+      font-size: 0.55rem;
+      color: var(--str);
+      pointer-events: none;
+      line-height: 1;
+      margin-top: 0.1rem;
+    }
+
+    .ftab-close {
+      background: none;
+      border: none;
+      color: transparent;
+      cursor: pointer;
+      font-size: 0.85rem;
+      line-height: 1;
+      padding: 0 0.15rem;
+      border-radius: 3px;
+      transition: color 0.1s, background 0.1s;
+    }
+    .ftab:hover .ftab-close, .ftab.active .ftab-close { color: var(--dim); }
+    .ftab-close:hover { color: var(--err) !important; background: rgba(249,112,112,.12); }
+
+    .ftab-add {
+      background: none;
+      border: none;
+      border-right: 1px solid var(--line);
+      color: var(--dim);
+      cursor: pointer;
+      font-size: 1.1rem;
+      line-height: 1;
+      padding: 0 0.65rem;
+      flex-shrink: 0;
+      transition: color 0.12s, background 0.12s;
+    }
+    .ftab-add:hover { color: var(--green); background: var(--green-dim); }
+
+    .ftab-rename-input {
+      background: var(--bg4);
+      border: 1px solid var(--green);
+      color: var(--hi);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      outline: none;
+      padding: 0.05rem 0.3rem;
+      border-radius: 3px;
+      width: 10ch;
+      min-width: 5ch;
+      max-width: 22ch;
+    }
   </style>
 </head>
 <body>
@@ -569,7 +683,7 @@
   <div id="pg-notice">
     <h2 id="pg-notice-title">
       Browser Playground
-      <span class="badge">zymbol.js v0.0.3</span>
+      <span class="badge">zymbol.js v0.0.4</span>
     </h2>
     <p>
       This playground runs a <strong>browser-only build</strong> of the Zymbol interpreter
@@ -579,7 +693,6 @@
     <p>The following features are <strong>not available</strong> in the browser runtime:</p>
     <ul>
       <li>Shell execution <code>&lt;\ cmd \&gt;</code> and script inclusion <code>&lt;/ file.zy /&gt;</code></li>
-      <li>Module system — <code>&lt;#</code> imports, <code>#&gt;</code> exports, and <code>::</code> calls</li>
       <li>CLI argument capture <code>&gt;&lt; args</code></li>
     </ul>
     <p>
@@ -619,9 +732,14 @@
       <span>Editor</span>
       <div class="panel-actions">
         <button class="btn btn-run" id="run-btn" title="Run (Ctrl+Enter)">▶ Run</button>
-        <button class="btn" id="clear-code-btn">Clear</button>
+        <button class="btn" id="clear-code-btn" title="Clear editor">Clear</button>
+        <button class="btn" id="download-btn" title="Download active file">↓ Save</button>
+        <button class="btn" id="upload-btn"   title="Upload .zy files">↑ Open</button>
+        <input type="file" id="upload-input" accept=".zy,.txt" multiple style="display:none">
       </div>
     </div>
+
+    <div id="file-tabs"></div>
 
     <div id="editor-wrapper">
       <pre id="editor-highlight" aria-hidden="true"></pre>
@@ -731,9 +849,9 @@ const EXAMPLES = {
     { title: 'Basic lambda',   code: 'double = x -> x * 2\n>> double(5) ¶\n>> double(12) ¶' },
     { title: 'Multi-param',    code: 'add = (a, b) -> a + b\n>> add(3, 4) ¶\n>> add(10, 20) ¶' },
     { title: 'Block body',     code: 'clamp = (v, lo, hi) -> {\n    ? v < lo { <~ lo }\n    ? v > hi { <~ hi }\n    <~ v\n}\n>> clamp(5, 1, 10) ¶\n>> clamp(-3, 0, 100) ¶\n>> clamp(150, 0, 100) ¶' },
-    { title: '$> with lambda', code: 'nums = [1, 2, 3, 4, 5]\n>> nums$> (x -> x * x) ¶' },
-    { title: '$| with lambda', code: 'nums = [1, 2, 3, 4, 5, 6]\n>> nums$| (x -> x % 2 == 0) ¶' },
-    { title: '$< with lambda', code: 'nums = [1, 2, 3, 4, 5]\n>> nums$< (0, (acc, x) -> acc + x) ¶' },
+    { title: '$> with lambda 1', code: 'nums = [1, 2, 3, 4, 5]\n>> nums$> (x -> x * x) ¶' },
+    { title: '$| with lambda 2', code: 'nums = [1, 2, 3, 4, 5, 6]\n>> nums$| (x -> x % 2 == 0) ¶' },
+    { title: '$< with lambda 3', code: 'nums = [1, 2, 3, 4, 5]\n>> nums$< (0, (acc, x) -> acc + x) ¶' },
     { title: 'Closure',        code: 'make_adder(n) {\n    <~ x -> x + n\n}\nadd5  = make_adder(5)\nadd10 = make_adder(10)\n>> add5(3) ¶\n>> add10(3) ¶' },
     { title: 'Pipe |>',        code: 'double = x -> x * 2\ninc    = x -> x + 1\nresult = 5 |> double(_) |> inc(_)\n>> result ¶' },
     { title: 'Pipe w/ args',   code: 'add = (a, b) -> a + b\n>> 10 |> add(_, 5) ¶\n>> 3  |> add(7, _) ¶' },
@@ -788,7 +906,7 @@ const EXAMPLES = {
     { title: 'தமிழ் — Tamil',  code: '// FizzBuzz — தமிழ்\n// தமிழில் அடையாளங்காட்டிகள். இயக்கிகள் எப்போதும் குறியீட்டு.\n\n>> "வணக்கம், உலகம்!" ¶\n\nவகைப்படுத்து(எண்) {\n    ? எண் % 15 == 0 { <~ "குமிழ்சத்தம்" }\n    _? எண் % 3  == 0 { <~ "குமிழ்" }\n    _? எண் % 5  == 0 { <~ "சத்தம்" }\n    _ { <~ எண் }\n}\n\n@ ந:1..15 {\n    >> வகைப்படுத்து(ந) ¶\n}' },
     { title: 'አማርኛ — Amharic',  code: '// FizzBuzz — አማርኛ\n// መለያዎች በአማርኛ። ኦፕሬተሮች ሁልጊዜ ምሳሌያዊ።\n\n>> "ሰላም፣ አማርኛ ተናጋሪ ዓለም!" ¶\n\nምደባ(ቁጥር) {\n    ? ቁጥር % 15 == 0 { <~ "ቡርቡርዝምዝም" }\n    _? ቁጥር % 3  == 0 { <~ "ቡርቡር" }\n    _? ቁጥር % 5  == 0 { <~ "ዝምዝም" }\n    _ { <~ ቁጥር }\n}\n\n@ ን:1..15 {\n    >> ምደባ(ን) ¶\n}' },
 
-    { title: 'தமிழ் ௦-௯ — Tamil',
+    { title: 'தமிழ் ௦-௯ — Tamil 2',
       code: '// FizzBuzz — தமிழ் + Tamil numerals (௦-௯)\n// Loop range, modulo checks, and output all use Tamil digits.\n\n>> "வணக்கம், தமிழ் உலகம்!" ¶\n\n#௦௯#\n\nவகைப்படுத்தல்(எண்) {\n    ? எண் % ௧௫ == ௦ { <~ "குமிழிசலசலப்பு" }\n    _? எண் % ௩  == ௦ { <~ "குமிழி" }\n    _? எண் % ௫  == ௦ { <~ "சலசலப்பு" }\n    _ { <~ எண் }\n}\n\n@ ந:௧..௧௫ {\n    >> வகைப்படுத்தல்(ந) ¶\n}' },
 
     { title: 'తెలుగు — Telugu',
@@ -804,6 +922,311 @@ const EXAMPLES = {
       code: "// FizzBuzz \u2014 \uf8e4\uf8d7\uf8dc\uf8d0\uf8db \uf8de\uf8d7\uf8df\uf8d0\uf8d3\n// pIqaD digits: CSUR PUA U+F8F0\u2013U+F8F9\n// pIqaD letters: CSUR PUA U+F8D0\u2013U+F8EF\n// Requires a pIqaD font (e.g. pIqaD-qolqoS) to render visually.\n\n#\uf8f0\uf8f9#\n\n>> \"\uf8db\uf8e5\uf8df\uf8db\uf8d4\uf8d6\" \u00b6\n\n\uf8e7\uf8d7\uf8e6(\uf8da\uf8d7\uf8e9) {\n    ? \uf8da\uf8d7\uf8e9 % \uf8f1\uf8f5 == 0 { <~ \"\uf8e0\uf8d0\uf8de\uf8d9\uf8d0\uf8e9\uf8d6\uf8dd\uf8d6\" }\n    _? \uf8da\uf8d7\uf8e9 % \uf8f3  == 0 { <~ \"\uf8e0\uf8d0\uf8de\uf8d9\uf8d0\uf8e9\" }\n    _? \uf8da\uf8d7\uf8e9 % \uf8f5  == 0 { <~ \"\uf8d6\uf8dd\uf8d6\" }\n    _ { <~ \uf8da\uf8d7\uf8e9 }\n}\n\n@ \uf8d3:\uf8f1..\uf8f1\uf8f5 {\n    >> \uf8e7\uf8d7\uf8e6(\uf8d3) \u00b6\n}" },
   ],
 
+  'Modules <#': [
+    {
+      title: 'Matemáticas',
+      files: [
+        {
+          name: 'matematicas.zy',
+          code:
+`# matematicas {
+    #> { sumar, restar, multiplicar, dividir, potencia, factorial, PI }
+
+    PI := 3.14159265
+
+    sumar(a, b)       { <~ a + b }
+    restar(a, b)      { <~ a - b }
+    multiplicar(a, b) { <~ a * b }
+    dividir(a, b)     { <~ a / b }
+    potencia(b, e)    { <~ b ^ e }
+
+    factorial(n) {
+        ? n <= 1 { <~ 1 }
+        <~ n * factorial(n - 1)
+    }
+}`
+        },
+        {
+          name: 'calculadora.zy',
+          code:
+`<# ./matematicas <= mat
+
+>> "=== Módulos en Zymbol ===" ¶
+¶
+
+>> "Aritmética básica:" ¶
+>> "  15 + 8  = " mat::sumar(15, 8) ¶
+>> "  15 − 8  = " mat::restar(15, 8) ¶
+>> "  6 × 7   = " mat::multiplicar(6, 7) ¶
+>> "  22 / 7  = " mat::dividir(22, 7) ¶
+¶
+
+>> "  PI = " mat.PI ¶
+¶
+
+>> "Factoriales 1..8:" ¶
+@ n:1..8 {
+    >> "  " n "! = " mat::factorial(n) ¶
+}
+¶
+
+>> "Potencias de 2:" ¶
+@ i:0..5 {
+    exp = i + 1
+    >> "  2^" exp " = " mat::potencia(2, exp) ¶
+}`
+        },
+      ],
+    },
+    {
+      title: 'i18n — Ελληνικά',
+      files: [
+        {
+          name: 'module.zy',
+          code:
+`# module {
+    #> {
+        sumar
+        restar
+        multiplicar
+        dividir
+        PI
+        E
+    }
+
+    PI := 3.14159
+    E  := 2.71828
+
+    sumar(a, b)        { <~ a + b }
+    restar(a, b)       { <~ a - b }
+    multiplicar(a, b)  { <~ a * b }
+    dividir(a, b)      { <~ a / b }
+}`
+        },
+        {
+          name: 'ελληνικά.zy',
+          code:
+`# ελληνικά {
+    <# ./module <= mat
+
+    #> {
+        mat::sumar       <= προσθέτω
+        mat::restar      <= αφαιρώ
+        mat::multiplicar <= πολλαπλασιάζω
+        mat::dividir     <= διαιρώ
+        mat.PI           <= ΠΙ
+        mat.E            <= Ε
+    }
+}`
+        },
+        {
+          name: 'Ελληνική_εφαρμογή.zy',
+          code:
+`<# ./ελληνικά <= μαθ
+
+αποτέλεσμα = μαθ::προσθέτω(10, 5)
+διαφορά    = μαθ::αφαιρώ(10, 5)
+γινόμενο   = μαθ::πολλαπλασιάζω(10, 5)
+διαίρεση   = μαθ::διαιρώ(10, 5)
+πι_τιμή    = μαθ.ΠΙ
+ε_τιμή     = μαθ.Ε
+
+>> "Άθροισμα: " αποτέλεσμα ¶
+>> "Διαφορά: "  διαφορά    ¶
+>> "Γινόμενο: " γινόμενο   ¶
+>> "Διαίρεση: " διαίρεση   ¶
+>> "Πι: "       πι_τιμή    ¶
+>> "Ε: "        ε_τιμή     ¶`
+        },
+      ],
+    },
+    {
+      title: 'i18n — עִברִית',
+      files: [
+        {
+          name: 'module.zy',
+          code:
+`# module {
+    #> {
+        sumar
+        restar
+        multiplicar
+        dividir
+        PI
+        E
+    }
+
+    PI := 3.14159
+    E  := 2.71828
+
+    sumar(a, b)        { <~ a + b }
+    restar(a, b)       { <~ a - b }
+    multiplicar(a, b)  { <~ a * b }
+    dividir(a, b)      { <~ a / b }
+}`
+        },
+        {
+          name: 'עִברִית.zy',
+          code:
+`# עִברִית {
+    <# ./module <= mat
+
+    #> {
+        mat::sumar       <= חיבור
+        mat::restar      <= חיסור
+        mat::multiplicar <= כפל
+        mat::dividir     <= חילוק
+        mat.PI           <= פאי
+        mat.E            <= אי
+    }
+}`
+        },
+        {
+          name: 'אפליקציית_מתמטיקה.zy',
+          code:
+`<# ./עִברִית <= מתמטיקה
+
+תוצאה   = מתמטיקה::חיבור(10, 5)
+הפרש    = מתמטיקה::חיסור(10, 5)
+מכפלה   = מתמטיקה::כפל(10, 5)
+חלוקה   = מתמטיקה::חילוק(10, 5)
+ערך_פאי = מתמטיקה.פאי
+ערך_אי  = מתמטיקה.אי
+
+>> "סכום: "  תוצאה   ¶
+>> "הפרש: "  הפרש    ¶
+>> "מכפלה: " מכפלה   ¶
+>> "חלוקה: " חלוקה   ¶
+>> "פאי: "   ערך_פאי ¶
+>> "אי: "    ערך_אי  ¶`
+        },
+      ],
+    },
+    {
+      title: 'i18n — 中文',
+      files: [
+        {
+          name: 'module.zy',
+          code:
+`# module {
+    #> {
+        sumar
+        restar
+        multiplicar
+        dividir
+        PI
+        E
+    }
+
+    PI := 3.14159
+    E  := 2.71828
+
+    sumar(a, b)        { <~ a + b }
+    restar(a, b)       { <~ a - b }
+    multiplicar(a, b)  { <~ a * b }
+    dividir(a, b)      { <~ a / b }
+}`
+        },
+        {
+          name: '中文.zy',
+          code:
+`# 中文 {
+    <# ./module <= mat
+
+    #> {
+        mat::sumar       <= 相加
+        mat::restar      <= 相减
+        mat::multiplicar <= 相乘
+        mat::dividir     <= 相除
+        mat.PI           <= 圆周率
+        mat.E            <= 自然常数
+    }
+}`
+        },
+        {
+          name: '中文_应用.zy',
+          code:
+`<# ./中文 <= 数学
+
+结果   = 数学::相加(10, 5)
+差值   = 数学::相减(10, 5)
+乘积   = 数学::相乘(10, 5)
+商值   = 数学::相除(10, 5)
+圆周率 = 数学.圆周率
+自然数 = 数学.自然常数
+
+>> "和：" 结果   ¶
+>> "差：" 差值   ¶
+>> "积：" 乘积   ¶
+>> "商：" 商值   ¶
+>> "π：" 圆周率 ¶
+>> "e：" 自然数 ¶`
+        },
+      ],
+    },
+    {
+      title: 'i18n — 한국인',
+      files: [
+        {
+          name: 'module.zy',
+          code:
+`# module {
+    #> {
+        sumar
+        restar
+        multiplicar
+        dividir
+        PI
+        E
+    }
+
+    PI := 3.14159
+    E  := 2.71828
+
+    sumar(a, b)        { <~ a + b }
+    restar(a, b)       { <~ a - b }
+    multiplicar(a, b)  { <~ a * b }
+    dividir(a, b)      { <~ a / b }
+}`
+        },
+        {
+          name: '한국인.zy',
+          code:
+`# 한국인 {
+    <# ./module <= mat
+
+    #> {
+        mat::sumar       <= 더하다
+        mat::restar      <= 빼다
+        mat::multiplicar <= 곱하다
+        mat::dividir     <= 나누다
+        mat.PI           <= 파이
+        mat.E            <= 이
+    }
+}`
+        },
+        {
+          name: '한국_앱.zy',
+          code:
+`<# ./한국인 <= 수학
+
+결과    = 수학::더하다(10, 5)
+차이    = 수학::빼다(10, 5)
+곱셈    = 수학::곱하다(10, 5)
+나눗셈  = 수학::나누다(10, 5)
+원주율  = 수학.파이
+자연상수 = 수학.이
+
+>> "합계: "    결과     ¶
+>> "차이: "    차이     ¶
+>> "곱셈: "    곱셈     ¶
+>> "나눗셈: "  나눗셈   ¶
+>> "파이: "    원주율   ¶
+>> "자연상수: " 자연상수 ¶`
+        },
+      ],
+    },
+  ],
 };
 
 // ─── Syntax highlighter ───────────────────────────────────────────────────────
@@ -885,6 +1308,23 @@ function highlightLine(line, inBlockComment) {
       while (j < len && /[A-Za-z0-9_]/.test(s[j])) j++;
       out += `<span class="t-kw">${esc(s.slice(i,j))}</span>`;
       i = j; continue;
+    }
+
+    // # name { — module block declaration: highlight # as keyword
+    if (s[i] === '#' && i+1 < len && (s[i+1] === ' ' || s[i+1] === '\t' || /[\p{L}_]/u.test(s[i+1]))) {
+      let _j = i + 1;
+      while (_j < len && (s[_j] === ' ' || s[_j] === '\t')) _j++;
+      if (_j < len && s[_j] === '.') _j++;
+      const _idStart = _j;
+      while (_j < len && /[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(s[_j])) _j++;
+      if (_j > _idStart) {
+        let _k = _j;
+        while (_k < len && (s[_k] === ' ' || s[_k] === '\t')) _k++;
+        if (_k < len && s[_k] === '{') {
+          out += `<span class="t-kw">#</span>`;
+          i++; continue;
+        }
+      }
     }
 
     // Numeral mode: #XY# where X and Y are the '0' and '9' digits of any Unicode digit
@@ -1032,7 +1472,7 @@ const highlight = document.getElementById('editor-highlight');
 
 function syncHighlight() {
   const code = editor.value;
-  highlight.innerHTML = highlightCode(code) + '\n'; // trailing \n keeps heights in sync
+  highlight.innerHTML = highlightCode(code) + '\n';
   syncScroll();
 }
 function syncScroll() {
@@ -1040,8 +1480,259 @@ function syncScroll() {
   highlight.scrollLeft = editor.scrollLeft;
 }
 
-editor.addEventListener('input',  syncHighlight);
 editor.addEventListener('scroll', syncScroll);
+
+// ─── File store ───────────────────────────────────────────────────────────────
+const LS_FILES   = 'zy-files';
+const EMPTY_CODE = '>> "Hello, Zymbol-Lang!" ¶';
+
+let files    = [];   // [{id, name, code, dirty}]
+let activeId = null;
+
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+function loadStore() {
+  try {
+    const raw = localStorage.getItem(LS_FILES);
+    if (raw) {
+      const data = JSON.parse(raw);
+      files    = (data.files ?? []).map(f => ({ ...f, dirty: f.dirty ?? false }));
+      activeId = data.activeId ?? null;
+    }
+  } catch {}
+  if (!files.length) {
+    files = [{ id: genId(), name: 'prog1.zy', code: EMPTY_CODE, dirty: false }];
+  }
+  if (!files.find(f => f.id === activeId)) activeId = files[0].id;
+}
+
+function saveStore() {
+  try { localStorage.setItem(LS_FILES, JSON.stringify({ files, activeId })); } catch {}
+}
+
+function activeFile() {
+  return files.find(f => f.id === activeId) ?? files[0];
+}
+
+function switchTo(id) {
+  const cur = activeFile();
+  if (cur) cur.code = editor.value;
+  activeId = id;
+  const f = activeFile();
+  editor.value = f.code;
+  syncHighlight();
+  clearOutput();
+  saveStore();
+  renderFileTabs();
+}
+
+function newFile(name, code = EMPTY_CODE) {
+  const f = { id: genId(), name, code, dirty: false };
+  const cur = activeFile();
+  if (cur) cur.code = editor.value;
+  files.push(f);
+  activeId = f.id;
+  editor.value = f.code;
+  syncHighlight();
+  clearOutput();
+  saveStore();
+  renderFileTabs();
+  return f;
+}
+
+function closeFile(id) {
+  if (files.length <= 1) return;
+  const idx = files.findIndex(f => f.id === id);
+  if (idx < 0) return;
+  files.splice(idx, 1);
+  if (activeId === id) {
+    activeId = files[Math.min(idx, files.length - 1)].id;
+    editor.value = activeFile().code;
+    syncHighlight();
+    clearOutput();
+  }
+  saveStore();
+  renderFileTabs();
+}
+
+function nextName(prefix) {
+  const used = new Set(files.map(f => f.name));
+  let n = 1;
+  while (used.has(`${prefix}${n}.zy`)) n++;
+  return `${prefix}${n}.zy`;
+}
+
+// Add a file without switching the active tab
+function addFile(name, code) {
+  const existing = files.find(f => f.name === name);
+  if (existing) {
+    if (!existing.dirty) existing.code = code;
+    return existing;
+  }
+  const cur = activeFile();
+  if (cur) cur.code = editor.value;
+  const f = { id: genId(), name, code, dirty: false };
+  files.push(f);
+  saveStore();
+  renderFileTabs();
+  return f;
+}
+
+// Derive a .zy filename from an example title
+function titleToFilename(title) {
+  let base = title;
+  // For "NonASCII — ASCII" titles, prefer the ASCII part as the filename
+  const parts = title.split(/\s*[—–]+\s*/);
+  const asciiPart = parts.find(p => /^[\x20-\x7E]+$/.test(p.trim()) && p.trim().length > 0);
+  if (asciiPart && asciiPart.trim() !== title.trim()) base = asciiPart.trim();
+  const slug = base
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, '_')
+    .replace(/^_+|_+$/g, '')
+    .replace(/_+/g, '_') || 'example';
+  return slug + '.zy';
+}
+
+// Load a single-file example: find-or-create a tab by derived filename
+function loadSingleFileExample(ex) {
+  const filename = titleToFilename(ex.title);
+  const existing = files.find(f => f.name === filename);
+  if (existing) {
+    if (existing.dirty) {
+      if (!window.confirm(`'${filename}' has been modified.\nOverwrite with the original example?`)) {
+        switchTo(existing.id);
+        return;
+      }
+    }
+    existing.code = ex.code;
+    existing.dirty = false;
+    if (existing.id === activeId) {
+      editor.value = ex.code;
+      syncHighlight();
+      clearOutput();
+      saveStore();
+      renderFileTabs();
+    } else {
+      switchTo(existing.id);
+    }
+  } else {
+    newFile(filename, ex.code);
+  }
+}
+
+// Load a multi-file example: add support files, switch to last (main program)
+function loadMultiFileExample(exFiles) {
+  for (let i = 0; i < exFiles.length - 1; i++) {
+    addFile(exFiles[i].name, exFiles[i].code);
+  }
+  const last = exFiles[exFiles.length - 1];
+  const existing = files.find(f => f.name === last.name);
+  if (existing) {
+    if (existing.dirty) {
+      if (!window.confirm(`'${existing.name}' has been modified.\nOverwrite with the original example?`)) {
+        switchTo(existing.id);
+        return;
+      }
+      existing.code = last.code;
+      existing.dirty = false;
+      saveStore();
+      renderFileTabs();
+    } else {
+      existing.code = last.code;
+    }
+    switchTo(existing.id);
+  } else {
+    newFile(last.name, last.code);
+  }
+}
+
+// ─── File tabs UI ─────────────────────────────────────────────────────────────
+const fileTabsEl = document.getElementById('file-tabs');
+
+function renderFileTabs() {
+  fileTabsEl.innerHTML = '';
+  for (const f of files) {
+    const tab = document.createElement('div');
+    tab.className = 'ftab' + (f.id === activeId ? ' active' : '');
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'ftab-name';
+    nameSpan.textContent = f.name;
+
+    const dot = document.createElement('span');
+    dot.className = 'ftab-dot';
+    dot.textContent = f.dirty ? '●' : '';
+    dot.title = f.dirty ? 'Modified' : '';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'ftab-close';
+    closeBtn.textContent = '×';
+    closeBtn.title = 'Close';
+    closeBtn.addEventListener('click', e => { e.stopPropagation(); closeFile(f.id); });
+
+    tab.appendChild(nameSpan);
+    tab.appendChild(dot);
+    tab.appendChild(closeBtn);
+    tab.addEventListener('click', () => switchTo(f.id));
+
+    tab.addEventListener('dblclick', e => { e.stopPropagation(); startRename(tab, nameSpan, f); });
+
+    fileTabsEl.appendChild(tab);
+  }
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'ftab-add';
+  addBtn.textContent = '+';
+  addBtn.title = 'New file';
+  addBtn.addEventListener('click', () => newFile(nextName('prog')));
+  fileTabsEl.appendChild(addBtn);
+
+  // Scroll active tab into view
+  const activeTab = fileTabsEl.querySelector('.ftab.active');
+  if (activeTab) activeTab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+
+function startRename(tabEl, nameSpan, file) {
+  if (tabEl.querySelector('.ftab-rename-input')) return;
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.className = 'ftab-rename-input';
+  inp.value = file.name;
+  nameSpan.replaceWith(inp);
+  inp.focus();
+  inp.select();
+
+  let committed = false;
+  function commit() {
+    if (committed) return;
+    committed = true;
+    let v = inp.value.trim() || file.name;
+    if (!v.endsWith('.zy')) v += '.zy';
+    file.name = v;
+    saveStore();
+    renderFileTabs();
+  }
+  inp.addEventListener('blur', commit);
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter')  { e.preventDefault(); commit(); }
+    if (e.key === 'Escape') { committed = true; inp.value = file.name; saveStore(); renderFileTabs(); }
+  });
+}
+
+// Track edits → mark file dirty
+editor.addEventListener('input', () => {
+  syncHighlight();
+  const f = activeFile();
+  if (!f) return;
+  f.code = editor.value;
+  if (!f.dirty) {
+    f.dirty = true;
+    renderFileTabs();   // refresh dot indicator
+  }
+  saveStore();
+});
 
 // Tab → 4 spaces
 editor.addEventListener('keydown', e => {
@@ -1110,6 +1801,17 @@ function inputFn() {
   });
 }
 
+// ─── Module resolver: look up other loaded tabs by name ──────────────────────
+function buildModuleResolver() {
+  const resolver = async (importPath) => {
+    // Normalize: strip path prefix and .zy, keep just the filename
+    let name = importPath.replace(/^(\.\/|\.\.\/)*/, '').replace(/\.zy$/, '') + '.zy';
+    const found = files.find(f => f.name === name);
+    return found ? { src: found.code, resolver } : null;
+  };
+  return resolver;
+}
+
 // ─── Run ──────────────────────────────────────────────────────────────────────
 async function runCode() {
   clearOutput();
@@ -1117,7 +1819,7 @@ async function runCode() {
   if (!src) { appendOutput('(empty program)', 'out-meta'); return; }
 
   try {
-    await runZymbol(src, inputFn, text => appendOutput(text));
+    await runZymbol(src, inputFn, text => appendOutput(text), buildModuleResolver());
     appendOutput('\n— done —', 'out-meta');
   } catch (err) {
     appendOutput('\n' + (err.message ?? String(err)), 'out-error');
@@ -1128,6 +1830,61 @@ document.getElementById('run-btn').addEventListener('click', runCode);
 document.getElementById('clear-code-btn').addEventListener('click', () => {
   editor.value = '';
   syncHighlight();
+  const f = activeFile();
+  if (f) { f.code = ''; f.dirty = false; saveStore(); renderFileTabs(); }
+});
+
+// ─── Download active file ─────────────────────────────────────────────────────
+document.getElementById('download-btn').addEventListener('click', () => {
+  const f = activeFile();
+  if (!f) return;
+  f.code = editor.value;
+  const blob = new Blob([f.code], { type: 'text/plain' });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), { href: url, download: f.name });
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// ─── Upload .zy files ─────────────────────────────────────────────────────────
+const uploadInput = document.getElementById('upload-input');
+
+document.getElementById('upload-btn').addEventListener('click', () => uploadInput.click());
+
+uploadInput.addEventListener('change', () => {
+  const picked = [...uploadInput.files];
+  uploadInput.value = '';          // reset so same file can be re-uploaded
+  if (!picked.length) return;
+
+  let first = true;
+  for (const file of picked) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const name = file.name.endsWith('.zy') ? file.name : file.name + '.zy';
+      const code = e.target.result;
+      if (first) {
+        // First file: check if active tab is pristine; load in place or new tab
+        const cur = activeFile();
+        if (cur && !cur.dirty && cur.code.trim() === '') {
+          // Empty pristine tab → reuse it
+          cur.name  = name;
+          cur.code  = code;
+          cur.dirty = false;
+          editor.value = code;
+          syncHighlight();
+          clearOutput();
+          saveStore();
+          renderFileTabs();
+        } else {
+          newFile(name, code);
+        }
+        first = false;
+      } else {
+        newFile(name, code);
+      }
+    };
+    reader.readAsText(file);
+  }
 });
 document.getElementById('clear-output-btn').addEventListener('click', clearOutput);
 
@@ -1170,14 +1927,22 @@ function renderGrid() {
   for (const ex of EXAMPLES[activeTab]) {
     const card = document.createElement('div');
     card.className = 'ex-card';
+    // Multi-file examples: show last file (main program) as preview
+    const previewCode = ex.files ? ex.files[ex.files.length - 1].code : ex.code;
+    // Badge for multi-file examples showing the file names
+    const badge = ex.files
+      ? `<div class="ex-card-badge">${ex.files.map(f => esc(f.name)).join(' + ')}</div>`
+      : '';
     card.innerHTML = `
-      <div class="ex-card-title">${esc(ex.title)}</div>
-      <div class="ex-card-code">${highlightCode(ex.code)}</div>
+      <div class="ex-card-title">${esc(ex.title)}${badge}</div>
+      <div class="ex-card-code">${highlightCode(previewCode)}</div>
     `;
     card.addEventListener('click', () => {
-      editor.value = ex.code;
-      syncHighlight();
-      clearOutput();
+      if (ex.files) {
+        loadMultiFileExample(ex.files);
+      } else {
+        loadSingleFileExample(ex);
+      }
     });
     gridEl.appendChild(card);
   }
@@ -1201,9 +1966,11 @@ themeBtn.addEventListener('click', () => {
 });
 applyTheme(document.documentElement.classList.contains('light'));
 
-// ─── Initial code ─────────────────────────────────────────────────────────────
-editor.value = `>> "Hello, Zymbol-Lang!" ¶`;
+// ─── Initialize file store ────────────────────────────────────────────────────
+loadStore();
+editor.value = activeFile().code;
 syncHighlight();
+renderFileTabs();
 
 // ─── Playground notice ────────────────────────────────────────────────────────
 (function () {

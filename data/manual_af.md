@@ -1,88 +1,107 @@
-# Zymbol-Lang Kompakte Handleiding
+> **Kennisgewing:** Hierdie dokumentasie is geskep met die hulp van kunsmatige intelligensie (AI).
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Die kanonieke verwysing is **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** in die interpreteerderbewaarplek.
 
-**Zymbol-Lang** is 'n simboliese programmeertaal. Dit gebruik geen sleutelwoorde nie — alles is 'n simbool. Dit werk dieselfde in enige menslike taal.
+---
 
-- Geen sleutelwoorde nie (`as`, `lus`, `gee terug` bestaan nie — slegs simbole `?`, `@`, `<~`)
-- Volledige Unicode — identifiseerders in enige taal of emoji 👋
-- Menslike-taal-agnosties — die kode is identies in elke taal
+# Zymbol-Lang Handleiding
+
+**Zymbol-Lang** is 'n simboliese programmeertaal. Geen sleutelwoorde nie — alles is 'n simbool. Werk identies in enige menslike taal.
+
+- Geen `if`, `while`, `return` — net `?`, `@`, `<~`
+- Volledige Unicode — identifiseerders in enige taal of emoji
+- Menslike taal-agnosties — die kode is oral dieselfde
+
+**Interpreteerderversie**: v0.0.4 | **Toetsdekking**: 393/393 (TW ↔ VM pariteit)
 
 ---
 
 ## Veranderlikes en Konstantes
 
 ```zymbol
-x = 10              // veranderlike (veranderbaar)
-PI := 3.14159       // konstante — fout as heraangewer
-naam = "Ana"
-aktief = #1         // boole-waarde waar
+x = 10              // veranderlike veranderlike
+PI := 3.14159       // konstante — heraanwysing is 'n looptydfout
+naam = "Alice"
+aktief = #1         // Booles waar
 👋 := "Hallo"
 ```
 
 ```zymbol
-x = 10
+x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
 
 ---
 
 ## Datatipes
 
-| Tipe          | Voorbeeld           | `#?` Simbool | Notas                               |
-|---------------|---------------------|--------------|-------------------------------------|
-| Heelgetal     | `42`, `-7`          | `###`        | 64-bit met teken                    |
-| Drywende punt | `3.14`, `1.5e10`    | `##.`        | Wetenskaplike notasie OK            |
-| String        | `"hallo"`           | `##"`        | Interpolasie: `"Hallo {naam}"`      |
-| Karakter      | `'A'`               | `##'`        | Een Unicode-karakter                |
-| Boole         | `#1`, `#0`          | `##?`        | NIE numeries 1 en 0 nie             |
-| Skikking      | `[1, 2, 3]`         | `##]`        | Alle elemente moet dieselfde tipe wees |
-| Tuple         | `(a, b)`            | `##)`        | Posisioneel                         |
-| Benoemde Tuple | `(x: 1, y: 2)`     | `##)`        | Toegang per naam of indeks          |
+| Tipe | Literaal | `#?` merker | Notas |
+|------|----------|-------------|-------|
+| Heelgetal | `42`, `-7` | `###` | 64-bis onderteken |
+| Dobbelpunt | `3.14`, `1.5e10` | `##.` | Wetenskaplike notasie toegelaat |
+| String | `"teks"` | `##"` | Interpolasie: `"Hallo {naam}"` |
+| Karakter | `'A'` | `##'` | Enkel Unicode karakter |
+| Booles | `#1`, `#0` | `##?` | NIE numeries nie — `#1 ≠ 1` |
+| Skikking | `[1, 2, 3]` | `##]` | Homogene elemente |
+| Tuple | `(a, b)` | `##)` | Posisioneel |
+| Genoemde tuple | `(x: 1, y: 2)` | `##)` | Genoemde velde |
+| Funksie | genoemde funksieverwysing | `##()` | Eerste-klas; wys `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Eerste-klas; wys `<lambd/N>` |
 
 ```zymbol
-// Tipe-introspeksie — gee (tipe, syfers, waarde) terug
+// Tipe introspesie — gee terug (tipe, syfers, waarde)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
-t = meta[0]
+t = meta[1]
 >> t ¶            // → ###
 ```
 
 ---
 
-## Uitvoer en Invoer
+## Uitset en Inset
 
 ```zymbol
->> "Hallo, Wêreld!" ¶                  // ¶ of \\ gee eksplisiete nuwe reël
->> "a=" a " b=" b ¶                    // verskeie waardes langs mekaar
->> (vrugte$#) ¶                        // postfix-operatore vereis hakies
+>> "Hallo" ¶                       // ¶ of \\ vir eksplisiete nuwe lyn
+>> "a=" a " b=" b ¶               // jukstaposisie — meervoudige waardes
+>> (arr$#) ¶                      // postfix operateurs benodig ( ) binne >>
 
-<< naam                                // geen kennisgewing — lees in veranderlike
-<< "Jou naam? " naam                   // met kennisgewing
+<< naam                           // lees in veranderlike (sonder prompt)
+<< "Voer naam in: " naam          // met prompt
 ```
 
-> `¶` of `\\` is gelykwaardig as nuwe reël.
+> `¶` (AltGr+R op Spaanse sleutelbord) en `\\` is ekwivalent vir nuwe lyn.
 
 ---
 
 ## Operateurs
 
 ```zymbol
-// Rekenkunde — gebruik toewysings; sommige operateurs het afwykings direk in >>
+// Rekenkundig — gebruik toewysings; sommige operateurs het eienaardighede direk in >>
 a = 10
 b = 3
-r1 = a + b    // 13     r2 = a - b    // 7
-r3 = a * b    // 30     r4 = a / b    // 3  (heelgetaldeling)
-r5 = a % b    // 1      r6 = a ^ b    // 1000  (magsverheffing)
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (heelgetal deling)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (eksponensiasie)
 
 // Vergelyking
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
+a == b    // #0    
+a <> b    // #1    
+a < b     // #0
+a <= b    // #0   
+a > b     // #1    
+a >= b    // #1
 
 // Logies
 #1 && #0    // #0
@@ -92,33 +111,32 @@ a <= b    // #0   a > b     // #1    a >= b   // #1
 
 ---
 
-## Karakterreekse
+## Stringe
 
 ```zymbol
-// Drie saamvoegingsvorms
-naam = "Ana"
+// Twee vervoegingsvorms
+naam = "Alice"
 n = 42
 
-boodskap = "Hallo ", naam, "!"            // komma — in toewysings
->> "Hallo " naam " jy het " n ¶           // langs mekaar — in >>
-beskrywing = "Hallo {naam}, jy het {n}"   // interpolasie — oral
+>> "Hallo " naam " jy het " n ¶       // jukstaposisie — in >>
+beskrywing = "Hallo {naam}, jy het {n}" // interpolasie — oral
 ```
 
 ```zymbol
 s = "Hallo Wêreld"
-len = s$#                  // 11
-sub = s$[0..5]             // "Hallo"  (end eksklusief)
-het = s$? "Wêreld"         // #1
-dele = "a,b,c,d" / ','     // [a, b, c, d]
-rep = s$~~["l":"L"]        // "HaLLo WêreLd"
-rep1 = s$~~["l":"L":1]     // "HaLlo Wêreld"  (eerste N slegs)
+lengte = s$#                  // 11
+sub = s$[1..5]                // "Hallo"  (basis-1, einde ingesluit)
+het = s$? "Wêreld"            // #1
+dele = "a,b,c,d"$/ ','        // [a, b, c, d]  (skeiding deur skeidingsteken)
+vervang = s$~~["a":"o"]       // "Hollo Wêreld"
+vervang1 = s$~~["a":"o":1]    // "Hollo Wêreld"  (slegs eerste N)
 ```
 
-> `+` is slegs vir getalle. Gebruik `,`, langs mekaar, of interpolasie vir strings.
+> `+` is slegs vir getalle. Gebruik `,`, jukstaposisie, of interpolasie vir stringe.
 
 ---
 
-## Beheersvloei
+## Beheervloei
 
 ```zymbol
 x = 7
@@ -136,46 +154,46 @@ x = 7
 }
 ```
 
-> Blokke `{ }` is **verpligtend** selfs vir 'n enkele reël.
+> Krulhakies `{ }` is **verpligtend** selfs vir 'n enkele stelling.
 
 ---
 
-## Passing
+## Passings (Match)
 
 ```zymbol
 // Reekse
-punte = 85
-beoordeling = ?? punte {
+telling = 85
+graad = ?? telling {
     90..100 : 'A'
     80..89  : 'B'
     70..79  : 'C'
     _       : 'F'
 }
->> beoordeling ¶    // → B
+>> graad ¶      // → B
 
-// Strings
+// Stringe
 kleur = "rooi"
 kode = ?? kleur {
-    "rooi"  : "#FF0000"
-    "groen" : "#00FF00"
-    _       : "#000000"
+    "rooi"   : "#FF0000"
+    "groen"  : "#00FF00"
+    _        : "#000000"
 }
 
-// Wagte
+// Vergelykingspatrone
 temperatuur = -5
 toestand = ?? temperatuur {
-    _? temperatuur < 0  : "ys"
-    _? temperatuur < 20 : "koud"
-    _? temperatuur < 35 : "warm"
-    _                   : "baie warm"
+    < 0  : "ys"
+    < 20 : "koud"
+    < 35 : "warm"
+    _    : "warm"
 }
 >> toestand ¶    // → ys
 
-// Stellingvorm (blokarme)
+// Stellingvorm (blokke)
 ?? n {
-    0       : { >> "nul" ¶ }
-    _? n < 0: { >> "negatief" ¶ }
-    _       : { >> "positief" ¶ }
+    0        : { >> "nul" ¶ }
+    _? n < 0 : { >> "negatief" ¶ }
+    _        : { >> "positief" ¶ }
 }
 ```
 
@@ -184,23 +202,23 @@ toestand = ?? temperatuur {
 ## Lusse
 
 ```zymbol
-@ i:0..4  { >> i " " }        // reeks ingesluit: 0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // met stap: 1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // omgekeerd: 5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // reeks ingesluit:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // met stap:         1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // omgekeerd:        5 4 3 2 1 0
 
-nommer = 1
-@ nommer <= 64 { nommer *= 2 }
->> nommer ¶                   // → 128  (terwyl)
+n = 1
+@ n <= 64 { n *= 2 }
+>> n ¶                        // → 128  (terwyl)
 
-vrugte = ["appel", "peer", "druiwe"]
-@ f:vrugte { >> f ¶ }
+vrugte = ["appel", "peer", "druif"]
+@ v:vrugte { >> v ¶ }         // vir elke element in skikking
 
-@ c:"hallo" { >> c "-" }
->> ¶                          // → h-a-l-l-o-
+@ k:"hallo" { >> k "-" }
+>> ¶                          // → h-a-l-l-o-  (vir elke karakter in string)
 
 @ i:1..10 {
     ? i % 2 == 0 { @> }       // @> gaan voort
-    ? i > 7 { @! }             // @! breek
+    ? i > 7 { @! }            // @! breek
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
@@ -215,12 +233,12 @@ i = 0
 >> ¶                          // → 1 2 3 4
 
 // Gemerkte lus (geneste breek)
-count = 0
-@ @outer {
-    count++
-    ? count >= 3 { @! outer }
+teller = 0
+@:buite {
+    teller++
+    ? teller >= 3 { @:buite! }
 }
->> count ¶                    // → 3
+>> teller ¶                   // → 3
 ```
 
 ---
@@ -228,8 +246,8 @@ count = 0
 ## Funksies
 
 ```zymbol
-add(a, b) { <~ a + b }
->> add(3, 4) ¶    // → 7
+optel(a, b) { <~ a + b }
+>> optel(3, 4) ¶   // → 7
 
 faktoriaal(n) {
     ? n <= 1 { <~ 1 }
@@ -238,13 +256,13 @@ faktoriaal(n) {
 >> faktoriaal(5) ¶    // → 120
 ```
 
-Funksies het **geïsoleerde omvang** — hulle kan nie buite-veranderlikes lees nie. Gebruik uitvoerparameters `<~` om aanroeperveranderlikes te wysig:
+Funksies het **geïsoleerde omvang** — hulle kan nie eksterne veranderlikes lees nie. Gebruik uitvoerparameters `<~` om die roeper se veranderlikes te wysig:
 
 ```zymbol
 ruil(a<~, b<~) {
-    tmp = a
+    tydelik = a
     a = b
-    b = tmp
+    b = tydelik
 }
 x = 10
 y = 20
@@ -252,38 +270,38 @@ ruil(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Benoemde funksies is nie eerste-klas-waardes nie. Om as argument te slaag, omhul: `x -> fn(x)`.
+> Genoemde funksies is **eerste-klas waardes** — stuur direk: `nums$> verdubbel`. `x -> fn(x)` is ook geldig.
 
 ---
 
 ## Lambdas en Sluitings
 
 ```zymbol
-verdubbeld = x -> x * 2
-som = (a, b) -> a + b
->> verdubbeld(5) ¶    // → 10
->> som(3, 7) ¶        // → 10
+verdubbel = x -> x * 2
+optel = (a, b) -> a + b
+>> verdubbel(5) ¶   // → 10
+>> optel(3, 7) ¶    // → 10
 
-// Blok-lambda
+// Blok lambda
 klassifiseer = x -> {
     ? x > 0 { <~ "positief" }
     _? x < 0 { <~ "negatief" }
     <~ "nul"
 }
 
-// Sluiting — vang buite-omvang
+// Sluiting — vang eksterne omvang
 faktor = 3
-verdriedubbeld = x -> x * faktor
->> verdriedubbeld(7) ¶    // → 21
+verdriedubbel = x -> x * faktor
+>> verdriedubbel(7) ¶   // → 21
 
-// Funksie-fabriek
-make_adder(n) { <~ x -> x + n }
-add10 = make_adder(10)
->> add10(5) ¶    // → 15
+// Fabriek
+maak_teller(n) { <~ x -> x + n }
+tien_bymekaar = maak_teller(10)
+>> tien_bymekaar(5) ¶    // → 15
 
 // In skikkings
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[2](5) ¶    // → 25
+>> ops[3](5) ¶        // → 25
 ```
 
 ---
@@ -295,175 +313,176 @@ Skikkings is **veranderbaar** en bevat elemente van **dieselfde tipe**.
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
-arr[0]          // 1 — toegang (0-gebaseer)
-arr[-1]         // 5 — negatiewe indeks (laaste)
+arr[1]          // 1 — toegang (basis-1: eerste element)
+arr[-1]         // 5 — negatiewe indeks (laaste element)
 arr$#           // 5 — lengte (gebruik (arr$#) in >>)
 
-arr = arr$+ 6            // byvoeg → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // invoeg by indeks 2
+arr = arr$+ 6            // voeg by → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // voeg in by posisie 2 (basis-1)
 arr3 = arr$- 3           // verwyder eerste voorkoms van waarde
 arr4 = arr$-- 3          // verwyder alle voorkomste
-arr5 = arr$-[0]          // verwyder by indeks
-arr6 = arr$-[1..3]       // verwyder reeks (end eksklusief)
+arr5 = arr$-[1]          // verwyder by indeks 1 (eerste element)
+arr6 = arr$-[2..3]       // verwyder reeks (basis-1, einde ingesluit)
 
 het = arr$? 3            // #1 — bevat
-pos = arr$?? 3           // [2] — alle indekse van waarde
-sny = arr$[0..3]         // [1,2,3] — sny (end eksklusief)
-sny2 = arr$[0:3]         // [1,2,3] — telling-gebaseerde sintaksis
+posisies = arr$?? 3      // [3] — alle indekse van waarde (basis-1)
+sny = arr$[1..3]         // [1,2,3] — sny (basis-1, einde ingesluit)
+sny2 = arr$[1:3]         // [1,2,3] — selfde, telling-gebaseerde sintaks
 
-op = arr$^+              // gesorteer oplopend (slegs primitiewe)
-af = arr$^-              // gesorteer aflopend (slegs primitiewe)
+opklimmend = arr$^+      // sorteer opklimmend (slegs primitiewe)
+afklimmend = arr$^-      // sorteer afklimmend (slegs primitiewe)
 
-// Benoemde/posisionele tuple-skikkings — gebruik $^ met vergelykings-lambda
+// Skikkings van genoemde/posisionele tuple — gebruik $^ met vergelykingslambda
 db = [(naam: "Carla", ouderdom: 28), (naam: "Ana", ouderdom: 25), (naam: "Bob", ouderdom: 30)]
-per_ouderdom = db$^ (a, b -> a.ouderdom < b.ouderdom)
-per_naam     = db$^ (a, b -> a.naam > b.naam)
->> per_ouderdom[0].naam ¶     // → Ana
->> per_naam[0].naam ¶         // → Carla
+volgens_ouderdom  = db$^ (a, b -> a.ouderdom < b.ouderdom)   // opklimmend volgens ouderdom (<)
+volgens_naam    = db$^ (a, b -> a.naam > b.naam)         // afklimmend volgens naam (>)
+>> volgens_ouderdom[1].naam ¶   // → Ana
+>> volgens_naam[1].naam ¶       // → Carla
 
-// Direkte element-opdatering (slegs skikkings)
-arr[1] = 99              // toewys
-arr[0] += 5              // saamgesteld: +=  -=  *=  /=  %=  ^=
+// Direkte element opdatering (slegs skikkings)
+arr[1] = 99              // wys toe
+arr[2] += 5              // saamgesteld: +=  -=  *=  /=  %=  ^=
 
-// Funksionele opdatering — gee 'n nuwe skikking terug; origineel onveranderd
-arr2 = arr[1]$~ 99
+// Funksionele opdatering — gee nuwe skikking terug; oorspronklike onveranderd
+arr2 = arr[2]$~ 99
 ```
 
-> Alle versamelingsoperateurs gee 'n **nuwe skikking** terug. Wys terug toe: `arr = arr$+ 4`.
-> Operateurs kan nie geketting word nie — gebruik tussentoewysings.
-> `$^+` / `$^-` sorteer **primitiewe skikkings**. Vir tuple-skikkings gebruik `$^` met 'n vergelykings-lambda.
+> Alle versamelingsoperateurs gee **nuwe skikking** terug. Wys weer toe: `arr = arr$+ 4`.
+> `$+` kan geketting word: `arr = arr$+ 5$+ 6$+ 7`. Ander operateurs gebruik tussentydse toewysings.
+> **Indeksering is basis-1**: `arr[1]` is die eerste element; `arr[0]` is 'n looptydfout.
+> `$^+` / `$^-` sorteer **primitiewe skikkings** (getalle, stringe). Vir tuple skikkings gebruik `$^` met vergelykingslambda — rigting is in lambda gekodeer (`<` = opklimmend, `>` = afklimmend).
 
-**Waardesemantiek** — om 'n skikking aan 'n ander veranderlike toe te wys skep 'n onafhanklike kopie:
+**Waardesemantiek** — om 'n skikking aan 'n ander veranderlike toe te wys, skep 'n onafhanklike kopie:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b is nie beïnvloed nie
+>> b ¶    // → [1, 2, 3]   ← b word nie beïnvloed nie
 ```
 
 ```zymbol
-// Geneste skikkings
+// Geneste skikkings (basis-1 indeksering)
 matriks = [[1,2,3],[4,5,6],[7,8,9]]
->> matriks[1][2] ¶    // → 6
+>> matriks[2][3] ¶    // → 6  (ry 2, kolom 3)
 ```
 
 ---
 
-## Destrukturering
+## Destrukturing
 
 ```zymbol
 // Skikking
 arr = [10, 20, 30, 40, 50]
 [a, b, c] = arr              // a=10  b=20  c=30
-[eerste, *res] = arr         // eerste=10  res=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ verwyder
+[eerste, *oorblywendes] = arr // eerste=10  oorblywendes=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ vergeet
 
 // Posisionele tuple
 punt = (100, 200)
 (px, py) = punt              // px=100  py=200
 
-// Benoemde tuple
-persoon = (naam: "Ana", ouderdom: 25, stad: "Kaapstad")
-(naam: n, ouderdom: o) = persoon  // n="Ana"  o=25
+// Genoemde tuple
+persoon = (naam: "Ana", ouderdom: 25, stad: "Madrid")
+(naam: n, ouderdom: o) = persoon   // n="Ana"  o=25
 ```
 
 ---
 
 ## Tuples
 
-Tuples is **onveranderlike** geordende houers wat waardes van **verskillende tipes** kan bevat.
-Anders as skikkings kan elemente nie na skepping gewysig word nie.
+Tuples is **onveranderlike** geordende houers wat waardes van **verskillende tipes** kan hou.
+Anders as skikkings, kan elemente nie verander word na skepping nie.
 
 ```zymbol
 // Posisioneel — gemengde tipes toegelaat
 punt = (10, 20)
->> punt[0] ¶    // → 10
+>> punt[1] ¶     // → 10
 
 data = (42, "hallo", #1, 3.14)
->> data[2] ¶     // → #1
+>> data[3] ¶     // → #1
 
-// Benoem
+// Genoemde
 persoon = (naam: "Alice", ouderdom: 25)
->> persoon.naam ¶    // → Alice
->> persoon[0] ¶      // → Alice (indeks werk ook)
+>> persoon.naam ¶   // → Alice
+>> persoon[1] ¶     // → Alice  (indeks werk ook, basis-1)
 
 // Geneste
 pos = (x: 10, y: 20)
 p = (pos: pos, etiket: "oorsprong")
->> p.pos.x ¶        // → 10
+>> p.pos.x ¶       // → 10
 ```
 
-**Onveranderlikheid** — enige poging om 'n tuple-element te wysig is 'n looptydsfout:
+**Onveranderlikheid** — enige poging om 'n tuple element te wysig, is 'n looptydfout:
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ looptydsfout: tuples is onveranderlik
-// t[0] += 5    // ❌ dieselfde fout
-```
+// t[1] = 99    // ❌ looptydfout: tuples is onveranderlik
+// t[1] += 5    // ❌ selfde fout
 
-Om 'n gewysigde waarde af te lei, gebruik `$~` (funksionele opdatering) — gee 'n **nuwe** tuple terug:
-
-```zymbol
-t = (10, 20, 30)
-t2 = t[1]$~ 999
->> t ¶     // → (10, 20, 30)   ← origineel onveranderd
->> t2 ¶    // → (10, 999, 30)
-
-// Benoemde tuple — herkonstrueer eksplisiet
+// Genoemde tuple — herbou eksplisiet
 persoon = (naam: "Alice", ouderdom: 25)
-ouer  = (naam: persoon.naam, ouderdom: 26)
->> persoon.ouderdom ¶    // → 25
->> ouer.ouderdom ¶       // → 26
+ouer = (naam: persoon.naam, ouderdom: 26)
+>> persoon.ouderdom ¶   // → 25
+>> ouer.ouderdom ¶      // → 26
+```
+
+Om 'n gewysigde waarde te kry, gebruik `$~` (funksionele opdatering) — gee **nuwe** tuple terug:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← oorspronklike onveranderd
+>> t2 ¶    // → (10, 999, 30)
 ```
 
 ---
 
 ## Hoër-orde Funksies
 
-> HOF-operatore vereis **inlyn lambda** — nie 'n direkte lambda-veranderlike nie.
-
 ```zymbol
 getalle = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-verdubbelde  = getalle$> (x -> x * 2)                // map  → [2,4,6…20]
-ewe          = getalle$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
-totaal       = getalle$< (0, (acc, x) -> acc + x)     // reduce → 55
+verdubbeldes = getalle$> (x -> x * 2)                // kaart → [2,4,6…20]
+ewe_getalle   = getalle$| (x -> x % 2 == 0)         // filter → [2,4,6,8,10]
+totaal     = getalle$< (0, (akkum, x) -> akkum + x) // verminder → 55
 
-// Ketting via tussentoewysings
+// Ketting deur tussengangers
 stap1 = getalle$| (x -> x > 3)
 stap2 = stap1$> (x -> x * x)
 >> stap2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Benoemde funksies binne HOF — omhul in lambda
+// Genoemde funksies kan direk na hoër-orde funksies gestuur word
 verdubbel(x) { <~ x * 2 }
-r = getalle$> (x -> verdubbel(x))    // ✅
+is_groot(x) { <~ x > 5 }
+r = getalle$> verdubbel       // ✅ direkte verwysing
+r = getalle$| is_groot        // ✅ direkte verwysing
 ```
 
 ---
 
-## Pyp-operator
+## Pyp operateur
 
-Die RHS vereis altyd `_` as plaasvervanger vir die geleide waarde:
+Die regterkant vereis altyd `_` as plekhouer vir die waarde wat gepyp word:
 
 ```zymbol
-verdubbeld = x -> x * 2
-bytel = (a, b) -> a + b
+verdubbel = x -> x * 2
+optel = (a, b) -> a + b
 verhoog = x -> x + 1
 
-5 |> verdubbeld(_)        // → 10
-10 |> bytel(_, 5)         // → 15
-5 |> bytel(2, _)          // → 7
+5 |> verdubbel(_)        // → 10
+10 |> optel(_, 5)        // → 15
+5 |> optel(2, _)         // → 7
 
-// Geketend
-r = 5 |> verdubbeld(_) |> verhoog(_) |> verdubbeld(_)
+// Geketting
+r = 5 |> verdubbel(_) |> verhoog(_) |> verdubbel(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## Fouthantering
+## Fout hantering
 
 ```zymbol
 !? {
@@ -477,93 +496,96 @@ r = 5 |> verdubbeld(_) |> verhoog(_) |> verdubbeld(_)
 }
 ```
 
-| Tipe        | Wanneer dit voorkom      |
-|-------------|--------------------------|
-| `##Div`     | Deling deur nul          |
-| `##IO`      | Lêer / stelsel           |
-| `##Index`   | Indeks buite perke       |
-| `##Type`    | Tipefout                 |
-| `##Parse`   | Data-ontleding           |
-| `##Network` | Netwerkfoute             |
-| `##_`       | Enige fout (vang-alles)  |
+| Tipe | Wanneer |
+|------|---------|
+| `##Div` | Deling deur nul |
+| `##IO` | Lêer / stelsel |
+| `##Index` | Indeks buite perke |
+| `##Type` | Tipe wanverhouding |
+| `##Parse` | Data ontleding |
+| `##Network` | Netwerk foute |
+| `##_` | Enige fout (vang alles) |
 
 ---
 
 ## Modules
 
 ```zymbol
-// lib/calc.zy
-# calc
+// lib/calc.zy — module liggaam is in krulhakies
+# calc {
+    #> { optel, get_PI }
 
-#> { add, get_PI }    // uitvoer VOOR definisies
-
-_PI := 3.14159
-add(a, b) { <~ a + b }
-get_PI() { <~ _PI }
+    _PI := 3.14159
+    optel(a, b) { <~ a + b }
+    get_PI() { <~ _PI }
+}
 ```
 
 ```zymbol
 // main.zy
-<# ./lib/calc <= c    // alias verpligtend
+<# ./lib/calc <= c    // alias is verpligtend
 
->> c::add(5, 3) ¶     // → 8
+>> c::optel(5, 3) ¶   // → 8
 pi = c::get_PI()
->> pi ¶               // → 3.14159
+>> pi ¶              // → 3.14159
 ```
 
 ```zymbol
-// Uitvoer met 'n ander openbare naam
-# mylib
-#> { _internal_add <= som }
+// Eksporteer met 'n ander openbare naam
+# my_biblioteek {
+    #> { _interne_optel <= som }
 
-_internal_add(a, b) { <~ a + b }
+    _interne_optel(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
-<# ./mylib <= m
+<# ./my_biblioteek <= m
 
->> m::som(3, 4) ¶    // → 7  (interne naam _internal_add is versteek)
+>> m::som(3, 4) ¶    // → 7  (interne naam _interne_optel is versteek)
 ```
+
+> **Module reëls**: slegs `#>`, funksie definisies, en letterlike veranderlike/konstante initialiseerders word toegelaat binne `# naam { }`. Uitvoerbare stellings (`>>`, `<<`, lusse, ens.) veroorsaak fout E013.
 
 ---
 
-## Numeriese Modi
+## Numeriese Modes
 
-Zymbol kan getalle vertoon in **69 Unicode-syferskrifte** — Devanagari, Arabies-Indies, Thais, Klingon pIqaD, Wiskundige Vetdruk, LCD-segmente en meer. Die aktiewe modus beïnvloed slegs `>>`-uitvoer; interne rekenkunde is altyd binêr.
+Zymbol kan getalle vertoon in **69 Unicode syferblokke** — Devanagari, Arabies-Indies, Thai, Klingon pIqaD, Wiskundige vet, LCD segmente, en meer. Die aktiewe mode beïnvloed slegs uitset `>>`; interne rekenkunde is altyd binêr.
 
-### 'n Skrif aktiveer
+### Aktiveer 'n skrif
 
-Skryf die `0`- en `9`-syfer van die teikenskrif tussen `#…#`:
+Skryf die `0` en `9` syfers van die teikenskrif binne `#…#`:
 
 ```zymbol
-#०९#    // Devanagari   (U+0966–U+096F)
-#٠٩#    // Arabies-Ind. (U+0660–U+0669)
-#๐๙#    // Thais        (U+0E50–U+0E59)
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabies-Indies (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
 #09#    // herstel na ASCII
 ```
 
-### Uitvoer en Booleans
+### Uitset en Booleans
 
 ```zymbol
 x = 42
->> x ¶          // → 42   (ASCII standaard)
+>> x ¶          // → 42   (verstek ASCII)
 
 #०९#
 >> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४   (desimaalkomma altyd ASCII)
+>> 3.14 ¶       // → ३.१४   (desimale punt is altyd ASCII)
 >> 1 + 2 ¶      // → ३
 
-// Booleans: # voorvoegsel altyd ASCII, syfer pas aan
+// Booleans: # voorvoegsel is altyd ASCII, syfer pas aan
 >> #1 ¶         // → #१   (waar in Devanagari)
->> #0 ¶         // → #०   (onwaar — anders as ०  heelgetal nul)
+>> #0 ¶         // → #०   (vals — onderskei van ० heelgetal nul)
 
 x = 28 > 4
->> x ¶          // → #१   (vergelykingsuitslag volg aktiewe modus)
+>> x ¶          // → #१   (vergelykingsresultaat volg aktiewe mode)
 ```
 
-### Oorspronklike syfer-literals in bronkode
+### Inheemse syfer literal in bronkode
 
-Syfers van enige ondersteunde skrif is geldige literals — in reekse, modulo, vergelykings:
+Enige ondersteunde skrif se syfers is geldige literale — in reekse, modulo, vergelykings:
 
 ```zymbol
 #०९#
@@ -576,78 +598,83 @@ Syfers van enige ondersteunde skrif is geldige literals — in reekse, modulo, v
 }
 ```
 
-### Boole-literals in enige skrif
+### Booles literale in enige skrif
 
-`#` + syfer `0` of `1` uit enige blok is 'n geldige boole-literal:
+`#` + syfer `0` of `1` van enige blok is 'n geldige Booles literaal:
 
 ```zymbol
-#٠٩#
-نشط = #١        // dieselfde as #1
->> نشط ¶        // → #١
->> (#١ && #٠) ¶ // → #٠
+#०९#
+aktief = #१        // dieselfde as #1
+>> aktief ¶        // → #१
+>> (#१ && #०) ¶    // → #०
 ```
 
-> `#` is **altyd ASCII**. `#0` (onwaar) is altyd visueel onderskeibaar van `0` (heelgetal nul) in elke skrif.
+> `#` is **altyd ASCII**. `#0` (vals) is altyd visueel onderskeibaar van `0` (heelgetal nul) in elke skrif.
 
 ---
 
-## Data-operateurs
+## Data Operateurs
 
 ```zymbol
-// Ontleed string na nommer
-v1 = #|"42"|      // → 42  (Int)
-v2 = #|"3.14"|    // → 3.14  (Float)
-v3 = #|"abc"|     // → "abc"  (misluk veilig, geen fout)
+// Tipe omskakeling
+##.42         // → 42.0  (na Dobbelpunt)
+###3.7        // → 4     (na Heelgetal, rond af)
+##!3.7        // → 3     (na Heelgetal, kap af)
 
-// Afrond / afkap
+// Ontleed string na getal
+v1 = #|"42"|      // → 42  (Heelgetal)
+v2 = #|"3.14"|    // → 3.14  (Dobbelpunt)
+v3 = #|"abc"|     // → "abc"  (veilig, geen fout)
+
+// Rond af / kap af
 pi = 3.14159265
-r2 = #.2|pi|      // → 3.14  (rond tot 2 desimale plekke)
-r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14  (afkap)
+afgerond2 = #.2|pi|     // → 3.14  (rond af na 2 desimale plekke)
+afgerond4 = #.4|pi|     // → 3.1416
+afgekap2 = #!2|pi|      // → 3.14  (kap af)
 
-// Getalleopmaak
-fmt = #,|1234567|      // → 1,234,567  (komma-geskei)
-sci = #^|12345.678|    // → 1.2345678e4  (wetenskaplik)
+// Getal formatering
+formaat = #,|1234567|   // → 1,234,567  (komma-geskei)
+wetenskaplik = #^|12345.678| // → 1.2345678e4  (wetenskaplik)
 
-// Basisletterales
-a = 0x41         // → 'A'  (hex)
+// Basis literale
+a = 0x41         // → 'A'  (heksadesimaal)
 b = 0b01000001   // → 'A'  (binêr)
 c = 0o101        // → 'A'  (oktaal)
 
-// Basisomskakeling
-hex = 0x|255|    // → "0x00FF"
-bin = 0b|65|     // → "0b1000001"
-oct = 0o|8|      // → "0o10"
-dec = 0d|255|    // → "0d0255"
+// Basis omskakeling uitset
+heks = 0x|255|    // → "0x00FF"
+bin = 0b|65|      // → "0b1000001"
+okt = 0o|8|       // → "0o10"
+des = 0d|255|     // → "0d0255"
 ```
 
 ---
 
-## Skaal-integrasie
+## Skulp Integrasie
 
 ```zymbol
-datum = <\ date +%Y-%m-%d \>     // vang stdout (sluit afsluitende \n in)
+datum = <\ date +%Y-%m-%d \>     // vang stdout (sluit \n aan die einde in)
 >> "Vandag: " datum
 
 lêer = "data.txt"
 inhoud = <\ cat {lêer} \>        // interpolasie in opdragte
 
-uitvoer = </"./subscript.zy"/>   // voer 'n ander Zymbol-skrip uit, vang uitvoer
->> uitvoer
+uitset = </"./subscript.zy"/>    // voer nog 'n Zymbol skrip uit, vang uitset
+>> uitset
 ```
 
-> `><` vang CLI-argumente as 'n string-skikking (slegs tree-walker).
+> `><` vang CLI argumente as 'n string skikking (slegs boomwandelaar).
 
 ---
 
 ## Volledige Voorbeeld: FizzBuzz
 
 ```zymbol
-klassifiseer(nommer) {
-    ? nommer % 15 == 0 { <~ "FizzBuzz" }
-    _? nommer % 3  == 0 { <~ "Fizz" }
-    _? nommer % 5  == 0 { <~ "Buzz" }
-    _ { <~ nommer }
+klassifiseer(getal) {
+    ? getal % 15 == 0 { <~ "FizzBuzz" }
+    _? getal % 3  == 0 { <~ "Fizz" }
+    _? getal % 5  == 0 { <~ "Buzz" }
+    _ { <~ getal }
 }
 
 @ i:1..20 { >> klassifiseer(i) ¶ }
@@ -655,78 +682,888 @@ klassifiseer(nommer) {
 
 ---
 
-## Simbolverwysing
+## Simbool Verwysing
 
 | Simbool | Operasie | Simbool | Operasie |
 |---------|----------|---------|----------|
 | `=` | veranderlike | `$#` | lengte |
-| `:=` | konstante | `$+` | byvoeg |
-| `>>` | uitvoer | `$+[i]` | invoeg by indeks |
-| `<<` | invoer | `$-` | verwyder eerste per waarde |
-| `¶` / `\\` | nuwe reël | `$--` | verwyder alle per waarde |
-| `?` | as | `$-[i]` | verwyder by indeks |
-| `_?` | anders-as | `$-[i..j]` | verwyder reeks |
-| `_` | anders / wildkaart | `$?` | bevat |
-| `??` | passing | `$??` | vind alle indekse |
-| `@` | lus | `$[s..e]` | sny |
-| `@!` | breek | `$>` | kaart |
-| `@>` | gaan voort | `$\|` | filter |
-| `->` | lambda | `$<` | verminder |
-| `arr[i] = val` | opdateer element (slegs skikkings) | `arr[i] += val` | saamgestelde opdatering |
-| `arr[i]$~` | funksionele opdatering (nuwe kopie) | `$^+` | sorteer oplopend (primitiewe) |
-| `$^-` | sorteer aflopend (primitiewe) | `$^` | sorteer met vergelyker (tuples) |
-| `<~` | gee terug | `!?` | probeer |
-| `\|>` | pyp | `:!` | vang |
-| `#1` | waar | `:>` | ten slotte |
-| `#0` | onwaar | `$!` | is fout |
-| `<#` | invoer module | `$!!` | versprei fout |
-| `#` | verklaar module | `#>` | uitvoer |
-| `::` | module-oproep | `.` | veld-toegang |
-| `#\|..\|` | ontleed nommer | `#?` | tipe-metadata |
-| `#.N\|..\|` | afrond | `#!N\|..\|` | afkap |
-| `#,\|..\|` | komma-formaat | `#^\|..\|` | wetenskaplik |
-| `#d0d9#` | numeriese modus-skakelaar | `#09#` | herstel na ASCII |
-| `<\ ..\>` | skaal-uitvoering | `>\<` | CLI-argumente |
-
-## Wysigingslys
-
-### v0.0.3 — Unicode Numeriese Stelsels & LSP-verbeterings _(April 2026)_
-
-- **Bygevoeg** 69 Unicode-syferblokke met die modus-skakelteken `#d0d9#`
-- **Bygevoeg** Boole-literals in enige skrif — `#१` / `#०`, `#١` / `#٠`, ens.
-- **Bygevoeg** Klingon pIqaD-syfers (CSUR PUA U+F8F0–U+F8F9)
-- **Bygevoeg** VM-opkode `SetNumeralMode` — volle pariteit met die boom-wandelaar
-- **Bygevoeg** REPL respekteer aktiewe numeriese modus in eggo en veranderlike-vertoning
-- **Verander** `>>`-uitvoer van Booleans sluit nou die `#`-voorvoegsel in (`#0` / `#1`) in alle modi
-
-### v0.0.2_01 — Operateur-hernoem _(30 Mar 2026)_
-
-- **Verander** `c|..|` → `#,|..|` en `e|..|` → `#^|..|` — konsekwent met die `#`-voorvoegselfamilie
-- **Bygevoeg** Uitvoer-alias: heruitvoer van moduleledenames onder 'n ander naam
-
-### v0.0.2 — Versameling-API Herontwerp & Installeerders _(24 Mar 2026)_
-
-- **Bygevoeg** Verenigde `$`-operateurfamilie vir skikkings en stringe (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Bygevoeg** Destrukturering vir skikkings, tuples en benoemde tuples
-- **Bygevoeg** Negatiewe indekse (`arr[-1]` = laaste element)
-- **Bygevoeg** Oorspronklike installeerders — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
-
-### v0.0.1-patch _(25 Mar 2026)_
-
-- **Bygevoeg** Saamgestelde toekenning `^=`
-- **Reggemaak** Rekenkundige ontleder-randgevalle; dokumentasiekorreksies
-
-### v0.0.1 — Eerste Publieke Vrystelling _(22 Mar 2026)_
-
-- Boom-wandelaar-tolk + register-VM (`--vm`, ~4× vinniger, ~95% pariteit)
-- Alle kernkonstrukte: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Volledige Unicode-identifiseerders, modulestelsel, lambdas, sluitings, fouthantering
-- REPL, LSP, VS Code-uitbreiding, formatteerder (`zymbol fmt`)
+| `:=` | konstante | `$+` | voeg by (kettingbaar) |
+| `>>` | uitset | `$+[i]` | voeg in by indeks (basis-1) |
+| `<<` | inset | `$-` | verwyder eerste volgens waarde |
+| `¶` / `\\` | nuwe lyn | `$--` | verwyder alle volgens waarde |
+| `?` | as | `$-[i]` | verwyder by indeks (basis-1) |
+| `_?` | anders as | `$-[i..j]` | verwyder reeks (basis-1) |
+| `_` | anders / joker | `$?` | bevat |
+| `??` | passing | `$??` | vind alle indekse (basis-1) |
+| `@` | lus | `$[s..e]` | sny (basis-1) |
+| `@ N { }` | N keer lus | `$>` | kaart |
+| `@!` | breek | `$|` | filter |
+| `@>` | gaan voort | `$<` | verminder |
+| `@:naam { }` | gemerkte lus | `$/ skeidingsteken` | string splitting |
+| `@:naam!` | gemerkte breek | `$++ a b c` | konkatenasie bou |
+| `@:naam>` | gemerkte gaan voort | `skikking[i>j>k]` | navigasie indeks |
+| `->` | lambda | `skikking[i] = waarde` | opdateer element (slegs skikkings) |
+| `skikking[i] += waarde` | saamgestelde opdatering | `skikking[i]$~` | funksionele opdatering (nuwe kopie) |
+| `$^+` | sorteer opklimmend (primitiewe) | `$^-` | sorteer afklimmend (primitiewe) |
+| `$^` | sorteer met vergelyker (tuples) | `<~` | terugkeer |
+| `|>` | pyp | `!?` | probeer |
+| `:!` | vang | `:>` | uiteindelik |
+| `#1` | waar | `#0` | vals |
+| `$!` | is fout | `$!!` | versprei fout |
+| `<#` | invoer | `#>` | uitvoer |
+| `#` | verklaar module | `::` | roep module |
+| `.` | veld toegang | `#?` | tipe metadata |
+| `#\|..\|` | ontleed getal | `##.` | omskakel na Dobbelpunt |
+| `###` | omskakel na Heelgetal (rond af) | `##!` | omskakel na Heelgetal (kap af) |
+| `#.N\|..\|` | rond af | `#!N\|..\|` | kap af |
+| `#,\|..\|` | komma formaat | `#^\|..\|` | wetenskaplik |
+| `#d0d9#` | verander numeriese mode | `#09#` | herstel na ASCII |
+| `<\ ..\>` | voer skulp uit | `>\<` | CLI argumente |
+| `\ var` | vernietig veranderlike eksplisiet | | |
 
 ---
 
-*Zymbol-Lang — Simbolies. Universeel. Onveranderlik.*
+## Vrystelling Verandering Log
 
-> **Vrywaring:** Hierdie dokumentasie is deur kunsmatige intelligensie (KI) geskep en vertaal. Alle pogings is aangewend om akkuraatheid te verseker, maar sommige vertalings of voorbeelde kan foute bevat. Die gesaghebbende verwysing is die [Zymbol-Lang spesifikasie](https://github.com/zymbol-lang/interpreter).
+### v0.0.4 — Basis-1 Indeksering, Eerste-klas Funksies & Module Blokke _(April 2026)_
+
+- **Brekend** Alle indeksering verander na **basis-1** — `arr[1]` is die eerste element; `arr[0]` is 'n looptydfout
+- **Bygevoeg** Genoemde funksies is **eerste-klas waardes** — stuur direk na hoër-orde funksies: `nums$> verdubbel`
+- **Bygevoeg** Module **blok sintaksis is verpligtend**: `# naam { ... }` — plat sintaksis verwyder
+- **Bygevoeg** Multidimensionele indeksering: `arr[i>j>k]` (navigasie), `arr[p ; q]` (platte onttrekking)
+- **Bygevoeg** Tipe omskakeling: `##.uitdrukking` (Dobbelpunt), `###uitdrukking` (Heelgetal rond af), `##!uitdrukking` (Heelgetal kap af)
+- **Bygevoeg** String splitting: `str$/ skeidingsteken` — gee terug `Array(String)`
+- **Bygevoeg** Konkatenasie bou: `basis$++ a b c` — voeg veelvuldige items by
+- **Bygevoeg** N keer lus: `@ N { }` — herhaal presies N keer
+- **Bygevoeg** Gemerkte lusse sintaksis: `@:naam { }`, `@:naam!`, `@:naam>` — vervang `@ @naam` / `@! naam`
+- **Bygevoeg** Veranderlike omvang reëls: `_naam` veranderlikes het presiese blok omvang; `\ var` vernietig vroeg
+- **Bygevoeg** Passing vergelykingspatrone: `< 0 :`, `> 5 :`, `== 42 :` ens.
+- **Bygevoeg** Module E013 fout: uitvoerbare stellings in module liggaam word verbied
+- **Reggemaak** `take_variable` korrupteer nie meer module konstantes tydens terugskrywing nie
+- **Reggemaak** `alias.CONST` word nou korrek opgelos; `#>` kan na funksie definisies verskyn
+- **VM** Volledige pariteit: 393/393 toetse slaag
+
+### v0.0.3 — Unicode Syferstelsels & LSP Verbeterings _(April 2026)_
+
+- **Bygevoeg** 69 Unicode syferblokke met mode wissel teken `#d0d9#`
+- **Bygevoeg** Booles literale in enige skrif — `#१` / `#०`, `#१` / `#०`, ens.
+- **Bygevoeg** Klingon pIqaD syfers (CSUR PUA U+F8F0–U+F8F9)
+- **Bygevoeg** `SetNumeralMode` VM opkode — volle pariteit met boomwandelaar
+- **Bygevoeg** REPL respekteer aktiewe numeriese mode in eggo en veranderlike vertoning
+- **Verander** Booles `>>` uitset sluit nou `#` voorvoegsel (`#0` / `#1`) in alle modes in
+
+### v0.0.2_01 — Operateur Hername _(30 Maart 2026)_
+
+- **Verander** `c|..|` → `#,|..|` en `e|..|` → `#^|..|` — konsekwent met `#` formaat voorvoegsel familie
+- **Bygevoeg** Uitvoer alias: her-uitvoer module lede onder 'n ander naam
+
+### v0.0.2 — Versameling API Herontwerp & Installeerders _(24 Maart 2026)_
+
+- **Bygevoeg** Verenigde `$` operateur familie vir skikkings en stringe (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Bygevoeg** Destrukturerings toewysing vir skikkings, tuples, en genoemde tuples
+- **Bygevoeg** Negatiewe indekse (`arr[-1]` = laaste element)
+- **Bygevoeg** Inheemse installeerders — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Maart 2026)_
+
+- **Bygevoeg** Saamgestelde toewysing `^=`
+- **Reggemaak** Ontleder rekenkundige randgevalle; dokumentasie regstellings
+
+### v0.0.1 — Aanvanklike Openbare Vrystelling _(22 Maart 2026)_
+
+- Boomwandelaar interpreteerder + register VM (`--vm`, ~4× vinniger, ~95% pariteit)
+- Alle kern konstrukte: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Volledige Unicode identifiseerders, module stelsel, lambdas, sluitings, fout hantering
+- REPL, LSP, VS Code uitbreiding, formateerder (`zymbol fmt`)
+
+---
+
+_Zymbol-Lang — Simbolies. Universeel. Onveranderlik._
+``Ja, nou gaan ek **`manual_af.md`** (Afrikaans) vertaal, met die behoud van dieselfde struktuur.
+
+---
+
+## manual_af.md
+
+```markdown
+> **Kennisgewing:** Hierdie dokumentasie is geskep met die hulp van kunsmatige intelligensie (AI).
 >
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI). While every effort has been made to ensure accuracy, some translations or examples may contain errors. The canonical reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Die kanonieke verwysing is **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** in die interpreteerderbewaarplek.
+
+---
+
+# Zymbol-Lang Handleiding
+
+**Zymbol-Lang** is 'n simboliese programmeertaal. Geen sleutelwoorde nie — alles is 'n simbool. Werk identies in enige menslike taal.
+
+- Geen `if`, `while`, `return` — net `?`, `@`, `<~`
+- Volledige Unicode — identifiseerders in enige taal of emoji
+- Menslike taal-agnosties — die kode is oral dieselfde
+
+**Interpreteerderversie**: v0.0.4 | **Toetsdekking**: 393/393 (TW ↔ VM pariteit)
+
+---
+
+## Veranderlikes en Konstantes
+
+```zymbol
+x = 10              // veranderlike veranderlike
+PI := 3.14159       // konstante — heraanwysing is 'n looptydfout
+naam = "Alice"
+aktief = #1         // Booles waar
+👋 := "Hallo"
+```
+
+```zymbol
+x = 10    // 10
+x += 5    // 15
+x -= 3    // 12
+x *= 2    // 24
+x /= 3    // 8
+x %= 3    // 2
+x ^= 2    // 4
+x++        // 5
+x--        // 4
+```
+
+---
+
+## Datatipes
+
+| Tipe | Literaal | `#?` merker | Notas |
+|------|----------|-------------|-------|
+| Heelgetal | `42`, `-7` | `###` | 64-bis onderteken |
+| Dobbelpunt | `3.14`, `1.5e10` | `##.` | Wetenskaplike notasie toegelaat |
+| String | `"teks"` | `##"` | Interpolasie: `"Hallo {naam}"` |
+| Karakter | `'A'` | `##'` | Enkel Unicode karakter |
+| Booles | `#1`, `#0` | `##?` | NIE numeries nie — `#1 ≠ 1` |
+| Skikking | `[1, 2, 3]` | `##]` | Homogene elemente |
+| Tuple | `(a, b)` | `##)` | Posisioneel |
+| Genoemde tuple | `(x: 1, y: 2)` | `##)` | Genoemde velde |
+| Funksie | genoemde funksieverwysing | `##()` | Eerste-klas; wys `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Eerste-klas; wys `<lambd/N>` |
+
+```zymbol
+// Tipe introspesie — gee terug (tipe, syfers, waarde)
+meta = 42#?
+>> meta ¶         // → (###, 2, 42)
+t = meta[1]
+>> t ¶            // → ###
+```
+
+---
+
+## Uitset en Inset
+
+```zymbol
+>> "Hallo" ¶                       // ¶ of \\ vir eksplisiete nuwe lyn
+>> "a=" a " b=" b ¶               // jukstaposisie — meervoudige waardes
+>> (arr$#) ¶                      // postfix operateurs benodig ( ) binne >>
+
+<< naam                           // lees in veranderlike (sonder prompt)
+<< "Voer naam in: " naam          // met prompt
+```
+
+> `¶` (AltGr+R op Spaanse sleutelbord) en `\\` is ekwivalent vir nuwe lyn.
+
+---
+
+## Operateurs
+
+```zymbol
+// Rekenkundig — gebruik toewysings; sommige operateurs het eienaardighede direk in >>
+a = 10
+b = 3
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (heelgetal deling)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (eksponensiasie)
+
+// Vergelyking
+a == b    // #0    
+a <> b    // #1    
+a < b     // #0
+a <= b    // #0   
+a > b     // #1    
+a >= b    // #1
+
+// Logies
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
+```
+
+---
+
+## Stringe
+
+```zymbol
+// Twee vervoegingsvorms
+naam = "Alice"
+n = 42
+
+>> "Hallo " naam " jy het " n ¶       // jukstaposisie — in >>
+beskrywing = "Hallo {naam}, jy het {n}" // interpolasie — oral
+```
+
+```zymbol
+s = "Hallo Wêreld"
+lengte = s$#                  // 11
+sub = s$[1..5]                // "Hallo"  (basis-1, einde ingesluit)
+het = s$? "Wêreld"            // #1
+dele = "a,b,c,d"$/ ','        // [a, b, c, d]  (skeiding deur skeidingsteken)
+vervang = s$~~["a":"o"]       // "Hollo Wêreld"
+vervang1 = s$~~["a":"o":1]    // "Hollo Wêreld"  (slegs eerste N)
+```
+
+> `+` is slegs vir getalle. Gebruik `,`, jukstaposisie, of interpolasie vir stringe.
+
+---
+
+## Beheervloei
+
+```zymbol
+x = 7
+
+? x > 0 { >> "positief" ¶ }
+
+? x > 100 {
+    >> "groot" ¶
+} _? x > 0 {
+    >> "positief" ¶
+} _? x == 0 {
+    >> "nul" ¶
+} _ {
+    >> "negatief" ¶
+}
+```
+
+> Krulhakies `{ }` is **verpligtend** selfs vir 'n enkele stelling.
+
+---
+
+## Passings (Match)
+
+```zymbol
+// Reekse
+telling = 85
+graad = ?? telling {
+    90..100 : 'A'
+    80..89  : 'B'
+    70..79  : 'C'
+    _       : 'F'
+}
+>> graad ¶      // → B
+
+// Stringe
+kleur = "rooi"
+kode = ?? kleur {
+    "rooi"   : "#FF0000"
+    "groen"  : "#00FF00"
+    _        : "#000000"
+}
+
+// Vergelykingspatrone
+temperatuur = -5
+toestand = ?? temperatuur {
+    < 0  : "ys"
+    < 20 : "koud"
+    < 35 : "warm"
+    _    : "warm"
+}
+>> toestand ¶    // → ys
+
+// Stellingvorm (blokke)
+?? n {
+    0        : { >> "nul" ¶ }
+    _? n < 0 : { >> "negatief" ¶ }
+    _        : { >> "positief" ¶ }
+}
+```
+
+---
+
+## Lusse
+
+```zymbol
+@ i:0..4  { >> i " " }        // reeks ingesluit:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // met stap:         1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // omgekeerd:        5 4 3 2 1 0
+
+n = 1
+@ n <= 64 { n *= 2 }
+>> n ¶                        // → 128  (terwyl)
+
+vrugte = ["appel", "peer", "druif"]
+@ v:vrugte { >> v ¶ }         // vir elke element in skikking
+
+@ k:"hallo" { >> k "-" }
+>> ¶                          // → h-a-l-l-o-  (vir elke karakter in string)
+
+@ i:1..10 {
+    ? i % 2 == 0 { @> }       // @> gaan voort
+    ? i > 7 { @! }            // @! breek
+    >> i " "
+}
+>> ¶                          // → 1 3 5 7
+
+// Oneindige lus
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Gemerkte lus (geneste breek)
+teller = 0
+@:buite {
+    teller++
+    ? teller >= 3 { @:buite! }
+}
+>> teller ¶                   // → 3
+```
+
+---
+
+## Funksies
+
+```zymbol
+optel(a, b) { <~ a + b }
+>> optel(3, 4) ¶   // → 7
+
+faktoriaal(n) {
+    ? n <= 1 { <~ 1 }
+    <~ n * faktoriaal(n - 1)
+}
+>> faktoriaal(5) ¶    // → 120
+```
+
+Funksies het **geïsoleerde omvang** — hulle kan nie eksterne veranderlikes lees nie. Gebruik uitvoerparameters `<~` om die roeper se veranderlikes te wysig:
+
+```zymbol
+ruil(a<~, b<~) {
+    tydelik = a
+    a = b
+    b = tydelik
+}
+x = 10
+y = 20
+ruil(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> Genoemde funksies is **eerste-klas waardes** — stuur direk: `nums$> verdubbel`. `x -> fn(x)` is ook geldig.
+
+---
+
+## Lambdas en Sluitings
+
+```zymbol
+verdubbel = x -> x * 2
+optel = (a, b) -> a + b
+>> verdubbel(5) ¶   // → 10
+>> optel(3, 7) ¶    // → 10
+
+// Blok lambda
+klassifiseer = x -> {
+    ? x > 0 { <~ "positief" }
+    _? x < 0 { <~ "negatief" }
+    <~ "nul"
+}
+
+// Sluiting — vang eksterne omvang
+faktor = 3
+verdriedubbel = x -> x * faktor
+>> verdriedubbel(7) ¶   // → 21
+
+// Fabriek
+maak_teller(n) { <~ x -> x + n }
+tien_bymekaar = maak_teller(10)
+>> tien_bymekaar(5) ¶    // → 15
+
+// In skikkings
+ops = [x -> x+1, x -> x*2, x -> x*x]
+>> ops[3](5) ¶        // → 25
+```
+
+---
+
+## Skikkings
+
+Skikkings is **veranderbaar** en bevat elemente van **dieselfde tipe**.
+
+```zymbol
+arr = [1, 2, 3, 4, 5]
+
+arr[1]          // 1 — toegang (basis-1: eerste element)
+arr[-1]         // 5 — negatiewe indeks (laaste element)
+arr$#           // 5 — lengte (gebruik (arr$#) in >>)
+
+arr = arr$+ 6            // voeg by → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // voeg in by posisie 2 (basis-1)
+arr3 = arr$- 3           // verwyder eerste voorkoms van waarde
+arr4 = arr$-- 3          // verwyder alle voorkomste
+arr5 = arr$-[1]          // verwyder by indeks 1 (eerste element)
+arr6 = arr$-[2..3]       // verwyder reeks (basis-1, einde ingesluit)
+
+het = arr$? 3            // #1 — bevat
+posisies = arr$?? 3      // [3] — alle indekse van waarde (basis-1)
+sny = arr$[1..3]         // [1,2,3] — sny (basis-1, einde ingesluit)
+sny2 = arr$[1:3]         // [1,2,3] — selfde, telling-gebaseerde sintaks
+
+opklimmend = arr$^+      // sorteer opklimmend (slegs primitiewe)
+afklimmend = arr$^-      // sorteer afklimmend (slegs primitiewe)
+
+// Skikkings van genoemde/posisionele tuple — gebruik $^ met vergelykingslambda
+db = [(naam: "Carla", ouderdom: 28), (naam: "Ana", ouderdom: 25), (naam: "Bob", ouderdom: 30)]
+volgens_ouderdom  = db$^ (a, b -> a.ouderdom < b.ouderdom)   // opklimmend volgens ouderdom (<)
+volgens_naam    = db$^ (a, b -> a.naam > b.naam)         // afklimmend volgens naam (>)
+>> volgens_ouderdom[1].naam ¶   // → Ana
+>> volgens_naam[1].naam ¶       // → Carla
+
+// Direkte element opdatering (slegs skikkings)
+arr[1] = 99              // wys toe
+arr[2] += 5              // saamgesteld: +=  -=  *=  /=  %=  ^=
+
+// Funksionele opdatering — gee nuwe skikking terug; oorspronklike onveranderd
+arr2 = arr[2]$~ 99
+```
+
+> Alle versamelingsoperateurs gee **nuwe skikking** terug. Wys weer toe: `arr = arr$+ 4`.
+> `$+` kan geketting word: `arr = arr$+ 5$+ 6$+ 7`. Ander operateurs gebruik tussentydse toewysings.
+> **Indeksering is basis-1**: `arr[1]` is die eerste element; `arr[0]` is 'n looptydfout.
+> `$^+` / `$^-` sorteer **primitiewe skikkings** (getalle, stringe). Vir tuple skikkings gebruik `$^` met vergelykingslambda — rigting is in lambda gekodeer (`<` = opklimmend, `>` = afklimmend).
+
+**Waardesemantiek** — om 'n skikking aan 'n ander veranderlike toe te wys, skep 'n onafhanklike kopie:
+
+```zymbol
+a = [1, 2, 3]
+b = a
+a[1] = 99
+>> a ¶    // → [99, 2, 3]
+>> b ¶    // → [1, 2, 3]   ← b word nie beïnvloed nie
+```
+
+```zymbol
+// Geneste skikkings (basis-1 indeksering)
+matriks = [[1,2,3],[4,5,6],[7,8,9]]
+>> matriks[2][3] ¶    // → 6  (ry 2, kolom 3)
+```
+
+---
+
+## Destrukturing
+
+```zymbol
+// Skikking
+arr = [10, 20, 30, 40, 50]
+[a, b, c] = arr              // a=10  b=20  c=30
+[eerste, *oorblywendes] = arr // eerste=10  oorblywendes=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ vergeet
+
+// Posisionele tuple
+punt = (100, 200)
+(px, py) = punt              // px=100  py=200
+
+// Genoemde tuple
+persoon = (naam: "Ana", ouderdom: 25, stad: "Madrid")
+(naam: n, ouderdom: o) = persoon   // n="Ana"  o=25
+```
+
+---
+
+## Tuples
+
+Tuples is **onveranderlike** geordende houers wat waardes van **verskillende tipes** kan hou.
+Anders as skikkings, kan elemente nie verander word na skepping nie.
+
+```zymbol
+// Posisioneel — gemengde tipes toegelaat
+punt = (10, 20)
+>> punt[1] ¶     // → 10
+
+data = (42, "hallo", #1, 3.14)
+>> data[3] ¶     // → #1
+
+// Genoemde
+persoon = (naam: "Alice", ouderdom: 25)
+>> persoon.naam ¶   // → Alice
+>> persoon[1] ¶     // → Alice  (indeks werk ook, basis-1)
+
+// Geneste
+pos = (x: 10, y: 20)
+p = (pos: pos, etiket: "oorsprong")
+>> p.pos.x ¶       // → 10
+```
+
+**Onveranderlikheid** — enige poging om 'n tuple element te wysig, is 'n looptydfout:
+
+```zymbol
+t = (10, 20, 30)
+// t[1] = 99    // ❌ looptydfout: tuples is onveranderlik
+// t[1] += 5    // ❌ selfde fout
+
+// Genoemde tuple — herbou eksplisiet
+persoon = (naam: "Alice", ouderdom: 25)
+ouer = (naam: persoon.naam, ouderdom: 26)
+>> persoon.ouderdom ¶   // → 25
+>> ouer.ouderdom ¶      // → 26
+```
+
+Om 'n gewysigde waarde te kry, gebruik `$~` (funksionele opdatering) — gee **nuwe** tuple terug:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← oorspronklike onveranderd
+>> t2 ¶    // → (10, 999, 30)
+```
+
+---
+
+## Hoër-orde Funksies
+
+```zymbol
+getalle = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+verdubbeldes = getalle$> (x -> x * 2)                // kaart → [2,4,6…20]
+ewe_getalle   = getalle$| (x -> x % 2 == 0)         // filter → [2,4,6,8,10]
+totaal     = getalle$< (0, (akkum, x) -> akkum + x) // verminder → 55
+
+// Ketting deur tussengangers
+stap1 = getalle$| (x -> x > 3)
+stap2 = stap1$> (x -> x * x)
+>> stap2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+
+// Genoemde funksies kan direk na hoër-orde funksies gestuur word
+verdubbel(x) { <~ x * 2 }
+is_groot(x) { <~ x > 5 }
+r = getalle$> verdubbel       // ✅ direkte verwysing
+r = getalle$| is_groot        // ✅ direkte verwysing
+```
+
+---
+
+## Pyp operateur
+
+Die regterkant vereis altyd `_` as plekhouer vir die waarde wat gepyp word:
+
+```zymbol
+verdubbel = x -> x * 2
+optel = (a, b) -> a + b
+verhoog = x -> x + 1
+
+5 |> verdubbel(_)        // → 10
+10 |> optel(_, 5)        // → 15
+5 |> optel(2, _)         // → 7
+
+// Geketting
+r = 5 |> verdubbel(_) |> verhoog(_) |> verdubbel(_)
+>> r ¶    // → 22  (5→10→11→22)
+```
+
+---
+
+## Fout hantering
+
+```zymbol
+!? {
+    x = 10 / 0
+} :! ##Div {
+    >> "deling deur nul" ¶
+} :! {
+    >> "ander fout: " _err ¶    // _err hou die foutboodskap
+} :> {
+    >> "loop altyd" ¶
+}
+```
+
+| Tipe | Wanneer |
+|------|---------|
+| `##Div` | Deling deur nul |
+| `##IO` | Lêer / stelsel |
+| `##Index` | Indeks buite perke |
+| `##Type` | Tipe wanverhouding |
+| `##Parse` | Data ontleding |
+| `##Network` | Netwerk foute |
+| `##_` | Enige fout (vang alles) |
+
+---
+
+## Modules
+
+```zymbol
+// lib/calc.zy — module liggaam is in krulhakies
+# calc {
+    #> { optel, get_PI }
+
+    _PI := 3.14159
+    optel(a, b) { <~ a + b }
+    get_PI() { <~ _PI }
+}
+```
+
+```zymbol
+// main.zy
+<# ./lib/calc <= c    // alias is verpligtend
+
+>> c::optel(5, 3) ¶   // → 8
+pi = c::get_PI()
+>> pi ¶              // → 3.14159
+```
+
+```zymbol
+// Eksporteer met 'n ander openbare naam
+# my_biblioteek {
+    #> { _interne_optel <= som }
+
+    _interne_optel(a, b) { <~ a + b }
+}
+```
+
+```zymbol
+<# ./my_biblioteek <= m
+
+>> m::som(3, 4) ¶    // → 7  (interne naam _interne_optel is versteek)
+```
+
+> **Module reëls**: slegs `#>`, funksie definisies, en letterlike veranderlike/konstante initialiseerders word toegelaat binne `# naam { }`. Uitvoerbare stellings (`>>`, `<<`, lusse, ens.) veroorsaak fout E013.
+
+---
+
+## Numeriese Modes
+
+Zymbol kan getalle vertoon in **69 Unicode syferblokke** — Devanagari, Arabies-Indies, Thai, Klingon pIqaD, Wiskundige vet, LCD segmente, en meer. Die aktiewe mode beïnvloed slegs uitset `>>`; interne rekenkunde is altyd binêr.
+
+### Aktiveer 'n skrif
+
+Skryf die `0` en `9` syfers van die teikenskrif binne `#…#`:
+
+```zymbol
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabies-Indies (U+0660–U+0669)
+#๐๙#    // Thai          (U+0E50–U+0E59)
+#09#    // herstel na ASCII
+```
+
+### Uitset en Booleans
+
+```zymbol
+x = 42
+>> x ¶          // → 42   (verstek ASCII)
+
+#०९#
+>> x ¶          // → ४२
+>> 3.14 ¶       // → ३.१४   (desimale punt is altyd ASCII)
+>> 1 + 2 ¶      // → ३
+
+// Booleans: # voorvoegsel is altyd ASCII, syfer pas aan
+>> #1 ¶         // → #१   (waar in Devanagari)
+>> #0 ¶         // → #०   (vals — onderskei van ० heelgetal nul)
+
+x = 28 > 4
+>> x ¶          // → #१   (vergelykingsresultaat volg aktiewe mode)
+```
+
+### Inheemse syfer literal in bronkode
+
+Enige ondersteunde skrif se syfers is geldige literale — in reekse, modulo, vergelykings:
+
+```zymbol
+#०९#
+
+@ i:१..१५ {
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३  == ० { >> "Fizz" ¶ }
+    _? i % ५  == ० { >> "Buzz" ¶ }
+    _ { >> i ¶ }
+}
+```
+
+### Booles literale in enige skrif
+
+`#` + syfer `0` of `1` van enige blok is 'n geldige Booles literaal:
+
+```zymbol
+#०९#
+aktief = #१        // dieselfde as #1
+>> aktief ¶        // → #१
+>> (#१ && #०) ¶    // → #०
+```
+
+> `#` is **altyd ASCII**. `#0` (vals) is altyd visueel onderskeibaar van `0` (heelgetal nul) in elke skrif.
+
+---
+
+## Data Operateurs
+
+```zymbol
+// Tipe omskakeling
+##.42         // → 42.0  (na Dobbelpunt)
+###3.7        // → 4     (na Heelgetal, rond af)
+##!3.7        // → 3     (na Heelgetal, kap af)
+
+// Ontleed string na getal
+v1 = #|"42"|      // → 42  (Heelgetal)
+v2 = #|"3.14"|    // → 3.14  (Dobbelpunt)
+v3 = #|"abc"|     // → "abc"  (veilig, geen fout)
+
+// Rond af / kap af
+pi = 3.14159265
+afgerond2 = #.2|pi|     // → 3.14  (rond af na 2 desimale plekke)
+afgerond4 = #.4|pi|     // → 3.1416
+afgekap2 = #!2|pi|      // → 3.14  (kap af)
+
+// Getal formatering
+formaat = #,|1234567|   // → 1,234,567  (komma-geskei)
+wetenskaplik = #^|12345.678| // → 1.2345678e4  (wetenskaplik)
+
+// Basis literale
+a = 0x41         // → 'A'  (heksadesimaal)
+b = 0b01000001   // → 'A'  (binêr)
+c = 0o101        // → 'A'  (oktaal)
+
+// Basis omskakeling uitset
+heks = 0x|255|    // → "0x00FF"
+bin = 0b|65|      // → "0b1000001"
+okt = 0o|8|       // → "0o10"
+des = 0d|255|     // → "0d0255"
+```
+
+---
+
+## Skulp Integrasie
+
+```zymbol
+datum = <\ date +%Y-%m-%d \>     // vang stdout (sluit \n aan die einde in)
+>> "Vandag: " datum
+
+lêer = "data.txt"
+inhoud = <\ cat {lêer} \>        // interpolasie in opdragte
+
+uitset = </"./subscript.zy"/>    // voer nog 'n Zymbol skrip uit, vang uitset
+>> uitset
+```
+
+> `><` vang CLI argumente as 'n string skikking (slegs boomwandelaar).
+
+---
+
+## Volledige Voorbeeld: FizzBuzz
+
+```zymbol
+klassifiseer(getal) {
+    ? getal % 15 == 0 { <~ "FizzBuzz" }
+    _? getal % 3  == 0 { <~ "Fizz" }
+    _? getal % 5  == 0 { <~ "Buzz" }
+    _ { <~ getal }
+}
+
+@ i:1..20 { >> klassifiseer(i) ¶ }
+```
+
+---
+
+## Simbool Verwysing
+
+| Simbool | Operasie | Simbool | Operasie |
+|---------|----------|---------|----------|
+| `=` | veranderlike | `$#` | lengte |
+| `:=` | konstante | `$+` | voeg by (kettingbaar) |
+| `>>` | uitset | `$+[i]` | voeg in by indeks (basis-1) |
+| `<<` | inset | `$-` | verwyder eerste volgens waarde |
+| `¶` / `\\` | nuwe lyn | `$--` | verwyder alle volgens waarde |
+| `?` | as | `$-[i]` | verwyder by indeks (basis-1) |
+| `_?` | anders as | `$-[i..j]` | verwyder reeks (basis-1) |
+| `_` | anders / joker | `$?` | bevat |
+| `??` | passing | `$??` | vind alle indekse (basis-1) |
+| `@` | lus | `$[s..e]` | sny (basis-1) |
+| `@ N { }` | N keer lus | `$>` | kaart |
+| `@!` | breek | `$|` | filter |
+| `@>` | gaan voort | `$<` | verminder |
+| `@:naam { }` | gemerkte lus | `$/ skeidingsteken` | string splitting |
+| `@:naam!` | gemerkte breek | `$++ a b c` | konkatenasie bou |
+| `@:naam>` | gemerkte gaan voort | `skikking[i>j>k]` | navigasie indeks |
+| `->` | lambda | `skikking[i] = waarde` | opdateer element (slegs skikkings) |
+| `skikking[i] += waarde` | saamgestelde opdatering | `skikking[i]$~` | funksionele opdatering (nuwe kopie) |
+| `$^+` | sorteer opklimmend (primitiewe) | `$^-` | sorteer afklimmend (primitiewe) |
+| `$^` | sorteer met vergelyker (tuples) | `<~` | terugkeer |
+| `|>` | pyp | `!?` | probeer |
+| `:!` | vang | `:>` | uiteindelik |
+| `#1` | waar | `#0` | vals |
+| `$!` | is fout | `$!!` | versprei fout |
+| `<#` | invoer | `#>` | uitvoer |
+| `#` | verklaar module | `::` | roep module |
+| `.` | veld toegang | `#?` | tipe metadata |
+| `#\|..\|` | ontleed getal | `##.` | omskakel na Dobbelpunt |
+| `###` | omskakel na Heelgetal (rond af) | `##!` | omskakel na Heelgetal (kap af) |
+| `#.N\|..\|` | rond af | `#!N\|..\|` | kap af |
+| `#,\|..\|` | komma formaat | `#^\|..\|` | wetenskaplik |
+| `#d0d9#` | verander numeriese mode | `#09#` | herstel na ASCII |
+| `<\ ..\>` | voer skulp uit | `>\<` | CLI argumente |
+| `\ var` | vernietig veranderlike eksplisiet | | |
+
+---
+
+## Vrystelling Verandering Log
+
+### v0.0.4 — Basis-1 Indeksering, Eerste-klas Funksies & Module Blokke _(April 2026)_
+
+- **Brekend** Alle indeksering verander na **basis-1** — `arr[1]` is die eerste element; `arr[0]` is 'n looptydfout
+- **Bygevoeg** Genoemde funksies is **eerste-klas waardes** — stuur direk na hoër-orde funksies: `nums$> verdubbel`
+- **Bygevoeg** Module **blok sintaksis is verpligtend**: `# naam { ... }` — plat sintaksis verwyder
+- **Bygevoeg** Multidimensionele indeksering: `arr[i>j>k]` (navigasie), `arr[p ; q]` (platte onttrekking)
+- **Bygevoeg** Tipe omskakeling: `##.uitdrukking` (Dobbelpunt), `###uitdrukking` (Heelgetal rond af), `##!uitdrukking` (Heelgetal kap af)
+- **Bygevoeg** String splitting: `str$/ skeidingsteken` — gee terug `Array(String)`
+- **Bygevoeg** Konkatenasie bou: `basis$++ a b c` — voeg veelvuldige items by
+- **Bygevoeg** N keer lus: `@ N { }` — herhaal presies N keer
+- **Bygevoeg** Gemerkte lusse sintaksis: `@:naam { }`, `@:naam!`, `@:naam>` — vervang `@ @naam` / `@! naam`
+- **Bygevoeg** Veranderlike omvang reëls: `_naam` veranderlikes het presiese blok omvang; `\ var` vernietig vroeg
+- **Bygevoeg** Passing vergelykingspatrone: `< 0 :`, `> 5 :`, `== 42 :` ens.
+- **Bygevoeg** Module E013 fout: uitvoerbare stellings in module liggaam word verbied
+- **Reggemaak** `take_variable` korrupteer nie meer module konstantes tydens terugskrywing nie
+- **Reggemaak** `alias.CONST` word nou korrek opgelos; `#>` kan na funksie definisies verskyn
+- **VM** Volledige pariteit: 393/393 toetse slaag
+
+### v0.0.3 — Unicode Syferstelsels & LSP Verbeterings _(April 2026)_
+
+- **Bygevoeg** 69 Unicode syferblokke met mode wissel teken `#d0d9#`
+- **Bygevoeg** Booles literale in enige skrif — `#१` / `#०`, `#१` / `#०`, ens.
+- **Bygevoeg** Klingon pIqaD syfers (CSUR PUA U+F8F0–U+F8F9)
+- **Bygevoeg** `SetNumeralMode` VM opkode — volle pariteit met boomwandelaar
+- **Bygevoeg** REPL respekteer aktiewe numeriese mode in eggo en veranderlike vertoning
+- **Verander** Booles `>>` uitset sluit nou `#` voorvoegsel (`#0` / `#1`) in alle modes in
+
+### v0.0.2_01 — Operateur Hername _(30 Maart 2026)_
+
+- **Verander** `c|..|` → `#,|..|` en `e|..|` → `#^|..|` — konsekwent met `#` formaat voorvoegsel familie
+- **Bygevoeg** Uitvoer alias: her-uitvoer module lede onder 'n ander naam
+
+### v0.0.2 — Versameling API Herontwerp & Installeerders _(24 Maart 2026)_
+
+- **Bygevoeg** Verenigde `$` operateur familie vir skikkings en stringe (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Bygevoeg** Destrukturerings toewysing vir skikkings, tuples, en genoemde tuples
+- **Bygevoeg** Negatiewe indekse (`arr[-1]` = laaste element)
+- **Bygevoeg** Inheemse installeerders — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Maart 2026)_
+
+- **Bygevoeg** Saamgestelde toewysing `^=`
+- **Reggemaak** Ontleder rekenkundige randgevalle; dokumentasie regstellings
+
+### v0.0.1 — Aanvanklike Openbare Vrystelling _(22 Maart 2026)_
+
+- Boomwandelaar interpreteerder + register VM (`--vm`, ~4× vinniger, ~95% pariteit)
+- Alle kern konstrukte: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Volledige Unicode identifiseerders, module stelsel, lambdas, sluitings, fout hantering
+- REPL, LSP, VS Code uitbreiding, formateerder (`zymbol fmt`)
+
+---
+
+_Zymbol-Lang — Simbolies. Universeel. Onveranderlik._

@@ -1,90 +1,111 @@
-# Buug-yaraha Kooban ee Zymbol-Lang
-
-**Zymbol-Lang** waa luqad barnaamij ah oo astaan ah. Ereyada muhiimka ah ma isticmaasho — wax kastaa astaan. Si isku mid ah ayey ugu shaqeysaa luqadda aadanaha kasta.
-
-- Ereyada muhiimka ah ma jiraan (`if`, `while`, `return` ma jiraan — astaamaha kaliya `?`, `@`, `<~`)
-- Unicode buuxa — magacyada kasta oo luqad ah ama emoji 👋
-- Luqad-agoon — koodka wuu isku mid yahay dhammaan luqadaha
+> **Ogeysiis:** Dukumiintigaan waxaa la sameeyay iyadoo la kaashanayo sirdoonka macmalka ah (AI).
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Tixraaca caadiga ah waa **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** oo ku dhex jira kaydka turjumaanka.
 
 ---
 
-## Doorsoomayaasha iyo Joogta
+# Buug-gacmeedka Zymbol-Lang
+
+**Zymbol-Lang** waa luqad barnaamijyeed oo astaan ah. Ma jiraan ereyo furaha ah — wax walba waa astaan. Waxay u shaqeysaa si la mid ah luqad kasta oo aadane.
+
+- Ma jiraan `if`, `while`, `return` — kaliya `?`, `@`, `<~`
+- Unicode dhammaystiran — aqoonsiyayaal luqad kasta ama emoji kasta
+- Ka madax banaan luqadda aadanaha — koodku waa isku mid meel kasta
+
+**Nooca turjumaanka**: v0.0.4 | **Daboolida tijaabada**: 393/393 (sinnaanta TW ↔ VM)
+
+---
+
+---
+
+## Doorsoomayaasha iyo Joogtayaasha
 
 ```zymbol
-x = 10              // Doorsoomaha (wax laga beddeli karo)
-PI := 3.14159       // Joogta — khalad haddii dib loo qoondeeyo
-magac = "Ana"
-run = #1            // Boolean run
-👋 := "Nabad"
+x = 10              // doorsoome la bedeli karo
+PI := 3.14159       // joogte — dib u qoondayntu waa qalad wakhtiga orodka
+magac = "Alice"
+firfircoon = #1     // Boolean run
+👋 := "Hello"
 ```
 
 ```zymbol
-x = 10
+x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
 
 ---
 
 ## Noocyada Xogta
 
-| Nooca            | Tusaale             | Astaan `#?` | Xusuus-qoryo                         |
-|------------------|---------------------|-------------|--------------------------------------|
-| Tiro Buuxda      | `42`, `-7`          | `###`       | 64-Bit oo calaamad leh               |
-| Tiro Jajaban     | `3.14`, `1.5e10`    | `##.`       | Xisaabta sayniska OK                 |
-| Xaraf-xidid      | `"nabad"`           | `##"`       | Gelinta: `"Nabad {magac}"`           |
-| Xaraf Keliya     | `'A'`               | `##'`       | Xaraf Unicode ah oo keliya           |
-| Boolean          | `#1`, `#0`          | `##?`       | MA aha tiroyinka 1 iyo 0             |
-| Taxane           | `[1, 2, 3]`         | `##]`       | Dhammaan xubnuhu waa nooc isku mid ah|
-| Tupul            | `(a, b)`            | `##)`       | Meel-meel                            |
-| Tupul La Magacaabay | `(x: 1, y: 2)`  | `##)`       | Galitaanka magac ama tirsi            |
+| Nooc | Suugaan | Calaamadda `#?` | Qoraalo |
+|------|---------|-----------------|---------|
+| Tiro dhan | `42`, `-7` | `###` | 64-bit oo saxeexan |
+| Dhibic sabeynaysa | `3.14`, `1.5e10` | `##.` | Qoraalka sayniska waa la ogolyahay |
+| Xaraf | `"qoraal"` | `##"` | Dhexgalka: `"Hello {magac}"` |
+| Xaraf | `'A'` | `##'` | Hal xaraf oo Unicode ah |
+| Boolean | `#1`, `#0` | `##?` | MA aha tiro — `#1 ≠ 1` |
+| Saf | `[1, 2, 3]` | `##]` | Walxo isku mid ah |
+| Tuupil | `(a, b)` | `##)` | Mawqifi |
+| Tuupil magac leh | `(x: 1, y: 2)` | `##)` | Goobo magac leh |
+| Hawl | tixraac hawl magac leh | `##()` | Heerka koowaad; waxay muujinaysaa `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Heerka koowaad; waxay muujinaysaa `<lambd/N>` |
 
 ```zymbol
-// Xog-raadinta nooca — waxay soo celisaa (nooc, tirsiyo, qiime)
+// Baarista nooca — waxay soo celisaa (nooc, tirooyinka, qiimaha)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
-t = meta[0]
+t = meta[1]
 >> t ¶            // → ###
 ```
 
 ---
 
-## Muujinta iyo Galinta
+## Soo-saaris iyo Gelis
 
 ```zymbol
->> "Nabad" ¶                    // ¶ ama \\ waxay bixisaa xaraf-saarka cad
->> "a=" a " b=" b ¶             // qiyamyo badan oo ku xiga
->> (arr$#) ¶                    // hawlaha postfix waxay u baahan yihiin xagasha
+>> "Hello" ¶                       // ¶ ama \\ xariiq cusub oo cad
+>> "a=" a " b=" b ¶               // is-dul-dhig — qiimayaal badan
+>> (arr$#) ¶                      // hawlwadeennada postfix waxay u baahan yihiin ( ) gudaha >>
 
-<< magac                        // la'aanta tilmaan — akhrinta doorsoomaha
-<< "Magacaaga? " magac          // tilmaan leh
+<< magac                           // u aqri doorsoome (lama odhan)
+<< "Geli magacaaga: " magac        // leh odhan
 ```
 
-> `¶` ama `\\` waxay u dhiganyihiin xaraf-saarka.
+> `¶` (AltGr+R on keyboard-ka Isbaanishka) iyo `\\` waxay u dhigmaan xariiq cusub.
 
 ---
 
-## Hawlwadeenada
+## Hawlwadeennada
 
 ```zymbol
-// Xisaab — isticmaal qoondaynta; qaar ka mid ah hawlwadeenadu waxay leeyihiin dheelli-tir ku >> toosan
+// Xisaab — isticmaal qoondayn; hawlwadeennada qaarkood waxay leeyihiin astaamo toos ah gudaha >>
 a = 10
 b = 3
-r1 = a + b    // 13     r2 = a - b    // 7
-r3 = a * b    // 30     r4 = a / b    // 3  (qaybinta tirada buuxda)
-r5 = a % b    // 1      r6 = a ^ b    // 1000  (awood-yeelista)
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (qaybinta tiro dhan)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (kordhin)
 
-// Barbar-dhigga
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
+// Isbarbardhig
+a == b    // #0    
+a <> b    // #1    
+a < b      // #0
+a <= b    // #0   
+a > b      // #1    
+a >= b    // #1
 
-// Macquul
+// Caqli
 #1 && #0    // #0
 #1 || #0    // #1
 !#1         // #0
@@ -92,115 +113,118 @@ a <= b    // #0   a > b     // #1    a >= b   // #1
 
 ---
 
-## Xargaha
+---
+
+## Xarfo
 
 ```zymbol
-// Saddex qaab oo isku-xidhka ah
-magac = "Ana"
+// Laba qaab oo isku xidhidh
+magac = "Alice"
 n = 42
 
-fariin = "Nabad ", magac, "!"               // xigashada — qoondaynta
->> "Nabad " magac " waxaad tahay " n ¶      // ku-xigeenka — muujinta >>
-sharax = "Nabad {magac}, waxaad tahay {n}"  // gelinta — meel kastaba
+>> "Hello " magac " waxaad haysataa " n ¶       // is-dul-dhig — gudaha >>
+sharraxaad = "Hello {magac}, waxaad haysataa {n}"   // dhexgal — meel kasta
 ```
 
 ```zymbol
-s = "Nabad Adduunka"
-len = s$#                  // 12
-sub = s$[0..5]             // "Nabad"  (dhamaadka iska-dhaarshiis)
-has = s$? "Adduunka"       // #1
-parts = "a,b,c,d" / ','    // [a, b, c, d]
-rep = s$~~["a":"A"]        // "NAbAd AdduunkA"
-rep1 = s$~~["a":"A":1]     // "NAbad Adduunka"  (koowaad N kaliya)
+s = "Hello Dunida"
+dherer = s$#                  // 11
+cabir = s$[1..5]              // "Hello"  (saldhig-1, dhamaadka lagu daray)
+waxaa_jira = s$? "Dunida"     // #1
+qaybo = "a,b,c,d"$/ ','       // [a, b, c, d]  (u qaybi kala-qaate)
+beddelay = s$~~["a":"o"]      // "Hello Dunido"
+beddelay1 = s$~~["a":"o":1]   // "Hello Dunida" (kaliya N-ka hore)
 ```
 
-> `+` waa tiroyinka keliya. Isticmaal `,`, ku-xigeenka, ama gelinta xaraf-xididka.
+> `+` waxaa loogu talagalay tirooyinka kaliya. Xarfaha, isticmaal `,`, is-dul-dhig, ama dhexgel.
 
 ---
 
-## Xukumaynta Socodka
+## Socodka Xakamaynta
 
 ```zymbol
 x = 7
 
-? x > 0 { >> "togan" ¶ }
+? x > 0 { >> "wax togan" ¶ }
 
 ? x > 100 {
     >> "weyn" ¶
 } _? x > 0 {
-    >> "togan" ¶
+    >> "wax togan" ¶
 } _? x == 0 {
     >> "eber" ¶
 } _ {
-    >> "tirsi" ¶
+    >> "wax taban" ¶
 }
 ```
 
-> Xagashada `{ }` waa **waajib**, xitaa xariiq keliya.
+> Qabsadeyaasha `{ }` **waa qasab** xitaa hal weedh.
 
 ---
 
-## Match
+---
+
+## Isku-dhiga
 
 ```zymbol
 // Kala-duwanaansho
-dhibcood = 85
-qiimaha = ?? dhibcood {
+dhibcaha = 85
+darajo = ?? dhibcaha {
     90..100 : 'A'
     80..89  : 'B'
     70..79  : 'C'
     _       : 'F'
 }
->> qiimaha ¶    // → B
+>> darajo ¶     // → B
 
-// Xaraf-xididyo
-midab = "cas"
-kood = ?? midab {
-    "cas"   : "#FF0000"
-    "cagaar": "#00FF00"
-    _       : "#000000"
+// Xarfo
+midab = "guduud"
+koodh = ?? midab {
+    "guduud"  : "#FF0000"
+    "cagaar"  : "#00FF00"
+    _         : "#000000"
 }
 
-// Ilaaliyayaasha
-heer = -5
-xaalad = ?? heer {
-    _? heer < 0  : "baraf"
-    _? heer < 20 : "qabow"
-    _? heer < 35 : "diiran"
-    _            : "kulul"
+// Qaababka isbarbardhigga
+heerkul = -5
+xaalka = ?? heerkul {
+    < 0  : "baraf"
+    < 20 : "qabow"
+    < 35 : "diirran"
+    _    : "kulul"
 }
->> xaalad ¶    // → baraf
+>> xaalka ¶      // → baraf
 
-// Qaabka bayaanka (gacmaha xagasha)
+// Qaabka weedhaha (baloogyo)
 ?? n {
-    0       : { >> "eber" ¶ }
-    _? n < 0: { >> "tirsi" ¶ }
-    _       : { >> "togan" ¶ }
+    0        : { >> "eber" ¶ }
+    _? n < 0 : { >> "wax taban" ¶ }
+    _        : { >> "wax togan" ¶ }
 }
 ```
 
 ---
 
-## Wareegyada
+## Wareegyo
 
 ```zymbol
-@ i:0..4  { >> i " " }        // kala-duwanaanshaha dhameystiran: 0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // tallaabo leh: 1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // dib-u-rogal: 5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // kala-duwanaansho lagu daray:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // leh tallaabo:               1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // rogrogid:                   5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶                        // → 128  (intay jirto)
+>> n ¶                        // → 128  (halka)
 
-khudaar = ["Tufaax", "Muus", "Canab"]
-@ f:khudaar { >> f ¶ }
+miraha = ["tufaax", "canbe", "iinab"]
+@ m:miraha { >> m ¶ }         // walax kasta oo safka ku jirta
 
-@ c:"nabad" { >> c "-" }
->> ¶                          // → n-a-b-a-d-
+@ x:"hello" { >> x "-" }
+>> ¶                          // → h-e-l-l-o-  (xaraf kasta oo xarafka ku jira)
 
 @ i:1..10 {
-    ? i % 2 == 0 { @> }       // @> sii-wad
-    ? i > 7 { @! }             // @! jooji
+    ? i % 2 == 0 { @> }       // @> sii wad
+    ? i > 7 { @! }            // @! jabiyo
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
@@ -214,14 +238,16 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Wareeg la magacaabay (joojin xidid)
-count = 0
-@ @outer {
-    count++
-    ? count >= 3 { @! outer }
+// Wareeg sumad leh (jebin isku dhex milmay)
+tiraawe = 0
+@:dibadda {
+    tiraawe++
+    ? tiraawe >= 3 { @:dibadda! }
 }
->> count ¶                    // → 3
+>> tiraawe ¶                  // → 3
 ```
+
+---
 
 ---
 
@@ -229,240 +255,250 @@ count = 0
 
 ```zymbol
 ku_dar(a, b) { <~ a + b }
->> ku_dar(3, 4) ¶    // → 7
+>> ku_dar(3, 4) ¶   // → 7
 
-xasaab(n) {
+isku_dhurasho(n) {
     ? n <= 1 { <~ 1 }
-    <~ n * xasaab(n - 1)
+    <~ n * isku_dhurasho(n - 1)
 }
->> xasaab(5) ¶    // → 120
+>> isku_dhurasho(5) ¶    // → 120
 ```
 
-Hawluhu waxay leeyihiin **xudduud gooni ah** — ma gaadaan doorsoomayaasha dibadda. Isticmaal `<~` si aad u beddesho doorsoomayaasha waciyaha:
+Hawluhu waxay leeyihiin **baahsan gooni ah** — ma akhrin karaan doorsoomayaasha dibadda. Isticmaal cabbirrada soo-saarka `<~>` si aad wax uga beddesho doorsoomayaasha qofka baaqaya:
 
 ```zymbol
-bedel(a<~, b<~) {
+beddel(a<~, b<~) {
     ku_meel_gaar = a
     a = b
     b = ku_meel_gaar
 }
 x = 10
 y = 20
-bedel(x, y)
+beddel(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Hawlaha la magacaabay ma ahan qiyam heer-koowaad. Si loogu gudbiyoo dood ahaan, geli: `x -> magac(x)`.
+> Hawlaha magac leh **waa qiimayaal heerka koowaad** — si toos ah u dir: `nums$> labanlaab`. `x -> fn(x)` sidoo kale waa sax.
 
 ---
 
-## Lambda iyo Xidhidka
+---
+
+## Lambda-yada iyo Xirista
 
 ```zymbol
-laban_laab = x -> x * 2
-wadarta = (a, b) -> a + b
->> laban_laab(5) ¶    // → 10
->> wadarta(3, 7) ¶    // → 10
+labanlaab = x -> x * 2
+ku_dar = (a, b) -> a + b
+>> labanlaab(5) ¶   // → 10
+>> ku_dar(3, 7) ¶   // → 10
 
-// Lambda xagasha leh
-kala_sooc = x -> {
-    ? x > 0 { <~ "togan" }
-    _? x < 0 { <~ "tirsi" }
+// Lambda baloog ah
+kala_saar = x -> {
+    ? x > 0 { <~ "wax togan" }
+    _? x < 0 { <~ "wax taban" }
     <~ "eber"
 }
 
-// Xidhidyo — Lambdas waxay qaadanaan doorsoomayaasha dibadda
-qiimayn = 3
-saddex_laab = x -> x * qiimayn
->> saddex_laab(7) ¶    // → 21
+// Xiritaan — waxay qabsataa baahsan dibadda
+wax_ka_qabso = 3
+saddexlaab = x -> x * wax_ka_qabso
+>> saddexlaab(7) ¶   // → 21
 
-// Warshada hawlaha
-samee_kudar(n) { <~ x -> x + n }
-kudar10 = samee_kudar(10)
->> kudar10(5) ¶    // → 15
+// Warshad
+samee_ku_dareeye(n) { <~ x -> x + n }
+ku_dar_toban = samee_ku_dareeye(10)
+>> ku_dar_toban(5) ¶   // → 15
 
-// Taxanaha
-hawlaha = [x -> x+1, x -> x*2, x -> x*x]
->> hawlaha[2](5) ¶    // → 25
+// Safka dhexdiisa
+hawl_wadeeno = [x -> x+1, x -> x*2, x -> x*x]
+>> hawl_wadeeno[3](5) ¶   // → 25
 ```
 
 ---
 
-## Taxanayaasha
+## Safaf
 
-Taxanayaashu **waa la bedeli karaa** (mutable) waxayna ku jiraan curiyayaal **nooc isku mid ah**.
+Safafku waa **la bedeli karaa** waxayna ka kooban yihiin walxo **iskku mid ah**.
 
 ```zymbol
-arr = [1, 2, 3, 4, 5]
+saf = [1, 2, 3, 4, 5]
 
-arr[0]          // 1 — galitaan (tilsi aasaas-0)
-arr[-1]         // 5 — tilsi taban (u dambeeya)
-arr$#           // 5 — dherer (isticmaal (arr$#) ku >>)
+saf[1]          // 1 — gelid (saldhig-1: walaxda koowaad)
+saf[-1]         // 5 — tusmo diidmo ah (walaxda u dambaysa)
+saf$#           // 5 — dherer (isticmaal (saf$#) gudaha >>)
 
-arr = arr$+ 6            // ku-dar → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // geli tilsi 2
-arr3 = arr$- 3           // ka-saar koowaad ee qiimaha
-arr4 = arr$-- 3          // ka-saar dhammaan
-arr5 = arr$-[0]          // ka-saar tilsiga
-arr6 = arr$-[1..3]       // ka-saar kala-duwanaanshaha (dhamaadka iska-dhaarshiis)
+saf = saf$+ 6            // ku dar → [1,2,3,4,5,6]
+saf2 = saf$+[2] 99       // geli booska 2 (saldhig-1)
+saf3 = saf$- 3           // ka saar muuqaalka koowaad ee qiimaha
+saf4 = saf$-- 3          // ka saar dhammaan muuqaalada
+saf5 = saf$-[1]          // ka saar tusmada 1 (walaxda koowaad)
+saf6 = saf$-[2..3]       // ka saar kala-duwanaanshaha (saldhig-1, dhamaadka lagu daray)
 
-jiraa = arr$? 3            // #1 — ku-jiraa
-pos = arr$?? 3             // [2] — dhammaan tilsiyadii qiimaha
-goyn = arr$[0..3]          // [1,2,3] — goynta (dhamaadka iska-dhaarshiis)
-goyn2 = arr$[0:3]          // [1,2,3] — syntax tirsi-ku-saleysan
+waxaa_jira = saf$? 3     // #1 — waxay ka kooban tahay
+boosaska = saf$?? 3      // [3] — dhammaan tusmooyinka qiimaha (saldhig-1)
+jajab = saf$[1..3]       // [1,2,3] — jajab (saldhig-1, dhamaadka lagu daray)
+jajab2 = saf$[1:3]       // [1,2,3] — isku mid, naxwaha tirada ku salaysan
 
-kor = arr$^+               // isku-hore (primitives kaliya)
-hoos = arr$^-              // isku-dambe (primitives kaliya)
+sare_uyo = saf$^+        // kala sooc sare (kaliya kuwa asaasiga ah)
+hoos_u_dhac = saf$^-     // kala sooc hoos (kaliya kuwa asaasiga ah)
 
-// Tupul magacaabay/meel-meel — isticmaal $^ lambda barbar-dhig leh
-db = [(magac: "Carla", da: 28), (magac: "Ana", da: 25), (magac: "Bob", da: 30)]
-biyo_da    = db$^ (a, b -> a.da < b.da)
-biyo_magac = db$^ (a, b -> a.magac > b.magac)
->> biyo_da[0].magac ¶     // → Ana
->> biyo_magac[0].magac ¶  // → Carla
+// Safafka tuupilka magac leh/mawqif leh — isticmaal $^ laambda isbarbardhigga leh
+xog = [(magac: "Karla", da': 28), (magac: "Ana", da': 25), (magac: "Bob", da': 30)]
+ku_saleysan_da'  = xog$^ (a, b -> a.da' < b.da')      // sare u kac ku saleysan da'da (<)
+ku_saleysan_magac  = xog$^ (a, b -> a.magac > b.magac) // hoos u dhac ku saleysan magaca (>)
+>> ku_saleysan_da'[1].magac ¶    // → Ana
+>> ku_saleysan_magac[1].magac ¶  // → Karla
 
-// Cusboonaysii curiyaha si toos ah (taxanayaasha kaliya)
-arr[1] = 99               // qoondee
-arr[0] += 5               // compound: +=  -=  *=  /=  %=  ^=
+// Cusbooneysiinta walaxda tooska ah (safafka kaliya)
+saf[1] = 99              // qoondey
+saf[2] += 5              // isku dhafan: +=  -=  *=  /=  %=  ^=
 
-// Cusboonaysii shaqeyneed — taxane cusub soo celiya; asalka ma beddelo
-arr2 = arr[1]$~ 99
+// Cusbooneysiinta hawlaha — waxay soo celisaa saf cusub; asalku kuma beddelmina
+saf2 = saf[2]$~ 99
 ```
 
-> Dhammaan hawlwadeenada ururinta waxay soo celiyaan **taxane cusub**. Dib u qoondee: `arr = arr$+ 4`.
-> Silsiladayn ma jirto — isticmaal qoondaynta dhexe.
-> `$^+` / `$^-` waxay kala-saaraan **taxanaha primitive-ka**. Tupulaha isticmaal `$^` lambda barbar-dhig leh.
+> Dhammaan hawlwadeennada ururinta waxay soo celiyaan **saf cusub**. Dib u qoondey: `saf = saf$+ 4`.
+> `$+` waa la silsiladaysan karaa: `saf = saf$+ 5$+ 6$+ 7`. Hawlwadeennada kale waxay isticmaalaan qoondayn dhexdhexaad ah.
+> **Tusmayntu waa saldhig-1**: `saf[1]` waa walaxda koowaad; `saf[0]` waa qalad wakhtiga orodka.
+> `$^+` / `$^-` waxay kala soocaan **safafka asaasiga ah** (tirooyinka, xarfaha). Safafka tuupilka, isticmaal $^ leh laambda isbarbardhigga — jihada waxaa lagu codeeyay laambda dhexdeeda (`<` = sare u kac, `>` = hoos u dhac).
 
-**Semantigga qiimaha** — u qoondaynta taxane doorsoomaha kale koobi madaxbanaan abuuraa:
+**Macnaha qiimaha** — in saf loo qoondeeyo doorsoome kale waxay abuurtaa nuqul madax banaan:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b ma beddelin
+>> b ¶    // → [1, 2, 3]   ← b saamayn ma leh
 ```
 
 ```zymbol
-// Taxanaha xidid ah
-matriks = [[1,2,3],[4,5,6],[7,8,9]]
->> matriks[1][2] ¶    // → 6
+// Safaf isku dhex milmay (tusmaynta saldhig-1)
+shax = [[1,2,3],[4,5,6],[7,8,9]]
+>> shax[2][3] ¶    // → 6  (safka 2, tiirka 3)
 ```
 
 ---
 
-## Kala-saaris
+---
+
+## Burburin
 
 ```zymbol
-// Taxane
-arr = [10, 20, 30, 40, 50]
-[a, b, c] = arr              // a=10  b=20  c=30
-[kowaad, *indharta] = arr    // kowaad=10  indharta=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ tuuraa
+// Saf
+saf = [10, 20, 30, 40, 50]
+[a, b, c] = saf               // a=10  b=20  c=30
+[koowaad, *intaa_kadib] = saf    // koowaad=10  intaa_kadib=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ waa la iska indho tiray
 
-// Tupul meel-meel
+// Tuupil mawqif
 dhibic = (100, 200)
 (px, py) = dhibic            // px=100  py=200
 
-// Tupul la magacaabay
-qof = (magac: "Ana", da: 25, magaalo: "Muqdisho")
-(magac: m, da: d) = qof      // m="Ana"  d=25
+// Tuupil magac leh
+qof = (magac: "Ana", da': 25, magaalo: "Madrid")
+(magac: m, da': d) = qof      // m="Ana"  d=25
 ```
 
 ---
 
-## Tupulaha
+## Tuupil
 
-Tupulahu waa weelal **aan la bedeli karin** (immutable) oo leh curiyayaal **noocyo kala duwan**. Kala duwan taxanayaasha, curiyayaasha ma beddeli karto ka dib abuurista.
+Tuupilku waa weelal **aan la beddeli karin** oo la kala horreeyo oo qaadi kara qiimayaal **noocyo kala duwan ah**.
+Si ka duwan safafka, walxaha lama beddeli karo ka dib marka la sameeyo.
 
 ```zymbol
-// Meel-meel
+// Mawqif — noocyada isku dhafan waa la oggol yahay
 dhibic = (10, 20)
->> dhibic[0] ¶    // → 10
+>> dhibic[1] ¶     // → 10
 
-xog = (42, "salaan", #1, 3.14)
->> xog[2] ¶     // → #1
+xog = (42, "hello", #1, 3.14)
+>> xog[3] ¶        // → #1
 
-// La magacaabay
-qof = (magac: "Alice", da: 25)
->> qof.magac ¶    // → Alice
->> qof[0] ¶       // → Alice (tilsiga wuu shaqeeyaa sidoo kale)
+// Magac leh
+qof = (magac: "Alice", da': 25)
+>> qof.magac ¶      // → Alice
+>> qof[1] ¶         // → Alice  (tusmada sidoo kale way shaqaysaa, saldhig-1)
 
-// Xidid
-pos = (x: 10, y: 20)
-p = (pos: pos, summad: "asalka")
->> p.pos.x ¶        // → 10
+// Isku dhex milmay
+boos = (x: 10, y: 20)
+p = (boos: boos, calaamad: "asal")
+>> p.boos.x ¶       // → 10
 ```
 
-**Aan la bedeli karin (Immutabilité)** — isku daygga beddelka curiyaha waa khalad wakhti-socodka:
+**Aan la beddeli karin** — isku day kasta oo lagu beddelayo walax tuupil waa qalad wakhtiga orodka:
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ khalad wakhti-socodka: tupulaha ma beddelo
-// t[0] += 5    // ❌ khalad isku mid ah
+// t[1] = 99    // ❌ qalad wakhtiga orodka: tuupilka lama beddeli karo
+// t[1] += 5    // ❌ isla qalad
+
+// Tuupil magac leh — dib u dhis si cad
+qof = (magac: "Alice", da': 25)
+ka_weyn = (magac: qof.magac, da': 26)
+>> qof.da' ¶       // → 25
+>> ka_weyn.da' ¶    // → 26
 ```
 
-Isticmaal `$~` (cusboonaysii shaqeyneed) si aad u hesho qiime beddel — **tupul cusub** soo celisaa:
+Si aad u hesho qiime la beddelay isticmaal `$~` (cusbooneysiinta hawlaha) — waxay soo celisaa tuupil **cusub**:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[1]$~ 999
->> t ¶     // → (10, 20, 30)   ← asalka ma beddelin
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← asalku ma beddelmin
 >> t2 ¶    // → (10, 999, 30)
-
-// Tupul magacaabay — dib u dhis si cad
-qof = (magac: "Alice", da: 25)
-qof2  = (magac: qof.magac, da: 26)
->> qof.da ¶    // → 25
->> qof2.da ¶   // → 26
 ```
+
+---
 
 ---
 
 ## Hawlaha Heerka Sare
 
-> Hawlaha HOF waxay u baahan yihiin **lambda-gooni-ah** — doorsoomaha lambda ma toos ah.
-
 ```zymbol
-tirooyin = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+tirooyinka = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-laban_laaban = tirooyin$> (x -> x * 2)                // map  → [2,4,6…20]
-lablaab      = tirooyin$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
-wadarta      = tirooyin$< (0, (acc, x) -> acc + x)     // reduce → 55
+labanlaabay = tirooyinka$> (x -> x * 2)                // khariidaynta → [2,4,6…20]
+sima   = tirooyinka$| (x -> x % 2 == 0)              // sifaynta → [2,4,6,8,10]
+wadar    = tirooyinka$< (0, (ururin, x) -> ururin + x) // dhimista → 55
 
-// Silsilad dhexe
-tallaabo1 = tirooyin$| (x -> x > 3)
-tallaabo2 = tallaabo1$> (x -> x * x)
->> tallaabo2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+// Silsilad iyada oo loo marayo dhexdhexaadiyeyaal
+talaabo1 = tirooyinka$| (x -> x > 3)
+talaabo2 = talaabo1$> (x -> x * x)
+>> talaabo2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Hawlaha magacaabay HOF-ga — ku duub lambda
-laban_laab(x) { <~ x * 2 }
-r = tirooyin$> (x -> laban_laab(x))    // ✅
+// Hawlaha magac leh waxaa si toos ah loogu diri karaa hawlaha heerka sare
+labanlaab(x) { <~ x * 2 }
+weynyahay(x) { <~ x > 5 }
+r = tirooyinka$> labanlaab       // ✅ tixraac toos ah
+r = tirooyinka$| weynyahay       // ✅ tixraac toos ah
 ```
 
 ---
 
-## Hawlwadeen Tuubada
+---
 
-RHS waxay u baahan tahay `_` oo ah meel-buuxiye qiimaha la gudbiyay:
+## Hawlwadeega Tuubada
+
+Dhinaca midig waxay had iyo jeer u baahan tahay `_` si ay boos ugu hayso qiimaha la tuubaynayo:
 
 ```zymbol
-laban_laab = x -> x * 2
+labanlaab = x -> x * 2
 ku_dar = (a, b) -> a + b
-kor_u_qaad = x -> x + 1
+korodhsi = x -> x + 1
 
-5 |> laban_laab(_)        // → 10
-10 |> ku_dar(_, 5)        // → 15
-5 |> ku_dar(2, _)         // → 7
+5 |> labanlaab(_)        // → 10
+10 |> ku_dar(_, 5)       // → 15
+5 |> ku_dar(2, _)        // → 7
 
-// Silsilad
-r = 5 |> laban_laab(_) |> kor_u_qaad(_) |> laban_laab(_)
+// Silsiladaysan
+r = 5 |> labanlaab(_) |> korodhsi(_) |> labanlaab(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## Maaraynta Khaladaadka
+## Maaraynta Qaladka
 
 ```zymbol
 !? {
@@ -470,99 +506,110 @@ r = 5 |> laban_laab(_) |> kor_u_qaad(_) |> laban_laab(_)
 } :! ##Div {
     >> "qaybinta eber" ¶
 } :! {
-    >> "khalad kale: " _err ¶    // _err wuxuu haysataa farriinta khaladka
+    >> "qalad kale: " _err ¶    // _err waxay haysaa fariinta qaladka
 } :> {
-    >> "had iyo jeer waa socdaa" ¶
+    >> "had iyo jeer waa shaqeysaa" ¶
 }
 ```
 
-| Nooca       | Goorta ay dhacdo                  |
-|-------------|-----------------------------------|
-| `##Div`     | Qaybinta eber                     |
-| `##IO`      | Faylka / Nidaamka                 |
-| `##Index`   | Tilsiga ka baxsan kala-duwanaanshaha |
-| `##Type`    | Khaladka nooca                    |
-| `##Parse`   | Khaladka falanqaynta              |
-| `##Network` | Khaladka shabakadda               |
-| `##_`       | Khalad kasta (qabasho-dhammaad)   |
+| Nooc | Goorma |
+|------|--------|
+| `##Div` | Qaybinta eber |
+| `##IO` | Fayl / nidaam |
+| `##Index` | Tusmo ka baxsan xadadka |
+| `##Type` | Is waafajin la'aanta nooca |
+| `##Parse` | Falanqaynta xogta |
+| `##Network` | Qaladada shabakada |
+| `##_` | Qalad kasta (wax kasta qabta) |
 
 ---
 
-## Moduulada
+---
+
+## Qaybaha
 
 ```zymbol
-// Faylka: lib/xisaab.zy
-# xisaab
+// lib/calc.zy — jirka qaybta wuxuu ku dhex jiraa qabsadeyaasha
+# calc {
+    #> { ku_dar, get_PI }
 
-#> { ku_dar, hel_PI }    // Dhoofinta KA HOR qeybaha
-
-_PI := 3.14159
-ku_dar(a, b) { <~ a + b }
-hel_PI() { <~ _PI }
+    _PI := 3.14159
+    ku_dar(a, b) { <~ a + b }
+    get_PI() { <~ _PI }
+}
 ```
 
 ```zymbol
-// Faylka: main.zy
-<# ./lib/xisaab <= x    // Magac-dhaadhicin waajib ah
+// main.zy
+<# ./lib/calc <= c    // magac beddelka ayaa loo baahan yahay
 
->> x::ku_dar(5, 3) ¶  // → 8
-pi = x::hel_PI()
->> pi ¶                // → 3.14159
+>> c::ku_dar(5, 3) ¶   // → 8
+pi = c::get_PI()
+>> pi ¶              // → 3.14159
 ```
 
 ```zymbol
-// Dhoofin magac kala duwan
-# mylib
-#> { _internal_add <= wadarta }
+// Ku soo saarid magac dadweyne oo kale ah
+# maktabada_ iisa {
+    #> { _ku_dar_gudaha <= wadarta }
 
-_internal_add(a, b) { <~ a + b }
+    _ku_dar_gudaha(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
-<# ./mylib <= m
+<# ./maktabada_ iisa <= m
 
->> m::wadarta(3, 4) ¶    // → 7  (magaca gudaha _internal_add waa qarsoodi)
+>> m::wadarta(3, 4) ¶    // → 7  (magaca gudaha _ku_dar_gudaha waa la qariyay)
 ```
+
+> **Xeerarka qaybaha**: gudaha `# magac { }`, kaliya `#>`, qeexitaannada hawlaha, iyo bilowgayaasha doorsoome/joogte ee suugaan ayaa la oggol yahay. Weedhaha la fulin karo (`>>`, `<<`, wareegyada, iwm.) waxay keenaan qalad E013.
 
 ---
 
-## Hababka Tirooyinka
+---
 
-Zymbol waxay u muujin kartaa tirada **Unicode qoraalada tirooyin 69** — Devanagari, Carabi-Hindiya, Thai, Klingon pIqaD, Xisaab Adag, qaybaha LCD iyo kuwa kale. Habka firfircoon waxuu saameeyaa keliya bixinta `>>`; xisaabta gudaha waa binary mar walba.
+## Xaaladaha Tirooyinka
 
-### Hawlgalin qoraal
+Zymbol waxay tirooyinka ku soo bandhigi kartaa **69 baloog tiro oo Unicode ah** — Devanagari, Carabi-Hindi, Taylandi, Kilingon pIqaD, Xarfo culus oo Xisaabta ah, qaybo LCD ah, iyo waxyaabo kale. Xaaladda firfircooni waxay saameyn ku yeelataa soo-saarista `>>` kaliya; xisaabta gudaha ah had iyo jeer waa labaale.
 
-Ku qor tiro `0` iyo `9` ee qoraalka la rabo ee ku jira `#…#`:
+### Firfircoonaynta far
+
+Qor tirooyinka `0` iyo `9` ee farta la beegsanayo gudaha `#…#`:
 
 ```zymbol
 #०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // Arabic-Indic  (U+0660–U+0669)
-#๐๙#    // Thai          (U+0E50–U+0E59)
-#09#    // reset to ASCII
+#٠٩#    // Carabi-Hindi   (U+0660–U+0669)
+#๐๙#    // Taylandi       (U+0E50–U+0E59)
+#09#    // dib ugu celi ASCII
 ```
 
-### Bixinta iyo qiyamka boolean
+---
+
+### Soo-saarista iyo Booleanka
 
 ```zymbol
 x = 42
->> x ¶          // → 42   (ASCII default)
+>> x ¶          // → 42   (taas oo ah ASCII)
 
 #०९#
 >> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४
+>> 3.14 ¶       // → ३.१४   (dhibic tobanle had iyo jeer waa ASCII)
 >> 1 + 2 ¶      // → ३
 
-// Boolean: # hore mar walba ASCII, tiro ayaa is-beddelaysa
->> #1 ¶         // → #१
->> #0 ¶         // → #०
+// Booleanka: horgale # had iyo jeer waa ASCII, tiro way la qabsanaysaa
+>> #1 ¶         // → #१   (run Devanagari gudaheed)
+>> #0 ¶         // → #०   (been — way ka duwan tahay ० eber tiro dhan)
 
 x = 28 > 4
->> x ¶          // → #१
+>> x ¶          // → #१   (natiijada isbarbardhigga waxay raacaysaa xaaladda firfircoon)
 ```
 
-### Tirooyin asalka ah oo ku jira koodka
+---
 
-Tirooyin kasta oo qoraal la taageero waa literals sax ah — meelaynta, modulo, barbaraadinta:
+## Tirooyinka asalka ah ee koodka isha ku jira
+
+Tirooyinka far kasta oo la taageero waa suugaan sax ah — kala-duwanaanshaha, qaybinta, isbarbardhigyada:
 
 ```zymbol
 #०९#
@@ -575,160 +622,194 @@ Tirooyin kasta oo qoraal la taageero waa literals sax ah — meelaynta, modulo, 
 }
 ```
 
-### Boolean literals qoraal kastaba
+---
 
-`#` + tiro `0` ama `1` block kasta waa literal boolean sax ah:
+### Suugaanta Booleanka ee far kasta
+
+`#` + tiro `0` ama `1` oo ka yimid baloog kasta waa suugaan Boolean oo sax ah:
 
 ```zymbol
-#٠٩#
-نشط = #١
->> نشط ¶        // → #١
->> (#١ && #٠) ¶ // → #٠
+#०९#
+firfircoon = #१        // la mid ah #1
+>> firfircoon ¶        // → #१
+>> (#१ && #०) ¶        // → #०
 ```
 
-> `#` waa **mar walba ASCII**. `#0` (been) waxay mar walba muujisaa kala duwanaansho muuqaal ahaan ka `0` (eber tirada) qoraal kasta.
+> `#` **had iyo jeer waa ASCII**. `#0` (been) had iyo jeer way ka duwan tahay muuqaal ahaan `0` (eber tiro dhan) far kasta.
 
 ---
 
-## Hawlwadeenada Xogta
+---
+
+## Hawlwadeennada Xogta
 
 ```zymbol
-// Xaraf-xidid u bedel tiro
-v1 = #|"42"|      // → 42  (Int)
-v2 = #|"3.14"|    // → 3.14  (Float)
-v3 = #|"abc"|     // → "abc"  (khalad-badbaado)
+// Beddelidda nooca
+##.42         // → 42.0  (Dhibic sabeynaysa)
+###3.7        // → 4     (Tiro dhan, soo wareejin)
+##!3.7        // → 3     (Tiro dhan, jarid)
 
-// Wareejin / jaro
+// Falanqaynta xarafka si loo helo tiro
+v1 = #|"42"|      // → 42  (Tiro dhan)
+v2 = #|"3.14"|    // → 3.14  (Dhibic sabeynaysa)
+v3 = #|"abc"|     // → "abc"  (badbaado leh, qalad ma jiro)
+
+// Soo wareejin / jarid
 pi = 3.14159265
-r2 = #.2|pi|      // → 3.14  (u wareejin 2 goobood)
-r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14  (jaro)
+soo_wareeji2 = #.2|pi|     // → 3.14  (soo wareeji 2 boos tobanle)
+soo_wareeji4 = #.4|pi|     // → 3.1416
+jar2 = #!2|pi|             // → 3.14  (jar)
 
-// Qaabka tirada
-fmt = #,|1234567|      // → 1,234,567  (comma-goynta)
-sci = #^|12345.678|    // → 1.2345678e4  (saynis)
+// Qaabaynta tirada
+qaab = #,|1234567|   // → 1,234,567  (kala soocid comma)
+saynisi = #^|12345.678| // → 1.2345678e4  (saynisi)
 
-// Base literals
-a = 0x41         // → 'A'  (hex)
-b = 0b01000001   // → 'A'  (binary)
-c = 0o101        // → 'A'  (octal)
+// Suugaanta saldhigga
+a = 0x41         // → 'A'  (laba iyo tobanle)
+b = 0b01000001   // → 'A'  (labaale)
+c = 0o101        // → 'A'  (siddeedle)
 
-// Beddelka xeerada
-hex = 0x|255|    // → "0x00FF"
-bin = 0b|65|     // → "0b1000001"
-oct = 0o|8|      // → "0o10"
-dec = 0d|255|    // → "0d0255"
+// Soo-saarista beddelidda saldhigga
+laba_iyo_tobanle = 0x|255|    // → "0x00FF"
+labaale = 0b|65|             // → "0b1000001"
+siddeedle = 0o|8|            // → "0o10"
+tobanle = 0d|255|            // → "0d0255"
 ```
 
 ---
 
-## Dhismaha Shell
+---
+
+## Is-dhexgalka Qolofka
 
 ```zymbol
-taariikhda = <\ date +%Y-%m-%d \>     // qaado stdout (oo ay ku jirto \n dhamaadka)
->> "Maanta: " taariikhda
+taariikh = <\ date +%Y-%m-%d \>     // waxay qabataa stdout (waxaa ku jira \n dhamaadka)
+>> "Maanta: " taariikh
 
-faylka = "data.txt"
-waxa_ku_jira = <\ cat {faylka} \>     // interpolation amarrada
+fayl = "xogta.txt"
+nuxurka = <\ cat {fayl} \>          // dhexgalka amarrooyinka
 
-output = </"./subscript.zy"/>          // fuliso qoraalka Zymbol kale, qaado output
->> output
+soo_saar = </"./subscript.zy"/>     // samee qoraal kale oo Zymbol ah, qabso soo-saarista
+>> soo_saar
 ```
 
-> `><` waxay qaadanayaan doodaha CLI ahaan taxane string (tree-walker kaliya).
+> `><` waxay u qabataa doodaha CLI siday u kala horreeyaan saf tiro ah (tree-walker kaliya).
 
 ---
 
-## Tusaale Buuxa: FizzBuzz
+---
+
+## Tusaale Dhammaystiran: FizzBuzz
 
 ```zymbol
-kala_sooc(tiro) {
+kala_saar(tiro) {
     ? tiro % 15 == 0 { <~ "FizzBuzz" }
     _? tiro % 3  == 0 { <~ "Fizz" }
     _? tiro % 5  == 0 { <~ "Buzz" }
     _ { <~ tiro }
 }
 
-@ i:1..20 { >> kala_sooc(i) ¶ }
+@ i:1..20 { >> kala_saar(i) ¶ }
 ```
 
 ---
 
 ## Tixraaca Astaamaha
 
-| Astaan | Hawsha | Astaan | Hawsha |
-|--------|--------|--------|--------|
-| `=` | Doorsoomaha | `$#` | Dhererka |
-| `:=` | Joogta | `$+` | ku-dar |
-| `>>` | Muujinta | `$+[i]` | geli tilsiga |
-| `<<` | Galinta | `$-` | ka-saar koowaad qiimaha |
-| `¶` / `\\` | Xaraf-saarka | `$--` | ka-saar dhammaan qiimaha |
-| `?` | haddii (if) | `$-[i]` | ka-saar tilsiga |
-| `_?` | haddii-kalena (elif) | `$-[i..j]` | ka-saar kala-duwanaanshaha |
-| `_` | haddii-kale / meel-buuxin | `$?` | ku-jiraa |
-| `??` | match | `$??` | dhammaan tilsiyadii |
-| `@` | Wareegga | `$[s..e]` | Goynta |
-| `@!` | jooji (break) | `$>` | map |
-| `@>` | sii-wad (continue) | `$\|` | filter |
-| `->` | Lambda | `$<` | reduce |
-| `arr[i] = val` | cusboonaysii curiyaha (taxanayaasha kaliya) | `arr[i] += val` | cusboonaysii compound |
-| `arr[i]$~` | cusboonaysii shaqeyneed (koobi cusub) | `$^+` | kala-saar kor (primitives) |
-| `$^-` | kala-saar hoos (primitives) | `$^` | kala-saar comparator (tuples) |
-| `<~` | soo-celi (return) | `!?` | isku-day (try) |
-| `\|>` | Pipe | `:!` | qaado (catch) |
-| `#1` | run | `:>` | had-jeer (finally) |
-| `#0` | been | `$!` | khalad ma ah |
-| `<#` | keeno (import) | `$!!` | khaladka gudbii |
-| `#` | moduulka bayaan | `#>` | dhoofi |
-| `::` | wicitaanka moduulka | `.` | galitaanka goobta |
-| `#\|..\|` | tiro parse | `#?` | metadata nooca |
-| `#.N\|..\|` | wareejin | `#!N\|..\|` | jaro |
-| `#,\|..\|` | qaabka comma | `#^\|..\|` | saynis |
-| `#d0d9#` | beddelka habka tirooyinka | `#09#` | dib u celi ASCII |
-| `<\ ..\>` | shell exec | `>\<` | doodaha CLI |
-
-## Taariikhda Noocyada
-
-### v0.0.3 — Unicode Nidaamyada Tirooyin & Horumarinta LSP _(Abriil 2026)_
-
-- **La daray** Block 69 Unicode ah oo tirooyin ah oo leh calaamad beddelka hababka `#d0d9#`
-- **La daray** Boolean literals qoraal kastaba — `#१` / `#०`, `#١` / `#٠`, iwm
-- **La daray** Klingon pIqaD tirooyin (CSUR PUA U+F8F0–U+F8F9)
-- **La daray** VM opcode `SetNumeralMode` — sinnaanta buuxda ee tree-walker
-- **La daray** REPL waxay xurmeysaa habka tirooyinka firfircoon ee echo iyo muujinta doorsoome
-- **La beddelay** Bixinta `>>` ee boolean hadda waxay leedahay `#` hore (`#0` / `#1`) hababka oo dhan
-
-### v0.0.2_01 — Magacaabista Hawlwadeenada _(30 Mar 2026)_
-
-- **La beddelay** `c|..|` → `#,|..|` iyo `e|..|` → `#^|..|` — waafaqsan qoyska `#`
-- **La daray** Alias dhoofin: dib u dhoofinta xubnaha module magac kale
-
-### v0.0.2 — Dib-u-naqshadaynta API Uruurinta & Dejiyayaasha _(24 Mar 2026)_
-
-- **La daray** Qoyska hawlwadeenada `$` midaysan arrays iyo strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **La daray** Destructuring arrays, tuples iyo tuples magac leh
-- **La daray** Indexes taban (`arr[-1]` = curiyaha ugu danbeeya)
-- **La daray** Dejiyayaasha asalka ah — Linux (deb/rpm/pkg/musl), macOS, Windows
-
-### v0.0.1-patch _(25 Mar 2026)_
-
-- **La daray** Xilsi isku dhafan `^=`
-- **La hagaajiyay** Xaaladaha xadka parser xisaab; saxitaanka dukumeentiyada
-
-### v0.0.1 — Sii-deynta Dadweynaha ee Ugu Horreysa _(22 Mar 2026)_
-
-- Tree-walker interpreter + register VM (`--vm`, ~4× degdeg, ~95% sinnaanta)
-- Dhammaan qaabaynta aasaasiga ah: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Unicode aqoonsiyeyaasha buuxa, nidaamka module, lambdas, xidhnaanta, maaraynta khaladaadka
-- REPL, LSP, VS Code extension, formatter (`zymbol fmt`)
+| Astaanta | Hawlaha | Astaanta | Hawlaha |
+|----------|---------|----------|---------|
+| `=` | doorsoome | `$#` | dherer |
+| `:=` | joogte | `$+` | ku dar (la silsiladaysan karo) |
+| `>>` | soo-saar | `$+[i]` | geli tusmada (saldhig-1) |
+| `<<` | gelin | `$-` | ka saar koowaad iyadoo loo eegayo qiimaha |
+| `¶` / `\\` | xariiq cusub | `$--` | ka saar dhammaan iyadoo loo eegayo qiimaha |
+| `?` | haddii | `$-[i]` | ka saar tusmada (saldhig-1) |
+| `_?` | haddii kale haddii | `$-[i..j]` | ka saar kala-duwanaanshaha (saldhig-1) |
+| `_` | haddii kale / bakhti | `$?` | waxaa ku jira |
+| `??` | isku-dhig | `$??` | raadi dhammaan tusmooyinka (saldhig-1) |
+| `@` | wareeg | `$[s..e]` | jajab (saldhig-1) |
+| `@ N { }` | wareeg N jeer | `$>` | khariidayn |
+| `@!` | jabiyo | `$|` | sifee |
+| `@>` | sii wad | `$<` | dhimo |
+| `@:magac { }` | wareeg sumad leh | `$/ kala-qaate` | kala qaybinta xarafka |
+| `@:magac!` | jabiyo sumad leh | `$++ a b c` | dhismaha isku xidhka |
+| `@:magac>` | sii wad sumad leh | `saf[i>j>k]` | tusmada hagista |
+| `->` | lambda | `saf[i] = qiimo` | cusbooneysii walaxda (safafka kaliya) |
+| `saf[i] += qiimo` | cusbooneysiin isku dhafan | `saf[i]$~` | cusbooneysiin hawl (nuqul cusub) |
+| `$^+` | kala sooc sare (asaasiga ah) | `$^-` | kala sooc hoose (asaasiga ah) |
+| `$^` | kala sooc leh isbarbardhig (tuupil) | `<~` | soo celi |
+| `|>` | tuubada | `!?` | isku day |
+| `:!` | qabasho | `:>` | ugu dambeyn |
+| `#1` | run | `#0` | been |
+| `$!` | waa qalad | `$!!` | faafin qaladka |
+| `<#` | soo dejiso | `#>` | soo saar |
+| `#` | ku dhawaaq qaybta | `::` | u yeedh qaybta |
+| `.` | gelida goobta | `#?` | xogta nooca |
+| `#\|..\|` | falanqaynta tirada | `##.` | u beddel Dhibic sabeynaysa |
+| `###` | u beddel Tiro dhan (soo wareeji) | `##!` | u beddel Tiro dhan (jar) |
+| `#.N\|..\|` | soo wareeji | `#!N\|..\|` | jar |
+| `#,\|..\|` | qaabaynta comma | `#^\|..\|` | saynisi |
+| `#d0d9#` | beddel xaaladda tirada | `#09#` | dib ugu celi ASCII |
+| `<\ ..\>` | samee qolofka | `>\<` | doodaha CLI |
+| `\ var` | baabi doorsoome si cad | | |
 
 ---
 
-*Zymbol-Lang — Astaan. Caalami. Joogto.*
+---
 
-> **Ogeysiis:** Buug-yarahani waxaa sameeya oo tarjumay Garashada Macquulka ah (AI).
-> Wax walba ayaa lagu dadaalay si loo hubiyo saxnaanta, laakiin tarjumaadaha qaar ama tusaalooyinka waxaa laga yaabaa inay khaladaad leeyihiin.
-> Tixraaca rasmiga ah waa [Qeybinta Zymbol-Lang](https://github.com/zymbol-lang/interpreter).
->
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
+## Diiwaanka Isbeddellada Siidaynta
+
+### v0.0.4 — Tusmaynta Saldhig-1, Hawlaha Heerka Koowaad & Baloogyada Qaybaha _(Abriil 2026)_
+
+- **Jabiya** Dhammaan tusmaynta waxaa loo beddelay **saldhig-1** — `saf[1]` waa walaxda koowaad; `saf[0]` waa qalad wakhtiga orodka
+- **Lagadaray** Hawlaha magac leh **waa qiimayaal heerka koowaad** — si toos ah ugu dir hawlaha heerka sare: `nums$> labanlaab`
+- **Lagadaray** **Naxwaha baloogga** qaybaha waa qasab: `# magac { ... }` — naxwaha fidsan waa la saaray
+- **Lagadaray** Tusmaynta cabbirro badan: `saf[i>j>k]` (hagista), `saf[p ; q]` (soo saarid fidsan)
+- **Lagadaray** Beddelidda nooca: `##.odhaah` (Dhibic sabeynaysa), `###odhaah` (Tiro dhan soo wareeji), `##!odhaah` (Tiro dhan jar)
+- **Lagadaray** Kala qaybinta xarafka: `xaraf$/ kala-qaate` — waxay soo celisaa `Array(Xaraf)`
+- **Lagadaray** Dhismaha isku xidhka: `saldhig$++ a b c` — waxay ku dartaa walxo badan
+- **Lagadaray** Wareeg N jeer: `@ N { }` — ku celi si sax ah N jeer
+- **Lagadaray** Naxwaha wareegyada sumadaha leh: `@:magac { }`, `@:magac!`, `@:magac>` — waxay bedeshay `@ @magac` / `@! magac`
+- **Lagadaray** Xeerarka baahsan ee doorsoomaha: doorsoomayaasha `_magac` waxay leeyihiin baahsan baloog oo sax ah; `\ var` waa u baabiiyaa goor hore
+- **Lagadaray** Qaababka isbarbardhigga ee isku-dhigga: `< 0 :`, `> 5 :`, `== 42 :`, iwm
+- **Lagadaray** Qaladka qaybta E013: weedhaha la fulin karo ee jirka qaybta ku jira waa mamnuuc
+- **La hagaajiyay** `take_variable` hada ma baabiyeejoogtayaasha qaybta marka dib loo qorayo
+- **La hagaajiyay** `alias.CONST` hada si sax ah ayay u xallinaysaa; `#>` waxay ka dhici kartaa ka dib qeexitaannada hawlaha
+- **VM** Sinnaan dhammaystiran: 393/393 tijaaboo ah ayaa gudbay
+
+### v0.0.3 — Nidaamyada Tirooyinka Unicode & Hagaajinta LSP _(Abriil 2026)_
+
+- **Lagadaray** 69 baloog tiro oo Unicode ah oo leh calaamadda beddelka xaaladda `#d0d9#`
+- **Lagadaray** Suugaanta Boolean ee far kasta — `#१` / `#०`, `#१` / `#०`, iwm
+- **Lagadaray** Tirooyinka Kilingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Lagadaray** `SetNumeralMode` opcode VM — sinnaan dhammaystiran oo lala yeelanayo socod-baraha geedka
+- **Lagadaray** REPL waxay ixtiraamaysaa xaaladda tirada ee firfircoon ee codaynta iyo soo-bandhigidda doorsoomaha
+- **La beddelay** Boolean `>>` soo-saarista hada waxaa ku jira horgale `#` (`#0` / `#1`) dhammaan xaaladaha
+
+### v0.0.2_01 — Beddelida Magaca Hawlwadeega _(30 Maarso 2026)_
+
+- **La beddelay** `c|..|` → `#,|..|` iyo `e|..|` → `#^|..|` — waafaqsan qoyska horgalaha qaabaynta `#`
+- **Lagadaray** Magac beddelka soo-saarista — dib u soo saar xubnaha qaybta magac kale hoostiisa
+
+### v0.0.2 — Dib-u-qaabaynta API-ga Uruurinta & Kuwa Rakibaadda _(24 Maarso 2026)_
+
+- **Lagadaray** Qoyska hawlwadeega `$` ee midoobay ee safafka iyo xarfaha (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Lagadaray** Qoondaynta burburinta ee safafka, tuupilka, iyo tuupilka magac leh
+- **Lagadaray** Tusmooyinka diidmada ah (`saf[-1]` = walaxda u dambaysa)
+- **Lagadaray** Kuwa rakibaadda asalka ah — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Maarso 2026)_
+
+- **Lagadaray** Qoondayn isku dhafan `^=`
+- **La hagaajiyay** Kiisaska geeska ah ee xisaabta ee falanqeeyaha; sixitaannada dukumiintiga
+
+### v0.0.1 — Siidaynta Guud ee Koowaad _(22 Maarso 2026)_
+
+- Turjumaane socod-baraha geedka + VM diiwaangeliyey (`--vm`, ~4× ka dheereeya, ~95% sinnaan)
+- Dhammaan qaab-dhismeedka asaasiga ah: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Aqoonsiyayaasha Unicode ee dhammaystiran, nidaamka qaybaha, lambda-yada, xiritaannada, maaraynta qaladka
+- REPL, LSP, Kordhinta VS Code, qaabaynta (`zymbol fmt`)
+
+---
+
+_Zymbol-Lang — Astaan. Caalami. Aan la beddeli karin._

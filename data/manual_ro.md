@@ -1,3 +1,11 @@
+> **Avertisment:** Această documentație a fost creată cu asistența inteligenței artificiale (IA).
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Referința canonică este **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** în depozitul interpretorului.
+
+---
+
 # Manualul Zymbol-Lang
 
 **Zymbol-Lang** este un limbaj de programare simbolic. Fără cuvinte cheie — totul este un simbol. Funcționează la fel în orice limbă umană.
@@ -5,6 +13,8 @@
 - Fără `if`, `while`, `return` — doar `?`, `@`, `<~`
 - Unicode complet — identificatori în orice limbă sau emoji
 - Agnostic față de limbă — codul este identic în toate limbile
+
+**Versiunea interpretorului**: v0.0.4 | **Acoperire teste**: 393/393 (paritate TW ↔ VM)
 
 ---
 
@@ -44,12 +54,14 @@ x--       // 4
 | Array          | `[1, 2, 3]`         | `##]`         | Elemente omogene                   |
 | Tuplu          | `(a, b)`            | `##)`         | Pozițional                         |
 | Tuplu numit    | `(x: 1, y: 2)`      | `##)`         | Câmpuri numite                     |
+| Funcție        | ref. funcție numită  | `##()`        | Prima clasă; afișează `<funct/N>`  |
+| Lambda         | `x -> x * 2`         | `##->`        | Prima clasă; afișează `<lambd/N>`  |
 
 ```zymbol
 // Introspecție de tip — returnează (tip, cifre, valoare)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
-t = meta[0]
+t = meta[1]
 >> t ¶            // → ###
 ```
 
@@ -95,23 +107,22 @@ a <= b    // #0   a > b     // #1    a >= b   // #1
 ## Șiruri de Caractere
 
 ```zymbol
-// Trei forme de concatenare
+// Două forme de concatenare
 nume = "Alice"
 n = 42
 
-msg = "Salut ", nume, "!"              // virgulă — în atribuiri
 >> "Salut " nume " ai " n ¶           // juxtapunere — în >>
 desc = "Salut {nume}, ai {n}"         // interpolare — oriunde
 ```
 
 ```zymbol
-s = "Hello World"
-len = s$#                  // 11
-sub = s$[0..5]             // "Hello"  (sfârșit exclusiv)
-are = s$? "World"          // #1
-parti = "a,b,c,d" / ','    // [a, b, c, d]
-rep = s$~~["l":"L"]        // "HeLLo WorLd"
-rep1 = s$~~["l":"L":1]     // "HeLlo World"  (doar primele N)
+s = "Salut Lume"
+len = s$#                  // 10
+sub = s$[1..5]             // "Salut"  (1-bazat, sfârșit inclusiv)
+are = s$? "Lume"           // #1
+parti = "a,b,c,d"$/ ','    // [a, b, c, d]  (separare după delimitator)
+rep = s$~~["u":"U"]        // "SalUt LUme"
+rep1 = s$~~["u":"U":1]     // "SalUt Lume"  (doar primele N)
 ```
 
 > `+` este doar pentru numere. Folosiți `,`, juxtapunere sau interpolare pentru șiruri.
@@ -161,13 +172,13 @@ cod = ?? culoare {
     _       : "#000000"
 }
 
-// Gărzi
+// Tipare de comparație
 temp = -5
 stare = ?? temp {
-    _? temp < 0  : "gheata"
-    _? temp < 20 : "rece"
-    _? temp < 35 : "cald"
-    _            : "fierbinte"
+    < 0  : "gheata"
+    < 20 : "rece"
+    < 35 : "cald"
+    _    : "fierbinte"
 }
 >> stare ¶    // → gheata
 
@@ -216,9 +227,9 @@ i = 0
 
 // Buclă etichetată (break imbricat)
 contor = 0
-@ @extern {
+@:extern {
     contor++
-    ? contor >= 3 { @! extern }
+    ? contor >= 3 { @:extern! }
 }
 >> contor ¶                   // → 3
 ```
@@ -252,7 +263,7 @@ schimba(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Funcțiile numite nu sunt valori de primă clasă. Pentru a le transmite ca argument, înveliți: `x -> fn(x)`.
+> Funcțiile numite sunt **valori de primă clasă** — transmiteți-le direct: `nums$> dubla`. Pentru a învelit: `x -> fn(x)` este de asemenea valid.
 
 ---
 
@@ -277,13 +288,13 @@ triplu = x -> x * factor
 >> triplu(7) ¶    // → 21
 
 // Fabrică
-make_adder(n) { <~ x -> x + n }
-add10 = make_adder(10)
->> add10(5) ¶    // → 15
+crea_adunator(n) { <~ x -> x + n }
+aduna10 = crea_adunator(10)
+>> aduna10(5) ¶    // → 15
 
 // În array-uri
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[2](5) ¶    // → 25
+>> ops[3](5) ¶    // → 25
 ```
 
 ---
@@ -295,21 +306,21 @@ Array-urile sunt **mutabile** și conțin elemente de **același tip**.
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
-arr[0]          // 1 — acces (baza 0)
-arr[-1]         // 5 — index negativ (ultimul)
+arr[1]          // 1 — acces (1-bazat: primul element)
+arr[-1]         // 5 — index negativ (ultimul element)
 arr$#           // 5 — lungime (folosiți (arr$#) în >>)
 
 arr = arr$+ 6            // adăuga → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // insera la indexul 2
+arr2 = arr$+[2] 99       // insera la poziția 2 (1-bazat)
 arr3 = arr$- 3           // elimina prima apariție a valorii
 arr4 = arr$-- 3          // elimina toate aparițiile
-arr5 = arr$-[0]          // elimina la index
-arr6 = arr$-[1..3]       // elimina un interval (sfârșit exclusiv)
+arr5 = arr$-[1]          // elimina la indexul 1 (primul element)
+arr6 = arr$-[2..3]       // elimina un interval (1-bazat, sfârșit inclusiv)
 
 are = arr$? 3            // #1 — conține
-pos = arr$?? 3           // [2] — toți indicii valorii
-sl = arr$[0..3]          // [1,2,3] — felie (sfârșit exclusiv)
-sl2 = arr$[0:3]          // [1,2,3] — la fel, sintaxă prin numărare
+pos = arr$?? 3           // [3] — toți indicii valorii (1-bazat)
+sl = arr$[1..3]          // [1,2,3] — felie (1-bazat, sfârșit inclusiv)
+sl2 = arr$[1:3]          // [1,2,3] — la fel, sintaxă prin numărare
 
 asc = arr$^+             // sortat crescător  (doar primitive)
 desc = arr$^-            // sortat descrescător (doar primitive)
@@ -318,19 +329,20 @@ desc = arr$^-            // sortat descrescător (doar primitive)
 db = [(nume: "Carla", varsta: 28), (nume: "Ana", varsta: 25), (nume: "Bob", varsta: 30)]
 dupa_varsta = db$^ (a, b -> a.varsta < b.varsta)    // crescător după vârstă  (<)
 dupa_nume   = db$^ (a, b -> a.nume > b.nume)        // descrescător după nume (>)
->> dupa_varsta[0].nume ¶     // → Ana
->> dupa_nume[0].nume ¶       // → Carla
+>> dupa_varsta[1].nume ¶     // → Ana
+>> dupa_nume[1].nume ¶       // → Carla
 
 // Actualizare directă a elementului (doar array-uri)
 arr[1] = 99              // atribuire
-arr[0] += 5              // compus: +=  -=  *=  /=  %=  ^=
+arr[2] += 5              // compus: +=  -=  *=  /=  %=  ^=
 
 // Actualizare funcțională — returnează un array nou; originalul rămâne nemodificat
-arr2 = arr[1]$~ 99
+arr2 = arr[2]$~ 99
 ```
 
 > Toți operatorii de colecție returnează un **array nou**. Reatribuiți: `arr = arr$+ 4`.
-> Operatorii nu pot fi înlănțuiți — folosiți atribuiri intermediare.
+> `$+` poate fi înlănțuit: `arr = arr$+ 5$+ 6$+ 7`. Alți operatori folosesc atribuiri intermediare.
+> **Indexarea este 1-bazată**: `arr[1]` este primul element; `arr[0]` este o eroare de execuție.
 > `$^+` / `$^-` sortează **array-uri primitive** (numere, șiruri). Pentru array-uri de tuple, folosiți `$^` cu lambda comparator — direcția este codificată în lambda (`<` = crescător, `>` = descrescător).
 
 **Semantică de valoare** — atribuirea unui array la o altă variabilă creează o copie independentă:
@@ -338,15 +350,15 @@ arr2 = arr[1]$~ 99
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
 >> b ¶    // → [1, 2, 3]   ← b nu este afectat
 ```
 
 ```zymbol
-// Array-uri imbricate
+// Array-uri imbricate (indexare 1-bazată)
 matrice = [[1,2,3],[4,5,6],[7,8,9]]
->> matrice[1][2] ¶    // → 6
+>> matrice[2][3] ¶    // → 6  (rând 2, coloană 3)
 ```
 
 ---
@@ -379,15 +391,15 @@ Spre deosebire de array-uri, elementele nu pot fi modificate după creare.
 ```zymbol
 // Pozițional
 punct = (10, 20)
->> punct[0] ¶    // → 10
+>> punct[1] ¶    // → 10
 
 date = (42, "hello", #1, 3.14)
->> date[2] ¶     // → #1
+>> date[3] ¶     // → #1
 
 // Numit
 persoana = (nume: "Alice", varsta: 25)
 >> persoana.nume ¶    // → Alice
->> persoana[0] ¶      // → Alice  (indexul funcționează și el)
+>> persoana[1] ¶      // → Alice  (indexul funcționează și el, 1-bazat)
 
 // Imbricat
 pos = (x: 10, y: 20)
@@ -399,15 +411,15 @@ p = (pos: pos, eticheta: "origine")
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ eroare de execuție: tuplurile sunt imutabile
-// t[0] += 5    // ❌ aceeași eroare
+// t[1] = 99    // ❌ eroare de execuție: tuplurile sunt imutabile
+// t[1] += 5    // ❌ aceeași eroare
 ```
 
 Pentru a deriva o valoare modificată folosiți `$~` (actualizare funcțională) — returnează un **nou** tuplu:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[1]$~ 999
+t2 = t[2]$~ 999
 >> t ¶     // → (10, 20, 30)   ← original nemodificat
 >> t2 ¶    // → (10, 999, 30)
 
@@ -422,8 +434,6 @@ mai_batrana  = (nume: persoana.nume, varsta: 26)
 
 ## Funcții de Ordin Superior
 
-> Operatorii HOF necesită un **lambda inline** — variabilele lambda nu pot fi transmise direct.
-
 ```zymbol
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
@@ -436,9 +446,11 @@ pas1 = nums$| (x -> x > 3)
 pas2 = pas1$> (x -> x * x)
 >> pas2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Funcții numite în HOF — înveliți în lambda
+// Funcțiile numite pot fi transmise direct la HOF
 dubla(x) { <~ x * 2 }
-r = nums$> (x -> dubla(x))    // ✅
+e_mare(x) { <~ x > 5 }
+r = nums$> dubla       // ✅ referință directă
+r = nums$| e_mare      // ✅ referință directă
 ```
 
 ---
@@ -492,31 +504,32 @@ r = 5 |> dublu(_) |> inc(_) |> dublu(_)
 ## Module
 
 ```zymbol
-// Fișier: lib/calc.zy
-# calc
+// lib/calc.zy — corpul modulului este închis între acolade
+# calc {
+    #> { aduna, obtine_PI }
 
-#> { aduna, get_PI }    // exporturi ÎNAINTE de definiții
-
-_PI := 3.14159
-aduna(a, b) { <~ a + b }
-get_PI() { <~ _PI }   // getter — accesul direct la constantă prin alias nu e suportat
+    _PI := 3.14159
+    aduna(a, b) { <~ a + b }
+    obtine_PI() { <~ _PI }
+}
 ```
 
 ```zymbol
-// Fișier: main.zy
+// principal.zy
 <# ./lib/calc <= c    // alias obligatoriu
 
->> c::aduna(5, 3) ¶     // → 8
-pi = c::get_PI()
->> pi ¶                 // → 3.14159
+>> c::aduna(5, 3) ¶   // → 8
+pi = c::obtine_PI()
+>> pi ¶               // → 3.14159
 ```
 
 ```zymbol
 // Export cu un alt nume public
-# libmea
-#> { _aduna_interna <= suma }
+# libmea {
+    #> { _aduna_interna <= suma }
 
-_aduna_interna(a, b) { <~ a + b }
+    _aduna_interna(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
@@ -524,6 +537,8 @@ _aduna_interna(a, b) { <~ a + b }
 
 >> m::suma(3, 4) ¶    // → 7  (numele intern _aduna_interna este ascuns)
 ```
+
+> **Regulile modulelor**: doar `#>`, definiții de funcții și inițializatori de variabile/constante literale sunt permise în `# nume { }`. Instrucțiunile executabile (`>>`, `<<`, bucle, etc.) generează eroarea E013.
 
 ---
 
@@ -594,6 +609,11 @@ Cifrele oricărui script suportat sunt literale valide — în intervale, modulo
 ## Operatori de Date
 
 ```zymbol
+// Conversii de tip
+##.42         // → 42.0  (la Float)
+###3.7        // → 4     (la Int, rotunjire)
+##!3.7        // → 3     (la Int, trunchiere)
+
 // Conversia șirului în număr
 v1 = #|"42"|      // → 42  (Int)
 v2 = #|"3.14"|    // → 3.14  (Float)
@@ -668,10 +688,14 @@ clasifică(număr) {
 | `_?`      | altfel dacă (elif)                 | `$-[i..j]`    | elimina un interval           |
 | `_`       | altfel / wildcard                  | `$?`          | conține                       |
 | `??`      | match                              | `$??`         | toți indicii valorii          |
-| `@`       | buclă                              | `$[s..e]`     | felie                         |
-| `@!`      | oprește (break)                    | `$>`          | map                           |
-| `@>`      | continuă                           | `$\|`         | filter                        |
-| `->`      | lambda                             | `$<`          | reduce                        |
+| `@`       | buclă                              | `$[s..e]`     | felie (1-bazat)               |
+| `@ N { }` | buclă N ori (N iterații)           | `$>`          | map                           |
+| `@!`      | oprește (break)                    | `$\|`         | filter                        |
+| `@>`      | continuă                           | `$<`          | reduce                        |
+| `@:nume { }` | buclă etichetată               | `$/ delim`    | împarte șir                   |
+| `@:nume!` | oprește etichetă                   | `$++ a b c`   | construiește concatenare      |
+| `@:nume>` | continuă etichetă                  | `arr[i>j>k]`  | index de navigare             |
+| `->`      | lambda                             | `arr[i] = val` | actualizare element (doar array-uri) |
 | `arr[i] = val` | actualizare element (doar array-uri) | `arr[i] += val` | actualizare compusă    |
 | `arr[i]$~` | actualizare funcțională (copie nouă) | `$^+`      | sorta crescător (primitive)   |
 | `$^-`     | sorta descrescător (primitive)     | `$^`          | sorta cu lambda comparator    |
@@ -682,13 +706,33 @@ clasifică(număr) {
 | `<#`      | importă                            | `$!!`         | propagă eroare                |
 | `#`       | declară modul                      | `#>`          | exportă                       |
 | `::`      | apel modul                         | `.`           | acces câmp                    |
-| `#\|..\|` | conversi număr                    | `#?`          | metadate tip                  |
+| `#\|..\|` | conversi număr                    | `##.`         | conversie la Float            |
+| `###`     | conversie la Int (rotunjire)       | `##!`         | conversie la Int (trunchiere) |
+| `#?`      | metadate tip                       | `\ var`       | distruge variabilă            |
 | `#.N\|..\|` | rotunjire                       | `#!N\|..\|`   | trunchiere                    |
 | `#,\|..\|` | format virgulă                    | `#^\|..\|`     | științific                    |
 | `#d0d9#` | comutare mod numeric | `#09#` | revenire la ASCII |
 | `<\ ..\>` | execuție shell                    | `>\<`         | argumente CLI                 |
 
 ## Istoricul Versiunilor
+
+### v0.0.4 — Indexare 1-bazată, Funcții de Primă Clasă & Blocuri Module _(Aprilie 2026)_
+
+- **Rupere** Toată indexarea a trecut la **1-bazată** — `arr[1]` este primul element; `arr[0]` este o eroare de execuție
+- **Adăugat** Funcțiile numite sunt **valori de primă clasă** — transmiteți direct la HOF: `nums$> dubla`
+- **Adăugat** **Sintaxă bloc** modul obligatorie: `# nume { ... }` — sintaxa plată a fost eliminată
+- **Adăugat** Indexare multidimensională: `arr[i>j>k]` (navigare), `arr[p ; q]` (extracție plată)
+- **Adăugat** Conversii de tip: `##.expr` (Float), `###expr` (Int rotunjire), `##!expr` (Int trunchiere)
+- **Adăugat** Împărțire șir: `str$/ delim` — returnează `Array(String)`
+- **Adăugat** Construire concatenare: `base$++ a b c` — adaugă mai multe elemente
+- **Adăugat** Buclă N ori: `@ N { }` — repetă exact N ori
+- **Adăugat** Sintaxă buclă etichetată: `@:nume { }`, `@:nume!`, `@:nume>` — înlocuiește `@ @nume` / `@! nume`
+- **Adăugat** Reguli domeniu variabile: variabilele `_nume` au domeniu exact de bloc; `\ var` distruge devreme
+- **Adăugat** Tipare de comparație în match: `< 0 :`, `> 5 :`, `== 42 :` etc.
+- **Adăugat** Eroare modul E013: instrucțiunile executabile în corpul modulului sunt interzise
+- **Corectat** `take_variable` nu mai corupe constantele modulului la rescrierea înapoi
+- **Corectat** `alias.CONST` se rezolvă acum corect; `#>` poate apărea după definițiile de funcții
+- **VM** Paritate totală: 393/393 teste trec
 
 ### v0.0.3 — Sisteme Numerice Unicode & Îmbunătățiri LSP _(Aprilie 2026)_
 
@@ -725,9 +769,4 @@ clasifică(număr) {
 
 ---
 
-> **Avertisment:** Această documentație a fost creată și tradusă de inteligența artificială (IA).
-> S-au depus toate eforturile pentru a asigura acuratețea, dar unele traduceri sau exemple pot conține erori.
-> Referința canonică este [specificația Zymbol-Lang](https://github.com/zymbol-lang/interpreter).
->
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
+_Zymbol-Lang — Simbolic. Universal. Imutabil._

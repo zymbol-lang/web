@@ -1,3 +1,11 @@
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+> 
+> **Aviso:** Esta documentación fue creada con asistencia de inteligencia artificial (IA).
+> 
+> The canonical reference is **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** in the interpreter repository.
+
+---
+
 # Zymbol-Lang Manual
 
 **Zymbol-Lang** is a symbolic programming language. No keywords — everything is a symbol. Works identically in any human language.
@@ -5,6 +13,8 @@
 - No `if`, `while`, `return` — only `?`, `@`, `<~`
 - Full Unicode — identifiers in any language or emoji
 - Human-language agnostic — the code is the same everywhere
+
+**Interpreter version**: v0.0.4 | **Test coverage**: 393/393 (TW ↔ VM parity)
 
 ---
 
@@ -19,15 +29,15 @@ active = #1         // boolean true
 ```
 
 ```zymbol
-x = 10
+x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
 
 ---
@@ -44,12 +54,14 @@ x--       // 4
 | Array | `[1, 2, 3]` | `##]` | Homogeneous elements |
 | Tuple | `(a, b)` | `##)` | Positional |
 | Named Tuple | `(x: 1, y: 2)` | `##)` | Named fields |
+| Function | named function ref | `##()` | First-class; display `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | First-class; display `<lambd/N>` |
 
 ```zymbol
 // Type introspection — returns (type, digits, value)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
-t = meta[0]
+t = meta[1]
 >> t ¶            // → ###
 ```
 
@@ -76,13 +88,20 @@ t = meta[0]
 // Arithmetic — use assignments; some operators have quirks directly in >>
 a = 10
 b = 3
-r1 = a + b    // 13     r2 = a - b    // 7
-r3 = a * b    // 30     r4 = a / b    // 3  (integer division)
-r5 = a % b    // 1      r6 = a ^ b    // 1000  (exponentiation)
+r1 = a + b    // 13     
+r2 = a - b    // 7
+r3 = a * b    // 30     
+r4 = a / b    // 3  (integer division)
+r5 = a % b    // 1      
+r6 = a ^ b    // 1000  (exponentiation)
 
 // Comparison
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
+a == b    // #0    
+a <> b    // #1    
+a < b      // #0
+a <= b    // #0   
+a > b      // #1    
+a >= b     // #1
 
 // Logical
 #1 && #0    // #0
@@ -95,11 +114,10 @@ a <= b    // #0   a > b     // #1    a >= b   // #1
 ## Strings
 
 ```zymbol
-// Three concatenation forms
+// Two concatenation forms
 name = "Alice"
 n = 42
 
-msg = "Hello ", name, "!"            // comma — in assignments
 >> "Hello " name " you have " n ¶    // juxtaposition — in >>
 desc = "Hello {name}, you have {n}"  // interpolation — anywhere
 ```
@@ -107,9 +125,9 @@ desc = "Hello {name}, you have {n}"  // interpolation — anywhere
 ```zymbol
 s = "Hello World"
 len = s$#                  // 11
-sub = s$[0..5]             // "Hello"  (end exclusive)
+sub = s$[1..5]             // "Hello"  (1-based, end inclusive)
 has = s$? "World"          // #1
-parts = "a,b,c,d" / ','    // [a, b, c, d]
+parts = "a,b,c,d"$/ ','    // [a, b, c, d]  (split by delimiter)
 rep = s$~~["l":"L"]        // "HeLLo WorLd"
 rep1 = s$~~["l":"L":1]     // "HeLlo World"  (first N only)
 ```
@@ -161,13 +179,13 @@ code = ?? color {
     _       : "#000000"
 }
 
-// Guards
+// Comparison patterns
 temp = -5
 state = ?? temp {
-    _? temp < 0  : "ice"
-    _? temp < 20 : "cold"
-    _? temp < 35 : "warm"
-    _            : "hot"
+    < 0  : "ice"
+    < 20 : "cold"
+    < 35 : "warm"
+    _    : "hot"
 }
 >> state ¶    // → ice
 
@@ -216,9 +234,9 @@ i = 0
 
 // Labeled loop (nested break)
 count = 0
-@ @outer {
+@:outer {
     count++
-    ? count >= 3 { @! outer }
+    ? count >= 3 { @:outer! }
 }
 >> count ¶                    // → 3
 ```
@@ -252,7 +270,7 @@ swap(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Named functions are not first-class. To pass as argument, wrap: `x -> fn(x)`.
+> Named functions are **first-class values** — pass directly: `nums$> double`. To wrap: `x -> fn(x)` is also valid.
 
 ---
 
@@ -283,7 +301,7 @@ add10 = make_adder(10)
 
 // In arrays
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[2](5) ¶    // → 25
+>> ops[3](5) ¶    // → 25
 ```
 
 ---
@@ -295,21 +313,21 @@ Arrays are **mutable** and hold elements of the **same type**.
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
-arr[0]          // 1 — access (0-indexed)
-arr[-1]         // 5 — negative index (last)
+arr[1]          // 1 — access (1-indexed: first element)
+arr[-1]         // 5 — negative index (last element)
 arr$#           // 5 — length (use (arr$#) in >>)
 
 arr = arr$+ 6            // append → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // insert at index 2
+arr2 = arr$+[2] 99       // insert at position 2 (1-based)
 arr3 = arr$- 3           // remove first occurrence of value
 arr4 = arr$-- 3          // remove all occurrences
-arr5 = arr$-[0]          // remove at index
-arr6 = arr$-[1..3]       // remove range (end exclusive)
+arr5 = arr$-[1]          // remove at index 1 (first element)
+arr6 = arr$-[2..3]       // remove range (1-based, end inclusive)
 
 has = arr$? 3            // #1 — contains
-pos = arr$?? 3           // [2] — all indices of value
-sl = arr$[0..3]          // [1,2,3] — slice (end exclusive)
-sl2 = arr$[0:3]          // [1,2,3] — same, count-based syntax
+pos = arr$?? 3           // [3] — all indices of value (1-based)
+sl = arr$[1..3]          // [1,2,3] — slice (1-based, end inclusive)
+sl2 = arr$[1:3]          // [1,2,3] — same, count-based syntax
 
 asc = arr$^+             // sorted ascending  (primitives only)
 desc = arr$^-            // sorted descending (primitives only)
@@ -318,19 +336,20 @@ desc = arr$^-            // sorted descending (primitives only)
 db = [(name: "Carla", age: 28), (name: "Ana", age: 25), (name: "Bob", age: 30)]
 by_age  = db$^ (a, b -> a.age < b.age)    // ascending by age  (<)
 by_name = db$^ (a, b -> a.name > b.name)  // descending by name (>)
->> by_age[0].name ¶     // → Ana
->> by_name[0].name ¶    // → Carla
+>> by_age[1].name ¶     // → Ana
+>> by_name[1].name ¶    // → Carla
 
 // Direct element update (arrays only)
 arr[1] = 99              // assign
-arr[0] += 5              // compound: +=  -=  *=  /=  %=  ^=
+arr[2] += 5              // compound: +=  -=  *=  /=  %=  ^=
 
 // Functional update — returns a new array; original unchanged
-arr2 = arr[1]$~ 99
+arr2 = arr[2]$~ 99
 ```
 
 > All collection operators return a **new array**. Assign back: `arr = arr$+ 4`.
-> Operators cannot be chained — use intermediate assignments.
+> `$+` can be chained: `arr = arr$+ 5$+ 6$+ 7`. Other operators use intermediate assignments.
+> **Indexing is 1-based**: `arr[1]` is the first element; `arr[0]` is a runtime error.
 > `$^+` / `$^-` sort **primitive arrays** (numbers, strings). For tuple arrays use `$^` with a comparator lambda — direction is encoded in the lambda (`<` = ascending, `>` = descending).
 
 **Value semantics** — assigning an array to another variable creates an independent copy:
@@ -338,15 +357,15 @@ arr2 = arr[1]$~ 99
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
 >> b ¶    // → [1, 2, 3]   ← b is unaffected
 ```
 
 ```zymbol
-// Nested arrays
+// Nested arrays (1-based indexing)
 matrix = [[1,2,3],[4,5,6],[7,8,9]]
->> matrix[1][2] ¶    // → 6
+>> matrix[2][3] ¶    // → 6  (row 2, column 3)
 ```
 
 ---
@@ -379,15 +398,15 @@ Unlike arrays, elements cannot be changed after creation.
 ```zymbol
 // Positional — mixed types allowed
 point = (10, 20)
->> point[0] ¶    // → 10
+>> point[1] ¶    // → 10
 
 data = (42, "hello", #1, 3.14)
->> data[2] ¶     // → #1
+>> data[3] ¶     // → #1
 
 // Named
 person = (name: "Alice", age: 25)
 >> person.name ¶    // → Alice
->> person[0] ¶      // → Alice  (index also works)
+>> person[1] ¶      // → Alice  (index also works, 1-based)
 
 // Nested
 pos = (x: 10, y: 20)
@@ -399,15 +418,15 @@ p = (pos: pos, label: "origin")
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ runtime error: tuples are immutable
-// t[0] += 5    // ❌ same error
+// t[1] = 99    // ❌ runtime error: tuples are immutable
+// t[1] += 5    // ❌ same error
 ```
 
 To derive a modified value use `$~` (functional update) — returns a **new** tuple:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[1]$~ 999
+t2 = t[2]$~ 999
 >> t ¶     // → (10, 20, 30)   ← original unchanged
 >> t2 ¶    // → (10, 999, 30)
 
@@ -422,8 +441,6 @@ older  = (name: person.name, age: 26)
 
 ## Higher-Order Functions
 
-> HOF operators require **inline lambda** — lambda variables passed directly do not work.
-
 ```zymbol
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
@@ -436,9 +453,11 @@ step1 = nums$| (x -> x > 3)
 step2 = step1$> (x -> x * x)
 >> step2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Named functions inside HOF — wrap in lambda
+// Named functions can be passed directly to HOF
 double(x) { <~ x * 2 }
-r = nums$> (x -> double(x))    // ✅
+is_big(x) { <~ x > 5 }
+r = nums$> double       // ✅ direct reference
+r = nums$| is_big       // ✅ direct reference
 ```
 
 ---
@@ -492,14 +511,14 @@ r = 5 |> double(_) |> inc(_) |> double(_)
 ## Modules
 
 ```zymbol
-// lib/calc.zy
-# calc
+// lib/calc.zy — module body is enclosed in braces
+# calc {
+    #> { add, get_PI }
 
-#> { add, get_PI }    // exports MUST come before definitions
-
-_PI := 3.14159
-add(a, b) { <~ a + b }
-get_PI() { <~ _PI }   // getter — direct constant access via alias not supported
+    _PI := 3.14159
+    add(a, b) { <~ a + b }
+    get_PI() { <~ _PI }
+}
 ```
 
 ```zymbol
@@ -513,10 +532,11 @@ pi = c::get_PI()
 
 ```zymbol
 // Export with a different public name
-# mylib
-#> { _internal_add <= sum }
+# mylib {
+    #> { _internal_add <= sum }
 
-_internal_add(a, b) { <~ a + b }
+    _internal_add(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
@@ -524,6 +544,8 @@ _internal_add(a, b) { <~ a + b }
 
 >> m::sum(3, 4) ¶    // → 7  (internal name _internal_add is hidden)
 ```
+
+> **Module rules**: only `#>`, function definitions, and literal variable/constant initializers are allowed inside `# name { }`. Executable statements (`>>`, `<<`, loops, etc.) raise error E013.
 
 ---
 
@@ -594,6 +616,11 @@ Any supported script's digits are valid literals — in ranges, modulo, comparis
 ## Data Operators
 
 ```zymbol
+// Type conversion casts
+##.42         // → 42.0  (to Float)
+###3.7        // → 4     (to Int, round)
+##!3.7        // → 3     (to Int, truncate)
+
 // Parse string to number
 v1 = #|"42"|      // → 42  (Int)
 v2 = #|"3.14"|    // → 3.14  (Float)
@@ -660,37 +687,61 @@ classify(number) {
 | Symbol | Operation | Symbol | Operation |
 |--------|-----------|--------|-----------|
 | `=` | variable | `$#` | length |
-| `:=` | constant | `$+` | append |
-| `>>` | output | `$+[i]` | insert at index |
+| `:=` | constant | `$+` | append (chainable) |
+| `>>` | output | `$+[i]` | insert at index (1-based) |
 | `<<` | input | `$-` | remove first by value |
 | `¶` / `\\` | newline | `$--` | remove all by value |
-| `?` | if | `$-[i]` | remove at index |
-| `_?` | else-if | `$-[i..j]` | remove range |
+| `?` | if | `$-[i]` | remove at index (1-based) |
+| `_?` | else-if | `$-[i..j]` | remove range (1-based) |
 | `_` | else / wildcard | `$?` | contains |
-| `??` | match | `$??` | find all indices |
-| `@` | loop | `$[s..e]` | slice |
-| `@!` | break | `$>` | map |
-| `@>` | continue | `$\|` | filter |
-| `->` | lambda | `$<` | reduce |
-| `arr[i] = val` | update element (arrays only) | `arr[i] += val` | compound update |
-| `arr[i]$~` | functional update (new copy) | `$^+` | sort ascending (primitives) |
-| `$^-` | sort descending (primitives) | `$^` | sort with comparator (tuples) |
-| `<~` | return | `!?` | try |
-| `\|>` | pipe | `:!` | catch |
-| `#1` | true | `:>` | finally |
-| `#0` | false | `$!` | is error |
-| `<#` | import | `$!!` | propagate error |
-| `#` | declare module | `#>` | export |
-| `::` | module call | `.` | field access |
-| `#\|..\|` | parse number | `#?` | type metadata |
+| `??` | match | `$??` | find all indices (1-based) |
+| `@` | loop | `$[s..e]` | slice (1-based) |
+| `@ N { }` | times loop (N iterations) | `$>` | map |
+| `@!` | break | `$\|` | filter |
+| `@>` | continue | `$<` | reduce |
+| `@:name { }` | labeled loop | `$/ delim` | string split |
+| `@:name!` | break label | `$++ a b c` | concat build |
+| `@:name>` | continue label | `arr[i>j>k]` | navigation index |
+| `->` | lambda | `arr[i] = val` | update element (arrays only) |
+| `arr[i] += val` | compound update | `arr[i]$~` | functional update (new copy) |
+| `$^+` | sort ascending (primitives) | `$^-` | sort descending (primitives) |
+| `$^` | sort with comparator (tuples) | `<~` | return |
+| `\|>` | pipe | `!?` | try |
+| `:!` | catch | `:>` | finally |
+| `#1` | true | `#0` | false |
+| `$!` | is error | `$!!` | propagate error |
+| `<#` | import | `#>` | export |
+| `#` | declare module | `::` | module call |
+| `.` | field access | `#?` | type metadata |
+| `#\|..\|` | parse number | `##.` | cast to Float |
+| `###` | cast to Int (round) | `##!` | cast to Int (truncate) |
 | `#.N\|..\|` | round | `#!N\|..\|` | truncate |
 | `#,\|..\|` | comma format | `#^\|..\|` | scientific |
 | `#d0d9#` | numeral mode switch | `#09#` | reset to ASCII |
 | `<\ ..\>` | shell exec | `>\<` | CLI args |
+| `\ var` | explicit destroy variable | | |
 
 ---
 
 ## Release Changelog
+
+### v0.0.4 — 1-Based Indexing, First-Class Functions & Module Blocks _(April 2026)_
+
+- **Breaking** All indexing switched to **1-based** — `arr[1]` is the first element; `arr[0]` is a runtime error
+- **Added** Named functions are **first-class values** — pass directly to HOF: `nums$> double`
+- **Added** Module **block syntax** required: `# name { ... }` — flat syntax removed
+- **Added** Multi-dimensional indexing: `arr[i>j>k]` (navigation), `arr[p ; q]` (flat extraction)
+- **Added** Type conversion casts: `##.expr` (Float), `###expr` (Int round), `##!expr` (Int truncate)
+- **Added** String split: `str$/ delim` — returns `Array(String)`
+- **Added** Concat build: `base$++ a b c` — appends multiple items
+- **Added** Times loop: `@ N { }` — repeat exactly N times
+- **Added** Labeled loop syntax: `@:name { }`, `@:name!`, `@:name>` — replaces `@ @name` / `@! name`
+- **Added** Variable scope rules: `_name` variables have exact block scope; `\ var` destroys early
+- **Added** Match comparison patterns: `< 0 :`, `> 5 :`, `== 42 :` etc.
+- **Added** Module E013 error: executable statements in module body are forbidden
+- **Fixed** `take_variable` no longer corrupts module constants on write-back
+- **Fixed** `alias.CONST` now resolves correctly; `#>` can appear after function definitions
+- **VM** Full parity: 393/393 tests pass
 
 ### v0.0.3 — Unicode Numeral Systems & LSP Improvements _(April 2026)_
 
@@ -729,5 +780,3 @@ classify(number) {
 
 _Zymbol-Lang — Symbolic. Universal. Immutable._
 
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> The canonical reference is [MANUAL.md](https://github.com/zymbol-lang/interpreter) in the interpreter repository.

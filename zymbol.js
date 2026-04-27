@@ -1,16 +1,14 @@
 /**
  * zymbol.js — Browser interpreter for the Zymbol playground
  *
- * Supports: output (>>), input (<<), variables, constants, booleans (#0/#1),
- * integers, floats, strings (with interpolation), chars, arrays, tuples,
- * if/else (?/_?/_), match (??), all loop forms (@), functions (<~),
- * numeral mode switch (#09#, #०९#, etc.) for multi-script numeric output.
+ * v0.0.4: 1-based indexing, multi-dimensional navigation (arr[i>j>k]),
+ * type-cast operators (##. ### ##!), string split ($/), ConcatBuild ($++),
+ * explicit lifetime end (\ var).
  *
- * Not supported: modules, shell integration (><), lambdas (->), closures.
+ * Not supported: modules, shell integration (><), BashExec (<\ \>).
  */
 
 // ─── Unicode digit blocks (mirrors DIGIT_BLOCKS in zymbol-lexer) ─────────────
-// Each entry: [blockBase, scriptName]. Sorted ascending by codepoint.
 const DIGIT_BLOCKS = [
   [0x0030,'ASCII'],[0x0660,'Arabic-Indic'],[0x06F0,'Ext. Arabic-Indic'],
   [0x07C0,'NKo'],[0x0966,'Devanagari'],[0x09E6,'Bengali'],[0x0A66,'Gurmukhi'],
@@ -37,7 +35,6 @@ const DIGIT_BLOCKS = [
   [0x1FBF0,'Segmented/LCD'],
 ];
 
-/** Returns 0–9 if ch is a digit in any supported block, else -1. */
 function digitValue(ch) {
   const cp = ch.codePointAt(0);
   for (const [base] of DIGIT_BLOCKS) {
@@ -46,7 +43,6 @@ function digitValue(ch) {
   return -1;
 }
 
-/** Returns the block base of ch if it is a digit, else -1. */
 function digitBlockBase(ch) {
   const cp = ch.codePointAt(0);
   for (const [base] of DIGIT_BLOCKS) {
@@ -55,23 +51,19 @@ function digitBlockBase(ch) {
   return -1;
 }
 
-/** Maps every ASCII digit in s to the equivalent digit in the target block. */
 function mapToScript(s, blockBase) {
-  if (blockBase === 0x0030) return s; // ASCII fast-path
+  if (blockBase === 0x0030) return s;
   return [...s].map(ch => {
     if (ch >= '0' && ch <= '9') return String.fromCodePoint(blockBase + (ch.charCodeAt(0) - 0x30));
     return ch;
   }).join('');
 }
 
-/** Format an integer in the active numeral mode. */
-function numeralInt(n, base) { return mapToScript(String(Math.trunc(n)), base); }
-/** Format a float in the active numeral mode (decimal point stays ASCII). */
+function numeralInt(n, base)   { return mapToScript(String(Math.trunc(n)), base); }
 function numeralFloat(f, base) { return mapToScript(String(f), base); }
-/** Format a boolean in the active numeral mode, always with # prefix. */
-function numeralBool(b, base) { return '#' + numeralInt(b ? 1 : 0, base); }
+function numeralBool(b, base)  { return '#' + numeralInt(b ? 1 : 0, base); }
 
-// ─── Signal types for control flow ───────────────────────────────────────────
+// ─── Signal types ─────────────────────────────────────────────────────────────
 
 class ZyReturn  { constructor(value) { this.value = value; } }
 class ZyBreak    { constructor(label = null) { this.label = label; } }
@@ -82,21 +74,20 @@ class ZyError extends Error {
     this.zyLine = line;
   }
 }
-
 class ZyRuntimeError extends ZyError {
   constructor(msg, errType = '##_', line) {
     super(msg, line);
     this.errType = errType;
   }
 }
+class ZyStaticError extends Error {
+  constructor(msg) { super(msg); }
+}
 
 // ─── Lexer ────────────────────────────────────────────────────────────────────
 
 export class Lexer {
   constructor(src) {
-    // Spread into an array of Unicode code points so that supplementary
-    // characters (SMP, surrogate pairs) are treated as single entries.
-    // This makes ch(n) return a full character regardless of BMP/SMP.
     this.src = [...src];
     this.pos = 0;
     this.line = 1;
@@ -115,48 +106,57 @@ export class Lexer {
     const tok = (type, value) => toks.push({ type, value, line: this.line });
 
     while (this.pos < this.src.length) {
-      // whitespace
       if (/[ \t\r\n]/.test(this.ch())) { this.consume(); continue; }
 
-      // comment: // ...
+      // comment
       if (this.ch() === '/' && this.ch(1) === '/') {
         while (this.pos < this.src.length && this.ch() !== '\n') this.consume();
         continue;
       }
+      // block comment /* ... */
+      if (this.ch() === '/' && this.ch(1) === '*') {
+        this.consume(); this.consume();
+        while (this.pos < this.src.length) {
+          if (this.ch() === '*' && this.ch(1) === '/') { this.consume(); this.consume(); break; }
+          this.consume();
+        }
+        continue;
+      }
 
-      // # — mode-switch #<d0><d9>#, booleans #0/#1 (any script), error types ##xxx
+      // # — mode-switch, booleans, cast ops, data ops, error types
       if (this.ch() === '#') {
         const c1 = this.ch(1);
         const dv1 = digitValue(c1);
         if (dv1 >= 0) {
-          // Check for mode-switch: #<digit0><digit9>#  (dv1==0, dv2==9, same block, closing #)
           if (dv1 === 0) {
             const c2 = this.ch(2);
             const dv2 = digitValue(c2);
             if (dv2 === 9 && digitBlockBase(c1) === digitBlockBase(c2) && this.ch(3) === '#') {
               const base = digitBlockBase(c1);
-              this.consume(); this.consume(); this.consume(); this.consume(); // #d0d9#
+              this.consume(); this.consume(); this.consume(); this.consume();
               tok('SET_NUMERAL_MODE', base); continue;
             }
           }
-          // Boolean: dv1 == 0 → false, dv1 == 1 → true
           this.consume(); this.consume();
           if (dv1 === 0) { tok('BOOL', false); continue; }
           if (dv1 === 1) { tok('BOOL', true);  continue; }
-          // digit 2–9 after # is a lex error — emit nothing, skip
           continue;
         }
         if (c1 === '#') {
+          // ##. → CAST_FLOAT, ### → CAST_INT_ROUND, ##! → CAST_INT_TRUNC, else ##xxx IDENT
+          const c2 = this.ch(2);
           this.consume(); this.consume(); // consume ##
+          if (c2 === '.') { this.consume(); tok('CAST_FLOAT',     '##.'); continue; }
+          if (c2 === '#') { this.consume(); tok('CAST_INT_ROUND', '###'); continue; }
+          if (c2 === '!') { this.consume(); tok('CAST_INT_TRUNC', '##!'); continue; }
           let name = '##';
           while (/[A-Za-z0-9_]/.test(this.ch())) { name += this.ch(); this.consume(); }
           tok('IDENT', name); continue;
         }
         if (c1 === '?') {
-          this.consume(); this.consume(); // consume #?
+          this.consume(); this.consume();
           tok('TYPE_QUERY', '#?'); continue;
         }
-        // Data formatting operators: #|..| #.N|..| #!N|..| #,|..| #^|..|
         {
           let kind = null, prec = null, advance = 0;
           const readDigits = start => {
@@ -166,7 +166,7 @@ export class Lexer {
           };
           if (c1 === '|') {
             kind = 'eval'; advance = 2;
-          } else if (c1 === '.' ) {
+          } else if (c1 === '.') {
             const { d, i } = readDigits(2);
             if (d.length > 0 && this.ch(i) === '|') { kind = 'round'; prec = parseInt(d); advance = i + 1; }
           } else if (c1 === '!') {
@@ -188,14 +188,36 @@ export class Lexer {
             tok('DATA_OP', { kind, prec }); continue;
           }
         }
-        // unknown # sequence — skip
+        // # followed by space/letter/dot: module block `# name {` or old-style comment
+        if (c1 === ' ' || c1 === '.' || /[\p{L}_]/u.test(c1)) {
+          // Lookahead: check for # [.] name { (new module block syntax)
+          let _j = this.pos + 1;
+          while (_j < this.src.length && (this.src[_j] === ' ' || this.src[_j] === '\t')) _j++;
+          if (_j < this.src.length && this.src[_j] === '.') _j++; // optional leading dot
+          const _idStart = _j;
+          while (_j < this.src.length && /[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(this.src[_j])) _j++;
+          if (_j > _idStart) {
+            let _k = _j;
+            while (_k < this.src.length && (this.src[_k] === ' ' || this.src[_k] === '\t')) _k++;
+            if (_k < this.src.length && this.src[_k] === '{') {
+              this.consume(); // consume #
+              tok('HASH', '#'); continue;
+            }
+          }
+          // Old-style header: skip to EOL
+          while (this.pos < this.src.length && this.src[this.pos] !== '\n') this.consume();
+          continue;
+        }
+        // #> = export block declarator
+        if (c1 === '>') { this.consume(); this.consume(); tok('EXPORT_DECL', '#>'); continue; }
         this.consume(); continue;
       }
 
-      // two-char operators (order matters)
+      // two-char operators
       const two = this.ch(0) + this.ch(1);
       const twoMap = {
         '>>': 'OUTPUT', '<<': 'INPUT',  '<~': 'RETURN',
+        '<#': 'IMPORT',
         '@!': 'BREAK',  '@>': 'CONTINUE',
         '??': 'MATCH',  '_?': 'ELSEIF', ':=': 'CONST_ASSIGN',
         '..': 'RANGE',  '==': 'EQ',     '<>': 'NEQ',
@@ -205,6 +227,7 @@ export class Lexer {
         '/=': 'DIV_EQ',   '%=': 'MOD_EQ',   '^=': 'POW_EQ',
         '->': 'ARROW',  '|>': 'PIPE',
         '!?': 'TRY',    ':!': 'CATCH',  ':>': 'FINALLY',
+        '::': 'SCOPE',
         '\\\\': 'NEWLINE_ESC',
       };
       if (twoMap[two]) {
@@ -215,7 +238,6 @@ export class Lexer {
 
       const c = this.ch();
 
-      // _ — ELSE or start of identifier
       if (c === '_') {
         if (/[\p{L}\p{Co}0-9_]/u.test(this.ch(1))) { this.readIdent(toks); }
         else { this.consume(); tok('ELSE', '_'); }
@@ -223,48 +245,49 @@ export class Lexer {
       }
 
       if (c === '?') { this.consume(); tok('IF',     '?'); continue; }
-      if (c === '@') { this.consume(); tok('AT',     '@'); continue; }
+      if (c === '@') {
+        this.consume();
+        if (/[\p{L}\p{M}\p{So}\p{Co}_]/u.test(this.ch())) {
+          let label = '';
+          while (/[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(this.ch())) label += this.consume();
+          tok('AT_LABEL', label);
+        } else {
+          tok('AT', '@');
+        }
+        continue;
+      }
       if (c === '¶') { this.consume(); tok('PILCROW','¶'); continue; }
 
-      // $ collection operators — must run before single-char fallback
+      // $ collection operators
       if (c === '$') {
         const a = this.ch(1), b = this.ch(2);
-        if (a === '#')                      { this.consume(); this.consume();            tok('DLEN',       '$#');  continue; }
+        if (a === '+' && b === '+')         { this.consume(); this.consume(); this.consume(); tok('DCONCATBUILD','$++'); continue; }
+        if (a === '#')                      { this.consume(); this.consume();               tok('DLEN',        '$#');  continue; }
         if (a === '?' && b === '?')         { this.consume(); this.consume(); this.consume(); tok('DFINDALL',  '$??'); continue; }
-        if (a === '?')                      { this.consume(); this.consume();            tok('DCONTAINS',  '$?');  continue; }
+        if (a === '?')                      { this.consume(); this.consume();               tok('DCONTAINS',  '$?');  continue; }
         if (a === '-' && b === '-')         { this.consume(); this.consume(); this.consume(); tok('DREMOVEALL','$--'); continue; }
-        if (a === '-')                      { this.consume(); this.consume();            tok('DREMOVE',    '$-');  continue; }
-        if (a === '+')                      { this.consume(); this.consume();            tok('DAPPEND',    '$+');  continue; }
+        if (a === '-')                      { this.consume(); this.consume();               tok('DREMOVE',    '$-');  continue; }
+        if (a === '+')                      { this.consume(); this.consume();               tok('DAPPEND',    '$+');  continue; }
+        if (a === '/' )                     { this.consume(); this.consume();               tok('DSPLIT',     '$/');  continue; }
         if (a === '^' && b === '+')         { this.consume(); this.consume(); this.consume(); tok('DSORTASC', '$^+'); continue; }
         if (a === '^' && b === '-')         { this.consume(); this.consume(); this.consume(); tok('DSORTDESC','$^-'); continue; }
-        if (a === '^')                      { this.consume(); this.consume();            tok('DSORT',      '$^');  continue; }
-        if (a === '>')                      { this.consume(); this.consume();            tok('DMAP',       '$>');  continue; }
-        if (a === '|')                      { this.consume(); this.consume();            tok('DFILTER',    '$|');  continue; }
-        if (a === '<')                      { this.consume(); this.consume();            tok('DREDUCE',    '$<');  continue; }
-        if (a === '~' && b === '~')         { this.consume(); this.consume(); this.consume(); tok('DREPLACE',   '$~~'); continue; }
-        if (a === '~')                      { this.consume(); this.consume();            tok('DUPDATE',    '$~');  continue; }
-        if (a === '[')                      { this.consume();                            tok('DSLICE',     '$[');  continue; }
-        if (a === '!' && b === '!')         { this.consume(); this.consume(); this.consume(); tok('DERRORPROP', '$!!'); continue; }
-        if (a === '!')                      { this.consume(); this.consume();            tok('DERROR',     '$!');  continue; }
-        this.consume(); continue; // unknown $
+        if (a === '^')                      { this.consume(); this.consume();               tok('DSORT',      '$^');  continue; }
+        if (a === '>')                      { this.consume(); this.consume();               tok('DMAP',       '$>');  continue; }
+        if (a === '|')                      { this.consume(); this.consume();               tok('DFILTER',    '$|');  continue; }
+        if (a === '<')                      { this.consume(); this.consume();               tok('DREDUCE',    '$<');  continue; }
+        if (a === '~' && b === '~')         { this.consume(); this.consume(); this.consume(); tok('DREPLACE', '$~~'); continue; }
+        if (a === '~')                      { this.consume(); this.consume();               tok('DUPDATE',    '$~');  continue; }
+        if (a === '[')                      { this.consume();                               tok('DSLICE',     '$[');  continue; }
+        if (a === '!' && b === '!')         { this.consume(); this.consume(); this.consume(); tok('DERRORPROP','$!!'); continue; }
+        if (a === '!')                      { this.consume(); this.consume();               tok('DERROR',     '$!');  continue; }
+        this.consume(); continue;
       }
 
-      // numbers
       if (/[0-9]/.test(c) || digitValue(c) >= 0) { this.readNumber(toks); continue; }
-
-      // strings
       if (c === '"') { this.readString(toks); continue; }
-
-      // char literals 'A'
       if (c === "'") { this.readChar(toks); continue; }
+      if (/[\p{L}\p{M}\p{So}\p{Co}]/u.test(c)) { this.readIdent(toks); continue; }
 
-      // identifiers (all Unicode letters, marks, symbols — src is code-point array
-      // so each element is already a full character, no surrogate handling needed)
-      if (/[\p{L}\p{M}\p{So}\p{Co}]/u.test(c)) {
-        this.readIdent(toks); continue;
-      }
-
-      // single-char tokens
       const single = {
         '=':'ASSIGN', '<':'LT', '>':'GT',
         '+':'PLUS',   '-':'MINUS', '*':'TIMES', '/':'DIV', '%':'MOD', '^':'POW',
@@ -275,7 +298,7 @@ export class Lexer {
       };
       if (single[c]) { this.consume(); tok(single[c], c); continue; }
 
-      this.consume(); // skip unknown
+      this.consume();
     }
 
     tok('EOF', null);
@@ -283,8 +306,39 @@ export class Lexer {
   }
 
   readNumber(toks) {
+    // Handle base literals: 0x (hex), 0b (binary), 0o (octal), 0d (decimal explicit)
+    if (this.ch() === '0') {
+      const next = this.ch(1);
+      if (next === 'x' || next === 'X') {
+        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 16 }, line: this.line }); return; }
+        this.consume(); this.consume();
+        let hex = '';
+        while (/[0-9a-fA-F]/.test(this.ch())) hex += this.consume();
+        toks.push({ type: 'CHAR', value: String.fromCodePoint(parseInt(hex, 16)), line: this.line }); return;
+      }
+      if (next === 'b' || next === 'B') {
+        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 2 }, line: this.line }); return; }
+        this.consume(); this.consume();
+        let bin = '';
+        while (this.ch() === '0' || this.ch() === '1') bin += this.consume();
+        toks.push({ type: 'CHAR', value: String.fromCodePoint(parseInt(bin, 2)), line: this.line }); return;
+      }
+      if (next === 'o' || next === 'O') {
+        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 8 }, line: this.line }); return; }
+        this.consume(); this.consume();
+        let oct = '';
+        while (/[0-7]/.test(this.ch())) oct += this.consume();
+        toks.push({ type: 'CHAR', value: String.fromCodePoint(parseInt(oct, 8)), line: this.line }); return;
+      }
+      if (next === 'd' || next === 'D') {
+        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 10 }, line: this.line }); return; }
+        this.consume(); this.consume();
+        let dec = '';
+        while (/[0-9]/.test(this.ch())) dec += this.consume();
+        toks.push({ type: 'CHAR', value: String.fromCodePoint(parseInt(dec, 10)), line: this.line }); return;
+      }
+    }
     let value = 0;
-    // Read digits from any supported Unicode block (normalise to ASCII value)
     while (this.pos < this.src.length) {
       const dv = digitValue(this.ch());
       if (dv < 0) break;
@@ -292,7 +346,7 @@ export class Lexer {
       this.consume();
     }
     if (this.ch() === '.' && this.ch(1) !== '.') {
-      this.consume(); // consume '.'
+      this.consume();
       let frac = 0, div = 1;
       while (this.pos < this.src.length) {
         const dv = digitValue(this.ch());
@@ -302,7 +356,6 @@ export class Lexer {
         this.consume();
       }
       const f = value + frac / div;
-      // scientific suffix stays ASCII
       let sci = '';
       if (this.ch() === 'e' || this.ch() === 'E') {
         sci += this.consume();
@@ -323,6 +376,7 @@ export class Lexer {
       if (this.ch() === '\\') {
         this.consume();
         const e = this.consume();
+        // \{ and \} produce literal braces (not interpolation delimiters)
         cur += e === 'n' ? '\n' : e === 't' ? '\t' : e;
       } else if (this.ch() === '{') {
         if (cur) { parts.push({ t: 'lit', v: cur }); cur = ''; }
@@ -345,11 +399,11 @@ export class Lexer {
   }
 
   readChar(toks) {
-    this.consume(); // opening '
+    this.consume();
     let ch = '';
     if (this.ch() === '\\') { this.consume(); ch = this.consume(); }
     else ch = this.consume();
-    if (this.ch() === "'") this.consume(); // closing '
+    if (this.ch() === "'") this.consume();
     toks.push({ type: 'CHAR', value: ch, line: this.line });
   }
 
@@ -358,8 +412,6 @@ export class Lexer {
     while (true) {
       const c = this.ch();
       if (!c) break;
-      // Non-ASCII Unicode digits (e.g. ०, ١, ๑) terminate the identifier;
-      // ASCII digits 0-9 are allowed inside identifiers (e.g. n1, x2).
       if (digitValue(c) >= 0 && !(c >= '0' && c <= '9')) break;
       if (/[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(c)) { s += this.consume(); continue; }
       break;
@@ -376,9 +428,7 @@ export class Parser {
     this.pos  = 0;
   }
 
-  peek(n = 0) {
-    return this.toks[Math.min(this.pos + n, this.toks.length - 1)];
-  }
+  peek(n = 0) { return this.toks[Math.min(this.pos + n, this.toks.length - 1)]; }
   adv() {
     const t = this.toks[this.pos];
     if (this.pos < this.toks.length - 1) this.pos++;
@@ -392,9 +442,7 @@ export class Parser {
     return this.adv();
   }
 
-  parse() {
-    return { type: 'Program', body: this.parseStmtList() };
-  }
+  parse() { return { type: 'Program', body: this.parseStmtList() }; }
 
   parseStmtList() {
     const stmts = [];
@@ -412,10 +460,72 @@ export class Parser {
     return stmts;
   }
 
+  parseModuleBlock() {
+    this.adv(); // consume HASH
+    let name = '';
+    if (this.check('DOT')) { this.adv(); name += '.'; }
+    name += this.eat('IDENT').value;
+    this.eat('LBRACE');
+    const body = this.parseStmtList();
+    this.eat('RBRACE');
+    return { type: 'ModuleBlock', name, body };
+  }
+
+  parseImport() {
+    this.adv(); // consume <#
+    // Parse path: ./name, ../name, ./dir/name, or string literal
+    let path = '';
+    if (this.check('DOT')) {
+      this.adv(); this.eat('DIV'); // consume . and /
+      path = './' + this.eat('IDENT').value;
+      while (this.check('DIV')) { this.adv(); path += '/' + this.eat('IDENT').value; }
+    } else if (this.check('RANGE')) {
+      this.adv(); this.eat('DIV'); // consume .. and /
+      let ups = 1;
+      while (this.check('RANGE')) { this.adv(); this.eat('DIV'); ups++; }
+      path = '../'.repeat(ups) + this.eat('IDENT').value;
+      while (this.check('DIV')) { this.adv(); path += '/' + this.eat('IDENT').value; }
+    } else if (this.check('STR')) {
+      path = this.adv().value;
+    } else {
+      path = this.eat('IDENT').value;
+    }
+    this.eat('LTE'); // consume <=
+    const alias = this.eat('IDENT').value;
+    return { type: 'Import', path, alias };
+  }
+
   parseStmt() {
     const t = this.peek();
 
     if (t.type === 'SET_NUMERAL_MODE') { this.adv(); return { type: 'SetNumeralMode', base: t.value }; }
+    if (t.type === 'IMPORT') return this.parseImport();
+    if (t.type === 'EXPORT_DECL') {
+      this.adv();
+      const names = []; // { kind:'own'|'reexport', internal, alias?, member?, exported }
+      if (this.check('LBRACE')) {
+        this.adv();
+        while (!this.check('RBRACE') && !this.check('EOF')) {
+          if (this.check('IDENT')) {
+            const first = this.adv().value;
+            if (this.check('SCOPE') || this.check('DOT')) {
+              // Re-export: alias::member or alias.member
+              this.adv();
+              const member = this.check('IDENT') ? this.adv().value : first;
+              const exported = this.check('LTE') ? (this.adv(), this.check('IDENT') ? this.adv().value : member) : member;
+              names.push({ kind: 'reexport', alias: first, member, exported });
+            } else {
+              const exported = this.check('LTE') ? (this.adv(), this.check('IDENT') ? this.adv().value : first) : first;
+              names.push({ kind: 'own', internal: first, exported });
+            }
+          } else {
+            this.adv();
+          }
+        }
+        this.match('RBRACE');
+      }
+      return { type: 'ExportDecl', names };
+    }
     if (t.type === 'OUTPUT')   return this.parseOutput();
     if (t.type === 'INPUT')    return this.parseInput();
     if (t.type === 'RETURN')   return this.parseReturn();
@@ -424,23 +534,32 @@ export class Parser {
     if (t.type === 'IF')       return this.parseIf();
     if (t.type === 'MATCH')    return { type: 'ExprStmt', expr: this.parseMatchExpr() };
     if (t.type === 'AT')       { this.adv(); return this.parseLoop(); }
-    if (t.type === 'TRY')       return this.parseTryCatch();
+    if (t.type === 'AT_LABEL') { return this.parseLabeledLoop(); }
+    if (t.type === 'TRY')      return this.parseTryCatch();
+    if (t.type === 'BACKSLASH') {
+      this.adv();
+      if (this.check('IDENT')) {
+        const name = this.adv().value;
+        return { type: 'LifetimeEnd', name };
+      }
+      return null;
+    }
     if (t.type === 'LBRACKET' && this.isDestructuring()) return this.parseArrayDestruct();
     if (t.type === 'LPAREN'   && this.isDestructuring()) return this.parseTupleDestruct();
     if (t.type === 'IDENT')    return this.parseIdentStmt();
     if (t.type === 'SEMI')     { this.adv(); return null; }
     if (t.type === 'PILCROW')  { this.adv(); return { type: 'Output', items: [], newline: true }; }
+    if (t.type === 'HASH')     return this.parseModuleBlock();
 
-    // fall-through: expression statement
     return { type: 'ExprStmt', expr: this.parseExpr() };
   }
 
   parseOutput() {
-    const opLine = this.adv().line; // >> — capture its line number
+    const opLine = this.adv().line;
     const items = [];
     while (!this.check('PILCROW') && !this.check('NEWLINE_ESC') &&
            !this.check('RBRACE') && !this.check('EOF')) {
-      if (this.peek().line > opLine) break; // next token is on a new line → new statement
+      if (this.peek().line > opLine) break;
       items.push(this.parseExpr());
     }
     const nl = this.match('PILCROW', 'NEWLINE_ESC');
@@ -449,7 +568,7 @@ export class Parser {
 
   parseInput() {
     const line = this.peek().line;
-    this.adv(); // <<
+    this.adv();
     let prompt = null;
     if (this.check('STR')) {
       prompt = { type: 'Literal', kind: 'str', value: this.adv().value };
@@ -459,32 +578,35 @@ export class Parser {
   }
 
   parseReturn() {
-    this.adv(); // <~
-    if (this.check('RBRACE') || this.check('EOF'))
+    const opLine = this.adv().line;
+    if (this.check('RBRACE') || this.check('EOF') || this.peek().line > opLine)
       return { type: 'Return', value: null };
-    return { type: 'Return', value: this.parseExpr() };
+    const items = [];
+    while (!this.check('RBRACE') && !this.check('EOF') && this.peek().line === opLine) {
+      items.push(this.parseExpr());
+    }
+    const value = items.length === 1 ? items[0] : { type: 'JuxtaConcat', items };
+    return { type: 'Return', value };
   }
 
   parseTryCatch() {
-    this.adv(); // !?
+    this.adv();
     const tryBody = this.parseBlock();
     const catches = [];
     while (this.check('CATCH')) {
-      this.adv(); // :!
-      // Optional error type: identifier starting with ##
+      this.adv();
       const errType = (this.check('IDENT') && this.peek().value.startsWith('##'))
         ? this.adv().value : null;
       catches.push({ errType, body: this.parseBlock() });
     }
     let finallyBody = null;
     if (this.check('FINALLY')) {
-      this.adv(); // :>
+      this.adv();
       finallyBody = this.parseBlock();
     }
     return { type: 'TryCatch', tryBody, catches, finallyBody };
   }
 
-  // Lookahead: returns true if current [ or ( starts a destructuring pattern (= without :=)
   isDestructuring() {
     let i = 0, depth = 0;
     const start = this.peek(0).type;
@@ -494,19 +616,18 @@ export class Parser {
       if (t.type === start) depth++;
       else if (t.type === close) { depth--; if (depth === 0) break; }
     }
-    // After the closing bracket/paren must be ASSIGN (=) but not CONST_ASSIGN (:=)
     return this.peek(i).type === 'ASSIGN';
   }
 
   parseArrayDestruct() {
-    this.adv(); // [
+    this.adv();
     const targets = [];
     while (!this.check('RBRACKET') && !this.check('EOF')) {
       if (this.check('TIMES')) {
         this.adv();
         targets.push({ name: this.eat('IDENT').value, rest: true });
       } else if (this.check('ELSE')) {
-        this.adv(); // _ discard
+        this.adv();
         targets.push({ name: '_', rest: false });
       } else {
         targets.push({ name: this.eat('IDENT').value, rest: false });
@@ -519,10 +640,8 @@ export class Parser {
   }
 
   parseTupleDestruct() {
-    // Distinguish named destructuring (x: a, y: b) = tup  vs  positional (a, b) = tup
-    // Peek inside to detect "IDENT COLON IDENT" pattern
     const isNamed = this.peek(1).type === 'IDENT' && this.peek(2).type === 'COLON';
-    this.adv(); // (
+    this.adv();
     if (isNamed) {
       const targets = [];
       while (!this.check('RPAREN') && !this.check('EOF')) {
@@ -553,7 +672,7 @@ export class Parser {
   }
 
   parseIf() {
-    this.adv(); // ?
+    this.adv();
     const cond = this.parseExpr();
     const then = this.parseBlock();
     const elseifs = [];
@@ -570,7 +689,7 @@ export class Parser {
   }
 
   parseMatchExpr() {
-    this.adv(); // ??
+    this.adv();
     const expr = this.parseExpr();
     this.eat('LBRACE');
     const arms = [];
@@ -589,6 +708,29 @@ export class Parser {
     } else if (this.check('ELSEIF')) {
       this.adv();
       pattern = { type: 'guard', cond: this.parseExpr() };
+    } else if (this.check('LBRACKET')) {
+      // List pattern: [a, b, *rest] or [1, "x", _]
+      this.adv();
+      const elems = [];
+      while (!this.check('RBRACKET') && !this.check('EOF')) {
+        if (this.check('TIMES')) {
+          this.adv();
+          elems.push({ kind: 'rest', name: this.eat('IDENT').value });
+        } else if (this.check('ELSE')) {
+          this.adv();
+          elems.push({ kind: 'wildcard' });
+        } else if (this.check('IDENT') && (this.peek(1).type === 'COMMA' || this.peek(1).type === 'RBRACKET')) {
+          elems.push({ kind: 'bind', name: this.adv().value });
+        } else {
+          elems.push({ kind: 'literal', expr: this.parseAdditive() });
+        }
+        this.match('COMMA');
+      }
+      this.eat('RBRACKET');
+      pattern = { type: 'list', elems };
+    } else if (['LT','GT','LTE','GTE','EQ','NEQ'].includes(this.peek().type)) {
+      const op = this.adv().value;
+      pattern = { type: 'comparison', op, value: this.parseAdditive() };
     } else {
       const left = this.parseAdditive();
       if (this.match('RANGE')) {
@@ -598,66 +740,62 @@ export class Parser {
       }
     }
     this.eat('COLON');
+    this.inMatchBody = true;
     const body = this.check('LBRACE')
       ? { type: 'block', stmts: this.parseBlock() }
       : { type: 'expr',  value: this.parseExpr()  };
+    this.inMatchBody = false;
     return { pattern, body };
   }
 
   parseLoop() {
-    // infinite: @ { }
     if (this.check('LBRACE')) {
       return { type: 'Loop', kind: 'infinite', label: null, body: this.parseBlock() };
     }
-
-    // labeled: @ @label { }  or  @ @label var:... { }
-    if (this.check('AT')) {
-      this.adv(); // consume @
-      const label = this.eat('IDENT').value;
-      if (this.check('LBRACE')) {
-        return { type: 'Loop', kind: 'infinite', label, body: this.parseBlock() };
-      }
-      if (this.check('IDENT') && this.peek(1).type === 'COLON') {
-        const varName = this.adv().value;
-        this.adv(); // :
-        const startExpr = this.parseAdditive();
-        if (this.match('RANGE')) {
-          const endExpr = this.parseAdditive();
-          let stepExpr = null;
-          if (this.match('COLON')) stepExpr = this.parseAdditive();
-          return { type: 'Loop', kind: 'range', label, var: varName,
-                   from: startExpr, to: endExpr, step: stepExpr, body: this.parseBlock() };
-        }
-        return { type: 'Loop', kind: 'foreach', label, var: varName,
-                 iterable: startExpr, body: this.parseBlock() };
-      }
-      const cond = this.parseExpr();
-      return { type: 'Loop', kind: 'while', label, cond, body: this.parseBlock() };
-    }
-
-    // range/foreach: @ var : ...
+    // @ IDENT COLON  → unlabeled range/foreach (@ var:start..end)
     if (this.check('IDENT') && this.peek(1).type === 'COLON') {
       const varName = this.adv().value;
-      this.adv(); // :
+      this.adv();
       const startExpr = this.parseAdditive();
       if (this.match('RANGE')) {
         const endExpr = this.parseAdditive();
         let stepExpr = null;
         if (this.match('COLON')) stepExpr = this.parseAdditive();
         return { type: 'Loop', kind: 'range', label: null, var: varName,
-                 from: startExpr, to: endExpr, step: stepExpr,
-                 body: this.parseBlock() };
+                 from: startExpr, to: endExpr, step: stepExpr, body: this.parseBlock() };
       }
       return { type: 'Loop', kind: 'foreach', label: null, var: varName,
                iterable: startExpr, body: this.parseBlock() };
     }
-
-    // while: @ cond { }
     const cond = this.parseExpr();
     return { type: 'Loop', kind: 'while', label: null, cond, body: this.parseBlock() };
   }
 
-  // Lookahead: is the current position a func decl? IDENT ( params ) {
+  parseLabeledLoop() {
+    const label = this.adv().value; // consume AT_LABEL token
+    if (this.check('LBRACE')) {
+      return { type: 'Loop', kind: 'infinite', label, body: this.parseBlock() };
+    }
+    // @label var:start..end
+    if (this.check('IDENT') && this.peek(1).type === 'COLON') {
+      const varName = this.adv().value;
+      this.adv(); // consume ':'
+      const startExpr = this.parseAdditive();
+      if (this.match('RANGE')) {
+        const endExpr = this.parseAdditive();
+        let stepExpr = null;
+        if (this.match('COLON')) stepExpr = this.parseAdditive();
+        return { type: 'Loop', kind: 'range', label, var: varName,
+                 from: startExpr, to: endExpr, step: stepExpr, body: this.parseBlock() };
+      }
+      return { type: 'Loop', kind: 'foreach', label, var: varName,
+               iterable: startExpr, body: this.parseBlock() };
+    }
+    // @label cond { }
+    const cond = this.parseExpr();
+    return { type: 'Loop', kind: 'while', label, cond, body: this.parseBlock() };
+  }
+
   isFuncDecl() {
     if (this.peek(0).type !== 'IDENT' || this.peek(1).type !== 'LPAREN') return false;
     let i = 2, depth = 1;
@@ -676,7 +814,7 @@ export class Parser {
     while (!this.check('RPAREN') && !this.check('EOF')) {
       const pname = this.eat('IDENT').value;
       let isOut = false;
-      if (this.match('RETURN')) isOut = true; // <~ suffix
+      if (this.match('RETURN')) isOut = true;
       params.push({ name: pname, isOut });
       this.match('COMMA');
     }
@@ -690,26 +828,22 @@ export class Parser {
     const name = this.adv().value;
     const line = this.peek().line;
 
-    // const assign
     if (this.match('CONST_ASSIGN')) {
       return { type: 'ConstAssign', name, value: this.parseRHS(), line };
     }
 
-    // compound assign
     const compound = { PLUS_EQ:'+', MINUS_EQ:'-', TIMES_EQ:'*', DIV_EQ:'/', MOD_EQ:'%', POW_EQ:'^' };
     const cop = compound[this.peek().type];
     if (cop) { this.adv(); return { type: 'CompoundAssign', name, op: cop, value: this.parseExpr(), line }; }
 
-    // inc / dec
     if (this.match('INC')) return { type: 'Increment', name, op: '++', line };
     if (this.match('DEC')) return { type: 'Increment', name, op: '--', line };
 
-    // assign
     if (this.match('ASSIGN')) {
       return { type: 'VarAssign', name, value: this.parseRHS(), line };
     }
 
-    // subscript assign: name[idx] = val  or  name[idx] += val
+    // subscript assign: name[idx] = val
     if (this.check('LBRACKET') && this.peek().line === this.toks[this.pos - 1].line) {
       this.adv();
       const idx = this.parseExpr();
@@ -717,44 +851,50 @@ export class Parser {
       if (this.match('ASSIGN')) {
         return { type: 'IndexAssign', obj: name, index: idx, value: this.parseExpr(), line };
       }
-      // compound indexed assign: arr[i] += rhs  →  IndexAssign(arr, i, arr[i] op rhs)
       const idxCompound = compound[this.peek().type];
       if (idxCompound) {
         this.adv();
         const rhs = this.parseExpr();
-        const currentElem = { type: 'Subscript', obj: { type: 'Ident', name }, index: idx };
+        const currentElem = { type: 'NavIndex', obj: { type: 'Ident', name }, spec: { kind: 'simple', index: idx } };
         const value = { type: 'BinOp', op: idxCompound, left: currentElem, right: rhs };
         return { type: 'IndexAssign', obj: name, index: idx, value, line };
       }
-      let left = { type: 'Subscript', obj: { type: 'Ident', name }, index: idx };
+      let left = { type: 'NavIndex', obj: { type: 'Ident', name }, spec: { kind: 'simple', index: idx } };
       return { type: 'ExprStmt', expr: this.parsePostfixRest(left) };
     }
 
-    // expression starting with this ident (function call, etc.)
     let left = { type: 'Ident', name };
     return { type: 'ExprStmt', expr: this.parsePostfixRest(left) };
   }
 
-  // Comma-join for string concat: x = "a ", name, "!"
   parseRHS() {
+    const firstLine = this.peek().line;
     const first = this.parseExpr();
-    if (!this.check('COMMA')) return first;
+    if (this.check('COMMA')) {
+      const items = [first];
+      while (this.match('COMMA')) items.push(this.parseExpr());
+      return { type: 'CommaJoin', items };
+    }
+    // Implicit string concatenation: collect multiple expressions on the same line
+    const implicitExprStart = new Set(['STR','IDENT','NUM','FLOAT','CHAR','BOOL','LPAREN','LBRACKET','MINUS','NOT','CAST_FLOAT','CAST_INT_ROUND','CAST_INT_TRUNC','DATA_OP','MATCH','ELSE']);
     const items = [first];
-    while (this.match('COMMA')) items.push(this.parseExpr());
-    return { type: 'CommaJoin', items };
+    while (this.peek().line === firstLine && implicitExprStart.has(this.peek().type)) {
+      items.push(this.parseExpr());
+    }
+    if (items.length === 1) return first;
+    return { type: 'ImplicitConcat', items };
   }
 
   // ─── Expression grammar ──────────────────────────────────────────────────
+
   parseExpr() {
     if (this.isLambdaStart()) return this.parseLambda();
     return this.parsePipe();
   }
 
   isLambdaStart() {
-    // x -> ...
     if (this.peek(0).type === 'IDENT' && this.peek(1).type === 'ARROW') return true;
     if (this.peek(0).type !== 'LPAREN') return false;
-    // (a, b) -> ...  — scan past LPAREN...RPAREN then check for ARROW
     let i = 1, depth = 1;
     while (depth > 0 && this.pos + i < this.toks.length) {
       const t = this.toks[this.pos + i++];
@@ -762,7 +902,6 @@ export class Parser {
       else if (t.type === 'RPAREN') depth--;
     }
     if (this.peek(i).type === 'ARROW') return true;
-    // (a, b -> expr) — ARROW before closing RPAREN, all before are IDENT/COMMA
     i = 1;
     while (this.pos + i < this.toks.length) {
       const t = this.toks[this.pos + i];
@@ -776,29 +915,34 @@ export class Parser {
 
   parseLambda() {
     const params = [];
+    let parensWrapped = false;
     if (this.check('LPAREN')) {
       this.adv();
-      // handles both (a, b) -> expr  and  (a, b -> expr)
       while (!this.check('RPAREN') && !this.check('ARROW') && !this.check('EOF')) {
         params.push(this.eat('IDENT').value);
         this.match('COMMA');
       }
-      if (this.check('RPAREN')) this.adv(); // (a, b) -> form: consume closing )
+      if (this.check('RPAREN')) {
+        // (params) -> body form: consume ')' before '->'
+        this.adv();
+      } else {
+        // (params -> body) form: closing ')' comes after body
+        parensWrapped = true;
+      }
     } else {
-      params.push(this.adv().value); // single param without parens
+      params.push(this.adv().value);
     }
     this.eat('ARROW');
     const body = this.check('LBRACE')
       ? { type: 'block', stmts: this.parseBlock() }
       : { type: 'expr',  value: this.parseExpr() };
+    if (parensWrapped) this.match('RPAREN');
     return { type: 'Lambda', params, body };
   }
 
   parsePipe() {
     let left = this.parseOr();
     while (this.match('PIPE')) {
-      // rhs is a full expression: fn(_), lambda(_), or bare fn reference.
-      // _ is bound to the left value at eval time via a child env.
       const rhs = this.parseOr();
       left = { type: 'Pipe', value: left, rhs };
     }
@@ -809,6 +953,7 @@ export class Parser {
   parseAnd()            { return this.parseBinLeft(['AND'], () => this.parseComparison()); }
   parseComparison() {
     let left = this.parseAdditive();
+    if (this.inMatchBody) return left;
     const cmp = { EQ:'==', NEQ:'<>', LT:'<', GT:'>', LTE:'<=', GTE:'>=' };
     const op  = cmp[this.peek().type];
     if (op) { this.adv(); left = { type:'BinOp', op, left, right: this.parseAdditive() }; }
@@ -832,37 +977,61 @@ export class Parser {
     return left;
   }
 
-  parseUnary() {
+  parseUnary(noCollectionChain) {
     if (this.match('MINUS')) return { type: 'UnaryOp', op: '-', operand: this.parseUnary() };
     if (this.match('NOT'))   return { type: 'UnaryOp', op: '!', operand: this.parseUnary() };
-    return this.parsePostfix();
+    return noCollectionChain ? this.parsePostfixNoChain() : this.parsePostfix();
   }
 
   parsePostfix() {
     return this.parsePostfixRest(this.parsePrimary());
   }
 
+  parsePostfixNoChain() {
+    const primary = this.parsePrimary();
+    const sameLine = () => this.peek().line === (this.toks[this.pos - 1]?.line ?? this.peek().line);
+    let left = primary;
+    while (true) {
+      if (this.check('LBRACKET') && sameLine()) {
+        this.adv(); const spec = this.parseNavContent(); this.eat('RBRACKET');
+        left = { type: 'NavIndex', obj: left, spec };
+      } else if (this.check('DOT') || this.check('SCOPE')) {
+        this.adv(); const field = this.eat('IDENT').value;
+        left = { type: 'FieldAccess', obj: left, field };
+      } else if (this.check('LPAREN') && sameLine() && left.type === 'Ident') {
+        this.adv(); const args = this.parseArgList(); this.eat('RPAREN');
+        left = { type: 'Call', callee: left.name, args };
+      } else if (this.check('LPAREN') && sameLine() && left.type !== 'Ident') {
+        this.adv(); const args = this.parseArgList(); this.eat('RPAREN');
+        left = { type: 'CallExpr', callee: left, args };
+      } else break;
+    }
+    return left;
+  }
+
   parsePostfixRest(left) {
     const COL_TOKENS = new Set(['DLEN','DAPPEND','DREMOVEALL','DREMOVE',
       'DFINDALL','DCONTAINS','DSORTASC','DSORTDESC','DSORT',
-      'DMAP','DFILTER','DREDUCE','DSLICE','DERROR','DERRORPROP','DREPLACE']);
+      'DMAP','DFILTER','DREDUCE','DSLICE','DERROR','DERRORPROP','DREPLACE',
+      'DSPLIT','DCONCATBUILD']);
 
     while (true) {
       const sameLine = () => this.peek().line === (this.toks[this.pos - 1]?.line ?? this.peek().line);
+
       if (this.check('LBRACKET') && sameLine()) {
         this.adv();
-        const idx = this.parseExpr();
+        const spec = this.parseNavContent();
         this.eat('RBRACKET');
-        // expr[i]$~ val — functional update (must follow immediately)
-        if (this.check('DUPDATE')) {
+        // FuncUpdate: arr[i]$~ val — only for simple subscript
+        if (spec.kind === 'simple' && this.check('DUPDATE')) {
           this.adv();
           const val = this.parseUnary();
-          left = { type: 'FuncUpdate', obj: left.obj ?? left, index: idx, value: val };
+          left = { type: 'FuncUpdate', obj: left.obj ?? left, index: spec.index, value: val };
         } else {
-          left = { type: 'Subscript', obj: left, index: idx };
+          left = { type: 'NavIndex', obj: left, spec };
         }
 
-      } else if (this.check('DOT')) {
+      } else if (this.check('DOT') || this.check('SCOPE')) {
         this.adv();
         const field = this.eat('IDENT').value;
         left = { type: 'FieldAccess', obj: left, field };
@@ -873,8 +1042,7 @@ export class Parser {
         this.eat('RPAREN');
         left = { type: 'Call', callee: left.name, args };
 
-      } else if (this.check('LPAREN') && sameLine() && left.type !== 'Ident') {
-        // Chained call: expr(args) — e.g. make_adder(5)(3), (lambda)(args)
+      } else if (this.check('LPAREN') && sameLine() && left.type !== 'Ident' && left.type !== 'Literal') {
         this.adv();
         const args = this.parseArgList();
         this.eat('RPAREN');
@@ -894,14 +1062,89 @@ export class Parser {
     return left;
   }
 
+  // ─── Navigation index parsing ─────────────────────────────────────────────
+
+  // Called after consuming '['. Returns a spec object for NavIndex.
+  parseNavContent() {
+    // Structured nav: [[g1] ; [g2]] — starts with '['
+    if (this.check('LBRACKET')) {
+      return this.parseNavStructured();
+    }
+
+    // Parse first nav atom (uses additive, not full comparison, so '>' is nav separator)
+    const firstAtom = this.parseNavAtom();
+
+    // nav path or flat extraction?
+    if (this.check('GT') || this.check('SEMI')) {
+      return this.parseNavContinue(firstAtom);
+    }
+
+    // Simple subscript: single index, no nav ops
+    if (firstAtom.kind === 'index') {
+      return { kind: 'simple', index: firstAtom.expr };
+    }
+    // Single range at top level (unusual) → flat
+    return { kind: 'flat', paths: [[firstAtom]] };
+  }
+
+  // Parse a nav atom: additive expr, optionally followed by '..' range
+  parseNavAtom() {
+    const expr = this.parseAdditive();
+    if (this.match('RANGE')) {
+      const to = this.parseAdditive();
+      return { kind: 'range', from: expr, to };
+    }
+    return { kind: 'index', expr };
+  }
+
+  // Continue parsing after the first atom — GT means nav path, SEMI means flat
+  parseNavContinue(firstAtom) {
+    // Build first path (starting with firstAtom)
+    const firstPath = [firstAtom];
+    while (this.match('GT')) firstPath.push(this.parseNavAtom());
+
+    if (!this.check('SEMI')) {
+      // Single nav path
+      return { kind: 'path', path: firstPath };
+    }
+
+    // Multiple paths separated by ';' — flat extraction
+    const paths = [firstPath];
+    while (this.match('SEMI')) {
+      const path = [this.parseNavAtom()];
+      while (this.match('GT')) path.push(this.parseNavAtom());
+      paths.push(path);
+    }
+    return { kind: 'flat', paths };
+  }
+
+  // Parse structured nav: [[g1,g2] ; [g3,g4]] — already past outer '['
+  parseNavStructured() {
+    const groups = [];
+    do {
+      this.eat('LBRACKET');
+      const paths = [];
+      do {
+        const path = [this.parseNavAtom()];
+        while (this.match('GT')) path.push(this.parseNavAtom());
+        paths.push(path);
+      } while (this.match('COMMA'));
+      this.eat('RBRACKET');
+      groups.push({ paths });
+    } while (this.match('SEMI'));
+    return { kind: 'structured', groups };
+  }
+
+  // ─── Collection ops ───────────────────────────────────────────────────────
+
   parseCollectionOp(left) {
-    const op = this.adv().type; // consume the $xxx token
+    const op = this.adv().type;
 
     switch (op) {
-      case 'DLEN':       // col$#
+      case 'DLEN':
         return { type: 'CollectionOp', op: '$#', obj: left };
 
-      case 'DAPPEND':    // col$+ val  OR  col$+[i] val
+      case 'DAPPEND':
         if (this.check('LBRACKET')) {
           this.adv();
           const idx = this.parseExpr(); this.eat('RBRACKET');
@@ -909,29 +1152,41 @@ export class Parser {
         }
         return { type: 'CollectionOp', op: '$+', obj: left, arg: this.parseUnary() };
 
-      case 'DREMOVEALL': // col$-- val
+      case 'DREMOVEALL':
         return { type: 'CollectionOp', op: '$--', obj: left, arg: this.parseUnary() };
 
-      case 'DREMOVE':    // col$- val  OR  col$-[i]  OR  col$-[i..j]
+      case 'DREMOVE':
         if (this.check('LBRACKET')) {
           this.adv();
-          const from = this.parseExpr();
+          // Open-start: $-[..N]
           if (this.match('RANGE')) {
             const to = this.parseExpr(); this.eat('RBRACKET');
-            return { type: 'CollectionOp', op: '$-[i..j]', obj: left, range: { from, to } };
+            return { type: 'CollectionOp', op: '$-[i..j]', obj: left, range: { from: null, to } };
+          }
+          const from = this.parseExpr();
+          if (this.match('RANGE')) {
+            // Open-end: $-[N..]  or  $-[N..M]
+            const toNode = (!this.check('RBRACKET')) ? this.parseExpr() : null;
+            this.eat('RBRACKET');
+            return { type: 'CollectionOp', op: '$-[i..j]', obj: left, range: { from, to: toNode } };
+          }
+          if (this.match('COLON')) {
+            // Count-based: $-[start:count]
+            const count = this.parseExpr(); this.eat('RBRACKET');
+            return { type: 'CollectionOp', op: '$-[i:n]', obj: left, start: from, count };
           }
           this.eat('RBRACKET');
           return { type: 'CollectionOp', op: '$-[i]', obj: left, index: from };
         }
         return { type: 'CollectionOp', op: '$-', obj: left, arg: this.parseUnary() };
 
-      case 'DFINDALL':   // col$?? val
+      case 'DFINDALL':
         return { type: 'CollectionOp', op: '$??', obj: left, arg: this.parseUnary() };
 
-      case 'DCONTAINS':  // col$? val
+      case 'DCONTAINS':
         return { type: 'CollectionOp', op: '$?', obj: left, arg: this.parseUnary() };
 
-      case 'DUPDATE':    // col$~[i] val
+      case 'DUPDATE':
         this.eat('LBRACKET');
         { const idx = this.parseExpr(); this.eat('RBRACKET');
           return { type: 'CollectionOp', op: '$~', obj: left, index: idx, arg: this.parseUnary() }; }
@@ -940,16 +1195,16 @@ export class Parser {
       case 'DSORTDESC':  return { type: 'CollectionOp', op: '$^-', obj: left };
       case 'DSORT':      return { type: 'CollectionOp', op: '$^',  obj: left, arg: this.parseUnary() };
 
-      case 'DMAP':       return { type: 'CollectionOp', op: '$>',  obj: left, arg: this.parseUnary() };
-      case 'DFILTER':    return { type: 'CollectionOp', op: '$|',  obj: left, arg: this.parseUnary() };
+      case 'DMAP':       return { type: 'CollectionOp', op: '$>',  obj: left, arg: this.parseUnary(true) };
+      case 'DFILTER':    return { type: 'CollectionOp', op: '$|',  obj: left, arg: this.parseUnary(true) };
 
-      case 'DREDUCE':    // col$< (init, fn)
+      case 'DREDUCE':
         this.eat('LPAREN');
         { const init = this.parseExpr(); this.eat('COMMA');
           const fn   = this.parseExpr(); this.eat('RPAREN');
           return { type: 'CollectionOp', op: '$<', obj: left, init, arg: fn }; }
 
-      case 'DSLICE':     // col$[i..j]  or  col$[i:n]
+      case 'DSLICE':
         this.eat('LBRACKET');
         { const from = this.parseExpr();
           if (this.match('RANGE')) {
@@ -960,19 +1215,37 @@ export class Parser {
           const count = this.parseExpr(); this.eat('RBRACKET');
           return { type: 'CollectionOp', op: '$[i:n]', obj: left, range: { from, count } }; }
 
-      case 'DERROR':     // expr$!  — check if expression errored
+      case 'DERROR':
         return { type: 'CollectionOp', op: '$!', obj: left };
 
-      case 'DERRORPROP': // expr$!! — propagate error
+      case 'DERRORPROP':
         return { type: 'CollectionOp', op: '$!!', obj: left };
 
-      case 'DREPLACE':   // str$~~["from":"to"]  or  str$~~["from":"to":n]
+      case 'DREPLACE':
         this.eat('LBRACKET');
         { const from = this.parseExpr(); this.eat('COLON');
           const to   = this.parseExpr();
           const count = this.match('COLON') ? this.parseExpr() : null;
           this.eat('RBRACKET');
           return { type: 'CollectionOp', op: '$~~', obj: left, from, to, count }; }
+
+      case 'DSPLIT':
+        return { type: 'CollectionOp', op: '$/', obj: left, arg: this.parseUnary() };
+
+      case 'DCONCATBUILD': {
+        const opLine = this.toks[this.pos - 1].line;
+        const items = [];
+        const canStart = () => {
+          const t = this.peek().type;
+          return ['NUM','FLOAT','BOOL','CHAR','STR','IDENT','LPAREN','LBRACKET','ELSE',
+                  'CAST_FLOAT','CAST_INT_ROUND','CAST_INT_TRUNC'].includes(t);
+        };
+        while (this.peek().line === opLine && !this.check('PILCROW') &&
+               !this.check('RBRACE') && !this.check('EOF') && canStart()) {
+          items.push(this.parsePostfix());
+        }
+        return { type: 'CollectionOp', op: '$++', obj: left, items };
+      }
 
       default:
         return left;
@@ -989,7 +1262,6 @@ export class Parser {
   }
 
   parsePrimary() {
-    // Lambda starting with ( — needs check before tuple parsing
     if (this.peek().type === 'LPAREN' && this.isLambdaStart()) return this.parseLambda();
 
     const t = this.peek();
@@ -1003,7 +1275,11 @@ export class Parser {
     if (t.type === 'ELSE')  { this.adv(); return { type: 'Ident',   name: '_'      }; }
     if (t.type === 'MATCH') { return this.parseMatchExpr(); }
 
-    // Array: [1, 2, 3]
+    // Cast operators: ##. ### ##!
+    if (t.type === 'CAST_FLOAT')     { this.adv(); return { type: 'CastOp', op: '##.', operand: this.parseUnary() }; }
+    if (t.type === 'CAST_INT_ROUND') { this.adv(); return { type: 'CastOp', op: '###', operand: this.parseUnary() }; }
+    if (t.type === 'CAST_INT_TRUNC') { this.adv(); return { type: 'CastOp', op: '##!', operand: this.parseUnary() }; }
+
     if (t.type === 'LBRACKET') {
       this.adv();
       const items = [];
@@ -1015,20 +1291,16 @@ export class Parser {
       return { type: 'Array', items };
     }
 
-    // Tuple or grouped: ( ... )
     if (t.type === 'LPAREN') {
       this.adv();
       if (this.check('RPAREN')) { this.adv(); return { type: 'Literal', kind: 'unit' }; }
 
-      // Detect named tuple: (key: val, ...)
       let firstKey = null;
       if (this.check('IDENT') && this.peek(1).type === 'COLON') {
         firstKey = this.adv().value;
-        this.adv(); // :
+        this.adv();
       }
-
       const firstVal = this.parseExpr();
-
       if (this.check('COMMA') || firstKey !== null) {
         const items = [firstVal];
         const keys  = [firstKey];
@@ -1046,12 +1318,10 @@ export class Parser {
         const named = keys.some(k => k !== null);
         return { type: 'Tuple', items, keys: named ? keys : null };
       }
-
       this.eat('RPAREN');
-      return firstVal; // grouped expression
+      return firstVal;
     }
 
-    // Data formatting operators: #|..| #.N|..| etc.
     if (t.type === 'DATA_OP') {
       this.adv();
       const arg = this.parseExpr();
@@ -1059,7 +1329,6 @@ export class Parser {
       return { type: 'DataOp', kind: t.value.kind, prec: t.value.prec, arg };
     }
 
-    // skip unrecognised token
     this.adv();
     return { type: 'Literal', kind: 'unit' };
   }
@@ -1068,33 +1337,29 @@ export class Parser {
 // ─── Environment ──────────────────────────────────────────────────────────────
 
 class Env {
-  // funcBoundary=true: this env is isolated (traditional function call).
-  // - get() walks parent chain only for func-type values (enables fn-to-fn calls).
-  // - set() never propagates to parent (variables stay local).
   constructor(parent = null, funcBoundary = false) {
-    this.vars        = new Map();
-    this.consts      = new Set();
-    this.parent      = parent;
+    this.vars         = new Map();
+    this.consts       = new Set();
+    this.parent       = parent;
     this.funcBoundary = funcBoundary;
   }
 
   get(name) {
     if (this.vars.has(name)) return this.vars.get(name);
-    if (!this.parent) throw new ZyError(`Undefined variable '${name}'`);
+    if (!this.parent) throw new ZyError(`undefined variable: '${name}'`);
+    if (name.startsWith('_')) throw new ZyRuntimeError(`cannot access underscore variable '${name}' from inner scope`, '##Scope');
     if (this.funcBoundary) {
-      // Only allow reading function definitions across the boundary
       const v = this.parent._getFuncOnly(name);
       if (v !== undefined) return v;
-      throw new ZyError(`Undefined variable '${name}'`);
+      throw new ZyError(`undefined variable: '${name}'`);
     }
     return this.parent.get(name);
   }
 
-  // Walk upward returning only func-type values (used by funcBoundary get)
   _getFuncOnly(name) {
     if (this.vars.has(name)) {
       const v = this.vars.get(name);
-      return v.type === 'func' ? v : undefined;
+      return (v.type === 'func' || v.type === 'module') ? v : undefined;
     }
     if (this.parent) return this.parent._getFuncOnly(name);
     return undefined;
@@ -1106,10 +1371,10 @@ class Env {
       this.vars.set(name, value);
       return true;
     }
-    // funcBoundary: never propagate assignments to outer scope
+    if (name.startsWith('_')) return false;
     if (this.funcBoundary) return false;
     if (this.parent && this.parent.set(name, value)) return true;
-    return false; // not found
+    return false;
   }
 
   def(name, value, isConst = false) {
@@ -1119,6 +1384,16 @@ class Env {
 
   has(name) {
     return this.vars.has(name) || (this.parent ? this.parent.has(name) : false);
+  }
+
+  destroy(name) {
+    if (this.vars.has(name)) {
+      this.vars.delete(name);
+      this.consts.delete(name);
+      return true;
+    }
+    if (this.parent) return this.parent.destroy(name);
+    return false;
   }
 }
 
@@ -1135,20 +1410,83 @@ const mkUnit  = () => ({ type: 'unit' });
 // ─── Interpreter ──────────────────────────────────────────────────────────────
 
 export class Interpreter {
-  /**
-   * @param {(text:string)=>void}      outputFn — called for each output chunk
-   * @param {()=>Promise<string>}      inputFn  — async callback for each << read
-   */
-  constructor(outputFn, inputFn = async () => '') {
-    this.outputFn    = outputFn;
-    this.inputFn     = inputFn;
-    this.steps       = 0;
-    this.maxSteps        = 50_000;  // ~50k AST nodes evaluated
-    this.maxInfiniteIter = 1_024;   // bare @ { } iteration cap
+  constructor(outputFn, inputFn = async () => '', moduleResolver = null) {
+    this.outputFn        = outputFn;
+    this.inputFn         = inputFn;
+    this.steps           = 0;
+    this.maxSteps        = 50_000;
+    this.maxInfiniteIter = 1_024;
     this.outputBytes     = 0;
-    this.maxBytes        = 8_000;   // 8 KB output cap
+    this.maxBytes        = 8_000;
     this.lastYield       = performance.now();
-    this.numeralMode     = 0x0030;  // active output numeral block base (default: ASCII)
+    this.numeralMode     = 0x0030;
+    this.moduleResolver  = moduleResolver;
+    this.moduleCache     = new Map();
+    this.loadingModules  = new Set();
+  }
+
+  async loadModule(path) {
+    if (this.moduleCache.has(path)) return this.moduleCache.get(path);
+    if (this.loadingModules.has(path)) {
+      const modName = path.replace(/^.*\//, '').replace(/\.zy$/, '');
+      throw new ZyStaticError(`E004: Circular import detected: module '${modName}' is already being loaded`);
+    }
+    if (!this.moduleResolver)
+      throw new ZyError(`Cannot import '${path}': no module resolver available`);
+
+    this.loadingModules.add(path);
+    const result = await this.moduleResolver(path);
+    if (result == null) throw new ZyError(`Module not found: '${path}'`);
+    const src      = typeof result === 'string' ? result : result.src;
+    const childRes = typeof result === 'string' ? this.moduleResolver : result.resolver;
+
+    const tokens = new Lexer(src).tokenize();
+    const ast    = new Parser(tokens).parse();
+
+    const modInterp = new Interpreter(this.outputFn, this.inputFn, childRes);
+    modInterp.moduleCache    = this.moduleCache;
+    modInterp.loadingModules = this.loadingModules;
+
+    const modEnv = new Env();
+    modInterp.globalEnv = modEnv;
+
+    // Support both old-style (bare top-level statements) and new block syntax # name { ... }
+    const modBody = (ast.body.length === 1 && ast.body[0].type === 'ModuleBlock')
+      ? ast.body[0].body
+      : ast.body;
+
+    // Collect exported names from ExportDecl nodes before execution
+    const exportPairs = [];
+    for (const s of modBody) {
+      if (s.type === 'ExportDecl') for (const p of s.names) exportPairs.push(p);
+    }
+
+    await modInterp.execBlock(modBody, modEnv);
+
+    // Bind all module-level functions to modEnv so intra-module calls work
+    for (const val of modEnv.vars.values()) {
+      if (val.type === 'func' && !val.closureEnv) val.closureEnv = modEnv;
+    }
+
+    // Build module value with only exported names
+    const exports = new Map();
+    for (const p of exportPairs) {
+      if (p.kind === 'reexport') {
+        // alias::member or alias.member re-export
+        const aliasVal = modEnv.vars.get(p.alias);
+        if (aliasVal && aliasVal.type === 'module' && aliasVal.exports.has(p.member)) {
+          exports.set(p.exported, aliasVal.exports.get(p.member));
+        }
+      } else {
+        // own export (with optional rename)
+        if (modEnv.vars.has(p.internal)) exports.set(p.exported, modEnv.vars.get(p.internal));
+      }
+    }
+
+    this.loadingModules.delete(path);
+    const modVal = { type: 'module', exports };
+    this.moduleCache.set(path, modVal);
+    return modVal;
   }
 
   tick() {
@@ -1156,7 +1494,6 @@ export class Interpreter {
       throw new ZyError('Execution limit reached (50 000 steps) — infinite loop?');
   }
 
-  // Yields to the browser every ~16 ms so the DOM can repaint between loop iterations.
   maybeYield() {
     const now = performance.now();
     if (now - this.lastYield > 16) {
@@ -1168,13 +1505,24 @@ export class Interpreter {
   emit(text) {
     this.outputBytes += text.length;
     if (this.outputBytes > this.maxBytes)
-      throw new ZyError('Output limit reached (64 KB) — infinite loop?');
+      throw new ZyError('Output limit reached (8 KB) — infinite loop?');
     this.outputFn(text);
   }
 
-  async run(program) {
+  async run(program, filePath = null) {
     const env = new Env();
-    this.globalEnv = env;   // functions see top-level definitions (for recursion + cross-calls)
+    this.globalEnv = env;
+    if (program.body.length >= 1 && program.body[0].type === 'ModuleBlock') {
+      const mb = program.body[0];
+      const modName = mb.name; // preserve as declared (e.g. '.module' or 'matematicas')
+      const pathStr = filePath ? `'${filePath}'` : `'${modName}.zy'`;
+      // Use filename stem for import hint (matches CLI for mismatched names)
+      const importHint = filePath
+        ? filePath.replace(/^.*[/\\]/, '').replace(/\.zy$/, '')
+        : modName.replace(/^\./, '');
+      this.emit(`warning: ${pathStr} is a module file and cannot be run directly\n  = help: module '${modName}' is meant to be imported with <# ./${importHint} <= alias`);
+      return;
+    }
     await this.execBlock(program.body, env);
   }
 
@@ -1190,16 +1538,24 @@ export class Interpreter {
     this.tick();
 
     switch (stmt.type) {
+      case 'Noop': return;
+      case 'ExportDecl': return;
+      case 'ModuleBlock': return;
+
+      case 'Import': {
+        const modVal = await this.loadModule(stmt.path);
+        if (!env.set(stmt.alias, modVal)) env.def(stmt.alias, modVal);
+        return;
+      }
+
       case 'SetNumeralMode': {
         this.numeralMode = stmt.base;
         return;
       }
 
       case 'Output': {
-        let out = '';
-        for (const item of stmt.items) out += this.displayOutput(await this.eval(item, env));
-        if (stmt.newline) out += '\n';
-        this.emit(out);
+        for (const item of stmt.items) this.emit(this.displayOutput(await this.eval(item, env)));
+        if (stmt.newline) this.emit('\n');
         return;
       }
 
@@ -1266,12 +1622,11 @@ export class Interpreter {
       }
 
       case 'IndexAssign': {
-        // Value semantics: create a new collection instead of mutating in place.
-        // env.set() throws automatically if stmt.obj is a constant.
         const col = env.get(stmt.obj);
         const i   = (await this.eval(stmt.index, env)).v;
+        if (i === 0) throw new ZyRuntimeError('Index 0 is invalid (indices start at 1)', '##Index');
         const val = await this.eval(stmt.value, env);
-        const idx = i < 0 ? col.v.length + i : i;
+        const idx = i < 0 ? col.v.length + i : i - 1;
         let updated;
         if (col.type === 'arr') {
           const r = [...col.v]; r[idx] = val; updated = mkArr(r);
@@ -1352,19 +1707,23 @@ export class Interpreter {
             catchEnv.def('_err', mkStr(err.message ?? String(err)));
             result = await this.execBlock(matched.body, catchEnv);
           } else {
-            throw err; // no matching catch — re-throw
+            throw err;
           }
         } finally {
           if (stmt.finallyBody) await this.execBlock(stmt.finallyBody, new Env(env));
         }
         return result;
       }
+
+      case 'LifetimeEnd': {
+        env.destroy(stmt.name);
+        return;
+      }
     }
   }
 
   async execLoop(loop, env) {
     const outer = new Env(env);
-    // Returns true if a break/continue signal targets this loop (unlabeled or matching label)
     const brk = sig => sig instanceof ZyBreak    && (sig.label === null || sig.label === loop.label);
     const cnt = sig => sig instanceof ZyContinue && (sig.label === null || sig.label === loop.label);
 
@@ -1376,21 +1735,42 @@ export class Interpreter {
         this.tick();
         const sig = await this.execBlock(loop.body, new Env(outer));
         if (brk(sig)) break;
+        if (cnt(sig)) continue;
         if (sig instanceof ZyReturn) return sig;
-        if (sig instanceof ZyBreak || sig instanceof ZyContinue) return sig; // propagate foreign label
+        if (sig instanceof ZyBreak) return sig;
+        if (sig instanceof ZyContinue) return sig;
         await this.maybeYield();
       }
       return;
     }
 
     if (loop.kind === 'while') {
-      while (this.truthy(await this.eval(loop.cond, env))) {
-        this.tick();
-        const sig = await this.execBlock(loop.body, new Env(outer));
-        if (brk(sig)) break;
-        if (sig instanceof ZyReturn) return sig;
-        if (sig instanceof ZyBreak || sig instanceof ZyContinue) return sig;
-        await this.maybeYield();
+      const firstVal = await this.eval(loop.cond, env);
+      if (firstVal.type === 'int') {
+        // Times loop: repeat N times
+        const n = firstVal.v;
+        for (let i = 0; i < n; i++) {
+          this.tick();
+          const sig = await this.execBlock(loop.body, new Env(outer));
+          if (brk(sig)) break;
+          if (sig instanceof ZyReturn) return sig;
+          if (sig instanceof ZyBreak || sig instanceof ZyContinue) return sig;
+          await this.maybeYield();
+        }
+      } else {
+        // While loop: re-evaluate condition each iteration
+        let cond = firstVal;
+        while (this.truthy(cond)) {
+          this.tick();
+          const sig = await this.execBlock(loop.body, new Env(outer));
+          if (brk(sig)) break;
+          if (cnt(sig)) { cond = await this.eval(loop.cond, env); continue; }
+          if (sig instanceof ZyReturn) return sig;
+          if (sig instanceof ZyBreak) return sig;
+          if (sig instanceof ZyContinue) return sig;
+          await this.maybeYield();
+          cond = await this.eval(loop.cond, env);
+        }
       }
       return;
     }
@@ -1398,7 +1778,9 @@ export class Interpreter {
     if (loop.kind === 'range') {
       const from = (await this.eval(loop.from, env)).v;
       const to   = (await this.eval(loop.to,   env)).v;
-      const step = loop.step ? (await this.eval(loop.step, env)).v : (from <= to ? 1 : -1);
+      let step = loop.step ? (await this.eval(loop.step, env)).v : (from <= to ? 1 : -1);
+      if (loop.step && from > to && step > 0) step = -step;
+      if (loop.step && from < to && step < 0) step = -step;
       if (step === 0) throw new ZyError('Loop step cannot be zero');
       for (let i = from; step > 0 ? i <= to : i >= to; i += step) {
         this.tick();
@@ -1462,13 +1844,17 @@ export class Interpreter {
         return { type: 'tuple', v: items, keys: expr.keys ?? null };
       }
 
+      case 'ImplicitConcat': {
+        const vals = [];
+        for (const item of expr.items) vals.push(await this.eval(item, env));
+        return mkStr(vals.map(v => this.display(v)).join(''));
+      }
       case 'CommaJoin': {
         const vals = await Promise.all(expr.items.map(i => this.eval(i, env)));
         return mkStr(vals.map(v => this.display(v)).join(''));
       }
 
       case 'BinOp': {
-        // short-circuit
         if (expr.op === '&&') {
           return mkBool(this.truthy(await this.eval(expr.left, env)) &&
                         this.truthy(await this.eval(expr.right, env)));
@@ -1494,11 +1880,16 @@ export class Interpreter {
         if (!fn || fn.type !== 'func')
           throw new ZyError(`'${expr.callee}' is not a function`);
         const args = await Promise.all(expr.args.map(a => this.eval(a, env)));
-        return await this.callFunc(fn, args);
+        // Build output param writeback list
+        const outWriteback = fn.params.some(p => p.isOut)
+          ? fn.params.map((p, i) => p.isOut && expr.args[i]?.type === 'Ident'
+              ? { paramName: p.name, callerName: expr.args[i].name, callerEnv: env }
+              : null).filter(Boolean)
+          : null;
+        return await this.callFunc(fn, args, outWriteback);
       }
 
       case 'CallExpr': {
-        // Chained / higher-order call: expr(args)
         const fn = await this.eval(expr.callee, env);
         if (!fn || fn.type !== 'func')
           throw new ZyError(`Expression is not a function`);
@@ -1506,24 +1897,69 @@ export class Interpreter {
         return await this.callFunc(fn, args);
       }
 
-      case 'Subscript': {
-        const obj = await this.eval(expr.obj, env);
-        const idx = (await this.eval(expr.index, env)).v;
-        if (obj.type === 'arr') {
-          const i = idx < 0 ? obj.v.length + idx : idx;
-          if (i < 0 || i >= obj.v.length) throw new ZyRuntimeError(`Index out of bounds: ${idx}`, '##Index');
-          return obj.v[i];
+      case 'NavIndex': {
+        const obj  = await this.eval(expr.obj, env);
+        const spec = expr.spec;
+
+        if (spec.kind === 'simple') {
+          // Simple 1-based subscript
+          const idx = (await this.eval(spec.index, env)).v;
+          return this.navGetAt(obj, idx);
         }
-        if (obj.type === 'str') {
-          const chars = [...obj.v];
-          const i = idx < 0 ? chars.length + idx : idx;
-          return mkChar(chars[i] ?? '');
+
+        if (spec.kind === 'path') {
+          // Single nav path — may return scalar or flat array if path has ranges
+          const resolvedSteps = await this.resolveNavSteps(spec.path, env);
+          return await this.evalNavPath(obj, resolvedSteps);
         }
-        if (obj.type === 'tuple') {
-          const i = idx < 0 ? obj.v.length + idx : idx;
-          return obj.v[i] ?? mkUnit();
+
+        if (spec.kind === 'flat') {
+          // Multiple nav paths — flat array result
+          const results = [];
+          for (const path of spec.paths) {
+            const resolvedSteps = await this.resolveNavSteps(path, env);
+            const val = await this.evalNavPath(obj, resolvedSteps);
+            if (val.type === 'arr') results.push(...val.v);
+            else results.push(val);
+          }
+          return mkArr(results);
         }
-        throw new ZyError(`Cannot subscript ${obj.type}`);
+
+        if (spec.kind === 'structured') {
+          if (spec.groups.length === 1) {
+            // Single structured group → flat array of that group's values
+            const group = spec.groups[0];
+            const results = [];
+            for (const path of group.paths) {
+              const resolvedSteps = await this.resolveNavSteps(path, env);
+              const val = await this.evalNavPath(obj, resolvedSteps);
+              if (val.type === 'arr') results.push(...val.v);
+              else results.push(val);
+            }
+            return mkArr(results);
+          }
+          // Multiple groups → array of arrays
+          const groups = [];
+          for (const group of spec.groups) {
+            const results = [];
+            for (const path of group.paths) {
+              const resolvedSteps = await this.resolveNavSteps(path, env);
+              const val = await this.evalNavPath(obj, resolvedSteps);
+              if (val.type === 'arr') results.push(...val.v);
+              else results.push(val);
+            }
+            groups.push(mkArr(results));
+          }
+          return mkArr(groups);
+        }
+
+        throw new ZyError(`Unknown nav spec kind: ${spec.kind}`);
+      }
+
+      case 'JuxtaConcat': {
+        const parts = [];
+        for (const it of expr.items) parts.push(this.display(await this.eval(it, env)));
+        return mkStr(parts.join(''));
       }
 
       case 'Lambda': {
@@ -1539,17 +1975,20 @@ export class Interpreter {
 
       case 'Pipe': {
         const val = await this.eval(expr.value, env);
-        // Bind _ = val in a child env so rhs can reference it as a placeholder.
         const pipeEnv = new Env(env);
         pipeEnv.def('_', val);
         const result = await this.eval(expr.rhs, pipeEnv);
-        // Bare function reference (no call): call it with val directly.
         if (result && result.type === 'func') return await this.callFunc(result, [val]);
         return result;
       }
 
       case 'FieldAccess': {
         const obj = await this.eval(expr.obj, env);
+        if (obj.type === 'module') {
+          if (!obj.exports.has(expr.field))
+            throw new ZyError(`Module has no export '${expr.field}'`);
+          return obj.exports.get(expr.field);
+        }
         if (obj.type !== 'tuple' || !obj.keys)
           throw new ZyError(`'.${expr.field}' requires a named tuple`);
         const i = obj.keys.indexOf(expr.field);
@@ -1557,15 +1996,15 @@ export class Interpreter {
         return obj.v[i];
       }
 
-      case 'CollectionOp': {
+      case 'CollectionOp':
         return await this.evalCollectionOp(expr, env);
-      }
 
       case 'FuncUpdate': {
         const arr = await this.eval(expr.obj, env);
         const i   = (await this.eval(expr.index, env)).v;
+        if (i === 0) throw new ZyRuntimeError('Index 0 is invalid (indices start at 1)', '##Index');
         const val = await this.eval(expr.value, env);
-        const idx = i < 0 ? arr.v.length + i : i;
+        const idx = i < 0 ? arr.v.length + i : i - 1;
         if (arr.type === 'arr')   { const r = [...arr.v]; r[idx] = val; return mkArr(r); }
         if (arr.type === 'str')   { const r = [...arr.v]; r[idx] = this.display(val); return mkStr(r.join('')); }
         if (arr.type === 'tuple') { const r = [...arr.v]; r[idx] = val; return { type:'tuple', v:r, keys:arr.keys }; }
@@ -1608,38 +2047,41 @@ export class Interpreter {
           if (num === 0) return '0e0';
           const neg = num < 0;
           const abs = Math.abs(num);
-          const exp = Math.floor(Math.log10(abs));
+          let exp = Math.floor(Math.log10(abs));
           let mant = abs / Math.pow(10, exp);
           if (prec !== null) {
             if (mode === 'round') mant = parseFloat(mant.toFixed(prec));
             else { const f = Math.pow(10, prec); mant = Math.trunc(mant * f) / f; }
+            if (mant >= 10) { mant /= 10; exp += 1; }
           }
-          const mantStr = parseFloat(mant.toPrecision(15)).toString().replace(/\.?0+$/, '');
+          let mantStr = parseFloat(mant.toPrecision(15)).toString().replace(/\.?0+$/, '');
+          if (prec !== null && !mantStr.includes('.')) mantStr += '.0';
           return (neg ? '-' : '') + mantStr + 'e' + exp;
         };
         switch (expr.kind) {
           case 'eval': {
             if (val.type === 'str') {
               const s = val.v.trim();
-              const p = parseFloat(s);
-              if (!isNaN(p)) {
-                if (Number.isInteger(p) && !s.includes('.') && !s.toLowerCase().includes('e')) return mkInt(p);
+              // Normalize Unicode digits to ASCII before parsing
+              const ascii = [...s].map(ch => {
+                const dv = digitValue(ch);
+                return (dv >= 0 && !(ch >= '0' && ch <= '9')) ? String(dv) : ch;
+              }).join('');
+              const p = parseFloat(ascii);
+              if (!isNaN(p) && /^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/.test(ascii)) {
+                if (Number.isInteger(p) && !ascii.includes('.') && !ascii.toLowerCase().includes('e')) return mkInt(p);
                 return mkFloat(p);
               }
             }
-            return val; // pass-through (already a number, or non-numeric string)
+            return val;
           }
-          case 'round': {
-            return mkFloat(parseFloat(toNum(val).toFixed(expr.prec)));
-          }
+          case 'round':       return mkFloat(parseFloat(toNum(val).toFixed(expr.prec)));
           case 'trunc': {
             const n = toNum(val);
             const f = Math.pow(10, expr.prec);
             return mkFloat(Math.trunc(n * f) / f);
           }
-          case 'comma': {
-            return mkStr(toNum(val).toLocaleString('en-US'));
-          }
+          case 'comma':       return mkStr(toNum(val).toLocaleString('en-US'));
           case 'comma_round': {
             const n = parseFloat(toNum(val).toFixed(expr.prec));
             return mkStr(n.toLocaleString('en-US', { minimumFractionDigits: expr.prec, maximumFractionDigits: expr.prec }));
@@ -1653,12 +2095,107 @@ export class Interpreter {
           case 'sci':       return mkStr(fmtSci(toNum(val), null, null));
           case 'sci_round': return mkStr(fmtSci(toNum(val), expr.prec, 'round'));
           case 'sci_trunc': return mkStr(fmtSci(toNum(val), expr.prec, 'trunc'));
+          case 'base_conv': {
+            const n = val.type === 'char' ? val.v.codePointAt(0) : Math.trunc(toNum(val));
+            const base = expr.prec;
+            if (base === 16) return mkStr('0x' + n.toString(16).toUpperCase().padStart(4, '0'));
+            if (base === 2)  return mkStr('0b' + n.toString(2));
+            if (base === 8)  return mkStr('0o' + n.toString(8));
+            if (base === 10) return mkStr('0d' + n.toString(10).padStart(4, '0'));
+            return val;
+          }
         }
+        return val;
+      }
+
+      case 'CastOp': {
+        const val = await this.eval(expr.operand, env);
+        if (val.type !== 'int' && val.type !== 'float') {
+          const typeName = val.type.charAt(0).toUpperCase() + val.type.slice(1);
+          throw new ZyRuntimeError(`${expr.op} requires a numeric value, got ${typeName}`, '##_');
+        }
+        if (expr.op === '##.') return mkFloat(val.v);
+        if (expr.op === '###') {
+          // Round half away from zero
+          const n = val.v;
+          return mkInt(n >= 0 ? Math.floor(n + 0.5) : Math.ceil(n - 0.5));
+        }
+        if (expr.op === '##!') return mkInt(Math.trunc(val.v));
         return val;
       }
     }
 
     return mkUnit();
+  }
+
+  // ─── Navigation helpers ───────────────────────────────────────────────────
+
+  // Resolve an AST nav step array to concrete { kind, val } or { kind, from, to } steps
+  async resolveNavSteps(steps, env) {
+    const resolved = [];
+    for (const step of steps) {
+      if (step.kind === 'index') {
+        const v = (await this.eval(step.expr, env)).v;
+        resolved.push({ kind: 'index', val: v });
+      } else {
+        const from = (await this.eval(step.from, env)).v;
+        const to   = (await this.eval(step.to,   env)).v;
+        resolved.push({ kind: 'range', from, to });
+      }
+    }
+    return resolved;
+  }
+
+  // Evaluate a nav path against an object; returns scalar or flat array
+  async evalNavPath(obj, resolvedSteps) {
+    if (resolvedSteps.length === 0) return obj;
+    const [step, ...rest] = resolvedSteps;
+
+    if (step.kind === 'index') {
+      const elem = this.navGetAt(obj, step.val);
+      return await this.evalNavPath(elem, rest);
+    }
+
+    // Range step — fan out
+    const { from, to } = step;
+    const results = [];
+    for (let i = from; i <= to; i++) {
+      const elem = this.navGetAt(obj, i);
+      const sub = await this.evalNavPath(elem, rest);
+      // Flatten one level when nested ranges produce arrays
+      if (rest.length > 0 && sub.type === 'arr') results.push(...sub.v);
+      else results.push(sub);
+    }
+    return mkArr(results);
+  }
+
+  // 1-based get with error on index 0 and out-of-bounds
+  navGetAt(obj, idx) {
+    if (typeof idx === 'boolean') throw new ZyRuntimeError('Cannot use Bool as array index', '##Index');
+    if (idx === 0) throw new ZyRuntimeError('Index 0 is invalid (indices start at 1)', '##Index');
+    if (obj.type === 'arr') {
+      const i = idx < 0 ? obj.v.length + idx : idx - 1;
+      if (i < 0 || i >= obj.v.length) throw new ZyRuntimeError(`Index out of bounds: ${idx}`, '##Index');
+      return obj.v[i];
+    }
+    if (obj.type === 'tuple') {
+      const i = idx < 0 ? obj.v.length + idx : idx - 1;
+      if (i < 0 || i >= obj.v.length) throw new ZyRuntimeError(`Index out of bounds: ${idx}`, '##Index');
+      return obj.v[i] ?? mkUnit();
+    }
+    if (obj.type === 'str') {
+      const chars = [...obj.v];
+      const i = idx < 0 ? chars.length + idx : idx - 1;
+      if (i < 0 || i >= chars.length) throw new ZyRuntimeError(`Index out of bounds: ${idx}`, '##Index');
+      return mkChar(chars[i]);
+    }
+    throw new ZyError(`Cannot subscript ${obj.type}`);
+  }
+
+  // Resolve a 1-based index to JS 0-based; 0 is clamped to 0 (for slices)
+  resolve1Based(n, len) {
+    if (n === 0) return 0;
+    return n > 0 ? n - 1 : len + n;
   }
 
   typeMetadata(val) {
@@ -1681,9 +2218,17 @@ export class Interpreter {
   async evalCollectionOp(expr, env) {
     const col = await this.eval(expr.obj, env);
     const arg = () => this.eval(expr.arg, env);
-    const idx = async () => { let i = (await this.eval(expr.index, env)).v; return i < 0 ? col.v.length + i : i; };
 
-    // helpers
+    // 1-based index resolution for collection ops
+    const resolveIdx = (n, len) => {
+      if (n === 0) throw new ZyRuntimeError('Index 0 is invalid (indices start at 1)', '##Index');
+      return n < 0 ? len + n : n - 1;
+    };
+    const idx = async () => {
+      const n = (await this.eval(expr.index, env)).v;
+      return resolveIdx(n, col.v.length);
+    };
+
     const notSupported = op => { throw new ZyError(`${op} not supported on ${col.type}`); };
     const colItems = () => {
       if (col.type === 'arr')   return col.v;
@@ -1698,7 +2243,6 @@ export class Interpreter {
         : mkArr(items);
 
     switch (expr.op) {
-      // ── length ──────────────────────────────────────────────────────────
       case '$#': {
         if (col.type === 'arr')   return mkInt(col.v.length);
         if (col.type === 'str')   return mkInt([...col.v].length);
@@ -1706,7 +2250,6 @@ export class Interpreter {
         notSupported('$#');
       }
 
-      // ── append / insert ──────────────────────────────────────────────────
       case '$+': {
         const v = await arg();
         if (col.type === 'arr')   return mkArr([...col.v, v]);
@@ -1718,10 +2261,14 @@ export class Interpreter {
         const i = await idx(), v = await arg();
         if (col.type === 'arr') { const r=[...col.v]; r.splice(i,0,v); return mkArr(r); }
         if (col.type === 'str') { const r=[...col.v]; r.splice(i,0,this.display(v)); return mkStr(r.join('')); }
+        if (col.type === 'tuple') {
+          const nv=[...col.v]; nv.splice(i,0,v);
+          const nk=col.keys?[...col.keys]:null; if(nk)nk.splice(i,0,null);
+          return { type:'tuple', v:nv, keys:nk };
+        }
         notSupported('$+[i]');
       }
 
-      // ── remove ──────────────────────────────────────────────────────────
       case '$-': {
         const v = await arg();
         if (col.type === 'arr') {
@@ -1762,15 +2309,29 @@ export class Interpreter {
         }
         notSupported('$-[i]');
       }
+      case '$-[i:n]': {
+        const sv = (await this.eval(expr.start, env)).v;
+        const nv = (await this.eval(expr.count, env)).v;
+        const len = col.type === 'str' ? [...col.v].length : col.v.length;
+        const si = resolveIdx(sv, len);
+        if (col.type === 'arr')   { const r=[...col.v]; r.splice(si, nv); return mkArr(r); }
+        if (col.type === 'str')   { const r=[...col.v]; r.splice(si, nv); return mkStr(r.join('')); }
+        if (col.type === 'tuple') { const r=[...col.v]; r.splice(si, nv); return { type:'tuple', v:r, keys:col.keys?[...col.keys].filter((_,i)=>i<si||i>=si+nv):null }; }
+        notSupported('$-[i:n]');
+      }
       case '$-[i..j]': {
-        const from=(await this.eval(expr.range.from,env)).v, to=(await this.eval(expr.range.to,env)).v;
-        const count = to - from + 1;
-        if (col.type === 'arr')   { const r=[...col.v]; r.splice(from,count); return mkArr(r); }
-        if (col.type === 'str')   { const r=[...col.v]; r.splice(from,count); return mkStr(r.join('')); }
+        const len = col.type === 'str' ? [...col.v].length : col.v.length;
+        const fv = expr.range.from ? (await this.eval(expr.range.from, env)).v : 1;
+        const tv = expr.range.to   ? (await this.eval(expr.range.to,   env)).v : len;
+        const fi = resolveIdx(fv, len);
+        const ti = resolveIdx(tv, len);
+        const count = ti - fi + 1;
+        if (col.type === 'arr')   { const r=[...col.v]; r.splice(fi,count); return mkArr(r); }
+        if (col.type === 'str')   { const r=[...col.v]; r.splice(fi,count); return mkStr(r.join('')); }
+        if (col.type === 'tuple') { const r=[...col.v]; r.splice(fi,count); const ks=col.keys?[...col.keys]:null; if(ks)ks.splice(fi,count); return {type:'tuple',v:r,keys:ks}; }
         notSupported('$-[i..j]');
       }
 
-      // ── search ──────────────────────────────────────────────────────────
       case '$?': {
         const v = await arg();
         if (col.type === 'arr')   return mkBool(col.v.some(el=>this.equals(el,v)));
@@ -1782,17 +2343,16 @@ export class Interpreter {
         const v = await arg(), target = this.display(v);
         const result = [];
         if (col.type === 'arr' || col.type === 'tuple') {
-          col.v.forEach((el,i) => { if (this.equals(el,v)) result.push(mkInt(i)); });
+          col.v.forEach((el,i) => { if (this.equals(el,v)) result.push(mkInt(i+1)); }); // 1-based
         } else if (col.type === 'str') {
           const chars = [...col.v];
           for (let i=0; i<=chars.length-target.length; i++) {
-            if (chars.slice(i,i+target.length).join('')===target) result.push(mkInt(i));
+            if (chars.slice(i,i+target.length).join('')===target) result.push(mkInt(i+1)); // 1-based
           }
         } else notSupported('$??');
         return mkArr(result);
       }
 
-      // ── update ──────────────────────────────────────────────────────────
       case '$~': {
         const i=await idx(), v=await arg();
         if (col.type === 'arr')   { const r=[...col.v]; r[i]=v; return mkArr(r); }
@@ -1801,24 +2361,27 @@ export class Interpreter {
         notSupported('$~');
       }
 
-      // ── slice ────────────────────────────────────────────────────────────
       case '$[i..j]': {
-        const from=(await this.eval(expr.range.from,env)).v, to=(await this.eval(expr.range.to,env)).v;
-        if (col.type === 'arr')   return mkArr(col.v.slice(from, to));
-        if (col.type === 'str')   return mkStr([...col.v].slice(from,to).join(''));
-        if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(from,to), keys:col.keys?col.keys.slice(from,to):null };
+        const fv=(await this.eval(expr.range.from,env)).v, tv=(await this.eval(expr.range.to,env)).v;
+        const len = col.type === 'str' ? [...col.v].length : col.v.length;
+        const fi = this.resolve1Based(fv, len);
+        const ti = this.resolve1Based(tv, len) + 1; // inclusive end
+        if (col.type === 'arr')   return mkArr(col.v.slice(fi, ti));
+        if (col.type === 'str')   return mkStr([...col.v].slice(fi,ti).join(''));
+        if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(fi,ti), keys:col.keys?col.keys.slice(fi,ti):null };
         notSupported('$[i..j]');
       }
 
       case '$[i:n]': {
-        const from=(await this.eval(expr.range.from,env)).v, n=(await this.eval(expr.range.count,env)).v;
-        if (col.type === 'arr')   return mkArr(col.v.slice(from, from+n));
-        if (col.type === 'str')   return mkStr([...col.v].slice(from,from+n).join(''));
-        if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(from,from+n), keys:col.keys?col.keys.slice(from,from+n):null };
+        const fv=(await this.eval(expr.range.from,env)).v, n=(await this.eval(expr.range.count,env)).v;
+        const len = col.type === 'str' ? [...col.v].length : col.v.length;
+        const fi = this.resolve1Based(fv, len);
+        if (col.type === 'arr')   return mkArr(col.v.slice(fi, fi+n));
+        if (col.type === 'str')   return mkStr([...col.v].slice(fi,fi+n).join(''));
+        if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(fi,fi+n), keys:col.keys?col.keys.slice(fi,fi+n):null };
         notSupported('$[i:n]');
       }
 
-      // ── sort ─────────────────────────────────────────────────────────────
       case '$^+': {
         if (col.type !== 'arr') notSupported('$^+');
         return mkArr([...col.v].sort((a,b)=> a.type==='str' ? a.v.localeCompare(b.v) : a.v-b.v));
@@ -1831,7 +2394,6 @@ export class Interpreter {
         if (col.type !== 'arr') notSupported('$^');
         const cmpFn = await this.evalCallable(expr.arg, env);
         const items = [...col.v];
-        // Stable sort using comparator lambda: returns true if a < b (a before b)
         for (let i = 1; i < items.length; i++) {
           for (let j = i; j > 0; j--) {
             const less = await this.callFunc(cmpFn, [items[j-1], items[j]]);
@@ -1842,7 +2404,6 @@ export class Interpreter {
         return mkArr(items);
       }
 
-      // ── higher-order (require named function) ────────────────────────────
       case '$>': {
         const fn = await this.evalCallable(expr.arg, env);
         const items = colItems();
@@ -1864,32 +2425,54 @@ export class Interpreter {
         for (const el of colItems()) acc = await this.callFunc(fn,[acc,el]);
         return acc;
       }
-      case '$!': {
-        // Returns #1 if the value is an error type, #0 otherwise
+
+      case '$!':
         return mkBool(col.type === 'error');
-      }
+
       case '$!!': {
-        // Propagates error: if the value is an error type, re-throw it; otherwise pass through
         if (col.type === 'error')
           throw new ZyRuntimeError(col.v ?? 'error', col.errType ?? '##_');
         return col;
       }
+
       case '$~~': {
         if (col.type !== 'str') notSupported('$~~');
         const from = this.display(await this.eval(expr.from, env));
         const to   = this.display(await this.eval(expr.to,   env));
         const maxN = expr.count ? (await this.eval(expr.count, env)).v : Infinity;
-        let result = col.v, idx = 0, n = 0;
+        let result = col.v, idx2 = 0, n = 0;
         while (n < maxN) {
-          const p = result.indexOf(from, idx);
+          const p = result.indexOf(from, idx2);
           if (p === -1) break;
           result = result.slice(0, p) + to + result.slice(p + from.length);
-          idx = p + to.length;
+          idx2 = p + to.length;
           n++;
         }
         return mkStr(result);
       }
+
+      case '$/': {
+        if (col.type !== 'str') notSupported('$/');
+        const delimVal = await arg();
+        const delim = this.display(delimVal);
+        const parts = col.v.split(delim);
+        return mkArr(parts.map(p => mkStr(p)));
+      }
+
+      case '$++': {
+        const evalItems = await Promise.all(expr.items.map(i => this.eval(i, env)));
+        if (col.type === 'str') {
+          let result = col.v;
+          for (const item of evalItems) result += this.display(item);
+          return mkStr(result);
+        }
+        if (col.type === 'arr') {
+          return mkArr([...col.v, ...evalItems]);
+        }
+        notSupported('$++');
+      }
     }
+
     throw new ZyError(`Unknown collection operator: ${expr.op}`);
   }
 
@@ -1908,22 +2491,84 @@ export class Interpreter {
         const to   = (await this.eval(pattern.to,   env)).v;
         return val.v >= from && val.v <= to;
       }
-      case 'literal':
-        return this.equals(val, await this.eval(pattern.value, env));
+      case 'comparison': {
+        const pv = (await this.eval(pattern.value, env)).v;
+        const sv = val.v;
+        switch (pattern.op) {
+          case '<':  return sv < pv;
+          case '>':  return sv > pv;
+          case '<=': return sv <= pv;
+          case '>=': return sv >= pv;
+          case '==': return this.equals(val, await this.eval(pattern.value, env));
+          case '<>': return !this.equals(val, await this.eval(pattern.value, env));
+        }
+        return false;
+      }
+      case 'literal': {
+        const pv = await this.eval(pattern.value, env);
+        if (pv.type === 'arr') return pv.v.some(el => this.equals(val, el));
+        return this.equals(val, pv);
+      }
+      case 'list': {
+        // Scalar scrutinee: list pattern means "value is one of these" (membership)
+        if (val.type !== 'arr') {
+          for (const elem of pattern.elems) {
+            if (elem.kind === 'wildcard') return true;
+            if (elem.kind === 'literal' && this.equals(val, await this.eval(elem.expr, env))) return true;
+          }
+          return false;
+        }
+        const elems = pattern.elems;
+        const restIdx = elems.findIndex(e => e.kind === 'rest');
+        const matchElem = async (elem, arrVal) => {
+          if (elem.kind === 'wildcard') return true;
+          if (elem.kind === 'literal') return this.equals(arrVal, await this.eval(elem.expr, env));
+          if (elem.kind === 'bind') { env.def(elem.name, arrVal); return true; }
+          // Legacy format (name, rest)
+          if (elem.rest) return true;
+          if (elem.name === '_') return true;
+          env.def(elem.name, arrVal); return true;
+        };
+        if (restIdx < 0) {
+          if (val.v.length !== elems.length) return false;
+          for (let i = 0; i < elems.length; i++) {
+            if (!await matchElem(elems[i], val.v[i])) return false;
+          }
+          return true;
+        }
+        const minLen = elems.length - 1;
+        if (val.v.length < minLen) return false;
+        for (let i = 0; i < restIdx; i++) {
+          if (!await matchElem(elems[i], val.v[i])) return false;
+        }
+        const afterRest = elems.length - restIdx - 1;
+        const restElem = elems[restIdx];
+        if (restElem.name && restElem.name !== '_')
+          env.def(restElem.name, mkArr(val.v.slice(restIdx, val.v.length - afterRest)));
+        for (let i = 0; i < afterRest; i++) {
+          const elem = elems[restIdx + 1 + i];
+          if (!await matchElem(elem, val.v[val.v.length - afterRest + i])) return false;
+        }
+        return true;
+      }
     }
     return false;
   }
 
-  async callFunc(fn, args) {
-    // Lambdas (closures): parent = closureEnv, no boundary (they capture their scope).
-    // Named functions: parent = globalEnv with funcBoundary=true — only func lookups
-    //   pass the boundary, variable reads/writes stay local (Zymbol isolation rule).
+  async callFunc(fn, args, outWriteback) {
     const isClosure = fn.closureEnv != null;
     const parent    = isClosure ? fn.closureEnv : this.globalEnv;
     const funcEnv   = new Env(parent, !isClosure);
     for (let i = 0; i < fn.params.length; i++)
       funcEnv.def(fn.params[i].name, args[i] ?? mkUnit());
     const sig = await this.execBlock(fn.body, funcEnv);
+    // Write back output params to caller env
+    if (outWriteback) {
+      for (const { paramName, callerName, callerEnv } of outWriteback) {
+        const val = funcEnv.vars.get(paramName);
+        if (val !== undefined) callerEnv.set(callerName, val);
+      }
+    }
     if (sig instanceof ZyReturn) return sig.value;
     return mkUnit();
   }
@@ -1947,7 +2592,6 @@ export class Interpreter {
   }
 
   applyOp(op, l, r) {
-    // String concatenation: str + anything → str
     if (op === '+' && (l.type === 'str' || r.type === 'str')) {
       return mkStr(this.display(l) + this.display(r));
     }
@@ -1979,7 +2623,7 @@ export class Interpreter {
           (b.type === 'int' || b.type === 'float')) return a.v === b.v;
       return false;
     }
-    if (a.type === 'arr'   || a.type === 'tuple') return JSON.stringify(a.v) === JSON.stringify(b.v);
+    if (a.type === 'arr' || a.type === 'tuple') return JSON.stringify(a.v) === JSON.stringify(b.v);
     return a.v === b.v;
   }
 
@@ -1991,8 +2635,6 @@ export class Interpreter {
     return true;
   }
 
-  // display() — internal representation (concatenation, array items, etc.)
-  // Does NOT apply numeral mode: booleans → #1/#0, numbers → ASCII digits.
   display(val) {
     if (!val || val.type === 'unit') return '';
     if (val.type === 'int')   return String(val.v);
@@ -2010,8 +2652,6 @@ export class Interpreter {
     return String(val.v ?? val);
   }
 
-  // displayOutput() — used exclusively by >>
-  // Applies the active numeral mode to int/float/bool; all other types unchanged.
   displayOutput(val) {
     const m = this.numeralMode;
     if (!val || val.type === 'unit') return '';
@@ -2024,15 +2664,15 @@ export class Interpreter {
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-/**
- * Run Zymbol source code.
- * @param {string}                  src      — source code
- * @param {()=>Promise<string>}     inputFn  — async callback invoked on each << read
- * @param {(text:string)=>void}     onOutput — callback for each output chunk
- * @returns {Promise<void>}
- */
-export async function runZymbol(src, inputFn, onOutput) {
+export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, filePath = null) {
   const tokens = new Lexer(src).tokenize();
   const ast    = new Parser(tokens).parse();
-  await new Interpreter(onOutput, inputFn).run(ast);
+  try {
+    await new Interpreter(onOutput, inputFn, moduleResolver).run(ast, filePath);
+  } catch (e) {
+    if (e instanceof ZyStaticError)
+      onOutput(`Runtime error: ${e.message}`);
+    else
+      onOutput(`Runtime error: runtime error: ${e.message ?? e}`);
+  }
 }

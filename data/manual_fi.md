@@ -1,20 +1,32 @@
-# Kompakti Zymbol-Lang-dokumentaatio
-
-**Zymbol-Lang** on symbolinen ohjelmointikieli. Se ei käytä avainsanoja — kaikki on symboleja. Se toimii samalla tavalla kaikilla ihmiskielillä. Ei avainsanoja (`if`, `while`, `return` eivät ole olemassa — vain symbolit `?`, `@`, `<~`). Täysi Unicode — tunnisteet millä tahansa kielellä tai emojilla 👋
+> **Vastuuvapauslauseke:** Tämä dokumentaatio on luotu tekoälyn (AI) avustuksella.
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Kanoninen viite on **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** tulkkiarkistossa.
 
 ---
 
-## Muuttujat ja Vakiot
+# Zymbol-Lang -käsikirja
+
+**Zymbol-Lang** on symbolinen ohjelmointikieli. Ei avainsanoja — kaikki on symboli. Toimii samalla tavalla missä tahansa ihmiskielessä.
+
+- Ei `if`, `while`, `return` — vain `?`, `@`, `<~`
+- Täysi Unicode — tunnisteet millä tahansa kielellä tai emojilla
+- Ihmiskielestä riippumaton — koodi on sama kaikkialla
+
+**Tulkin versio**: v0.0.4 | **Testikattavuus**: 393/393 (TW ↔ VM -pariteetti)
+
+---
+
+## Muuttujat ja vakiot
 
 ```zymbol
-x = 10          // muuttuja (muutettava)
-PI := 3.14159   // vakio (muuttumaton — virhe uudelleensijoituksessa)
-nimi = "Ana"
-aktiivinen = #1 // totuusarvo tosi
+x = 10              // muuttuva muuttuja
+PI := 3.14159       // vakio — uudelleenmääritys on ajonaikainen virhe
+nimi = "Anna"
+aktiivinen = #1     // totuusarvo tosi
 👋 := "Hei"
 ```
-
-### Yhdistetty Sijoitus
 
 ```zymbol
 x = 10    // 10
@@ -24,99 +36,103 @@ x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
 
 ---
 
 ## Tietotyypit
 
-| Tyyppi          | Esimerkki           | Symboli `#?` | Huomiot                               |
-|-----------------|---------------------|--------------|---------------------------------------|
-| Kokonaisluku    | `42`, `-7`          | `###`        | 64-bit etumerkillinen                 |
-| Liukuluku       | `3.14`, `1.5e10`    | `##.`        | Tieteellinen merkintätapa OK          |
-| Merkkijono      | `"hei"`             | `##"`        | Interpolaatio: `"Hei {nimi}"`         |
-| Merkki          | `'A'`               | `##'`        | Yksi Unicode-merkki                   |
-| Totuusarvo      | `#1`, `#0`          | `##?`        | EI numeerisia 1 ja 0                  |
-| Taulukko        | `[1, 2, 3]`         | `##]`        | Kaikki elementit samaa tyyppiä        |
-| Monikko         | `(a, b)`            | `##)`        | Paikallinen                           |
-| Nimetty monikko | `(x: 1, y: 2)`      | `##)`        | Pääsy nimellä tai indeksillä          |
+| Tyyppi | Literaali | `#?` -tunniste | Huomautukset |
+|--------|-----------|----------------|--------------|
+| Kokonaisluku | `42`, `-7` | `###` | 64-bittinen etumerkillinen |
+| Liukuluku | `3.14`, `1.5e10` | `##.` | Tieteellinen merkintä OK |
+| Merkkijono | `"teksti"` | `##"` | Interpolointi: `"Hei {nimi}"` |
+| Merkki | `'A'` | `##'` | Yksi Unicode-merkki |
+| Totuusarvo | `#1`, `#0` | `##?` | EI numeerinen — `#1 ≠ 1` |
+| Taulukko | `[1, 2, 3]` | `##]` | Homogeeniset alkiot |
+| Monikko | `(a, b)` | `##)` | Paikkainen |
+| Nimetty monikko | `(x: 1, y: 2)` | `##)` | Nimetyt kentät |
+| Funktio | nimetty funktioviite | `##()` | Ensiluokkainen; näyttää `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Ensiluokkainen; näyttää `<lambd/N>` |
+
+```zymbol
+// Tyypin tiedustelu — palauttaa (tyyppi, numerot, arvo)
+meta = 42#?
+>> meta ¶         // → (###, 2, 42)
+t = meta[1]
+>> t ¶            // → ###
+```
 
 ---
 
-## Tulostus ja Syöte
+## Tulostus ja syöte
 
 ```zymbol
-// Tulostus — EI automaattista rivinvaihtoa
->> "Hei" ¶                     // ¶ tai \\ antaa eksplisiittisen rivinvaihdon
->> "a=" a " b=" b ¶            // useita arvoja rinnakkainasettelulla
->> "summa=" laske(2, 3) ¶      // funktiokutsut missä tahansa kohdassa
->> (arr$#) ¶                   // postfix-operaattorit vaativat sulkeet
+>> "Hei" ¶                       // ¶ tai \\ selkeälle rivinvaihdolle
+>> "a=" a " b=" b ¶              // rinnakkain asettelu — useita arvoja
+>> (arr$#) ¶                     // postfix-operaattorit vaativat ( ) >>-merkissä
 
-// Syöte
-<< nimi                        // ilman kehotetta — lukee muuttujaan
-<< "Nimi? " nimi               // kehotteella
+<< nimi                           // lue muuttujaan (ei kehotetta)
+<< "Anna nimi: " nimi             // kehotteen kanssa
 ```
 
-> `¶` tai `\\` on rivinvaihdon vastaava.
+> `¶` (AltGr+R espanjalaisella näppäimistöllä) ja `\\` vastaavat rivinvaihtoja.
 
 ---
 
 ## Operaattorit
 
 ```zymbol
-// Aritmetiikka
-5 + 2    // → 7
-5 - 2    // → 3
-5 * 2    // → 10
-5 / 2    // → 2.5
-5 % 2    // → 1
-5 ^ 2    // → 25   (potenssilasku)
+// Aritmetiikka — käytä sijoituksia; joillakin operaattoreilla on erikoisuuksia suoraan >>-merkissä
+a = 10
+b = 3
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (kokonaislukujako)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (potenssiinkorotus)
 
-// Vertailu (palauttaa #1 tai #0)
-5 == 5   // → #1
-5 != 4   // → #1
-5 > 4    // → #1
-5 < 4    // → #0
-5 >= 5   // → #1
-5 <= 4   // → #0
+// Vertailu
+a == b    // #0    
+a <> b    // #1    
+a < b     // #0
+a <= b    // #0   
+a > b     // #1    
+a >= b    // #1
 
 // Loogiset
-#1 && #0    // → #0   (ja)
-#1 || #0    // → #1   (tai)
-!#1         // → #0   (ei)
+#1 && #0    // #0
+#1 || #0    // #1
+!#1         // #0
 ```
 
 ---
 
 ## Merkkijonot
 
-Kolme pätevää tapaa — kukin omaan kontekstiinsa:
-
 ```zymbol
-nimi = "Ana"
-luku = 25
+// Kaksi yhdistämismuotoa
+nimi = "Anna"
+n = 42
 
-// 1. Pilkku — sijoituksissa = tai :=
-msg = "Hei ", nimi, "!"                    // → Hei Ana!
-OTSIKKO := "Käyttäjä: ", nimi
-
-// 2. Rinnakkainasettelu — tulostuksessa >>
->> "Hei " nimi " olet " luku " vuotta vanha" ¶   // → Hei Ana olet 25 vuotta vanha
-
-// 3. Interpolaatio — missä tahansa kontekstissa
-desc = "Hei {nimi}, olet {luku} vuotta vanha"    // → Hei Ana, olet 25 vuotta vanha
+>> "Hei " nimi " sinulla on " n ¶       // rinnakkain asettelu — >>-merkissä
+kuvaus = "Hei {nimi}, sinulla on {n}"   // interpolointi — missä tahansa
 ```
 
 ```zymbol
-// Korvaa — s$~~["vanha":"uusi"]
-s = "hei maailma"
-s = s$~~["maailma":"maa"]       // → "hei maa"
-s = s$~~["i":"I":1]             // → "heI maa"   korvaa ensimmäiset N esiintymät
+s = "Hei Maailma"
+pituus = s$#                  // 11
+osa = s$[1..5]                // "Hei M"  (1-pohjainen, loppu mukaan lukien)
+onko = s$? "Maailma"          // #1
+osat = "a,b,c,d"$/ ','        // [a, b, c, d]  (erota erottimella)
+korvattu = s$~~["i":"y"]      // "Hey Maaylma"
+korvattu1 = s$~~["i":"y":1]   // "Hey Maailma"  (vain ensimmäinen N)
 ```
 
-> **Huomio**: `+` on vain numeroille. Käyttö merkkijonoilla antaa varoituksen.
+> `+` on vain numeroille. Käytä `,`, rinnakkain asettelua tai interpolointia merkkijonoille.
 
 ---
 
@@ -125,10 +141,8 @@ s = s$~~["i":"I":1]             // → "heI maa"   korvaa ensimmäiset N esiinty
 ```zymbol
 x = 7
 
-// Yksinkertainen jos
 ? x > 0 { >> "positiivinen" ¶ }
 
-// Jos / muuten jos / muuten
 ? x > 100 {
     >> "suuri" ¶
 } _? x > 0 {
@@ -140,14 +154,14 @@ x = 7
 }
 ```
 
-Lohkot `{ }` ovat **pakollisia** vaikka ne sisältäisivät vain yhden rivin.
+> `{ }` -aaltosulkeet **vaaditaan** jopa yhdelle lauseelle.
 
 ---
 
 ## Match
 
 ```zymbol
-// Match intervallien kanssa
+// Alueet
 pisteet = 85
 arvosana = ?? pisteet {
     90..100 : 'A'
@@ -157,24 +171,30 @@ arvosana = ?? pisteet {
 }
 >> arvosana ¶    // → B
 
-// Match vartijoiden (ehtojen) kanssa
-lämpötila = -5
-tila = ?? lämpötila {
-    _? lämpötila < 0  : "jää"
-    _? lämpötila < 20 : "kylmä"
-    _? lämpötila < 35 : "lämmin"
-    _                 : "kuuma"
-}
->> tila ¶    // → jää
-
-// Match merkkijonojen kanssa
-väri = "punainen"
-koodi = ?? väri {
+// Merkkijonot
+vari = "punainen"
+koodi = ?? vari {
     "punainen" : "#FF0000"
     "vihreä"   : "#00FF00"
     _          : "#000000"
 }
->> koodi ¶
+
+// Vertailumallit
+lampotila = -5
+tila = ?? lampotila {
+    < 0  : "jää"
+    < 20 : "kylmä"
+    < 35 : "lämmin"
+    _    : "kuuma"
+}
+>> tila ¶    // → jää
+
+// Lausemuoto (lohkot)
+?? n {
+    0        : { >> "nolla" ¶ }
+    _? n < 0 : { >> "negatiivinen" ¶ }
+    _        : { >> "positiivinen" ¶ }
+}
 ```
 
 ---
@@ -182,38 +202,43 @@ koodi = ?? väri {
 ## Silmukat
 
 ```zymbol
-// Inklusiivinen väli: 0..4 iteroi 0,1,2,3,4
-@ i:0..4 { >> i " " }
->> ¶    // → 0 1 2 3 4
+@ i:0..4  { >> i " " }        // alue mukaan lukien:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // askeleella:          1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // käänteinen:          5 4 3 2 1 0
 
-// Väli askeleilla
-@ i:1..9:2 { >> i " " }
->> ¶    // → 1 3 5 7 9
+n = 1
+@ n <= 64 { n *= 2 }
+>> n ¶                        // → 128  (while)
 
-// Käänteinen väli
-@ i:5..0:1 { >> i " " }
->> ¶    // → 5 4 3 2 1 0
+hedelmat = ["omena", "päärynä", "rypäle"]
+@ h:hedelmat { >> h ¶ }       // for-each taulukkoon
 
-// Niin kauan kuin (while)
-luku = 1
-@ luku <= 64 { luku *= 2 }
->> luku ¶    // → 128
+@ m:"hei" { >> m "-" }
+>> ¶                          // → h-e-i-  (for-each merkkijonoon)
 
-// Jokaiselle elementille
-hedelmä = ["omena", "päärynä", "viinirypäle"]
-@ f:hedelmä { >> f ¶ }
-
-// Merkkijonon merkkien yli
-@ c:"hei" { >> c "-" }
->> ¶    // → h-e-i-
-
-// Keskeytä ja Jatka
 @ i:1..10 {
-    ? i % 2 == 0 { @> }    // @> jatka
-    ? i > 7 { @! }          // @! keskeytä
+    ? i % 2 == 0 { @> }       // @> jatka
+    ? i > 7 { @! }            // @! keskeytä
     >> i " "
 }
->> ¶    // → 1 3 5 7
+>> ¶                          // → 1 3 5 7
+
+// Päättymätön silmukka
+i = 0
+@ {
+    i++
+    ? i >= 5 { @! }
+    >> i " "
+}
+>> ¶                          // → 1 2 3 4
+
+// Nimetty silmukka (sisäkkäinen keskeytys)
+laskuri = 0
+@:ulompi {
+    laskuri++
+    ? laskuri >= 3 { @:ulompi! }
+}
+>> laskuri ¶                  // → 3
 ```
 
 ---
@@ -221,362 +246,346 @@ hedelmä = ["omena", "päärynä", "viinirypäle"]
 ## Funktiot
 
 ```zymbol
-// Määrittely ja kutsu
 summa(a, b) { <~ a + b }
 >> summa(3, 4) ¶    // → 7
 
-// Rekursio
-kertoma(luku) {
-    ? luku <= 1 { <~ 1 }
-    <~ luku * kertoma(luku - 1)
+kertoma(n) {
+    ? n <= 1 { <~ 1 }
+    <~ n * kertoma(n - 1)
 }
 >> kertoma(5) ¶    // → 120
-
-// Funktioilla on eristetty näkyvyysalue — ei pääsyä ulkoisiin muuttujiin
-globaali = 100
-testata() {
-    x = 42    // paikallinen, ei pääsyä 'globaali'-muuttujaan
-    <~ x
-}
->> testata() ¶    // → 42
 ```
 
-> **Tärkeää**: Funktiot, jotka on määritelty muodolla `nimi(params){ }`, eivät ole ensimmäisen luokan arvoja.
-> Käytä `x -> nimi(x)` välittääksesi ne argumenttina.
+Funktioilla on **eristetty näkyvyysalue** — ne eivät voi lukea ulkoisia muuttujia. Käytä tulostusparametreja `<~` muokataksesi kutsujan muuttujia:
+
+```zymbol
+vaihda(a<~, b<~) {
+    tmp = a
+    a = b
+    b = tmp
+}
+x = 10
+y = 20
+vaihda(x, y)
+>> "x=" x " y=" y ¶    // → x=20 y=10
+```
+
+> Nimetyt funktiot ovat **ensiluokkaisia arvoja** — siirrä suoraan: `nums$> tuplaa`. Myös `x -> fn(x)` on kelvollinen.
 
 ---
 
-## Lambdat ja Sulkeumat
+## Lambdat ja sulkeumat
 
 ```zymbol
-// Yksinkertainen lambda (implisiittinen palautus)
-kaksinkertainen = x -> x * 2
+tuplaa = x -> x * 2
 summa = (a, b) -> a + b
->> kaksinkertainen(5) ¶     // → 10
->> summa(3, 7) ¶            // → 10
+>> tuplaa(5) ¶    // → 10
+>> summa(3, 7) ¶  // → 10
 
-// Lambda lohkolla (eksplisiittinen palautus)
+// Lohkolambda
 luokittele = x -> {
     ? x > 0 { <~ "positiivinen" }
     _? x < 0 { <~ "negatiivinen" }
     <~ "nolla"
 }
->> luokittele(5) ¶     // → positiivinen
->> luokittele(0) ¶     // → nolla
->> luokittele(-5) ¶    // → negatiivinen
 
-// Sulkeumat — lambdat kaappaavat muuttujia ulkoisesta näkyvyysalueesta
+// Sulkeuma — kaappaa ulkoisen näkyvyysalueen
 kerroin = 3
-kolminkertainen = x -> x * kerroin    // kaappaa 'kerroin'
->> kolminkertainen(7) ¶    // → 21
+kolminkertaista = x -> x * kerroin
+>> kolminkertaista(7) ¶    // → 21
 
-// Funktiotuotanto
-make_adder(luku) { <~ x -> x + luku }
-add10 = make_adder(10)
-add20 = make_adder(20)
->> add10(5) ¶    // → 15
->> add20(5) ¶    // → 25
+// Tehdas
+luo_summaaja(n) { <~ x -> x + n }
+lisaa10 = luo_summaaja(10)
+>> lisaa10(5) ¶    // → 15
 
-// Lambdat arvoina: tallennetaan taulukoihin
+// Taulukoissa
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[0](5) ¶    // → 6
->> ops[1](5) ¶    // → 10
->> ops[2](5) ¶    // → 25
+>> ops[3](5) ¶    // → 25
 ```
 
 ---
 
 ## Taulukot
 
-Taulukot ovat **muutettavia** ja sisältävät **samantyyppisiä** elementtejä.
+Taulukot ovat **muuttuvia** ja sisältävät **saman tyypin** alkioita.
 
 ```zymbol
-arr = [10, 20, 30, 40, 50]
+arr = [1, 2, 3, 4, 5]
 
-// Pääsy (indeksi alkaa 0:sta)
->> arr[0] ¶    // → 10
->> arr[2] ¶    // → 30
->> arr[-1] ¶   // → 50   negatiivinen indeksi
+arr[1]          // 1 — pääsy (1-pohjainen: ensimmäinen alkio)
+arr[-1]         // 5 — negatiivinen indeksi (viimeinen alkio)
+arr$#           // 5 — pituus (käytä (arr$#) >>-merkissä)
 
-// Pituus (vaatii sulkeet >>:ssä)
-luku = arr$#
->> luku ¶          // → 5
->> (arr$#) ¶       // → 5
+arr = arr$+ 6            // lisää → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // lisää kohtaan 2 (1-pohjainen)
+arr3 = arr$- 3           // poista ensimmäinen arvon esiintymä
+arr4 = arr$-- 3          // poista kaikki esiintymät
+arr5 = arr$-[1]          // poista indeksistä 1 (ensimmäinen alkio)
+arr6 = arr$-[2..3]       // poista alue (1-pohjainen, loppu mukaan lukien)
 
-// Lisää, poista, tarkista, siivu
-arr = arr$+ 60               // [10, 20, 30, 40, 50, 60]
-arr = arr$- 0                // poistaa indeksin 0: [20, 30, 40, 50, 60]
-sisältää = arr$? 30          // → #1
-idx = arr$?? 30              // → [1]   kaikki indeksit arvolle
-osa = arr$[0..2]             // siivu [0,2): [20, 30]
-määrä = arr$[0:3]            // määräpohjainen: [20, 30, 40]
+onko = arr$? 3           // #1 — sisältää
+paikat = arr$?? 3        // [3] — kaikki arvon indeksit (1-pohjainen)
+pala = arr$[1..3]        // [1,2,3] — siivu (1-pohjainen, loppu mukaan lukien)
+pala2 = arr$[1:3]        // [1,2,3] — sama, lukumääräsyntaksi
 
-// Elementin suora päivitys (vain taulukot)
-arr[1] = 99              // aseta
-arr[0] += 5              // yhdistetty: +=  -=  *=  /=  %=  ^=
+nouseva = arr$^+         // lajittele nousevasti (vain primitiivit)
+laskeva = arr$^-         // lajittele laskevasti (vain primitiivit)
 
-// Toiminnallinen päivitys — palauttaa uuden taulukon; alkuperäinen pysyy muuttumattomana
-arr2 = arr[1]$~ 77
+// Nimetyt/paikkaiset monikkotaulukot — käytä $^ vertailulambdalla
+db = [(nimi: "Karla", ika: 28), (nimi: "Ana", ika: 25), (nimi: "Pekka", ika: 30)]
+ian_mukaan   = db$^ (a, b -> a.ika < b.ika)      // nousevasti iän mukaan (<)
+nimen_mukaan = db$^ (a, b -> a.nimi > b.nimi)    // laskevasti nimen mukaan (>)
+>> ian_mukaan[1].nimi ¶     // → Ana
+>> nimen_mukaan[1].nimi ¶   // → Karla
 
-// Lajittele (primitiivit)
-num = [3, 1, 4, 1, 5]
-nouseva  = num$^+            // → [1, 1, 3, 4, 5]
-laskeva  = num$^-            // → [5, 4, 3, 1, 1]
+// Suora alkion päivitys (vain taulukot)
+arr[1] = 99              // sijoita
+arr[2] += 5              // yhdistetty: +=  -=  *=  /=  %=  ^=
 
-// Lajittele monikot vertailulambdalla
-parit = [(2,"b"), (1,"a"), (3,"c")]
-lajiteltu = parit$^ ((a,b) -> a[0] - b[0])    // lajittele ensimmäisen elementin mukaan
-
-// Sisäkkäiset taulukot
-matriisi = [[1,2],[3,4],[5,6]]
->> matriisi[1][0] ¶    // → 3
-
-// Jokaiselle elementille
-@ x:arr { >> x " " }
->> ¶
+// Funktionaalinen päivitys — palauttaa uuden taulukon; alkuperäinen muuttumaton
+arr2 = arr[2]$~ 99
 ```
 
-> `$+`, `$-`, `$[..]` palauttavat **uuden taulukon** — sijoita samaan nimeen: `arr = arr$+ 4`.
-> Älä ketjuta: `arr$+ 4$+ 5` ei toimi — käytä kahta sijoitusta.
-> `arr$??` ja `arr$[s:n]` käyttävät eri syntaksia kuin `arr$[s..e]` — katso Symboliviite.
+> Kaikki kokoelmaoperaattorit palauttavat **uuden taulukon**. Sijoita takaisin: `arr = arr$+ 4`.
+> `$+` voidaan ketjuttaa: `arr = arr$+ 5$+ 6$+ 7`. Muut operaattorit käyttävät väliaikaisia sijoituksia.
+> **Indeksointi on 1-pohjainen**: `arr[1]` on ensimmäinen alkio; `arr[0]` on ajonaikainen virhe.
+> `$^+` / `$^-` lajittelevat **primitiiviset taulukot** (numerot, merkkijonot). Monikkotaulukoille käytä `$^` vertailulambdalla — suunta on koodattu lambdaan (`<` = nouseva, `>` = laskeva).
 
-**Arvosematiikka** — taulukon sijoittaminen toiseen muuttujaan luo itsenäisen kopion:
+**Arvosemantiikka** — taulukon sijoittaminen toiseen muuttujaan luo itsenäisen kopion:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
 >> b ¶    // → [1, 2, 3]   ← b ei muutu
 ```
 
-**Muuttumattomuus** — mikä tahansa yritys muuttaa tuplin elementtiä on ajonaikainen virhe:
-
 ```zymbol
-t = (10, 20, 30)
-// t[0] = 99    // ❌ ajonaikainen virhe: tuplit ovat muuttumattomia
-// t[0] += 5    // ❌ sama virhe
-```
-
-Muokatun arvon johtamiseen käytä `$~` (toiminnallinen päivitys) — palauttaa **uuden** tuplin:
-
-```zymbol
-t = (10, 20, 30)
-t2 = t[1]$~ 999
->> t ¶     // → (10, 20, 30)   ← alkuperäinen ei muutu
->> t2 ¶    // → (10, 999, 30)
-
-// Nimetty monikko — rakenna eksplisiittisesti uudelleen
-henkilö = (nimi: "Alice", ikä: 25)
-vanhempi = (nimi: henkilö.nimi, ikä: 26)
->> henkilö.ikä ¶    // → 25
->> vanhempi.ikä ¶   // → 26
+// Sisäkkäiset taulukot (1-pohjainen indeksointi)
+matriisi = [[1,2,3],[4,5,6],[7,8,9]]
+>> matriisi[2][3] ¶    // → 6  (rivi 2, sarake 3)
 ```
 
 ---
 
-## Purkaminen
+## Destrukturointi
 
 ```zymbol
-// Taulukon purkaminen
-arr = [10, 20, 30]
-[a, b, c] = arr
->> a ¶    // → 10
->> b ¶    // → 20
+// Taulukko
+arr = [10, 20, 30, 40, 50]
+[a, b, c] = arr              // a=10  b=20  c=30
+[ensimmainen, *loput] = arr  // ensimmainen=10  loput=[20,30,40,50]
+[x, _, z] = [1, 2, 3]       // _ hylkää
 
-// Paikallisen monikon purkaminen
-pt = (3, 4)
-(x, y) = pt
->> x ¶    // → 3
-
-// Nimetyn monikon purkaminen
-henkilö = (nimi: "Alice", ikä: 25)
-(nimi: n, ikä: i) = henkilö
->> n ¶    // → Alice
->> i ¶    // → 25
-```
-
----
-
-## Tuplit
-
-Tuplit ovat **muuttumattomia** järjestettyjä säiliöitä, jotka voivat sisältää **erityyppisiä** arvoja. Toisin kuin taulukot, elementtejä ei voi muuttaa luomisen jälkeen.
-
-```zymbol
-// Paikallinen monikko
-piste = (10, 20)
->> piste[0] ¶    // → 10
-
-tieto = (42, "hei", #1, 3.14)
->> tieto[2] ¶     // → #1
-
->> piste[1] ¶    // → 20
+// Paikkainen monikko
+piste = (100, 200)
+(px, py) = piste             // px=100  py=200
 
 // Nimetty monikko
-henkilö = (nimi: "Alice", ikä: 25)
->> henkilö.nimi ¶      // → Alice
->> henkilö.ikä ¶       // → 25
->> henkilö[0] ¶        // → Alice (indeksi toimii myös)
+henkilo = (nimi: "Ana", ika: 25, kaupunki: "Madrid")
+(nimi: n, ika: i) = henkilo   // n="Ana"  i=25
+```
+
+---
+
+## Monikot
+
+Monikot ovat **muuttumattomia** järjestettyjä säiliöitä, jotka voivat sisältää **eri tyyppisiä** arvoja.
+Toisin kuin taulukot, alkioita ei voi muuttaa luomisen jälkeen.
+
+```zymbol
+// Paikkainen — sekatyypit sallittuja
+piste = (10, 20)
+>> piste[1] ¶    // → 10
+
+data = (42, "hei", #1, 3.14)
+>> data[3] ¶     // → #1
+
+// Nimetty
+henkilo = (nimi: "Anna", ika: 25)
+>> henkilo.nimi ¶    // → Anna
+>> henkilo[1] ¶      // → Anna  (indeksi toimii myös, 1-pohjainen)
 
 // Sisäkkäinen
-pos = (x: 3, y: 4)
-p = (pos: pos, etiketti: "alkupiste")
->> p.etiketti ¶    // → alkupiste
->> p.pos.x ¶       // → 3
+p = (x: 10, y: 20)
+monikko = (p: p, label: "alkuperä")
+>> monikko.p.x ¶     // → 10
+```
+
+**Muuttumattomuus** — yritys muokata monikon alkiota on ajonaikainen virhe:
+
+```zymbol
+t = (10, 20, 30)
+// t[1] = 99    // ❌ ajonaikainen virhe: monikot ovat muuttumattomia
+// t[1] += 5    // ❌ sama virhe
+```
+
+Muokatun arvon johtamiseksi käytä `$~` (funktionaalinen päivitys) — palauttaa **uuden** monikon:
+
+```zymbol
+t = (10, 20, 30)
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← alkuperäinen muuttumaton
+>> t2 ¶    // → (10, 999, 30)
+
+// Nimetty monikko — rakenna nimenomaisesti
+henkilo = (nimi: "Anna", ika: 25)
+vanhempi = (nimi: henkilo.nimi, ika: 26)
+>> henkilo.ika ¶    // → 25
+>> vanhempi.ika ¶   // → 26
 ```
 
 ---
 
-## Korkeamman asteen Funktiot
-
-HOF-operaattorit vaativat **inline-lambdan** — ei suoraa lambda-muuttujaa.
+## Korkeamman asteen funktiot
 
 ```zymbol
-luku_lista = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+numerot = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-// Map ($>)
-kaksinkertaistetut = luku_lista$> (x -> x * 2)
->> kaksinkertaistetut ¶    // → [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+tuplattu  = numerot$> (x -> x * 2)               // kuvaus  → [2,4,6…20]
+parilliset = numerot$| (x -> x % 2 == 0)         // suodatus → [2,4,6,8,10]
+summa     = numerot$< (0, (acc, x) -> acc + x)   // redusointi → 55
 
-// Filter ($|)
-parilliset = luku_lista$| (x -> x % 2 == 0)
->> parilliset ¶    // → [2, 4, 6, 8, 10]
-
-// Reduce ($<) — (alkuarvo, (akkumulaattori, elementti) -> lauseke)
-yhteensä = luku_lista$< (0, (acc, x) -> acc + x)
->> yhteensä ¶    // → 55
-
-// Ei suoraa ketjutusta — käytä välimuuttujia
-vaihe1 = luku_lista$| (x -> x > 5)
+// Ketjuta väliaikaismuuttujien kautta
+vaihe1 = numerot$| (x -> x > 3)
 vaihe2 = vaihe1$> (x -> x * x)
->> vaihe2 ¶    // → [36, 49, 64, 81, 100]
+>> vaihe2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+
+// Nimetyt funktiot voidaan siirtää suoraan HOF:ille
+tuplaa(x) { <~ x * 2 }
+on_suuri(x) { <~ x > 5 }
+r = numerot$> tuplaa       // ✅ suora viite
+r = numerot$| on_suuri     // ✅ suora viite
 ```
 
 ---
 
-## Putki-operaattori
+## Putkioperaattori
+
+Oikea puoli vaatii aina `_`-merkkiä sijoitusmerkkinä putkitettavalle arvolle:
 
 ```zymbol
-// |> välittää vasemman arvon _ oikeaan lausekkeeseen
-tulos = 5 |> _ * 2 |> _ + 1
->> tulos ¶    // → 11
+tuplaa = x -> x * 2
+summaa = (a, b) -> a + b
+inc = x -> x + 1
 
-// Ketjutetut muunnokset
-sanat = ["hei", "maailma"]
-ulos = sanat
-    |> _$> (w -> w$#)              // muunna pituuksiksi: [3, 6]
-    |> _$< (0, (a,x) -> a+x)      // summaa: 9
->> ulos ¶    // → 9
+5 |> tuplaa(_)        // → 10
+10 |> summaa(_, 5)    // → 15
+5 |> summaa(2, _)     // → 7
+
+// Ketjutettu
+r = 5 |> tuplaa(_) |> inc(_) |> tuplaa(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## Virheenkäsittely
+## Virheiden käsittely
 
 ```zymbol
-// Yritä / Ota kiinni / Lopuksi
 !? {
     x = 10 / 0
 } :! ##Div {
     >> "jako nollalla" ¶
-} :! ##IO {
-    >> "IO-virhe" ¶
 } :! {
     >> "muu virhe: " _err ¶    // _err sisältää virheviestin
 } :> {
     >> "suoritetaan aina" ¶
 }
-
-// Kiinniotto indeksityypillä
-!? {
-    arr = [1, 2, 3]
-    v = arr[10]
-} :! ##Index {
-    >> "indeksi alueen ulkopuolella" ¶
-}
 ```
 
-### Virhetyypit
-
-| Tyyppi      | Milloin tapahtuu               |
-|-------------|-------------------------------|
-| `##Div`     | Jako nollalla                 |
-| `##IO`      | Tiedosto / järjestelmä        |
-| `##Index`   | Indeksi alueen ulkopuolella   |
-| `##Type`    | Tyyppivirhe                   |
-| `##Parse`   | Datan jäsennys                |
-| `##Network` | Verkkovirheet                 |
-| `##_`       | Mikä tahansa virhe (kaikki)   |
+| Tyyppi | Milloin |
+|--------|---------|
+| `##Div` | Jako nollalla |
+| `##IO` | Tiedosto / järjestelmä |
+| `##Index` | Indeksi alueen ulkopuolella |
+| `##Type` | Tyyppiristiriita |
+| `##Parse` | Datan jäsennys |
+| `##Network` | Verkkovirheet |
+| `##_` | Mikä tahansa virhe (kaappaa kaikki) |
 
 ---
 
 ## Moduulit
 
 ```zymbol
-// Tiedosto: lib/calc.zy
-# calc                    // määrittely — aina ylhäällä
+// lib/calc.zy — moduulin runko on aaltosulkeiden sisällä
+# calc {
+    #> { summa, get_PI }
 
-#> {                      // viennit — TÄYTYY olla ennen määrittelyjä
-    summa
-    get_PI
+    _PI := 3.14159
+    summa(a, b) { <~ a + b }
+    get_PI() { <~ _PI }
 }
-
-_PI := 3.14159
-
-summa(a, b) { <~ a + b }
-get_PI() { <~ _PI }       // getter vakiolle (tarvittava kiertotie)
 ```
 
 ```zymbol
-// Tiedosto: main.zy
-<# ./lib/calc <= c         // alias pakollinen
+// main.zy
+<# ./lib/calc <= c    // alias vaaditaan
 
->> c::summa(5, 3) ¶        // → 8  — kutsu ::
+>> c::summa(5, 3) ¶   // → 8
 pi = c::get_PI()
->> pi ¶                    // → 3.14159
+>> pi ¶               // → 3.14159
 ```
 
-> **Huomio**: `alias.NIMI` vakioiden käyttämiseen ei toimi — käytä getter-funktiota.
+```zymbol
+// Vie eri julkisella nimellä
+# oma_kirjasto {
+    #> { _sisainen_summa <= sum }
+
+    _sisainen_summa(a, b) { <~ a + b }
+}
+```
+
+```zymbol
+<# ./oma_kirjasto <= m
+
+>> m::sum(3, 4) ¶    // → 7  (sisäinen nimi _sisainen_summa on piilotettu)
+```
+
+> **Moduulisäännöt**: vain `#>`, funktiomäärittelyt ja literaalimuuttujien/vakioiden alustajat ovat sallittuja `# nimi { }` -lohkon sisällä. Suoritettavat lauseet (`>>`, `<<`, silmukat jne.) aiheuttavat E013-virheen.
 
 ---
 
-## Numerotilat
+## Numeraalitilat
 
-Zymbol voi näyttää lukuja **69 Unicode-numeromerkistössä** — Devanagari, Arabi-Intialainen, Thaimaalainen, Klingon pIqaD, Matemaattinen Lihavoitu, LCD-segmentit ja muita. Aktiivinen tila vaikuttaa vain `>>`-ulostuloon; sisäinen aritmetiikka on aina binaarinen.
+Zymbol voi näyttää numeroita **69 Unicode-numerolohkossa** — Devanagari, Arabialais-intialainen, Thaimaalainen, Klingonin pIqaD, Matematiikan lihavointi, LCD-segmentit ja lisää. Aktiivinen tila vaikuttaa vain `>>`-tulostukseen; sisäinen aritmetiikka on aina binaarista.
 
-### Merkistön aktivointi
+### Tilan aktivointi
 
-Kirjoita kohdemerkistön numero `0` ja `9` suljettu `#…#`-väliin:
+Kirjoita kohdeskriptin `0` ja `9` numerot `#…#`-merkkien sisään:
 
 ```zymbol
-#०९#    // Devanagari     (U+0966–U+096F)
-#٠٩#    // Arabi-Intial.  (U+0660–U+0669)
-#๐๙#    // Thaimaalainen  (U+0E50–U+0E59)
-#09#    // palauta ASCII:ksi
+#०९#    // Devanagari    (U+0966–U+096F)
+#٠٩#    // Arabialais-intialainen (U+0660–U+0669)
+#๐๙#    // Thaimaalainen (U+0E50–U+0E59)
+#09#    // palauta ASCII
 ```
 
 ### Tulostus ja totuusarvot
 
 ```zymbol
 x = 42
->> x ¶          // → 42   (ASCII oletus)
+>> x ¶          // → 42   (ASCII-oletus)
 
 #०९#
 >> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४   (desimaalipiste aina ASCII)
+>> 3.14 ¶       // → ३.१४   (desimaalipiste on aina ASCII)
 >> 1 + 2 ¶      // → ३
 
-// Totuusarvot: # etuliite aina ASCII, numero mukautuu
->> #1 ¶         // → #१   (tosi Devanagari-merkistössä)
->> #0 ¶         // → #०   (epätosi — eroaa ०  kokonaisluku nollasta)
+// Totuusarvot: #-etuliite on aina ASCII, numero mukautuu
+>> #1 ¶         // → #१   (tosi Devanagarilla)
+>> #0 ¶         // → #०   (epätosi — erillinen ०-kokonaisluvusta)
 
 x = 28 > 4
 >> x ¶          // → #१   (vertailutulos seuraa aktiivista tilaa)
 ```
 
-### Alkuperäiset numeroliteraalit lähdekoodissa
+### Natiivi numeroliteraalit lähdekoodissa
 
-Minkä tahansa tuetun merkistön numerot ovat kelvollisia literaaleja — väleissä, modulo, vertailuissa:
+Minkä tahansa tuetun skriptin numerot ovat kelvollisia literalreja — alueilla, moduloissa, vertailuissa:
 
 ```zymbol
 #०९#
@@ -589,82 +598,85 @@ Minkä tahansa tuetun merkistön numerot ovat kelvollisia literaaleja — välei
 }
 ```
 
-### Totuusarvoliteraalit missä tahansa merkistössä
+### Totuusarvoliteraalit missä tahansa skriptissä
 
 `#` + numero `0` tai `1` mistä tahansa lohkosta on kelvollinen totuusarvoliteraali:
 
 ```zymbol
 #٠٩#
-نشط = #١        // sama kuin #1
->> نشط ¶        // → #١
->> (#١ && #٠) ¶ // → #٠
+aktiivinen = #١        // sama kuin #1
+>> aktiivinen ¶        // → #١
+>> (#١ && #٠) ¶        // → #٠
 ```
 
-> `#` on **aina ASCII**. `#0` (epätosi) on aina visuaalisesti erilainen kuin `0` (kokonaisluku nolla) jokaisessa merkistössä.
+> `#` on **aina ASCII**. `#0` (epätosi) on aina visuaalisesti erotettavissa `0`-luvusta (kokonaisluku nolla) jokaisessa skriptissä.
 
 ---
 
-## Dataoperaattorit
+## Data-operaattorit
 
 ```zymbol
+// Tyypinmuunnos
+##.42         // → 42.0  (liukuluvuksi)
+###3.7        // → 4     (kokonaisluvuksi, pyöristys)
+##!3.7        // → 3     (kokonaisluvuksi, katkaisu)
+
 // Jäsennä merkkijono numeroksi
-x = #|"42"|          // → 42    (kokonaisluku)
-y = #|"3.14"|        // → 3.14  (liukuluku)
+v1 = #|"42"|      // → 42  (kokonaisluku)
+v2 = #|"3.14"|    // → 3.14  (liukuluku)
+v3 = #|"abc"|     // → "abc"  (virheturvallinen, ei virhettä)
 
-// Pyöristä / katkaise
-r = #.2|3.14159|     // → 3.14   pyöristä 2 desimaaliin
-t = #!2|3.14159|     // → 3.14   katkaise 2 desimaaliin
+// Pyöristys / katkaisu
+pii = 3.14159265
+r2 = #.2|pii|      // → 3.14  (pyöristä 2 desimaaliin)
+r4 = #.4|pii|      // → 3.1416
+t2 = #!2|pii|      // → 3.14  (katkaise)
 
-// Muotoile numero
-s = #,|1234567.89|    // → "1,234,567.89"  pilkkumuoto
-e = #^|0.00042|       // → "4.2e-4"        tieteellinen merkintä
+// Numeromuotoilu
+fmt = #,|1234567|   // → 1,234,567  (pilkulla erotettu)
+sci = #^|12345.678| // → 1.2345678e4  (tieteellinen)
 
-// Kantaliteralit
-h = 0xFF             // → 255  heksadesimaalinen
-b = 0b1010           // → 10   binaarinen
-o = 0o17             // → 15   oktaalinen
+// Kantalukuliteraalit
+a = 0x41         // → 'A'  (heksadesimaali)
+b = 0b01000001   // → 'A'  (binaari)
+c = 0o101        // → 'A'  (oktaali)
 
-// Kantamuunnos
-hex = 255$>>"16"     // → "FF"
-bin = 10$>>"2"       // → "1010"
+// Kantalukuesitystulostus
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
 ```
 
 ---
 
-## Komentotulkin Integraatio
+## Shell-integraatio
 
 ```zymbol
-// Suorita komentotulkin komento ja kaappaa tuloste
-ulos = <\ ls -la \>
->> ulos ¶
+paivamaara = <\ date +%Y-%m-%d \>    // kaappaa stdoutin (sisältää \n)
+>> "Tänään: " paivamaara
 
-// Interpolaatio komennoissa
-hakemisto = "/tmp"
-tiedostot = <\ ls {hakemisto} \>
+tiedosto = "data.txt"
+sisalto = <\ cat {tiedosto} \>       // interpolointi komennoissa
 
-// Moniriviinen komentolohko
-tulos = </
-    echo "hei"
-    pwd
-/>
-
-// Ohjaa tuloste komentotulkkiin (ilman kaappausta)
->< "echo hei"
+tuloste = </"./subscript.zy"/>       // suorita toinen Zymbol-skripti, kaappaa tuloste
+>> tuloste
 ```
 
-> `><` lähettää tulosteen komentotulkkiin ilman kaappausta.
+> `><` kaappaa CLI-argumentit merkkijonotaulukkona (vain tree-walker).
 
 ---
 
-## Täydellinen Esimerkki: FizzBuzz
+## Täydellinen esimerkki: FizzBuzz
 
 ```zymbol
 luokittele(luku) {
-    ? luku % 15 == 0 { <~ "SuhPörr" }
-    _? luku % 3  == 0 { <~ "Suh" }
-    _? luku % 5  == 0 { <~ "Pörr" }
+    ? luku % 15 == 0 { <~ "FizzBuzz" }
+    _? luku % 3  == 0 { <~ "Fizz" }
+    _? luku % 5  == 0 { <~ "Buzz" }
     _ { <~ luku }
 }
+
 @ i:1..20 { >> luokittele(i) ¶ }
 ```
 
@@ -672,80 +684,98 @@ luokittele(luku) {
 
 ## Symboliviite
 
-| Symboli     | Operaatio            | Symboli      | Operaatio                  |
-|-------------|----------------------|--------------|----------------------------|
-| `=`         | muuttuja             | `$#`         | pituus                     |
-| `:=`        | vakio                | `$+`         | lisää (append)             |
-| `>>`        | tulostus             | `$+[i]`      | lisää indeksiin            |
-| `<<`        | syöte                | `$--`        | poista viimeinen           |
-| `¶`/`\`     | rivinvaihto          | `$-[i]`      | poista indeksistä          |
-| `?`         | jos (if)             | `$-[i..j]`   | poista väli                |
-| `_?`        | muuten jos (elif)    | `$?`         | sisältää                   |
-| `_`         | muuten / wildcard    | `$??`        | kaikki indeksit arvolle    |
-| `??`        | match                | `$[s..e]`    | siivu                      |
-| `@`         | silmukka             | `$>`         | map                        |
-| `@!`        | keskeytä             | `$\|`        | filter                     |
-| `@>`        | jatka                | `$<`         | reduce                     |
-| `->`        | lambda               | `arr[i] = val` | elementin päivitys (vain taulukot) |
-| `arr[i] += val` | yhdistetty päivitys | `arr[i]$~` | toiminnallinen päivitys (uusi kopio) |
-| `$^+`       | lajittele nousevasti | `$^-`        | lajittele laskevasti       |
-| `$^`        | lajittele vertailulla | `<~`        | palautus                   |
-| `\|>`       | putki                | `#1`         | tosi                       |
-| `#0`        | epätosi              | `!?`         | yritä (try)                |
-| `:!`        | ota kiinni (catch)   | `$!`         | on virhe                   |
-| `:>`        | aina (finally)       | `$!!`        | propagoi virhe             |
-| `#`         | määrittele moduuli   | `#>`         | vie ulos                   |
-| `<#`        | tuo sisään           | `::`         | moduulikutsu               |
-| `.`         | kenttäpääsy          | `#.N\|..\|`  | pyöristä N desimaalia      |
-| `#!N\|..\|` | katkaise N desimaalia| `#,\|..\|`    | pilkkumuoto                |
-| `#d0d9#` | numerotilan vaihto | `#09#` | palauta ASCII:ksi |
-| `#^\|..\|`   | tieteellinen not.    | `<\ \>`      | komentotulkin komento      |
-| `><`        | komentotulkin tuloste| `$~~[..]`    | korvaa merkkijonossa       |
-| `[a,b]=arr` | purkaminen           | `(x,y)=tup`  | monikon purkaminen         |
+| Symboli | Toiminto | Symboli | Toiminto |
+|---------|----------|---------|----------|
+| `=` | muuttuja | `$#` | pituus |
+| `:=` | vakio | `$+` | lisää (ketjutettavissa) |
+| `>>` | tulostus | `$+[i]` | lisää indeksiin (1-pohjainen) |
+| `<<` | syöte | `$-` | poista ensimmäinen arvon mukaan |
+| `¶` / `\\` | rivinvaihto | `$--` | poista kaikki arvon mukaan |
+| `?` | jos | `$-[i]` | poista indeksistä (1-pohjainen) |
+| `_?` | muuten jos | `$-[i..j]` | poista alue (1-pohjainen) |
+| `_` | muuten / yleismalli | `$?` | sisältää |
+| `??` | täsmäytys | `$??` | etsi kaikki indeksit (1-pohjainen) |
+| `@` | silmukka | `$[s..e]` | siivu (1-pohjainen) |
+| `@ N { }` | N kertaa silmukka | `$>` | kuvaus |
+| `@!` | keskeytä | `$|` | suodatus |
+| `@>` | jatka | `$<` | redusointi |
+| `@:nimi { }` | nimetty silmukka | `$/ erotin` | merkkijonon jako |
+| `@:nimi!` | keskeytä nimetty | `$++ a b c` | ketjutusrakenne |
+| `@:nimi>` | jatka nimetty | `arr[i>j>k]` | navigointi-indeksi |
+| `->` | lambda | `arr[i] = arvo` | päivitä alkio (vain taulukot) |
+| `arr[i] += arvo` | yhdistetty päivitys | `arr[i]$~` | funktionaalinen päivitys (uusi kopio) |
+| `$^+` | lajittele nousevasti (primitiiivit) | `$^-` | lajittele laskevasti (primitiiivit) |
+| `$^` | lajittele vertailijalla (monikot) | `<~` | palauta |
+| `|>` | putki | `!?` | yritä |
+| `:!` | kaappaa | `:>` | lopuksi |
+| `#1` | tosi | `#0` | epätosi |
+| `$!` | on virhe | `$!!` | levitä virhe |
+| `<#` | tuo | `#>` | vie |
+| `#` | määrittele moduuli | `::` | kutsu moduulia |
+| `.` | kenttään pääsy | `#?` | tyypin metadata |
+| `#|..|` | jäsennä numero | `##.` | muunna liukuluvuksi |
+| `###` | muunna kokonaisluvuksi (pyöristys) | `##!` | muunna kokonaisluvuksi (katkaisu) |
+| `#.N|..|` | pyöristä | `#!N|..|` | katkaise |
+| `#,|..|` | pilkkuformaatio | `#^|..|` | tieteellinen |
+| `#d0d9#` | numeraalitilan vaihto | `#09#` | palauta ASCII |
+| `<\ ..\>` | shell-suoritus | `>\<` | CLI-argumentit |
+| `\ var` | tuhoa muuttuja nimenomaisesti | | |
 
 ---
 
-*Zymbol-Lang — Symbolinen. Universaali. Muuttumaton.*
+## Julkaisumuutosloki
 
-## Versiohistoria
+### v0.0.4 — 1-pohjainen indeksointi, Ensiluokkaiset funktiot ja Moduulilohkot _(Huhtikuu 2026)_
 
-### v0.0.3 — Unicode Numerojärjestelmät & LSP-parannukset _(Huhtikuu 2026)_
+- **Muutos** Kaikki indeksointi vaihdettu **1-pohjaiseksi** — `arr[1]` on ensimmäinen alkio; `arr[0]` on ajonaikainen virhe
+- **Lisätty** Nimetyt funktiot ovat **ensiluokkaisia arvoja** — siirrä suoraan HOF:ille: `nums$> tuplaa`
+- **Lisätty** Moduulien **lohkosyntaksi vaaditaan**: `# nimi { ... }` — tasainen syntaksi poistettu
+- **Lisätty** Moniulotteinen indeksointi: `arr[i>j>k]` (navigointi), `arr[p ; q]` (tasainen poiminta)
+- **Lisätty** Tyypinmuunnos: `##.lauseke` (liukuluku), `###lauseke` (kokonaisluku pyöristys), `##!lauseke` (kokonaisluku katkaisu)
+- **Lisätty** Merkkijonon jako: `str$/ erotin` — palauttaa `Array(String)`
+- **Lisätty** Ketjutusrakenne: `pohja$++ a b c` — lisää useita alkioita
+- **Lisätty** N kertaa silmukka: `@ N { }` — toista tarkalleen N kertaa
+- **Lisätty** Nimettyjen silmukoiden syntaksi: `@:nimi { }`, `@:nimi!`, `@:nimi>` — korvaa `@ @nimi` / `@! nimi`
+- **Lisätty** Muuttujien näkyvyyssäännöt: `_nimi`-muuttujilla on tarkka lohkonäkyvyys; `\ var` tuhoaa varhain
+- **Lisätty** Täsmäytyksen vertailumallit: `< 0 :`, `> 5 :`, `== 42 :` jne.
+- **Lisätty** Moduulien E013-virhe: suoritettavat lauseet moduulin rungossa ovat kiellettyjä
+- **Korjattu** `take_variable` ei enää vioita moduulivakioita takaisinkirjoituksessa
+- **Korjattu** `alias.VAKIO` ratkeaa nyt oikein; `#>` voi esiintyä funktiomäärittelyjen jälkeen
+- **VM** Täysi pariteetti: 393/393 testiä läpäisee
+
+### v0.0.3 — Unicode-numeraalijärjestelmät ja LSP-parannukset _(Huhtikuu 2026)_
 
 - **Lisätty** 69 Unicode-numerolohkoa tilanvaihtotokenilla `#d0d9#`
-- **Lisätty** Totuusarvoliteraalit missä tahansa merkistössä — `#१` / `#०`, `#١` / `#٠`, jne.
-- **Lisätty** Klingon pIqaD-numerot (CSUR PUA U+F8F0–U+F8F9)
-- **Lisätty** VM-opkoodi `SetNumeralMode` — täysi pariteetti tree-walkerin kanssa
-- **Lisätty** REPL kunnioittaa aktiivista numerotilaa kaiussa ja muuttujien näytössä
+- **Lisätty** Totuusarvoliteraalit missä tahansa skriptissä — `#१` / `#०`, `#١` / `#٠`, jne.
+- **Lisätty** Klingonin pIqaD-numerot (CSUR PUA U+F8F0–U+F8F9)
+- **Lisätty** `SetNumeralMode` VM-opkoodi — täysi pariteetti puukulkijan kanssa
+- **Lisätty** REPL kunnioittaa aktiivista numeraalitilaa kaiussa ja muuttujanäytössä
 - **Muutettu** Totuusarvojen `>>`-tulostus sisältää nyt `#`-etuliitteen (`#0` / `#1`) kaikissa tiloissa
 
-### v0.0.2_01 — Operaattorien Uudelleennimeäminen _(30 Mar 2026)_
+### v0.0.2_01 — Operaattoreiden uudelleennimeäminen _(30. maaliskuuta 2026)_
 
-- **Muutettu** `c|..|` → `#,|..|` ja `e|..|` → `#^|..|` — yhdenmukainen `#`-etuliiteperheeseen
-- **Lisätty** Vientialias: moduulin jäsenten uudelleenvienti toisella nimellä
+- **Muutettu** `c|..|` → `#,|..|` ja `e|..|` → `#^|..|` — yhdenmukainen `#`-muotoiluetuliiteperheen kanssa
+- **Lisätty** Vientialias: vie moduulin jäsenet uudelleen eri nimellä
 
-### v0.0.2 — Kokoelmien API-uudelleensuunnittelu & Asennusohjelmat _(24 Mar 2026)_
+### v0.0.2 — Kokoelma-APIN uudelleensuunnittelu ja asennusohjelmat _(24. maaliskuuta 2026)_
 
-- **Lisätty** Yhdistetty `$`-operaattoriperhe taulukoille ja merkkijonoille (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Lisätty** Destrukturointi taulukoille, tuplille ja nimetyille tuplille
+- **Lisätty** Yhtenäinen `$`-operaattoriperhe taulukoille ja merkkijonoille (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Lisätty** Destrukturointisijoitus taulukoille, monikoille ja nimetyille monikoille
 - **Lisätty** Negatiiviset indeksit (`arr[-1]` = viimeinen alkio)
-- **Lisätty** Alkuperäiset asennusohjelmat — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+- **Lisätty** Natiivit asennusohjelmat — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
 
-### v0.0.1-patch _(25 Mar 2026)_
+### v0.0.1-patch _(25. maaliskuuta 2026)_
 
 - **Lisätty** Yhdistetty sijoitus `^=`
-- **Korjattu** Aritmeettisen jäsentäjän reunatapaukset; dokumentaatiokorjaukset
+- **Korjattu** Jäsentimen aritmetiikan reunatapaukset; dokumentaatiokorjaukset
 
-### v0.0.1 — Ensimmäinen Julkinen Julkaisu _(22 Mar 2026)_
+### v0.0.1 — Ensimmäinen julkinen julkaisu _(22. maaliskuuta 2026)_
 
-- Tree-walker-tulkki + rekisteriVM (`--vm`, ~4× nopeampi, ~95% pariteetti)
+- Puukulkijatulkki + rekisteri-VM (`--vm`, ~4× nopeampi, ~95% pariteetti)
 - Kaikki ydinrakenteet: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Täydelliset Unicode-tunnisteet, moduulijärjestelmä, lambdat, sulkeumat, virheenkäsittely
-- REPL, LSP, VS Code -laajennus, muotoiluohjelma (`zymbol fmt`)
+- Täysi Unicode-tunnisteet, moduulijärjestelmä, lambdat, sulkeumat, virheidenkäsittely
+- REPL, LSP, VS Code -laajennus, muotoilija (`zymbol fmt`)
 
 ---
 
-**Vastuuvapauslauseke:** Tämä dokumentaatio on luotu ja käännetty tekoälyllä (AI). Kaikki pyrkimykset on tehty tarkkuuden varmistamiseksi, mutta jotkut käännökset tai esimerkit saattavat sisältää virheitä. Virallinen viite on [Zymbol-Lang-spesifikaatio](https://github.com/zymbol-lang/interpreter).
-
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-> The authoritative reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).
+_Zymbol-Lang — Symbolinen. Universaali. Muuttumaton._
