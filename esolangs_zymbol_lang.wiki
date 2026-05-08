@@ -18,12 +18,14 @@ The core philosophy: ''operators are universal, identifiers are yours''.
 
 == Overview ==
 
-Zymbol-Lang is currently in public alpha (v0.0.2). It is a working implementation open for use and feedback, with active development ongoing.
+Zymbol-Lang is currently in public alpha (v0.0.4). It is a working implementation open for use and feedback, with active development ongoing.
 
 The language has two execution backends:
 
 * A tree-walking interpreter written in Rust (default, fully featured)
-* A register-based virtual machine (optional via <code>--vm</code>, ~4× faster on recursive workloads)
+* A register-based virtual machine (optional via <code>--vm</code>, ~1.1–1.5× faster than Python for most workloads; ~4.4× faster than the tree-walker on recursive workloads)
+
+Both backends produce identical output on 393/393 parity tests.
 
 The language specification is defined in a formal EBNF grammar. Source files use the <code>.zy</code> extension.
 
@@ -34,12 +36,15 @@ The language specification is defined in a formal EBNF grammar. Source files use
 # '''Language-agnostic types''' — <code>#1</code> / <code>#0</code> instead of <code>true</code> / <code>false</code>; type tags use symbols (<code>###</code>, <code>##"</code>, <code>##?</code>...).
 # '''Consistent operators''' — the same symbol means the same thing in every human language.
 # '''Explicit over implicit''' — newlines in output, return values, and scope capture all require explicit syntax.
+# '''1-based indexing''' — <code>arr[1]</code> is the first element; <code>arr[-1]</code> is the last. Index 0 is a runtime error.
 
 == Syntax ==
 
 === Variables and Mutability ===
 
 Zymbol-Lang distinguishes mutable variables (<code>=</code>) from immutable constants (<code>:=</code>) at the assignment level. Augmented assignment operators (<code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>%=</code>, <code>^=</code>) and increment/decrement (<code>++</code>, <code>--</code>) are supported. Attempting to reassign a constant is a runtime error.
+
+A variable whose name begins with <code>_</code> has exact block scope — it exists only within the block where it is declared and is not visible from inner or outer blocks. Explicit destruction: <code>\ var</code> releases a variable before its block ends.
 
 === Operators Reference ===
 
@@ -53,9 +58,11 @@ Zymbol-Lang distinguishes mutable variables (<code>=</code>) from immutable cons
 |-
 | Output || <code>>></code> || Print (no auto-newline) || Multiple values by juxtaposition
 |-
-| Newline || <code>¶</code> or <code>\</code> || Explicit newline in output || Newlines are never implicit
+| Newline || <code>¶</code> or <code>\\</code> || Explicit newline in output || Newlines are never implicit
 |-
 | Input || <code><<</code> || Read from stdin || Accepts optional prompt string
+|-
+| CLI args || <code>><</code> || Capture CLI arguments as string array || Tree-walker only
 |-
 | If || <code>?</code> || Conditional || Braces required even for single statements
 |-
@@ -63,13 +70,15 @@ Zymbol-Lang distinguishes mutable variables (<code>=</code>) from immutable cons
 |-
 | Else || <code>_</code> || Else branch || Also used as wildcard in <code>??</code>
 |-
-| Match || <code>??</code> || Pattern match / switch || Supports ranges, strings, guards, and block arms
+| Match || <code>??</code> || Pattern match / switch || Literal, range, comparison, ident, list, and wildcard patterns
 |-
-| Loop || <code>@</code> || Loop (while / range / for-each / infinite) || Range syntax: <code>i:0..N</code>, with step: <code>i:0..N:S</code>
+| Loop || <code>@</code> || Loop (while / range / for-each / infinite / times) || Range: <code>i:0..N</code>; with step: <code>i:0..N:S</code>; times: <code>@ N { }</code>
 |-
-| Break || <code>@!</code> || Break out of loop || Supports labels for nested loops: <code>@! label</code>
+| Break || <code>@!</code> || Break out of loop || Labeled: <code>@:name!</code>
 |-
-| Continue || <code>@></code> || Continue to next iteration ||
+| Continue || <code>@></code> || Continue to next iteration || Labeled: <code>@:name></code>
+|-
+| Loop label || <code>@:name</code> || Label a loop for targeted break/continue || <code>@:outer i:1..10 { }</code>; colon is required
 |-
 | Lambda || <code>-></code> || Anonymous function (lambda) || Captures outer scope (closure)
 |-
@@ -83,27 +92,39 @@ Zymbol-Lang distinguishes mutable variables (<code>=</code>) from immutable cons
 |-
 | Length || <code>$#</code> || Length of array or string ||
 |-
-| Append || <code>$+</code> || Append to array || Returns new array; use <code>$+[i]</code> to insert at index
+| Append || <code>$+</code> || Append to array or string || Returns new collection; use <code>$+[i]</code> to insert at index
+|-
+| ConcatBuild || <code>$++</code> || Concatenate/append multiple items in one expression || <code>"n=" $++ n " x=" x</code>; works on strings and arrays
 |-
 | Remove || <code>$-</code> || Remove first occurrence by value || <code>$--</code> removes all; <code>$-[i]</code> by index; <code>$-[i..j]</code> range
 |-
 | Update || <code>$~</code> || Functional update at index || Returns new array; use <code>arr[i] = v</code> for in-place
 |-
-| Contains || <code>$?</code> || Test membership || <code>$??</code> returns list of all matching indices
+| Contains || <code>$?</code> || Test membership || <code>$??</code> returns list of all matching indices (1-based)
 |-
-| Slice || <code>$[s..e]</code> || Slice array or string || End-exclusive; also <code>$[s:count]</code> count-based form
+| Slice || <code>$[s..e]</code> || Slice array or string || 1-based, inclusive on both ends; also <code>$[s:count]</code> count-based form
 |-
-| Sort || <code>$^+</code> / <code>$^-</code> || Sort ascending / descending || Primitives only; use <code>$^</code> with comparator lambda for tuples
+| Sort || <code>$^+</code> / <code>$^-</code> || Sort ascending / descending || Primitives; use <code>$^</code> with two-argument comparator lambda for custom order
 |-
-| Map || <code>$></code> || Map over array || Requires inline lambda
+| Map || <code>$></code> || Map over array || Inline lambda or named function reference
 |-
-| Filter || <code>$\|</code> || Filter array || Requires inline lambda
+| Filter || <code>$\|</code> || Filter array || Inline lambda or named function reference
 |-
-| Reduce || <code>$<</code> || Reduce array || Requires inline lambda
+| Reduce || <code>$<</code> || Reduce array || Inline lambda or named function reference
 |-
-| String split || <code>/</code> || Split string by delimiter || <code>"a,b,c" / ','</code> → <code>[a, b, c]</code>
+| String split || <code>$/</code> || Split string by delimiter || <code>"a,b,c" $/ ','</code> → <code>[a, b, c]</code>; char or substring delimiter
 |-
 | String replace || <code>$~~</code> || Replace in string || Supports max-count: <code>$~~["old":"new":N]</code>
+|-
+| Deep index || <code>[i>j>k]</code> || Multi-dimensional access || 1-based; depth separator <code>></code>; supports ranges and multi-path extraction
+|-
+| Cast to Float || <code>##.</code> || Convert value to Float || <code>##.x</code>; runtime error on non-numeric
+|-
+| Cast to Int (round) || <code>###</code> || Convert value to Int, rounding || <code>###x</code>
+|-
+| Cast to Int (truncate) || <code>##!</code> || Convert value to Int, truncating || <code>##!x</code>
+|-
+| Numeral mode || <code>#d0d9#</code> || Switch numeric output digit script || <code>#०९#</code> Devanagari; <code>#٠٩#</code> Arabic-Indic; 69 scripts supported
 |-
 | Try || <code>!?{ }</code> || Try block ||
 |-
@@ -115,9 +136,9 @@ Zymbol-Lang distinguishes mutable variables (<code>=</code>) from immutable cons
 |-
 | Propagate || <code>$!!</code> || Propagate error to caller ||
 |-
-| Module declare || <code>#</code> || Declare module name ||
+| Module declare || <code>#</code> || Declare module with block syntax || <code># name { ... }</code>; name must match filename stem
 |-
-| Export || <code>#>{ }</code> || Export symbols || Exports must appear before definitions; supports renaming
+| Export || <code>#>{ }</code> || Export symbols || Must appear inside module block; supports renaming
 |-
 | Import || <code><#</code> || Import module ||
 |-
@@ -135,7 +156,9 @@ Zymbol-Lang distinguishes mutable variables (<code>=</code>) from immutable cons
 |-
 | Truncate || <code>#!N\|..\|</code> || Truncate to N decimal places ||
 |-
-| Shell exec || <code><\ cmd \></code> || Execute shell command, capture stdout || String interpolation supported in command
+| Shell exec || <code><\ cmd \></code> || Execute shell command, capture stdout || String interpolation supported; tree-walker only
+|-
+| Sub-script || <code></ path.zy /></code> || Execute a <code>.zy</code> sub-script, capture output || Tree-walker only
 |}
 
 === Type System ===
@@ -146,7 +169,7 @@ Types are dynamic. Type metadata is accessed via the postfix operator <code>#?</
 |-
 ! Type !! Literal Example !! Type Tag !! Notes
 |-
-| Integer || <code>42</code>, <code>-7</code>, <code>0xFF</code> || <code>###</code> || 64-bit signed; supports hex, binary, octal, decimal prefixes
+| Integer || <code>42</code>, <code>-7</code>, <code>0xFF</code> || <code>###</code> || 64-bit signed; supports hex, binary, octal, decimal prefixes; any Unicode digit script in source
 |-
 | Float || <code>3.14</code>, <code>1.5e10</code> || <code>##.</code> || Scientific notation; division between two integers yields integer
 |-
@@ -154,20 +177,24 @@ Types are dynamic. Type metadata is accessed via the postfix operator <code>#?</
 |-
 | Char || <code>'A'</code> || <code>##'</code> || Single Unicode grapheme
 |-
-| Bool || <code>#1</code>, <code>#0</code> || <code>##?</code> || Not numeric — <code>#1 ≠ 1</code>
+| Bool || <code>#1</code>, <code>#0</code> || <code>##?</code> || Not numeric — <code>#1 ≠ 1</code>; digit adapts to active numeral script
 |-
-| Array || <code>[1, 2, 3]</code> || <code>##]</code> || 0-indexed; negative indices supported (<code>arr[-1]</code> = last)
+| Array || <code>[1, 2, 3]</code> || <code>##]</code> || 1-indexed; negative indices supported (<code>arr[-1]</code> = last); homogeneous elements
 |-
-| Tuple || <code>(a, b)</code>, <code>(x: 1, y: 2)</code> || <code>##)</code> || Named fields accessed by <code>.field</code> or by index
+| Tuple || <code>(a, b)</code>, <code>(x: 1, y: 2)</code> || <code>##)</code> || Immutable; named fields accessed by <code>.field</code> or by index; allows mixed types
 |-
-| Unit || (no value) || <code>##_</code> || Returned by functions with no explicit return
+| Function || _(named function reference)_ || <code>##()</code> || First-class since v0.0.4; display <code><funct/N></code>; captures scope at point of assignment
+|-
+| Lambda || <code>x -> x * 2</code> || <code>##-></code> || Always first-class; display <code><lambd/N></code>; captures scope at point of definition
+|-
+| Unit || _(no value)_ || <code>##_</code> || Returned by functions with no explicit return
 |}
 
 === Scoping and Function Isolation ===
 
-Zymbol-Lang enforces a strict separation between named functions and their calling context. Named functions have fully isolated scopes — they cannot read or modify variables from the enclosing scope. This is an intentional design decision to prevent hidden state dependencies.
+Zymbol-Lang enforces a strict separation between named functions (called directly by name) and their calling context. When called directly, named functions have fully isolated scopes — they cannot read or modify variables from the enclosing scope. This is an intentional design decision to prevent hidden state dependencies.
 
-Lambdas (<code>-></code>) behave differently: they capture the enclosing scope (closure semantics). Named functions that need to affect the caller's state do so through '''output parameters''', declared with <code><~</code> in the function signature:
+Lambdas (<code>-></code>) always capture the enclosing scope (closure semantics). Named functions that need to affect the caller's state do so through '''output parameters''', declared with <code><~</code> in the function signature:
 
 <pre>
 swap(a<~, b<~) {
@@ -183,18 +210,32 @@ swap(x, y)
 
 Blocks (<code>{ }</code>) use lexical scoping with automatic cleanup on exit.
 
-=== Named Functions and First-Class Values ===
+=== Named Functions as First-Class Values ===
 
-Named functions in Zymbol-Lang are '''not first-class values'''. They cannot be stored in variables, passed as arguments, or stored in arrays directly. To use a named function as a higher-order argument, it must be wrapped in a lambda:
+Since v0.0.4, named functions are first-class values. They can be stored in variables, passed as arguments, returned from other functions, and used as HOF operands directly. When a named function is used as a value (rather than called directly by name), it captures a snapshot of the current scope at the point of assignment — this snapshot is read-only and does not update if outer variables change later:
 
 <pre>
 double(x) { <~ x * 2 }
-nums = [1, 2, 3, 4, 5]
+is_big(x)  { <~ x > 5 }
+nums = [1, 2, 3, 4, 5, 6, 7, 8]
 
-r = nums$> (x -> double(x))    // ✅  wrapped in lambda
+// Direct reference in HOF — no wrapper needed
+doubled = nums$> double      // ✅
+big     = nums$| is_big      // ✅
+
+// Store in variable (captures scope snapshot at assignment)
+base = 10
+adder(n) { <~ n + base }
+f = adder                    // captures { base: 10 }
+>> f(5) ¶                    // → 15
+base = 99
+>> f(5) ¶                    // → 15  (snapshot unchanged)
+
+// Direct call remains isolated (base not accessible)
+// adder(5)  // runtime error: undefined variable 'base'
 </pre>
 
-Lambdas, by contrast, are first-class and can be stored in variables, arrays, and passed freely.
+Lambdas, by contrast, always capture scope at the point of definition and are always first-class.
 
 === Destructuring ===
 
@@ -225,7 +266,7 @@ Pipes can be chained by assigning intermediates.
 
 === Match Expression ===
 
-The <code>??</code> operator supports value matching, range matching, guard conditions, and block arms. Guards use the <code>_?</code> syntax inside a match:
+The <code>??</code> operator supports six pattern types: literal, range, comparison, ident, list, and wildcard. Comparison patterns (<code>< expr</code>, <code>> expr</code>, <code>== expr</code>, etc.) implicitly compare the scrutinee — arms are tested in order:
 
 <pre>
 // Range match
@@ -235,25 +276,89 @@ grade = ?? score {
     _       : 'F'
 }
 
-// Guard match (condition-driven)
+// Comparison match
 state = ?? temp {
-    _? temp < 0  : "ice"
-    _? temp < 20 : "cold"
-    _            : "warm"
+    < 0  : "ice"
+    < 20 : "cold"
+    _    : "warm"
 }
+
+// List pattern — scalar containment
+n = 3
+?? n {
+    [1, 2] : "low"
+    [3, 4] : "mid"
+    _      : "other"
+}
+</pre>
+
+=== Numeral Modes ===
+
+Zymbol-Lang can display numbers in any of 69 Unicode digit scripts at runtime. The mode-switch token takes the zero-digit and nine-digit of the target script enclosed in <code>#…#</code>. The mode persists until the next switch and is file-local — modules never inherit or alter the caller's active script.
+
+<pre>
+#०९#              // activate Devanagari
+>> 42 ¶           // → ४२
+>> 3.14 ¶         // → ३.१४
+>> (#1 && #1) ¶   // → #१  (Bool digit adapts to active script)
+
+#٠٩#              // activate Arabic-Indic
+>> 42 ¶           // → ٤٢
+
+#09#              // restore ASCII
+>> 42 ¶           // → 42
+</pre>
+
+Native digit literals from any supported script may also appear directly in source code — in assignments, loop ranges, and arithmetic. The lexer normalises all scripts to the same internal integer value:
+
+<pre>
+#०९#
+n = ४२             // same as n = 42
+@ i:१..१५ {       // range 1..15 in Devanagari
+    ? i % १५ == ० { >> "FizzBuzz" ¶ }
+    _? i % ३ == ०  { >> "Fizz" ¶    }
+    _? i % ५ == ०  { >> "Buzz" ¶    }
+    _ { >> i ¶ }
+}
+</pre>
+
+Selected supported scripts (of 69): ASCII, Arabic-Indic, Extended Arabic-Indic, Devanagari, Bengali, Gujarati, Tamil, Telugu, Thai, Tibetan, Myanmar, Khmer, Mongolian, Mathematical Bold, Mathematical Double-struck, Mathematical Monospace, Segmented/LCD, and Klingon pIqaD (ConScript Unicode Registry, U+F8F0–U+F8F9).
+
+=== Multi-dimensional Indexing ===
+
+The <code>></code> character inside a postfix <code>[…]</code> is a depth separator, providing a symbol-consistent system for navigating nested arrays. All indices are 1-based; negative indices count from the end.
+
+<pre>
+m = [[1,2,3], [4,5,6], [7,8,9]]
+
+// Scalar deep access
+>> m[2>3] ¶                       // → 6    (row 2, col 3)
+>> m[-1>-1] ¶                     // → 9    (last row, last col)
+
+// Flat extraction — multiple paths return a flat array
+diag = m[1>1 ; 2>2 ; 3>3]
+>> diag ¶                         // → [1, 5, 9]
+
+// Structured extraction — array of arrays
+corners = m[[1>1, 1>3] ; [3>1, 3>3]]
+>> corners[1] ¶                   // → [1, 3]
+
+// Range on a step — expand along a dimension
+>> m[[1>2..3] ; [2>2..3]] ¶       // → [[2, 3], [5, 6]]
 </pre>
 
 === Shell Integration ===
 
-Zymbol-Lang can execute shell commands and capture their standard output via the <code><\ cmd \></code> construct. String interpolation works inside the command, enabling dynamic shell calls:
+Zymbol-Lang can execute shell commands and capture their standard output via the <code><\ cmd \></code> construct. A <code>.zy</code> sub-script can be executed with <code></ path.zy /></code>. String interpolation works inside both forms:
 
 <pre>
-date = <\ date +%Y-%m-%d \>
-file = "data.txt"
+date    = <\ date +%Y-%m-%d \>
+file    = "data.txt"
 content = <\ cat {file} \>
+result  = </ helper.zy />
 </pre>
 
-This feature is available in the tree-walker backend only.
+Both features are available in the tree-walker backend only.
 
 == Examples ==
 
@@ -300,18 +405,27 @@ x = 7
 fruits = ["apple", "banana", "mango"]
 @ item:fruits { >> item ¶ }       // for-each array
 
+@ 5 { >> "*" }                    // times loop → *****
+
 @ {                               // infinite loop
     i++
     ? i >= 5 { @! }
 }
 </pre>
 
-Labeled breaks are supported for exiting nested loops:
+Labeled loops use the <code>@:name</code> prefix — the colon is required. Break with <code>@:name!</code>, continue with <code>@:name></code>:
 
 <pre>
-@ @outer {
-    @ @inner {
-        ? condition { @! outer }
+@:outer i:1..4 {
+    @:inner j:1..4 {
+        ? j == 2 { @:outer> }    // continue outer loop
+        >> "{i}{j} "
+    }
+}
+
+@:outer {
+    @:inner {
+        ? condition { @:outer! }  // break outer loop
     }
 }
 </pre>
@@ -333,6 +447,9 @@ doubled = nums$> (x -> x * 2)
 evens   = nums$| (x -> x % 2 == 0)
 total   = nums$< (0, (acc, x) -> acc + x)
 >> total ¶    // → 55
+
+// Named function as direct HOF argument
+doubled2 = nums$> double    // ✅ direct reference, no wrapper needed
 
 // Closure / factory
 make_adder(n) { <~ x -> x + n }
@@ -373,14 +490,17 @@ Error types: <code>##IO</code>, <code>##Network</code>, <code>##Parse</code>, <c
 
 === Modules ===
 
+Modules use a closed block syntax — all module content is enclosed in braces. The module declaration name must match the filename stem. Running a module file directly (without importing it) raises an error.
+
 <pre>
 // lib/math.zy
-# math
-#> { add, get_PI }
+# math {
+    #> { add, get_PI }
 
-_PI := 3.14159
-add(a, b) { <~ a + b }
-get_PI()   { <~ _PI  }
+    _PI := 3.14159
+    add(a, b) { <~ a + b }
+    get_PI()   { <~ _PI  }
+}
 </pre>
 
 <pre>
@@ -392,14 +512,12 @@ pi = m::get_PI()
 >> pi ¶               // → 3.14159
 </pre>
 
-Exports must be declared before definitions. Exported symbols can be renamed at the export site with <code><=</code>.
-
 == Computational Class ==
 
 Zymbol-Lang is [[Turing complete]]. It supports:
 
 * Unbounded loops (<code>@</code> with arbitrary while-conditions)
-* Arbitrary recursion (with tail-call optimization in the VM backend)
+* Arbitrary recursion (with tail-call optimization in both backends)
 * Dynamic arrays of unlimited size
 * Integer arithmetic without fixed bounds (64-bit signed integers)
 
@@ -409,6 +527,8 @@ Because Zymbol-Lang has no English keywords, programs written in any human langu
 
 A program written entirely in Arabic, Japanese, Cherokee Syllabics, or Klingon pIqaD is structurally the same as one written in Latin script — no translation layer, no preprocessing. The Unicode grapheme cluster model ensures that scripts with complex glyph composition (Devanagari, Thai, Burmese, Cree Syllabics) are handled correctly at the lexer level.
 
+Numeral modes extend this principle to numeric output: a program running in Devanagari mode displays all integer, float, and boolean output in Devanagari digits. The 69 supported scripts cover every major decimal digit block in Unicode as well as Klingon pIqaD from the ConScript Unicode Registry. Native digit literals from any supported script may appear directly in source code, making a fully Devanagari or fully Arabic-Indic program not just valid but first-class.
+
 == Implementation ==
 
 The reference implementation is written in [[Rust (programming language)|Rust]] and consists of:
@@ -416,7 +536,7 @@ The reference implementation is written in [[Rust (programming language)|Rust]] 
 * '''Lexer / Parser''' — produces an AST from <code>.zy</code> source; handles Unicode grapheme clusters natively
 * '''Semantic analyzer''' — type-checks, detects unused variables, circular imports
 * '''Tree-walking interpreter''' — default execution path, fully featured
-* '''Bytecode compiler + Register VM''' — optional backend (<code>--vm</code>), ~4× faster on recursive workloads; module system support is partial
+* '''Bytecode compiler + Register VM''' — optional backend (<code>--vm</code>), ~1.1–1.5× faster than Python; 393/393 parity tests passing
 
 The interpreter is available as a CLI tool:
 

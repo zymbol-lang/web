@@ -211,12 +211,46 @@
     /* ─── Playground layout: editor | output ─── */
     #playground {
       flex: 1;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr;
+      display: flex;
+      flex-direction: row;
       min-height: 0;
       overflow: hidden;
     }
+
+    #editor-panel  { flex: 1 1 50%; min-width: 0; }
+    #output-panel  { flex: 1 1 50%; min-width: 0; }
+
+    /* Split handle */
+    #split-handle {
+      flex: 0 0 5px;
+      background: var(--line);
+      cursor: col-resize;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      z-index: 2;
+    }
+    #split-handle::after {
+      content: '';
+      display: block;
+      width: 3px;
+      height: 28px;
+      border-radius: 2px;
+      background: var(--dim);
+      opacity: 0.4;
+      transition: opacity 0.15s, background 0.15s;
+    }
+    #split-handle:hover { background: var(--green-dim); }
+    #split-handle:hover::after,
+    #split-handle.dragging::after { opacity: 1; background: var(--green); }
+    #split-handle.dragging { background: var(--green-dim); cursor: col-resize; }
+    #split-handle.output-collapsed { cursor: default; opacity: 0.35; pointer-events: none; }
+
+    /* Output collapsed: only header strip visible */
+    #output-panel.output-collapsed { flex: 0 0 auto !important; min-width: 0; }
+    #output-panel.output-collapsed #output-content,
+    #output-panel.output-collapsed #tui-wrap { display: none !important; }
 
     /* ─── Panel shared ─── */
     .panel {
@@ -271,6 +305,20 @@
     }
     .btn-run:hover { background: var(--green-mid); }
 
+    #args-input {
+      background: #1a1a1a;
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: #ccc;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-size: 11px;
+      padding: 3px 7px;
+      width: 130px;
+      outline: none;
+    }
+    #args-input:focus { border-color: var(--green-mid); }
+    #args-input::placeholder { color: #555; }
+
     .btn-active {
       background: var(--green-dim);
       border-color: var(--green-mid);
@@ -278,7 +326,6 @@
     }
 
     /* ─── Editor panel ─── */
-    #editor-panel { border-right: 1px solid var(--line); }
 
     #editor-wrapper {
       flex: 1;
@@ -336,6 +383,67 @@
     .out-text  { color: var(--hi); }
     .out-error { color: var(--err); }
     .out-meta  { color: var(--mid); font-style: italic; font-size: 0.75rem; }
+
+    #tui-wrap {
+      display: none;
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    #tui-wrap.active { display: flex; flex-direction: column; }
+
+    #tui-canvas {
+      display: block;
+      background: #000;
+      outline: none;
+      cursor: default;
+      image-rendering: pixelated;
+    }
+
+    #tui-stop-btn {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      font-family: var(--ui);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.3rem 0.65rem;
+      border-radius: var(--radius);
+      border: 1px solid #a33;
+      background: rgba(80, 10, 10, 0.85);
+      color: #f88;
+      cursor: pointer;
+      opacity: 0.75;
+      transition: opacity 0.15s, background 0.15s;
+      z-index: 10;
+    }
+    #tui-stop-btn:hover { opacity: 1; background: rgba(160, 20, 20, 0.95); color: #fff; }
+
+    #tui-input-bar {
+      display: none;
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(8, 14, 8, 0.93);
+      border-top: 1px solid #2a4a2a;
+      align-items: center;
+      padding: 5px 10px;
+      gap: 6px;
+      z-index: 11;
+    }
+    #tui-input-bar.active { display: flex; }
+    #tui-input-prompt { color: var(--green); font-family: var(--mono); font-size: 13px; flex-shrink: 0; }
+    #tui-input-field {
+      flex: 1;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid #2a4a2a;
+      color: #ddd;
+      font-family: var(--mono);
+      font-size: 13px;
+      outline: none;
+      padding: 2px 0;
+    }
+    #tui-input-field:focus { border-bottom-color: var(--green); }
 
     /* ─── Interactive input line ─── */
     .out-input-line {
@@ -497,8 +605,13 @@
 
     /* ─── Mobile ─── */
     @media (max-width: 700px) {
-      #playground { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
-      #editor-panel { border-right: none; border-bottom: 1px solid var(--line); }
+      #playground { flex-direction: column; }
+      #editor-panel  { flex: 1 1 50%; min-width: unset; min-height: 0; }
+      #output-panel  { flex: 1 1 50%; min-width: unset; min-height: 0; }
+      #split-handle  { flex: 0 0 5px; cursor: row-resize; width: 100%; }
+      #split-handle::after { width: 28px; height: 3px; }
+      #split-handle.dragging { cursor: row-resize; }
+      #output-panel.output-collapsed { flex: 0 0 auto !important; min-height: 0; }
       --examples-h: 200px;
     }
 
@@ -703,18 +816,17 @@
   <div id="pg-notice">
     <h2 id="pg-notice-title">
       Browser Playground
-      <span class="badge">zymbol.js v0.0.4</span>
+      <span class="badge">zymbol.js v0.0.5</span>
     </h2>
     <p>
       This playground runs a <strong>browser-only build</strong> of the Zymbol interpreter
       (<code>zymbol.js</code>) compiled directly to JavaScript. It is a preview environment
       intended to explore the language without installing anything.
     </p>
-    <p>The following features are <strong>not available</strong> in the browser runtime:</p>
-    <ul>
-      <li>Shell execution <code>&lt;\ cmd \&gt;</code> and script inclusion <code>&lt;/ file.zy /&gt;</code></li>
-      <li>CLI argument capture <code>&gt;&lt; args</code></li>
-    </ul>
+    <p>CLI argument capture <code>&gt;&lt; args</code> is supported — use the <strong>args…</strong> field next to the Run button.</p>
+    <p>Shell execution <code>&lt;\ cmd \&gt;</code> returns a high-resolution timestamp (entropy source for random seeds).
+       Script inclusion <code>&lt;/ file.zy /&gt;</code> is not available in the browser runtime.</p>
+    <p>TUI mode (<code>&gt;&gt;|</code>) works in the browser with a canvas renderer. On mobile: <strong>swipe</strong> for directional input (↑↓←→), <strong>tap</strong> for Enter, and the <strong>✕ Stop</strong> button to exit. A physical keyboard is recommended for the best experience.</p>
     <p>
       Code runs without prior semantic checking — runtime errors are displayed in the output panel.
       For the full language experience use the <a href="install.html" style="color:var(--green)">native interpreter</a>.
@@ -752,6 +864,7 @@
       <span>Editor</span>
       <div class="panel-actions">
         <button class="btn btn-run" id="run-btn" title="Run (Ctrl+Enter)">▶ Run</button>
+        <input id="args-input" type="text" placeholder="args…" title="CLI arguments (space-separated, use quotes for spaces: &quot;hello world&quot;)" spellcheck="false" autocomplete="off">
         <button class="btn" id="clear-code-btn" title="Clear editor">Clear</button>
         <button class="btn" id="download-btn" title="Download active file">↓ Save</button>
         <button class="btn" id="upload-btn"   title="Upload .zy files">↑ Open</button>
@@ -768,15 +881,27 @@
     </div>
   </div>
 
+  <!-- Resize handle -->
+  <div id="split-handle" title="Drag to resize"></div>
+
   <!-- Output -->
   <div class="panel" id="output-panel">
     <div class="panel-header">
       <span>Output</span>
       <div class="panel-actions">
+        <button class="btn" id="toggle-output-btn" title="Hide output">◀</button>
         <button class="btn" id="clear-output-btn">Clear</button>
       </div>
     </div>
     <div id="output-content"><span class="out-meta">Press ▶ Run or Ctrl+Enter to execute.</span></div>
+    <div id="tui-wrap">
+      <canvas id="tui-canvas" tabindex="-1"></canvas>
+      <div id="tui-input-bar">
+        <span id="tui-input-prompt">❮❮ </span>
+        <input id="tui-input-field" type="text" autocomplete="off" spellcheck="false" placeholder="Enter…">
+      </div>
+      <button id="tui-stop-btn" title="Stop program (Escape)">✕ Stop</button>
+    </div>
   </div>
 
 </div>
@@ -979,7 +1104,7 @@ const EXAMPLES = {
         {
           name: 'calculadora.zy',
           code:
-`<# ./matematicas <= mat
+`<# ./matematicas : mat
 
 >> "=== Módulos en Zymbol ===" ¶
 ¶
@@ -1037,7 +1162,7 @@ const EXAMPLES = {
           name: 'ελληνικά.zy',
           code:
 `# ελληνικά {
-    <# ./module <= mat
+    <# ./module : mat
 
     #> {
         mat::sumar       <= προσθέτω
@@ -1052,7 +1177,7 @@ const EXAMPLES = {
         {
           name: 'Ελληνική_εφαρμογή.zy',
           code:
-`<# ./ελληνικά <= μαθ
+`<# ./ελληνικά : μαθ
 
 αποτέλεσμα = μαθ::προσθέτω(10, 5)
 διαφορά    = μαθ::αφαιρώ(10, 5)
@@ -1099,7 +1224,7 @@ const EXAMPLES = {
           name: 'עִברִית.zy',
           code:
 `# עִברִית {
-    <# ./module <= mat
+    <# ./module : mat
 
     #> {
         mat::sumar       <= חיבור
@@ -1114,7 +1239,7 @@ const EXAMPLES = {
         {
           name: 'אפליקציית_מתמטיקה.zy',
           code:
-`<# ./עִברִית <= מתמטיקה
+`<# ./עִברִית : מתמטיקה
 
 תוצאה   = מתמטיקה::חיבור(10, 5)
 הפרש    = מתמטיקה::חיסור(10, 5)
@@ -1161,7 +1286,7 @@ const EXAMPLES = {
           name: '中文.zy',
           code:
 `# 中文 {
-    <# ./module <= mat
+    <# ./module : mat
 
     #> {
         mat::sumar       <= 相加
@@ -1176,7 +1301,7 @@ const EXAMPLES = {
         {
           name: '中文_应用.zy',
           code:
-`<# ./中文 <= 数学
+`<# ./中文 : 数学
 
 结果   = 数学::相加(10, 5)
 差值   = 数学::相减(10, 5)
@@ -1223,7 +1348,7 @@ const EXAMPLES = {
           name: '한국인.zy',
           code:
 `# 한국인 {
-    <# ./module <= mat
+    <# ./module : mat
 
     #> {
         mat::sumar       <= 더하다
@@ -1238,7 +1363,7 @@ const EXAMPLES = {
         {
           name: '한국_앱.zy',
           code:
-`<# ./한국인 <= 수학
+`<# ./한국인 : 수학
 
 결과    = 수학::더하다(10, 5)
 차이    = 수학::빼다(10, 5)
@@ -1255,6 +1380,566 @@ const EXAMPLES = {
 >> "자연상수: " 자연상수 ¶`
         },
       ],
+    },
+  ],
+
+  'TUI >>|': [
+    {
+      title: 'Hola TUI',
+      code:
+`>>| {
+    [filas, cols] = >>?
+    >>~ (1, 1) > "Canvas TUI activo"
+    >>~ (2, 1) > "Tamaño: " filas " filas × " cols " cols"
+    >>~ (4, 1, 1, 10, 0) > "NEGRITA VERDE"
+    >>~ (5, 1, 2, 11, 0) > "CURSIVA CIAN"
+    >>~ (6, 1, 4, 12, 0) > "SUBRAYADO ROJO"
+    >>~ (8, 1) > "Presiona una tecla para salir..."
+    <<| k
+    >>~ (9, 1) > "Tecla: " k
+    @~ 1000
+}`,
+    },
+    {
+      title: 'Serpiente',
+      files: [
+        {
+          name: 'logica.zy',
+          code:
+`// Serpiente — lógica del juego: movimiento, colisiones, spawn de comida
+// AN = ancho interior del tablero, AL = alto interior del tablero
+// Aleatorio: LCG (Numerical Recipes) implementado en Zymbol puro.
+# logica {
+    #> { lcg_sig, rango_aleatorio, fruta_aleatoria, nueva_dir, nueva_comida, tick_comida, mover }
+
+    // Avanza la semilla un paso: LCG Numerical Recipes
+    lcg_sig(semilla) {
+        <~ (1664525 * semilla + 1013904223) % 2147483647
+    }
+
+    // Entero aleatorio en [min, max] — retorna (valor, semilla_siguiente)
+    rango_aleatorio(semilla, min, max) {
+        sig = lcg_sig(semilla)
+        val = sig % (max - min + 1) + min
+        <~ (val, sig)
+    }
+
+    // Emoji de fruta aleatorio — retorna (emoji, semilla_siguiente)
+    fruta_aleatoria(semilla) {
+        frutas = ["🍎", "🍊", "🍋", "🍇", "🍓", "🫐", "🍑", "🥝", "🍒", "🍉"]
+        [ind, s1] = rango_aleatorio(semilla, 1, 10)
+        <~ (frutas[ind], s1)
+    }
+
+    // Genera posición de comida sin superponerse con la serpiente
+    nueva_comida(serpiente, AN, AL, semilla) {
+        [r, s1] = rango_aleatorio(semilla, 2, AL + 1)
+        [c, s2] = rango_aleatorio(s1,     2, AN)
+        pos = (r, c)
+        ? _en_serpiente(serpiente, pos) {
+            [r, s1] = rango_aleatorio(s2, 2, AL + 1)
+            [c, s2] = rango_aleatorio(s1, 2, AN)
+            pos = (r, c)
+        }
+        <~ (pos, s2)
+    }
+
+    // Genera nueva comida y fruta solo si comio=#1
+    tick_comida(comio, serpiente, AN, AL, semilla, comida, fruta) {
+        ? !comio { <~ (comida, fruta, semilla) }
+        [npos, s1] = nueva_comida(serpiente, AN, AL, semilla)
+        [nfru, s2] = fruta_aleatoria(s1)
+        <~ (npos, nfru, s2)
+    }
+
+    // Mapea tecla cruda a dirección interna
+    nueva_dir(tecla, dir) {
+        nueva = dir
+        ? tecla == 'w' || tecla == '↑' { nueva = '↑' }
+        ? tecla == 's' || tecla == '↓' { nueva = '↓' }
+        ? tecla == 'a' || tecla == '←' { nueva = '←' }
+        ? tecla == 'd' || tecla == '→' { nueva = '→' }
+        inverso = #0
+        ? dir == '↑' && nueva == '↓' { inverso = #1 }
+        ? dir == '↓' && nueva == '↑' { inverso = #1 }
+        ? dir == '←' && nueva == '→' { inverso = #1 }
+        ? dir == '→' && nueva == '←' { inverso = #1 }
+        ? inverso { <~ dir }
+        <~ nueva
+    }
+
+    _en_serpiente(serpiente, pos) {
+        i = 1
+        @ i <= serpiente$# {
+            ? serpiente[i] == pos { <~ #1 }
+            i++
+        }
+        <~ #0
+    }
+
+    // Avanza la serpiente un paso
+    // crecer=#1 → hay crecimiento diferido del tick anterior (cola se queda)
+    // Retorna (vivo, serpiente, puntos, comio)
+    mover(serpiente, dir, comida, puntos, AN, AL, crecer) {
+        [fr_cab, fc_cab] = serpiente[1]
+        nf = fr_cab
+        nc = fc_cab
+        ? dir == '↑' { nf = fr_cab - 1 }
+        ? dir == '↓' { nf = fr_cab + 1 }
+        ? dir == '←' { nc = fc_cab - 1 }
+        ? dir == '→' { nc = fc_cab + 1 }
+        cab = (nf, nc)
+        ? nf < 2 || nf > AL+1 || nc < 2 || nc > AN+1 {
+            <~ (#0, serpiente, puntos, #0)
+        }
+        [fr_com, fc_com] = comida
+        comio = cab == comida || cab == (fr_com, fc_com + 1)
+        lon = serpiente$#
+        limite = lon - 1
+        ? crecer { limite = lon }
+        i = 1
+        @ i <= limite {
+            ? serpiente[i] == cab { <~ (#0, serpiente, puntos, #0) }
+            i++
+        }
+        serpiente = serpiente$+[1] cab
+        ? comio { puntos = puntos + 1 }
+        ? !crecer { serpiente = serpiente$-[-1] }
+        <~ (#1, serpiente, puntos, comio)
+    }
+}`,
+        },
+        {
+          name: 'dibujo.zy',
+          code:
+`// Serpiente — renderizado: tablero, serpiente, comida, marcador, pantallas
+# dibujo {
+    #> { menu_velocidad, dibujar_inicio, dibujar, fin_juego, pausa }
+
+    BORDE  := 8
+    VERDE  := 10
+    CABEZA := 2
+    COMIDA := 11
+    ROJO   := 9
+    TEXTO  := 15
+
+    _linea_h(n) { <~ "─" $* n }
+
+    _dir_hacia(origen, destino) {
+        [or, oc] = origen
+        [dr, dc] = destino
+        ? dc > oc { <~ 'R' }
+        ? dc < oc { <~ 'L' }
+        ? dr < or { <~ 'U' }
+        <~ 'D'
+    }
+
+    _char_cabeza(cab, cuerpo) {
+        d = _dir_hacia(cuerpo, cab)
+        ? d == 'R' { <~ "▶" }
+        ? d == 'L' { <~ "◀" }
+        ? d == 'U' { <~ "▲" }
+        <~ "▼"
+    }
+
+    _char_cuerpo(ant, pos, sig) {
+        da = _dir_hacia(pos, ant)
+        ds = _dir_hacia(pos, sig)
+        ? (da == 'R' && ds == 'L') || (da == 'L' && ds == 'R') { <~ "─" }
+        ? (da == 'U' && ds == 'D') || (da == 'D' && ds == 'U') { <~ "│" }
+        ? (da == 'R' && ds == 'D') || (da == 'D' && ds == 'R') { <~ "╭" }
+        ? (da == 'L' && ds == 'D') || (da == 'D' && ds == 'L') { <~ "╮" }
+        ? (da == 'R' && ds == 'U') || (da == 'U' && ds == 'R') { <~ "╰" }
+        <~ "╯"
+    }
+
+    _char_cola(penultimo, cola) {
+        d = _dir_hacia(penultimo, cola)
+        ? d == 'R' || d == 'L' { <~ "─" }
+        <~ "│"
+    }
+
+    _marcador(puntos, AN) {
+        col_m = AN / 2 - 7
+        >>~ (1, col_m, 0,      8) > "┤"
+        >>~ (1, col_m + 1, 0, 14) > " ✦ PUNTOS "
+        >>~ (1, col_m + 10, 0, 11) > puntos
+        >>~ (1, col_m + 12, 0, 14) > " ✦ "
+        >>~ (1, col_m + 15, 0,  8) > "├"
+    }
+
+    menu_velocidad(AN, AL) {
+        >>!
+        fila_c = AL / 2 - 5
+        col_c  = AN / 2 - 15
+        sel = 1
+
+        @:sel {
+            >>~ (fila_c,    col_c, 0, TEXTO) > "╭──────────────────────────────╮"
+            >>~ (fila_c+1,  col_c, 0, TEXTO) > "│        Z Y M B O L           │"
+            >>~ (fila_c+2,  col_c, 0, TEXTO) > "│      S E R P I E N T E       │"
+            >>~ (fila_c+3,  col_c, 0, TEXTO) > "├──────────────────────────────┤"
+            >>~ (fila_c+4,  col_c, 0, TEXTO) > "│   Elige tu velocidad:        │"
+            >>~ (fila_c+5,  col_c, 0, TEXTO) > "│                              │"
+            >>~ (fila_c+6,  col_c, 0, 15)  > "│   [1]  Lento      160 ms     │"
+            >>~ (fila_c+7,  col_c, 0, 15)  > "│   [2]  Normal     130 ms     │"
+            >>~ (fila_c+8,  col_c, 0, 15)  > "│   [3]  Rápido     100 ms     │"
+            >>~ (fila_c+9,  col_c, 0,  9)  > "│   [4]  Infernal    70 ms     │"
+            >>~ (fila_c+10, col_c, 0, 201) > "│   [5]  Demencial   40 ms     │ "
+            >>~ (fila_c+11, col_c, 0, TEXTO) > "╰──────────────────────────────╯"
+            ? sel == 1 { >>~ (fila_c+6,  col_c, 0, 10) > "│ ► [1]  Lento      160 ms     │" }
+            ? sel == 2 { >>~ (fila_c+7,  col_c, 0, 10) > "│ ► [2]  Normal     130 ms     │" }
+            ? sel == 3 { >>~ (fila_c+8,  col_c, 0, 10) > "│ ► [3]  Rápido     100 ms     │" }
+            ? sel == 4 { >>~ (fila_c+9,  col_c, 0, 10) > "│ ► [4]  Infernal    70 ms     │" }
+            ? sel == 5 { >>~ (fila_c+10, col_c, 0, 10) > "│ ► [5]  Demencial   40 ms     │" }
+            <<| tecla
+            ? tecla == '1' { <~ 160 }
+            ? tecla == '2' { <~ 130 }
+            ? tecla == '3' { <~ 100 }
+            ? tecla == '4' { <~ 70  }
+            ? tecla == '5' { <~ 40  }
+            ? tecla == '\n' {
+                ? sel == 1 { <~ 160 }
+                ? sel == 2 { <~ 130 }
+                ? sel == 3 { <~ 100 }
+                ? sel == 4 { <~ 70  }
+                ? sel == 5 { <~ 40  }
+            }
+            sel = _mover_sel(tecla, sel, 5)
+        }
+    }
+
+    _ayuda(AN, AL) {
+        >>!
+        fila_c = AL / 2 - 7
+        col_c  = AN / 2 - 15
+        >>~ (fila_c,    col_c, 0, 2)  > "╭──────────────────────────────╮"
+        >>~ (fila_c+1,  col_c, 0, 2)  > "│         A Y U D A            │"
+        >>~ (fila_c+2,  col_c, 0, 2)  > "├──────────────────────────────┤"
+        >>~ (fila_c+3,  col_c, 0, 11) > "│  Movimiento:                 │"
+        >>~ (fila_c+4,  col_c, 0, 15) > "│    W / ↑   — arriba          │"
+        >>~ (fila_c+5,  col_c, 0, 15) > "│    S / ↓   — abajo           │"
+        >>~ (fila_c+6,  col_c, 0, 15) > "│    A / ←   — izquierda       │"
+        >>~ (fila_c+7,  col_c, 0, 15) > "│    D / →   — derecha         │"
+        >>~ (fila_c+8,  col_c, 0, 11) > "│  En partida:                 │"
+        >>~ (fila_c+9,  col_c, 0, 15) > "│    Q       — salir           │"
+        >>~ (fila_c+10, col_c, 0, 15) > "│    P       — pausar          │"
+        >>~ (fila_c+11, col_c, 0, 11) > "│  Al comer: la serpiente crece│"
+        >>~ (fila_c+12, col_c, 0, 15) > "│  por la cola en el siguiente │"
+        >>~ (fila_c+13, col_c, 0, 15) > "│  tick de reloj.              │"
+        >>~ (fila_c+14, col_c, 0, 2)  > "╰──────────────────────────────╯"
+        >>~ (fila_c+16, col_c, 0, 0)  > "Presiona cualquier tecla..."
+        <<| _tecla_cualquiera
+    }
+
+    pausa(AN, AL) {
+        fila_c = AL / 2 - 2
+        col_c  = AN / 2 - 10
+        >>~ (fila_c,   col_c, 0, TEXTO) > "╭───────────────────╮"
+        >>~ (fila_c+1, col_c, 0, TEXTO) > "│                   │"
+        >>~ (fila_c+2, col_c, 0, TEXTO) > "│    P A U S A      │"
+        >>~ (fila_c+3, col_c, 0, TEXTO) > "│                   │"
+        >>~ (fila_c+4, col_c, 0, TEXTO) > "│  [P]  continuar   │"
+        >>~ (fila_c+5, col_c, 0, TEXTO) > "╰───────────────────╯"
+        @:espera {
+            <<| tecla
+            ? tecla == 'p' || tecla == 'P' { @:espera! }
+        }
+    }
+
+    dibujar_inicio(serpiente, comida, fruta, puntos, AN, AL) {
+        >>!
+        >>~ (1, 1, 0, BORDE) > "╭" _linea_h(AN) "╮"
+        >>~ (AL + 2, 1, 0, BORDE) > "╰" _linea_h(AN) "╯"
+        fila = 2
+        @ fila <= AL + 1 {
+            >>~ (fila, 1, 0, BORDE) > "│"
+            >>~ (fila, AN + 2, 0, BORDE) > "│"
+            fila++
+        }
+        _marcador(puntos, AN)
+        [fy, fx] = comida
+        >>~ (fy, fx, 0, COMIDA) > fruta
+        [hy, hx] = serpiente[1]
+        >>~ (hy, hx, 0, CABEZA) > _char_cabeza(serpiente[1], serpiente[2])
+        lon = serpiente$#
+        i = 2
+        @ i < lon {
+            [sy, sx] = serpiente[i]
+            >>~ (sy, sx, 0, VERDE) > _char_cuerpo(serpiente[i-1], serpiente[i], serpiente[i+1])
+            i++
+        }
+        [ty, tx] = serpiente[lon]
+        >>~ (ty, tx, 0, VERDE) > _char_cola(serpiente[lon-1], serpiente[lon])
+    }
+
+    dibujar(serpiente, cola_vieja, crecer, comio, comida_vieja, comida, fruta, puntos, AN, AL, pos_arroba) {
+        [fy_cab, fx_cab] = serpiente[1]
+
+        ? comio {
+            [fvy, fvx] = comida_vieja
+            >>~ (fvy, fvx, 0, 0) > "  "
+            ? serpiente$# >= 3 {
+                [py2, px2] = serpiente[2]
+                >>~ (py2, px2, 0, 10) > _char_cuerpo(serpiente[1], serpiente[2], serpiente[3])
+            }
+            [ty, tx] = cola_vieja
+            >>~ (ty, tx, 0, 0) > " "
+            lon = serpiente$#
+            [nty, ntx] = serpiente[lon]
+            >>~ (nty, ntx, 0, 10) > _char_cola(serpiente[lon-1], serpiente[lon])
+            [fy, fx] = comida
+            >>~ (fy, fx, 0, 11) > fruta
+        }
+
+        ? crecer {
+            [ay, ax] = pos_arroba
+            >>~ (ay, ax, 0, 11) > "@"
+        }
+
+        ? !comio && !crecer {
+            ? serpiente$# >= 3 {
+                [py2, px2] = serpiente[2]
+                >>~ (py2, px2, 0, 10) > _char_cuerpo(serpiente[1], serpiente[2], serpiente[3])
+            }
+            [ty, tx] = cola_vieja
+            >>~ (ty, tx, 0, 0) > " "
+            lon = serpiente$#
+            [nty, ntx] = serpiente[lon]
+            >>~ (nty, ntx, 0, 10) > _char_cola(serpiente[lon-1], serpiente[lon])
+        }
+
+        >>~ (fy_cab, fx_cab, 0, 2) > _char_cabeza(serpiente[1], serpiente[2])
+        _marcador(puntos, AN)
+    }
+
+    _mover_sel(tecla, sel, max) {
+        ? tecla == '↑' { ? sel > 1 { <~ sel - 1 } <~ max }
+        ? tecla == '↓' { ? sel < max { <~ sel + 1 } <~ 1 }
+        <~ sel
+    }
+
+    fin_juego(puntos, AN, AL) {
+        fila_c = AL / 2 - 4
+        col_c  = AN / 2 - 10
+        sel = 1
+        @:menu {
+            >>!
+            >>~ (fila_c,   col_c, 0, ROJO)  > "╭───────────────────╮"
+            >>~ (fila_c+1, col_c, 0, ROJO)  > "│     J U E G O     │"
+            >>~ (fila_c+2, col_c, 0, ROJO)  > "│   T E R M I N Ó   │"
+            >>~ (fila_c+3, col_c, 0, ROJO)  > "╰───────────────────╯"
+            >>~ (fila_c+5, col_c, 0, TEXTO) > "Puntaje final: " puntos "  "
+            >>~ (fila_c+7, col_c, 0, 15) > "  Nuevo juego   "
+            >>~ (fila_c+8, col_c, 0, 15) > "  Salir         "
+            >>~ (fila_c+9, col_c, 0, 15) > "  Ayuda         "
+            ? sel == 1 { >>~ (fila_c+7, col_c, 0, 10) > "► Nuevo juego   " }
+            ? sel == 2 { >>~ (fila_c+8, col_c, 0, 10) > "► Salir         " }
+            ? sel == 3 { >>~ (fila_c+9, col_c, 0, 10) > "► Ayuda         " }
+            <<| tecla
+            ? tecla == 'n' || tecla == 'N' { <~ 'n' }
+            ? tecla == 's' || tecla == 'S' { <~ 's' }
+            ? tecla == 'a' || tecla == 'A' { _ayuda(AN, AL) }
+            ? tecla == '\n' {
+                ? sel == 1 { <~ 'n' }
+                ? sel == 2 { <~ 's' }
+                ? sel == 3 { _ayuda(AN, AL) }
+            }
+            sel = _mover_sel(tecla, sel, 3)
+        }
+    }
+}`,
+        },
+        {
+          name: 'serpiente.zy',
+          code:
+`// Serpiente — juego clásico de serpiente en la terminal
+// Controles: WASD o flechas — Q para salir — P para pausar
+
+<# ./logica : l
+<# ./dibujo : d
+
+[filas, cols] = >>?
+AN = cols  - 2
+AL = filas - 2
+
+fila_c = AL / 2 + 1
+col_c  = AN / 2 + 1
+ult_filas = filas
+ult_cols  = cols
+
+_ns  = <\\ "date +%N" \\>
+_pid = <\\ "echo $$" \\>
+_rnd = <\\ "od -An -N2 -tu2 /dev/urandom | tr -d ' \\n'" \\>
+semilla = (#|_ns| + #|_pid| * 31337 + #|_rnd| * 65537) % 2147483647
+
+>>| {
+    retardo = d::menu_velocidad(AN, AL)
+
+    @:main {
+        serpiente = [(fila_c, col_c), (fila_c, col_c-1), (fila_c, col_c-2)]
+        dir       = '→'
+        puntos    = 0
+        pendiente = #0
+
+        [comida, semilla] = l::nueva_comida(serpiente, AN, AL, semilla)
+        [fruta,  semilla] = l::fruta_aleatoria(semilla)
+
+        d::dibujar_inicio(serpiente, comida, fruta, puntos, AN, AL)
+
+        @:game {
+            <<|? tecla
+
+            [filas_act, cols_act] = >>?
+            ? filas_act <> ult_filas || cols_act <> ult_cols {
+                AN = cols_act - 2
+                AL = filas_act - 2
+                fila_c = AL / 2 + 1
+                col_c  = AN / 2 + 1
+                ult_filas = filas_act
+                ult_cols  = cols_act
+                @:main>
+            }
+
+            ? tecla == 'q' || tecla == 'Q' { @:game! }
+
+            ? tecla == 'p' || tecla == 'P' {
+                d::pausa(AN, AL)
+                d::dibujar_inicio(serpiente, comida, fruta, puntos, AN, AL)
+            }
+
+            ? tecla <> '\\0' {
+                dir = l::nueva_dir(tecla, dir)
+            }
+
+            cola_vieja   = serpiente[serpiente$#]
+            comida_vieja = comida
+
+            crecer = pendiente <> #0
+
+            [vivo, serpiente, puntos, comio] = l::mover(serpiente, dir, comida, puntos, AN, AL, crecer)
+
+            [comida, fruta, semilla] = l::tick_comida(comio, serpiente, AN, AL, semilla, comida, fruta)
+
+            pos_arroba = pendiente
+            ? crecer { pendiente = #0 }
+            ? comio  { pendiente = serpiente[1] }
+
+            ? !vivo { @:game! }
+
+            d::dibujar(serpiente, cola_vieja, crecer, comio, comida_vieja, comida, fruta, puntos, AN, AL, pos_arroba)
+            @~ retardo
+        }
+
+        accion = d::fin_juego(puntos, AN, AL)
+        ? accion == 's' { @:main! }
+    }
+}`,
+        },
+      ],
+    },
+  ],
+
+  'ARGS ><': [
+    {
+      title: 'Contador de args',
+      args: 'hola mundo "tercer argumento"',
+      code:
+`>< args
+
+>> "Argumentos recibidos: " args$# ¶
+
+@ i:1..args$#:1 {
+    >> "  [" i "] " args[i] ¶
+}
+
+? args$# == 0 {
+    >> "— sin argumentos —" ¶
+}`,
+    },
+    {
+      title: 'Suma de números',
+      args: '10 25 7 3',
+      code:
+`>< args
+
+? args$# == 0 {
+    >> "Uso: suma n1 n2 n3 ..." ¶
+    <~ ()
+}
+
+total° = 0
+@ i:1..args$#:1 {
+    total° += #|args[i]|
+}
+
+>> "Suma de " args$# " números: " total ¶`,
+    },
+    {
+      title: 'Saludo personalizado',
+      args: 'Rakzo',
+      code:
+`>< args
+
+nombre = ?? args {
+    [] : "mundo"
+    _  : args[1]
+}
+>> "¡Hola, " nombre "!" ¶`,
+    },
+  ],
+
+  'SHELL <\\': [
+    {
+      title: 'Fecha y hora',
+      code:
+`// En CLI: ejecuta los comandos reales del sistema
+// En el playground: devuelve un timestamp (nanosegundos desde epoch)
+
+anio  = <\\ "date +%Y" \\>
+mes   = <\\ "date +%m" \\>
+dia   = <\\ "date +%d" \\>
+hora  = <\\ "date +%H" \\>
+min   = <\\ "date +%M" \\>
+seg   = <\\ "date +%S" \\>
+
+>> "Fecha : " anio "-" mes "-" dia ¶
+>> "Hora  : " hora ":" min ":" seg ¶`,
+    },
+    {
+      title: 'Semilla aleatoria',
+      code:
+`// <\\ cmd \\> devuelve un timestamp de alta resolución en el playground
+// útil como semilla para generadores de números pseudoaleatorios
+
+_ns  = <\\ "date +%N" \\>
+_pid = <\\ "echo $$" \\>
+
+semilla = (#|_ns| + #|_pid| * 31337) % 2147483647
+
+// LCG — generador pseudoaleatorio
+lcg(s) { <~ (1664525 * s + 1013904223) % 2147483647 }
+
+s1 = lcg(semilla)
+s2 = lcg(s1)
+s3 = lcg(s2)
+
+>> "Semilla inicial: " semilla ¶
+>> "r1 = " s1 % 100 ¶
+>> "r2 = " s2 % 100 ¶
+>> "r3 = " s3 % 100 ¶`,
+    },
+    {
+      title: 'Timestamp como ID',
+      code:
+`// Usar <\\ \\'> como fuente de entropía para IDs únicos
+
+_t = <\\ "date +%N" \\>
+
+id_sesion = #|_t| % 999999 + 100000
+
+>> "ID de sesión: " id_sesion ¶
+>> "Generado a las: " _t ¶`,
     },
   ],
 };
@@ -1628,6 +2313,8 @@ function titleToFilename(title) {
 // Load a single-file example: find-or-create a tab by derived filename
 function loadSingleFileExample(ex) {
   const filename = titleToFilename(ex.title);
+  if (ex.args !== undefined)
+    document.getElementById('args-input').value = ex.args;
   const existing = files.find(f => f.name === filename);
   if (existing) {
     if (existing.dirty) {
@@ -1794,6 +2481,289 @@ function clearOutput() {
   outputEl.innerHTML = '';
 }
 
+// ─── TUI canvas support ───────────────────────────────────────────────────────
+function ansi256ToRgb(n) {
+  const ANSI16 = [
+    '#000','#800000','#008000','#808000','#000080','#800080','#008080','#c0c0c0',
+    '#808080','#ff0000','#00ff00','#ffff00','#0000ff','#ff00ff','#00ffff','#fff',
+  ];
+  if (n < 16)  return ANSI16[n];
+  if (n < 232) {
+    n -= 16;
+    const b = n % 6, g = Math.floor(n / 6) % 6, r = Math.floor(n / 36);
+    const c = v => v === 0 ? 0 : v * 40 + 55;
+    return `rgb(${c(r)},${c(g)},${c(b)})`;
+  }
+  const v = (n - 232) * 10 + 8;
+  return `rgb(${v},${v},${v})`;
+}
+
+class BrowserTUI {
+  constructor(canvas, outputDiv) {
+    this.canvas       = canvas;
+    this.wrap         = document.getElementById('tui-wrap');
+    this.stopBtn      = document.getElementById('tui-stop-btn');
+    this.inputBar     = document.getElementById('tui-input-bar');
+    this.inputField   = document.getElementById('tui-input-field');
+    this.outputDiv    = outputDiv;
+    this.ctx          = null;
+    this.rows         = 0;
+    this.cols         = 0;
+    this.cellW        = 0;
+    this.cellH        = 0;
+    this.keyQueue     = [];
+    this.keyWaiters   = [];
+    this.keyListener  = null;
+    this.active       = false;
+    this.aborted      = false;
+    this._sleepCancel     = null;
+    this._inputResolve    = null;
+    this._inputKeyHandler = null;
+    this._touchStart      = null;
+    this._touchEnd        = null;
+    // Pre-compute dimensions so >>? works even before >>| is entered
+    this._measureCells();
+  }
+
+  _measureCells() {
+    const tmp = document.createElement('canvas');
+    const ctx = tmp.getContext('2d');
+    ctx.font = '13px "JetBrains Mono","Courier New",monospace';
+    this.cellW = Math.ceil(ctx.measureText('M').width) || 8;
+    this.cellH = 16;
+    // wrap is display:none in constructor — use output-panel (always visible)
+    const panel = this.outputDiv?.parentElement;
+    const w = (panel && panel.clientWidth)  || 600;
+    const h = (panel && panel.clientHeight) || 400;
+    this.cols = Math.max(10, Math.floor(w / this.cellW));
+    this.rows = Math.max(5,  Math.floor(h / this.cellH));
+  }
+
+  enter() {
+    // Show wrap first so clientWidth/Height are real
+    this.outputDiv.style.display = 'none';
+    this.wrap.classList.add('active');
+
+    this.ctx = this.canvas.getContext('2d');
+
+    const w   = this.wrap.clientWidth  || 600;
+    const h   = this.wrap.clientHeight || 400;
+    const dpr = window.devicePixelRatio || 1;
+
+    // HiDPI: buffer in physical pixels, draw in CSS pixels
+    this.canvas.width        = Math.round(w * dpr);
+    this.canvas.height       = Math.round(h * dpr);
+    this.canvas.style.width  = w + 'px';
+    this.canvas.style.height = h + 'px';
+    this.ctx.scale(dpr, dpr);
+
+    this.ctx.font = '13px "JetBrains Mono","Courier New",monospace';
+    this.cellW = Math.ceil(this.ctx.measureText('M').width) || 8;
+    this.cellH = 16;
+
+    this.cols = Math.max(10, Math.floor(w / this.cellW));
+    this.rows = Math.max(5,  Math.floor(h / this.cellH));
+
+    this.canvas.focus();
+
+    this.ctx.fillStyle = '#000';
+    this.ctx.fillRect(0, 0, w, h);
+
+    this.printRow = 1;
+    this.printCol = 1;
+    this.keyQueue        = [];
+    this.keyWaiters      = [];
+    this.aborted         = false;
+    this._sleepCancel    = null;
+    this._inputResolve   = null;
+    this._inputKeyHandler = null;
+    this.keyListener = e => {
+      if (this.inputBar.classList.contains('active')) return;
+      e.preventDefault();
+      const ch = this._mapKey(e);
+      if (this.keyWaiters.length > 0) this.keyWaiters.shift()(ch);
+      else this.keyQueue.push(ch);
+    };
+    document.addEventListener('keydown', this.keyListener);
+
+    // Swipe gestures → arrow keys (mobile)
+    let _tx = 0, _ty = 0;
+    this._touchStart = e => {
+      if (this.inputBar.classList.contains('active')) return;
+      _tx = e.touches[0].clientX;
+      _ty = e.touches[0].clientY;
+    };
+    this._touchEnd = e => {
+      if (this.inputBar.classList.contains('active')) return;
+      const dx = e.changedTouches[0].clientX - _tx;
+      const dy = e.changedTouches[0].clientY - _ty;
+      const ax = Math.abs(dx), ay = Math.abs(dy);
+      const ch = Math.max(ax, ay) < 25
+        ? '\n'                                                        // tap → Enter
+        : ax > ay ? (dx > 0 ? '→' : '←') : (dy > 0 ? '↓' : '↑');  // swipe → arrow
+      if (this.keyWaiters.length > 0) this.keyWaiters.shift()(ch);
+      else this.keyQueue.push(ch);
+    };
+    this.canvas.addEventListener('touchstart', this._touchStart, { passive: true });
+    this.canvas.addEventListener('touchend',   this._touchEnd,   { passive: true });
+
+    this.active = true;
+  }
+
+  leave() {
+    if (!this.active) return;
+    document.removeEventListener('keydown', this.keyListener);
+    this.keyListener = null;
+    if (this._touchStart) this.canvas.removeEventListener('touchstart', this._touchStart);
+    if (this._touchEnd)   this.canvas.removeEventListener('touchend',   this._touchEnd);
+    this._touchStart = null;
+    this._touchEnd   = null;
+    while (this.keyWaiters.length > 0) this.keyWaiters.shift()('\x1b');
+    this.inputBar.classList.remove('active');
+    this.wrap.classList.remove('active');
+    this.outputDiv.style.display = '';
+    this.active = false;
+  }
+
+  abort() {
+    this.aborted = true;
+    while (this.keyWaiters.length > 0) this.keyWaiters.shift()('\x1b');
+    if (this._sleepCancel) { this._sleepCancel(); this._sleepCancel = null; }
+    if (this._inputResolve) {
+      if (this._inputKeyHandler) this.inputField.removeEventListener('keydown', this._inputKeyHandler);
+      this._inputResolve('');
+      this._inputResolve = null;
+    }
+  }
+
+  readLine() {
+    return new Promise(resolve => {
+      this.inputBar.classList.add('active');
+      this.inputField.value = '';
+      this.inputField.focus();
+      this._inputResolve = val => {
+        this.inputBar.classList.remove('active');
+        this._inputResolve   = null;
+        this._inputKeyHandler = null;
+        this.canvas.focus();
+        resolve(val);
+      };
+      const onKey = e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation(); // prevent Enter from leaking into canvas keyQueue
+          const val = this.inputField.value;
+          this.inputField.removeEventListener('keydown', onKey);
+          if (this._inputResolve) this._inputResolve(val);
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          this.inputField.removeEventListener('keydown', onKey);
+          if (this._inputResolve) this._inputResolve('');
+        } else {
+          e.stopPropagation(); // block all typing from reaching canvas keyQueue
+        }
+      };
+      this._inputKeyHandler = onKey;
+      this.inputField.addEventListener('keydown', onKey);
+    });
+  }
+
+  clear() {
+    if (!this.ctx) return;
+    this.ctx.fillStyle = '#000';
+    this.ctx.fillRect(0, 0, this.cols * this.cellW, this.rows * this.cellH);
+    this.printRow = 1;
+    this.printCol = 1;
+  }
+
+  // Returns true for Unicode "wide" characters (emoji, CJK fullwidth) that occupy 2 columns
+  _isWide(ch) {
+    const cp = ch.codePointAt(0);
+    return cp >= 0x1F000 || (cp >= 0xFF01 && cp <= 0xFFE6);
+  }
+
+  _drawChar(row, col, ch, bks, fg, bg) {
+    if (!this.ctx || row < 1 || row > this.rows || col < 1 || col > this.cols) return;
+    // Snap cell boundaries to integers to avoid sub-pixel accumulation
+    const x  = Math.round((col - 1) * this.cellW);
+    const y  = Math.round((row - 1) * this.cellH);
+    const x2 = Math.round( col      * this.cellW);
+    const y2 = Math.round( row      * this.cellH);
+    const cw = x2 - x;
+    const ch2 = y2 - y;
+    // Wide chars (emoji) occupy 2 cells — same behaviour as a real terminal
+    const wide  = ch && ch !== ' ' && this._isWide(ch);
+    const clipW = wide ? cw * 2 : cw;
+    // Erase cell(s) + 1px right: clears any bleed the previous char left in the neighbor
+    this.ctx.clearRect(x, y, clipW + 1, ch2);
+    this.ctx.fillStyle = (bg !== null && bg !== undefined) ? ansi256ToRgb(bg) : '#000';
+    this.ctx.fillRect(x, y, clipW, ch2);
+    if (!ch || ch === ' ') return;
+    let font = '13px "JetBrains Mono","Courier New",monospace';
+    if (bks & 1) font = 'bold '   + font;
+    if (bks & 2) font = 'italic ' + font;
+    this.ctx.font = font;
+    this.ctx.textBaseline = 'top';
+    this.ctx.fillStyle = (fg !== null && fg !== undefined) ? ansi256ToRgb(fg) : '#ddd';
+    // Clip to cell (or 2 cells for wide): prevents glyph bleed into further neighbors
+    this.ctx.save();
+    this.ctx.beginPath();
+    this.ctx.rect(x, y, clipW, ch2);
+    this.ctx.clip();
+    this.ctx.fillText(ch, x, y + 1);
+    this.ctx.restore();
+    if (bks & 4) {
+      this.ctx.fillStyle = (fg !== null && fg !== undefined) ? ansi256ToRgb(fg) : '#ddd';
+      this.ctx.fillRect(x, y + ch2 - 2, cw, 1);
+    }
+  }
+
+  // Positioned output (>>~) — draws at absolute position and updates streaming cursor
+  printAt(row, col, text, bks, fg, bg) {
+    if (!this.ctx) return;
+    for (const ch of [...text]) {
+      this._drawChar(row, col, ch, bks, fg, bg);
+      col += (ch && this._isWide(ch)) ? 2 : 1;
+    }
+    this.printRow = row;
+    this.printCol = col;
+  }
+
+  // Streaming output (>>) — renders at current cursor position, continues after >>~ output
+  print(text) {
+    for (const ch of text) {
+      if (ch === '\n') { this.printRow++; this.printCol = 1; }
+      else {
+        this._drawChar(this.printRow, this.printCol, ch, 0, null, null);
+        this.printCol += (this._isWide(ch)) ? 2 : 1;
+      }
+    }
+  }
+
+  async readKey() {
+    if (this.keyQueue.length > 0) return this.keyQueue.shift();
+    return new Promise(resolve => this.keyWaiters.push(resolve));
+  }
+
+  pollKey() {
+    return this.keyQueue.length > 0 ? this.keyQueue.shift() : '\0';
+  }
+
+  getSize() { return [this.rows, this.cols]; }
+
+  _mapKey(e) {
+    if (e.key === 'ArrowUp')    return '↑';
+    if (e.key === 'ArrowDown')  return '↓';
+    if (e.key === 'ArrowLeft')  return '←';
+    if (e.key === 'ArrowRight') return '→';
+    if (e.key === 'Enter')      return '\n';
+    if (e.key === 'Escape')     return '\x1b';
+    if (e.key.length === 1)     return e.key;
+    return '\0';
+  }
+}
+
 // ─── Interactive input ────────────────────────────────────────────────────────
 function inputFn() {
   return new Promise(resolve => {
@@ -1842,17 +2812,50 @@ function buildModuleResolver() {
   return resolver;
 }
 
+// ─── Parse CLI args (shell-like: spaces split, quotes group) ─────────────────
+function parseCliArgs(str) {
+  const args = [];
+  let cur = '', quote = null;
+  for (const ch of str) {
+    if (quote) {
+      if (ch === quote) quote = null;
+      else cur += ch;
+    } else if (ch === '"' || ch === "'") {
+      quote = ch;
+    } else if (ch === ' ') {
+      if (cur) { args.push(cur); cur = ''; }
+    } else {
+      cur += ch;
+    }
+  }
+  if (cur) args.push(cur);
+  return args;
+}
+
 // ─── Run ──────────────────────────────────────────────────────────────────────
 async function runCode() {
   clearOutput();
   const src = editor.value.trim();
   if (!src) { appendOutput('(empty program)', 'out-meta'); return; }
 
+  const cliArgs = parseCliArgs(document.getElementById('args-input').value);
+  const tui = new BrowserTUI(
+    document.getElementById('tui-canvas'),
+    outputEl
+  );
+  const stopBtn = document.getElementById('tui-stop-btn');
+  const onStop = () => tui.abort();
+  stopBtn.addEventListener('click', onStop);
+  // Route << input through canvas bar when TUI is active
+  const activeInputFn = () => tui.active ? tui.readLine() : inputFn();
   try {
-    await runZymbol(src, inputFn, text => appendOutput(text), buildModuleResolver());
-    appendOutput('\n— done —', 'out-meta');
+    await runZymbol(src, activeInputFn, text => appendOutput(text), buildModuleResolver(), null, tui, cliArgs);
+    if (!tui.aborted) appendOutput('\n— done —', 'out-meta');
   } catch (err) {
-    appendOutput('\n' + (err.message ?? String(err)), 'out-error');
+    tui.leave();
+    if (!tui.aborted) appendOutput('\n' + (err.message ?? String(err)), 'out-error');
+  } finally {
+    stopBtn.removeEventListener('click', onStop);
   }
 }
 
@@ -2028,6 +3031,93 @@ renderFileTabs();
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !backdrop.classList.contains('hidden')) dismiss();
   });
+})();
+
+// ─── Split panel + output toggle ─────────────────────────────────────────────
+(function () {
+  const playgroundEl     = document.getElementById('playground');
+  const editorPanel      = document.getElementById('editor-panel');
+  const outputPanel      = document.getElementById('output-panel');
+  const splitHandle      = document.getElementById('split-handle');
+  const toggleOutputBtn  = document.getElementById('toggle-output-btn');
+
+  let dragging      = false;
+  let outputHidden  = false;
+  let savedEditorPct = 50;
+
+  function isVertical() { return window.innerWidth <= 700; }
+
+  function updateToggleIcon() {
+    if (outputHidden) {
+      toggleOutputBtn.textContent = isVertical() ? '▲' : '▶';
+      toggleOutputBtn.title = 'Show output';
+    } else {
+      toggleOutputBtn.textContent = isVertical() ? '▼' : '◀';
+      toggleOutputBtn.title = 'Hide output';
+    }
+  }
+
+  toggleOutputBtn.addEventListener('click', () => {
+    if (outputHidden) {
+      outputPanel.classList.remove('output-collapsed');
+      splitHandle.classList.remove('output-collapsed');
+      editorPanel.style.flex = `0 0 ${savedEditorPct}%`;
+      outputPanel.style.flex = `0 0 ${100 - savedEditorPct}%`;
+      outputHidden = false;
+    } else {
+      const pgRect  = playgroundEl.getBoundingClientRect();
+      const edRect  = editorPanel.getBoundingClientRect();
+      savedEditorPct = isVertical()
+        ? (edRect.height / pgRect.height) * 100
+        : (edRect.width  / pgRect.width)  * 100;
+      editorPanel.style.flex = '1 1 auto';
+      outputPanel.style.flex = '';
+      outputPanel.classList.add('output-collapsed');
+      splitHandle.classList.add('output-collapsed');
+      outputHidden = true;
+    }
+    updateToggleIcon();
+  });
+
+  // Drag start
+  function onDragStart(e) {
+    if (outputHidden) return;
+    dragging = true;
+    splitHandle.classList.add('dragging');
+    document.body.style.userSelect = 'none';
+    if (e.cancelable) e.preventDefault();
+  }
+
+  // Drag move
+  function onDragMove(clientX, clientY) {
+    if (!dragging) return;
+    const pgRect = playgroundEl.getBoundingClientRect();
+    let pct = isVertical()
+      ? ((clientY - pgRect.top)  / pgRect.height) * 100
+      : ((clientX - pgRect.left) / pgRect.width)  * 100;
+    pct = Math.max(15, Math.min(85, pct));
+    editorPanel.style.flex = `0 0 ${pct}%`;
+    outputPanel.style.flex = `0 0 ${100 - pct}%`;
+  }
+
+  // Drag end
+  function onDragEnd() {
+    if (!dragging) return;
+    dragging = false;
+    splitHandle.classList.remove('dragging');
+    document.body.style.userSelect = '';
+  }
+
+  splitHandle.addEventListener('mousedown',  e => onDragStart(e));
+  splitHandle.addEventListener('touchstart', e => onDragStart(e), { passive: false });
+  document.addEventListener('mousemove',  e => onDragMove(e.clientX, e.clientY));
+  document.addEventListener('touchmove',  e => { const t = e.touches[0]; onDragMove(t.clientX, t.clientY); }, { passive: true });
+  document.addEventListener('mouseup',   onDragEnd);
+  document.addEventListener('touchend',  onDragEnd);
+
+  // Keep icon in sync on resize
+  window.addEventListener('resize', updateToggleIcon);
+  updateToggleIcon();
 })();
 
 </script>

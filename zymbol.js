@@ -5,7 +5,14 @@
  * type-cast operators (##. ### ##!), string split ($/), ConcatBuild ($++),
  * explicit lifetime end (\ var).
  *
- * Not supported: modules, shell integration (><), BashExec (<\ \>).
+ * v0.0.5: string repeat ($*), hot definition (°), module alias (:), sleep (@~),
+ * labeled loops (@:label { } / @:label! / @:label>), TUI canvas operators
+ * (>>! >>? >>~ <<| <<|? >>|), caught error values (##_(...)), hotDef scope fix.
+ *
+ * CLI args (><): supported — pass cliArgs array to runZymbol().
+ * BashExec (<\ \>): returns high-resolution timestamp (entropy stub).
+ * Not supported: shell inclusion (</ />).
+ * TUI operators require a >>| { } block to activate the canvas overlay.
  */
 
 // ─── Unicode digit blocks (mirrors DIGIT_BLOCKS in zymbol-lexer) ─────────────
@@ -213,12 +220,40 @@ export class Lexer {
         this.consume(); continue;
       }
 
+      // BashExec <\ cmd \> — browser-only: captures command text, simulates common date/echo
+      if (this.ch() === '<' && this.ch(1) === '\\') {
+        this.consume(); this.consume(); // consume <\
+        let _cmd = '';
+        while (this.pos < this.src.length) {
+          if (this.ch() === '\\' && this.ch(1) === '>') { this.consume(); this.consume(); break; }
+          _cmd += this.consume();
+        }
+        tok('BASHEXEC', _cmd.trim()); continue;
+      }
+
+      // TUI operators (3-4 chars) — must come before twoMap so >> and << aren't consumed first
+      if (this.ch() === '>' && this.ch(1) === '>') {
+        const c2 = this.ch(2);
+        if (c2 === '!') { this.consume(); this.consume(); this.consume(); tok('OUTPUT_CLEAR', '>>!'); continue; }
+        if (c2 === '?') { this.consume(); this.consume(); this.consume(); tok('OUTPUT_QUERY', '>>?'); continue; }
+        if (c2 === '~') { this.consume(); this.consume(); this.consume(); tok('OUTPUT_POS',   '>>~'); continue; }
+        if (c2 === '|') { this.consume(); this.consume(); this.consume(); tok('OUTPUT_GATE',  '>>|'); continue; }
+      }
+      if (this.ch() === '<' && this.ch(1) === '<' && this.ch(2) === '|') {
+        if (this.ch(3) === '?') {
+          this.consume(); this.consume(); this.consume(); this.consume();
+          tok('KEY_NONBLOCK', '<<|?'); continue;
+        }
+        this.consume(); this.consume(); this.consume();
+        tok('KEY_BLOCK', '<<|'); continue;
+      }
+
       // two-char operators
       const two = this.ch(0) + this.ch(1);
       const twoMap = {
         '>>': 'OUTPUT', '<<': 'INPUT',  '<~': 'RETURN',
         '<#': 'IMPORT',
-        '@!': 'BREAK',  '@>': 'CONTINUE',
+        '@!': 'BREAK',  '@>': 'CONTINUE', '@~': 'ATSLEEP',
         '??': 'MATCH',  '_?': 'ELSEIF', ':=': 'CONST_ASSIGN',
         '..': 'RANGE',  '==': 'EQ',     '<>': 'NEQ',
         '<=': 'LTE',    '>=': 'GTE',    '&&': 'AND',
@@ -229,6 +264,7 @@ export class Lexer {
         '!?': 'TRY',    ':!': 'CATCH',  ':>': 'FINALLY',
         '::': 'SCOPE',
         '\\\\': 'NEWLINE_ESC',
+        '><': 'CLI_ARGS',
       };
       if (twoMap[two]) {
         this.consume(); this.consume();
@@ -247,7 +283,16 @@ export class Lexer {
       if (c === '?') { this.consume(); tok('IF',     '?'); continue; }
       if (c === '@') {
         this.consume();
-        if (/[\p{L}\p{M}\p{So}\p{Co}_]/u.test(this.ch())) {
+        if (this.ch() === ':') {
+          // @:label — labeled loop, break, or continue
+          this.consume();
+          let label = '';
+          while (/[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(this.ch())) label += this.consume();
+          if (this.ch() === '!') { this.consume(); tok('AT_BREAK', label); }
+          else if (this.ch() === '>') { this.consume(); tok('AT_CONT',  label); }
+          else tok('AT_LABEL', label);
+        } else if (/[\p{L}\p{M}\p{So}\p{Co}_]/u.test(this.ch())) {
+          // @label (legacy: label without colon)
           let label = '';
           while (/[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(this.ch())) label += this.consume();
           tok('AT_LABEL', label);
@@ -268,6 +313,7 @@ export class Lexer {
         if (a === '-' && b === '-')         { this.consume(); this.consume(); this.consume(); tok('DREMOVEALL','$--'); continue; }
         if (a === '-')                      { this.consume(); this.consume();               tok('DREMOVE',    '$-');  continue; }
         if (a === '+')                      { this.consume(); this.consume();               tok('DAPPEND',    '$+');  continue; }
+        if (a === '*')                      { this.consume(); this.consume();               tok('DREPEAT',    '$*');  continue; }
         if (a === '/' )                     { this.consume(); this.consume();               tok('DSPLIT',     '$/');  continue; }
         if (a === '^' && b === '+')         { this.consume(); this.consume(); this.consume(); tok('DSORTASC', '$^+'); continue; }
         if (a === '^' && b === '-')         { this.consume(); this.consume(); this.consume(); tok('DSORTDESC','$^-'); continue; }
@@ -412,11 +458,14 @@ export class Lexer {
     while (true) {
       const c = this.ch();
       if (!c) break;
+      if (c === '°') break; // hot-def suffix — consumed below, not part of name
       if (digitValue(c) >= 0 && !(c >= '0' && c <= '9')) break;
       if (/[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(c)) { s += this.consume(); continue; }
       break;
     }
-    toks.push({ type: 'IDENT', value: s, line: this.line });
+    const hot = this.ch() === '°';
+    if (hot) this.consume();
+    toks.push({ type: 'IDENT', value: s, hot, line: this.line });
   }
 }
 
@@ -490,7 +539,7 @@ export class Parser {
     } else {
       path = this.eat('IDENT').value;
     }
-    this.eat('LTE'); // consume <=
+    this.eat('COLON'); // consume :
     const alias = this.eat('IDENT').value;
     return { type: 'Import', path, alias };
   }
@@ -512,10 +561,10 @@ export class Parser {
               // Re-export: alias::member or alias.member
               this.adv();
               const member = this.check('IDENT') ? this.adv().value : first;
-              const exported = this.check('LTE') ? (this.adv(), this.check('IDENT') ? this.adv().value : member) : member;
+              const exported = this.check('COLON') ? (this.adv(), this.check('IDENT') ? this.adv().value : member) : member;
               names.push({ kind: 'reexport', alias: first, member, exported });
             } else {
-              const exported = this.check('LTE') ? (this.adv(), this.check('IDENT') ? this.adv().value : first) : first;
+              const exported = this.check('COLON') ? (this.adv(), this.check('IDENT') ? this.adv().value : first) : first;
               names.push({ kind: 'own', internal: first, exported });
             }
           } else {
@@ -531,6 +580,15 @@ export class Parser {
     if (t.type === 'RETURN')   return this.parseReturn();
     if (t.type === 'BREAK')    { this.adv(); const bl = this.check('IDENT') ? this.adv().value : null; return { type: 'Break',    label: bl }; }
     if (t.type === 'CONTINUE') { this.adv(); const cl = this.check('IDENT') ? this.adv().value : null; return { type: 'Continue', label: cl }; }
+    if (t.type === 'AT_BREAK') { const lbl = this.adv().value; return { type: 'Break',    label: lbl }; }
+    if (t.type === 'AT_CONT')  { const lbl = this.adv().value; return { type: 'Continue', label: lbl }; }
+    if (t.type === 'ATSLEEP')    { this.adv(); return { type: 'Sleep', duration: this.parseExpr() }; }
+    if (t.type === 'CLI_ARGS')    { this.adv(); return { type: 'CliArgs', variable: this.eat('IDENT').value }; }
+    if (t.type === 'OUTPUT_CLEAR') { this.adv(); return { type: 'ClearScreen' }; }
+    if (t.type === 'OUTPUT_GATE')  return this.parseTuiBlock();
+    if (t.type === 'OUTPUT_POS')   return this.parseOutputPos();
+    if (t.type === 'KEY_BLOCK')    return this.parseKeyInput(true);
+    if (t.type === 'KEY_NONBLOCK') return this.parseKeyInput(false);
     if (t.type === 'IF')       return this.parseIf();
     if (t.type === 'MATCH')    return { type: 'ExprStmt', expr: this.parseMatchExpr() };
     if (t.type === 'AT')       { this.adv(); return this.parseLoop(); }
@@ -825,7 +883,9 @@ export class Parser {
   parseIdentStmt() {
     if (this.isFuncDecl()) return this.parseFuncDecl();
 
-    const name = this.adv().value;
+    const tok0 = this.adv();
+    const name = tok0.value;
+    const hot  = tok0.hot ?? false;
     const line = this.peek().line;
 
     if (this.match('CONST_ASSIGN')) {
@@ -834,13 +894,13 @@ export class Parser {
 
     const compound = { PLUS_EQ:'+', MINUS_EQ:'-', TIMES_EQ:'*', DIV_EQ:'/', MOD_EQ:'%', POW_EQ:'^' };
     const cop = compound[this.peek().type];
-    if (cop) { this.adv(); return { type: 'CompoundAssign', name, op: cop, value: this.parseExpr(), line }; }
+    if (cop) { this.adv(); return { type: 'CompoundAssign', name, hot, op: cop, value: this.parseExpr(), line }; }
 
-    if (this.match('INC')) return { type: 'Increment', name, op: '++', line };
-    if (this.match('DEC')) return { type: 'Increment', name, op: '--', line };
+    if (this.match('INC')) return { type: 'Increment', name, hot, op: '++', line };
+    if (this.match('DEC')) return { type: 'Increment', name, hot, op: '--', line };
 
     if (this.match('ASSIGN')) {
-      return { type: 'VarAssign', name, value: this.parseRHS(), line };
+      return { type: 'VarAssign', name, hot, value: this.parseRHS(), line };
     }
 
     // subscript assign: name[idx] = val
@@ -863,7 +923,7 @@ export class Parser {
       return { type: 'ExprStmt', expr: this.parsePostfixRest(left) };
     }
 
-    let left = { type: 'Ident', name };
+    let left = { type: 'Ident', name, hot };
     return { type: 'ExprStmt', expr: this.parsePostfixRest(left) };
   }
 
@@ -1013,7 +1073,7 @@ export class Parser {
     const COL_TOKENS = new Set(['DLEN','DAPPEND','DREMOVEALL','DREMOVE',
       'DFINDALL','DCONTAINS','DSORTASC','DSORTDESC','DSORT',
       'DMAP','DFILTER','DREDUCE','DSLICE','DERROR','DERRORPROP','DREPLACE',
-      'DSPLIT','DCONCATBUILD']);
+      'DSPLIT','DCONCATBUILD','DREPEAT']);
 
     while (true) {
       const sameLine = () => this.peek().line === (this.toks[this.pos - 1]?.line ?? this.peek().line);
@@ -1232,6 +1292,9 @@ export class Parser {
       case 'DSPLIT':
         return { type: 'CollectionOp', op: '$/', obj: left, arg: this.parseUnary() };
 
+      case 'DREPEAT':
+        return { type: 'CollectionOp', op: '$*', obj: left, arg: this.parseUnary() };
+
       case 'DCONCATBUILD': {
         const opLine = this.toks[this.pos - 1].line;
         const items = [];
@@ -1250,6 +1313,43 @@ export class Parser {
       default:
         return left;
     }
+  }
+
+  parseKeyInput(blocking) {
+    this.adv(); // consume <<| or <<|?
+    const v = this.eat('IDENT');
+    return { type: 'KeyInput', variable: v.value, blocking };
+  }
+
+  parseTuiBlock() {
+    this.adv(); // consume >>|
+    const body = this.parseBlock();
+    return { type: 'TuiBlock', body };
+  }
+
+  parseOutputPos() {
+    const opLine = this.adv().line; // consume >>~
+    let slots;
+    if (this.check('LPAREN')) {
+      this.adv(); // consume (
+      slots = [];
+      while (!this.check('RPAREN') && !this.check('EOF')) {
+        if (this.check('COMMA')) { slots.push(null); this.adv(); }
+        else { slots.push(this.parseExpr()); if (this.check('COMMA')) this.adv(); }
+        if (slots.length > 5) throw new Error('>>~ position has at most 5 slots');
+      }
+      this.eat('RPAREN');
+    } else {
+      const name = this.eat('IDENT').value;
+      slots = [{ type: 'Ident', name, hot: false }]; // sentinel: variable mode
+    }
+    this.eat('GT'); // consume >
+    const items = [];
+    while (!this.check('PILCROW') && !this.check('RBRACE') &&
+           !this.check('EOF') && this.peek().line === opLine) {
+      items.push(this.parseExpr());
+    }
+    return { type: 'OutputPos', slots, items };
   }
 
   parseArgList() {
@@ -1271,8 +1371,10 @@ export class Parser {
     if (t.type === 'BOOL')  { this.adv(); return { type: 'Literal', kind: 'bool',  value: t.value }; }
     if (t.type === 'CHAR')  { this.adv(); return { type: 'Literal', kind: 'char',  value: t.value }; }
     if (t.type === 'STR')   { this.adv(); return { type: 'Literal', kind: 'str',   value: t.value }; }
-    if (t.type === 'IDENT') { this.adv(); return { type: 'Ident',   name: t.value }; }
-    if (t.type === 'ELSE')  { this.adv(); return { type: 'Ident',   name: '_'      }; }
+    if (t.type === 'IDENT')        { this.adv(); return { type: 'Ident',       name: t.value, hot: t.hot ?? false }; }
+    if (t.type === 'ELSE')         { this.adv(); return { type: 'Ident',       name: '_'      }; }
+    if (t.type === 'OUTPUT_QUERY') { this.adv(); return { type: 'TerminalSize' }; }
+    if (t.type === 'BASHEXEC')    { const tok = this.adv(); return { type: 'BashExec', cmd: tok.value }; }
     if (t.type === 'MATCH') { return this.parseMatchExpr(); }
 
     // Cast operators: ##. ### ##!
@@ -1337,23 +1439,42 @@ export class Parser {
 // ─── Environment ──────────────────────────────────────────────────────────────
 
 class Env {
-  constructor(parent = null, funcBoundary = false) {
-    this.vars         = new Map();
-    this.consts       = new Set();
-    this.parent       = parent;
-    this.funcBoundary = funcBoundary;
+  constructor(parent = null, funcBoundary = false, isModuleScope = false) {
+    this.vars          = new Map();
+    this.consts        = new Set();
+    this.parent        = parent;
+    this.funcBoundary  = funcBoundary;
+    this.isModuleScope = isModuleScope;
   }
 
   get(name) {
     if (this.vars.has(name)) return this.vars.get(name);
-    if (!this.parent) throw new ZyError(`undefined variable: '${name}'`);
-    if (name.startsWith('_')) throw new ZyRuntimeError(`cannot access underscore variable '${name}' from inner scope`, '##Scope');
+    if (!this.parent) throw new ZyError(`'${name}' is undefined — did you mean '${name}°'?`);
     if (this.funcBoundary) {
       const v = this.parent._getFuncOnly(name);
       if (v !== undefined) return v;
-      throw new ZyError(`undefined variable: '${name}'`);
+      throw new ZyError(`'${name}' is undefined — did you mean '${name}°'?`);
+    }
+    if (name.startsWith('_')) {
+      // _ vars can't escape block scopes — but _ names defined at module scope
+      // (past any funcBoundary) are module-private and accessible from within the module.
+      const v = this._findPastBoundary(name);
+      if (v !== undefined) return v;
+      throw new ZyRuntimeError(`cannot access underscore variable '${name}' from inner scope`, '##Scope');
     }
     return this.parent.get(name);
+  }
+
+  _findPastBoundary(name) {
+    // Module scope: _ names here are module-private, accessible from within the module
+    if (this.isModuleScope && this.vars.has(name)) return this.vars.get(name);
+    if (this.funcBoundary) return this.parent ? this.parent._findUnrestricted(name) : undefined;
+    return this.parent ? this.parent._findPastBoundary(name) : undefined;
+  }
+
+  _findUnrestricted(name) {
+    if (this.vars.has(name)) return this.vars.get(name);
+    return this.parent ? this.parent._findUnrestricted(name) : undefined;
   }
 
   _getFuncOnly(name) {
@@ -1380,6 +1501,13 @@ class Env {
   def(name, value, isConst = false) {
     this.vars.set(name, value);
     if (isConst) this.consts.add(name);
+  }
+
+  hotDef(name, value) {
+    // Walk to nearest function boundary or root so hot-def vars survive loop iterations
+    let scope = this;
+    while (scope.parent && !scope.funcBoundary) scope = scope.parent;
+    scope.vars.set(name, value);
   }
 
   has(name) {
@@ -1410,7 +1538,7 @@ const mkUnit  = () => ({ type: 'unit' });
 // ─── Interpreter ──────────────────────────────────────────────────────────────
 
 export class Interpreter {
-  constructor(outputFn, inputFn = async () => '', moduleResolver = null) {
+  constructor(outputFn, inputFn = async () => '', moduleResolver = null, tuiContext = null) {
     this.outputFn        = outputFn;
     this.inputFn         = inputFn;
     this.steps           = 0;
@@ -1422,6 +1550,8 @@ export class Interpreter {
     this.numeralMode     = 0x0030;
     this.moduleResolver  = moduleResolver;
     this.moduleCache     = new Map();
+    this.tui             = tuiContext;
+    this.cliArgs         = [];
     this.loadingModules  = new Set();
   }
 
@@ -1447,7 +1577,7 @@ export class Interpreter {
     modInterp.moduleCache    = this.moduleCache;
     modInterp.loadingModules = this.loadingModules;
 
-    const modEnv = new Env();
+    const modEnv = new Env(null, false, true); // isModuleScope=true
     modInterp.globalEnv = modEnv;
 
     // Support both old-style (bare top-level statements) and new block syntax # name { ... }
@@ -1490,6 +1620,7 @@ export class Interpreter {
   }
 
   tick() {
+    if (this.tui?.aborted) throw new ZyError('Program stopped.');
     if (++this.steps > this.maxSteps)
       throw new ZyError('Execution limit reached (50 000 steps) — infinite loop?');
   }
@@ -1506,7 +1637,8 @@ export class Interpreter {
     this.outputBytes += text.length;
     if (this.outputBytes > this.maxBytes)
       throw new ZyError('Output limit reached (8 KB) — infinite loop?');
-    this.outputFn(text);
+    if (this.tui && this.tui.active) this.tui.print(text);
+    else this.outputFn(text);
   }
 
   async run(program, filePath = null) {
@@ -1520,7 +1652,7 @@ export class Interpreter {
       const importHint = filePath
         ? filePath.replace(/^.*[/\\]/, '').replace(/\.zy$/, '')
         : modName.replace(/^\./, '');
-      this.emit(`warning: ${pathStr} is a module file and cannot be run directly\n  = help: module '${modName}' is meant to be imported with <# ./${importHint} <= alias`);
+      this.emit(`warning: ${pathStr} is a module file and cannot be run directly\n  = help: module '${modName}' is meant to be imported with <# ./${importHint} : alias`);
       return;
     }
     await this.execBlock(program.body, env);
@@ -1569,7 +1701,10 @@ export class Interpreter {
 
       case 'VarAssign': {
         const val = await this.eval(stmt.value, env);
-        if (!env.set(stmt.name, val)) env.def(stmt.name, val);
+        if (!env.set(stmt.name, val)) {
+          if (stmt.hot) env.hotDef(stmt.name, val);
+          else env.def(stmt.name, val);
+        }
         return;
       }
 
@@ -1580,14 +1715,26 @@ export class Interpreter {
       }
 
       case 'CompoundAssign': {
-        const cur = env.get(stmt.name);
+        let cur;
+        try { cur = env.get(stmt.name); }
+        catch (e) {
+          if (!stmt.hot) throw e;
+          cur = mkInt(0);
+          env.hotDef(stmt.name, cur);
+        }
         const rhs = await this.eval(stmt.value, env);
         env.set(stmt.name, this.applyOp(stmt.op, cur, rhs));
         return;
       }
 
       case 'Increment': {
-        const cur = env.get(stmt.name);
+        let cur;
+        try { cur = env.get(stmt.name); }
+        catch (e) {
+          if (!stmt.hot) throw e;
+          cur = mkInt(0);
+          env.hotDef(stmt.name, cur);
+        }
         const one = cur.type === 'float' ? mkFloat(1) : mkInt(1);
         env.set(stmt.name, this.applyOp(stmt.op === '++' ? '+' : '-', cur, one));
         return;
@@ -1605,6 +1752,75 @@ export class Interpreter {
 
       case 'Break':    return new ZyBreak(stmt.label ?? null);
       case 'Continue': return new ZyContinue(stmt.label ?? null);
+
+      case 'CliArgs':
+        env.def(stmt.variable, { type: 'arr', v: this.cliArgs.map(s => mkStr(s)) });
+        return;
+
+      case 'Sleep': {
+        const ms = (await this.eval(stmt.duration, env)).v;
+        await new Promise(r => {
+          const id = setTimeout(r, Math.max(0, Math.trunc(ms)));
+          if (this.tui) this.tui._sleepCancel = () => { clearTimeout(id); r(); };
+        });
+        if (this.tui) this.tui._sleepCancel = null;
+        return;
+      }
+
+      case 'ClearScreen':
+        if (this.tui) this.tui.clear();
+        return;
+
+      case 'KeyInput': {
+        const ch = stmt.blocking
+          ? await (this.tui ? this.tui.readKey() : Promise.resolve('\0'))
+          : (this.tui ? this.tui.pollKey() : '\0');
+        const cur = { type: 'char', v: ch };
+        if (!env.set(stmt.variable, cur)) env.def(stmt.variable, cur);
+        return;
+      }
+
+      case 'OutputPos': {
+        if (!this.tui) return;
+        const { slots, items } = stmt;
+        let row = null, col = null, bks = 0, fg = null, bg = null;
+        if (slots.length === 1 && slots[0]?.type === 'Ident') {
+          // Variable mode: evaluate as dense tuple
+          const tv = await this.eval(slots[0], env);
+          const get = i => tv.v?.[i]?.v ?? null;
+          row = get(0); col = get(1); bks = get(2) ?? 0; fg = get(3); bg = get(4);
+        } else {
+          const vals = [];
+          for (const s of slots) vals.push(s ? await this.eval(s, env) : null);
+          if (vals[0]) row = vals[0].v;
+          if (vals[1]) col = vals[1].v;
+          if (vals[2] != null) bks = vals[2].v;
+          if (vals[3] != null) fg = vals[3].v;
+          if (vals[4] != null) bg = vals[4].v;
+        }
+        const parts = [];
+        for (const i of items) parts.push(await this.eval(i, env));
+        const text = parts.map(v => this.displayOutput(v)).join('');
+        this.tui.printAt(row, col, text, bks, fg, bg);
+        return;
+      }
+
+      case 'TuiBlock': {
+        if (!this.tui) return await this.execBlock(stmt.body, new Env(env));
+        const savedMax  = this.maxSteps;
+        const savedByte = this.maxBytes;
+        this.maxSteps = Infinity;
+        this.maxBytes = Infinity;
+        this.tui.enter();
+        try {
+          await this.execBlock(stmt.body, new Env(env));
+        } finally {
+          this.tui.leave();
+          this.maxSteps = savedMax;
+          this.maxBytes = savedByte;
+        }
+        return;
+      }
 
       case 'If': {
         if (this.truthy(await this.eval(stmt.cond, env))) return await this.execBlock(stmt.then, new Env(env));
@@ -1644,7 +1860,8 @@ export class Interpreter {
 
       case 'ArrayDestruct': {
         const arr = await this.eval(stmt.value, env);
-        if (arr.type !== 'arr') throw new ZyError('Array destructuring requires an array');
+        if (arr.type !== 'arr' && arr.type !== 'tuple') throw new ZyError('Array destructuring requires an array');
+        if (arr.type === 'tuple') arr.v = arr.v; // tuples are compatible
         let i = 0;
         for (const t of stmt.targets) {
           if (t.rest) {
@@ -1704,7 +1921,8 @@ export class Interpreter {
           );
           if (matched) {
             const catchEnv = new Env(env);
-            catchEnv.def('_err', mkStr(err.message ?? String(err)));
+            const errMsg = err.message ?? String(err);
+            catchEnv.def('_err', { type: 'error', errType, v: errMsg });
             result = await this.execBlock(matched.body, catchEnv);
           } else {
             throw err;
@@ -1834,7 +2052,34 @@ export class Interpreter {
         }
         break;
 
-      case 'Ident': return env.get(expr.name);
+      case 'Ident':
+        if (expr.hot) {
+          try { return env.get(expr.name); }
+          catch (_) { const n = mkInt(0); env.def(expr.name, n); return n; }
+        }
+        return env.get(expr.name);
+
+      case 'TerminalSize': {
+        if (!this.tui) return { type: 'tuple', v: [mkInt(24), mkInt(80)], keys: null };
+        const [rows, cols] = this.tui.getSize();
+        return { type: 'tuple', v: [mkInt(rows), mkInt(cols)], keys: null };
+      }
+
+      case 'BashExec': {
+        const _cmd = (expr.cmd ?? '').replace(/['"]/g, ' ').trim();
+        const _now = new Date();
+        const _pad = n => String(n).padStart(2, '0');
+        if (_cmd.includes('%Y')) return mkStr(String(_now.getFullYear()));
+        if (_cmd.includes('%m')) return mkStr(_pad(_now.getMonth() + 1));
+        if (_cmd.includes('%d')) return mkStr(_pad(_now.getDate()));
+        if (_cmd.includes('%H')) return mkStr(_pad(_now.getHours()));
+        if (_cmd.includes('%M')) return mkStr(_pad(_now.getMinutes()));
+        if (_cmd.includes('%S')) return mkStr(_pad(_now.getSeconds()));
+        if (_cmd.includes('%s')) return mkStr(String(Math.floor(Date.now() / 1000)));
+        if (_cmd.startsWith('echo ') && !_cmd.includes('$')) return mkStr(_cmd.slice(5).trim().replace(/^['"]|['"]$/g, ''));
+        // Default: nanosecond-ish timestamp for random seeds
+        return mkStr(String(Date.now() * 1000000 + Math.trunc(Math.random() * 999999)));
+      }
 
       case 'Array':
         return mkArr(await Promise.all(expr.items.map(i => this.eval(i, env))));
@@ -1992,7 +2237,10 @@ export class Interpreter {
         if (obj.type !== 'tuple' || !obj.keys)
           throw new ZyError(`'.${expr.field}' requires a named tuple`);
         const i = obj.keys.indexOf(expr.field);
-        if (i < 0) throw new ZyError(`Unknown field '${expr.field}'`);
+        if (i < 0) throw new ZyRuntimeError(
+          `Named tuple has no field '${expr.field}'. Available fields: ${obj.keys.filter(k => k).join(', ')}`,
+          '##_'
+        );
         return obj.v[i];
       }
 
@@ -2216,7 +2464,16 @@ export class Interpreter {
   }
 
   async evalCollectionOp(expr, env) {
-    const col = await this.eval(expr.obj, env);
+    // Hot array-accumulator: arr°$+ i initializes arr to [] instead of 0
+    let col;
+    if (expr.op === '$+' && expr.obj?.type === 'Ident' && expr.obj?.hot) {
+      let existing = null;
+      try { existing = env.get(expr.obj.name); } catch (_) {}
+      if (existing === null) { col = mkArr([]); env.hotDef(expr.obj.name, col); }
+      else col = existing;
+    } else {
+      col = await this.eval(expr.obj, env);
+    }
     const arg = () => this.eval(expr.arg, env);
 
     // 1-based index resolution for collection ops
@@ -2459,6 +2716,13 @@ export class Interpreter {
         return mkArr(parts.map(p => mkStr(p)));
       }
 
+      case '$*': {
+        const n = (await arg()).v;
+        if (col.type !== 'str') notSupported('$*');
+        if (n <= 0) return mkStr('');
+        return mkStr(col.v.repeat(Math.trunc(n)));
+      }
+
       case '$++': {
         const evalItems = await Promise.all(expr.items.map(i => this.eval(i, env)));
         if (col.type === 'str') {
@@ -2648,7 +2912,8 @@ export class Interpreter {
         return '(' + val.v.map((item, i) => `${val.keys[i]}: ${this.display(item)}`).join(', ') + ')';
       return '(' + val.v.map(v => this.display(v)).join(', ') + ')';
     }
-    if (val.type === 'func') return `<function ${val.name}>`;
+    if (val.type === 'func')  return `<function ${val.name}>`;
+    if (val.type === 'error') return `${val.errType ?? '##_'}(${val.v ?? ''})`;
     return String(val.v ?? val);
   }
 
@@ -2664,11 +2929,13 @@ export class Interpreter {
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, filePath = null) {
+export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, filePath = null, tuiContext = null, cliArgs = []) {
   const tokens = new Lexer(src).tokenize();
   const ast    = new Parser(tokens).parse();
   try {
-    await new Interpreter(onOutput, inputFn, moduleResolver).run(ast, filePath);
+    const interp = new Interpreter(onOutput, inputFn, moduleResolver, tuiContext);
+    interp.cliArgs = cliArgs;
+    await interp.run(ast, filePath);
   } catch (e) {
     if (e instanceof ZyStaticError)
       onOutput(`Runtime error: ${e.message}`);

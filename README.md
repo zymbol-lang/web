@@ -4,21 +4,22 @@ Source for [zymbol-lang.org](https://zymbol-lang.org) — the official website o
 
 ## About
 
-Zymbol is a keyword-free symbolic programming language. Every construct uses pure symbols (`?` for if, `@` for loops, `->` for lambdas, `>>` for output). Identifiers can be written in any human language or script — Unicode, emoji, RTL, CJK, Indic, and more.
+Zymbol is a keyword-free symbolic programming language. Every construct uses pure symbols (`?` for if, `@` for loops, `->` for lambdas, `>>` for output). Identifiers can be written in any human language or script — Unicode, emoji, RTL, CJK, Indic, and more. Numeric output can be displayed in any of 69 Unicode digit scripts (Devanagari, Arabic-Indic, Thai, Klingon pIqaD, …) via numeral modes.
 
 ## Structure
 
 ```
-index.html        — Main landing page (i18n, 106 languages)
-playground.html   — Interactive online editor
-main.js           — UI logic, language switcher, fade transitions
-zymbol.js         — Zymbol interpreter (WASM/JS) for the playground
-style.css         — Styles (light/dark theme)
+index.html                    — Main landing page (i18n, 106 languages)
+playground.html               — Interactive online editor (multi-file, i18n examples)
+main.js                       — UI logic, language switcher, fade transitions
+zymbol.js                     — Zymbol interpreter (WASM/JS) for the playground
+style.css                     — Styles (light/dark theme)
 data/
-  i18n.json       — Translations for all 106 supported languages
-assets/           — Icons and static assets
-fonts/            — Custom font files
-examples/         — Code snippets shown in the landing page
+  i18n.json                   — Translations for all 106 supported languages
+assets/                       — Icons and static assets
+fonts/                        — Custom font files
+examples/                     — Code snippets shown in the landing page
+esolangs_zymbol_lang.wiki     — Esolangs.org wiki article source (MediaWiki format)
 ```
 
 ## Development
