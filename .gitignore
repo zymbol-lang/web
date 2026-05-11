@@ -8,3 +8,6 @@ zymbol_logo.png
 # OS
 .DS_Store
 Thumbs.db
+
+# Test logs
+tests/manual/logs/manual*.log
