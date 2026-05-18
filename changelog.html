@@ -269,11 +269,59 @@
 <!-- ═══ TIMELINE ═══ -->
 <div class="cl-timeline">
 
+  <!-- ── v0.0.5 ── -->
+  <div class="cl-entry">
+    <div class="cl-entry-head">
+      <span class="cl-version">v0.0.5</span>
+      <span class="cl-badge-latest">latest</span>
+      <span class="cl-date">April 2026</span>
+    </div>
+    <div class="cl-title">TUI Primitives, Hot Definitions &amp; Bug Fixes</div>
+
+    <div class="cl-groups">
+
+      <div class="cl-group">
+        <span class="cl-group-label added">Added</span>
+        <ul class="cl-change-list">
+          <li><strong>Hot Definition operator <code>°</code></strong> — two-form scope anchoring: <code>x° op= n</code> (postfix) anchors to the nearest enclosing <code>@</code> loop; <code>°x op= n</code> (prefix) anchors to the scope above. RHS hot read <code>p° + c</code> returns neutral if undefined. Neutral values: <code>+=</code>/<code>-=</code> → 0; <code>*=</code>/<code>/=</code> → 1; <code>$+</code> → <code>[]</code>; juxtaposition → <code>""</code></li>
+          <li><strong>TUI / Terminal primitives</strong> — six new operators: <code>@~ N</code> sleep N ms; <code>&gt;&gt;!</code> clear screen; <code>&gt;&gt;?</code> query terminal size (returns <code>(rows, cols)</code>); <code>&gt;&gt;~ (row, col, BKS, fg, bg) &gt; items</code> positioned &amp; styled output (sparse: any slot may be omitted); <code>&lt;&lt;|</code> blocking keypress read; <code>&lt;&lt;|?</code> non-blocking keypress poll; <code>&gt;&gt;| {}</code> TUI block (alternate screen + raw mode)</li>
+          <li><strong>String repeat <code>$*</code></strong> — <code>"str" $* N</code> repeats a string N times; implemented in tree-walker and VM (<code>StrRepeat</code> instruction)</li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label fixed">Fixed</span>
+        <ul class="cl-change-list">
+          <li><strong>BUG-005</strong> — VM tuple <code>==</code> / <code>&lt;&gt;</code> always returned <code>#0</code>; recursive element-wise comparison added to <code>cmp_direct()</code> and <code>Value::equals()</code></li>
+          <li><strong>BUG-001</strong> — re-exported functions lost their origin module scope; <code>FunctionDef</code> now carries <code>origin_module_path</code> and uses it at call time</li>
+          <li><strong>BUG-002</strong> — <code>&gt;&lt;</code> CLI args capture not registered in semantic scope; <code>zymbol check</code> and LSP no longer report false <code>undefined variable</code></li>
+          <li><strong>BUG-003</strong> — LSP failed to resolve imports in directories with Unicode names (percent-encoded URIs); <code>uri_to_path</code> now decodes before building the <code>PathBuf</code></li>
+          <li><strong>GAP-001</strong> — arithmetic expressions as slice bounds (<code>$[pos-1..end]</code>) caused parse errors; new <code>parse_slice_bound()</code> handles <code>+</code>/<code>-</code> in bounds</li>
+          <li><strong>GAP-002</strong> — parenthesized expressions rejected as <code>$++</code> items; <code>LParen</code> added to the item start set without affecting juxtaposition chains</li>
+          <li><strong>GAP-003</strong> — spurious <code>ambiguous lifetime</code> warning on every loop iterator; suppressed for <code>_</code>-prefixed names and pre-defined variables</li>
+          <li><strong>TUI-FIX-01/02/03</strong> — <code>&gt;&gt;</code> invisible before <code>&lt;&lt;|</code> (missing flush); <code>¶</code> breaking column alignment in raw mode (CRLF fix); TUI tokens not recognized as statement starters inside <code>&gt;&gt;</code></li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label changed">Changed</span>
+        <ul class="cl-change-list">
+          <li><strong>VS Code extension v0.1.3</strong> — syntax highlighting for all new operators (<code>°</code>, <code>@~</code>, <code>&gt;&gt;!</code>, <code>&gt;&gt;?</code>, <code>&gt;&gt;~</code>, <code>&lt;&lt;|</code>, <code>&gt;&gt;|</code>, <code>$*</code>); new snippets: <code>outps</code>, <code>outpc</code>, <code>repeat</code>, <code>hotacc</code>, <code>key</code>, <code>keynb</code>, <code>tui</code>, <code>sleep</code>, <code>cls</code>, <code>termsize</code></li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="cl-actions">
+      <a href="https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.5" target="_blank" class="btn-ghost">↗ GitHub</a>
+      <a href="install.html" class="btn-ghost">↓ Download</a>
+    </div>
+  </div>
+
   <!-- ── v0.0.4 ── -->
   <div class="cl-entry">
     <div class="cl-entry-head">
       <span class="cl-version">v0.0.4</span>
-      <span class="cl-badge-latest">latest</span>
       <span class="cl-date">April 2026</span>
     </div>
     <div class="cl-title">1-Based Indexing, Multi-Dim Access &amp; Tooling Improvements</div>
