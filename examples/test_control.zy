@@ -16,29 +16,29 @@ x = 7
 // ─── Match con rangos ───
 score = 85
 grade = ?? score {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+    90..100 => 'A'
+    80..89  => 'B'
+    70..79  => 'C'
+    _       => 'F'
 }
 >> "grade=" grade ¶    // → grade=B
 
 // ─── Match con guards ───
 temp = -5
 estado = ?? temp {
-    _? temp < 0  : "hielo"
-    _? temp < 20 : "frio"
-    _? temp < 35 : "calido"
-    _            : "caliente"
+    _? temp < 0  => "hielo"
+    _? temp < 20 => "frio"
+    _? temp < 35 => "calido"
+    _            => "caliente"
 }
 >> estado ¶    // → hielo
 
 // ─── Match con cadenas ───
 color = "rojo"
 codigo = ?? color {
-    "rojo"  : "#FF0000"
-    "verde" : "#00FF00"
-    _       : "#000000"
+    "rojo"  => "#FF0000"
+    "verde" => "#00FF00"
+    _       => "#000000"
 }
 >> codigo ¶    // → #FF0000
 

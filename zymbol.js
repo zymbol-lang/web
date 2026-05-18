@@ -5,7 +5,14 @@
  * type-cast operators (##. ### ##!), string split ($/), ConcatBuild ($++),
  * explicit lifetime end (\ var).
  *
- * Not supported: modules, shell integration (><), BashExec (<\ \>).
+ * v0.0.5: string repeat ($*), hot definition (°), module alias (:), sleep (@~),
+ * labeled loops (@:label { } / @:label! / @:label>), TUI canvas operators
+ * (>>! >>? >>~ <<| <<|? >>|), caught error values (##_(...)), hotDef scope fix.
+ *
+ * CLI args (><): supported — pass cliArgs array to runZymbol().
+ * BashExec (<\ \>): returns high-resolution timestamp (entropy stub).
+ * Not supported: shell inclusion (</ />).
+ * TUI operators require a >>| { } block to activate the canvas overlay.
  */
 
 // ─── Unicode digit blocks (mirrors DIGIT_BLOCKS in zymbol-lexer) ─────────────
@@ -68,6 +75,7 @@ function numeralBool(b, base)  { return '#' + numeralInt(b ? 1 : 0, base); }
 class ZyReturn  { constructor(value) { this.value = value; } }
 class ZyBreak    { constructor(label = null) { this.label = label; } }
 class ZyContinue { constructor(label = null) { this.label = label; } }
+class ZyErrorPropagate { constructor(errVal) { this.errVal = errVal; } }
 class ZyError extends Error {
   constructor(msg, line) {
     super(line ? `Line ${line}: ${msg}` : msg);
@@ -213,22 +221,51 @@ export class Lexer {
         this.consume(); continue;
       }
 
+      // BashExec <\ cmd \> — browser-only: captures command text, simulates common date/echo
+      if (this.ch() === '<' && this.ch(1) === '\\') {
+        this.consume(); this.consume(); // consume <\
+        let _cmd = '';
+        while (this.pos < this.src.length) {
+          if (this.ch() === '\\' && this.ch(1) === '>') { this.consume(); this.consume(); break; }
+          _cmd += this.consume();
+        }
+        tok('BASHEXEC', _cmd.trim()); continue;
+      }
+
+      // TUI operators (3-4 chars) — must come before twoMap so >> and << aren't consumed first
+      if (this.ch() === '>' && this.ch(1) === '>') {
+        const c2 = this.ch(2);
+        if (c2 === '!') { this.consume(); this.consume(); this.consume(); tok('OUTPUT_CLEAR', '>>!'); continue; }
+        if (c2 === '?') { this.consume(); this.consume(); this.consume(); tok('OUTPUT_QUERY', '>>?'); continue; }
+        if (c2 === '~') { this.consume(); this.consume(); this.consume(); tok('OUTPUT_POS',   '>>~'); continue; }
+        if (c2 === '|') { this.consume(); this.consume(); this.consume(); tok('OUTPUT_GATE',  '>>|'); continue; }
+      }
+      if (this.ch() === '<' && this.ch(1) === '<' && this.ch(2) === '|') {
+        if (this.ch(3) === '?') {
+          this.consume(); this.consume(); this.consume(); this.consume();
+          tok('KEY_NONBLOCK', '<<|?'); continue;
+        }
+        this.consume(); this.consume(); this.consume();
+        tok('KEY_BLOCK', '<<|'); continue;
+      }
+
       // two-char operators
       const two = this.ch(0) + this.ch(1);
       const twoMap = {
         '>>': 'OUTPUT', '<<': 'INPUT',  '<~': 'RETURN',
         '<#': 'IMPORT',
-        '@!': 'BREAK',  '@>': 'CONTINUE',
+        '@!': 'BREAK',  '@>': 'CONTINUE', '@~': 'ATSLEEP',
         '??': 'MATCH',  '_?': 'ELSEIF', ':=': 'CONST_ASSIGN',
         '..': 'RANGE',  '==': 'EQ',     '<>': 'NEQ',
         '<=': 'LTE',    '>=': 'GTE',    '&&': 'AND',
         '||': 'OR',     '++': 'INC',    '--': 'DEC',
         '+=': 'PLUS_EQ',  '-=': 'MINUS_EQ', '*=': 'TIMES_EQ',
         '/=': 'DIV_EQ',   '%=': 'MOD_EQ',   '^=': 'POW_EQ',
-        '->': 'ARROW',  '|>': 'PIPE',
+        '->': 'ARROW',  '=>': 'FAT_ARROW',  '|>': 'PIPE',
         '!?': 'TRY',    ':!': 'CATCH',  ':>': 'FINALLY',
         '::': 'SCOPE',
         '\\\\': 'NEWLINE_ESC',
+        '><': 'CLI_ARGS',
       };
       if (twoMap[two]) {
         this.consume(); this.consume();
@@ -247,7 +284,16 @@ export class Lexer {
       if (c === '?') { this.consume(); tok('IF',     '?'); continue; }
       if (c === '@') {
         this.consume();
-        if (/[\p{L}\p{M}\p{So}\p{Co}_]/u.test(this.ch())) {
+        if (this.ch() === ':') {
+          // @:label — labeled loop, break, or continue
+          this.consume();
+          let label = '';
+          while (/[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(this.ch())) label += this.consume();
+          if (this.ch() === '!') { this.consume(); tok('AT_BREAK', label); }
+          else if (this.ch() === '>') { this.consume(); tok('AT_CONT',  label); }
+          else tok('AT_LABEL', label);
+        } else if (/[\p{L}\p{M}\p{So}\p{Co}_]/u.test(this.ch())) {
+          // @label (legacy: label without colon)
           let label = '';
           while (/[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(this.ch())) label += this.consume();
           tok('AT_LABEL', label);
@@ -268,6 +314,7 @@ export class Lexer {
         if (a === '-' && b === '-')         { this.consume(); this.consume(); this.consume(); tok('DREMOVEALL','$--'); continue; }
         if (a === '-')                      { this.consume(); this.consume();               tok('DREMOVE',    '$-');  continue; }
         if (a === '+')                      { this.consume(); this.consume();               tok('DAPPEND',    '$+');  continue; }
+        if (a === '*')                      { this.consume(); this.consume();               tok('DREPEAT',    '$*');  continue; }
         if (a === '/' )                     { this.consume(); this.consume();               tok('DSPLIT',     '$/');  continue; }
         if (a === '^' && b === '+')         { this.consume(); this.consume(); this.consume(); tok('DSORTASC', '$^+'); continue; }
         if (a === '^' && b === '-')         { this.consume(); this.consume(); this.consume(); tok('DSORTDESC','$^-'); continue; }
@@ -412,11 +459,14 @@ export class Lexer {
     while (true) {
       const c = this.ch();
       if (!c) break;
+      if (c === '°') break; // hot-def suffix — consumed below, not part of name
       if (digitValue(c) >= 0 && !(c >= '0' && c <= '9')) break;
       if (/[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(c)) { s += this.consume(); continue; }
       break;
     }
-    toks.push({ type: 'IDENT', value: s, line: this.line });
+    const hot = this.ch() === '°';
+    if (hot) this.consume();
+    toks.push({ type: 'IDENT', value: s, hot, line: this.line });
   }
 }
 
@@ -490,7 +540,7 @@ export class Parser {
     } else {
       path = this.eat('IDENT').value;
     }
-    this.eat('LTE'); // consume <=
+    this.eat('FAT_ARROW'); // consume =>
     const alias = this.eat('IDENT').value;
     return { type: 'Import', path, alias };
   }
@@ -512,10 +562,10 @@ export class Parser {
               // Re-export: alias::member or alias.member
               this.adv();
               const member = this.check('IDENT') ? this.adv().value : first;
-              const exported = this.check('LTE') ? (this.adv(), this.check('IDENT') ? this.adv().value : member) : member;
+              const exported = this.check('FAT_ARROW') ? (this.adv(), this.check('IDENT') ? this.adv().value : member) : member;
               names.push({ kind: 'reexport', alias: first, member, exported });
             } else {
-              const exported = this.check('LTE') ? (this.adv(), this.check('IDENT') ? this.adv().value : first) : first;
+              const exported = this.check('FAT_ARROW') ? (this.adv(), this.check('IDENT') ? this.adv().value : first) : first;
               names.push({ kind: 'own', internal: first, exported });
             }
           } else {
@@ -531,6 +581,15 @@ export class Parser {
     if (t.type === 'RETURN')   return this.parseReturn();
     if (t.type === 'BREAK')    { this.adv(); const bl = this.check('IDENT') ? this.adv().value : null; return { type: 'Break',    label: bl }; }
     if (t.type === 'CONTINUE') { this.adv(); const cl = this.check('IDENT') ? this.adv().value : null; return { type: 'Continue', label: cl }; }
+    if (t.type === 'AT_BREAK') { const lbl = this.adv().value; return { type: 'Break',    label: lbl }; }
+    if (t.type === 'AT_CONT')  { const lbl = this.adv().value; return { type: 'Continue', label: lbl }; }
+    if (t.type === 'ATSLEEP')    { this.adv(); return { type: 'Sleep', duration: this.parseExpr() }; }
+    if (t.type === 'CLI_ARGS')    { this.adv(); return { type: 'CliArgs', variable: this.eat('IDENT').value }; }
+    if (t.type === 'OUTPUT_CLEAR') { this.adv(); return { type: 'ClearScreen' }; }
+    if (t.type === 'OUTPUT_GATE')  return this.parseTuiBlock();
+    if (t.type === 'OUTPUT_POS')   return this.parseOutputPos();
+    if (t.type === 'KEY_BLOCK')    return this.parseKeyInput(true);
+    if (t.type === 'KEY_NONBLOCK') return this.parseKeyInput(false);
     if (t.type === 'IF')       return this.parseIf();
     if (t.type === 'MATCH')    return { type: 'ExprStmt', expr: this.parseMatchExpr() };
     if (t.type === 'AT')       { this.adv(); return this.parseLoop(); }
@@ -739,7 +798,7 @@ export class Parser {
         pattern = { type: 'literal', value: left };
       }
     }
-    this.eat('COLON');
+    this.eat('FAT_ARROW');
     this.inMatchBody = true;
     const body = this.check('LBRACE')
       ? { type: 'block', stmts: this.parseBlock() }
@@ -808,7 +867,9 @@ export class Parser {
   }
 
   parseFuncDecl() {
-    const name = this.adv().value;
+    const nameTok = this.adv();
+    const name = nameTok.value;
+    const line = nameTok.line;
     this.eat('LPAREN');
     const params = [];
     while (!this.check('RPAREN') && !this.check('EOF')) {
@@ -819,13 +880,15 @@ export class Parser {
       this.match('COMMA');
     }
     this.eat('RPAREN');
-    return { type: 'FuncDecl', name, params, body: this.parseBlock() };
+    return { type: 'FuncDecl', name, params, body: this.parseBlock(), line };
   }
 
   parseIdentStmt() {
     if (this.isFuncDecl()) return this.parseFuncDecl();
 
-    const name = this.adv().value;
+    const tok0 = this.adv();
+    const name = tok0.value;
+    const hot  = tok0.hot ?? false;
     const line = this.peek().line;
 
     if (this.match('CONST_ASSIGN')) {
@@ -834,13 +897,13 @@ export class Parser {
 
     const compound = { PLUS_EQ:'+', MINUS_EQ:'-', TIMES_EQ:'*', DIV_EQ:'/', MOD_EQ:'%', POW_EQ:'^' };
     const cop = compound[this.peek().type];
-    if (cop) { this.adv(); return { type: 'CompoundAssign', name, op: cop, value: this.parseExpr(), line }; }
+    if (cop) { this.adv(); return { type: 'CompoundAssign', name, hot, op: cop, value: this.parseExpr(), line }; }
 
-    if (this.match('INC')) return { type: 'Increment', name, op: '++', line };
-    if (this.match('DEC')) return { type: 'Increment', name, op: '--', line };
+    if (this.match('INC')) return { type: 'Increment', name, hot, op: '++', line };
+    if (this.match('DEC')) return { type: 'Increment', name, hot, op: '--', line };
 
     if (this.match('ASSIGN')) {
-      return { type: 'VarAssign', name, value: this.parseRHS(), line };
+      return { type: 'VarAssign', name, hot, value: this.parseRHS(), line };
     }
 
     // subscript assign: name[idx] = val
@@ -855,15 +918,15 @@ export class Parser {
       if (idxCompound) {
         this.adv();
         const rhs = this.parseExpr();
-        const currentElem = { type: 'NavIndex', obj: { type: 'Ident', name }, spec: { kind: 'simple', index: idx } };
+        const currentElem = { type: 'NavIndex', obj: { type: 'Ident', name, line: tok0.line }, spec: { kind: 'simple', index: idx } };
         const value = { type: 'BinOp', op: idxCompound, left: currentElem, right: rhs };
         return { type: 'IndexAssign', obj: name, index: idx, value, line };
       }
-      let left = { type: 'NavIndex', obj: { type: 'Ident', name }, spec: { kind: 'simple', index: idx } };
+      let left = { type: 'NavIndex', obj: { type: 'Ident', name, line: tok0.line }, spec: { kind: 'simple', index: idx } };
       return { type: 'ExprStmt', expr: this.parsePostfixRest(left) };
     }
 
-    let left = { type: 'Ident', name };
+    let left = { type: 'Ident', name, hot, line: tok0.line };
     return { type: 'ExprStmt', expr: this.parsePostfixRest(left) };
   }
 
@@ -1013,7 +1076,7 @@ export class Parser {
     const COL_TOKENS = new Set(['DLEN','DAPPEND','DREMOVEALL','DREMOVE',
       'DFINDALL','DCONTAINS','DSORTASC','DSORTDESC','DSORT',
       'DMAP','DFILTER','DREDUCE','DSLICE','DERROR','DERRORPROP','DREPLACE',
-      'DSPLIT','DCONCATBUILD']);
+      'DSPLIT','DCONCATBUILD','DREPEAT']);
 
     while (true) {
       const sameLine = () => this.peek().line === (this.toks[this.pos - 1]?.line ?? this.peek().line);
@@ -1148,9 +1211,10 @@ export class Parser {
         if (this.check('LBRACKET')) {
           this.adv();
           const idx = this.parseExpr(); this.eat('RBRACKET');
-          return { type: 'CollectionOp', op: '$+[i]', obj: left, index: idx, arg: this.parseUnary() };
+          return { type: 'CollectionOp', op: '$+[i]', obj: left, index: idx, arg: this.parseUnary(true) };
         }
-        return { type: 'CollectionOp', op: '$+', obj: left, arg: this.parseUnary() };
+        // Use parseUnary(true) to prevent right-nesting: arr$+4$+5 → (arr$+4)$+5 not arr$+(4$+5)
+        return { type: 'CollectionOp', op: '$+', obj: left, arg: this.parseUnary(true) };
 
       case 'DREMOVEALL':
         return { type: 'CollectionOp', op: '$--', obj: left, arg: this.parseUnary() };
@@ -1232,6 +1296,9 @@ export class Parser {
       case 'DSPLIT':
         return { type: 'CollectionOp', op: '$/', obj: left, arg: this.parseUnary() };
 
+      case 'DREPEAT':
+        return { type: 'CollectionOp', op: '$*', obj: left, arg: this.parseUnary() };
+
       case 'DCONCATBUILD': {
         const opLine = this.toks[this.pos - 1].line;
         const items = [];
@@ -1250,6 +1317,43 @@ export class Parser {
       default:
         return left;
     }
+  }
+
+  parseKeyInput(blocking) {
+    this.adv(); // consume <<| or <<|?
+    const v = this.eat('IDENT');
+    return { type: 'KeyInput', variable: v.value, blocking };
+  }
+
+  parseTuiBlock() {
+    this.adv(); // consume >>|
+    const body = this.parseBlock();
+    return { type: 'TuiBlock', body };
+  }
+
+  parseOutputPos() {
+    const opLine = this.adv().line; // consume >>~
+    let slots;
+    if (this.check('LPAREN')) {
+      this.adv(); // consume (
+      slots = [];
+      while (!this.check('RPAREN') && !this.check('EOF')) {
+        if (this.check('COMMA')) { slots.push(null); this.adv(); }
+        else { slots.push(this.parseExpr()); if (this.check('COMMA')) this.adv(); }
+        if (slots.length > 5) throw new Error('>>~ position has at most 5 slots');
+      }
+      this.eat('RPAREN');
+    } else {
+      const name = this.eat('IDENT').value;
+      slots = [{ type: 'Ident', name, hot: false }]; // sentinel: variable mode
+    }
+    this.eat('GT'); // consume >
+    const items = [];
+    while (!this.check('PILCROW') && !this.check('RBRACE') &&
+           !this.check('EOF') && this.peek().line === opLine) {
+      items.push(this.parseExpr());
+    }
+    return { type: 'OutputPos', slots, items };
   }
 
   parseArgList() {
@@ -1271,8 +1375,10 @@ export class Parser {
     if (t.type === 'BOOL')  { this.adv(); return { type: 'Literal', kind: 'bool',  value: t.value }; }
     if (t.type === 'CHAR')  { this.adv(); return { type: 'Literal', kind: 'char',  value: t.value }; }
     if (t.type === 'STR')   { this.adv(); return { type: 'Literal', kind: 'str',   value: t.value }; }
-    if (t.type === 'IDENT') { this.adv(); return { type: 'Ident',   name: t.value }; }
-    if (t.type === 'ELSE')  { this.adv(); return { type: 'Ident',   name: '_'      }; }
+    if (t.type === 'IDENT')        { this.adv(); return { type: 'Ident',       name: t.value, hot: t.hot ?? false, line: t.line }; }
+    if (t.type === 'ELSE')         { this.adv(); return { type: 'Ident',       name: '_'      }; }
+    if (t.type === 'OUTPUT_QUERY') { this.adv(); return { type: 'TerminalSize' }; }
+    if (t.type === 'BASHEXEC')    { const tok = this.adv(); return { type: 'BashExec', cmd: tok.value }; }
     if (t.type === 'MATCH') { return this.parseMatchExpr(); }
 
     // Cast operators: ##. ### ##!
@@ -1337,23 +1443,42 @@ export class Parser {
 // ─── Environment ──────────────────────────────────────────────────────────────
 
 class Env {
-  constructor(parent = null, funcBoundary = false) {
-    this.vars         = new Map();
-    this.consts       = new Set();
-    this.parent       = parent;
-    this.funcBoundary = funcBoundary;
+  constructor(parent = null, funcBoundary = false, isModuleScope = false) {
+    this.vars          = new Map();
+    this.consts        = new Set();
+    this.parent        = parent;
+    this.funcBoundary  = funcBoundary;
+    this.isModuleScope = isModuleScope;
   }
 
   get(name) {
     if (this.vars.has(name)) return this.vars.get(name);
-    if (!this.parent) throw new ZyError(`undefined variable: '${name}'`);
-    if (name.startsWith('_')) throw new ZyRuntimeError(`cannot access underscore variable '${name}' from inner scope`, '##Scope');
+    if (!this.parent) throw new ZyError(`'${name}' is undefined — did you mean '${name}°' (hot definition)?`);
     if (this.funcBoundary) {
       const v = this.parent._getFuncOnly(name);
       if (v !== undefined) return v;
-      throw new ZyError(`undefined variable: '${name}'`);
+      throw new ZyError(`'${name}' is undefined — did you mean '${name}°' (hot definition)?`);
+    }
+    if (name.startsWith('_')) {
+      // _ vars can't escape block scopes — but _ names defined at module scope
+      // (past any funcBoundary) are module-private and accessible from within the module.
+      const v = this._findPastBoundary(name);
+      if (v !== undefined) return v;
+      throw new ZyRuntimeError(`cannot access underscore variable '${name}' from inner scope`, '##Scope');
     }
     return this.parent.get(name);
+  }
+
+  _findPastBoundary(name) {
+    // Module scope: _ names here are module-private, accessible from within the module
+    if (this.isModuleScope && this.vars.has(name)) return this.vars.get(name);
+    if (this.funcBoundary) return this.parent ? this.parent._findUnrestricted(name) : undefined;
+    return this.parent ? this.parent._findPastBoundary(name) : undefined;
+  }
+
+  _findUnrestricted(name) {
+    if (this.vars.has(name)) return this.vars.get(name);
+    return this.parent ? this.parent._findUnrestricted(name) : undefined;
   }
 
   _getFuncOnly(name) {
@@ -1382,6 +1507,13 @@ class Env {
     if (isConst) this.consts.add(name);
   }
 
+  hotDef(name, value) {
+    // Walk to nearest function boundary or root so hot-def vars survive loop iterations
+    let scope = this;
+    while (scope.parent && !scope.funcBoundary) scope = scope.parent;
+    scope.vars.set(name, value);
+  }
+
   has(name) {
     return this.vars.has(name) || (this.parent ? this.parent.has(name) : false);
   }
@@ -1394,6 +1526,532 @@ class Env {
     }
     if (this.parent) return this.parent.destroy(name);
     return false;
+  }
+}
+
+// ─── Checker ──────────────────────────────────────────────────────────────────
+
+function formatDiagnostic(d) {
+  return `${d.severity}: ${d.message}`;
+}
+
+class Checker {
+  constructor(ast) {
+    this.ast         = ast;
+    this.diagnostics = [];
+    this.stack       = [];
+    this.pendingHot  = false; // prefix hot-def sentinel (°name)
+  }
+
+  push(funcBoundary = false) {
+    this.stack.push({ vars: new Map(), funcBoundary });
+  }
+
+  pop() {
+    const frame = this.stack.pop();
+    for (const [name, info] of frame.vars) {
+      if (!info.used && !name.startsWith('_') && !info.isConst) {
+        this.warn('W_UNUSED', `unused variable '${name}'`, info.line);
+      }
+    }
+  }
+
+  define(name, line, isConst = false) {
+    if (this.stack.length === 0 || !name) return;
+    this.stack[this.stack.length - 1].vars.set(name, { line, isConst, used: false });
+  }
+
+  // Mirror Env.hotDef: walk to nearest funcBoundary or root, define there
+  hotDefine(name, line) {
+    if (this.stack.length === 0 || !name) return;
+    let i = this.stack.length - 1;
+    while (i > 0 && !this.stack[i].funcBoundary) i--;
+    this.stack[i].vars.set(name, { line, isConst: false, used: false });
+  }
+
+  lookup(name, usageLine) {
+    if (!name) return null;
+    for (let i = this.stack.length - 1; i >= 0; i--) {
+      const frame = this.stack[i];
+      if (frame.vars.has(name)) {
+        // Found — check underscore scope violation: _name cannot be read from inner scope
+        // that crosses at least one non-funcBoundary scope to reach the definition
+        if (name.startsWith('_') && i < this.stack.length - 1) {
+          const crossedNonBoundary = this.stack.slice(i + 1).some(f => !f.funcBoundary);
+          if (crossedNonBoundary) {
+            this.error('E_SCOPE', `cannot access underscore variable '${name}' from inner scope`, usageLine);
+            return { used: true, isConst: false, isScope: true }; // sentinel: suppress follow-up E_VAR
+          }
+        }
+        frame.vars.get(name).used = true;
+        return frame.vars.get(name);
+      }
+      if (frame.funcBoundary && !name.startsWith('_')) break;
+    }
+    return null;
+  }
+
+  error(code, msg, line = null) {
+    this.diagnostics.push({ severity: 'error', code, message: msg, line });
+  }
+
+  warn(code, msg, line = null) {
+    this.diagnostics.push({ severity: 'warning', code, message: msg, line });
+  }
+
+  _leftmostIdent(expr) {
+    if (!expr) return null;
+    if (expr.type === 'Ident') return expr.name || null;
+    if (expr.type === 'BinOp')       return this._leftmostIdent(expr.left);
+    if (expr.type === 'CollectionOp') return this._leftmostIdent(expr.obj);
+    if (expr.type === 'NavIndex')     return this._leftmostIdent(expr.obj);
+    if (expr.type === 'UnaryOp')      return this._leftmostIdent(expr.operand ?? expr.value);
+    return null;
+  }
+
+  check() {
+    this.push(false);
+    for (const stmt of this.ast.body) {
+      if (stmt.type === 'FuncDecl') this.define(stmt.name, stmt.line);
+    }
+    for (const stmt of this.ast.body) this.checkStmt(stmt);
+    this.pop();
+    return this.diagnostics;
+  }
+
+  checkBlock(stmts) {
+    if (!Array.isArray(stmts)) return;
+    for (const s of stmts) {
+      if (s?.type === 'FuncDecl') this.define(s.name, s.line, false);
+    }
+    for (const s of stmts) this.checkStmt(s);
+  }
+
+  checkStmt(stmt) {
+    if (!stmt) return;
+    const wasHot = this.pendingHot;
+    this.pendingHot = false;
+
+    switch (stmt.type) {
+
+      case 'VarAssign': {
+        // Prefix hot-def (°name = expr): define target before checking RHS so self-references are valid
+        if (wasHot && stmt.name) {
+          const info = this.lookup(stmt.name, stmt.line);
+          if (!info) this.hotDefine(stmt.name, stmt.line);
+        }
+        this.checkExpr(stmt.value);
+        // Check for reassignment of a constant
+        if (stmt.name) {
+          const existing = this.lookup(stmt.name, stmt.line);
+          if (existing?.isConst) {
+            this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line);
+            return;
+          }
+        }
+        if (!wasHot) this.define(stmt.name, stmt.line, false);
+        return;
+      }
+
+      case 'ConstAssign': {
+        this.checkExpr(stmt.value);
+        this.define(stmt.name, stmt.line, true);
+        return;
+      }
+
+      case 'CompoundAssign': {
+        // postfix hot: name° +=  → stmt.hot = true
+        // prefix hot:  °name +=  → wasHot = true (from ExprStmt sentinel)
+        const isHot = stmt.hot || wasHot;
+        if (!isHot) {
+          const info = this.lookup(stmt.name, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line);
+          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line);
+        } else {
+          const info = this.lookup(stmt.name, stmt.line);
+          if (!info) this.hotDefine(stmt.name, stmt.line);
+        }
+        this.checkExpr(stmt.value);
+        return;
+      }
+
+      case 'Increment': {
+        const isHot = stmt.hot || wasHot;
+        if (!isHot) {
+          const info = this.lookup(stmt.name, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line);
+          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line);
+        } else {
+          const info = this.lookup(stmt.name, stmt.line);
+          if (!info) this.hotDefine(stmt.name, stmt.line);
+        }
+        return;
+      }
+
+      case 'IndexAssign': {
+        // obj is a string (the variable name being indexed)
+        const obj = stmt.obj ?? stmt.name;
+        if (obj) {
+          const info = this.lookup(obj, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${obj}'`, stmt.line);
+        }
+        this.checkExpr(stmt.index);
+        this.checkExpr(stmt.value);
+        return;
+      }
+
+      case 'IndexedAssign': {
+        const name = stmt.name ?? stmt.obj;
+        if (name) {
+          const info = this.lookup(name, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${name}'`, stmt.line);
+        }
+        for (const idx of (stmt.indices ?? [])) this.checkExpr(idx);
+        this.checkExpr(stmt.value);
+        return;
+      }
+
+      case 'LifetimeEnd': {
+        if (stmt.name) {
+          const info = this.lookup(stmt.name, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line);
+          else {
+            for (let i = this.stack.length - 1; i >= 0; i--) {
+              if (this.stack[i].vars.has(stmt.name)) {
+                this.stack[i].vars.delete(stmt.name); break;
+              }
+            }
+          }
+        }
+        return;
+      }
+
+      case 'Import': {
+        if (stmt.alias) this.define(stmt.alias, stmt.line, false);
+        return;
+      }
+
+      case 'Output':
+      case 'OutputPos': {
+        for (const item of (stmt.items ?? [])) this.checkExpr(item);
+        return;
+      }
+
+      case 'Input': {
+        if (stmt.prompt) this.checkExpr(stmt.prompt);
+        const varName = stmt.varName ?? stmt.name;
+        if (varName) this.define(varName, stmt.line, false);
+        return;
+      }
+
+      case 'If': {
+        this.checkExpr(stmt.cond);
+        this.push(); this.checkBlock(stmt.then); this.pop();
+        for (const elif of (stmt.elseifs ?? [])) {
+          this.checkExpr(elif.cond);
+          this.push(); this.checkBlock(elif.body ?? elif.then); this.pop();
+        }
+        if (stmt.else) { this.push(); this.checkBlock(stmt.else); this.pop(); }
+        return;
+      }
+
+      case 'Loop': {
+        this.push();
+        if (stmt.kind === 'foreach' || stmt.iterable || stmt.iter) {
+          this.checkExpr(stmt.iterable ?? stmt.iter);
+          if (stmt.var) this.define(stmt.var, stmt.line, false);
+        } else if (stmt.kind === 'range' || stmt.from !== undefined) {
+          this.checkExpr(stmt.from);
+          this.checkExpr(stmt.to);
+          if (stmt.step) this.checkExpr(stmt.step);
+          if (stmt.var) this.define(stmt.var, stmt.line, false);
+        } else if (stmt.cond) {
+          this.checkExpr(stmt.cond);
+        }
+        this.checkBlock(stmt.body);
+        this.pop();
+        return;
+      }
+
+      case 'CliArgs': {
+        // >< name: captures CLI args into a variable
+        if (stmt.variable) this.define(stmt.variable, stmt.line, false);
+        return;
+      }
+
+      case 'KeyInput': {
+        if (stmt.varName ?? stmt.variable) this.define(stmt.varName ?? stmt.variable, stmt.line, false);
+        return;
+      }
+
+      case 'Break':
+      case 'Continue':
+      case 'SetNumeralMode':
+      case 'Noop':
+      case 'ExportDecl':
+      case 'Sleep':
+      case 'ClearScreen':
+        return;
+
+      case 'ModuleBlock': {
+        const allowedInModule = new Set(['ExportDecl', 'FuncDecl', 'VarAssign', 'ConstAssign', 'Import', 'Noop']);
+        for (const s of (stmt.body ?? [])) {
+          if (s && !allowedInModule.has(s.type))
+            this.error('E013', `E013: executable statement not allowed in module body`, s.line ?? stmt.line);
+        }
+        return;
+      }
+
+      case 'Match': {
+        this.checkExpr(stmt.subject ?? stmt.expr);
+        for (const arm of (stmt.arms ?? [])) {
+          if (arm.pattern?.type === 'Ident') this.lookup(arm.pattern.name, arm.pattern.line);
+          if (Array.isArray(arm.body)) { this.push(); this.checkBlock(arm.body); this.pop(); }
+          else this.checkExpr(arm.body);
+        }
+        return;
+      }
+
+      case 'FuncDecl': {
+        this.push(false); // named fns can access outer scope (module aliases, globals)
+        for (const p of (stmt.params ?? [])) {
+          const pname = typeof p === 'string' ? p : p.name;
+          if (pname) this.define(pname, stmt.line, false);
+        }
+        this.checkBlock(stmt.body);
+        this.pop();
+        return;
+      }
+
+      case 'Return': {
+        if (stmt.value) this.checkExpr(stmt.value);
+        return;
+      }
+
+      case 'TryCatch': {
+        this.push(); this.checkBlock(stmt.tryBody ?? stmt.try); this.pop();
+        for (const catch_ of (stmt.catches ?? [])) {
+          this.push();
+          this.define('_err', stmt.line, false);
+          this.checkBlock(catch_.body);
+          this.pop();
+        }
+        const fin = stmt.finallyBody ?? stmt.finally;
+        if (fin) { this.push(); this.checkBlock(fin); this.pop(); }
+        return;
+      }
+
+      case 'TupleDestruct':
+      case 'ArrayDestruct': {
+        this.checkExpr(stmt.value);
+        for (const t of (stmt.targets ?? [])) {
+          if (t.name && t.name !== '_') this.define(t.name, stmt.line, false);
+        }
+        return;
+      }
+
+      case 'NamedDestruct': {
+        this.checkExpr(stmt.value);
+        for (const t of (stmt.targets ?? [])) {
+          if (t.name && t.name !== '_') this.define(t.name, stmt.line, false);
+        }
+        return;
+      }
+
+      case 'DestructureAssign': {
+        this.checkExpr(stmt.value);
+        for (const item of (stmt.pattern ?? [])) {
+          if (item.type === 'Bind' || item.type === 'Rest') this.define(item.name, stmt.line, false);
+        }
+        return;
+      }
+
+      case 'ExprStmt': {
+        const expr = stmt.expr ?? stmt.value;
+        // Prefix hot-def sentinel: ExprStmt with empty hot Ident (°name produces this)
+        if (expr?.type === 'Ident' && expr.hot === true && expr.name === '') {
+          this.pendingHot = true;
+          return;
+        }
+        this.checkExpr(expr);
+        return;
+      }
+
+      default:
+        if (stmt.value) this.checkExpr(stmt.value);
+        if (stmt.body)  this.checkBlock(stmt.body);
+    }
+  }
+
+  checkExpr(expr) {
+    if (!expr) return;
+    switch (expr.type) {
+
+      case 'Ident': {
+        if (!expr.name) return; // empty sentinel
+        if (expr.name === '_') return; // wildcard placeholder — never an error
+        // hot Ident (name°): auto-initializes at function/root boundary
+        if (expr.hot) {
+          const info = this.lookup(expr.name, expr.line);
+          if (!info) this.hotDefine(expr.name, expr.line);
+          return;
+        }
+        const info = this.lookup(expr.name, expr.line);
+        if (!info) this.error('E_VAR', `undefined variable '${expr.name}'`, expr.line);
+        return;
+      }
+
+      case 'BinOp': {
+        this.checkExpr(expr.left);
+        this.checkExpr(expr.right);
+        return;
+      }
+
+      case 'UnaryOp': {
+        this.checkExpr(expr.operand ?? expr.value);
+        return;
+      }
+
+      case 'CastOp': {
+        this.checkExpr(expr.operand ?? expr.value ?? expr.obj);
+        return;
+      }
+
+      case 'Call': {
+        // callee is a string — mark as used (W_UNUSED suppression) but don't emit E_VAR
+        if (typeof expr.callee === 'string' && expr.callee) {
+          this.lookup(expr.callee, expr.line);
+        } else if (expr.callee && typeof expr.callee === 'object') {
+          this.checkExpr(expr.callee);
+        }
+        for (const a of (expr.args ?? [])) this.checkExpr(a.value ?? a);
+        return;
+      }
+
+      case 'CallExpr': {
+        this.checkExpr(expr.callee ?? expr.fn);
+        for (const a of (expr.args ?? [])) this.checkExpr(a.value ?? a);
+        return;
+      }
+
+      case 'Lambda': {
+        // Lambdas are closures — use funcBoundary=false so outer vars remain accessible
+        this.push(false);
+        for (const p of (expr.params ?? [])) {
+          const pname = typeof p === 'string' ? p : p.name;
+          if (pname) this.define(pname, expr.line, false);
+        }
+        const body = expr.body;
+        if (Array.isArray(body))         this.checkBlock(body);
+        else if (body?.type === 'expr')  this.checkExpr(body.value);
+        else if (body?.type === 'block') this.checkBlock(body.stmts ?? body.body ?? []);
+        else                             this.checkExpr(body);
+        this.pop();
+        return;
+      }
+
+      case 'Array': {
+        for (const el of (expr.items ?? expr.elements ?? [])) this.checkExpr(el);
+        return;
+      }
+
+      case 'Tuple': {
+        for (const f of (expr.items ?? expr.fields ?? [])) this.checkExpr(f.value ?? f);
+        return;
+      }
+
+      case 'NavIndex': {
+        this.checkExpr(expr.obj);
+        const spec = expr.spec;
+        if (spec?.index) this.checkExpr(spec.index);
+        if (spec?.from)  this.checkExpr(spec.from);
+        if (spec?.to)    this.checkExpr(spec.to);
+        return;
+      }
+
+      case 'FieldAccess': {
+        this.checkExpr(expr.obj);
+        return;
+      }
+
+      case 'CollectionOp': {
+        this.checkExpr(expr.obj);
+        if (expr.arg)  this.checkExpr(expr.arg);
+        if (expr.arg2) this.checkExpr(expr.arg2);
+        return;
+      }
+
+      case 'Pipe': {
+        this.checkExpr(expr.value);
+        this.checkExpr(expr.rhs ?? expr.fn);
+        return;
+      }
+
+      case 'ImplicitConcat':
+      case 'JuxtaConcat':
+      case 'CommaJoin': {
+        const items = expr.items ?? [];
+        // Prefix hot-def in expression context: °name op expr
+        // Parsed as ImplicitConcat[{Ident name:'' hot:true}, <expr starting with name>]
+        if (items.length >= 2 &&
+            items[0]?.type === 'Ident' && items[0]?.hot === true && !items[0]?.name) {
+          const hotName = this._leftmostIdent(items[1]);
+          if (hotName) this.hotDefine(hotName, items[1]?.line ?? expr.line);
+        }
+        for (const item of items) this.checkExpr(item);
+        return;
+      }
+
+      case 'TypeMetadata': {
+        // #? is safe access — target may be undefined, don't emit E_VAR
+        return;
+      }
+
+      case 'DataOp': {
+        this.checkExpr(expr.obj ?? expr.value);
+        if (expr.arg) this.checkExpr(expr.arg);
+        return;
+      }
+
+      case 'Match': {
+        this.checkStmt(expr);
+        return;
+      }
+
+      case 'Literal': {
+        // String literals may embed interpolated identifier names: {varname}
+        if (expr.kind === 'str' && Array.isArray(expr.value)) {
+          for (const part of expr.value) {
+            if (part.t === 'expr' && typeof part.v === 'string') {
+              const name = part.v.trim();
+              // Only look up simple identifiers (no operators/spaces)
+              if (/^[\p{L}_][\p{L}\p{M}0-9_]*$/u.test(name)) this.lookup(name, expr.line);
+            }
+          }
+        }
+        return;
+      }
+
+      // Terminals — nothing to check
+      case 'BoolLiteral':
+      case 'IntLiteral':
+      case 'FloatLiteral':
+      case 'StringLiteral':
+      case 'CharLiteral':
+      case 'Numeral':
+      case 'BashExec':
+      case 'CliArgs':
+      case 'TerminalSize':
+      case 'KeyInput':
+        return;
+
+      default:
+        if (expr.left)    this.checkExpr(expr.left);
+        if (expr.right)   this.checkExpr(expr.right);
+        if (expr.value)   this.checkExpr(expr.value);
+        if (expr.obj)     this.checkExpr(expr.obj);
+        if (expr.operand) this.checkExpr(expr.operand);
+    }
   }
 }
 
@@ -1410,33 +2068,42 @@ const mkUnit  = () => ({ type: 'unit' });
 // ─── Interpreter ──────────────────────────────────────────────────────────────
 
 export class Interpreter {
-  constructor(outputFn, inputFn = async () => '', moduleResolver = null) {
+  constructor(outputFn, inputFn = async () => '', moduleResolver = null, tuiContext = null) {
     this.outputFn        = outputFn;
     this.inputFn         = inputFn;
     this.steps           = 0;
     this.maxSteps        = 50_000;
-    this.maxInfiniteIter = 1_024;
+    this.maxInfiniteIter = 100_000;
     this.outputBytes     = 0;
-    this.maxBytes        = 8_000;
+    this.maxBytes        = 32_000;
     this.lastYield       = performance.now();
     this.numeralMode     = 0x0030;
     this.moduleResolver  = moduleResolver;
     this.moduleCache     = new Map();
+    this.tui             = tuiContext;
+    this.cliArgs         = [];
     this.loadingModules  = new Set();
   }
 
   async loadModule(path) {
-    if (this.moduleCache.has(path)) return this.moduleCache.get(path);
-    if (this.loadingModules.has(path)) {
-      const modName = path.replace(/^.*\//, '').replace(/\.zy$/, '');
-      throw new ZyStaticError(`E004: Circular import detected: module '${modName}' is already being loaded`);
-    }
     if (!this.moduleResolver)
       throw new ZyError(`Cannot import '${path}': no module resolver available`);
 
-    this.loadingModules.add(path);
     const result = await this.moduleResolver(path);
-    if (result == null) throw new ZyError(`Module not found: '${path}'`);
+    if (result == null || result.notFound) {
+      const displayPath = result?.path ?? path;
+      throw new ZyError(`module not found: ${displayPath}`);
+    }
+    // Use resolved absolute path as canonical key so circular-import detection
+    // works even when the same file is imported via different relative paths.
+    const cacheKey = (typeof result === 'object' && result.resolvedPath) ? result.resolvedPath : path;
+
+    if (this.moduleCache.has(cacheKey)) return this.moduleCache.get(cacheKey);
+    if (this.loadingModules.has(cacheKey)) {
+      const modName = cacheKey.replace(/^.*\//, '').replace(/\.zy$/, '');
+      throw new ZyStaticError(`E004: Circular import detected: module '${modName}' is already being loaded`);
+    }
+    this.loadingModules.add(cacheKey);
     const src      = typeof result === 'string' ? result : result.src;
     const childRes = typeof result === 'string' ? this.moduleResolver : result.resolver;
 
@@ -1447,7 +2114,7 @@ export class Interpreter {
     modInterp.moduleCache    = this.moduleCache;
     modInterp.loadingModules = this.loadingModules;
 
-    const modEnv = new Env();
+    const modEnv = new Env(null, false, true); // isModuleScope=true
     modInterp.globalEnv = modEnv;
 
     // Support both old-style (bare top-level statements) and new block syntax # name { ... }
@@ -1483,13 +2150,14 @@ export class Interpreter {
       }
     }
 
-    this.loadingModules.delete(path);
+    this.loadingModules.delete(cacheKey);
     const modVal = { type: 'module', exports };
-    this.moduleCache.set(path, modVal);
+    this.moduleCache.set(cacheKey, modVal);
     return modVal;
   }
 
   tick() {
+    if (this.tui?.aborted) throw new ZyError('Program stopped.');
     if (++this.steps > this.maxSteps)
       throw new ZyError('Execution limit reached (50 000 steps) — infinite loop?');
   }
@@ -1505,8 +2173,9 @@ export class Interpreter {
   emit(text) {
     this.outputBytes += text.length;
     if (this.outputBytes > this.maxBytes)
-      throw new ZyError('Output limit reached (8 KB) — infinite loop?');
-    this.outputFn(text);
+      throw new ZyError('Output limit reached (32 KB) — infinite loop?');
+    if (this.tui && this.tui.active) this.tui.print(text);
+    else this.outputFn(text);
   }
 
   async run(program, filePath = null) {
@@ -1520,14 +2189,28 @@ export class Interpreter {
       const importHint = filePath
         ? filePath.replace(/^.*[/\\]/, '').replace(/\.zy$/, '')
         : modName.replace(/^\./, '');
-      this.emit(`warning: ${pathStr} is a module file and cannot be run directly\n  = help: module '${modName}' is meant to be imported with <# ./${importHint} <= alias`);
+      this.emit(`warning: ${pathStr} is a module file and cannot be run directly\n  = help: module '${modName}' is meant to be imported with <# ./${importHint} => alias`);
       return;
     }
     await this.execBlock(program.body, env);
   }
 
   async execBlock(stmts, env) {
-    for (const stmt of stmts) {
+    for (let i = 0; i < stmts.length; i++) {
+      const stmt = stmts[i];
+      // Prefix hot-def sentinel: ExprStmt{Ident{hot:true, name:''}} followed by the actual op.
+      // Pre-initialize the target variable in the enclosing function/root scope.
+      if (stmt.type === 'ExprStmt' &&
+          stmt.expr?.type === 'Ident' && stmt.expr.hot && stmt.expr.name === '') {
+        const next = stmts[i + 1];
+        const targetName = this._hotTargetName(next);
+        if (targetName) {
+          let exists = false;
+          try { env.get(targetName); exists = true; } catch (_) {}
+          if (!exists) env.hotDef(targetName, this._hotNeutralForStmt(next));
+        }
+        continue;
+      }
       const sig = await this.exec(stmt, env);
       if (sig instanceof ZyReturn || sig instanceof ZyBreak || sig instanceof ZyContinue)
         return sig;
@@ -1569,7 +2252,10 @@ export class Interpreter {
 
       case 'VarAssign': {
         const val = await this.eval(stmt.value, env);
-        if (!env.set(stmt.name, val)) env.def(stmt.name, val);
+        if (!env.set(stmt.name, val)) {
+          if (stmt.hot) env.hotDef(stmt.name, val);
+          else env.def(stmt.name, val);
+        }
         return;
       }
 
@@ -1580,14 +2266,26 @@ export class Interpreter {
       }
 
       case 'CompoundAssign': {
-        const cur = env.get(stmt.name);
+        let cur;
+        try { cur = env.get(stmt.name); }
+        catch (e) {
+          if (!stmt.hot) throw e;
+          cur = (stmt.op === '*' || stmt.op === '/') ? mkInt(1) : mkInt(0);
+          env.hotDef(stmt.name, cur);
+        }
         const rhs = await this.eval(stmt.value, env);
         env.set(stmt.name, this.applyOp(stmt.op, cur, rhs));
         return;
       }
 
       case 'Increment': {
-        const cur = env.get(stmt.name);
+        let cur;
+        try { cur = env.get(stmt.name); }
+        catch (e) {
+          if (!stmt.hot) throw e;
+          cur = mkInt(0);
+          env.hotDef(stmt.name, cur);
+        }
         const one = cur.type === 'float' ? mkFloat(1) : mkInt(1);
         env.set(stmt.name, this.applyOp(stmt.op === '++' ? '+' : '-', cur, one));
         return;
@@ -1605,6 +2303,77 @@ export class Interpreter {
 
       case 'Break':    return new ZyBreak(stmt.label ?? null);
       case 'Continue': return new ZyContinue(stmt.label ?? null);
+
+      case 'CliArgs':
+        env.def(stmt.variable, { type: 'arr', v: this.cliArgs.map(s => mkStr(s)) });
+        return;
+
+      case 'Sleep': {
+        const ms = (await this.eval(stmt.duration, env)).v;
+        await new Promise(r => {
+          const id = setTimeout(r, Math.max(0, Math.trunc(ms)));
+          if (this.tui) this.tui._sleepCancel = () => { clearTimeout(id); r(); };
+        });
+        if (this.tui) this.tui._sleepCancel = null;
+        return;
+      }
+
+      case 'ClearScreen':
+        if (this.tui) this.tui.clear();
+        return;
+
+      case 'KeyInput': {
+        const ch = stmt.blocking
+          ? await (this.tui ? this.tui.readKey() : Promise.resolve('\0'))
+          : (this.tui ? this.tui.pollKey() : '\0');
+        const cur = { type: 'char', v: ch };
+        if (!env.set(stmt.variable, cur)) env.def(stmt.variable, cur);
+        return;
+      }
+
+      case 'OutputPos': {
+        const { slots, items } = stmt;
+        let row = null, col = null, bks = 0, fg = null, bg = null;
+        if (slots.length === 1 && slots[0]?.type === 'Ident') {
+          const tv = await this.eval(slots[0], env);
+          const get = i => tv.v?.[i]?.v ?? null;
+          row = get(0); col = get(1); bks = get(2) ?? 0; fg = get(3); bg = get(4);
+        } else {
+          const vals = [];
+          for (const s of slots) vals.push(s ? await this.eval(s, env) : null);
+          if (vals[0] != null) row = vals[0].v;
+          if (vals[1] != null) col = vals[1].v;
+          if (vals[2] != null) bks = vals[2].v;
+          if (vals[3] != null) fg = vals[3].v;
+          if (vals[4] != null) bg = vals[4].v;
+        }
+        const parts = [];
+        for (const i of items) parts.push(await this.eval(i, env));
+        const text = parts.map(v => this.displayOutput(v)).join('');
+        if (this.tui) this.tui.printAt(row, col, text, bks, fg, bg);
+        else this.emit(text);
+        return;
+      }
+
+      case 'TuiBlock': {
+        if (!this.tui) return await this.execBlock(stmt.body, new Env(env));
+        const savedMax  = this.maxSteps;
+        const savedByte = this.maxBytes;
+        const savedIter = this.maxInfiniteIter;
+        this.maxSteps        = Infinity;
+        this.maxBytes        = Infinity;
+        this.maxInfiniteIter = Infinity;
+        this.tui.enter();
+        try {
+          await this.execBlock(stmt.body, new Env(env));
+        } finally {
+          this.tui.leave();
+          this.maxSteps        = savedMax;
+          this.maxBytes        = savedByte;
+          this.maxInfiniteIter = savedIter;
+        }
+        return;
+      }
 
       case 'If': {
         if (this.truthy(await this.eval(stmt.cond, env))) return await this.execBlock(stmt.then, new Env(env));
@@ -1644,17 +2413,20 @@ export class Interpreter {
 
       case 'ArrayDestruct': {
         const arr = await this.eval(stmt.value, env);
-        if (arr.type !== 'arr') throw new ZyError('Array destructuring requires an array');
+        if (arr.type !== 'arr' && arr.type !== 'tuple') throw new ZyError('Array destructuring requires an array');
+        if (arr.type === 'tuple') arr.v = arr.v; // tuples are compatible
         let i = 0;
         for (const t of stmt.targets) {
           if (t.rest) {
             const val = mkArr(arr.v.slice(i));
-            if (!env.set(t.name, val)) env.def(t.name, val);
+            try { if (!env.set(t.name, val)) env.def(t.name, val); }
+            catch { env.destroy(t.name); env.def(t.name, val); }
           } else if (t.name === '_') {
             i++;
           } else {
             const val = arr.v[i] ?? mkUnit();
-            if (!env.set(t.name, val)) env.def(t.name, val);
+            try { if (!env.set(t.name, val)) env.def(t.name, val); }
+            catch { env.destroy(t.name); env.def(t.name, val); }
             i++;
           }
         }
@@ -1670,10 +2442,12 @@ export class Interpreter {
         for (const t of stmt.targets) {
           if (t.rest) {
             const val = mkArr(items.slice(i));
-            if (!env.set(t.name, val)) env.def(t.name, val);
+            try { if (!env.set(t.name, val)) env.def(t.name, val); }
+            catch { env.destroy(t.name); env.def(t.name, val); }
           } else {
             const val = items[i] ?? mkUnit();
-            if (!env.set(t.name, val)) env.def(t.name, val);
+            try { if (!env.set(t.name, val)) env.def(t.name, val); }
+            catch { env.destroy(t.name); env.def(t.name, val); }
             i++;
           }
         }
@@ -1698,13 +2472,15 @@ export class Interpreter {
         try {
           result = await this.execBlock(stmt.tryBody, new Env(env));
         } catch (err) {
+          if (err instanceof ZyErrorPropagate) throw err; // $!! propagates through try/catch
           const errType = err.errType ?? '##_';
           const matched = stmt.catches.find(
             c => !c.errType || c.errType === errType || c.errType === '##_'
           );
           if (matched) {
             const catchEnv = new Env(env);
-            catchEnv.def('_err', mkStr(err.message ?? String(err)));
+            const errMsg = err.message ?? String(err);
+            catchEnv.def('_err', { type: 'error', errType, v: errMsg });
             result = await this.execBlock(matched.body, catchEnv);
           } else {
             throw err;
@@ -1834,7 +2610,34 @@ export class Interpreter {
         }
         break;
 
-      case 'Ident': return env.get(expr.name);
+      case 'Ident':
+        if (expr.hot) {
+          try { return env.get(expr.name); }
+          catch (_) { const n = mkInt(0); env.hotDef(expr.name, n); return n; }
+        }
+        return env.get(expr.name);
+
+      case 'TerminalSize': {
+        if (!this.tui) return { type: 'tuple', v: [mkInt(24), mkInt(80)], keys: null };
+        const [rows, cols] = this.tui.getSize();
+        return { type: 'tuple', v: [mkInt(rows), mkInt(cols)], keys: null };
+      }
+
+      case 'BashExec': {
+        const _cmd = (expr.cmd ?? '').replace(/['"]/g, ' ').trim();
+        const _now = new Date();
+        const _pad = n => String(n).padStart(2, '0');
+        if (_cmd.includes('%Y')) return mkStr(String(_now.getFullYear()));
+        if (_cmd.includes('%m')) return mkStr(_pad(_now.getMonth() + 1));
+        if (_cmd.includes('%d')) return mkStr(_pad(_now.getDate()));
+        if (_cmd.includes('%H')) return mkStr(_pad(_now.getHours()));
+        if (_cmd.includes('%M')) return mkStr(_pad(_now.getMinutes()));
+        if (_cmd.includes('%S')) return mkStr(_pad(_now.getSeconds()));
+        if (_cmd.includes('%s')) return mkStr(String(Math.floor(Date.now() / 1000)));
+        if (_cmd.startsWith('echo ') && !_cmd.includes('$')) return mkStr(_cmd.slice(5).trim().replace(/^['"]|['"]$/g, ''));
+        // Default: nanosecond-ish timestamp for random seeds
+        return mkStr(String(Date.now() * 1000000 + Math.trunc(Math.random() * 999999)));
+      }
 
       case 'Array':
         return mkArr(await Promise.all(expr.items.map(i => this.eval(i, env))));
@@ -1845,8 +2648,21 @@ export class Interpreter {
       }
 
       case 'ImplicitConcat': {
+        const items = expr.items ?? [];
+        // Prefix hot-def sentinel in RHS: [Ident{hot:true, name:''}, <inner_expr>]
+        if (items.length >= 2 &&
+            items[0]?.type === 'Ident' && items[0]?.hot && items[0]?.name === '') {
+          const inner = items[1];
+          const hotName = this._leftmostIdentName(inner);
+          if (hotName) {
+            let exists = false;
+            try { env.get(hotName); exists = true; } catch (_) {}
+            if (!exists) env.hotDef(hotName, this._hotNeutralForExpr(inner));
+          }
+          return await this.eval(inner, env);
+        }
         const vals = [];
-        for (const item of expr.items) vals.push(await this.eval(item, env));
+        for (const item of items) vals.push(await this.eval(item, env));
         return mkStr(vals.map(v => this.display(v)).join(''));
       }
       case 'CommaJoin': {
@@ -1985,14 +2801,19 @@ export class Interpreter {
       case 'FieldAccess': {
         const obj = await this.eval(expr.obj, env);
         if (obj.type === 'module') {
-          if (!obj.exports.has(expr.field))
-            throw new ZyError(`Module has no export '${expr.field}'`);
+          if (!obj.exports.has(expr.field)) {
+            const modAlias = expr.obj?.name ?? 'module';
+            throw new ZyError(`module '${modAlias}' does not export function '${expr.field}'`);
+          }
           return obj.exports.get(expr.field);
         }
         if (obj.type !== 'tuple' || !obj.keys)
           throw new ZyError(`'.${expr.field}' requires a named tuple`);
         const i = obj.keys.indexOf(expr.field);
-        if (i < 0) throw new ZyError(`Unknown field '${expr.field}'`);
+        if (i < 0) throw new ZyRuntimeError(
+          `Named tuple has no field '${expr.field}'. Available fields: ${obj.keys.filter(k => k).join(', ')}`,
+          '##_'
+        );
         return obj.v[i];
       }
 
@@ -2111,7 +2932,8 @@ export class Interpreter {
       case 'CastOp': {
         const val = await this.eval(expr.operand, env);
         if (val.type !== 'int' && val.type !== 'float') {
-          const typeName = val.type.charAt(0).toUpperCase() + val.type.slice(1);
+          const _typeNames = { str:'String', int:'Integer', float:'Float', bool:'Bool', char:'Char', arr:'Array', tuple:'Tuple', unit:'Unit' };
+          const typeName = _typeNames[val.type] ?? (val.type.charAt(0).toUpperCase() + val.type.slice(1));
           throw new ZyRuntimeError(`${expr.op} requires a numeric value, got ${typeName}`, '##_');
         }
         if (expr.op === '##.') return mkFloat(val.v);
@@ -2172,21 +2994,21 @@ export class Interpreter {
   // 1-based get with error on index 0 and out-of-bounds
   navGetAt(obj, idx) {
     if (typeof idx === 'boolean') throw new ZyRuntimeError('Cannot use Bool as array index', '##Index');
-    if (idx === 0) throw new ZyRuntimeError('Index 0 is invalid (indices start at 1)', '##Index');
+    if (idx === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
     if (obj.type === 'arr') {
       const i = idx < 0 ? obj.v.length + idx : idx - 1;
-      if (i < 0 || i >= obj.v.length) throw new ZyRuntimeError(`Index out of bounds: ${idx}`, '##Index');
+      if (i < 0 || i >= obj.v.length) throw new ZyRuntimeError(`array index out of bounds: index ${idx} for array of length ${obj.v.length}`, '##Index');
       return obj.v[i];
     }
     if (obj.type === 'tuple') {
       const i = idx < 0 ? obj.v.length + idx : idx - 1;
-      if (i < 0 || i >= obj.v.length) throw new ZyRuntimeError(`Index out of bounds: ${idx}`, '##Index');
+      if (i < 0 || i >= obj.v.length) throw new ZyRuntimeError(`array index out of bounds: index ${idx} for array of length ${obj.v.length}`, '##Index');
       return obj.v[i] ?? mkUnit();
     }
     if (obj.type === 'str') {
       const chars = [...obj.v];
       const i = idx < 0 ? chars.length + idx : idx - 1;
-      if (i < 0 || i >= chars.length) throw new ZyRuntimeError(`Index out of bounds: ${idx}`, '##Index');
+      if (i < 0 || i >= chars.length) throw new ZyRuntimeError(`array index out of bounds: index ${idx} for array of length ${chars.length}`, '##Index');
       return mkChar(chars[i]);
     }
     throw new ZyError(`Cannot subscript ${obj.type}`);
@@ -2199,8 +3021,15 @@ export class Interpreter {
   }
 
   typeMetadata(val) {
-    const symMap = { int:'###', float:'##.', str:'##"', char:"##'", bool:'##?', arr:'##]', tuple:'##)', unit:'##_', error:'##_' };
-    const sym = symMap[val.type] ?? '##_';
+    const symMap = { int:'###', float:'##.', str:'##"', char:"##'", bool:'##?', arr:'##]', tuple:'##)', unit:'##_' };
+    let sym;
+    if (val.type === 'func') {
+      sym = (val.name === '<lambda>') ? '##->' : '##()';
+    } else if (val.type === 'error') {
+      sym = val.errType ?? '##_'; // error type symbol = specific error code
+    } else {
+      sym = symMap[val.type] ?? '##_';
+    }
     let count;
     switch (val.type) {
       case 'int':   count = String(Math.abs(val.v)).length; break;
@@ -2210,13 +3039,70 @@ export class Interpreter {
       case 'bool':  count = 1; break;
       case 'arr':   count = val.v.length; break;
       case 'tuple': count = val.v.length; break;
+      case 'func':  count = val.params?.length ?? 0; break;
       default:      count = 0;
     }
     return { type: 'tuple', v: [mkStr(sym), mkInt(count), val], keys: null };
   }
 
+  // ─── Hot-def helpers ─────────────────────────────────────────────────────────
+
+  // Return the name of the variable targeted by a statement (for sentinel pre-init)
+  _hotTargetName(stmt) {
+    if (!stmt) return null;
+    if (stmt.type === 'CompoundAssign' || stmt.type === 'VarAssign' || stmt.type === 'Increment')
+      return stmt.name;
+    if (stmt.type === 'ExprStmt' && stmt.expr?.type === 'CollectionOp')
+      return stmt.expr.obj?.name ?? null;
+    return null;
+  }
+
+  // Return the neutral value for the first use of a hot-def variable (2-stmt prefix form)
+  _hotNeutralForStmt(stmt) {
+    if (!stmt) return mkInt(0);
+    if (stmt.type === 'CompoundAssign' && (stmt.op === '*' || stmt.op === '/')) return mkInt(1);
+    if (stmt.type === 'ExprStmt' && stmt.expr?.type === 'CollectionOp' && stmt.expr.op === '$+')
+      return mkArr([]);
+    if (stmt.type === 'VarAssign' && this._exprContainsOp(stmt.value, '$+')) return mkArr([]);
+    if (stmt.type === 'VarAssign') return mkStr('');
+    return mkInt(0);
+  }
+
+  // Return the neutral value for the first use of a hot-def variable (RHS ImplicitConcat form)
+  _hotNeutralForExpr(expr) {
+    if (!expr) return mkInt(0);
+    if (expr.type === 'CollectionOp' && expr.op === '$+') return mkArr([]);
+    return mkInt(0);
+  }
+
+  // Walk an expression and return the leftmost Ident name
+  _leftmostIdentName(expr) {
+    if (!expr) return null;
+    if (expr.type === 'Ident') return expr.name || null;
+    if (expr.type === 'CollectionOp') return this._leftmostIdentName(expr.obj);
+    if (expr.type === 'BinOp') return this._leftmostIdentName(expr.left);
+    return null;
+  }
+
+  // Check if an expression tree contains a CollectionOp with the given op
+  _exprContainsOp(expr, op) {
+    if (!expr) return false;
+    if (expr.type === 'CollectionOp' && expr.op === op) return true;
+    if (expr.type === 'ImplicitConcat') return (expr.items ?? []).some(i => this._exprContainsOp(i, op));
+    return false;
+  }
+
   async evalCollectionOp(expr, env) {
-    const col = await this.eval(expr.obj, env);
+    // Hot array-accumulator: arr°$+ i initializes arr to [] instead of 0
+    let col;
+    if (expr.op === '$+' && expr.obj?.type === 'Ident' && expr.obj?.hot) {
+      let existing = null;
+      try { existing = env.get(expr.obj.name); } catch (_) {}
+      if (existing === null) { col = mkArr([]); env.hotDef(expr.obj.name, col); }
+      else col = existing;
+    } else {
+      col = await this.eval(expr.obj, env);
+    }
     const arg = () => this.eval(expr.arg, env);
 
     // 1-based index resolution for collection ops
@@ -2430,8 +3316,7 @@ export class Interpreter {
         return mkBool(col.type === 'error');
 
       case '$!!': {
-        if (col.type === 'error')
-          throw new ZyRuntimeError(col.v ?? 'error', col.errType ?? '##_');
+        if (col.type === 'error') throw new ZyErrorPropagate(col);
         return col;
       }
 
@@ -2457,6 +3342,13 @@ export class Interpreter {
         const delim = this.display(delimVal);
         const parts = col.v.split(delim);
         return mkArr(parts.map(p => mkStr(p)));
+      }
+
+      case '$*': {
+        const n = (await arg()).v;
+        if (col.type !== 'str') notSupported('$*');
+        if (n <= 0) return mkStr('');
+        return mkStr(col.v.repeat(Math.trunc(n)));
       }
 
       case '$++': {
@@ -2561,7 +3453,14 @@ export class Interpreter {
     const funcEnv   = new Env(parent, !isClosure);
     for (let i = 0; i < fn.params.length; i++)
       funcEnv.def(fn.params[i].name, args[i] ?? mkUnit());
-    const sig = await this.execBlock(fn.body, funcEnv);
+    let sig;
+    try {
+      sig = await this.execBlock(fn.body, funcEnv);
+    } catch (e) {
+      // $!! (ZyErrorPropagate) exits the function and returns the error value to the caller
+      if (e instanceof ZyErrorPropagate) return e.errVal;
+      throw e;
+    }
     // Write back output params to caller env
     if (outWriteback) {
       for (const { paramName, callerName, callerEnv } of outWriteback) {
@@ -2602,7 +3501,7 @@ export class Interpreter {
       case '+':  return mk(lv + rv);
       case '-':  return mk(lv - rv);
       case '*':  return mk(lv * rv);
-      case '/':  if (rv === 0) throw new ZyRuntimeError('Division by zero', '##Div');
+      case '/':  if (rv === 0) throw new ZyRuntimeError('division by zero', '##Div');
                  return isFloat ? mkFloat(lv / rv) : mkInt(Math.trunc(lv / rv));
       case '%':  if (rv === 0) throw new ZyRuntimeError('Modulo by zero', '##Div');
                  return mk(lv % rv);
@@ -2648,7 +3547,11 @@ export class Interpreter {
         return '(' + val.v.map((item, i) => `${val.keys[i]}: ${this.display(item)}`).join(', ') + ')';
       return '(' + val.v.map(v => this.display(v)).join(', ') + ')';
     }
-    if (val.type === 'func') return `<function ${val.name}>`;
+    if (val.type === 'func') {
+      const arity = val.params?.length ?? 0;
+      return val.name === '<lambda>' ? `<lambd/${arity}>` : `<funct/${arity}>`;
+    }
+    if (val.type === 'error') return `${val.errType ?? '##_'}(${val.v ?? ''})`;
     return String(val.v ?? val);
   }
 
@@ -2664,15 +3567,27 @@ export class Interpreter {
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, filePath = null) {
+export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, filePath = null, tuiContext = null, cliArgs = [], opts = {}) {
   const tokens = new Lexer(src).tokenize();
   const ast    = new Parser(tokens).parse();
+
+  const checker = new Checker(ast);
+  const diags   = checker.check();
+
+  for (const d of diags) if (d.severity === 'error') onOutput(formatDiagnostic(d) + '\n\n');
+  if (diags.some(d => d.severity === 'error')) return;
+
   try {
-    await new Interpreter(onOutput, inputFn, moduleResolver).run(ast, filePath);
+    const interp = new Interpreter(onOutput, inputFn, moduleResolver, tuiContext);
+    interp.cliArgs = cliArgs;
+    if (opts.maxSteps        != null) interp.maxSteps        = opts.maxSteps;
+    if (opts.maxBytes        != null) interp.maxBytes        = opts.maxBytes;
+    if (opts.maxInfiniteIter != null) interp.maxInfiniteIter = opts.maxInfiniteIter;
+    await interp.run(ast, filePath);
   } catch (e) {
     if (e instanceof ZyStaticError)
       onOutput(`Runtime error: ${e.message}`);
     else
-      onOutput(`Runtime error: runtime error: ${e.message ?? e}`);
+      onOutput(`Runtime error: ${e.message ?? e}`);
   }
 }

@@ -1,7 +1,7 @@
 {
   "version": "2.0",
   "description": "Zymbol-Lang RosettaStone — constructs in 80 languages",
-  "count": 105,
+  "count": 111,
   "languages": [
     {
       "id": "amharic",
@@ -553,30 +553,6 @@
         "function": "वर्गीकरण(संख्या) {\n    ? संख्या % १५ == ० { <~ \"बुलबुलाभनभन\" }\n    _? संख्या % ३  == ० { <~ \"बुलबुला\" }\n    _? संख्या % ५  == ० { <~ \"भनभन\" }\n    _ { <~ संख्या }\n}",
         "loop": "@ न:१..१५ {\n    >> वर्गीकरण(न) ¶\n}",
         "full": "// FizzBuzz — हिन्दी\n// Identifiers in हिन्दी. Operators are always symbolic.\n// Numeral mode: native digits (०–९).\n\n>> \"नमस्ते, हिन्दी भाषी दुनिया!\" ¶\n\n#०९#\n\nवर्गीकरण(संख्या) {\n    ? संख्या % १५ == ० { <~ \"बुलबुलाभनभन\" }\n    _? संख्या % ३  == ० { <~ \"बुलबुला\" }\n    _? संख्या % ५  == ० { <~ \"भनभन\" }\n    _ { <~ संख्या }\n}\n\n@ न:१..१५ {\n    >> वर्गीकरण(न) ¶\n}"
-      }
-    },
-    {
-      "id": "hungarian",
-      "name": "Hungarian",
-      "native": "Magyar",
-      "dir": "ltr",
-      "tokens": {
-        "greeting": "Szia, Magyar Világ!",
-        "func": "osztályoz",
-        "param": "szám",
-        "fizz": "Szisz",
-        "buzz": "Züm",
-        "fizzbuzz": "SziszZüm"
-      },
-      "constructs": {
-        "assign": "szám = 42\nname = \"Szia, Magyar\"",
-        "output": ">> \"Szia, Magyar Világ!\" ¶",
-        "if": "? szám % 15 == 0 {\n    >> \"SziszZüm\" ¶\n}",
-        "else_if": "? szám % 15 == 0 {\n    >> \"SziszZüm\" ¶\n}\n_? szám % 3 == 0 {\n    >> \"Szisz\" ¶\n}\n_? szám % 5 == 0 {\n    >> \"Züm\" ¶\n}",
-        "else": "? szám % 15 == 0 {\n    >> \"SziszZüm\" ¶\n}\n_? szám % 3 == 0 {\n    >> \"Szisz\" ¶\n}\n_? szám % 5 == 0 {\n    >> \"Züm\" ¶\n}\n_ {\n    >> szám ¶\n}",
-        "function": "osztályoz(szám) {\n    ? szám % 15 == 0 { <~ \"SziszZüm\" }\n    _? szám % 3  == 0 { <~ \"Szisz\" }\n    _? szám % 5  == 0 { <~ \"Züm\" }\n    _ { <~ szám }\n}",
-        "loop": "@ i:1..15 {\n    >> osztályoz(i) ¶\n}",
-        "full": "// FizzBuzz — Magyar\n// Azonosítók magyarul. Az operátorok mindig szimbolikusak.\n\n>> \"Szia, Magyar Világ!\" ¶\n\nosztályoz(szám) {\n    ? szám % 15 == 0 { <~ \"SziszZüm\" }\n    _? szám % 3  == 0 { <~ \"Szisz\" }\n    _? szám % 5  == 0 { <~ \"Züm\" }\n    _ { <~ szám }\n}\n\n@ i:1..15 {\n    >> osztályoz(i) ¶\n}"
       }
     },
     {
@@ -1348,30 +1324,6 @@
       }
     },
     {
-      "id": "welsh",
-      "name": "Welsh",
-      "native": "Cymraeg",
-      "dir": "ltr",
-      "tokens": {
-        "greeting": "Helo, Byd Cymraeg!",
-        "func": "dosbarthu",
-        "param": "rhif",
-        "fizz": "Swigen",
-        "buzz": "Bwm",
-        "fizzbuzz": "SwigenBwm"
-      },
-      "constructs": {
-        "assign": "rhif = 42\nname = \"Helo, Byd Cy\"",
-        "output": ">> \"Helo, Byd Cymraeg!\" ¶",
-        "if": "? rhif % 15 == 0 {\n    >> \"SwigenBwm\" ¶\n}",
-        "else_if": "? rhif % 15 == 0 {\n    >> \"SwigenBwm\" ¶\n}\n_? rhif % 3 == 0 {\n    >> \"Swigen\" ¶\n}\n_? rhif % 5 == 0 {\n    >> \"Bwm\" ¶\n}",
-        "else": "? rhif % 15 == 0 {\n    >> \"SwigenBwm\" ¶\n}\n_? rhif % 3 == 0 {\n    >> \"Swigen\" ¶\n}\n_? rhif % 5 == 0 {\n    >> \"Bwm\" ¶\n}\n_ {\n    >> rhif ¶\n}",
-        "function": "dosbarthu(rhif) {\n    ? rhif % 15 == 0 { <~ \"SwigenBwm\" }\n    _? rhif % 3  == 0 { <~ \"Swigen\" }\n    _? rhif % 5  == 0 { <~ \"Bwm\" }\n    _ { <~ rhif }\n}",
-        "loop": "@ i:1..15 {\n    >> dosbarthu(i) ¶\n}",
-        "full": "// FizzBuzz — Cymraeg\n// Adnabyddwyr yn Gymraeg. Gweithredwyr bob amser yn symbolaidd.\n\n>> \"Helo, Byd Cymraeg!\" ¶\n\ndosbarthu(rhif) {\n    ? rhif % 15 == 0 { <~ \"SwigenBwm\" }\n    _? rhif % 3  == 0 { <~ \"Swigen\" }\n    _? rhif % 5  == 0 { <~ \"Bwm\" }\n    _ { <~ rhif }\n}\n\n@ i:1..15 {\n    >> dosbarthu(i) ¶\n}"
-      }
-    },
-    {
       "id": "yoruba",
       "name": "Yoruba",
       "native": "Yorùbá",
@@ -1929,31 +1881,6 @@
       }
     },
     {
-      "id": "cree",
-      "name": "Cree",
-      "native": "nêhiyawêwin (SRO)",
-      "dir": "ltr",
-      "region": "americas",
-      "tokens": {
-        "greeting": "Tânisi, nêhiyawêwin!",
-        "func": "nâtawihoht",
-        "param": "akihtâson",
-        "fizz": "Papîwin",
-        "buzz": "Wîwîhcikan",
-        "fizzbuzz": "PapîwinWîwîhcikan"
-      },
-      "constructs": {
-        "assign": "akihtâson = 42\nisiyihkâsowin = \"Tânisi\"",
-        "output": ">> \"Tânisi, ᓀᐦᐃᔭᐍᐏᐣ!\" ¶",
-        "if": "? akihtâson % 15 == 0 {\n    >> \"PapîwinWîwîhcikan\" ¶\n}",
-        "else_if": "? akihtâson % 15 == 0 {\n    >> \"PapîwinWîwîhcikan\" ¶\n}\n_? akihtâson % 3 == 0 {\n    >> \"Papîwin\" ¶\n}\n_? akihtâson % 5 == 0 {\n    >> \"Wîwîhcikan\" ¶\n}",
-        "else": "? akihtâson % 15 == 0 {\n    >> \"PapîwinWîwîhcikan\" ¶\n}\n_? akihtâson % 3 == 0 {\n    >> \"Papîwin\" ¶\n}\n_? akihtâson % 5 == 0 {\n    >> \"Wîwîhcikan\" ¶\n}\n_ {\n    >> akihtâson ¶\n}",
-        "function": "nâtawihoht(akihtâson) {\n    ? akihtâson % 15 == 0 { <~ \"PapîwinWîwîhcikan\" }\n    _? akihtâson % 3  == 0 { <~ \"Papîwin\" }\n    _? akihtâson % 5  == 0 { <~ \"Wîwîhcikan\" }\n    _ { <~ akihtâson }\n}",
-        "loop": "@ ê:1..15 {\n    >> nâtawihoht(ê) ¶\n}",
-        "full": "// FizzBuzz — nêhiyawêwin (SRO)\n// Âpacihiwêwina nêhiyaw-pîkiskwêwina. Masinahikanisak namôya pâstâhowak.\n\n>> \"Tânisi, nêhiyawêwin!\" ¶\n\nnâtawihoht(akihtâson) {\n    ? akihtâson % 15 == 0 { <~ \"PapîwinWîwîhcikan\" }\n    _? akihtâson % 3  == 0 { <~ \"Papîwin\" }\n    _? akihtâson % 5  == 0 { <~ \"Wîwîhcikan\" }\n    _ { <~ akihtâson }\n}\n\n@ ê:1..15 {\n    >> nâtawihoht(ê) ¶\n}"
-      }
-    },
-    {
       "id": "cree_syl",
       "name": "Cree (Syllabics)",
       "native": "ᓀᐦᐃᔭᐍᐏᐣ (ᐊᓯᓂᑿᐣ)",
@@ -2404,156 +2331,6 @@
       }
     },
     {
-      "id": "mandoa",
-      "name": "Mando'a",
-      "native": "Mando'a",
-      "dir": "ltr",
-      "region": "universal",
-      "tokens": {
-        "greeting": "Su'cuy",
-        "func": "jate",
-        "param": "gal",
-        "fizz": "Mando",
-        "buzz": "Vode",
-        "fizzbuzz": "MandoVode"
-      },
-      "constructs": {
-        "assign": "x = 42",
-        "output": ">> \"Su'cuy\" ¶",
-        "if": "? x > 0 { >> \"elek\" ¶ }",
-        "else_if": "_? x == 0 { >> \"solus\" ¶ }",
-        "else": "_ { >> \"nayc\" ¶ }",
-        "function": "jate(gal) { <~ gal * 2 }",
-        "loop": "@ i:1..10 { >> i \" \" }",
-        "full": "// FizzBuzz — Mando'a\n// Acyc'ade Mando'a. Olaror nayc'ade naast.\n\n>> \"Su'cuy\" ¶\n\njate(gal) {\n    ? gal % 15 == 0 { <~ \"MandoVode\" }\n    _? gal % 3  == 0 { <~ \"Mando\" }\n    _? gal % 5  == 0 { <~ \"Vode\" }\n    _ { <~ gal }\n}\n@ i:1..15 { >> jate(i) ¶ }"
-      }
-    },
-    {
-      "id": "quenya",
-      "name": "Quenya",
-      "native": "Quenya",
-      "dir": "ltr",
-      "region": "universal",
-      "tokens": {
-        "greeting": "Namárië",
-        "func": "carna",
-        "param": "nótë",
-        "fizz": "Calë",
-        "buzz": "Morë",
-        "fizzbuzz": "CalëMorë"
-      },
-      "constructs": {
-        "assign": "x = 42",
-        "output": ">> \"Namárië\" ¶",
-        "if": "? x > 0 { >> \"námo\" ¶ }",
-        "else_if": "_? x == 0 { >> \"minë\" ¶ }",
-        "else": "_ { >> \"lá\" ¶ }",
-        "function": "carna(nótë) { <~ nótë * 2 }",
-        "loop": "@ i:1..10 { >> i \" \" }",
-        "full": "// FizzBuzz — Quenya\n// Esseli Quenya. Carvalë ilya simboyainen.\n\n>> \"Namárië\" ¶\n\ncarna(nótë) {\n    ? nótë % 15 == 0 { <~ \"CalëMorë\" }\n    _? nótë % 3  == 0 { <~ \"Calë\" }\n    _? nótë % 5  == 0 { <~ \"Morë\" }\n    _ { <~ nótë }\n}\n@ i:1..15 { >> carna(i) ¶ }"
-      }
-    },
-    {
-      "id": "sindarin",
-      "name": "Sindarin",
-      "native": "Sindarin",
-      "dir": "ltr",
-      "region": "universal",
-      "tokens": {
-        "greeting": "Mae govannen",
-        "func": "gerio",
-        "param": "norn",
-        "fizz": "Galad",
-        "buzz": "Dûn",
-        "fizzbuzz": "GaladDûn"
-      },
-      "constructs": {
-        "assign": "x = 42",
-        "output": ">> \"Mae govannen\" ¶",
-        "if": "? x > 0 { >> \"î\" ¶ }",
-        "else_if": "_? x == 0 { >> \"min\" ¶ }",
-        "else": "_ { >> \"ú\" ¶ }",
-        "function": "gerio(norn) { <~ norn * 2 }",
-        "loop": "@ i:1..10 { >> i \" \" }",
-        "full": "// FizzBuzz — Sindarin\n// Anw i Sindarin. I operatoriath ir gwanathol saew.\n\n>> \"Mae govannen\" ¶\n\ngerio(norn) {\n    ? norn % 15 == 0 { <~ \"GaladDûn\" }\n    _? norn % 3  == 0 { <~ \"Galad\" }\n    _? norn % 5  == 0 { <~ \"Dûn\" }\n    _ { <~ norn }\n}\n@ i:1..15 { >> gerio(i) ¶ }"
-      }
-    },
-    {
-      "id": "dothraki",
-      "name": "Dothraki",
-      "native": "Dothraki",
-      "dir": "ltr",
-      "region": "universal",
-      "tokens": {
-        "greeting": "M'athchomaroon",
-        "func": "astat",
-        "param": "eveth",
-        "fizz": "Fizzat",
-        "buzz": "Buzzat",
-        "fizzbuzz": "FizzatBuzzat"
-      },
-      "constructs": {
-        "assign": "x = 42",
-        "output": ">> \"M'athchomaroon\" ¶",
-        "if": "? x > 0 { >> \"hash\" ¶ }",
-        "else_if": "_? x == 0 { >> \"at\" ¶ }",
-        "else": "_ { >> \"vos\" ¶ }",
-        "function": "astat(eveth) { <~ eveth * 2 }",
-        "loop": "@ i:1..10 { >> i \" \" }",
-        "full": "// FizzBuzz — Dothraki\n// Adori dothraki. Vorsqoyi shafkea athvísir.\n\n>> \"M'athchomaroon\" ¶\n\nastat(eveth) {\n    ? eveth % 15 == 0 { <~ \"FizzatBuzzat\" }\n    _? eveth % 3  == 0 { <~ \"Fizzat\" }\n    _? eveth % 5  == 0 { <~ \"Buzzat\" }\n    _ { <~ eveth }\n}\n@ i:1..15 { >> astat(i) ¶ }"
-      }
-    },
-    {
-      "id": "high_valyrian",
-      "name": "High Valyrian",
-      "native": "High Valyrian",
-      "dir": "ltr",
-      "region": "universal",
-      "tokens": {
-        "greeting": "Rytsas",
-        "func": "tymagon",
-        "param": "lentor",
-        "fizz": "Dracarys",
-        "buzz": "Valar",
-        "fizzbuzz": "DracarysValar"
-      },
-      "constructs": {
-        "assign": "x = 42",
-        "output": ">> \"Rytsas\" ¶",
-        "if": "? x > 0 { >> \"iksan\" ¶ }",
-        "else_if": "_? x == 0 { >> \"mēre\" ¶ }",
-        "else": "_ { >> \"daor\" ¶ }",
-        "function": "tymagon(lentor) { <~ lentor * 2 }",
-        "loop": "@ i:1..10 { >> i \" \" }",
-        "full": "// FizzBuzz — High Valyrian\n// Identerī High Valyrian issa. Sytilībi iksā jemī.\n\n>> \"Rytsas\" ¶\n\ntymagon(lentor) {\n    ? lentor % 15 == 0 { <~ \"DracarysValar\" }\n    _? lentor % 3  == 0 { <~ \"Dracarys\" }\n    _? lentor % 5  == 0 { <~ \"Valar\" }\n    _ { <~ lentor }\n}\n@ i:1..15 { >> tymagon(i) ¶ }"
-      }
-    },
-    {
-      "id": "navi",
-      "name": "Na'vi",
-      "native": "Lì'fya leNa'vi",
-      "dir": "ltr",
-      "region": "universal",
-      "tokens": {
-        "greeting": "Oel ngati kameie",
-        "func": "tìkan",
-        "param": "tìfya",
-        "fizz": "Eywa",
-        "buzz": "Toruk",
-        "fizzbuzz": "EywaToruk"
-      },
-      "constructs": {
-        "assign": "x = 42",
-        "output": ">> \"Oel ngati kameie\" ¶",
-        "if": "? x > 0 { >> \"srane\" ¶ }",
-        "else_if": "_? x == 0 { >> \"ke\" ¶ }",
-        "else": "_ { >> \"txoa\" ¶ }",
-        "function": "tìkan(tìfya) { <~ tìfya * 2 }",
-        "loop": "@ i:1..10 { >> i \" \" }",
-        "full": "// FizzBuzz — Na'vi\n// Tìtstxolì'u leNa'vi. Tìran sìltseo nìwotx.\n\n>> \"Oel ngati kameie\" ¶\n\ntìkan(tìfya) {\n    ? tìfya % 15 == 0 { <~ \"EywaToruk\" }\n    _? tìfya % 3  == 0 { <~ \"Eywa\" }\n    _? tìfya % 5  == 0 { <~ \"Toruk\" }\n    _ { <~ tìfya }\n}\n@ i:1..15 { >> tìkan(i) ¶ }"
-      }
-    },
-    {
       "id": "klingon_piqad",
       "name": "Klingon pIqaD",
       "native": " ",
@@ -2576,6 +2353,342 @@
         "function": "() { <~  * 2 }",
         "loop": "@ i:.. { >> i \" \" }",
         "full": "// FizzBuzz —  \n// : . : .\n\n>> \"\" ¶\n\n() {\n    ?  %  ==  { <~ \"\" }\n    _?  %   ==  { <~ \"\" }\n    _?  %   ==  { <~ \"\" }\n    _ { <~  }\n}\n\n@ :.. {\n    >> () ¶\n}"
+      }
+    },
+    {
+      "id": "haitian_creole",
+      "name": "Haitian Creole",
+      "native": "Kreyòl ayisyen",
+      "dir": "ltr",
+      "tokens": {
+        "greeting": "Bonjou, Mond Kreyòl!",
+        "func": "klase",
+        "param": "nimewo",
+        "fizz": "boul",
+        "buzz": "bwi",
+        "fizzbuzz": "boulbwi"
+      },
+      "constructs": {
+        "assign": "nimewo = 42\nnom = \"Bonjou, Mond\"",
+        "output": ">> \"Bonjou, Mond Kreyòl!\" ¶",
+        "if": "? nimewo % 15 == 0 {\n    >> \"boulbwi\" ¶\n}",
+        "else_if": "? nimewo % 15 == 0 {\n    >> \"boulbwi\" ¶\n}\n_? nimewo % 3 == 0 {\n    >> \"boul\" ¶\n}\n_? nimewo % 5 == 0 {\n    >> \"bwi\" ¶\n}",
+        "else": "? nimewo % 15 == 0 {\n    >> \"boulbwi\" ¶\n}\n_? nimewo % 3 == 0 {\n    >> \"boul\" ¶\n}\n_? nimewo % 5 == 0 {\n    >> \"bwi\" ¶\n}\n_ {\n    >> nimewo ¶\n}",
+        "function": "klase(nimewo) {\n    ? nimewo % 15 == 0 { <~ \"boulbwi\" }\n    _? nimewo % 3  == 0 { <~ \"boul\" }\n    _? nimewo % 5  == 0 { <~ \"bwi\" }\n    _ { <~ nimewo }\n}",
+        "loop": "@ i:1..15 {\n    >> klase(i) ¶\n}",
+        "full": "// FizzBuzz — Kreyòl ayisyen\n// Identifiers in Kreyòl. Operators are always symbolic.\n\n>> \"Bonjou, Mond Kreyòl!\" ¶\n\nklase(nimewo) {\n    ? nimewo % 15 == 0 { <~ \"boulbwi\" }\n    _? nimewo % 3  == 0 { <~ \"boul\" }\n    _? nimewo % 5  == 0 { <~ \"bwi\" }\n    _ { <~ nimewo }\n}\n\n@ i:1..15 {\n    >> klase(i) ¶\n}"
+      }
+    },
+    {
+      "id": "jamaican_patois",
+      "name": "Jamaican Patois",
+      "native": "Patwa",
+      "dir": "ltr",
+      "tokens": {
+        "greeting": "Wah gwaan, Jamaica Yaad!",
+        "func": "sort_out",
+        "param": "namba",
+        "fizz": "Fizz",
+        "buzz": "Buzz",
+        "fizzbuzz": "FizzBuzz"
+      },
+      "constructs": {
+        "assign": "namba = 42\nname = \"Wah gwaan\"",
+        "output": ">> \"Wah gwaan, Jamaica Yaad!\" ¶",
+        "if": "? namba % 15 == 0 {\n    >> \"FizzBuzz\" ¶\n}",
+        "else_if": "? namba % 15 == 0 {\n    >> \"FizzBuzz\" ¶\n}\n_? namba % 3 == 0 {\n    >> \"Fizz\" ¶\n}\n_? namba % 5 == 0 {\n    >> \"Buzz\" ¶\n}",
+        "else": "? namba % 15 == 0 {\n    >> \"FizzBuzz\" ¶\n}\n_? namba % 3 == 0 {\n    >> \"Fizz\" ¶\n}\n_? namba % 5 == 0 {\n    >> \"Buzz\" ¶\n}\n_ {\n    >> namba ¶\n}",
+        "function": "sort_out(namba) {\n    ? namba % 15 == 0 { <~ \"FizzBuzz\" }\n    _? namba % 3  == 0 { <~ \"Fizz\" }\n    _? namba % 5  == 0 { <~ \"Buzz\" }\n    _ { <~ namba }\n}",
+        "loop": "@ i:1..15 {\n    >> sort_out(i) ¶\n}",
+        "full": "// FizzBuzz — Patwa\n// Identifiers in Patwa. Operators are always symbolic.\n\n>> \"Wah gwaan, Jamaica Yaad!\" ¶\n\nsort_out(namba) {\n    ? namba % 15 == 0 { <~ \"FizzBuzz\" }\n    _? namba % 3  == 0 { <~ \"Fizz\" }\n    _? namba % 5  == 0 { <~ \"Buzz\" }\n    _ { <~ namba }\n}\n\n@ i:1..15 {\n    >> sort_out(i) ¶\n}"
+      }
+    },
+    {
+      "id": "javanese",
+      "name": "Javanese",
+      "native": "Basa Jawa",
+      "dir": "ltr",
+      "tokens": {
+        "greeting": "Halo, jagad nganggo basa Jawa!",
+        "func": "pilah",
+        "param": "nomer",
+        "fizz": "kembang",
+        "buzz": "muni",
+        "fizzbuzz": "kembangmuni"
+      },
+      "constructs": {
+        "assign": "nomer = 42\naran = \"Halo, jagad\"",
+        "output": ">> \"Halo, jagad nganggo basa Jawa!\" ¶",
+        "if": "? nomer % 15 == 0 {\n    >> \"kembangmuni\" ¶\n}",
+        "else_if": "? nomer % 15 == 0 {\n    >> \"kembangmuni\" ¶\n}\n_? nomer % 3 == 0 {\n    >> \"kembang\" ¶\n}\n_? nomer % 5 == 0 {\n    >> \"muni\" ¶\n}",
+        "else": "? nomer % 15 == 0 {\n    >> \"kembangmuni\" ¶\n}\n_? nomer % 3 == 0 {\n    >> \"kembang\" ¶\n}\n_? nomer % 5 == 0 {\n    >> \"muni\" ¶\n}\n_ {\n    >> nomer ¶\n}",
+        "function": "pilah(nomer) {\n    ? nomer % 15 == 0 { <~ \"kembangmuni\" }\n    _? nomer % 3  == 0 { <~ \"kembang\" }\n    _? nomer % 5  == 0 { <~ \"muni\" }\n    _ { <~ nomer }\n}",
+        "loop": "@ i:1..15 {\n    >> pilah(i) ¶\n}",
+        "full": "// FizzBuzz — Basa Jawa\n// Identifiers in Basa Jawa. Operators are always symbolic.\n\n>> \"Halo, jagad nganggo basa Jawa!\" ¶\n\npilah(nomer) {\n    ? nomer % 15 == 0 { <~ \"kembangmuni\" }\n    _? nomer % 3  == 0 { <~ \"kembang\" }\n    _? nomer % 5  == 0 { <~ \"muni\" }\n    _ { <~ nomer }\n}\n\n@ i:1..15 {\n    >> pilah(i) ¶\n}"
+      }
+    },
+    {
+      "id": "khmer",
+      "name": "Khmer",
+      "native": "ភាសាខ្មែរ",
+      "dir": "ltr",
+      "tokens": {
+        "greeting": "ជំរាបសួរ ពិភពលោក!",
+        "func": "ចាត",
+        "param": "លេខ",
+        "fizz": "ពហ",
+        "buzz": "មរ",
+        "fizzbuzz": "ពហមរ"
+      },
+      "constructs": {
+        "assign": "លេខ = 42\nឈ = \"ជំរាបសួរ\"",
+        "output": ">> \"ជំរាបសួរ ពិភពលោក!\" ¶",
+        "if": "? លេខ % 15 == 0 {\n    >> \"ពហមរ\" ¶\n}",
+        "else_if": "? លេខ % 15 == 0 {\n    >> \"ពហមរ\" ¶\n}\n_? លេខ % 3 == 0 {\n    >> \"ពហ\" ¶\n}\n_? លេខ % 5 == 0 {\n    >> \"មរ\" ¶\n}",
+        "else": "? លេខ % 15 == 0 {\n    >> \"ពហមរ\" ¶\n}\n_? លេខ % 3 == 0 {\n    >> \"ពហ\" ¶\n}\n_? លេខ % 5 == 0 {\n    >> \"មរ\" ¶\n}\n_ {\n    >> លេខ ¶\n}",
+        "function": "ចាត(លេខ) {\n    ? លេខ % 15 == 0 { <~ \"ពហមរ\" }\n    _? លេខ % 3  == 0 { <~ \"ពហ\" }\n    _? លេខ % 5  == 0 { <~ \"មរ\" }\n    _ { <~ លេខ }\n}",
+        "loop": "@ ន:1..15 {\n    >> ចាត(ន) ¶\n}",
+        "full": "// FizzBuzz — ភាសាខ្មែរ\n// Identifiers in ភាសាខ្មែរ. Operators are always symbolic.\n\n>> \"ជំរាបសួរ ពិភពលោក!\" ¶\n\nចាត(លេខ) {\n    ? លេខ % 15 == 0 { <~ \"ពហមរ\" }\n    _? លេខ % 3  == 0 { <~ \"ពហ\" }\n    _? លេខ % 5  == 0 { <~ \"មរ\" }\n    _ { <~ លេខ }\n}\n\n@ ន:1..15 {\n    >> ចាត(ន) ¶\n}"
+      }
+    },
+    {
+      "id": "luganda",
+      "name": "Luganda",
+      "native": "Luganda",
+      "dir": "ltr",
+      "tokens": {
+        "greeting": "Oli otya, Ensi eyogera Luganda!",
+        "func": "tegeka",
+        "param": "omuwendo",
+        "fizz": "bubula",
+        "buzz": "kuuma",
+        "fizzbuzz": "bubulaKuuma"
+      },
+      "constructs": {
+        "assign": "omuwendo = 42\nezina = \"Oli otya\"",
+        "output": ">> \"Oli otya, Ensi eyogera Luganda!\" ¶",
+        "if": "? omuwendo % 15 == 0 {\n    >> \"bubulaKuuma\" ¶\n}",
+        "else_if": "? omuwendo % 15 == 0 {\n    >> \"bubulaKuuma\" ¶\n}\n_? omuwendo % 3 == 0 {\n    >> \"bubula\" ¶\n}\n_? omuwendo % 5 == 0 {\n    >> \"kuuma\" ¶\n}",
+        "else": "? omuwendo % 15 == 0 {\n    >> \"bubulaKuuma\" ¶\n}\n_? omuwendo % 3 == 0 {\n    >> \"bubula\" ¶\n}\n_? omuwendo % 5 == 0 {\n    >> \"kuuma\" ¶\n}\n_ {\n    >> omuwendo ¶\n}",
+        "function": "tegeka(omuwendo) {\n    ? omuwendo % 15 == 0 { <~ \"bubulaKuuma\" }\n    _? omuwendo % 3  == 0 { <~ \"bubula\" }\n    _? omuwendo % 5  == 0 { <~ \"kuuma\" }\n    _ { <~ omuwendo }\n}",
+        "loop": "@ i:1..15 {\n    >> tegeka(i) ¶\n}",
+        "full": "// FizzBuzz — Luganda\n// Identifiers in Luganda. Operators are always symbolic.\n\n>> \"Oli otya, Ensi eyogera Luganda!\" ¶\n\ntegeka(omuwendo) {\n    ? omuwendo % 15 == 0 { <~ \"bubulaKuuma\" }\n    _? omuwendo % 3  == 0 { <~ \"bubula\" }\n    _? omuwendo % 5  == 0 { <~ \"kuuma\" }\n    _ { <~ omuwendo }\n}\n\n@ i:1..15 {\n    >> tegeka(i) ¶\n}"
+      }
+    },
+    {
+      "id": "lao",
+      "name": "Lao",
+      "native": "ພາສາລາວ",
+      "dir": "ltr",
+      "tokens": {
+        "greeting": "ສະບາຍດີ, ໂລກລາວ!",
+        "func": "ຈັດ",
+        "param": "ເລກ",
+        "fizz": "ຟ",
+        "buzz": "ສ",
+        "fizzbuzz": "ຟສ"
+      },
+      "constructs": {
+        "assign": "ເລກ = 42\nຊ = \"ສະບາຍດີ\"",
+        "output": ">> \"ສະບາຍດີ, ໂລກລາວ!\" ¶",
+        "if": "? ເລກ % 15 == 0 {\n    >> \"ຟສ\" ¶\n}",
+        "else_if": "? ເລກ % 15 == 0 {\n    >> \"ຟສ\" ¶\n}\n_? ເລກ % 3 == 0 {\n    >> \"ຟ\" ¶\n}\n_? ເລກ % 5 == 0 {\n    >> \"ສ\" ¶\n}",
+        "else": "? ເລກ % 15 == 0 {\n    >> \"ຟສ\" ¶\n}\n_? ເລກ % 3 == 0 {\n    >> \"ຟ\" ¶\n}\n_? ເລກ % 5 == 0 {\n    >> \"ສ\" ¶\n}\n_ {\n    >> ເລກ ¶\n}",
+        "function": "ຈັດ(ເລກ) {\n    ? ເລກ % 15 == 0 { <~ \"ຟສ\" }\n    _? ເລກ % 3  == 0 { <~ \"ຟ\" }\n    _? ເລກ % 5  == 0 { <~ \"ສ\" }\n    _ { <~ ເລກ }\n}",
+        "loop": "@ ນ:1..15 {\n    >> ຈັດ(ນ) ¶\n}",
+        "full": "// FizzBuzz — ພາສາລາວ\n// Identifiers in ພາສາລາວ. Operators are always symbolic.\n\n>> \"ສະບາຍດີ, ໂລກລາວ!\" ¶\n\nຈັດ(ເລກ) {\n    ? ເລກ % 15 == 0 { <~ \"ຟສ\" }\n    _? ເລກ % 3  == 0 { <~ \"ຟ\" }\n    _? ເລກ % 5  == 0 { <~ \"ສ\" }\n    _ { <~ ເລກ }\n}\n\n@ ນ:1..15 {\n    >> ຈັດ(ນ) ¶\n}"
+      }
+    },
+    {
+      "id": "nyanja",
+      "name": "Nyanja",
+      "native": "Chichewa",
+      "dir": "ltr",
+      "tokens": {
+        "greeting": "Moni, Dziko la Nyanja!",
+        "func": "gawa",
+        "param": "nambala",
+        "fizz": "povu",
+        "buzz": "phokoso",
+        "fizzbuzz": "povuPhokoso"
+      },
+      "constructs": {
+        "assign": "nambala = 42\ndzina = \"Moni, Dziko\"",
+        "output": ">> \"Moni, Dziko la Nyanja!\" ¶",
+        "if": "? nambala % 15 == 0 {\n    >> \"povuPhokoso\" ¶\n}",
+        "else_if": "? nambala % 15 == 0 {\n    >> \"povuPhokoso\" ¶\n}\n_? nambala % 3 == 0 {\n    >> \"povu\" ¶\n}\n_? nambala % 5 == 0 {\n    >> \"phokoso\" ¶\n}",
+        "else": "? nambala % 15 == 0 {\n    >> \"povuPhokoso\" ¶\n}\n_? nambala % 3 == 0 {\n    >> \"povu\" ¶\n}\n_? nambala % 5 == 0 {\n    >> \"phokoso\" ¶\n}\n_ {\n    >> nambala ¶\n}",
+        "function": "gawa(nambala) {\n    ? nambala % 15 == 0 { <~ \"povuPhokoso\" }\n    _? nambala % 3  == 0 { <~ \"povu\" }\n    _? nambala % 5  == 0 { <~ \"phokoso\" }\n    _ { <~ nambala }\n}",
+        "loop": "@ i:1..15 {\n    >> gawa(i) ¶\n}",
+        "full": "// FizzBuzz — Chichewa\n// Identifiers in Chichewa/Nyanja. Operators are always symbolic.\n\n>> \"Moni, Dziko la Nyanja!\" ¶\n\ngawa(nambala) {\n    ? nambala % 15 == 0 { <~ \"povuPhokoso\" }\n    _? nambala % 3  == 0 { <~ \"povu\" }\n    _? nambala % 5  == 0 { <~ \"phokoso\" }\n    _ { <~ nambala }\n}\n\n@ i:1..15 {\n    >> gawa(i) ¶\n}"
+      }
+    },
+    {
+      "id": "nigerian_pidgin",
+      "name": "Nigerian Pidgin",
+      "native": "Naijá",
+      "dir": "ltr",
+      "tokens": {
+        "greeting": "How you dey, Naija!",
+        "func": "sort_am",
+        "param": "nomba",
+        "fizz": "Fizz",
+        "buzz": "Buzz",
+        "fizzbuzz": "FizzBuzz"
+      },
+      "constructs": {
+        "assign": "nomba = 42\nname = \"How you dey\"",
+        "output": ">> \"How you dey, Naija!\" ¶",
+        "if": "? nomba % 15 == 0 {\n    >> \"FizzBuzz\" ¶\n}",
+        "else_if": "? nomba % 15 == 0 {\n    >> \"FizzBuzz\" ¶\n}\n_? nomba % 3 == 0 {\n    >> \"Fizz\" ¶\n}\n_? nomba % 5 == 0 {\n    >> \"Buzz\" ¶\n}",
+        "else": "? nomba % 15 == 0 {\n    >> \"FizzBuzz\" ¶\n}\n_? nomba % 3 == 0 {\n    >> \"Fizz\" ¶\n}\n_? nomba % 5 == 0 {\n    >> \"Buzz\" ¶\n}\n_ {\n    >> nomba ¶\n}",
+        "function": "sort_am(nomba) {\n    ? nomba % 15 == 0 { <~ \"FizzBuzz\" }\n    _? nomba % 3  == 0 { <~ \"Fizz\" }\n    _? nomba % 5  == 0 { <~ \"Buzz\" }\n    _ { <~ nomba }\n}",
+        "loop": "@ i:1..15 {\n    >> sort_am(i) ¶\n}",
+        "full": "// FizzBuzz — Naijá\n// Identifiers in Naijá. Operators are always symbolic.\n\n>> \"How you dey, Naija!\" ¶\n\nsort_am(nomba) {\n    ? nomba % 15 == 0 { <~ \"FizzBuzz\" }\n    _? nomba % 3  == 0 { <~ \"Fizz\" }\n    _? nomba % 5  == 0 { <~ \"Buzz\" }\n    _ { <~ nomba }\n}\n\n@ i:1..15 {\n    >> sort_am(i) ¶\n}"
+      }
+    },
+    {
+      "id": "pashto",
+      "name": "Pashto",
+      "native": "پښتو",
+      "dir": "rtl",
+      "tokens": {
+        "greeting": "سلام، د پښتو ژبې نړۍ!",
+        "func": "ډول",
+        "param": "شمیر",
+        "fizz": "بلبله",
+        "buzz": "وزوز",
+        "fizzbuzz": "بلبلهوزوز"
+      },
+      "constructs": {
+        "assign": "شمیر = 42\nنوم = \"سلام، پښتو\"",
+        "output": ">> \"سلام، د پښتو ژبې نړۍ!\" ¶",
+        "if": "? شمیر % 15 == 0 {\n    >> \"بلبلهوزوز\" ¶\n}",
+        "else_if": "? شمیر % 15 == 0 {\n    >> \"بلبلهوزوز\" ¶\n}\n_? شمیر % 3 == 0 {\n    >> \"بلبله\" ¶\n}\n_? شمیر % 5 == 0 {\n    >> \"وزوز\" ¶\n}",
+        "else": "? شمیر % 15 == 0 {\n    >> \"بلبلهوزوز\" ¶\n}\n_? شمیر % 3 == 0 {\n    >> \"بلبله\" ¶\n}\n_? شمیر % 5 == 0 {\n    >> \"وزوز\" ¶\n}\n_ {\n    >> شمیر ¶\n}",
+        "function": "ډول(شمیر) {\n    ? شمیر % 15 == 0 { <~ \"بلبلهوزوز\" }\n    _? شمیر % 3  == 0 { <~ \"بلبله\" }\n    _? شمیر % 5  == 0 { <~ \"وزوز\" }\n    _ { <~ شمیر }\n}",
+        "loop": "@ ن:1..15 {\n    >> ډول(ن) ¶\n}",
+        "full": "// FizzBuzz — پښتو\n// Identifiers in پښتو. Operators are always symbolic.\n\n>> \"سلام، د پښتو ژبې نړۍ!\" ¶\n\nډول(شمیر) {\n    ? شمیر % 15 == 0 { <~ \"بلبلهوزوز\" }\n    _? شمیر % 3  == 0 { <~ \"بلبله\" }\n    _? شمیر % 5  == 0 { <~ \"وزوز\" }\n    _ { <~ شمیر }\n}\n\n@ ن:1..15 {\n    >> ډول(ن) ¶\n}"
+      }
+    },
+    {
+      "id": "kiche",
+      "name": "K'iche'",
+      "native": "K'iche'",
+      "dir": "ltr",
+      "tokens": {
+        "greeting": "Utz awach, k'aslemal!",
+        "func": "tzijonik",
+        "param": "uwuj",
+        "fizz": "poq",
+        "buzz": "chajij",
+        "fizzbuzz": "poqchajij"
+      },
+      "constructs": {
+        "assign": "uwuj = 42\nubi = \"Utz awach\"",
+        "output": ">> \"Utz awach, k'aslemal!\" ¶",
+        "if": "? uwuj % 15 == 0 {\n    >> \"poqchajij\" ¶\n}",
+        "else_if": "? uwuj % 15 == 0 {\n    >> \"poqchajij\" ¶\n}\n_? uwuj % 3 == 0 {\n    >> \"poq\" ¶\n}\n_? uwuj % 5 == 0 {\n    >> \"chajij\" ¶\n}",
+        "else": "? uwuj % 15 == 0 {\n    >> \"poqchajij\" ¶\n}\n_? uwuj % 3 == 0 {\n    >> \"poq\" ¶\n}\n_? uwuj % 5 == 0 {\n    >> \"chajij\" ¶\n}\n_ {\n    >> uwuj ¶\n}",
+        "function": "tzijonik(uwuj) {\n    ? uwuj % 15 == 0 { <~ \"poqchajij\" }\n    _? uwuj % 3  == 0 { <~ \"poq\" }\n    _? uwuj % 5  == 0 { <~ \"chajij\" }\n    _ { <~ uwuj }\n}",
+        "loop": "@ i:1..15 {\n    >> tzijonik(i) ¶\n}",
+        "full": "// FizzBuzz — K'iche'\n// Identifiers in K'iche'. Operators are always symbolic.\n\n>> \"Utz awach, k'aslemal!\" ¶\n\ntzijonik(uwuj) {\n    ? uwuj % 15 == 0 { <~ \"poqchajij\" }\n    _? uwuj % 3  == 0 { <~ \"poq\" }\n    _? uwuj % 5  == 0 { <~ \"chajij\" }\n    _ { <~ uwuj }\n}\n\n@ i:1..15 {\n    >> tzijonik(i) ¶\n}"
+      }
+    },
+    {
+      "id": "sundanese",
+      "name": "Sundanese",
+      "native": "Basa Sunda",
+      "dir": "ltr",
+      "tokens": {
+        "greeting": "Wilujeng sumping, dunya Sunda!",
+        "func": "asup",
+        "param": "wilangan",
+        "fizz": "kembung",
+        "buzz": "sora",
+        "fizzbuzz": "kembungSora"
+      },
+      "constructs": {
+        "assign": "wilangan = 42\nngaran = \"Wilujeng sumping\"",
+        "output": ">> \"Wilujeng sumping, dunya Sunda!\" ¶",
+        "if": "? wilangan % 15 == 0 {\n    >> \"kembungSora\" ¶\n}",
+        "else_if": "? wilangan % 15 == 0 {\n    >> \"kembungSora\" ¶\n}\n_? wilangan % 3 == 0 {\n    >> \"kembung\" ¶\n}\n_? wilangan % 5 == 0 {\n    >> \"sora\" ¶\n}",
+        "else": "? wilangan % 15 == 0 {\n    >> \"kembungSora\" ¶\n}\n_? wilangan % 3 == 0 {\n    >> \"kembung\" ¶\n}\n_? wilangan % 5 == 0 {\n    >> \"sora\" ¶\n}\n_ {\n    >> wilangan ¶\n}",
+        "function": "asup(wilangan) {\n    ? wilangan % 15 == 0 { <~ \"kembungSora\" }\n    _? wilangan % 3  == 0 { <~ \"kembung\" }\n    _? wilangan % 5  == 0 { <~ \"sora\" }\n    _ { <~ wilangan }\n}",
+        "loop": "@ i:1..15 {\n    >> asup(i) ¶\n}",
+        "full": "// FizzBuzz — Basa Sunda\n// Identifiers in Basa Sunda. Operators are always symbolic.\n\n>> \"Wilujeng sumping, dunya Sunda!\" ¶\n\nasup(wilangan) {\n    ? wilangan % 15 == 0 { <~ \"kembungSora\" }\n    _? wilangan % 3  == 0 { <~ \"kembung\" }\n    _? wilangan % 5  == 0 { <~ \"sora\" }\n    _ { <~ wilangan }\n}\n\n@ i:1..15 {\n    >> asup(i) ¶\n}"
+      }
+    },
+    {
+      "id": "setswana",
+      "name": "Setswana",
+      "native": "Setswana",
+      "dir": "ltr",
+      "tokens": {
+        "greeting": "Dumela, Lefatshe la Setswana!",
+        "func": "kgaoganya",
+        "param": "nomoro",
+        "fizz": "Fizz",
+        "buzz": "Buzz",
+        "fizzbuzz": "FizzBuzz"
+      },
+      "constructs": {
+        "assign": "nomoro = 42\nleina = \"Dumela\"",
+        "output": ">> \"Dumela, Lefatshe la Setswana!\" ¶",
+        "if": "? nomoro % 15 == 0 {\n    >> \"FizzBuzz\" ¶\n}",
+        "else_if": "? nomoro % 15 == 0 {\n    >> \"FizzBuzz\" ¶\n}\n_? nomoro % 3 == 0 {\n    >> \"Fizz\" ¶\n}\n_? nomoro % 5 == 0 {\n    >> \"Buzz\" ¶\n}",
+        "else": "? nomoro % 15 == 0 {\n    >> \"FizzBuzz\" ¶\n}\n_? nomoro % 3 == 0 {\n    >> \"Fizz\" ¶\n}\n_? nomoro % 5 == 0 {\n    >> \"Buzz\" ¶\n}\n_ {\n    >> nomoro ¶\n}",
+        "function": "kgaoganya(nomoro) {\n    ? nomoro % 15 == 0 { <~ \"FizzBuzz\" }\n    _? nomoro % 3  == 0 { <~ \"Fizz\" }\n    _? nomoro % 5  == 0 { <~ \"Buzz\" }\n    _ { <~ nomoro }\n}",
+        "loop": "@ i:1..15 {\n    >> kgaoganya(i) ¶\n}",
+        "full": "// FizzBuzz — Setswana\n// Identifiers in Setswana. Operators are always symbolic.\n\n>> \"Dumela, Lefatshe la Setswana!\" ¶\n\nkgaoganya(nomoro) {\n    ? nomoro % 15 == 0 { <~ \"FizzBuzz\" }\n    _? nomoro % 3  == 0 { <~ \"Fizz\" }\n    _? nomoro % 5  == 0 { <~ \"Buzz\" }\n    _ { <~ nomoro }\n}\n\n@ i:1..15 {\n    >> kgaoganya(i) ¶\n}"
+      }
+    },
+    {
+      "id": "malayalam",
+      "name": "Malayalam",
+      "native": "മലയാളം",
+      "dir": "ltr",
+      "tokens": {
+        "greeting": "ഹലോ, മലയാള ലോകം!",
+        "func": "തരം",
+        "param": "സംഖ്യ",
+        "fizz": "കുമിള",
+        "buzz": "മൂളൽ",
+        "fizzbuzz": "കുമിളമൂളൽ"
+      },
+      "constructs": {
+        "assign": "സംഖ്യ = 42\nപേര് = \"ഹലോ\"",
+        "output": ">> \"ഹലോ, മലയാള ലോകം!\" ¶",
+        "if": "? സംഖ്യ % 15 == 0 {\n    >> \"കുമിളമൂളൽ\" ¶\n}",
+        "else_if": "? സംഖ്യ % 15 == 0 {\n    >> \"കുമിളമൂളൽ\" ¶\n}\n_? സംഖ്യ % 3 == 0 {\n    >> \"കുമിള\" ¶\n}\n_? സംഖ്യ % 5 == 0 {\n    >> \"മൂളൽ\" ¶\n}",
+        "else": "? സംഖ്യ % 15 == 0 {\n    >> \"കുമിളമൂളൽ\" ¶\n}\n_? സംഖ്യ % 3 == 0 {\n    >> \"കുമിള\" ¶\n}\n_? സംഖ്യ % 5 == 0 {\n    >> \"മൂളൽ\" ¶\n}\n_ {\n    >> സംഖ്യ ¶\n}",
+        "function": "തരം(സംഖ്യ) {\n    ? സംഖ്യ % 15 == 0 { <~ \"കുമിളമൂളൽ\" }\n    _? സംഖ്യ % 3  == 0 { <~ \"കുമിള\" }\n    _? സംഖ്യ % 5  == 0 { <~ \"മൂളൽ\" }\n    _ { <~ സംഖ്യ }\n}",
+        "loop": "@ ന:1..15 {\n    >> തരം(ന) ¶\n}",
+        "full": "// FizzBuzz — മലയാളം\n// Identifiers in മലയാളം. Operators are always symbolic.\n\n>> \"ഹലോ, മലയാള ലോകം!\" ¶\n\nതരം(സംഖ്യ) {\n    ? സംഖ്യ % 15 == 0 { <~ \"കുമിളമൂളൽ\" }\n    _? സംഖ്യ % 3  == 0 { <~ \"കുമിള\" }\n    _? സംഖ്യ % 5  == 0 { <~ \"മൂളൽ\" }\n    _ { <~ സംഖ്യ }\n}\n\n@ ന:1..15 {\n    >> തരം(ന) ¶\n}"
+      }
+    },
+    {
+      "id": "sinhala",
+      "name": "Sinhala",
+      "native": "සිංහල",
+      "dir": "ltr",
+      "tokens": {
+        "greeting": "හෙලෝ, සිංහල ලෝකය!",
+        "func": "වර්ගය",
+        "param": "අංකය",
+        "fizz": "බුබුළ",
+        "buzz": "ශබ්දය",
+        "fizzbuzz": "බුබුළශබ්දය"
+      },
+      "constructs": {
+        "assign": "අංකය = 42\nනාමය = \"හෙලෝ\"",
+        "output": ">> \"හෙලෝ, සිංහල ලෝකය!\" ¶",
+        "if": "? අංකය % 15 == 0 {\n    >> \"බුබුළශබ්දය\" ¶\n}",
+        "else_if": "? අංකය % 15 == 0 {\n    >> \"බුබුළශබ්දය\" ¶\n}\n_? අංකය % 3 == 0 {\n    >> \"බුබුළ\" ¶\n}\n_? අංකය % 5 == 0 {\n    >> \"ශබ්දය\" ¶\n}",
+        "else": "? අංකය % 15 == 0 {\n    >> \"බුබුළශබ්දය\" ¶\n}\n_? අංකය % 3 == 0 {\n    >> \"බුබුළ\" ¶\n}\n_? අංකය % 5 == 0 {\n    >> \"ශබ්දය\" ¶\n}\n_ {\n    >> අංකය ¶\n}",
+        "function": "වර්ගය(අංකය) {\n    ? අංකය % 15 == 0 { <~ \"බුබුළශබ්දය\" }\n    _? අංකය % 3  == 0 { <~ \"බුබුළ\" }\n    _? අංකය % 5  == 0 { <~ \"ශබ්දය\" }\n    _ { <~ අංකය }\n}",
+        "loop": "@ න:1..15 {\n    >> වර්ගය(න) ¶\n}",
+        "full": "// FizzBuzz — සිංහල\n// Identifiers in සිංහල. Operators are always symbolic.\n\n>> \"හෙලෝ, සිංහල ලෝකය!\" ¶\n\nවර්ගය(අංකය) {\n    ? අංකය % 15 == 0 { <~ \"බුබුළශබ්දය\" }\n    _? අංකය % 3  == 0 { <~ \"බුබුළ\" }\n    _? අංකය % 5  == 0 { <~ \"ශබ්දය\" }\n    _ { <~ අංකය }\n}\n\n@ න:1..15 {\n    >> වර්ගය(න) ¶\n}"
       }
     }
   ]
