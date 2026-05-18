@@ -67,7 +67,7 @@ async function runWeb(file, src) {
     await runZymbol(
       src, async () => '', text => { out += text; },
       makeModuleResolver(dirname(resolve(file))), file,
-      null, [], { maxSteps: Infinity, maxBytes: Infinity }
+      null, [], { maxSteps: Infinity, maxBytes: Infinity, maxInfiniteIter: Infinity }
     );
   } catch (e) {
     out += `[ERROR] ${e.message ?? e}`;

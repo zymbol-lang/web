@@ -28,18 +28,10 @@
 
 ### RUNTIME_FORMAT — 53 tests
 
-#### Sub-group A: Module help text uses `: alias` instead of `<= alias` (38 tests)
+#### Sub-group A: Module help text mismatch — RESOLVED
 
-All these tests fail because the module-file warning says:
-```
-= help: module 'X' is meant to be imported with <# ./X : alias
-```
-but the CLI emits:
-```
-= help: module 'X' is meant to be imported with <# ./X <= alias
-```
-
-**Fix:** In `web/zymbol.js`, locate the module-file warning construction and change `: alias` to `<= alias`.
+Both web and CLI now emit `<# ./X => alias`. This sub-group was resolved when
+`zymbol.js` was updated to `FAT_ARROW` (`=>`) as the module alias separator.
 
 Affected tests:
 - `bugs/bug001_adaptador.zy`
@@ -310,7 +302,7 @@ The step limit is intentional for the browser. These tests could be excluded fro
 
 ### Priority 1 — Single fix, 38 tests unlocked
 
-Change `': alias'` to `'<= alias'` in the module-file warning help text in `web/zymbol.js`. This is a one-line change that fixes 38 tests.
+~~Change `': alias'` to `'<= alias'` in the module-file warning help text in `web/zymbol.js`.~~ **RESOLVED** — warning now emits `=> alias` (FAT_ARROW), matching the CLI.
 
 ### Priority 2 — Single fix, ~10 more tests improved
 

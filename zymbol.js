@@ -261,7 +261,7 @@ export class Lexer {
         '||': 'OR',     '++': 'INC',    '--': 'DEC',
         '+=': 'PLUS_EQ',  '-=': 'MINUS_EQ', '*=': 'TIMES_EQ',
         '/=': 'DIV_EQ',   '%=': 'MOD_EQ',   '^=': 'POW_EQ',
-        '->': 'ARROW',  '|>': 'PIPE',
+        '->': 'ARROW',  '=>': 'FAT_ARROW',  '|>': 'PIPE',
         '!?': 'TRY',    ':!': 'CATCH',  ':>': 'FINALLY',
         '::': 'SCOPE',
         '\\\\': 'NEWLINE_ESC',
@@ -540,7 +540,7 @@ export class Parser {
     } else {
       path = this.eat('IDENT').value;
     }
-    this.eat('COLON'); // consume :
+    this.eat('FAT_ARROW'); // consume =>
     const alias = this.eat('IDENT').value;
     return { type: 'Import', path, alias };
   }
@@ -562,10 +562,10 @@ export class Parser {
               // Re-export: alias::member or alias.member
               this.adv();
               const member = this.check('IDENT') ? this.adv().value : first;
-              const exported = this.check('COLON') ? (this.adv(), this.check('IDENT') ? this.adv().value : member) : member;
+              const exported = this.check('FAT_ARROW') ? (this.adv(), this.check('IDENT') ? this.adv().value : member) : member;
               names.push({ kind: 'reexport', alias: first, member, exported });
             } else {
-              const exported = this.check('COLON') ? (this.adv(), this.check('IDENT') ? this.adv().value : first) : first;
+              const exported = this.check('FAT_ARROW') ? (this.adv(), this.check('IDENT') ? this.adv().value : first) : first;
               names.push({ kind: 'own', internal: first, exported });
             }
           } else {
@@ -798,7 +798,7 @@ export class Parser {
         pattern = { type: 'literal', value: left };
       }
     }
-    this.eat('COLON');
+    this.eat('FAT_ARROW');
     this.inMatchBody = true;
     const body = this.check('LBRACE')
       ? { type: 'block', stmts: this.parseBlock() }
@@ -2073,9 +2073,9 @@ export class Interpreter {
     this.inputFn         = inputFn;
     this.steps           = 0;
     this.maxSteps        = 50_000;
-    this.maxInfiniteIter = 1_024;
+    this.maxInfiniteIter = 100_000;
     this.outputBytes     = 0;
-    this.maxBytes        = 8_000;
+    this.maxBytes        = 32_000;
     this.lastYield       = performance.now();
     this.numeralMode     = 0x0030;
     this.moduleResolver  = moduleResolver;
@@ -2173,7 +2173,7 @@ export class Interpreter {
   emit(text) {
     this.outputBytes += text.length;
     if (this.outputBytes > this.maxBytes)
-      throw new ZyError('Output limit reached (8 KB) — infinite loop?');
+      throw new ZyError('Output limit reached (32 KB) — infinite loop?');
     if (this.tui && this.tui.active) this.tui.print(text);
     else this.outputFn(text);
   }
@@ -2189,7 +2189,7 @@ export class Interpreter {
       const importHint = filePath
         ? filePath.replace(/^.*[/\\]/, '').replace(/\.zy$/, '')
         : modName.replace(/^\./, '');
-      this.emit(`warning: ${pathStr} is a module file and cannot be run directly\n  = help: module '${modName}' is meant to be imported with <# ./${importHint} <= alias`);
+      this.emit(`warning: ${pathStr} is a module file and cannot be run directly\n  = help: module '${modName}' is meant to be imported with <# ./${importHint} => alias`);
       return;
     }
     await this.execBlock(program.body, env);
@@ -2359,15 +2359,18 @@ export class Interpreter {
         if (!this.tui) return await this.execBlock(stmt.body, new Env(env));
         const savedMax  = this.maxSteps;
         const savedByte = this.maxBytes;
-        this.maxSteps = Infinity;
-        this.maxBytes = Infinity;
+        const savedIter = this.maxInfiniteIter;
+        this.maxSteps        = Infinity;
+        this.maxBytes        = Infinity;
+        this.maxInfiniteIter = Infinity;
         this.tui.enter();
         try {
           await this.execBlock(stmt.body, new Env(env));
         } finally {
           this.tui.leave();
-          this.maxSteps = savedMax;
-          this.maxBytes = savedByte;
+          this.maxSteps        = savedMax;
+          this.maxBytes        = savedByte;
+          this.maxInfiniteIter = savedIter;
         }
         return;
       }
@@ -3577,8 +3580,9 @@ export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, f
   try {
     const interp = new Interpreter(onOutput, inputFn, moduleResolver, tuiContext);
     interp.cliArgs = cliArgs;
-    if (opts.maxSteps != null) interp.maxSteps = opts.maxSteps;
-    if (opts.maxBytes != null) interp.maxBytes = opts.maxBytes;
+    if (opts.maxSteps        != null) interp.maxSteps        = opts.maxSteps;
+    if (opts.maxBytes        != null) interp.maxBytes        = opts.maxBytes;
+    if (opts.maxInfiniteIter != null) interp.maxInfiniteIter = opts.maxInfiniteIter;
     await interp.run(ast, filePath);
   } catch (e) {
     if (e instanceof ZyStaticError)

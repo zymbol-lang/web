@@ -1,5 +1,7 @@
 # Zymbol-Lang — Landing Page
 
+> **Revisado para v0.0.5 — 2026-05-12**
+
 Source for [zymbol-lang.org](https://zymbol-lang.org) — the official website of the Zymbol programming language.
 
 ## About

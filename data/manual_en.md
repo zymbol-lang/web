@@ -8,6 +8,8 @@
 
 # Zymbol-Lang Manual
 
+> **Revisado para v0.0.5 — 2026-05-12**
+
 **Zymbol-Lang** is a symbolic programming language. No keywords — everything is a symbol. Works identically in any human language.
 
 - No `if`, `while`, `return` — only `?`, `@`, `<~`
@@ -779,4 +781,3 @@ classify(number) {
 ---
 
 _Zymbol-Lang — Symbolic. Universal. Immutable._
-

@@ -777,4 +777,4 @@ klasifitsiram(chislo) {
 *Zymbol-Lang — Символен. Универсален. Непроменлив.*
 
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> The canonical reference is [MANUAL.md](https://github.com/zymbol-lang/interpreter) in the interpreter repository.
+> The canonical reference is [GUIDE.md](https://github.com/zymbol-lang/interpreter) in the interpreter repository.
