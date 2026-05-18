@@ -1,30 +1,32 @@
-> **Ohar garrantzitsua:** Dokumentazio hau adimen artifizialaren (AI) laguntzaz sortu da.
->
+> **Oharra:** Dokumentazio hau adimen artifizialak (AA) sortu eta itzuli du.
+> 
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
->
-> Erreferentzia kanonikoa **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** da interpretearen biltegian.
+> 
+> The canonical reference is **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** in the interpreter repository.
 
 ---
 
-# Zymbol-Lang-en Eskuliburua
+# Zymbol-Lang Eskuliburua
 
-**Zymbol-Lang** programazio lengoaia sinbolikoa da. Ez dago gako-hitzik — dena sinboloa da. Edozein gizaki hizkuntzatan berdin funtzionatzen du.
+> **v0.0.5 bertsiorako berrikusita — 2026-05-12**
 
-- Ez dago `if`-rik, `while`-rik, `return`-ik — bakarrik `?`, `@`, `<~`
-- Unicode osoa — identifikatzaileak edozein hizkuntzatan edo emojitan
-- Giza hizkuntzarekiko agnostikoa — kodea berdina da leku guztietan
+**Zymbol-Lang** programazio lengoaia sinbolikoa da. Hitz-gakoak gabe — dena sinboloa da. Edozein giza-hizkuntzan modu berean funtzionatzen du.
 
-**Interpretearen bertsioa**: v0.0.4 | **Test estaldura**: 393/393 (TW ↔ VM parekotasuna)
+- Ez dago `if`, `while`, `return` — soilik `?`, `@`, `<~`
+- Unicode osoa — identifikatzaileak edozein hizkuntzan edo emojitan
+- Giza-hizkuntzarekiko neutroa — kodea leku guztietan berdina da
+
+**Interpretatzailearen bertsioa**: v0.0.5 | **Proba-estaldura**: 436/436 (TW ↔ VM parekotasuna)
 
 ---
 
 ## Aldagaiak eta konstanteak
 
 ```zymbol
-x = 10              // aldaera aldakorra
-PI := 3.14159       // konstantea — berresleitzea exekuzio errorea da
-izena = "Alizia"
-aktibo = #1         // boolear egia
+x = 10              // aldagai aldagarria
+PI := 3.14159       // konstantea — berriro esleitzea exekuzio-errorea da
+izena = "Alice"
+aktiboa = #1        // boolean egia
 👋 := "Kaixo"
 ```
 
@@ -40,25 +42,39 @@ x++        // 5
 x--        // 4
 ```
 
----
-
-## Datu motak
-
-| Mota | Literala | `#?` etiketa | Oharrak |
-|------|---------|----------|-------|
-| Zenbaki osoa | `42`, `-7` | `###` | 64 biteko sinoduna |
-| Zenbaki hamartarra | `3.14`, `1.5e10` | `##.` | Notazio zientifiko onartuta |
-| Katea | `"testua"` | `##"` | Interpolazioa: `"Kaixo {izena}"` |
-| Karakterea | `'A'` | `##'` | Unicode karaktere bakarra |
-| Boolearra | `#1`, `#0` | `##?` | EZ da zenbakia — `#1 ≠ 1` |
-| Array-a | `[1, 2, 3]` | `##]` | Elementu homogeneoak |
-| Tupla | `(a, b)` | `##)` | Posizionala |
-| Izeneko tupla | `(x: 1, y: 2)` | `##)` | Izeneko eremuak |
-| Funtzioa | izendun funtzio erreferenzia | `##()` | Lehen mailakoa; `<funct/N>` bistaratzen du |
-| Lambda | `x -> x * 2` | `##->` | Lehen mailakoa; `<lambd/N>` bistaratzen du |
+`°` (gradu-ikurra, U+00B0) aldagai bat bere balio neutrora hasieratzen du automatikoki lehen erabileran:
 
 ```zymbol
-// Mota introspekzioa — itzultzen du (mota, digituak, balioa)
+zenbakiak = [3, 1, 4, 1, 5]
+@ z:zenbakiak {
+    °guztira += z    // 0ra auto-hasieratu begizta gainean; @ ondoren irauten du
+}
+>> guztira ¶         // → 14
+```
+
+> `°x` (aurrizkia) begizta gainean ainguratzen da — emaitza `@` ondoren eskuragarri dago.
+> `x°` (atzizkia) begizta barruan ainguratzen da — begizta amaitzean desagertzen da.
+> Zuhaitz-ibiltzailerako soilik.
+
+---
+
+## Datu-motak
+
+| Mota | Literala | `#?` etiketa | Oharrak |
+|------|---------|------------|---------|
+| Osoa | `42`, `-7` | `###` | 64 biteko zeinu-batekin |
+| Hamartarra | `3.14`, `1.5e10` | `##.` | Notazio zientifikoa bai |
+| Katea | `"testua"` | `##"` | Interpolazioa: `"Kaixo {izena}"` |
+| Karakterea | `'A'` | `##'` | Unicode karaktere bakarra |
+| Boolearrra | `#1`, `#0` | `##?` | EZ da zenbakizkoa — `#1 ≠ 1` |
+| Array-a | `[1, 2, 3]` | `##]` | Elementu homogeneoak |
+| Tupleta | `(a, b)` | `##)` | Posizionala |
+| Izendatutako tupleta | `(x: 1, y: 2)` | `##)` | Izendatutako eremuak |
+| Funtzioa | izendatutako funtzio-erreferentzia | `##()` | Lehen mailakoa; bistaratze `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Lehen mailakoa; bistaratze `<lambd/N>` |
+
+```zymbol
+// Mota-introspekzioa — itzultzen du (mota, digituak, balioa)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
 t = meta[1]
@@ -70,43 +86,75 @@ t = meta[1]
 ## Irteera eta sarrera
 
 ```zymbol
->> "Kaixo" ¶                       // ¶ edo \\ lerro jauzi espliziturako
->> "a=" a " b=" b ¶               // elkartzea — balio anitz
->> (arr$#) ¶                      // postfix eragileek ( ) behar dute >> barruan
+>> "Kaixo" ¶                      // ¶ edo \\ lerro-jausi esplizitua
+>> "a=" a " b=" b ¶               // juxtaposizioa — balio anitz
+>> (array$#) ¶                    // atzizkiko operadoreek ( ) behar dute >>-n
 
-<< izena                           // aldagaira irakurri (gonbipenik gabe)
-<< "Sartu izena: " izena            // gonbipenarekin
+<< izena                          // irakurri aldagaian (gidoirik gabe)
+<< "Sartu izena: " izena          // gidoiarekin
 ```
 
-> `¶` (AltGr+R teklatu espainolean) eta `\\` berdinak dira lerro jauzi gisa.
+> `¶` (AltGr+R espainiako teklatuan) eta `\\` lerro-jausi baliokideak dira.
 
 ---
 
-## Eragileak
+## TUI primitiboak
+
+Terminal-interfazeko operadoreak programa interaktiboetarako. Gehienek `>>| { }` blokea behar dute (pantaila alternatiboa + raw modua).
 
 ```zymbol
-// Aritmetika — esleipenak erabili; eragile batzuek berezitasunak dituzte >> zuzenean
+>>| {
+    >>!                             // pantaila alternatiboa garbitu
+    >>~ (1, 1, 0, 10) > "Exekutatzen"  // 1. errenkada, 1. zutabe, fg=10 (berdea)
+    @~ 1000                         // pausa 1 segundo (1000 ms)
+    >>~ (2, 1) > "Amaituta."
+}
+// terminala automatikoki berrezartzen da irtetean
+```
+
+```zymbol
+// Teklatu-sakatzea eta terminal-tamaina
+>>| {
+    [errenkadak, zutabeak] = >>?              // terminal-dimentsioak eskatu
+    >>~ (1, 1) > "Terminala: " errenkadak " x " zutabeak
+    <<| tekla                         // blokeatuz teklatu-sakatzea irakurri
+    >>~ (2, 1) > "Sakatuta: " tekla
+}
+```
+
+> `>>!` pantaila garbitzen du. `>>?` itzultzen du `[errenkadak, zutabeak]`. `@~ N` N milisegundo lo egiten du.
+> `<<|` teklatu-sakatze bat irakurtzen du (blokeatzailea); `<<|?` blokatu gabe galdetzen du (itzultzen du `'\0'` ez badago).
+> Posizionatutako irteera tupleta: `(errenkada, zutabea, BKS, fg, bg)` — edozein leku koma batekin utzi daiteke (`>>~ (,,, 196) > "gorria"`).
+> BKS bit-maskara: `1`=Lodia, `2`=Etzana, `4`=Azpimarra. ANSI 256 koloreko paleta (`0`=terminal lehenetsita).
+> Zuhaitz-ibiltzailerako soilik (`>>!`, `>>?`, `@~`, `>>~` ez bada, `--vm`-n ere exekutatzen direnak).
+
+---
+
+## Operadoreak
+
+```zymbol
+// Aritmetika
 a = 10
 b = 3
-r1 = a + b    // 13
-r2 = a - b    // 7
-r3 = a * b    // 30
-r4 = a / b    // 3  (zatiketa osoa)
-r5 = a % b    // 1
-r6 = a ^ b    // 1000  (berretura)
+e1 = a + b    // 13
+e2 = a - b    // 7
+e3 = a * b    // 30
+e4 = a / b    // 3  (zenbaki osoaren zatiketa)
+e5 = a % b    // 1
+e6 = a ^ b    // 1000  (berreketa)
 
-// Konparazioa
-a == b    // #0    
-a <> b    // #1    
-a < b    // #0
-a <= b    // #0   
-a > b     // #1    
-a >= b   // #1
+// Konparaketa — ikusteko esleitu
+k1 = a == b    // #0
+k2 = a <> b    // #1
+k3 = a < b     // #0
+k4 = a <= b    // #0
+k5 = a > b     // #1
+k6 = a >= b    // #1
 
-// Logikoa
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
+// Logika
+l1 = #1 && #0    // #0
+l2 = #1 || #0    // #1
+l3 = !#1         // #0
 ```
 
 ---
@@ -114,29 +162,30 @@ a >= b   // #1
 ## Kateak
 
 ```zymbol
-// Bi elkartze modu
-izena = "Alizia"
+// Bi kateaketa-forma
+izena = "Alice"
 n = 42
 
->> "Kaixo " izena " " n " dituzu" ¶       // elkartzea — >> barruan
-desc = "Kaixo {izena}, {n} dituzu"        // interpolazioa — edozein lekutan
+>> "Kaixo " izena " dituzu " n ¶    // juxtaposizioa — >>-n
+deskribapena = "Kaixo {izena}, dituzu {n}"  // interpolazioa — edonon
 ```
 
 ```zymbol
 s = "Kaixo Mundua"
-luz = s$#                  // 11 (edo 12 kontu)
-sub = s$[1..5]             // "Kaixo" (1-oinarria, amaiera barne)
-badauka = s$? "Mundua"     // #1
-zatiak = "a,b,c,d"$/ ','   // [a, b, c, d]  (zatitu mugatzaileaz)
-rep = s$~~["o":"0"]        // "Kai0 Mundua"
-rep1 = s$~~["o":"0":1]     // "Kai0 Mundo"  (lehen N bakarrik)
+luzera = s$#                  // 11
+azpikatea = s$[1..5]          // "Kaixo"  (1-oinarritua, amaiera barne)
+bai = s$? "Mundua"            // #1
+zatiak = "a,b,c,d"$/ ','      // [a, b, c, d]  (mugatzailearen arabera zatitu)
+ordezkatu = s$~~["a":"A"]     // "KAixo MunduA"
+ordezkatu1 = s$~~["a":"A":1]  // "KAixo Mundua"  (lehen N soilik)
+lerroa = "─" $* 20            // "────────────────────"  (N aldiz errepikatu)
 ```
 
-> `+` zenbakientzat bakarrik da. Erabili `,`, elkartzea edo interpolazioa kateentzat.
+> `+` zenbakientzat soilik. Erabili `,`, juxtaposizioa edo interpolazioa kateetarako.
 
 ---
 
-## Kontrol fluxua
+## Fluxu-kontrola
 
 ```zymbol
 x = 7
@@ -154,46 +203,47 @@ x = 7
 }
 ```
 
-> `{ }` giltzak **beharrezkoak** dira adierazpen bakarra izan arren.
+> `{ }` giltza-markak **beharrezkoak** dira adierazpen bakarrerako ere.
 
 ---
 
-## Match
+## Patroi-erkaketa
 
 ```zymbol
 // Tarteak
 puntuazioa = 85
 nota = ?? puntuazioa {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+    90..100 => 'A'
+    80..89  => 'B'
+    70..79  => 'C'
+    _       => 'F'
 }
 >> nota ¶    // → B
 
 // Kateak
 kolorea = "gorria"
 kodea = ?? kolorea {
-    "gorria" : "#FF0000"
-    "berdea" : "#00FF00"
-    _        : "#000000"
+    "gorria"  => "#FF0000"
+    "berdea"  => "#00FF00"
+    _         => "#000000"
 }
 
-// Konparazio ereduak
-tenp = -5
-egoera = ?? tenp {
-    < 0  : "izotza"
-    < 20 : "hotza"
-    < 35 : "epela"
-    _    : "beroa"
+// Konparazio-ereduak
+tenperatura = -5
+egoera = ?? tenperatura {
+    < 0  => "izotza"
+    < 20 => "hotza"
+    < 35 => "epela"
+    _    => "beroa"
 }
 >> egoera ¶    // → izotza
 
-// Adierazpen forma (blokeak)
+// Adierazpen-forma (blokeko adarrak)
+n = -3
 ?? n {
-    0        : { >> "zero" ¶ }
-    _? n < 0 : { >> "negatiboa" ¶ }
-    _        : { >> "positiboa" ¶ }
+    0    => { >> "zero" ¶ }
+    < 0  => { >> "negatiboa" ¶ }
+    _    => { >> "positiboa" ¶ }
 }
 ```
 
@@ -202,28 +252,28 @@ egoera = ?? tenp {
 ## Begiztak
 
 ```zymbol
-@ i:0..4  { >> i " " }        // tarte inklusiboa:  0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // pausoarekin:       1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // alderantziz:       5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // tartea barne:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // pausoarekin:   1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // alderantziz:   5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶                        // → 128  (bitartean)
+>> n ¶                        // → 128  (while)
 
-fruitak = ["sagarra", "udarea", "mahatsa"]
-@ f:fruitak { >> f ¶ }        // bakoitzeko
+frutak = ["sagarra", "udarea", "mahats-alea"]
+@ f:frutak { >> f ¶ }         // for-each array-a
 
-@ c:"kaixo" { >> c "-" }
->> ¶                          // → k-a-i-x-o-  (karaktere bakoitzeko)
+@ k:"kaixo" { >> k "-" }
+>> ¶                          // → k-a-i-x-o-  (for-each katea)
 
 @ i:1..10 {
     ? i % 2 == 0 { @> }       // @> jarraitu
-    ? i > 7 { @! }            // @! hautsi
+    ? i > 7 { @! }             // @! eten
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
 
-// Begizta infinitua
+// Begiztarik gabeko begizta
 i = 0
 @ {
     i++
@@ -232,13 +282,13 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Etiketadun begizta (habiaratua hautsi)
-kont = 0
-@:kanpokoa {
-    kont++
-    ? kont >= 3 { @:kanpokoa! }
+// Izendatutako begizta (habiaratutako etena)
+kontagailua = 0
+@:kanpoa {
+    kontagailua++
+    ? kontagailua >= 3 { @:kanpoa! }
 }
->> kont ¶                     // → 3
+>> kontagailua ¶                    // → 3
 ```
 
 ---
@@ -256,13 +306,13 @@ faktoriala(n) {
 >> faktoriala(5) ¶    // → 120
 ```
 
-Funtzioek **isolatutako eskopea** dute — ezin dituzte kanpoko aldagaiak irakurri. Erabili irteera parametroak `<~` deitzailearen aldagaiak aldatzeko:
+Funtzioek **isolatutako esparrua** dute — ezin dituzte kanpoko aldagaiak irakurri. Erabili irteera-parametroak `<~` dei-egilearen aldagaiak aldatzeko:
 
 ```zymbol
 trukatu(a<~, b<~) {
-    tmp = a
+    aldi = a
     a = b
-    b = tmp
+    b = aldi
 }
 x = 10
 y = 20
@@ -270,89 +320,89 @@ trukatu(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Izeneko funtzioak **lehen mailako balioak** dira — zuzenean pasa daitezke: `nums$> bikoiztu`. `x -> fn(x)` ere balio du.
+> Izendatutako funtzioak **lehen mailako balioak** dira — zuzenean pasa daitezke: `zenbakiak$> bikoiztu`. Biltzeko: `x -> fn(x)` ere baliozkoa da.
 
 ---
 
-## Lambdak eta itxiurak
+## Lambdak eta itxierak
 
 ```zymbol
 bikoiztu = x -> x * 2
-batu = (a, b) -> a + b
+batura = (a, b) -> a + b
 >> bikoiztu(5) ¶    // → 10
->> batu(3, 7) ¶     // → 10
+>> batura(3, 7) ¶   // → 10
 
-// Bloke lambda
+// Bloke-lambda
 sailkatu = x -> {
     ? x > 0 { <~ "positiboa" }
     _? x < 0 { <~ "negatiboa" }
     <~ "zero"
 }
 
-// Itxiura — kanpoko eskopea harrapatzen du
+// Itxiera — kanpoko esparrua harrapatzen du
 faktorea = 3
 hirukoiztu = x -> x * faktorea
 >> hirukoiztu(7) ¶    // → 21
 
 // Fabrika
-sortu_batugailua(n) { <~ x -> x + n }
-batu10 = sortu_batugailua(10)
->> batu10(5) ¶        // → 15
+gehitzailea_egin(n) { <~ x -> x + n }
+gehitu10 = gehitzailea_egin(10)
+>> gehitu10(5) ¶    // → 15
 
 // Array-etan
-ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[3](5) ¶        // → 25
+eragiketak = [x -> x+1, x -> x*2, x -> x*x]
+>> eragiketak[3](5) ¶    // → 25
 ```
 
 ---
 
 ## Array-ak
 
-Array-ak **aldakorrak** dira eta **mota bereko** elementuak dituzte.
+Array-ak **aldagarriak** dira eta **mota bereko** elementuak gordetzen dituzte.
 
 ```zymbol
-arr = [1, 2, 3, 4, 5]
+array = [1, 2, 3, 4, 5]
 
-arr[1]          // 1 — sarrera (1-oinarria: lehen elementua)
-arr[-1]         // 5 — indize negatiboa (azken elementua)
-arr$#           // 5 — luzera (erabili (arr$#) >> barruan)
+x = array[1]      // 1 — sarbidea (1-oinarritua: lehen elementua)
+x = array[-1]     // 5 — indize negatiboa (azken elementua)
+x = array$#       // 5 — luzera (erabili (array$#) >>-n)
 
-arr = arr$+ 6            // atxiki → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // txertatu 2. posizioan (1-oinarria)
-arr3 = arr$- 3           // kendu balioaren lehen agerpena
-arr4 = arr$-- 3          // kendu agerpen guztiak
-arr5 = arr$-[1]          // kendu indize 1ean (lehen elementua)
-arr6 = arr$-[2..3]       // kendu tartea (1-oinarria, amaiera barne)
+array = array$+ 6            // gehitu → [1,2,3,4,5,6]
+array2 = array$+[2] 99       // txertatu 2. posizioan (1-oinarritua)
+array3 = array$- 3           // kendu balioaren lehen agerpena
+array4 = array$-- 3          // kendu agerraldi guztiak
+array5 = array$-[1]          // kendu 1. indizean (lehen elementua)
+array6 = array$-[2..3]       // kendu tartea (1-oinarritua, amaiera barne)
 
-badauka = arr$? 3        // #1 — badu
-pos = arr$?? 3           // [3] — balioaren indize guztiak (1-oinarria)
-sl = arr$[1..3]          // [1,2,3] — zati (1-oinarria, amaiera barne)
-sl2 = arr$[1:3]          // [1,2,3] — berdina, kopuruaren sintaxia
+bai = array$? 3            // #1 — edukitzen du
+pos = array$?? 3           // [3] — balioaren indize guztiak (1-oinarritua)
+zatia = array$[1..3]       // [1,2,3] — zatia (1-oinarritua, amaiera barne)
+zatia2 = array$[1:3]       // [1,2,3] — berdina, kopuruetan oinarritutako sintaxia
 
-asc = arr$^+             // ordenatu goranzka (primitiboak bakarrik)
-desc = arr$^-            // ordenatu beheranzka (primitiboak bakarrik)
+gora = array$^+             // goranzko ordenan ordenatua  (primitivoak soilik)
+behera = array$^-           // beheranzko ordenan ordenatua (primitivoak soilik)
 
-// Izeneko/posizioko tupla array-ak — erabili $^ lambda konparatzailearekin
-db = [(izena: "Karla", adina: 28), (izena: "Ana", adina: 25), (izena: "Bob", adina: 30)]
-adinez_gora  = db$^ (a, b -> a.adina < b.adina)       // goranzka adinez  (<)
-izenez_behera = db$^ (a, b -> a.izena > b.izena)      // beheranzka izenez (>)
->> adinez_gora[1].izena ¶     // → Ana
->> izenez_behera[1].izena ¶   // → Karla
+// Izendatutako/posiziozko tupleta array-ak — erabili $^ konparadore-lambdarekin
+bd = [(izena: "Carla", adina: 28), (izena: "Ana", adina: 25), (izena: "Bob", adina: 30)]
+adina_arabera  = bd$^ (a, b -> a.adina < b.adina)    // goranzko adinaren arabera  (<)
+izena_arabera = bd$^ (a, b -> a.izena > b.izena)     // beheranzko izenaren arabera (>)
+>> adina_arabera[1].izena ¶     // → Ana
+>> izena_arabera[1].izena ¶    // → Carla
 
-// Elementu zuzeneko eguneraketa (array-ak bakarrik)
-arr[1] = 99              // esleitu
-arr[2] += 5              // konposatua: +=  -=  *=  /=  %=  ^=
+// Elementua zuzenean eguneratu (array-ak soilik)
+array[1] = 99              // esleitu
+array[2] += 5              // konposatuak: +=  -=  *=  /=  %=  ^=
 
-// Eguneraketa funtzionala — array berri bat itzultzen du; jatorrizkoa aldatu gabe
-arr2 = arr[2]$~ 99
+// Eguneraketa funtzionala — array berria itzultzen du; originala aldatu gabe
+array2 = array[2]$~ 99
 ```
 
-> Bilduma eragile guztiek **array berri bat** itzultzen dute. Esleitu atzera: `arr = arr$+ 4`.
-> `$+` kateatu daiteke: `arr = arr$+ 5$+ 6$+ 7`. Beste eragileek bitarteko esleipenak erabiltzen dituzte.
-> **Indexazioa 1-oinarria**: `arr[1]` lehen elementua da; `arr[0]` exekuzio errorea da.
-> `$^+` / `$^-` **array primitiboak** ordenatzen ditu (zenbakiak, kateak). Tupla array-etan erabili `$^` lambda konparatzailearekin — norabidea lambda-kodetzen da (`<` = goranzka, `>` = beheranzka).
+> Bilduma-operadore guztiek **array berria** itzultzen dute. Berriro esleitu: `array = array$+ 4`.
+> `$+` kate daiteke: `array = array$+ 5$+ 6$+ 7`. Beste operadoreek tarteko esleipen-ak erabiltzen dituzte.
+> **Indexatzea 1-oinarritua da**: `array[1]` lehen elementua da; `array[0]` exekuzio-errorea da.
+> `$^+` / `$^-` **primitibozko array-ak** ordenatzen dituzte (zenbakiak, kateak). Tupleta array-etarako erabili `$^` konparadore-lambdarekin — norabidea lambdan kodetuta dago (`<` = goranzkoa, `>` = beheranzkoa).
 
-**Balio semantika** — array bat beste aldagai batera esleitzeak kopia independente bat sortzen du:
+**Balio-semantika** — array bat beste aldagai bati esleitzeak kopia independentea sortzen du:
 
 ```zymbol
 a = [1, 2, 3]
@@ -363,75 +413,75 @@ a[1] = 99
 ```
 
 ```zymbol
-// Habiaratutako array-ak (1-oinarria)
+// Habiaratutako array-ak (1-oinarritutako indexatzea)
 matrizea = [[1,2,3],[4,5,6],[7,8,9]]
->> matrizea[2][3] ¶    // → 6  (2. lerroa, 3. zutabea)
+>> matrizea[2][3] ¶    // → 6  (2. errenkada, 3. zutabea)
 ```
 
 ---
 
-## Destructuring
+## Desegituraketa
 
 ```zymbol
-// Array
-arr = [10, 20, 30, 40, 50]
-[a, b, c] = arr              // a=10  b=20  c=30
-[lehena, *gainontzekoa] = arr      // lehena=10  gainontzekoa=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ baztertu
+// Array-a
+array = [10, 20, 30, 40, 50]
+[a, b, c] = array              // a=10  b=20  c=30
+[lehena, *gainontzekoak] = array  // lehena=10  gainontzekoak=[20,30,40,50]
+[x, _, z] = [1, 2, 3]          // _ baztertu
 
-// Tupla posizionala
+// Posiziozko tupleta
 puntua = (100, 200)
-(px, py) = puntua             // px=100  py=200
+(px, py) = puntua              // px=100  py=200
 
-// Izeneko tupla
+// Izendatutako tupleta
 pertsona = (izena: "Ana", adina: 25, hiria: "Madril")
-(izena: n, adina: a) = pertsona   // n="Ana"  a=25
+(izena: n, adina: a) = pertsona  // n="Ana"  a=25
 ```
 
 ---
 
-## Tuplak
+## Tupletak
 
-Tuplak ordenatutako edukiontzi **aldaezinak** dira, **mota desberdinetako** balioak eduki ditzaketenak.
-Array-ek ez bezala, elementuak ezin dira sortu ondoren aldatu.
+Tupletak **aldaezinak** diren ordenatutako edukiontziak dira, **mota desberdineko** balioak gordetzeko gai direnak.
+Array-en ez bezala, elementuak ezin dira sortu ondoren aldatu.
 
 ```zymbol
-// Posizionala — mota mistoak onartzen dira
+// Posiziozko — mota nahasiak onartuta
 puntua = (10, 20)
 >> puntua[1] ¶    // → 10
 
 datuak = (42, "kaixo", #1, 3.14)
->> datuak[3] ¶    // → #1
+>> datuak[3] ¶     // → #1
 
-// Izenekoa
-pertsona = (izena: "Alizia", adina: 25)
->> pertsona.izena ¶    // → Alizia
->> pertsona[1] ¶       // → Alizia  (indizea ere funtzionatzen du, 1-oinarria)
+// Izendatuta
+pertsona = (izena: "Alice", adina: 25)
+>> pertsona.izena ¶    // → Alice
+>> pertsona[1] ¶       // → Alice  (indizea ere funtzionatzen du, 1-oinarritua)
 
-// Habiaratua
+// Habiaratuta
 pos = (x: 10, y: 20)
 p = (pos: pos, etiketa: "jatorria")
 >> p.pos.x ¶        // → 10
 ```
 
-**Aldaezintasuna** — tupla baten elementu bat aldatzen saiatzea exekuzio errorea da:
+**Aldaezintasuna** — tupleta-elementu bat aldatzeko edozein saiakera exekuzio-errorea da:
 
 ```zymbol
 t = (10, 20, 30)
-// t[1] = 99    // ❌ exekuzio errorea: tuplak aldaezinak dira
+// t[1] = 99    // ❌ exekuzio-errorea: tupletak aldaezinak dira
 // t[1] += 5    // ❌ errore bera
 ```
 
-Balio aldatua ateratzeko erabili `$~` (eguneraketa funtzionala) — tupla **berri** bat itzultzen du:
+Aldatutako balio bat lortzeko erabili `$~` (eguneraketa funtzionala) — tupleta **berria** itzultzen du:
 
 ```zymbol
 t = (10, 20, 30)
 t2 = t[2]$~ 999
->> t ¶     // → (10, 20, 30)   ← jatorrizkoa aldatu gabe
+>> t ¶     // → (10, 20, 30)   ← originala aldatu gabe
 >> t2 ¶    // → (10, 999, 30)
 
-// Izeneko tupla — eraiki esplizituki
-pertsona = (izena: "Alizia", adina: 25)
+// Izendatutako tupleta — berreraiki esplizituki
+pertsona = (izena: "Alice", adina: 25)
 zaharragoa  = (izena: pertsona.izena, adina: 26)
 >> pertsona.adina ¶    // → 25
 >> zaharragoa.adina ¶  // → 26
@@ -439,153 +489,153 @@ zaharragoa  = (izena: pertsona.izena, adina: 26)
 
 ---
 
-## Ordena altuko funtzioak
+## Ordena handiko funtzioak
 
 ```zymbol
-nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+zenbakiak = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-bikoiztuak  = nums$> (x -> x * 2)                  // mapa   → [2,4,6…20]
-bakoitiak   = nums$| (x -> x % 2 == 0)             // iragazki → [2,4,6,8,10]
-guztira    = nums$< (0, (acc, x) -> acc + x)       // murriztu → 55
+bikoiztuak  = zenbakiak$> (x -> x * 2)                // map  → [2,4,6…20]
+bikoitiak   = zenbakiak$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
+guztira     = zenbakiak$< (0, (akum, x) -> akum + x)  // reduce → 55
 
-// Kateatu bitarteko aldagaiekin
-urrats1 = nums$| (x -> x > 3)
-urrats2 = urrats1$> (x -> x * x)
->> urrats2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+// Kate bidez tarteko aldagaiekin
+urratsa1 = zenbakiak$| (x -> x > 3)
+urratsa2 = urratsa1$> (x -> x * x)
+>> urratsa2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Izeneko funtzioak zuzenean pasa daitezke HOF-era
+// Izendatutako funtzioak zuzenean pasa daitezke HOF-era
 bikoiztu(x) { <~ x * 2 }
-handia(x) { <~ x > 5 }
-r = nums$> bikoiztu       // ✅ zuzeneko erreferentzia
-r = nums$| handia         // ✅ zuzeneko erreferentzia
+handia_da(x) { <~ x > 5 }
+e = zenbakiak$> bikoiztu       // ✅ erreferentzia zuzena
+e = zenbakiak$| handia_da      // ✅ erreferentzia zuzena
 ```
 
 ---
 
-## Pipe eragilea
+## Hodiak operadorea
 
-Eskuinaldeak beti `_` behar du balioan ordezko gisa:
+Eskuineko aldeak beti `_` behar du lekukotze gisa kanalizatutako balioaren:
 
 ```zymbol
 bikoiztu = x -> x * 2
-batu = (a, b) -> a + b
-inc = x -> x + 1
+gehitu = (a, b) -> a + b
+handitu = x -> x + 1
 
-5 |> bikoiztu(_)        // → 10
-10 |> batu(_, 5)        // → 15
-5 |> batu(2, _)         // → 7
+e1 = 5 |> bikoiztu(_)        // → 10
+e2 = 10 |> gehitu(_, 5)      // → 15
+e3 = 5 |> gehitu(2, _)       // → 7
 
-// Kateatua
-r = 5 |> bikoiztu(_) |> inc(_) |> bikoiztu(_)
->> r ¶    // → 22  (5→10→11→22)
+// Kateatuta
+e = 5 |> bikoiztu(_) |> handitu(_) |> bikoiztu(_)
+>> e ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## Errore kudeaketa
+## Errore-kudeaketa
 
 ```zymbol
 !? {
     x = 10 / 0
 } :! ##Div {
-    >> "zeroz biderkatzea" ¶
+    >> "zeroz zatiketa" ¶
 } :! {
-    >> "beste errorea: " _err ¶    // _err errore mezua du
+    >> "bestea: " _err ¶    // _err errorea gordeta dago
 } :> {
     >> "beti exekutatzen da" ¶
 }
 ```
 
-| Mota | Noiz gertatzen da |
-|------|-------------------|
-| `##Div` | Zeroz biderkatzea |
+| Mota | Noiz |
+|------|------|
+| `##Div` | Zeroz zatiketa |
 | `##IO` | Fitxategia / sistema |
-| `##Index` | Indizea kanpoan |
-| `##Type` | Mota desegokitasuna |
-| `##Parse` | Datuen parseaketa |
-| `##Network` | Sare erroreak |
-| `##_` | Edozein errore (dena harrapatzen du) |
+| `##Index` | Indizea mugaz kanpo |
+| `##Type` | Mota-desadostasuna |
+| `##Parse` | Datuen analisia |
+| `##Network` | Sare-erroreak |
+| `##_` | Edozein errore (dena harrapatu) |
 
 ---
 
 ## Moduluak
 
 ```zymbol
-// lib/calc.zy — moduluaren gorputza giltzen artean doa
-# calc {
-    #> { batu, get_PI }
+// lib/kalkulua.zy — moduluaren gorputza giltza-marken artean dago
+# kalkulua {
+    #> { gehitu, PI_eskuratu }
 
     _PI := 3.14159
-    batu(a, b) { <~ a + b }
-    get_PI() { <~ _PI }
+    gehitu(a, b) { <~ a + b }
+    PI_eskuratu() { <~ _PI }
 }
 ```
 
 ```zymbol
-// main.zy
-<# ./lib/calc <= c    // alias derrigorrezkoa
+// nagusia.zy
+<# ./lib/kalkulua => k    // aliasak beharrezkoak dira
 
->> c::batu(5, 3) ¶    // → 8
-pi = c::get_PI()
+>> k::gehitu(5, 3) ¶     // → 8
+pi = k::PI_eskuratu()
 >> pi ¶               // → 3.14159
 ```
 
 ```zymbol
-// Esportatu izen publiko ezberdinarekin
-# nirelib {
-    #> { _barne_batu <= batura }
+// Izen publiko desberdinekin esportatu
+# nire_liburutegia {
+    #> { _barneko_batuketa => batura }
 
-    _barne_batu(a, b) { <~ a + b }
+    _barneko_batuketa(a, b) { <~ a + b }
 }
 ```
 
 ```zymbol
-<# ./nirelib <= m
+<# ./nire_liburutegia => n
 
->> m::batura(3, 4) ¶    // → 7  (barne izena _barne_batu ezkutatuta dago)
+>> n::batura(3, 4) ¶    // → 7  (barneko izena _barneko_batuketa ezkutatuta dago)
 ```
 
-> **Modulu arauak**: `# izena { }` barruan bakarrik `#>`, funtzio definizioak eta literalen hasieratzaileak onartzen dira. Adierazpen exekutagarriek (`>>`, `<<`, begiztak, etab.) E013 errorea sortzen dute.
+> **Modulu-arauak**: `# izena { }` barruan `#>`, funtzio-definizioak eta literalezko aldagai/konstante-hasieratzaileak soilik onartzen dira. Adierazpen exekutagarriak (`>>`, `<<`, begiztak, etab.) E013 errorea eragiten dute.
 
 ---
 
-## Sistema numeralak
+## Zenbaki-modoak
 
-Zymbol-ek **69 Unicode digitu bloke**tan erakutsi ditzake zenbakiak — Devanagari, Arabiar-Indiar, Thailandiar, Klingoierazko pIqaD, Matematikako lodia, LCD segmentuak, eta gehiago. Modu aktiboak `>>` irteerari bakarrik eragiten dio; barne aritmetika beti bitarra da.
+Zymbol zenbakiak **69 Unicode zifra-scriptetakoak** bezala bistaratu ditzake — Devanagari, Arabe-Indiar, Tailandiarra, Klingon pIqaD, Mathematical Bold, LCD segmentuak, eta gehiago. Modu aktiboa `>>` irteeran soilik eragiten du; barneko aritmetika beti binarioa da.
 
-### Sistema bat aktibatzea
+### Script bat aktibatu
 
-Idatzi helburuko sistemaren `0` eta `9` digituak `#…#` artean:
+Idatzi helburuko scriptaren `0` eta `9` zifraren artean `#…#`:
 
 ```zymbol
-#०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // Arabiar-Indiar (U+0660–U+0669)
-#๐๙#    // Thailandiar    (U+0E50–U+0E59)
-#09#    // ASCIIra berrezarri
+#०९#    // Devanagari   (U+0966–U+096F)
+#٠٩#    // Arabe-Indiar (U+0660–U+0669)
+#๐๙#    // Tailandiar   (U+0E50–U+0E59)
+#09#    // ASCII-ra berrezarri
 ```
 
-### Irteera eta booleanak
+### Irteera eta booleanarrak
 
 ```zymbol
 x = 42
->> x ¶          // → 42   (ASCII lehenetsia)
+>> x ¶          // → 42   (ASCII lehenetsita)
 
 #०९#
 >> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४   (hamartar puntua beti ASCII)
+>> 3.14 ¶       // → ३.१४   (hamartar-puntua beti ASCII)
 >> 1 + 2 ¶      // → ३
 
-// Booleanak: # aurrizkia beti ASCII, digitua egokitzen da
->> #1 ¶         // → #१   (egia Devanagariz)
->> #0 ¶         // → #०   (faltsua — ० zenbaki oso zeroz desberdina)
+// Booleanarrak: # aurrizkia beti ASCII, zifra egokitzen da
+>> #1 ¶         // → #१   (egia Devanagarin)
+>> #0 ¶         // → #०   (gezurra — ०  osoko zerotik bereizita)
 
 x = 28 > 4
->> x ¶          // → #१   (konparazio emaitzak modu aktiboa jarraitzen du)
+>> x ¶          // → #१   (konparazio-emaitza modu aktiboa jarraitzen du)
 ```
 
-### Jatorrizko digitu literalak iturburu kodean
+### Jatorrizko zifra-literalak iturrian
 
-Onartutako edozein sistemako digituak literal baliodunak dira — tarteetan, moduloan, konparazioetan:
+Onartutako edozein scriptaren zifrак literalak baliozkoak dira — tarteetan, moduluan, konparaketetan:
 
 ```zymbol
 #०९#
@@ -598,50 +648,50 @@ Onartutako edozein sistemako digituak literal baliodunak dira — tarteetan, mod
 }
 ```
 
-### Literal boolearrak edozein sistematan
+### Boolean literalak edozein scriptan
 
-`#` + digitu `0` edo `1` edozein bloketakoa literal boolear balioduna da:
+`#` + `0` edo `1` zifra edozein bloketik boolean literal baliozkoa da:
 
 ```zymbol
 #٠٩#
-aktibo = #١        // #1 berdin
->> aktibo ¶        // → #١
->> (#١ && #٠) ¶    // → #०
+aktiboa = #١        // #1 berdina
+>> aktiboa ¶        // → #١
+>> (#١ && #٠) ¶ // → #٠
 ```
 
-> `#` **beti ASCII da**. `#0` (faltsua) beti bereiz daiteke bisualki `0`-tik (zenbaki oso zero) edozein sistematan.
+> `#` **beti ASCII**. `#0` (gezurra) beti bisualki bereizita dago `0`-tik (osoko zero) script guztietan.
 
 ---
 
-## Datu eragileak
+## Datu-operadoreak
 
 ```zymbol
-// Mota bihurketa
-##.42         // → 42.0  (Float-era)
-###3.7        // → 4     (Oso-era, biribildu)
-##!3.7        // → 3     (Oso-era, moztu)
+// Mota-bihurketa-casteak
+f = ##.42         // → 42.0  (Hamartarrera)
+i = ###3.7        // → 4     (Osora, biribiltzea)
+t = ##!3.7        // → 3     (Osora, moztea)
 
-// Katea zenbakira parseatu
-v1 = #|"42"|      // → 42  (Zenbaki osoa)
-v2 = #|"3.14"|    // → 3.14  (Float)
+// Kate bat zenbakira analizatu
+v1 = #|"42"|      // → 42  (Osoa)
+v2 = #|"3.14"|    // → 3.14  (Hamartarra)
 v3 = #|"abc"|     // → "abc"  (segurua, errorerik gabe)
 
 // Biribildu / moztu
 pi = 3.14159265
-r2 = #.2|pi|      // → 3.14  (biribildu 2 hamartarretara)
-r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14  (moztu)
+b2 = #.2|pi|      // → 3.14  (2 dezimaltara biribildu)
+b4 = #.4|pi|      // → 3.1416
+m2 = #!2|pi|      // → 3.14  (moztea)
 
-// Zenbaki formatua
-fmt = #,|1234567|      // → 1,234,567  (komaz bereizita)
-sci = #^|12345.678|    // → 1.2345678e4  (zientifikoa)
+// Zenbaki-formatua
+fmt = #,|1234567|  // → 1,234,567  (komarekin bereizita)
+zient = #^|12345.678|    // → 1.2345678e4  (notazio zientifikoa)
 
-// Beste oinarrietako literalak
-a = 0x41         // → 'A'  (hexa)
-b = 0b01000001   // → 'A'  (bitar)
-c = 0o101        // → 'A'  (zortzitar)
+// Oinarri-literalak
+a = 0x41         // → 'A'  (hexadezimala)
+b = 0b01000001   // → 'A'  (binarioa)
+c = 0o101        // → 'A'  (oktala)
 
-// Oinarri bihurketa irteera
+// Oinarri-bihurketa irteera
 hex = 0x|255|    // → "0x00FF"
 bin = 0b|65|     // → "0b1000001"
 oct = 0o|8|      // → "0o10"
@@ -653,17 +703,17 @@ dec = 0d|255|    // → "0d0255"
 ## Shell integrazioa
 
 ```zymbol
-data = <\ date +%Y-%m-%d \>    // stdout harrapatzen du (lerro amaiera \n barne)
+data = <\ date +%Y-%m-%d \>     // stdout harrapatu (amaierako \n barne)
 >> "Gaur: " data
 
 fitxategia = "datuak.txt"
 edukia = <\ cat {fitxategia} \>      // interpolazioa komandoetan
 
-irteera = </"./subscript.zy"/>      // beste Zymbol script bat exekutatu, irteera harrapatu
+irteera = </"./azpiscripta.zy"/>   // beste Zymbol scripta exekutatu, irteera harrapatu
 >> irteera
 ```
 
-> `><` CLI argumentuak kate-array gisa harrapatzen ditu (tree-walker bakarrik).
+> `><` CLI argumentuak katea-array gisa harrapatzen ditu (zuhaitz-ibiltzailerako soilik).
 
 ---
 
@@ -682,99 +732,116 @@ sailkatu(zenbakia) {
 
 ---
 
-## Sinboloen erreferentziak
+## Sinbolo erreferentzia
 
 | Sinboloa | Eragiketa | Sinboloa | Eragiketa |
-|----------|-----------|----------|-----------|
+|---------|----------|---------|----------|
 | `=` | aldagaia | `$#` | luzera |
-| `:=` | konstantea | `$+` | atxiki (kateagarria) |
-| `>>` | irteera | `$+[i]` | txertatu indizean (1-oinarria) |
-| `<<` | sarrera | `$-` | kendu lehena balioz |
-| `¶` / `\\` | lerro jauzia | `$--` | kendu guztiak balioz |
-| `?` | baldin | `$-[i]` | kendu indizean (1-oinarria) |
-| `_?` | bestela baldin | `$-[i..j]` | kendu tartea (1-oinarria) |
-| `_` | bestela / komodin | `$?` | badu |
-| `??` | bat etorri | `$??` | aurkitu indize guztiak (1-oinarria) |
-| `@` | begizta | `$[s..e]` | zati (1-oinarria) |
-| `@ N { }` | N aldiz begizta | `$>` | mapa |
-| `@!` | hautsi | `$|` | iragazki |
-| `@>` | jarraitu | `$<` | murriztu |
-| `@:izena { }` | etiketadun begizta | `$/ delim` | katea zatitu |
-| `@:izena!` | hautsi etiketa | `$++ a b c` | konkatenatu eraiki |
-| `@:izena>` | jarraitu etiketa | `arr[i>j>k]` | nabigazio indizea |
-| `->` | lambda | `arr[i] = bal` | eguneratu elementua (array-ak bakarrik) |
-| `arr[i] += bal` | konposatu eguneraketa | `arr[i]$~` | eguneraketa funtzionala (kopia berria) |
-| `$^+` | ordenatu goranzka (primitiboak) | `$^-` | ordenatu beheranzka (primitiboak) |
-| `$^` | ordenatu konparatzaileaz (tuplak) | `<~` | itzuli |
-| `|>` | hodia | `!?` | saiatu |
-| `:!` | harrapatu | `:>` | azkenik |
-| `#1` | egia | `#0` | faltsua |
-| `$!` | errorea da | `$!!` | hedatu errorea |
+| `:=` | konstantea | `$+` | gehitu (kateagarria) |
+| `>>` | irteera | `$+[i]` | txertatu indizean (1-oinarritua) |
+| `<<` | sarrera | `$-` | kendu lehenengoa balioaren arabera |
+| `¶` / `\\` | lerro-jauzia | `$--` | kendu guztiak balioaren arabera |
+| `?` | if | `$-[i]` | kendu indizearen arabera (1-oinarritua) |
+| `_?` | else-if | `$-[i..j]` | kendu tartea (1-oinarritua) |
+| `_` | else / metamaska | `$?` | edukitzen du |
+| `??` | patroi-erkaketa | `$??` | aurkitu indize guztiak (1-oinarritua) |
+| `@` | begizta | `$[s..e]` | zatia (1-oinarritua) |
+| `@ N { }` | N aldiz begizta | `$>` | map |
+| `@!` | eten | `$\|` | filter |
+| `@>` | jarraitu | `$<` | reduce |
+| `@:izena { }` | izendatutako begizta | `$/ mug` | katea zatitu |
+| `@:izena!` | eten izena | `$++ a b c` | kateaketa eraiki |
+| `@:izena>` | jarraitu izena | `array[i>j>k]` | nabigazio-indizea |
+| `->` | lambda | `array[i] = b` | elementua eguneratu (array-ak soilik) |
+| `array[i] += b` | konposatu-eguneraketa | `array[i]$~` | eguneraketa funtzionala (kopia berria) |
+| `$^+` | ordenatu goranzko (primitivoak) | `$^-` | ordenatu beheranzko (primitivoak) |
+| `$^` | ordenatu konparadorearekin (tupletak) | `<~` | itzuli |
+| `\|>` | hodi | `!?` | saiatu |
+| `:!` | harrapatu | `:>` | azkenean |
+| `#1` | egia | `#0` | gezurra |
+| `$!` | errorea da | `$!!` | errorea zabaldu |
 | `<#` | inportatu | `#>` | esportatu |
-| `#` | deklaratu modulua | `::` | deitu modulua |
-| `.` | eremura sartu | `#?` | mota metadatuak |
-| `#|..|` | parseatu zenbakia | `##.` | bihurtu Float-era |
-| `###` | bihurtu Oso-era (biribildu) | `##!` | bihurtu Oso-era (moztu) |
-| `#.N|..|` | biribildu | `#!N|..|` | moztu |
-| `#,|..|` | koma formatua | `#^|..|` | zientifikoa |
-| `#d0d9#` | sistema numerala aldatu | `#09#` | ASCIIra berrezarri |
-| `<\ ..\>` | shell exekutatu | `>\<` | CLI argumentuak |
-| `\ var` | aldagaia suntsitu esplizituki | | |
+| `#` | modulua deklaratu | `::` | modulu-deia |
+| `.` | eremura sartu | `#?` | mota-metadatuak |
+| `#\|..\|` | zenbakia analizatu | `##.` | Hamartarrera cast |
+| `###` | Osora cast (biribiltzea) | `##!` | Osora cast (moztea) |
+| `#.N\|..\|` | biribildu | `#!N\|..\|` | moztu |
+| `#,\|..\|` | koma-formatua | `#^\|..\|` | notazio zientifikoa |
+| `#d0d9#` | zenbaki-modo aldaketa | `#09#` | ASCII-ra berrezarri |
+| `<\ ..\>` | shell exekuzioa | `>\<` | CLI argumentuak |
+| `\ aldg` | aldagaia esplizituki suntsitu | `°x` / `x°` | definizio beroa (auto-hasieraketa) |
+| `>>|` | TUI blokea (alt-pantaila) | `>>~` | posizionatutako irteera |
+| `>>!` | pantaila garbitu | `>>?` | terminal-tamaina eskatu |
+| `<<\|` | blokeatuz tekla-sakatzea | `<<\|?` | ez-blokeatuz tekla-sakatzea |
+| `@~ N` | N milisegundo lo egin | `$*` | katea N aldiz errepikatu |
 
 ---
 
-## Bertsioen historia
+## Aldaketen erregistroa
 
-### v0.0.4 — 1-oinarriko Indexazioa, Lehen Mailako Funtzioak eta Modulu blokeak _(Apirila 2026)_
+### v0.0.5 — TUI primitiboak, definizio beroa eta katearen errepikatzea _(Maiatza 2026)_
 
-- **Haustura** Indexazio guztia **1-oinarrira** aldatu da — `arr[1]` lehen elementua da; `arr[0]` exekuzio errorea da
-- **Gehituta** Izeneko funtzioak **lehen mailako balioak** dira — zuzenean pasa daitezke HOF-era: `nums$> bikoiztu`
-- **Gehituta** Moduluen **bloke sintaxia beharrezkoa** da: `# izena { ... }` — sintaxia laua kendu da
-- **Gehituta** Dimentsio anitzeko indexazioa: `arr[i>j>k]` (nabigazioa), `arr[p ; q]` (hedapen laua)
-- **Gehituta** Mota bihurketa: `##.adiera` (Float), `###adiera` (Oso biribildu), `##!adiera` (Oso moztu)
-- **Gehituta** Katea zatitu: `str$/ delim` — `Array(String)` itzultzen du
-- **Gehituta** Konkatenatu eraiki: `oinarria$++ a b c` — hainbat elementu atxikitzen ditu
-- **Gehituta** N aldiz begizta: `@ N { }` — N aldiz errepikatu zehazki
-- **Gehituta** Etiketadun begizten sintaxia: `@:izena { }`, `@:izena!`, `@:izena>` — `@ @izena` / `@! izena` ordezkatzen du
-- **Gehituta** Aldagaien eskopearen arauak: `_izena` aldagaiek bloke eskope zehatza dute; `\ var` goiz suntsitzen du
-- **Gehituta** Match konparazio ereduak: `< 0 :`, `> 5 :`, `== 42 :` etab.
-- **Gehituta** Moduluetako E013 errorea: adierazpen exekutagarriak moduluaren gorputzean debekatuta daude
-- **Konponduta** `take_variable`-k ez ditu moduluen konstanteak hondatzen atzera idaztean
-- **Konponduta** `alias.KONST`-a behar bezala ebazten da; `#>` funtzio definizioen atzetik ager daiteke
-- **VM** Parekotasun osoa: 393/393 test gainditu
+- **Hautsi** Patroi-erkaketa adar-banatzailea: `eredua : emaitza` → `eredua => emaitza`
+- **Hautsi** Inportazio-aliasa: `<# bide <= aliasa` → `<# bide => aliasa`
+- **Hautsi** Esportazio-berrizendatzea: `#> { fn <= pub }` → `#> { fn => pub }`
+- **Gehitu** TUI blokea `>>| { }` — pantaila alternatiboa + raw modua; irtetean garbitze
+- **Gehitu** Posizionatutako irteera `>>~ (errenkada, zutabea, BKS, fg, bg) > elementuak` — leku hutsak, 256 koloretako ANSI
+- **Gehitu** Tekla-sarrera `<<| aldg` (blokeatzailea) eta `<<|? aldg` (ez-blokeatzaile inkestatzea)
+- **Gehitu** `>>!` pantaila garbitu, `>>?` terminal-tamaina eskatu, `@~ N` N milisegundo lo egin
+- **Gehitu** Definizio beroa `°x` / `x°` — aldagaia auto-hasieratzen du begiztan lehen erabileran
+- **Gehitu** Katea errepikatzea `katea $* N` — katea N aldiz errepikatu
+- **VM** Parekotasuna: 436/436 proba gainditu
 
-### v0.0.3 — Unicode Sistema Numeralak eta LSP Hobekuntzak _(Apirila 2026)_
+### v0.0.4 — 1-oinarritutako indexatzea, lehen mailako funtzioak eta modulu-blokeak _(Apirila 2026)_
 
-- **Gehituta** 69 Unicode digitu bloke modu aldaketa tokenarekin `#d0d9#`
-- **Gehituta** Literal boolearrak edozein sistematan — `#१` / `#०`, `#١` / `#٠`, etab.
-- **Gehituta** Klingoierazko pIqaD digituak (CSUR PUA U+F8F0–U+F8F9)
-- **Gehituta** `SetNumeralMode` VM opcode — parekotasun osoa zuhaitz ibiltariarekin
-- **Gehituta** REPL-ek modu numeral aktiboa errespetatzen du oihartzunean eta aldagaien bistaratzean
-- **Aldatuta** Boolearren `>>` irteerak `#` aurrizkia barne hartzen du (`#0` / `#1`) modu guztietan
+- **Hautsi** Indexatze guztia **1-oinarritutakora** aldatu zen — `array[1]` lehen elementua da; `array[0]` exekuzio-errorea da
+- **Gehitu** Izendatutako funtzioak **lehen mailako balioak** dira — zuzenean pasa HOF-era: `zenbakiak$> bikoiztu`
+- **Gehitu** Moduluaren **bloke-sintaxia** beharrezkoa da: `# izena { ... }` — sintaxi laua kendu
+- **Gehitu** Dimentsio anitzeko indexatzea: `array[i>j>k]` (nabigazioa), `array[p ; q]` (lau erauzketa)
+- **Gehitu** Mota-bihurketa-casteak: `##.adierazpena` (Hamartarra), `###adierazpena` (Osoa biribiltzea), `##!adierazpena` (Osoa moztea)
+- **Gehitu** Katea zatitzea: `katea$/ mug` — `Array(String)` itzultzen du
+- **Gehitu** Kateaketa eraikitzea: `oinarria$++ a b c` — elementu anitz gehitzen ditu
+- **Gehitu** N aldiz begizta: `@ N { }` — zehazki N aldiz errepikatu
+- **Gehitu** Izendatutako begizta-sintaxia: `@:izena { }`, `@:izena!`, `@:izena>` — `@ @izena` / `@! izena` ordezkatzen du
+- **Gehitu** Aldagai-esparru-arauak: `_izena` aldagaiek bloke-esparru zehatza dute; `\ aldg` goiz suntsitzen du
+- **Gehitu** Patroi-erkaketa konparazio-ereduak: `< 0 :`, `> 5 :`, `== 42 :` etab.
+- **Gehitu** Moduluaren E013 errorea: adierazpen exekutagarriak modulu-gorputzean debekatuta daude
+- **Konponduta** `take_variable` ez du moduluaren konstanteak gehiago hondatzen idaztean
+- **Konponduta** `aliasa.KONSTANTEA` orain zuzen konpontzen da; `#>` funtzio-definizioen ondoren ager daiteke
+- **VM** Parekotasun osoa: 393/393 proba gainditu
 
-### v0.0.2_01 — Eragileen berrizendatzea _(2026 Martxoa 30)_
+### v0.0.3 — Unicode zenbaki-sistemak eta LSP hobekuntzak _(Apirila 2026)_
 
-- **Aldatuta** `c|..|` → `#,|..|` eta `e|..|` → `#^|..|` — `#` formatu aurrizki familiarekin koherentzia
-- **Gehituta** Esportazio aliasa: moduluko kideak izen ezberdinarekin berresportatu
+- **Gehitu** 69 Unicode zifra-bloke modo-aldaketa tokenarekin `#d0d9#`
+- **Gehitu** Boolean literalak edozein scriptan — `#१` / `#०`, `#١` / `#٠`, etab.
+- **Gehitu** Klingon pIqaD zifrак (CSUR PUA U+F8F0–U+F8F9)
+- **Gehitu** VM opkodea `SetNumeralMode` — zuhaitz-ibiltzailearekin parekotasun osoa
+- **Gehitu** REPL modu aktiboan dagoen zenbaki-sistema errespetatzen du oihartzunean eta aldagaien bistaratze
+- **Aldatu** Boolean `>>` irteerak orain `#` aurrizkia barne hartzen du (`#0` / `#1`) modu guztietan
 
-### v0.0.2 — Bildumen APIaren berrazterketa eta Instalatzaileak _(2026 Martxoa 24)_
+### v0.0.2_01 — Operadore-berrizendatzea _(30 Mar 2026)_
 
-- **Gehituta** `$` eragile familia bateratua array eta kateentzat (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Gehituta** Destructuring esleipena array, tupla eta izeneko tupletarako
-- **Gehituta** Indize negatiboak (`arr[-1]` = azken elementua)
-- **Gehituta** Instalatzaile natiboak — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+- **Aldatu** `c|..|` → `#,|..|` eta `e|..|` → `#^|..|` — `#` formatu-aurrizki familiarekin koherentzia
+- **Gehitu** Esportazio-aliasa: modulu-kideak beste izen batean berresportatu
 
-### v0.0.1-patch _(2026 Martxoa 25)_
+### v0.0.2 — Bilduma APIaren berrdiseinua eta instalazioak _(24 Mar 2026)_
 
-- **Gehituta** Konposatu esleipena `^=`
-- **Konponduta** Parserraren aritmetika kasu ertzak; dokumentazio zuzenketak
+- **Gehitu** `$` operadore-familia bateratua array-etarako eta kateetarako (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Gehitu** Desegituraketa-esleipena array-etarako, tupletarako eta izendatutako tupletarako
+- **Gehitu** Indize negatiboak (`array[-1]` = azken elementua)
+- **Gehitu** Jatorrizko instalatzaileak — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
 
-### v0.0.1 — Lehen Publikazioa _(2026 Martxoa 22)_
+### v0.0.1-patch _(25 Mar 2026)_
 
-- Zuhaitz ibiltari interpretea + erregistro VM (`--vm`, ~4× azkarrago, ~%95 parekotasuna)
+- **Gehitu** Konposatu-esleipena `^=`
+- **Konponduta** Analizadorearen aritmetika-kasu muturrekoak; dokumentazio-zuzenketak
+
+### v0.0.1 — Lehen argitalpen publikoa _(22 Mar 2026)_
+
+- Zuhaitz-ibiltzaile interpretatzailea + erregistro VM-a (`--vm`, ~4× azkarrago, ~95% parekotasuna)
 - Oinarrizko egitura guztiak: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Unicode identifikatzaile osoak, modulu sistema, lambdak, itxiurak, errore kudeaketa
-- REPL, LSP, VS Code luzapena, formateatzailea (`zymbol fmt`)
+- Unicode identifikatzaile osoak, modulu-sistema, lambdak, itxierak, errore-kudeaketa
+- REPL, LSP, VS Code hedapena, formateatzailea (`zymbol fmt`)
 
 ---
 

@@ -1,211 +1,279 @@
-# Zymbol-Lang Ome Wẽra
-
-**Zymbol-Lang** embera ome wẽra kira pari. Jã dachi nezarã — kira pari dachi nezarã. Embera ome wẽra dachi nezara.
-
-- Jã nezara (`if`, `while`, `return` jã dachi — kira pari `?`, `@`, `<~`)
-- Unicode wẽra — dachi ome wẽra kira pari 👋
-- Ome jãni — kira pari dachi ome wẽra nezara
+> **⚠️:** 📄 🤖 🧠 (AI) 🛠️ 🌐.
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> 📖 🔗 **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** 📦 🗃️.
 
 ---
 
-## Kira mîna Jãni Pari
+# 🟦🟨🟩🟪 Zymbol-Lang 📘
 
-```zymbol
-kira = 10           // kira (wẽra)
-DACHI := 3.14159    // jãni pari (jã wẽra — kira jã)
-nabi = "Ana"
-ome = #1            // wẽra pari
-👋 := "Nabi, Embera!"
-```
+> **🔄 v0.0.5 — 📅 2026-05-15**
 
-```zymbol
-kira = 10
-kira += 5    // 15
-kira -= 3    // 12
-kira *= 2    // 24
-kira /= 3    // 8
-kira %= 3    // 2
-kira ^= 2    // 4
-kira++       // 5
-kira--       // 4
-```
+**🔣** 🟦🟨🟩🟪 🗣️ 💻. 🚫 🔑 — 🔄 🟰 🔣. 🛠️ 🆔 🌐 🗣️ 👤.
+
+- 🚫 `if`, `while`, `return` — 🟰 `?`, `@`, `<~`
+- ✅ 🌐 Unicode — 🏷️ 🌐 🗣️ 📧
+- 🚫 📝 🗣️ — 💻 🟰 📍📍
+
+**🔄 🧠**: v0.0.5 | **🧪 📊**: 436/436 (TW ↔ VM ⚖️)
 
 ---
 
-## Ome Kira
-
-| Kira Ome        | Wẽra Pari           | Symbol `#?`  | Dachi Nezara                        |
-|-----------------|---------------------|--------------|-------------------------------------|
-| Jãni Kira       | `42`, `-7`          | `###`        | 64-Bit wẽra pari                    |
-| Wẽra Kira       | `3.14`, `1.5e10`    | `##.`        | Nezara ome wẽra                     |
-| Ome Kira        | `"nabi"`            | `##"`        | Wẽra: `"Nabi {nabi}"`               |
-| Kira Ome        | `'A'`               | `##'`        | Ome kira wẽra                       |
-| Pari Ome        | `#1`, `#0`          | `##?`        | Jã kira 1 mîna 0                    |
-| Kira Pari       | `[1, 2, 3]`         | `##]`        | Ome kira nezara                     |
-| Tuple           | `(a, b)`            | `##)`        | Kira pari                           |
-| Nabi Tuple      | `(x: 1, y: 2)`      | `##)`        | Kira nabi mîna jãni                 |
+## 🔄 🔢
 
 ```zymbol
-// Kira ome — dachi (kira, jãni, wẽra)
-meta = 42#?
->> meta ¶         // → (###, 2, 42)
-t = meta[0]
+x = 10              // 🔄 🔢 🔄
+π := 3.14159        // 🔒 — 🔄 ❌ ⏰
+👤 = "👩"
+✅ = #1         // ✅ 👍
+👋 := "👋"
+```
+
+```zymbol
+x = 10    // 1️⃣0️⃣
+x += 5    // 1️⃣5️⃣
+x -= 3    // 1️⃣2️⃣
+x *= 2    // 2️⃣4️⃣
+x /= 3    // 8️⃣
+x %= 3    // 2️⃣
+x ^= 2    // 4️⃣
+x++        // 5️⃣
+x--        // 4️⃣
+```
+
+`°` (📐, U+00B0) 🚀 🔄 ➡️ 🎯 🥇 🛠️:
+
+```zymbol
+🔢 = [3, 1, 4, 1, 5]
+@ n:🔢 {
+    °➕ += n    // 🚀 0️⃣ ⬆️ 🔄; ➕ 🔄 ⏩ @
+}
+>> ➕ ¶         // → 1️⃣4️⃣
+```
+
+> `°x` (➕) ⚓ ⬆️ 🔄 — 🎯 🔓 ⏩ `@`.
+> `x°` (➖) ⚓ 🔲 🔄 — 💀 ⏰ 🔄 🏁.
+> 🟰 tree-walker.
+
+---
+
+## 🗂️ 🏷️
+
+| 🏷️ | 📝 | 🏷️ `#?` | 📝 |
+|------|---------|----------|---------|
+| 🔢 | `42`, `-7` | `###` | 64-bit 🪧
+| 💧 | `3.14`, `1.5e10` | `##.` | 🔬 ✍️ ✅
+| 📝 | `"📄"` | `##"` | 🔗: `"👋 {👤}"`
+| 🔤 | `'A'` | `##'` | 1️⃣ 🔣 Unicode
+| ✅❌ | `#1`, `#0` | `##?` | 🚫 🔢 — `#1 ≠ 1`
+| 📦 | `[1, 2, 3]` | `##]` | 🟰 🧩
+| 📦📦 | `(a, b)` | `##)` | 📍
+| 🏷️📦📦 | `(x: 1, y: 2)` | `##)` | 🏷️ 🗂️
+| 🔧 | 🏷️ 🔧 🔗 | `##()` | 🥇 🎓; 📺 `<funct/N>`
+| λ | `x -> x * 2` | `##->` | 🥇 🎓; 📺 `<lambd/N>`
+
+```zymbol
+// 🔍 🏷️ — 🔄 (🏷️, 🔢, 💰)
+📊 = 42#?
+>> 📊 ¶         // → (###, 2️⃣, 42)
+t = 📊[1]
 >> t ¶            // → ###
 ```
 
 ---
 
-## Ewandó mîna Peda
+## 📤 📥
 
 ```zymbol
->> "Nabi" ¶                      // ¶ mîna \\ ome wẽra
->> "a=" kira " b=" peda ¶        // ome kira wẽra jãni
->> (dachi$#) ¶                   // kira pari ewandó wẽra
+>> "👋" ¶                       // ¶ 🔄 \\ ➕ 🆕 📏
+>> "a=" a " b=" b ¶               // 📎 — 📈 💰
+>> (arr$#) ¶                      // ➖ 🔧 ❌ ( ) 🔲 >>
 
-<< nabi                          // jã ome — kira peda
-<< "Nabi ome? " nabi             // ome peda
+>> 👤                           // 📖 🔄 🗂️ (🚫 🔔)
+>> "🔤 👤: " 👤            // ✅ 🔔
 ```
 
-> `¶` mîna `\\` ome wẽra kira pari.
+> `¶` (AltGr+R 🇪🇸 ⌨️) 🔄 `\\` 🟰 🆕 📏.
 
 ---
 
-## ⚙️🔢
+## 🖥️ 🧱
+
+🖥️ 👤 🎛️ 🔧 🎮 🖥️. 📈 ❌ 🧱 `>>| { }` (🔄 🖥️ + 🥩 🎮).
 
 ```zymbol
-// Jãni kira — wẽra mîna
+>>| {
+    >>!                             // 🧹 🔄 🖥️
+    >>~ (1, 1, 0, 10) > "🏃"      // 📏 1️⃣, 📐 1️⃣, fg=1️⃣0️⃣ (🟢)
+    @~ 1000                         // ⏸️ 1️⃣ ⏱️ (1000 ms)
+    >>~ (2, 1) > "✅."
+}
+// 🖥️ 🔄 🔄 🚪
+```
+
+```zymbol
+// ⌨️ 🔘 📏 🖥️
+>>| {
+    [📏, 📐] = >>?              // ❓ 📏 🖥️
+    >>~ (1, 1) > "🖥️: " 📏 " x " 📐
+    <<| 🔘                         // 📖 🚫 ⌨️ 🔘
+    >>~ (2, 1) > "🔘: " 🔘
+}
+```
+
+> `>>!` 🧹 🖥️. `>>?` 🔄 `[📏, 📐]`. `@~ N` 💤 N ⏲️.
+> `<<|` 📖 1️⃣ ⌨️ 🔘 (🚫); `<<|?` 🔍 🚫 🚫 (🔄 `'\0'` ❌).
+> 📍 📤 📦📦: `(📏, 📐, BKS, fg, bg)` — 🗂️ ❌, 🔄 `,` (`>>~ (,,, 196) > "🔴"`).
+> BKS 🧩: `1`=🔤, `2`=📜, `4`=⬇️📏. ANSI 2️⃣5️⃣6️⃣ 🎨 (`0`=🖥️ 🔄).
+> 🟰 tree-walker (❌ `>>!`, `>>?`, `@~`, `>>~` 🛠️ 🔲 `--vm`).
+
+---
+
+## 🔧
+
+```zymbol
+// ➕
 a = 10
 b = 3
-r1 = a + b    // 13     r2 = a - b    // 7
-r3 = a * b    // 30     r4 = a / b    // 3  (jãni kira)
-r5 = a % b    // 1      r6 = a ^ b    // 1000  (kira wẽra)
+r1 = a + b    // 1️⃣3️⃣
+r2 = a - b    // 7️⃣
+r3 = a * b    // 3️⃣0️⃣
+r4 = a / b    // 3️⃣  (🔢 ➗)
+r5 = a % b    // 1️⃣
+r6 = a ^ b    // 1️⃣0️⃣0️⃣0️⃣  (⬆️)
 
-// Pari ome
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
+// ⚖️ — 🔄 🧐
+c1 = a == b    // #0
+c2 = a <> b    // #1
+c3 = a < b     // #0
+c4 = a <= b    // #0
+c5 = a > b     // #1
+c6 = a >= b    // #1
 
-// Wẽra pari
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
+// 🧠
+l1 = #1 && #0    // #0
+l2 = #1 || #0    // #1
+l3 = !#1         // #0
 ```
 
 ---
 
-## 💬🔤
+## 📝
 
 ```zymbol
-// Nezara wẽra pari — dachi kira ome
-nabi = "Ana"
-kira = 42
+// 2️⃣ 🔗 🔘
+p = "👩"
+n = 42
 
-ome = "Nabi ", nabi, "!"               // ome — kira = mîna :=
->> "Nabi " nabi " kira " kira ¶        // wẽra — ewandó >>
-peda = "Nabi {nabi}, kira {kira}"      // wẽra ome — dachi nezara
+>> "👋 " p " 🫵 🈶 " n ¶       // 📎 — 🔲 >>
+📄 = "👋 {p}, 🫵 🈶 {n}"     // 🔗 — 📍📍
 ```
 
 ```zymbol
-s = "Nabi Embera"
-len = s$#                  // 11
-sub = s$[0..4]             // "Nabi"  (jã wẽra)
-has = s$? "Embera"         // #1
-parts = "a,b,c,d" / ','    // [a, b, c, d]
-rep = s$~~["a":"A"]        // "NAbi EmberA"
-rep1 = s$~~["a":"A":1]     // "NAbi Embera"
+s = "👋 🌍"
+📏 = s$#                  // 1️⃣1️⃣
+✂️ = s$[1..5]             // "👋"  (1️⃣-📌, 🔚 ✅)
+✅ = s$? "🌍"          // #1
+✂️ = "a,b,c,d"$/ ','   // [a, b, c, d]  (✂️ 🔗)
+🔄 = s$~~["a":"e"]        // "👋 🌍"
+🔄1 = s$~~["a":"e":1]     // "👋 🌍"  (🥇 N)
+📏 = "─" $* 20           // "────────────────────"  (🔄 N 🔁)
 ```
 
-> **Dachi**: `+` jã kira wẽra pari. Ome kira wẽra nezara.
+> `+` 🟰 🔢. 📝, 🛠️ `,`, 📎, 🔗.
 
 ---
 
-## Jaida
+## 🎮 🚦
 
 ```zymbol
-kira = 7
+x = 7
 
-? kira > 0 { >> "wẽra pari" ¶ }
+? x > 0 { >> "➕" ¶ }
 
-? kira > 100 {
-    >> "dachi" ¶
-} _? kira > 0 {
-    >> "wẽra pari" ¶
-} _? kira == 0 {
-    >> "jã" ¶
+? x > 100 {
+    >> "🔴" ¶
+} _? x > 0 {
+    >> "➕" ¶
+} _? x == 0 {
+    >> "0️⃣" ¶
 } _ {
-    >> "jã wẽra" ¶
+    >> "➖" ¶
 }
 ```
 
-> Kira pari `{ }` **dachi nezara**, ome kira wẽra.
+> `{ }` **✅** 🎯 1️⃣ 📄.
 
 ---
 
-## Match
+## 🔍
 
 ```zymbol
-// Match kira ome
-ome = 85
-nezara = ?? ome {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+// 🎚️
+🎯 = 85
+🏆 = ?? 🎯 {
+    90..100 => 'A'
+    80..89  => 'B'
+    70..79  => 'C'
+    _       => 'D'
 }
->> nezara ¶    // → B
+>> 🏆 ¶    // → B
 
-// Match ome kira
-nabi = "babará"
-kira = ?? nabi {
-    "babará"  : "#FF0000"
-    "bupurú"  : "#00FF00"
-    _         : "#000000"
+// 📝
+🎨 = "🔴"
+🆔 = ?? 🎨 {
+    "🔴"   => "#FF0000"
+    "🟢" => "#00FF00"
+    _       => "#000000"
 }
 
-// Match kira wẽra
-peda = -5
-dachi = ?? peda {
-    _? peda < 0  : "wẽra"
-    _? peda < 20 : "kira"
-    _? peda < 35 : "nabi"
-    _            : "dachi"
+// ⚖️ 🧩
+🌡️ = -5
+📊 = ?? 🌡️ {
+    < 0  => "🧊"
+    < 20 => "❄️"
+    < 35 => "☀️"
+    _    => "🔥"
 }
->> dachi ¶    // → wẽra
+>> 📊 ¶    // → 🧊
 
-// Match pari (kira wẽra)
+// 📄 🔘 (🧱 🦾)
+n = -3
 ?? n {
-    0       : { >> "jã" ¶ }
-    _? n < 0: { >> "jã wẽra" ¶ }
-    _       : { >> "wẽra pari" ¶ }
+    0    => { >> "0️⃣" ¶ }
+    < 0  => { >> "➖" ¶ }
+    _    => { >> "➕" ¶ }
 }
 ```
 
 ---
 
-## Naweda
+## 🔄
 
 ```zymbol
-@ i:0..4  { >> i " " }        // kira wẽra:  0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // kira ome:   1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // kira jã:    5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // 🎚️ ✅:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // ✅ 🚶:         1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // 🔄:           5 4 3 2 1 0
 
-kira = 1
-@ kira <= 64 { kira *= 2 }
->> kira ¶                     // → 128  (wẽra ome)
+n = 1
+@ n <= 64 { n *= 2 }
+>> n ¶                        // → 1️⃣2️⃣8️⃣  (⏳)
 
-nabi = ["Embera", "Dachi", "Wẽra"]
-@ ome:nabi { >> ome ¶ }       // kira dachi
+🍎 = ["🍎", "🍐", "🍇"]
+@ f:🍎 { >> f ¶ }         // 🟰 🧩 🔲 📦
 
-@ c:"nabi" { >> c "-" }
->> ¶                          // → n-a-b-i-
+@ c:"hello" { >> c "-" }
+>> ¶                          // → h-e-l-l-o-  (🟰 🔤 🔲 📝)
 
 @ i:1..10 {
-    ? i % 2 == 0 { @> }       // @> wẽra
-    ? i > 7 { @! }             // @! dachi
+    ? i % 2 == 0 { @> }       // @> ▶️
+    ? i > 7 { @! }             // @! 🛑
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
 
-// Naweda jãni
+// ♾️ 🔄
 i = 0
 @ {
     i++
@@ -214,356 +282,360 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Naweda nabi (dachi mîna)
-count = 0
-@ @outer {
-    count++
-    ? count >= 3 { @! outer }
+// 🏷️ 🔄 (📦 🛑)
+🔢 = 0
+@:🌐 {
+    🔢++
+    ? 🔢 >= 3 { @:🌐! }
 }
->> count ¶                    // → 3
+>> 🔢 ¶                    // → 3️⃣
 ```
 
 ---
 
-## Dachi Nezara
+## 🔧
 
 ```zymbol
-ewandó(a, b) { <~ a + b }
->> ewandó(3, 4) ¶    // → 7
+➕(a, b) { <~ a + b }
+>> ➕(3, 4) ¶    // → 7️⃣
 
-dachi(kira) {
-    ? kira <= 1 { <~ 1 }
-    <~ kira * dachi(kira - 1)
+🧮(n) {
+    ? n <= 1 { <~ 1 }
+    <~ n * 🧮(n - 1)
 }
->> dachi(5) ¶    // → 120
+>> 🧮(5) ¶    // → 1️⃣2️⃣0️⃣
 ```
 
-Dachi nezara **jã kira ome wẽra** — jã wẽra pari kira. Hut'unn `<~` kira wẽra:
+🔧 🈶 **🔒 🗺️** — 🚫 📖 🌐 🔄. 🛠️ 📤 🔧 `<~>` 🔄 📞 🔄:
 
 ```zymbol
-swap(a<~, b<~) {
-    tmp = a
+🔄(a<~, b<~) {
+    🕒 = a
     a = b
-    b = tmp
+    b = 🕒
 }
 x = 10
 y = 20
-swap(x, y)
+🔄(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> **Dachi**: Ewandó nabi `ome(nembi){ }` jã kira wẽra pari.
-> Kira pari wẽra: `x -> ome(x)`.
+> 🏷️ 🔧 **🥇 🎓 💰** — 📤 ✅: `🔢$> 2️⃣`. 🔄: `x -> fn(x)` ✅.
 
 ---
 
-## Lambda mîna Kira
+## λ 🔒
 
 ```zymbol
-peda = x -> x * 2
-dachi = (a, b) -> a + b
->> peda(5) ¶     // → 10
->> dachi(3, 7) ¶ // → 10
+🔁 = x -> x * 2
+➕ = (a, b) -> a + b
+>> 🔁(5) ¶    // → 1️⃣0️⃣
+>> ➕(3, 7) ¶  // → 1️⃣0️⃣
 
-// Lambda kira ome
-nezara = x -> {
-    ? x > 0 { <~ "wẽra pari" }
-    _? x < 0 { <~ "jã wẽra" }
-    <~ "jã"
+// 🧱 λ
+🔍 = x -> {
+    ? x > 0 { <~ "➕" }
+    _? x < 0 { <~ "➖" }
+    <~ "0️⃣"
 }
 
-// Kira — lambda ome wẽra pari
-kira = 3
-dachi2 = x -> x * kira
->> dachi2(7) ¶    // → 21
+// 🔒 — 🎣 🌐 🗺️
+🔢 = 3
+📐 = x -> x * 🔢
+>> 📐(7) ¶    // → 2️⃣1️⃣
 
-// Ewandó kira ome
-make_adder(kira) { <~ x -> x + kira }
-add10 = make_adder(10)
->> add10(5) ¶    // → 15
+// 🏭
+➕🔧(n) { <~ x -> x + n }
+➕🔟 = ➕🔧(10)
+>> ➕🔟(5) ¶    // → 1️⃣5️⃣
 
-// Lambda kira: dachi wẽra
-ome = [x -> x+1, x -> x*2, x -> x*x]
->> ome[2](5) ¶    // → 25
+// 🔲 📦
+🔧 = [x -> x+1, x -> x*2, x -> x*x]
+>> 🔧[3](5) ¶    // → 2️⃣5️⃣
 ```
 
 ---
 
-## Nembira
+## 📦
 
-Arrays are **mutable** and hold elements of the **same type**. _(Nembira **wẽra pari** dachi — kira pari ome wẽra nezara.)_
+📦 **🔄** 🈶 🧩 **🟰 🏷️**.
 
 ```zymbol
-dachi = [1, 2, 3, 4, 5]
+arr = [1, 2, 3, 4, 5]
 
-dachi[0]          // 1 — kira (0 ome wẽra)
-dachi[-1]         // 5 — jãni kira (pari)
-dachi$#           // 5 — ome wẽra (kira wẽra >> dachi)
+x = arr[1]      // 1 — 🔓 (1️⃣-📌: 🥇 🧩)
+x = arr[-1]     // 5 — ➖ 🔢 (🔚 🧩)
+x = arr$#       // 5 — 📏 (🛠️ (arr$#) 🔲 >>)
 
-dachi = dachi$+ 6            // ewandó → [1,2,3,4,5,6]
-dachi2 = dachi$+[2] 99       // kira 2
-dachi3 = dachi$- 3           // kira jãni wẽra
-dachi4 = dachi$-- 3          // kira ibac
-dachi5 = dachi$-[0]          // kira ome
-dachi6 = dachi$-[1..3]       // kira pari (jã wẽra)
+arr = arr$+ 6            // ➕ → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // 🔌 📍 2️⃣ (1️⃣-📌)
+arr3 = arr$- 3           // ❌ 🥇 🧩 💰
+arr4 = arr$-- 3          // ❌ 🌐 🧩
+arr5 = arr$-[1]          // ❌ 🔢 1️⃣ (🥇 🧩)
+arr6 = arr$-[2..3]       // ❌ 🎚️ (1️⃣-📌, 🔚 ✅)
 
-has = dachi$? 3              // #1 — wẽra ome
-pos = dachi$?? 3             // [2] — ibac ome
-sl = dachi$[0..3]            // [1,2,3] — pari (jã wẽra)
-sl2 = dachi$[0:3]            // [1,2,3] — jãni kira
+✅ = arr$? 3            // #1 — 🈶
+📍 = arr$?? 3           // [3] — 🌐 🔢 💰 (1️⃣-📌)
+✂️ = arr$[1..3]          // [1,2,3] — ✂️ (1️⃣-📌, 🔚 ✅)
+✂️2 = arr$[1:3]          // [1,2,3] — 🟰, 🔢-📌 ✍️
 
-asc = dachi$^+               // kira jate (naas solus)
-desc = dachi$^-              // kira nayc (naas solus)
+⬆️ = arr$^+             // 🔼 🔢 (🟰 🧩)
+⬇️ = arr$^-            // 🔽 🔢 (🟰 🧩)
 
-// Nabi Tuple — hut'unn $^ mîna lambda
-db = [(nabi: "Carla", kira: 28), (nabi: "Ana", kira: 25), (nabi: "Bob", kira: 30)]
-by_kira = db$^ (a, b -> a.kira < b.kira)
-by_nabi = db$^ (a, b -> a.nabi > b.nabi)
->> by_kira[0].nabi ¶     // → Ana
->> by_nabi[0].nabi ¶     // → Carla
+// 🏷️/📍 📦📦 📦 — 🛠️ $^ ✅ λ ⚖️
+🗄️ = [(👤: "👩", 🎂: 28), (👤: "👧", 🎂: 25), (👤: "👨", 🎂: 30)]
+🎂  = 🗄️$^ (a, b -> a.🎂 < b.🎂)    // 🎂 🔼 (<)
+👤 = 🗄️$^ (a, b -> a.👤 > b.👤)   // 👤 🔽 (>)
+>> 🎂[1].👤 ¶     // → 👧
+>> 👤[1].👤 ¶    // → 👩
 
-// Kira pari wẽra (nembira dachi kama)
-dachi[1] = 99              // kira wẽra (jünüin)
-dachi[0] += 5              // wẽra ome: +=  -=  *=  /=  %=  ^=
+// ✅ 🧩 🔄 (📦)
+arr[1] = 99              // 🔄
+arr[2] += 5              // ➕: +=  -=  *=  /=  %=  ^=
 
-// Kira ome wẽra — bora nembira dachi; nayc mana tikiti
-dachi2 = dachi[1]$~ 99
+// 🔧 🔄 — 🔄 🆕 📦; 📄 📦 🔄
+arr2 = arr[2]$~ 99
 ```
 
-> `$+`, `$-`, `$[..]` **kira wẽra** dachi — wẽra: `dachi = dachi$+ 4`.
-> Jã kira: peda wẽra kira ome.
-> `$^+` / `$^-` kira **naas solus**. Nabi Tuple — hut'unn `$^` mîna lambda.
+> 🌐 📦 🔧 🔄 **🆕 📦**. 🔄: `arr = arr$+ 4`.
+> `$+` 🔗: `arr = arr$+ 5$+ 6$+ 7`. 🔄 🔧 🛠️ 🔄.
+> **🔢 1️⃣-📌**: `arr[1]` 🥇 🧩; `arr[0]` ❌ ⏰.
+> `$^+` / `$^-` 🔼 **📦 🟰** (🔢, 📝). 📦📦 📦, 🛠️ `$^` ✅ λ ⚖️ — 🧭 📟 🔲 λ (`<` = 🔼, `>` = 🔽).
 
-**Kira ome wẽra** — nembira dachi bora wẽra ome kira pari (kira ibac):
+**💰 🧠** — 📦 🔄 ➡️ 🔄 🔄 🆕 📄 📦:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b jã wẽra
+>> b ¶    // → [1, 2, 3]   ← b 🔄
 ```
 
 ```zymbol
-// Nembira naasad
-matrix = [[1,2,3],[4,5,6],[7,8,9]]
->> matrix[1][2] ¶    // → 6
-```
-
----
-
-## 🔓📦
-
-```zymbol
-// Nembira
-dachi = [10, 20, 30, 40, 50]
-[a, b, c] = dachi              // a=10  b=20  c=30
-[first, *rest] = dachi         // first=10  rest=[20,30,40,50]
-[x, _, z] = [1, 2, 3]          // _ jã nezara
-
-// Tuple kira
-point = (100, 200)
-(px, py) = point               // px=100  py=200
-
-// Nabi Tuple
-person = (nabi: "Ana", kira: 25, city: "Babará")
-(nabi: n, kira: a) = person    // n="Ana"  a=25
+// 📦 📦 (1️⃣-📌 🔢)
+📊 = [[1,2,3],[4,5,6],[7,8,9]]
+>> 📊[2][3] ¶    // → 6️⃣  (📏 2️⃣, 📐 3️⃣)
 ```
 
 ---
 
-## Tuple
-
-Tuples are **immutable** ordered containers that can hold values of **different types**. Unlike arrays, elements cannot be changed after creation. _(Tuple **jã wẽra pari** ome kira dachi nezara — kira pari wẽra ome. Nembira dachi kama, kira jã wẽra pari lurasipxata qhipana.)_
+## 🧩 🔄
 
 ```zymbol
-// Kira pari
-point = (10, 20)
->> point[0] ¶    // → 10
+// 📦
+arr = [10, 20, 30, 40, 50]
+[a, b, c] = arr              // a=10  b=20  c=30
+[🥇, *🗑️] = arr         // 🥇=10  🗑️=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ 🗑️
 
-kira_pë = (42, "kë embera", #1, 3.14)
->> kira_pë[2] ¶     // → #1
+// 📍 📦📦
+📍 = (100, 200)
+(px, py) = 📍             // px=100  py=200
 
-// Nabi
-nabi = (ome: "Alice", kira: 25)
->> nabi.ome ¶     // → Alice
->> nabi[0] ¶      // → Alice  (kira ome)
-
-// Naasad
-pos = (x: 10, y: 20)
-p = (pos: pos, label: "embera")
->> p.pos.x ¶        // → 10
+// 🏷️ 📦📦
+👤 = (👤: "👧", 🎂: 25, 🏙️: "📌")
+(👤: n, 🎂: a) = 👤   // n="👧"  a=25
 ```
 
-**Jã wẽra pari** — kira pari dachi wẽra ome kira pari nowë kami:
+---
+
+## 📦📦
+
+📦📦 **🔒** 🗂️ 📦 📦 📦 **🔢 🏷️**.
+🔀 📦, 🧩 🔄 🔄 🔄.
+
+```zymbol
+// 📍 — 🔢 🏷️ ✅
+📍 = (10, 20)
+>> 📍[1] ¶    // → 1️⃣0️⃣
+
+📊 = (42, "👋", #1, 3.14)
+>> 📊[3] ¶     // → #1
+
+// 🏷️
+👤 = (👤: "👩", 🎂: 25)
+>> 👤.👤 ¶    // → 👩
+>> 👤[1] ¶      // → 👩  (🔢 🛠️, 1️⃣-📌)
+
+// 📦
+📍 = (x: 10, y: 20)
+p = (📍: 📍, 🏷️: "🔴")
+>> p.📍.x ¶        // → 1️⃣0️⃣
+```
+
+**🔒** — 🛠️ 📦📦 🧩 ❌ ⏰:
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ kira pari: tuple jã wẽra pari
-// t[0] += 5    // ❌ kira pari wẽra ome
+// t[1] = 99    // ❌ ⏰ ❌: 📦📦 🔒
+// t[1] += 5    // ❌ 🟰 ❌
 ```
 
-Kira ome wẽra pari `$~` apaykachaña (wẽra kira) — **bora** tuple dachi:
+💰 🔄, 🛠️ `$~` (🔧 🔄) — 🔄 **🆕 📦📦**:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[1]$~ 999
->> t ¶     // → (10, 20, 30)   ← nayc mana tikiti
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← 📄 📦 🔄
 >> t2 ¶    // → (10, 999, 30)
 
-// Nabi tuple — bora kira wẽra
-nabi = (ome: "Alice", kira: 25)
-nabi2 = (ome: nabi.ome, kira: 26)
->> nabi.kira ¶    // → 25
->> nabi2.kira ¶   // → 26
+// 🏷️ 📦📦 — 🔄 ✅
+👤 = (👤: "👩", 🎂: 25)
+➕  = (👤: 👤.👤, 🎂: 26)
+>> 👤.🎂 ¶    // → 2️⃣5️⃣
+>> ➕.🎂 ¶     // → 2️⃣6️⃣
 ```
 
 ---
 
-## Wẽra Kira
-
-> Kira ome wẽra **lambda inline** — jã lambda kira wẽra.
+## ⬆️ 🔧
 
 ```zymbol
-kira = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+🔢 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-peda = kira$> (x -> x * 2)                // map → [2,4,6…20]
-dachi = kira$| (x -> x % 2 == 0)          // filter → [2,4,6,8,10]
-nezara = kira$< (0, (ome, x) -> ome + x)  // reduce → 55
+🔁  = 🔢$> (x -> x * 2)                  // map  → [2,4,6…20]
+🔢    = 🔢$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
+➕    = 🔢$< (0, (📦, x) -> 📦 + x)     // reduce → 55
 
-// Kira wẽra
-step1 = kira$| (x -> x > 3)
-step2 = step1$> (x -> x * x)
->> step2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+// 🔗 ✅ 📦
+⬆️ = 🔢$| (x -> x > 3)
+🔁 = ⬆️$> (x -> x * x)
+>> 🔁 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Dachi naasad — peda lambda
-ewandó2(x) { <~ x * 2 }
-r = kira$> (x -> ewandó2(x))    // ✅
+// 🏷️ 🔧 📤 ✅ HOF
+🔁(x) { <~ x * 2 }
+🔴(x) { <~ x > 5 }
+r = 🔢$> 🔁       // ✅ ✅ 🔗
+r = 🔢$| 🔴       // ✅ ✅ 🔗
 ```
 
 ---
 
-## 🔗➡️
+## | 🔧
 
-Ibac kira wẽra `_` dachi nezara:
+👉 🦾 🟰 `_` 🕳️ 📤 💰:
 
 ```zymbol
-peda = x -> x * 2
-dachi = (a, b) -> a + b
-inc = x -> x + 1
+🔁 = x -> x * 2
+➕ = (a, b) -> a + b
+⬆️ = x -> x + 1
 
-5 |> peda(_)        // → 10
-10 |> dachi(_, 5)   // → 15
-5 |> dachi(2, _)    // → 7
+r1 = 5 |> 🔁(_)        // → 1️⃣0️⃣
+r2 = 10 |> ➕(_, 5)       // → 1️⃣5️⃣
+r3 = 5 |> ➕(2, _)        // → 7️⃣
 
-// Naasad
-r = 5 |> peda(_) |> inc(_) |> peda(_)
->> r ¶    // → 22  (5→10→11→22)
+// 🔗
+r = 5 |> 🔁(_) |> ⬆️(_) |> 🔁(_)
+>> r ¶    // → 2️⃣2️⃣  (5→10→11→22)
 ```
 
 ---
 
-## Jãni
+## ❌
 
 ```zymbol
 !? {
     x = 10 / 0
 } :! ##Div {
-    >> "Kira jã wẽra" ¶
+    >> "➗ 0️⃣" ¶
 } :! {
-    >> "ome kira: " _err ¶    // _err kira ome wẽra
+    >> "🔹: " _err ¶    // _err 📨 ❌
 } :> {
-    >> "dachi wẽra" ¶
+    >> "🔄 🏃" ¶
 }
 ```
 
-| Kira Ome    | Dachi Nezara                  |
-|-------------|-------------------------------|
-| `##Div`     | Kira jã wẽra                  |
-| `##IO`      | Kira / ome wẽra               |
-| `##Index`   | Kira ome pari                 |
-| `##Type`    | Kira ome wẽra                 |
-| `##Parse`   | Kira wẽra pari                |
-| `##Network` | Kira ome nezara               |
-| `##_`       | Dachi kira (catch-all)        |
+| 🏷️ | ⏰ |
+|------|------|
+| `##Div` | ➗ 0️⃣ |
+| `##IO` | 📁 / 🖥️ |
+| `##Index` | 🔢 🚫 |
+| `##Type` | 🏷️ ❌ |
+| `##Parse` | 📊 🔍 |
+| `##Network` | 🌐 ❌ |
+| `##_` | ❌ (✅) |
 
 ---
 
-## Ome Wẽra
+## 🧩
 
 ```zymbol
-// lib/dachi.zy
-# dachi
+// lib/calc.zy — 🧱 🧩 🧱 {}
+# calc {
+    #> { ➕, get_PI }
 
-#> { ewandó, get_DACHI }    // Kira wẽra DACHI nezara
-
-_DACHI := 3.14159
-ewandó(a, b) { <~ a + b }
-get_DACHI() { <~ _DACHI }
+    _π := 3.14159
+    ➕(a, b) { <~ a + b }
+    get_PI() { <~ _π }
+}
 ```
 
 ```zymbol
 // main.zy
-<# ./lib/dachi <= d    // Kira wẽra dachi
+<# ./lib/calc => c    // 🏷️ ✅
 
->> d::ewandó(5, 3) ¶   // → 8
-pari = d::get_DACHI()
->> pari ¶              // → 3.14159
+>> c::➕(5, 3) ¶     // → 8️⃣
+π = c::get_PI()
+>> π ¶               // → 3.14159
 ```
 
 ```zymbol
-// Nabi kira ome
-# mylib
-#> { _ibac_ewandó <= ibac }
+// 📤 ✅ 🔢 🏷️
+# mylib {
+    #> { _➕🔲 => ➕ }
 
-_ibac_ewandó(a, b) { <~ a + b }
+    _➕🔲(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
-<# ./mylib <= m
+<# ./mylib => m
 
->> m::ibac(3, 4) ¶    // → 7
+>> m::➕(3, 4) ¶    // → 7️⃣  (🔲 🏷️ _➕🔲 🙈)
 ```
+
+> **🧩 📜**: 🔲 `# 🏷️ { }`, `#>`, 🔧 📄, 📝 🔄/🔒 ✅. 📄 🔧 (`>>`, `<<`, 🔄, etc.) ❌ E013.
 
 ---
 
-## Dachi Jakhu Pari
+## 🔢 🎮
 
-Zymbol jakhunaka uñjaña danañatawa **Unicode jakhu aru 69** — Devanagari, Arabi-India, Thai, Klingon pIqaD, Matemática Sasa, LCD ukanakaw. Kira aktivo `>>`-naka pari; jakhu binario.
+Zymbol 📺 🔢 🔲 **6️⃣9️⃣ Unicode 🔢 ✍️** — 🇮🇳, 🇸🇦, 🇹🇭, 🖖, 📐, 📺, ➕. 🎮 ✅ 📤 `>>`; 🔲 ➕ 🟰 2️⃣.
 
-### Ome wẽra kira
+### ✍️ ✅
 
-Jakhu `0` mîna `9` bëdë `#…#`:
+✍️ 🔢 `0️⃣` `9️⃣` ✍️ 🔲 `#…#`:
 
 ```zymbol
-#०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // Arabi-India   (U+0660–U+0669)
-#๐๙#    // Thai          (U+0E50–U+0E59)
-#09#    // ASCII dachi
+#०९#    // 🇮🇳   (U+0966–U+096F)
+#٠٩#    // 🇸🇦 (U+0660–U+0669)
+#๐๙#    // 🇹🇭     (U+0E50–U+0E59)
+#09#    // 🔄 ASCII
 ```
 
-### Peda mîna boolean
+### 📤 ✅❌
 
 ```zymbol
 x = 42
->> x ¶          // → 42
+>> x ¶          // → 4️⃣2️⃣  (ASCII 🔄)
 
 #०९#
 >> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४
+>> 3.14 ¶       // → ३.१४   (🔘 🔟 🟰 ASCII)
 >> 1 + 2 ¶      // → ३
 
-// Boolean: # ASCII, jakhu yatiqawi
->> #1 ¶         // → #१
->> #0 ¶         // → #०
+// ✅❌: # 🔂 ASCII, 🔢 🔄
+>> #1 ¶         // → #१   (✅ 🇮🇳)
+>> #0 ¶         // → #०   (❌ — 🔀 ० 🔢 0️⃣)
 
 x = 28 > 4
->> x ¶          // → #१
+>> x ¶          // → #१   (⚖️ 🎯 🎮 ✅)
 ```
 
-### Jakhu dachi kira
+### 🔢 📝 🔲 📄
 
-Jakhu aru literal — range, modulo:
+🔢 ✍️ ✅ 📝 — 🔲 🎚️, ➗, ⚖️:
 
 ```zymbol
 #०९#
@@ -576,45 +648,50 @@ Jakhu aru literal — range, modulo:
 }
 ```
 
-### Boolean literal
+### ✅❌ 📝 🔲 ✍️
 
-`#` + `0` mîna `1` bloc boolean:
+`#` + 🔢 `0️⃣` `1️⃣` 🧱 ✅❌ 📝:
 
 ```zymbol
-#٠٩#
-نشط = #١
->> نشط ¶        // → #١
->> (#١ && #٠) ¶ // → #٠
+#०९#
+✅ = #१        // 🟰 #1
+>> ✅ ¶        // → #१
+>> (#१ && #०) ¶ // → #०
 ```
 
-> `#` **ASCII**. `#0` (kami) `0` (dachi zero) uñjasiwa.
+> `#` **🔂 ASCII**. `#0` (❌) 🔂 👁️ 🔀 `0️⃣` (🔢 0️⃣) 🔲 ✍️.
 
 ---
 
-## 📊⚙️
+## 📊 🔧
 
 ```zymbol
-// Kira jãni ome wẽra
-v1 = #|"42"|      // → 42  (Jãni Kira)
-v2 = #|"3.14"|    // → 3.14  (Wẽra Kira)
-v3 = #|"abc"|     // → "abc"  (jã wẽra)
+// 🏷️ 🔄
+f = ##.42         // → 4️⃣2️⃣.0️⃣  (💧)
+i = ###3.7        // → 4️⃣     (🔢, 🔄)
+t = ##!3.7        // → 3️⃣     (🔢, ✂️)
 
-// Pari / kira
-pi = 3.14159265
-r2 = #.2|pi|      // → 3.14
-r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14  (kira)
+// 📝 🔢 🔍
+v1 = #|"42"|      // → 4️⃣2️⃣  (🔢)
+v2 = #|"3.14"|    // → 3️⃣.1️⃣4️⃣  (💧)
+v3 = #|"abc"|     // → "abc"  (🛡️, ❌)
 
-// Ome kira
-fmt = #,|1234567|      // → 1,234,567
-sci = #^|12345.678|    // → 1.2345678e4
+// 🔄 / ✂️
+π = 3.14159265
+🔄2 = #.2|π|      // → 3️⃣.1️⃣4️⃣  (🔄 2️⃣ 🔟)
+🔄4 = #.4|π|      // → 3️⃣.1️⃣4️⃣1️⃣6️⃣
+✂️2 = #!2|π|      // → 3️⃣.1️⃣4️⃣  (✂️)
 
-// Naas kira
-a = 0x41         // → 'A'  (hex)
-b = 0b01000001   // → 'A'  (binary)
-c = 0o101        // → 'A'  (octal)
+// 🔢 ✍️
+✍️ = #,|1234567|  // → 1,234,567  (`,` ✂️)
+🔬 = #^|12345.678|    // → 1.2345678e4  (🔬)
 
-// Wẽra naas
+// 📌 📝
+a = 0x41         // → 'A'  (1️⃣6️⃣)
+b = 0b01000001   // → 'A'  (2️⃣)
+c = 0o101        // → 'A'  (8️⃣)
+
+// 📌 🔄 📤
 hex = 0x|255|    // → "0x00FF"
 bin = 0b|65|     // → "0b1000001"
 oct = 0o|8|      // → "0o10"
@@ -623,110 +700,147 @@ dec = 0d|255|    // → "0d0255"
 
 ---
 
-## 🐚🔌
+## 🐚 🔗
 
 ```zymbol
-date = <\ date +%Y-%m-%d \>     // kira stdout (mîna ome wẽra)
->> "Kira: " date
+📅 = <\ date +%Y-%m-%d \>     // 📤 (✅ \n 🔚)
+>> "📅: " 📅
 
-tebec = "data.txt"
-content = <\ cat {tebec} \>     // wẽra ome kira
+📁 = "data.txt"
+📄 = <\ cat {📁} \>      // 🔗 🔲 ⌨️
 
-output = </"./sub.zy"/>         // ewandó zy kira, peda
->> output
+📤 = </"./subscript.zy"/>   // 🏃 🔄 Zymbol 📄, 📤
+>> 📤
 ```
 
-> `><` kira CLI jãni ome wẽra pari (jãni solus).
+> `><` 📤 CLI 🗂️ 🔢 📝 (tree-walker).
 
 ---
 
-## Dachi Kira: FizzBuzz
+## ✅ 📝: FizzBuzz
 
 ```zymbol
-ewandó(nembi) {
-    ? nembi % 15 == 0 { <~ "BabaráBupurú" }
-    _? nembi % 3  == 0 { <~ "Babará" }
-    _? nembi % 5  == 0 { <~ "Bupurú" }
-    _ { <~ nembi }
+🔍(🔢) {
+    ? 🔢 % 15 == 0 { <~ "FizzBuzz" }
+    _? 🔢 % 3  == 0 { <~ "Fizz" }
+    _? 🔢 % 5  == 0 { <~ "Buzz" }
+    _ { <~ 🔢 }
 }
 
-@ i:1..20 { >> ewandó(i) ¶ }
+@ i:1..20 { >> 🔍(i) ¶ }
 ```
 
 ---
 
-## Kira Pari
+## 🔣 📖
 
-| Symbol  | Kira Ome           | Symbol       | Kira Ome              |
-|---------|--------------------|--------------|------------------------|
-| `=`     | Kira               | `$#`         | Ome wẽra              |
-| `:=`    | Jãni Pari          | `$+`         | Ewandó                |
-| `>>`    | Dachi              | `$+[i]`      | Kira ome              |
-| `<<`    | Peda               | `$-`         | Kira jãni             |
-| `¶`/`\\`| Ome wẽra           | `$--`        | Kira ibac             |
-| `?`     | Jaida (if)         | `$-[i]`      | Kira ome              |
-| `_?`    | Ome jaida (elif)   | `$-[i..j]`   | Kira pari             |
-| `_`     | Ome / kira pari    | `$?`         | Wẽra ome              |
-| `??`    | match              | `$??`        | Ibac ome              |
-| `@`     | Naweda             | `$[s..e]`    | Kira pari             |
-| `@!`    | Dachi (break)      | `$>`         | map                   |
-| `@>`    | Wẽra (continue)    | `$\|`        | filter                |
-| `->`    | Lambda             | `$<`         | reduce                |
-| `dachi[i] = val` | kira wẽra (nembira kama) | `dachi[i] += val` | wẽra ome kira |
-| `dachi[i]$~` | wẽra kira ome (bora copia) | `$^+` | Kira jate (naas solus) |
-| `$^-`   | Kira nayc (naas solus) | `$^`     | Kira lambda           |
-| `<~`    | Nezara (return)    | `!?`         | Jãni (try)            |
-| `\|>`   | Pipe               | `:!`         | Kira (catch)          |
-| `#1`    | Wẽra (#1)          | `:>`         | Dachi wẽra (finally)  |
-| `#0`    | Jã (#0)            | `$!`         | Kira wẽra             |
-| `<#`    | Peda kira          | `$!!`        | Kira pari             |
-| `#`     | Ome wẽra dachi     | `#>`         | Dachi kira            |
-| `::`    | Ome kira           | `.`          | Kira ome              |
-| `#\|..\|`| Kira jãni        | `#?`         | Kira ome naas         |
-| `#.N\|..\|`| Pari           | `#!N\|..\|`  | Kira                  |
-| `#,\|..\|`| Ome kira comma   | `#^\|..\|`    | Naas'ika              |
-| `#d0d9#` | jakhu kira amtaña | `#09#` | ASCII dachi |
-| `<\ ..\>`| Shell ewandó     | `>\<`        | CLI kira              |
-
-## Dachi Versión
-
-### v0.0.3 — Unicode Jakhu & LSP _(Abril 2026)_
-
-- **Ida'ame** Unicode bloc 69 token `#d0d9#`
-- **Ida'ame** Boolean literals — `#१` / `#०`, `#١` / `#٠`
-- **Ida'ame** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
-- **Ida'ame** VM opcode `SetNumeralMode` — tree-walker
-- **Ida'ame** REPL jakhu echo variable
-- **Jijjiirame** `>>` boolean `#` (`#0` / `#1`)
-
-### v0.0.2_01 _(30 Mar 2026)_
-
-- **Jijjiirame** `c|..|` → `#,|..|` mîna `e|..|` → `#^|..|`
-- **Ida'ame** Export alias
-
-### v0.0.2 _(24 Mar 2026)_
-
-- **Ida'ame** `$` arrays mîna strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Ida'ame** Destructuring arrays, tuples
-- **Ida'ame** Index kami (`arr[-1]`)
-- **Ida'ame** Instalar — Linux, macOS, Windows
-
-### v0.0.1-patch _(25 Mar 2026)_
-
-- **Ida'ame** `^=`
-
-### v0.0.1 _(22 Mar 2026)_
-
-- Tree-walker + register VM (`--vm`, ~4×, ~95%)
-- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- REPL, LSP, VS Code, formatter (`zymbol fmt`)
+| 🔣 | ⚙️ | 🔣 | ⚙️ |
+|--------|-----------|--------|-----------|
+| `=` | 🔄 | `$#` | 📏 |
+| `:=` | 🔒 | `$+` | ➕ (🔗) |
+| `>>` | 📤 | `$+[i]` | 🔌 🔢 (1️⃣-📌) |
+| `<<` | 📥 | `$-` | ❌ 🥇 💰 |
+| `¶` / `\\` | 🆕 📏 | `$--` | ❌ 🌐 💰 |
+| `?` | ❓ | `$-[i]` | ❌ 🔢 (1️⃣-📌) |
+| `_?` | ❓ ❌ | `$-[i..j]` | ❌ 🎚️ (1️⃣-📌) |
+| `_` | ❌ / 🃏 | `$?` | ✅ |
+| `??` | 🔍 | `$??` | 🔍 🌐 🔢 (1️⃣-📌) |
+| `@` | 🔄 | `$[s..e]` | ✂️ (1️⃣-📌) |
+| `@ N { }` | 🔄 N 🔁 | `$>` | map |
+| `@!` | 🛑 | `$\|` | filter |
+| `@>` | ▶️ | `$<` | reduce |
+| `@:🏷️ { }` | 🏷️ 🔄 | `$/ 🔗` | ✂️ 📝 |
+| `@:🏷️!` | 🛑 🏷️ | `$++ a b c` | 🔗 🏗️ |
+| `@:🏷️>` | ▶️ 🏷️ | `arr[i>j>k]` | 🧭 🔢 |
+| `->` | λ | `arr[i] = 💰` | 🔄 🧩 (📦) |
+| `arr[i] += 💰` | ➕ 🔄 | `arr[i]$~` | 🔧 🔄 (🆕 📄) |
+| `$^+` | 🔼 (🟰) | `$^-` | 🔽 (🟰) |
+| `$^` | 🔼 ✅ ⚖️ (📦📦) | `<~` | 🔄 |
+| `\|>` | | `!?` | 🎣 |
+| `:!` | 🎣 | `:>` | 🔚 |
+| `#1` | ✅ | `#0` | ❌ |
+| `$!` | ❌ | `$!!` | 📤 ❌ |
+| `<#` | 📥 | `#>` | 📤 |
+| `#` | 🧩 📢 | `::` | 📞 🧩 |
+| `.` | 🔓 🗂️ | `#?` | 🏷️ 📊 |
+| `#\|..\|` | 🔍 🔢 | `##.` | 🔄 💧 |
+| `###` | 🔄 🔢 (🔄) | `##!` | 🔄 🔢 (✂️) |
+| `#.N\|..\|` | 🔄 | `#!N\|..\|` | ✂️ |
+| `#,\|..\|` | `,` ✍️ | `#^\|..\|` | 🔬 |
+| `#d0d9#` | 🔄 🔢 🎮 | `#09#` | 🔄 ASCII |
+| `<\ ..\>` | 🏃 🐚 | `>\<` | CLI 🗂️ |
+| `\ 🔄` | ❌ 🔄 | `°x` / `x°` | 🔥 📄 (🚀) |
+| `>>|` | TUI 🧱 (🔄 🖥️) | `>>~` | 📍 📤 |
+| `>>!` | 🧹 🖥️ | `>>?` | ❓ 📏 🖥️ |
+| `<<\|` | 🚫 ⌨️ 🔘 | `<<\|?` | 🔍 ⌨️ 🔘 🚫 🚫 |
+| `@~ N` | 💤 N ⏲️ | `$*` | 🔁 📝 N 🔁 |
 
 ---
 
-*Zymbol-Lang — Kira. Dachi. Jãni Pari.*
+## 📅 📝
 
-> **Dachi Nezara:** Ome wẽra kira pari dachi nezara ome kira wẽra. Kira ome wẽra pari dachi nezara kira ome. Kira pari wẽra: [Zymbol-Lang](https://github.com/zymbol-lang/interpreter).
->
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-> The authoritative reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).
+### v0.0.5 — TUI 🧱, 🔥 📄 & 🔁 📝 _(📅 5️⃣ 2026)_
+
+- **💥** 🔍 🦾 ✂️: `🧩 : 🎯` → `🧩 => 🎯`
+- **💥** 📥 🏷️: `<# 🗺️ <= 🏷️` → `<# 🗺️ => 🏷️`
+- **💥** 📤 🏷️: `#> { 🔧 <= 🌐 }` → `#> { 🔧 => 🌐 }`
+- **➕** TUI 🧱 `>>| { }` — 🔄 🖥️ + 🥩 🎮; 🧹 🚪
+- **➕** 📍 📤 `>>~ (📏, 📐, BKS, fg, bg) > 🧩` — 🗂️, ANSI 2️⃣5️⃣6️⃣ 🎨
+- **➕** ⌨️ 📥 `<<| 🔄` (🚫) 🔄 `<<|? 🔄` (🔍 🚫 🚫)
+- **➕** `>>!` 🧹 🖥️, `>>?` ❓ 📏 🖥️, `@~ N` 💤 N ⏲️
+- **➕** 🔥 📄 `°x` / `x°` — 🚀 🔄 🥇 🛠️ 🔲 🔄
+- **➕** 🔁 📝 `📝 $* N` — 🔁 📝 N 🔁
+- **🧠** ⚖️: 4️⃣3️⃣6️⃣/4️⃣3️⃣6️⃣ 🧪 ✅
+
+### v0.0.4 — 1️⃣-📌 🔢, 🥇 🎓 🔧 & 🧱 🧩 _(📅 4️⃣ 2026)_
+
+- **💥** 🌐 🔢 ➡️ **1️⃣-📌** — `arr[1]` 🥇 🧩; `arr[0]` ❌ ⏰
+- **➕** 🏷️ 🔧 **🥇 🎓 💰** — 📤 ✅ HOF: `🔢$> 2️⃣`
+- **➕** **🧱 ✍️** 🧩: `# 🏷️ { ... }` — 📄 ✍️ ❌
+- **➕** 📐 🔢: `arr[i>j>k]` (🧭), `arr[p ; q]` (📄 📤)
+- **➕** 🏷️ 🔄: `##.📄` (💧), `###📄` (🔢 🔄), `##!📄` (🔢 ✂️)
+- **➕** ✂️ 📝: `📝$/ 🔗` — 🔄 `Array(📝)`
+- **➕** 🔗 🏗️: `📌$++ a b c` — ➕ 📈 🧩
+- **➕** 🔄 N 🔁: `@ N { }` — 🔁 N 🔁
+- **➕** 🏷️ 🔄 ✍️: `@:🏷️ { }`, `@:🏷️!`, `@:🏷️>` — 🔄 `@ @🏷️` / `@! 🏷️`
+- **➕** 🔄 🗺️ 📜: `_🏷️` 🔄 🈶 🧱 🗺️; `\ 🔄` ❌ ⏰
+- **➕** 🔍 ⚖️ 🧩: `< 0 =>`, `> 5 =>`, `== 42 =>`, ➕
+- **➕** 🧩 E013 ❌: 📄 🔧 🔲 🧱 ❌
+- **🔧** `alias.CONST` ✅ 🔍; `#>` 🔄 🔧 📄
+- **🧠** ⚖️: 3️⃣9️⃣3️⃣/3️⃣9️⃣3️⃣ 🧪 ✅
+
+### v0.0.3 — Unicode 🔢 🎮 & LSP 📈 _(📅 4️⃣ 2026)_
+
+- **➕** 6️⃣9️⃣ Unicode 🔢 🧱 ✅ 🎮 🔄 🔣 `#d0d9#`
+- **➕** ✅❌ 📝 🔲 ✍️ — `#१` / `#०`, `#१` / `#०`, ➕
+- **➕** 🖖 pIqaD 🔢 (CSUR PUA U+F8F0–U+F8F9)
+- **➕** 🧠 🔧 `SetNumeralMode` — ⚖️ tree-walker
+- **🔄** ✅❌ `>>` 📤 🔂 # (`#0` / `#1`) 🔲 🎮
+
+### v0.0.2_01 — 🔧 🏷️ 🔄 _(📅 3️⃣0️⃣ 3️⃣ 2026)_
+
+- **🔄** `c|..|` → `#,|..|` 🔄 `e|..|` → `#^|..|` — 🔂 `#` 🔂
+- **➕** 📤 🏷️ — 📤 🔄 🧩 🏷️ 🔄 🏷️
+
+### v0.0.2 — 📦 API 🔄 & ⚙️ 📥 _(📅 2️⃣4️⃣ 3️⃣ 2026)_
+
+- **➕** 🔗 `$` 🔧 🔂 📦 📝 (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **➕** 🧩 🔄 🔄 📦, 📦📦, 🏷️ 📦📦
+- **➕** ➖ 🔢 (`arr[-1]` = 🔚 🧩)
+- **➕** ⚙️ 📥 — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(📅 2️⃣5️⃣ 3️⃣ 2026)_
+
+- **➕** ➕ 🔄 `^=`
+- **🔧** 🔍 ➕ 🔬; 📄 🔧
+
+### v0.0.1 — 🥇 📤 📅 _(📅 2️⃣2️⃣ 3️⃣ 2026)_
+
+- tree-walker 🧠 + 🗂️ VM (`--vm`, ~4️⃣× ⚡, ~9️⃣5️⃣% ⚖️)
+- 🌐 🧱: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- 🌐 Unicode 🏷️, 🧩 🖥️, λ, 🔒, ❌
+- REPL, LSP, VS Code ➕, ✍️ (`zymbol fmt`)
+
+---
+
+**🟦🟨🟩🟪 — 🔣. 🌐. 🔒.**

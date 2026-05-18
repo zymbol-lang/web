@@ -1,4 +1,4 @@
-> **QunDu':** Wej Dochvam chenmoHmeH 'e' chenmoHmo' ghantoH 'e' ja'chuqmoHwI' (AI). qar'a'? 'e' wISovbe'.
+> **:** W        (AI). ?  .
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 >
@@ -6,841 +6,841 @@
 
 ---
 
-# Zymbol-Lang ghItlh
+# Zymbol-Lang 
 
-> **v0.0.5 vaD wIv — 2026-05-15**
+> **v0.0.5   — 2026-05-15**
 
-**Zymbol-Lang** chenmoHwI' Hol 'oH. mughato' tu'lu'be' — Hoch 'oH mughom'e'. Hoch HolDaq rur.
+**Zymbol-Lang**   .   —   .   .
 
-- `if`, `while`, `return` tu'lu'be' — 'oH neH 'oH `?`, `@`, `<~`
-- naQ 'oH Unicode'e' — yu' HomwI' HolDaq 'ej emoji'Daq
-- HolDaq rarHa' — ghItlhvetlhDaq rur Hoch
+- `if`, `while`, `return`  —    `?`, `@`, `<~`
+-   Unicode —     emoji
+-   —   
 
-**chenmoHwI' versIon**: v0.0.5 | **QelpIn**: 436/436 (TW ↔ VM rur)
+** s**: v0.0.5 | ****: 436/436 (TW ↔ VM )
 
 ---
 
-## lIwmey 'ej rurbuS
+##   
 
 ```zymbol
-x = 10              // lIw Dor
-π := 3.14159        // rurbuS — chenmoHmeH qaStaHvIS wej qel
-pong = "Alice"
-Suq = #1            // boQyIn bot
-👋 := "nuqneH"
+ =               //  
+π := .        //  —    
+ = ""
+ = #            //  
+👋 := ""
 ```
 
 ```zymbol
-x = 10    // 10
-x += 5    // 15
-x -= 3    // 12
-x *= 2    // 24
-x /= 3    // 8
-x %= 3    // 2
-x ^= 2    // 4
-x++        // 5
-x--        // 4
+ =     // 
+ +=     // 
+ -=     // 
+ *=     // 
+ /=     // 
+ %=     // 
+ ^=     // 
+++        // 
+--        // 
 ```
 
-`°` (degree chenmoH, U+00B0) lIw chenmoH nagh poH wa'DIch lo':
+`°` (dg , U+00B0)      :
 
 ```zymbol
-mI'mey = [3, 1, 4, 1, 5]
-@ n:mI'mey {
-    °nay' += n    // nagh chenmoH 0Daq Dung mIw; yInpa' @
+ = [, , , , ]
+@ : {
+    ° +=     //   0Da  ;  @
 }
->> nay' ¶         // → 14
+>>  ¶         // → 
 ```
 
-> `°x` (chan) Dung mIw — chIch `@` QaH.
-> `x°` (tam) pa' mIw — Hegh mIw bIr.
-> neH tree-walker.
+> `°j` ()   —  `@` .
+> `j°` ()   —   .
+>  -k.
 
 ---
 
-## De' wabmey
+##  
 
-| wab | ghalqI' | tagh `#?` | qelmeH |
+|  |  |  `#?` |  |
 |-----|---------|-----------|--------|
-| mI' | `42`, `-7` | `###` | 64-bit |
-| yon | `3.14`, `1.5e10` | `##.` | QeD ghItlhwIj luq |
-| chIch | `"ghItlh"` | `##"` | lI': `"nuqneH {pong}"` |
-| mu'ghom | `'A'` | `##'` | wa' Unicode mu'ghom |
-| boQyIn | `#1`, `#0` | `##?` | mI'be' — `#1 ≠ 1` |
-| gev | `[1, 2, 3]` | `##]` | roD wabmey |
-| tup | `(a, b)` | `##)` | Doch |
-| pong tup | `(x: 1, y: 2)` | `##)` | pong ghItlhmey |
-| Qun | pong Qun mIgh | `##()` | wa'DIch boq; legh `<funct/N>` |
-| lambda | `x -> x * 2` | `##->` | wa'DIch boq; legh `<lambd/N>` |
+|  | `42`, `-7` | `###` | 64-i |
+|  | `3.14`, `1.5e10` | `##.` |    |
+|  | `"ghItlh"` | `##"` | : `"nuqneH {pong}"` |
+|  | `'A'` | `##'` |  Unicode  |
+|  | `#1`, `#0` | `##?` |  — `#1 ≠ 1` |
+| g | `[1, 2, 3]` | `##]` |   |
+|  | `(a, b)` | `##)` |  |
+|   | `(j: 1, y: 2)` | `##)` |   |
+|  |    | `##()` |  ;  `<funct/N>` |
+| d | `j -> j * 2` | `##->` |  ;  `<lambd/N>` |
 
 ```zymbol
-// tach - HeS (ghItlhwab, mI'mey, qay)
-meta = 42#?
->> meta ¶         // → (###, 2, 42)
-t = meta[1]
->> t ¶            // → ###
+//  -  (, , )
+ = #?
+>>  ¶         // → (###, , )
+ = []
+>>  ¶            // → ###
 ```
 
 ---
 
-## 'och 'ej 'ong
+##   
 
 ```zymbol
->> "nuqneH" ¶                       // ¶ pagh \\ chu' ghItlh 'e' leghmoHmeH
->> "a=" a " b=" b ¶                // qabDaq - 'op qaymey
->> (arr$#) ¶                       // postfix SeHwI' 'e' ( ) tul >>Daq
+>> "" ¶                       // ¶  \\    
+>> "="  " ="  ¶                //  -  
+>> ($#) ¶                       // sfix   ( )  >>
 
-<< pong                           // lIwDaq HIvoy (ghItlhtaHghach Hutlh)
-<< "pong yIghItlh: " pong         // ghItlhtaHghach ghaj
+<<                            //   ( )
+<< " : "          //  
 ```
 
-> `¶` (AltGr+R spanish QI' lombuQ Dung) 'ej `\\` chu' ghItlh 'oH.
+> `¶` (AG+R sish   )  `\\`   .
 
 ---
 
-## TUI mI' Qunmey
+## TU  
 
-terminal UI Qunmey chenmoHwI' Holvam ngevDaq. HochHom `>>| { }` taj neH (lan chu' + raw mode).
+i U    .  `>>| { }`   (  +  d).
 
 ```zymbol
 >>| {
-    >>!                                // lan chu' HIch
-    >>~ (1, 1, 0, 10) > "ghoS"        // 'ur 1, Hev 1, fg=10 (SuD)
-    @~ 1000                            // wa' tup (1000 ms) QIt
-    >>~ (2, 1) > "rIn."
+    >>!                                //   
+    >>~ (, , , ) > ""        //  ,  , fg= ()
+    @~                             //   ( s) 
+    >>~ (, ) > "."
 }
-// terminal SuvwI' tI'Ha' 'e' Qap rIntaH
+// i     
 ```
 
 ```zymbol
-// mu'tay' Hev 'ej terminal mI'mey
+//    i 
 >>| {
-    [cheb, Hev] = >>?                  // terminal mI' tlhab
-    >>~ (1, 1) > "terminal: " cheb " x " Hev
-    <<| mu'tay'                        // lo' mu'tay' (block)
-    >>~ (2, 1) > "yItlhap: " mu'tay'
+    [, ] = >>?                  // i  
+    >>~ (, ) > ": "  "  " 
+    <<|                         //   (ck)
+    >>~ (, ) > ": " 
 }
 ```
 
-> `>>!` lan chu' HIch. `>>?` `[cheb, Hev]` lIta'. `@~ N` N millisecond QIt.
-> `<<|` mu'tay' wa' lo' (block); `<<|?` HajmoHbe' lo' (`'\0'` chev pagh).
-> Doch 'ang tup: `(ur, Hev, BKS, fg, bg)` — Hoch Daq `,`Daq Qaw'lu' (`>>~ (,,, 196) > "Doq"`).
-> BKS bitmask: `1`=tIn, `2`=lIHmoH, `4`=Dung. ANSI 256-Qaj palette (`0`=terminal nab).
-> tree-walker neH (`>>!`, `>>?`, `@~`, `>>~` `--vm`Daq je Qap).
+> `>>!`   . `>>?` `[cheb, Hev]` . `@~ N` N iiscd .
+> `<<|`    (ck); `<<|?`   (`'\0'`  ).
+>   : `(ur, Hev, BKS, fg, bg)` —   `,`  (`>>~ (,,, 196) > "Doq"`).
+> BK isk: `1`=, `2`=, `4`=. AN 256-  (`0`=i ).
+> -k  (`>>!`, `>>?`, `@~`, `>>~` `--vm`  ).
 
 ---
 
-## SeHwI'
+## 
 
 ```zymbol
-// mI'
-a = 10
-b = 3
-r1 = a + b    // 13
-r2 = a - b    // 7
-r3 = a * b    // 30
-r4 = a / b    // 3  (mI' boqHa')
-r5 = a % b    // 1
-r6 = a ^ b    // 1000  (Dung)
+// 
+ = 
+ = 
+ =  +     // 
+ =  -     // 
+ =  *     // 
+ =  /     //   ( )
+ =  %     // 
+ =  ^     //   ()
 
-// 'ang
-c1 = a == b    // #0
-c2 = a <> b    // #1
-c3 = a < b     // #0
-c4 = a <= b    // #0
-c5 = a > b     // #1
-c6 = a >= b    // #1
+// 
+c =  ==     // #
+c =  <>     // #
+c =  <      // #
+c =  <=     // #
+c =  >      // #
+c =  >=     // #
 
-// QeD
-l1 = #1 && #0    // #0
-l2 = #1 || #0    // #1
-l3 = !#1         // #0
+// 
+ = # && #    // #
+ = # || #    // #
+ = !#         // #
 ```
 
 ---
 
-## chIchyey
+## 
 
 ```zymbol
-// cha' ghap rurbu'
-pong = "Alice"
-n = 42
+//   
+ = ""
+ = 
 
->> "nuqneH " pong " SoH ghaj " n ¶       // qabDaq — >>Daq
-ghItlh = "nuqneH {pong}, SoH ghaj {n}"   // lI' — DatDaq
+>> " "  "   "  ¶       //  — >>
+ = " "  ",   "    //  —  
 ```
 
 ```zymbol
-s = "nuqneH 'u'"
-chab = s$#                  // 10
-bI'reS = s$[1..4]           // "nuqn"  (nab-1, rInDaq)
-ghaj = s$? "'u'"            // #1
-'uch = "a,b,c,d"$/ ','      // [a, b, c, d]  (chetlI' lo'taHvIS QAw)
-lIw = s$~~["n":"q"]         // "quqneH 'u'"
-lIw1 = s$~~["n":"q":1]      // "quqneH 'u'"  (nab n neH)
-line = "─" $* 20           // "────────────────────"  (Qav N logh)
+s = " "
+ = s$#                  // 
+ = s$[..]           // ""  (-, )
+ = s$? ""            // #
+ = ",,,"$/ ","      // [, , c, d]  (  A)
+ = s$~~["":""]         // " "
+ = s$~~["":"":]      // " "  (  )
+i = "─" $*            // "────────────────────"  ( N )
 ```
 
-> `+` 'oH mI''e'. chIchyeyDaq lo' `,`, qabDaq, joq lI'.
+> `+`  .   `,`, ,  .
 
 ---
 
-## Do
+## 
 
 ```zymbol
-x = 7
+ = 
 
-? x > 0 { >> "poS" ¶ }
+?  >  { >> "" ¶ }
 
-? x > 100 {
-    >> "tIn" ¶
-} _? x > 0 {
-    >> "poS" ¶
-} _? x == 0 {
-    >> "pagh" ¶
+?  >  {
+    >> "" ¶
+} _?  >  {
+    >> "" ¶
+} _?  ==  {
+    >> "" ¶
 } _ {
-    >> "Ha'DIbaH" ¶
+    >> "" ¶
 }
 ```
 
-> `{ }` **parHa'** neH wa' ghItlhtaHghach je.
+> `{ }` ****    .
 
 ---
 
-## 'ang (Match)
+##  (M)
 
 ```zymbol
-// 'ur
-pIn = 85
-latlh = ?? pIn {
-    90..100 => 'A'
-    80..89  => 'B'
-    70..79  => 'C'
-    _       => 'F'
+// 
+ = 
+ = ??  {
+    .. => A
+    ..  => B
+    ..  => C
+    _       => F
 }
->> latlh ¶    // → B
+>>  ¶    // → B
 
-// chIchyey
-Qaj = "Doq"
-code = ?? Qaj {
-    "Doq"   => "#FF0000"
-    "SuD"   => "#00FF00"
-    _       => "#000000"
+// 
+ = ""
+cd = ??  {
+    ""   => "#FF"
+    ""   => "#FF"
+    _       => "#"
 }
 
-// 'ang rurbu'
-waH = -5
-Qap = ?? waH {
-    < 0  => "bIS"
-    < 20 => "bIr"
-    < 35 => "wIj"
-    _    => "tuj"
+//  
+ = -
+ = ??  {
+    <   => ""
+    <  => ""
+    <  => ""
+    _    => ""
 }
->> Qap ¶      // → bIS
+>>  ¶      // → 
 
-// ghItlhtaHghach rurbu' (tajmey)
-n = -3
-?? n {
-    0    => { >> "pagh" ¶ }
-    < 0  => { >> "Ha'DIbaH" ¶ }
-    _    => { >> "poS" ¶ }
+//   ()
+ = -
+??  {
+        => { >> "" ¶ }
+    <   => { >> "" ¶ }
+    _    => { >> "" ¶ }
 }
 ```
 
 ---
 
-## pe'meH
+## 
 
 ```zymbol
-@ i:0..4  { >> i " " }        // 'ur:  0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // wIgh:   1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // lan:    5 4 3 2 1 0
+@ i:..  { >> i " " }        // :      
+@ i:..: { >> i " " }       // :       
+@ i:..: { >> i " " }       // :         
 
-n = 1
-@ n <= 64 { n *= 2 }
->> n ¶                        // → 128  (bID)
+ = 
+@  <=  {  *=  }
+>>  ¶                        // →   ()
 
-naHmey = ["Hara'", "pe'ar", "tIqIp"]
-@ Soj:naHmey { >> Soj ¶ }      // gevDaq Hoch wab
+ = ["", "", ""]
+@ : { >>  ¶ }      // g  
 
-@ ch:"nuqneH" { >> ch "-" }
->> ¶                          // → n-u-q-n-e-H-  (chIchyeyDaq Hoch mu'ghom)
+@ :"" { >>  "-" }
+>> ¶                          // → ------  (  )
 
-@ i:1..10 {
-    ? i % 2 == 0 { @> }       // @> jaH
-    ? i > 7 { @! }            // @! Qaw'
+@ i:.. {
+    ? i %  ==  { @> }       // @> 
+    ? i >  { @! }            // @! 
     >> i " "
 }
->> ¶                          // → 1 3 5 7
+>> ¶                          // →    
 
-// pIpyuS pe'meH
-i = 0
+//  
+i = 
 @ {
     i++
-    ? i >= 5 { @! }
+    ? i >=  { @! }
     >> i " "
 }
->> ¶                          // → 1 2 3 4
+>> ¶                          // →    
 
-// pong pe'meH (ruD Qaw')
-naQ = 0
-@:Hur {
-    naQ++
-    ? naQ >= 3 { @:Hur! }
+//   ( )
+ = 
+@: {
+    ++
+    ?  >=  { @:! }
 }
->> naQ ¶                     // → 3
+>>  ¶                     // → 
 ```
 
 ---
 
-## Qun
+## 
 
 ```zymbol
-boq(a, b) { <~ a + b }
->> boq(3, 4) ¶   // → 7
+(, ) { <~  +  }
+>> (, ) ¶   // → 
 
-'archu'(n) {
-    ? n <= 1 { <~ 1 }
-    <~ n * 'archu'(n - 1)
+() {
+    ?  <=  { <~  }
+    <~  * ( - )
 }
->> 'archu'(5) ¶    // → 120
+>> () ¶    // → 
 ```
 
-Qunpu' ghaj **Ha'DIbaH Dung** — laDmeH 'e' tulbe'. lo' `meq.` mutlh `<~>` chenmoHwI' lIw:
+  ** ** —   .  `meq.`  `<~>`  :
 
 ```zymbol
-boq'egh(a<~, b<~) {
-    lIwwIj = a
-    a = b
-    b = lIwwIj
+(<~, <~) {
+     = 
+     = 
+     = 
 }
-x = 10
-y = 20
-boq'egh(x, y)
->> "x=" x " y=" y ¶    // → x=20 y=10
+ = 
+ = 
+(, )
+>> "="  " ="  ¶    // → = =
 ```
 
-> pong Qunpu' 'oH **wa'DIch boq qay**. DIl: `mI'mey$> cha'logh`. `x -> Qun(x)` je Qap.
+>    **  **. : `mI'mey$> cha'logh`. `j -> Qun(j)`  .
 
 ---
 
-## lambda bogh 'ej 'eDSeH
+## d   
 
 ```zymbol
-cha'logh = x -> x * 2
-boq = (a, b) -> a + b
->> cha'logh(5) ¶   // → 10
->> boq(3, 7) ¶    // → 10
+ =  ->  * 
+ = (, ) ->  + 
+>> () ¶   // → 
+>> (, ) ¶    // → 
 
-// taj lambda
-nIv = x -> {
-    ? x > 0 { <~ "poS" }
-    _? x < 0 { <~ "Ha'DIbaH" }
-    <~ "pagh"
+//  d
+ =  -> {
+    ?  >  { <~ "" }
+    _?  <  { <~ "" }
+    <~ ""
 }
 
-// 'eDSeH — Hur Dung pe'
-tIn = 3
-wejlogh = x -> x * tIn
->> wejlogh(7) ¶   // → 21
+//  —   
+ = 
+ =  ->  * 
+>> () ¶   // → 
 
-// chen
-chenmoHboq(n) { <~ x -> x + n }
-wa'maH boq = chenmoHboq(10)
->> wa'maH boq(5) ¶   // → 15
+// 
+() { <~  ->  +  }
+  = ()
+>>  () ¶   // → 
 
-// gevDaq
-SeH = [x -> x+1, x -> x*2, x -> x*x]
->> SeH[3](5) ¶      // → 25
+// g
+ = [ -> +,  -> *,  -> *]
+>> []() ¶      // → 
 ```
 
 ---
 
-## gev
+## g
 
-gev **Dor** 'ej ghaj **roD wabmey**.
+g ****   ** **.
 
 ```zymbol
-gev = [1, 2, 3, 4, 5]
+g = [, , , , ]
 
-x = gev[1]      // 1 — 'uch (nab-1: wa'DIch wab)
-x = gev[-1]     // 5 — nagh nugh (Qav wab)
-x = gev$#       // 5 — chab (lo' (gev$#) >>Daq)
+ = g[]      //  —  (-:  )
+ = g[-]     //  —   ( )
+ = g$#       //  —  ( (g$#) >>)
 
-gev = gev$+ 6            // boq → [1,2,3,4,5,6]
-gev2 = gev$+[2] 99       // 'eD chen 2Daq (nab-1)
-gev3 = gev$- 3           // wa'DIch qay ta'pu'bogh yIqaw'Ha'
-gev4 = gev$-- 3          // Hoch qay yIqaw'Ha'
-gev5 = gev$-[1]          // nugh 1Daq yIqaw'Ha' (wa'DIch wab)
-gev6 = gev$-[2..3]       // 'ur yIqaw'Ha' (nab-1, rInDaq)
+g = g$+             //  → [,,,,,]
+g = g$+[]        //    (-)
+g = g$-            //    
+g = g$--           //   
+g = g$-[]          //    ( )
+g = g$-[..]       //   (-, )
 
-ghaj = gev$? 3           // #1 — tu'lu'
-nughmey = gev$?? 3       // [3] — Hoch qay nugh (nab-1)
-Qav = gev$[1..3]        // [1,2,3] — Qav (nab-1, rInDaq)
-Qav2 = gev$[1:3]        // [1,2,3] — rur, mI'nab ghItlh
+ = g$?            // # — 
+ = g$??        // [] —    (-)
+ = g$[..]        // [,,] —  (-, )
+ = g$[:]        // [,,] — ,  
 
-Dung = gev$^+           // Dung (nab rurbu')
-bIng = gev$^-           // bIng (nab rurbu')
+ = g$^+           //  ( )
+ = g$^-           //  ( )
 
-// pong/Doch tup gev — lo' $^ 'ang lambda
-De' = [(pong: "qarla", ben: 28), (pong: "'ana", ben: 25), (pong: "bob", ben: 30)]
-benDung   = De'$^ (a, b -> a.ben < b.ben)     // Dung ben (<)
-pongbIng   = De'$^ (a, b -> a.pong > b.pong)  // bIng pong (>)
->> benDung[1].pong ¶    // → 'ana
->> pongbIng[1].pong ¶   // → qarla
+// /  g —  $^  d
+ = [(: "", : ), (: "", : ), (: "", : )]
+   = $^ (,  -> . < .)     //   (<)
+   = $^ (,  -> . > .)  //   (>)
+>> []. ¶    // → 
+>> []. ¶   // → 
 
-// Hoch wab Qap (gev neH)
-gev[1] = 99              // lI'
-gev[2] += 5              // lI' boqtaH: +=  -=  *=  /=  %=  ^=
+//    (g )
+g[] =               // 
+g[] +=               //  : +=  -=  *=  /=  %=  ^=
 
-// Qun Qap — ghIq gev chu' 'ang; Sov ghIq Ha'DIbaH
-gev2 = gev[2]$~ 99
+//   —  g  ;   
+g = g[]$~ 
 ```
 
-> Hoch 'ay' SeHwI' **gev chu'** 'ang. lI': `gev = gev$+ 4`.
-> `$+` Hogh: `gev = gev$+ 5$+ 6$+ 7`. latlh SeHwI' lI' 'ugh.
-> **nugh nab-1**: `gev[1] 'oH wa'DIch wab`; `gev[0] 'oH qaStaHvIS wej qel`.
-> `$^+` / `$^-` **rurbu' gev** (mI', chIchyey). tup gev lo' $^ 'ang 'ang lambda — Hur lambdaDaq wul (`<` = Dung, `>` = bIng).
+>    **g ** . : `gev = gev$+ 4`.
+> `$+` : `gev = gev$+ 5$+ 6$+ 7`.    .
+> ** -1**: `gev[1] 'oH wa'DIch wab`; `gev[0] 'oH qaStaHvIS wej qel`.
+> `$^+` / `$^-` ** g** (, ).  g  $^   d —  d  (`<` = , `>` = ).
 
-**qay rurbu'** — gev HItlhej lIw chu' chenmoH:
+** ** — g    :
 
 ```zymbol
-a = [1, 2, 3]
-b = a
-a[1] = 99
->> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b Qapbe'
+ = [, , ]
+ = 
+[] = 
+>>  ¶    // → [, , ]
+>>  ¶    // → [, , ]   ←  
 ```
 
 ```zymbol
-// ruD gev (nab-1 nugh)
-logh = [[1,2,3],[4,5,6],[7,8,9]]
->> logh[2][3] ¶    // → 6  (logh2, tuq3)
-```
-
----
-
-## ghItlhwIj tIqIp
-
-```zymbol
-// gev
-gev = [10, 20, 30, 40, 50]
-[a, b, c] = gev              // a=10  b=20  c=30
-[wa'DIch, *ngI'] = gev       // wa'DIch=10  ngI'=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ Qaw'
-
-// Doch tup
-nav = (100, 200)
-(px, py) = nav              // px=100  py=200
-
-// pong tup
-tlhIngan = (pong: "'ana", ben: 25, Qo'noS: "madrid")
-(pong: p, ben: b) = tlhIngan   // p="'ana"  b=25
+//  g (- )
+ = [[,,],[,,],[,,]]
+>> [][] ¶    // →   (, )
 ```
 
 ---
 
-## tup
-
-tup 'oH **Ha'DIbaH** 'ay'pu' 'ej ghaj **wab law'**.
+##  
 
 ```zymbol
-// Doch — law' wabmey lutu'
-nav = (10, 20)
->> nav[1] ¶     // → 10
+// g
+g = [, , , , ]
+[, , c] = g              // =  =  c=
+[, *] = g       // =  =[,,,]
+[, _, z] = [, , ]        // _ 
 
-De' = (42, "nuqneH", #1, 3.14)
->> De'[3] ¶     // → #1
+//  
+ = (, )
+(x, ) =               // x=  =
 
-// pong
-tlhIngan = (pong: "alIS", ben: 25)
->> tlhIngan.pong ¶   // → alIS
->> tlhIngan[1] ¶     // → alIS  (nugh je Qap, nab-1)
-
-// ruD
-nagh = (x: 10, y: 20)
-p = (nagh: nagh, tagh: "ghoS")
->> p.nagh.x ¶       // → 10
-```
-
-**Ha'DIbaH** — tup wab Qap 'e' Qapbe':
-
-```zymbol
-t = (10, 20, 30)
-// t[1] = 99    // ❌ Ha'DIbaH: tup Ha'DIbaH 'oH
-// t[1] += 5    // ❌ rur
-```
-
-chenmoHmeH Qap, lo' `$~` (Qun Qap) — **chu'** tup 'ang:
-
-```zymbol
-t = (10, 20, 30)
-t2 = t[2]$~ 999
->> t ¶     // → (10, 20, 30)   ← Sov Ha'DIbaH
->> t2 ¶    // → (10, 999, 30)
-
-// pong tup — 'angtaH qevlu'
-tlhIngan = (pong: "alIS", ben: 25)
-tIn = (pong: tlhIngan.pong, ben: 26)
->> tlhIngan.ben ¶    // → 25
->> tIn.ben ¶         // → 26
+//  
+ = (: "", : , : "")
+(: , : ) =    // =""  =
 ```
 
 ---
 
-## Dung Qun
+## 
+
+  ****    ** **.
 
 ```zymbol
-mI'mey = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+//  —   
+ = (, )
+>> [] ¶     // → 
 
-cha'loghpu' = mI'mey$> (x -> x * 2)                // meq → [2,4,6…20]
-chatlh   = mI'mey$| (x -> x % 2 == 0)             // ghItlhtaH → [2,4,6,8,10]
-nay'     = mI'mey$< (0, (boq, x) -> boq + x)       // Qaw' → 55
+ = (, "", #, .)
+>> [] ¶     // → #
 
-// Hogh 'ugh
-tep1 = mI'mey$| (x -> x > 3)
-tep2 = tep1$> (x -> x * x)
->> tep2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+// 
+ = (: "", : )
+>> . ¶   // → 
+>> [] ¶     // →   (  , -)
 
-// pong Qun lo' Dung Qun
-cha'logh(x) { <~ x * 2 }
-tIn'a'(x) { <~ x > 5 }
-r = mI'mey$> cha'logh       // ✅ Hoch mIgh
-r = mI'mey$| tIn'a'         // ✅ Hoch mIgh
+// 
+ = (: , : )
+ = (: , : "")
+>> .. ¶       // → 
+```
+
+**** —     :
+
+```zymbol
+ = (, , )
+// [] =     // ❌ :   
+// [] +=     // ❌ 
+```
+
+ ,  `$~` ( ) — ****  :
+
+```zymbol
+ = (, , )
+ = []$~ 
+>>  ¶     // → (, , )   ←  
+>>  ¶    // → (, , )
+
+//   —  
+ = (: "", : )
+ = (: ., : )
+>> . ¶    // → 
+>> . ¶         // → 
 ```
 
 ---
 
-## pel SeHwI'
-
-nIH poS jarDaq 'oH `_` 'e' lo':
+##  
 
 ```zymbol
-cha'logh = x -> x * 2
-boq = (a, b) -> a + b
-nIq = x -> x + 1
+ = [, , , , , , , , , ]
 
-r1 = 5 |> cha'logh(_)        // → 10
-r2 = 10 |> boq(_, 5)         // → 15
-r3 = 5 |> boq(2, _)          // → 7
+ = $> ( ->  * )                //  → [,,…]
+   = $| ( ->  %  == )             //  → [,,,,]
+     = $< (, (, ) ->  + )       //  → 
 
-// Hogh
-r = 5 |> cha'logh(_) |> nIq(_) |> cha'logh(_)
->> r ¶    // → 22  (5→10→11→22)
+//  
+ = $| ( ->  > )
+ = $> ( ->  * )
+>>  ¶    // → [, , , , , , ]
+
+//     
+() { <~  *  }
+() { <~  >  }
+ = $>        // ✅  
+ = $|          // ✅  
 ```
 
 ---
 
-## qay
+##  
+
+    `_`  :
+
+```zymbol
+ =  ->  * 
+ = (, ) ->  + 
+ =  ->  + 
+
+ =  |> (_)        // → 
+ =  |> (_, )         // → 
+ =  |> (, _)          // → 
+
+// 
+ =  |> (_) |> (_) |> (_)
+>>  ¶    // →   (→→→)
+```
+
+---
+
+## 
 
 ```zymbol
 !? {
-    x = 10 / 0
-} :! ##Div {
-    >> "pagh boqHa''a'" ¶
+     =  / 
+} :! ##i {
+    >> " " ¶
 } :! {
-    >> "Hoch qay: " _err ¶    // _err qay ghItlh
+    >> " : " _ ¶    // _  
 } :> {
-    >> "Hoch logh" ¶
+    >> " " ¶
 }
 ```
 
-| wab | qaStaH |
+|  |  |
 |-----|--------|
-| `##Div` | pagh boqHa''a' |
-| `##IO` | De'wI' / chen |
-| `##Index` | nugh bIng |
-| `##Type` | wab rurbe' |
-| `##Parse` | De' tIqIp |
-| `##Network` | 'echlet qay |
-| `##_` | Hoch qay (choH) |
+| `##Div` |   |
+| `##IO` |  /  |
+| `##Index` |   |
+| `##Type` |   |
+| `##Parse` |   |
+| `##Network` |   |
+| `##_` |   () |
 
 ---
 
-## modul
+## d
 
 ```zymbol
-// lib/calc.zy — modul taj bIng
-# calc {
-    #> { boq, get_PI }
+// i/cc.z — d  
+# cc {
+    #> { , g_P }
 
-    _π := 3.14159
-    boq(a, b) { <~ a + b }
-    get_PI() { <~ _π }
+    _π := .
+    (, ) { <~  +  }
+    g_P() { <~ _π }
 }
 ```
 
 ```zymbol
-// main.zy
-<# ./lib/calc => c    // pong tIqIp parHa'
+// i.z
+<# ./i/cc => c    //   
 
->> c::boq(5, 3) ¶   // → 8
-π = c::get_PI()
->> π ¶              // → 3.14159
+>> c::(, ) ¶   // → 
+π = c::g_P()
+>> π ¶              // → .
 ```
 
 ```zymbol
-// 'ang latlh pong
-# moy'taHghach {
-    #> { _boqDaq => boqHom }
+//   
+#  {
+    #> { _ =>  }
 
-    _boqDaq(a, b) { <~ a + b }
+    _(, ) { <~  +  }
 }
 ```
 
 ```zymbol
-<# ./moy'taHghach => m
+<# ./ => 
 
->> m::boqHom(3, 4) ¶    // → 7  (_boqDaq pong So'lu')
+>> ::(, ) ¶    // →   (_  )
 ```
 
-> **modul malja':** `# pong { }`Daq reH `#>`, Qun rurbu', 'ej ghalqI' lIw/rurbu' dam — parHa'. ghItlhtaHghach SeH (`>>`, `<<`, pe'meH, latlh) qay E013 'ang.
+> **d :** `# pong { }`  `#>`,  ,   / d — .   (`>>`, `<<`, , )  E013 .
 
 ---
 
-## mI' rurbu'
+##  
 
-Zymbol mI'mey 'anglaH **69 Unicode mI' tajmey**Daq — Devanagari, 'arAb-Hindu, thay, tlhIngan pIqaD, QeD bIr, LCD 'ay', latlh. rurbu' 'oH QuQ 'angtaHvIS `>>`; 'oHbogh mI' 'oH binary.
+Zymbol   **69 Unicode  ** — gi, A-id, h,  ,  , LC , .     `>>`;    i.
 
-### mI' tIqIp
+###  
 
-`0` 'ej `9` mI' tIqIp `#…#`Daq:
+`0`  `9`   `#…#`:
 
 ```zymbol
-#०९#    // Devanagari   (U+0966–U+096F)
-#٠٩#    // 'arAb-Hindu (U+0660–U+0669)
-#๐๙#    // thay         (U+0E50–U+0E59)
-#09#    // ASCII DIr
+#०९#    // gi   (U+0966–U+096F)
+#٠٩#    // A-id (U+0660–U+0669)
+#๐๙#    // h         (U+0E50–U+0E59)
+#09#    // ASCII 
 ```
 
-### 'ang 'ej boQyIn
+###   
 
 ```zymbol
-x = 42
->> x ¶          // → 42   (ASCII nab)
+ = 
+>>  ¶          // →    (ASCII )
 
 #०९#
->> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४   (yon nugh 'oH ASCII)
->> 1 + 2 ¶      // → ३
+>>  ¶          // → ४२
+>> . ¶       // → ३.१४   (   ASCII)
+>>  +  ¶      // → ३
 
-// boQyIn: # tagh 'oH ASCII, mI' je
->> #1 ¶         // → #१   (bot DevanagariDaq)
->> #0 ¶         // → #०   (botHa' — ० mI' pagh je)
+// : #   ASCII,  
+>> # ¶         // → #१   ( gi)
+>> # ¶         // → #०   ( — ०   )
 
-x = 28 > 4
->> x ¶          // → #१   ('ang rurbu' legh)
+ =  > 
+>>  ¶          // → #१   (  )
 ```
 
-### ghalqI' mI'mey De'Daq
+###   
 
-Hoch rurbu' mI'mey 'oH **ghalqI'** — 'urDaq, moduloDaq, 'angDaq:
+    **** — , d, :
 
 ```zymbol
 #०९#
 
 @ i:१..१५ {
-    ? i % १५ == ० { >> "FizzBuzz" ¶ }
-    _? i % ३  == ० { >> "Fizz" ¶ }
-    _? i % ५  == ० { >> "Buzz" ¶ }
+    ? i % १५ == ० { >> "" ¶ }
+    _? i % ३  == ० { >> "" ¶ }
+    _? i % ५  == ० { >> "" ¶ }
     _ { >> i ¶ }
 }
 ```
 
-### Hoch rurbu' boQyIn ghalqI'
+###    
 
-`#` + mI' `0` pagh `1` tajvo' 'oH boQyIn ghalqI':
+`#` +  `0`  `1`    :
 
 ```zymbol
 #०९#
-Suq = #१        // rur #1
->> Suq ¶        // → #१
+ = #१        //  #
+>>  ¶        // → #१
 >> (#१ && #०) ¶ // → #०
 ```
 
-> `#` **reH ASCII**. `#0` (botHa') reH 'oH legh 'e' rur `0` (pagh mI') Hoch rurbu'.
+> `#` ** ASCII**. `#0` ()      `0` ( )  .
 
 ---
 
-## De' SeHwI'
+##  
 
 ```zymbol
-// wab 'ang
-f = ##.42         // → 42.0  (yonDaq)
-i = ###3.7        // → 4     (mI'Daq, bow)
-t = ##!3.7        // → 3     (mI'Daq, Qor)
+//  
+f = ##.         // → .  ()
+i = ###.        // →      (, )
+ = ##!.        // →      (, )
 
-// chIch mI'Daq tIqIp
-v1 = #|"42"|      // → 42  (mI')
-v2 = #|"3.14"|    // → 3.14  (yon)
-v3 = #|"abc"|     // → "abc"  (DeSDu', qaybe')
+//   
+ = #|""|      // →   ()
+ = #|"."|    // → .  ()
+ = #|""|     // → ""  (, )
 
-// bow / Qor
-π = 3.14159265
-bow2 = #.2|π|      // → 3.14  (yoS 2Daq bow)
-bow4 = #.4|π|      // → 3.1416
-Qor2 = #!2|π|      // → 3.14  (Qor)
+//  / 
+π = .
+ = #.|π|      // → .  (  )
+ = #.|π|      // → .
+ = #!|π|      // → .  ()
 
-// mI' ghItlh
-ghItlh = #,|1234567|   // → 1,234,567  (Qo'noS)
-QeD = #^|12345.678|    // → 1.2345678e4  (QeD)
+//  
+ = #,||   // → ,,  ()
+ = #^|.|    // → .  ()
 
-// nab ghalqI'
-a = 0x41         // → 'A'  (hex)
-b = 0b01000001   // → 'A'  (binary)
-c = 0o101        // → 'A'  (octal)
+//  
+ = 0x41         // → A  (hx)
+ = 0b01000001   // → A  (i)
+ = 0o101        // → A  (c)
 
-// nab 'ang
-hex = 0x|255|    // → "0x00FF"
-bin = 0b|65|     // → "0b1000001"
-oct = 0o|8|      // → "0o10"
-dec = 0d|255|    // → "0d0255"
+//  
+ = 0x||    // → "0x00FF"
+ = 0b||     // → "0b1000001"
+ = 0o||      // → "0o10"
+ = 0d||    // → "0d0255"
 ```
 
 ---
 
-## DIvI' Hol
+##  
 
 ```zymbol
-jaj = <\ date +%Y-%m-%d \>     // stdout chav (rInDaq \n je)
->> "DaHjaj: " jaj
+ = <\ d +%Y-%-%d \>     // sd  ( \ )
+>> ": " 
 
-De'wI' = "De'.txt"
-ghItlh = <\ cat {De'wI'} \>       // ra'Daq lI'
+ = "."
+ = <\ c {} \>       //  
 
-'ang = </"./subscript.zy"/>      // latlh Zymbol ghItlh Qap, 'ang chav
->> 'ang
+ = </"./."/>      //  Zymbol  ,  
+>> 
 ```
 
-> `><` CLI SeH 'ang chav (tree-walker neH).
+> `><` CL    (-k ).
 
 ---
 
-## qaSDI' QeD: FizzBuzz
+##  : FizzBzz
 
 ```zymbol
-nIv(mI') {
-    ? mI' % 15 == 0 { <~ "FizzBuzz" }
-    _? mI' % 3  == 0 { <~ "Fizz" }
-    _? mI' % 5  == 0 { <~ "Buzz" }
-    _ { <~ mI' }
+() {
+    ?  %  ==  { <~ "" }
+    _?  %   ==  { <~ "" }
+    _?  %   ==  { <~ "" }
+    _ { <~  }
 }
 
-@ i:1..20 { >> nIv(i) ¶ }
+@ i:.. { >> (i) ¶ }
 ```
 
 ---
 
-## mughom
+## 
 
-| mughom | Qun | mughom | Qun |
+|  |  |  |  |
 |--------|-----|--------|-----|
-| `=` | lIw | `$#` | chab |
-| `:=` | rurbuS | `$+` | boq (Hogh) |
-| `>>` | 'ang | `$+[i]` | 'eD nughDaq (nab-1) |
-| `<<` | 'ong | `$-` | wa'DIch Qaw'Ha' qay |
-| `¶` / `\\` | chu' ghItlh | `$--` | Hoch Qaw'Ha' qay |
-| `?` | chugh | `$-[i]` | nughDaq Qaw'Ha' (nab-1) |
-| `_?` | pagh chugh | `$-[i..j]` | 'ur Qaw'Ha' (nab-1) |
-| `_` | pagh / Hoch | `$?` | tu'lu' |
-| `??` | 'ang | `$??` | Hoch nugh tu' (nab-1) |
-| `@` | pe'meH | `$[s..e]` | Qav (nab-1) |
-| `@ N { }` | N logh pe'meH | `$>` | meq |
-| `@!` | Qaw' | `$|` | ghItlhtaH |
-| `@>` | jaH | `$<` | Qaw' |
-| `@:pong { }` | pong pe'meH | `$/ chetlI'` | chIch 'uch |
-| `@:pong!` | pong Qaw' | `$++ a b c` | boq chen |
-| `@:pong>` | pong jaH | `gev[i>j>k]` | nugh |
-| `->` | lambda | `gev[i] = qay` | wab Qap (gev neH) |
-| `gev[i] += qay` | lI' Qap | `gev[i]$~` | Qun Qap (ghIq copy) |
-| `$^+` | Dung (rurbu') | `$^-` | bIng (rurbu') |
-| `$^` | 'ang (tup) | `<~` | 'ang |
-| `\|>` | pel | `!?` | Qap |
-| `:!` | chav | `:>` | rIn |
-| `#1` | bot | `#0` | botHa' |
-| `$!` | qay | `$!!` | qay 'ang |
-| `<#` | 'ong | `#>` | 'ang |
-| `#` | modul ja'chu' | `::` | modul boq |
-| `.` | Doch 'uch | `#?` | wab De' |
-| `#\|..\|` | mI' tIqIp | `##.` | yonDaq 'ang |
-| `###` | mI'Daq 'ang (bow) | `##!` | mI'Daq 'ang (Qor) |
-| `#.N\|..\|` | bow | `#!N\|..\|` | Qor |
-| `#,\|..\|` | Qo'noS ghItlh | `#^\|..\|` | QeD |
-| `#d0d9#` | mI' rurbu' choH | `#09#` | ASCII DIr |
-| `<\ ..\>` | DIvI' Hol Qap | `>\<` | CLI SeH |
-| `\ lIw` | lIw Qaw' | `°x` / `x°` | DIr Qun (nagh chenmoH) |
-| `>>|` | TUI taj (lan chu') | `>>~` | Doch 'ang |
-| `>>!` | ghItlhmey HIch | `>>?` | terminal mI' tlhab |
-| `<<\|` | lo' (block) | `<<\|?` | lo' (blockHa') |
-| `@~ N` | QIt N millisecond | `$*` | chIch Qav N logh |
+| `=` |  | `$#` |  |
+| `:=` |  | `$+` |  () |
+| `>>` |  | `$+[i]` |   (-1) |
+| `<<` |  | `$-` |    |
+| `¶` / `\\` |   | `$--` |    |
+| `?` |  | `$-[i]` |   (-1) |
+| `_?` |   | `$-[i..j]` |   (-1) |
+| `_` |  /  | `$?` |  |
+| `??` |  | `$??` |    (-1) |
+| `@` |  | `$[s..e]` |  (-1) |
+| `@ N { }` | N   | `$>` |  |
+| `@!` |  | `$|` |  |
+| `@>` |  | `$<` |  |
+| `@:pong { }` |   | `$/ chetlI'` |   |
+| `@:pong!` |   | `$++ a b c` |   |
+| `@:pong>` |   | `gev[i>j>k]` |  |
+| `->` | d | `gev[i] = qay` |   (g ) |
+| `gev[i] += qay` |   | `gev[i]$~` |   ( c) |
+| `$^+` |  () | `$^-` |  () |
+| `$^` |  () | `<~` |  |
+| `\|>` |  | `!?` |  |
+| `:!` |  | `:>` |  |
+| `#1` |  | `#0` |  |
+| `$!` |  | `$!!` |   |
+| `<#` |  | `#>` |  |
+| `#` | d  | `::` | d  |
+| `.` |   | `#?` |   |
+| `#\|..\|` |   | `##.` |   |
+| `###` |   () | `##!` |   () |
+| `#.N\|..\|` |  | `#!N\|..\|` |  |
+| `#,\|..\|` |   | `#^\|..\|` |  |
+| `#d P0000 #` |    | `#09#` | ASCII  |
+| `<\ ..\>` |    | `>\<` | CL  |
+| `\ lIw` |   | `°j` / `j°` |   ( ) |
+| `>>|` | TU  ( ) | `>>~` |   |
+| `>>!` |   | `>>?` | i   |
+| `<<\|` |  (ck) | `<<\|?` |  (ck) |
+| `@~ N` |  N iiscd | `$*` |   N  |
 
 ---
 
-## 'ang logh
+##  
 
-### v0.0.5 — TUI taj, DIr Qun, chIch Qav _(May 2026)_
+### v0.0.5 — TU ,  ,   _(M 2026)_
 
-- **Qaw'** 'ang: `pattern : result` → `pattern => result`
-- **Qaw'** 'ong pong: `<# path <= alias` → `<# path => alias`
-- **Qaw'** 'ang pong: `#> { fn <= pub }` → `#> { fn => pub }`
-- **boq** TUI taj `>>| { }` — lan chu' + raw mode; ghItlhmey HIch 'angtaHvIS
-- **boq** Doch 'ang `>>~ (line, column, BKS, fg, bg) > items` — Hoch, ANSI 256 Qap
-- **boq** lo' `<<| lIw` (block) 'ej `<<|? lIw` (blockHa')
-- **boq** `>>!` ghItlhmey HIch, `>>?` terminal mI' tlhab, `@~ N` QIt N millisecond
-- **boq** DIr Qun `°x` / `x°` — lIw nagh chenmoH wa'DIch lo' pe'meHDaq
-- **boq** chIch Qav `chIch $* N` — chIch Qav N logh
-- **VM** rur: 436/436 QelpIn Qap
+- **** : `pattern : result` → `pattern => result`
+- ****  : `<# path <= alias` → `<# path => alias`
+- ****  : `#> { fn <= pub }` → `#> { fn => pub }`
+- **** TU  `>>| { }` —   +  d;   
+- ****   `>>~ (line, column, BKS, fg, bg) > items` — , AN 256 
+- ****  `<<| lIw` (ck)  `<<|? lIw` (ck)
+- **** `>>!`  , `>>?` i  , `@~ N`  N iiscd
+- ****   `°j` / `j°` —      
+- ****   `chIch $* N` —   N 
+- **VM** : 436/436  
 
-### v0.0.4 — nab-1 nugh, wa'DIch boq Qun, modul taj _(April 2026)_
+### v0.0.4 — -1 ,   , d  _(Ai 2026)_
 
-- **Qaw'** Hoch nugh **nab-1** — `arr[1]` 'oH wa'DIch wab; `arr[0]` 'oH qaStaHvIS wej qel
-- **boq** pong Qun 'oH **wa'DIch boq qay** — Dung QunDaq DIl: `mI'mey$> cha'logh`
-- **boq** modul **taj ghItlh** parHa': `# pong { ... }` — Sut ghItlh Qaw'lu'
-- **boq** law' nugh: `arr[i>j>k]` (Do), `arr[p ; q]` (Sut)
-- **boq** wab 'ang: `##.ghItlh` (yon), `###ghItlh` (mI' bow), `##!ghItlh` (mI' Qor)
-- **boq** chIch 'uch: `chIch$/ chetlI'` — 'ang `Array(chIch)`
-- **boq** boq chen: `nab$++ a b c` — 'op wab boq
-- **boq** N logh pe'meH: `@ N { }` — N logh Qap
-- **boq** pong pe'meH ghItlh: `@:pong { }`, `@:pong!`, `@:pong>` — Sut `@ @pong` / `@! pong`
-- **boq** lIw Dung malja': `_pong` lIw ghaj taj Dung; `\ lIw` Qaw' Qap
-- **boq** 'ang 'ang rurbu': `< 0 =>`, `> 5 =>`, `== 42 =>`, latlh
-- **boq** modul qay E013: Sut ghItlhtaHghach modulDaq 'e' 'angbe'
-- **Qap** `take_variable` modul rurbuS Qaw'Ha' vay'
-- **Qap** `alias.RURBUS` Daq Qap; `#>` Qun rurbu' 'anglaH
-- **VM** rur: 393/393 QelpIn Qap
+- ****   **-1** — `arr[1]`   ; `arr[0]`    
+- ****    **  ** —   : `mI'mey$> cha'logh`
+- **** d ** ** : `# pong { ... }` —   
+- ****  : `arr[i>j>k]` (), `arr[p ; q]` ()
+- ****  : `##.ghItlh` (), `###ghItlh` ( ), `##!ghItlh` ( )
+- ****  : `chIch$/ chetlI'` —  `Array(chIch)`
+- ****  : `nab$++ a b c` —   
+- **** N  : `@ N { }` — N  
+- ****   : `@:pong { }`, `@:pong!`, `@:pong>` —  `@ @pong` / `@! pong`
+- ****   : `_pong`    ; `\ lIw`  
+- ****   : `< 0 =>`, `> 5 =>`, `== 42 =>`, 
+- **** d  E013:   d  
+- **** `take_variable` d   
+- **** `alias.RURBUS`  ; `#>`   
+- **VM** : 393/393  
 
-### v0.0.3 — Unicode mI' rurbu' 'ej LSP Qap _(April 2026)_
+### v0.0.3 — Unicode    LSP  _(Ai 2026)_
 
-- **boq** 69 Unicode mI' tajmey lo' `#d0d9#` rurbu' choH
-- **boq** boQyIn ghalqI' Hoch rurbu' — `#१` / `#०`, `#١` / `#٠`, latlh
-- **boq** tlhIngan pIqaD mI'mey (CSUR PUA U+F8F0–U+F8F9)
-- **boq** `SetNumeralMode` VM SeHwI' — rur tree-walker
-- **choH** boQyIn `>>` 'ang 'oH `#` tagh (`#0` / `#1`) Hoch rurbu'Daq
+- **** 69 Unicode    `#d P0000 #`  
+- ****     — `#१` / `#०`, `#١` / `#٠`, 
+- ****    (CUR PUA U+F8F0–U+F8F9)
+- **** `SetNumeralMode` VM  —  -k
+- ****  `>>`   `#`  (`#0` / `#1`)  
 
-### v0.0.2_01 — SeHwI' pong choH _(30 'IwlIj 2026)_
+### 0.0.2_01 —    _(30  2026)_
 
-- **choH** `c|..|` → `#,|..|` 'ej `e|..|` → `#^|..|` — 'ang `#` tagh
-- **boq** 'ang pong: modul wab 'ang latlh pong
+- **** `c|..|` → `#,|..|`  `e|..|` → `#^|..|` —  `#` 
+- ****  : d    
 
-### v0.0.2 — 'ay' API Sut 'ej chenmoHwI' _(24 'IwlIj 2026)_
+### v0.0.2 —  API    _(24  2026)_
 
-- **boq** 'ay' `$` SeHwI' gev 'ej chIch (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **boq** ghItlhwIj tIqIp lI' gev, tup, 'ej pong tup
-- **boq** nagh nugh (`arr[-1]` = Qav wab)
-- **boq** chenmoHwI' — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+- ****  `$`  g   (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- ****    g, ,   
+- ****   (`arr[-1]` =  )
+- ****  — Lix (d//kg/s), cO ( + A iic), Wids (M, i)
 
-### v0.0.1-patch _(25 'IwlIj 2026)_
+### v0.0.1- _(25  2026)_
 
-- **boq** lI' boqtaH `^=`
-- **Qap** De'wI' mI' qab; ghItlh Qap
+- ****   `^=`
+- ****   ;  
 
-### v0.0.1 — wa'DIch 'ang _(22 'IwlIj 2026)_
+### v0.0.1 —   _(22  2026)_
 
-- tree-walker chenmoHwI' + register VM (`--vm`, ~4× QaQ, ~95% rur)
-- Hoch Qun: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- naQ Unicode yu', modul chen, lambda, 'eDSeH, qay
-- REPL, LSP, VS Code 'ay', ghItlh (`zymbol fmt`)
+- -k  + gis VM (`--vm`, ~4× , ~95% )
+-  : `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+-  Unicode , d , d, , 
+- REPL, LSP, V Cd ,  (`zymbol fmt`)
 
 ---
 
-**Zymbol-Lang — mughom. Hoch 'u'. Ha'DIbaH.**
+**Zymbol-Lang — .  . .**

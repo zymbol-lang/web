@@ -1,33 +1,33 @@
-> **Ìfitóléni:** Ìwé ìmọ̀ yíi ni a ṣe pẹ̀lú ìrànwọ́ ọpọlọ àbòbò (AI).
+> **Ikililo:** A ṣẹda ati tumọ iwe-ipamọ yii nipasẹ ọgbọn atọwọda (AI).
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 >
-> Ìtókasí ti ó tọ́ ni **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** nínú ibi ìpamọ́ atumọ̀.
+> Itọkasi canonical ni **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** ninu ibi-ipamọ onitumọ.
 
 ---
 
-# Ìwé ìtọ́ni ti Zymbol-Lang
+# Itọsọna Zymbol-Lang
 
-**Zymbol-Lang** jẹ́ èdè ìṣèto àmì kan. Kò sí àwọn ọ̀rọ ọ̀rọ̀ — ohun gbogbo jẹ́ àmì. Ó ń ṣiṣẹ́ bakanna nínú èdè ènìyàn èyìkeyi.
+> **Ṣe atunyẹwo fun v0.0.5 — 2026-05-14**
 
-- Kò sí `if`, `while`, `return` — nikan `?`, `@`, `<~`
-- Unicode ní ìkikun — àwọn ìdámú ninú èdè eyikeyi tàbí emoji
-- Ó dàgbere sí èdè ènìyàn — kóọ̀dú naá jẹ́ kanna ní gbogbo ibi
+**Zymbol-Lang** jẹ ede siseto aami. Ko si awọn ọrọ-ọkọọ — ohun gbogbo jẹ aami. Nṣiṣẹ ni bakanna ni eyikeyi ede eniyan.
 
-**Ẹ̀ya atumọ̀**: v0.0.4 | **Ìbìdí ìdánwò**: 393/393 (ìgbá ti TW ↔ VM)
+- Ko si `if`, `while`, `return` — `?`, `@`, `<~` nikan
+- Unicode ni kikun — awọn idamo ni eyikeyi ede tabi emoji
+- Ominira ede eniyan — koodu naa jẹ kanna nibikibi
+
+**Ipele Onitumọ**: v0.0.5 | **Agbegbe Idanwo**: 436/436 (afiwera TW ↔ VM)
 
 ---
 
----
-
-## Àwọn oniyipada àti Iduróṣínṣin
+## Awọn Oniyipada ati Awọn Iduro
 
 ```zymbol
-x = 10              // oniyipadá tó lè yí padà
-PI := 3.14159       // iduróṣínṣin — fífa fun ni tuntun jẹ́ aṣìṣe àkọ́ọ̀lé
-orúkọ = "Aliisi"
-ṣiṣẹ = #1           // Boolian òtitó
-👋 := "Kààbò"
+x = 10              // oniyipada ti o le yipada
+π := 3.14159        // iduro — atunkọ jẹ aṣiṣe akoko ṣiṣe
+orúkọ = "Alice"
+lọwọ = #1         // boolean otito
+👋 := "Káàbọ"
 ```
 
 ```zymbol
@@ -42,25 +42,39 @@ x++        // 5
 x--        // 4
 ```
 
----
-
-## Àwọn irú Data
-
-| Irú | Litáli | Àmì `#?` | Àkíyesí |
-|------|--------|-----------|-----------|
-| Nòmbá òdó | `42`, `-7` | `###` | 64-bit ti a fi ẹ̀mí sí |
-| Nòmbá lílefòfò | `3.14`, `1.5e10` | `##.` | Ìkọsìlẹ̀ ìmọ̀ ìjọnlọ ti yọ̀ndà |
-| Òkún | `"ọ̀rọ̀"` | `##"` | Ifísí: `"Kààbò {orúkọ}"` |
-| Lẹ́tà | `'A'` | `##'` | Lẹ́tà Unicode kan ṣoṣo |
-| Boolian | `#1`, `#0` | `##?` | KÒ jẹ́ nòmbá — `#1 ≠ 1` |
-| Ẹ̀kọ́ | `[1, 2, 3]` | `##]` | Àwọn ohun ti o jọra |
-| Túpù | `(a, b)` | `##)` | Nípò |
-| Túpù ti a sọ lorúkọ | `(x: 1, y: 2)` | `##)` | Àwọn aaye ti wọn ni oorúkọ |
-| Ìṣé | ìtókasí ìṣé ti a sọ lorúkọ | `##()` | Ipele kíní; ó fi hàn `<funct/N>` |
-| Lambda | `x -> x * 2` | `##->` | Ipele kíní; ó fi hàn `<lambd/N>` |
+`°` (aami ìwọ̀n, U+00B0) ṣe ipilẹṣẹ oniyipada laifọwọyi si iye alainidii rẹ ni lilo akọkọ:
 
 ```zymbol
-// Ayẹwo irú — ó padà (irú, àwọn nòmbá, iye)
+awọn_nọmba = [3, 1, 4, 1, 5]
+@ n:awọn_nọmba {
+    °lapapọ += n    // ipilẹṣẹ laifọwọyi si 0 loke lupu; ye lẹhin @
+}
+>> lapapọ ¶         // → 14
+```
+
+> `°x` (iṣaju) n daduro loke lupu — abajade wa ni iraye si lẹhin `@`.
+> `x°` (iṣẹhin) n daduro ninu lupu — ku nigbati lupu ba pari.
+> tree-walker nikan.
+
+---
+
+## Awọn Iru Data
+
+| Iru | Lítíró | Àmì `#?` | Awọn akọsilẹ |
+|------|---------|----------|---------|
+| Nọmba odidi | `42`, `-7` | `###` | 64-bit ti o ni ami |
+| Nọmba lilefoofo | `3.14`, `1.5e10` | `##.` | Aami imọ-jinlẹ gba laaye |
+| Okun | `"ọrọ"` | `##"` | Ifisi: `"Káàbọ {orúkọ}"` |
+| Lẹta | `'A'` | `##'` | Lẹta Unicode kanṣoṣo |
+| Boolean | `#1`, `#0` | `##?` | Kii ṣe nọmba — `#1 ≠ 1` |
+| Ọ̀wọ̀ | `[1, 2, 3]` | `##]` | Awọn eroja isokan |
+| Tuple | `(a, b)` | `##)` | Ipo |
+| Tuple ti a npè ni | `(x: 1, y: 2)` | `##)` | Awọn aaye ti a npè ni |
+| Iṣẹ | itọkasi iṣẹ ti a npè ni | `##()` | Ipele-akọkọ; ṣe afihan `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Ipele-akọkọ; ṣe afihan `<lambd/N>` |
+
+```zymbol
+// Ìwádìí iru — pada (iru, awọn nọmba, iye)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
 t = meta[1]
@@ -69,167 +83,197 @@ t = meta[1]
 
 ---
 
-## Àwùjò àti Ìgbáwọlé
+## Ijade ati Iṣiṣẹsi
 
 ```zymbol
->> "Kààbò" ¶                       // ¶ tàbí \\ fun ìlà tuntun ti ó yéyé
->> "a=" a " b=" b ¶               // ìfí sí èbé — àwọn iye púpọ̀
->> (arr$#) ¶                      // àwọn òṣìṣẹ́ lórúkọ ní ìgbéyìn nílò ( ) nínú >>
+>> "Káàbọ" ¶                       // ¶ tabi \\ fun laini tuntun ti o han gbangba
+>> "a=" a " b=" b ¶               // isọpọ — awọn iye pupọ
+>> (arr$#) ¶                      // awọn oniṣẹ iṣẹhin nilo ( ) ni >>
 
-<< orúkọ                           // kà sínú oniyipada (láìsí ìbéèrè)
-<< "Tẹ orúkọ sí: " orúkọ         // pẹ̀lú ìbéèrè
+>> orúkọ                           // ka sinu oniyipada (laisi itọka)
+>> "Tẹ orúkọ sii: " orúkọ            // pẹlu itọka
 ```
 
-> `¶` (AltGr+R lórí keyboard Sípéènì) àti `\\` jẹ́ ìgbá fun ìlà tuntun.
+> `¶` (AltGr+R lori bọtini itẹwe Sipeeni) ati `\\` jẹ awọn laini tuntun deede.
 
 ---
 
-## Òṣìṣẹ́
+## Awọn Ipilẹ TUI
+
+Awọn oniṣẹ wiwo olumulo ebute fun awọn eto ibaraenisepo. Pupọ nilo bulọki `>>| { }` (iboju aropo + ipo aise).
 
 ```zymbol
-// Ìṣìrò — lo àwọn àfífun; àwọn òṣìṣẹ́ kan ní àwọn ẹ̀yà tààrà nínú >>
+>>| {
+    >>!                             // nu iboju aropo
+    >>~ (1, 1, 0, 10) > "Nṣiṣẹ"   // ori ila 1, ọwọn 1, fg=10 (alawọ ewe)
+    @~ 1000                         // da duro fun iṣẹju-aaya 1 (1000 ms)
+    >>~ (2, 1) > "Ti pari."
+}
+// ebute pada wa laifọwọyi nigbati o ba jade
+```
+
+```zymbol
+// Titẹ bọtini ati iwọn ebute
+>>| {
+    [awọn_ila, awọn_ọwọn] = >>?              // beere awọn iwọn ebute
+    >>~ (1, 1) > "Ebute: " awọn_ila " x " awọn_ọwọn
+    <<| bọtini                         // ka titẹ bọtini idilọwọ
+    >>~ (2, 1) > "Tẹ: " bọtini
+}
+```
+
+> `>>!` nu iboju. `>>?` pada `[awọn_ila, awọn_ọwọn]`. `@~ N` sun N miliseconds.
+> `<<|` ka titẹ bọtini kan (idilọwọ); `<<|?` ṣe idibo laisi idilọwọ (pada `'\0'` ti ko ba si).
+> Tuple ijade ipo: `(ila, ọwọn, BKS, fg, bg)` — aaye eyikeyi le jẹ fifi silẹ pẹlu aami idẹsẹ (`>>~ (,,, 196) > "pupa"`).
+> BKS bitmask: `1`=okun, `2`=itẹlẹ, `4`=ila-ẹ̀yẹ. ANSI 256 awọ paleti (`0`=aiyipada ebute).
+> tree-walker nikan (ayafi `>>!`, `>>?`, `@~`, `>>~` eyiti o tun ṣiṣẹ ni `--vm`).
+
+---
+
+## Awọn Oniṣẹ
+
+```zymbol
+// Iṣiro
 a = 10
 b = 3
-r1 = a + b    // 13
-r2 = a - b    // 7
-r3 = a * b    // 30
-r4 = a / b    // 3  (pínpín nòmbá òdó)
-r5 = a % b    // 1
-r6 = a ^ b    // 1000  (igbéga)
+ab1 = a + b    // 13
+ab2 = a - b    // 7
+ab3 = a * b    // 30
+ab4 = a / b    // 3  (pipin nọmba odidi)
+ab5 = a % b    // 1
+ab6 = a ^ b    // 1000  (igbega)
 
-// Láfiwé
-a == b    // #0    
-a <> b    // #1    
-a < b     // #0
-a <= b    // #0   
-a > b     // #1    
-a >= b    // #1
+// Ifiwera — sọtọ fun ayewo
+fi1 = a == b    // #0
+fi2 = a <> b    // #1
+fi3 = a < b     // #0
+fi4 = a <= b    // #0
+fi5 = a > b     // #1
+fi6 = a >= b    // #1
 
-// Ọgbọ́n
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
+// Ọgbọn
+ọgb1 = #1 && #0    // #0
+ọgb2 = #1 || #0    // #1
+ọgb3 = !#1         // #0
 ```
 
 ---
 
-## Àwọn Òkún
+## Awọn Okun
 
 ```zymbol
-// Àwọn ọ̀nà méjì ti ìṣọ̀kan
-orúkọ = "Aliisi"
+// Awọn ọna asopọ meji
+orúkọ = "Alice"
 n = 42
 
->> "Kààbò " orúkọ " o ni " n ¶       // ìfí sí èbé — nínú >>
-àlàyé = "Kààbò {orúkọ}, o ni {n}"   // ifísí — níbi eyikeyi
+>> "Káàbọ " orúkọ " o ni " n ¶       // isọpọ — ni >>
+apejuwe = "Káàbọ {orúkọ}, o ni {n}"     // ifisi — nibikibi
 ```
 
 ```zymbol
-s = "Kààbò Aye"
-igígùn = s$#                  // 9
-abẹ́ = s$[1..4]                // "Kàà"  (ìpilò-1, ìpèkun nínú)
-wà = s$? "Aye"                // #1
-àwọn ìhà = "a,b,c,d"$/ ','  // [a, b, c, d]  (pinpin pẹ̀lú àlàyà)
-rópò = s$~~["a":"o"]         // "Kòòbò Ayo"
-rópò1 = s$~~["a":"o":1]      // "Kòòbò Aye" (N àkọ́kọ́ nikan)
+s = "Káàbọ aye"
+gigun = s$#                  // 10
+ìpín = s$[1..5]             // "Káàbọ"  (1-ipilẹ, opin pẹlu)
+wà = s$? "aye"          // #1
+awọn_ẹya = "a,b,c,d"$/ ','   // [a, b, c, d]  (pin pẹlu oluyapa)
+rọpo = s$~~["l":"r"]        // "Káàbọ aye" (ko si 'l' ninu Yoruba)
+rọpo1 = s$~~["l":"r":1]     // "Káàbọ aye"
+ila = "─" $* 20           // "────────────────────"  (tun ṣe N igba)
 ```
 
-> `+` jẹ́ fun àwọn nòmbá nikan. Fun àwọn òkún, lo `,`, ìfí sí èbé, tàbí ifísí.
+> `+` jẹ fun awọn nọmba nikan. Fun awọn okun, lo `,`, isọpọ, tabi ifisi.
 
 ---
 
----
-
-## Ìṣàkóso Ìṣàn
+## Iṣakoso Sisan
 
 ```zymbol
 x = 7
 
-? x > 0 { >> "ọmọlúwàbí" ¶ }
+? x > 0 { >> "rere" ¶ }
 
 ? x > 100 {
-    >> "tóbi" ¶
+    >> "ntobi" ¶
 } _? x > 0 {
-    >> "ọmọlúwàbí" ¶
+    >> "rere" ¶
 } _? x == 0 {
     >> "odo" ¶
 } _ {
-    >> "ọ̀dọ̀" ¶
+    >> "odi" ¶
 }
 ```
 
-> Àwọn àmì ìhà `{ }` **jẹ́ díndá** páápáá fun ọ̀rọ̀ kan ṣoṣo.
+> Awọn àmì-ọ̀rọ̀ `{ }` **jẹ dandan** paapaa fun alaye kanṣoṣo.
 
 ---
 
----
-
-## Ìbámu
+## Ibamu
 
 ```zymbol
-// Àwọn àlà
-ìdímú = 85
-ìpele = ?? ìdímú {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+// Awọn sakani
+Dimegilio = 85
+ite = ?? Dimegilio {
+    90..100 => 'A'
+    80..89  => 'B'
+    70..79  => 'C'
+    _       => 'D'
 }
->> ìpele ¶      // → B
+>> ite ¶    // → B
 
-// Àwọn òkún
-àwò = "púpà"
-kọ́ọ̀dú = ?? àwò {
-    "púpà"  : "#FF0000"
-    "àwò éwé" : "#00FF00"
-    _        : "#000000"
+// Awọn okun
+awọ = "pupa"
+koodu = ?? awọ {
+    "pupa"   => "#FF0000"
+    "alawọ ewe" => "#00FF00"
+    _       => "#000000"
 }
 
-// Àwọn ìlanà láfiwé
-ọra = -5
-ìdúró = ?? ọra {
-    < 0  : "yinyin"
-    < 20 : "tùtù"
-    < 35 : "gbéérún"
-    _    : "gboná"
+// Awọn apẹrẹ ifiwera
+iwọn_otutu = -5
+ipo = ?? iwọn_otutu {
+    < 0  => "yinyin"
+    < 20 => "tutu"
+    < 35 => "gbigbona"
+    _    => "gbigbona"
 }
->> ìdúró ¶     // → yinyin
+>> ipo ¶    // → yinyin
 
-// Ọ̀nà ìlànà (àwọn bulọ́ọ̀ki)
+// Fọọmu alaye (awọn apa bulọki)
+n = -3
 ?? n {
-    0        : { >> "odo" ¶ }
-    _? n < 0 : { >> "ọ̀dọ̀" ¶ }
-    _        : { >> "ọmọlúwàbí" ¶ }
+    0    => { >> "odo" ¶ }
+    < 0  => { >> "odi" ¶ }
+    _    => { >> "rere" ¶ }
 }
 ```
 
 ---
 
-## Àwọn Ìyípò
+## Awọn Lupu
 
 ```zymbol
-@ i:0..4  { >> i " " }        // àlà ti ó nínú:  0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // pẹ̀lú ìgbésẹ̀:    1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // ìdàpò:          5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // sakani pẹlu:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // pẹlu igbesẹ:         1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // yiyipada:           5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶                        // → 128  (nigbà ti)
+>> n ¶                        // → 128  (nigba ti)
 
-àwọn èso = ["àpù", "péà", "èso àjàrà"]
-@ e:àwọn èso { >> e ¶ }        // fun ohun kòòkan nínú ẹ̀kọ́
+awọn_eso = ["appu", "pia", "esin"]
+@ e:awọn_eso { >> e ¶ }         // fun gbogbo eroja ninu ọ̀wọ̀
 
-@ k:"kààbò" { >> k "-" }
->> ¶                          // → k-a-̀-à-b-o-̀-  (fun lẹ́tà kòòkan nínú òkún)
+@ k:"hello" { >> k "-" }
+>> ¶                          // → h-e-l-l-o-  (fun gbogbo lẹta ninu okun)
 
 @ i:1..10 {
-    ? i % 2 == 0 { @> }       // @> tèsiwájú
-    ? i > 7 { @! }            // @! bú
+    ? i % 2 == 0 { @> }       // @> tẹsiwaju
+    ? i > 7 { @! }             // @! bu
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
 
-// Ìyípò aláìpin
+// Lupu ailopin
 i = 0
 @ {
     i++
@@ -238,377 +282,360 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Ìyípò ti o ní àmì (bú ìkọra-ara)
-onkà = 0
-@:ìta {
-    onkà++
-    ? onkà >= 3 { @:ìta! }
+// Lupu ti o ni aami (bu ti o wa ni itosi)
+kika = 0
+@:ita {
+    kika++
+    ? kika >= 3 { @:ita! }
 }
->> onkà ¶                     // → 3
+>> kika ¶                    // → 3
 ```
 
 ---
 
----
-
-## Àwọn Ìṣé
+## Awọn Iṣẹ
 
 ```zymbol
-fìkún(a, b) { <~ a + b }
->> fìkún(3, 4) ¶   // → 7
+fi_ku_n(a, b) { <~ a + b }
+>> fi_ku_n(3, 4) ¶    // → 7
 
-faktoriyali(n) {
+iṣiro_factored(n) {
     ? n <= 1 { <~ 1 }
-    <~ n * faktoriyali(n - 1)
+    <~ n * iṣiro_factored(n - 1)
 }
->> faktoriyali(5) ¶    // → 120
+>> iṣiro_factored(5) ¶    // → 120
 ```
 
-Àwọn ìṣé ní **àyikà ìyàsọ̀tọ̀** — wọn kò lè ka àwọn oniyipada ìta. Lo àwọn paramita èèjò `ìṣèjè` `<~>` láti ṣàtúnṣe àwọn oniyipada olùpè:
+Awọn iṣẹ ni **agbegbe ti o ya sọtọ** — wọn ko le ka awọn oniyipada ita. Lo awọn paramita ijade `<~>` lati paarọ awọn oniyipada olupè:
 
 ```zymbol
-pààrò(a<~, b<~) {
-    ìgbàdíẹ̀ = a
+paarọ(a<~, b<~) {
+    igba_die = a
     a = b
-    b = ìgbàdíẹ̀
+    b = igba_die
 }
 x = 10
 y = 20
-pààrò(x, y)
+paarọ(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Àwọn ìṣé ti a sọ lorúkọ **jẹ́ àwọn iye ipele kíní** — fì ránṣẹ́ ní tààrà: `àwọn nòmbá$> ìlọ́po méjì`. `x -> fn(x)` tún wọ́.
+> Awọn iṣẹ ti a npè ni jẹ **awọn iye ipele-akọkọ** — fi taara ranṣẹ: `awọn_nọmba$> ìlọpo_meji`. Lati fi ipò: `x -> fn(x)` tun wulo.
 
 ---
 
----
-
-## Lambda àti Àtiọ̀ràn
+## Lambda ati Awọn Pipade
 
 ```zymbol
-ìlọ́po méjì = x -> x * 2
-fìkún = (a, b) -> a + b
->> ìlọ́po méjì(5) ¶   // → 10
->> fìkún(3, 7) ¶      // → 10
+ìlọpo_meji = x -> x * 2
+fi_ku_n = (a, b) -> a + b
+>> ìlọpo_meji(5) ¶    // → 10
+>> fi_ku_n(3, 7) ¶  // → 10
 
-// Bulọ́ọ̀ki lambda
-ìpín = x -> {
-    ? x > 0 { <~ "ọmọlúwàbí" }
-    _? x < 0 { <~ "ọ̀dọ̀" }
+// Lambda bulọki
+pin = x -> {
+    ? x > 0 { <~ "rere" }
+    _? x < 0 { <~ "odi" }
     <~ "odo"
 }
 
-// Àtiọ̀ràn — ó mú àyikà ìta
-ohun ọ̀pọ̀ = 3
-ìlọ́po mẹ́ta = x -> x * ohun ọ̀pọ̀
->> ìlọ́po mẹ́ta(7) ¶    // → 21
+// Pipade — gba agbegbe ita
+ifosiwewe = 3
+ìlọpo_mẹta = x -> x * ifosiwewe
+>> ìlọpo_mẹta(7) ¶    // → 21
 
-// Ìlé ìṣé
-ṣẹ̀dá_àrópò(n) { <~ x -> x + n }
-fìkún-ẹ̀wá = ṣẹ̀dá_àrópò(10)
->> fìkún-ẹ̀wá(5) ¶     // → 15
+// Ile-iṣẹ
+oṣelu_fi_ku_n(n) { <~ x -> x + n }
+fi_ku_n_mẹwa = oṣelu_fi_ku_n(10)
+>> fi_ku_n_mẹwa(5) ¶    // → 15
 
-// Nínú ẹ̀kọ́
-àwọn ìṣé = [x -> x+1, x -> x*2, x -> x*x]
->> àwọn ìṣé[3](5) ¶    // → 25
+// Ninu ọ̀wọ̀
+awọn_onísẹ = [x -> x+1, x -> x*2, x -> x*x]
+>> awọn_onísẹ[3](5) ¶    // → 25
 ```
 
 ---
 
-## Àwọn Ẹ̀kọ́
+## Ọ̀wọ̀
 
-Àwọn ẹ̀kọ́ **lè yí padà** ati pé wọn ní àwọn ohun **ti irú kanna**.
+Awọn ọ̀wọ̀ **le yipada** ati pe wọn ni awọn eroja **ti iru kanna**.
 
 ```zymbol
-ẹ̀kọ́ = [1, 2, 3, 4, 5]
+arr = [1, 2, 3, 4, 5]
 
-ẹ̀kọ́[1]          // 1 — ìwádé (ìpilò-1: ohun àkọ́kọ́)
-ẹ̀kọ́[-1]         // 5 — àmì òdì (ohun ìkẹyìn)
-ẹ̀kọ́$#           // 5 — gígí (lo (ẹ̀kọ́$#) nínú >>)
+x = arr[1]      // 1 — iraye si (1-ipilẹ: eroja akọkọ)
+x = arr[-1]     // 5 — atọka odi (eroja ikẹhin)
+x = arr$#       // 5 — gigun (lo (arr$#) ni >>)
 
-ẹ̀kọ́ = ẹ̀kọ́$+ 6            // fìkún → [1,2,3,4,5,6]
-ẹ̀kọ́2 = ẹ̀kọ́$+[2] 99       // físí sí ipò 2 (ìpilò-1)
-ẹ̀kọ́3 = ẹ̀kọ́$- 3           // yọ ìfarahè àkọ́kọ́ ti iye
-ẹ̀kọ́4 = ẹ̀kọ́$-- 3          // yọ gbogbo ìfarahè
-ẹ̀kọ́5 = ẹ̀kọ́$-[1]          // yọ ní àmì 1 (ohun àkọ́kọ́)
-ẹ̀kọ́6 = ẹ̀kọ́$-[2..3]       // yọ àlà (ìpilò-1, ìpèkun nínú)
+arr = arr$+ 6            // fi kun → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // fi sii ni ipo 2 (1-ipilẹ)
+arr3 = arr$- 3           // yọ iṣẹlẹ akọkọ ti iye kuro
+arr4 = arr$-- 3          // yọ gbogbo awọn iṣẹlẹ kuro
+arr5 = arr$-[1]          // yọ ni atọka 1 (eroja akọkọ)
+arr6 = arr$-[2..3]       // yọ sakani (1-ipilẹ, opin pẹlu)
 
-wà = ẹ̀kọ́$? 3            // #1 — nínú
-àwọn ipò = ẹ̀kọ́$?? 3     // [3] — gbogbo àwọn àmì ti iye (ìpilò-1)
-ìgéré = ẹ̀kọ́$[1..3]      // [1,2,3] — ìgéré (ìpilò-1, ìpèkun nínú)
-ìgéré2 = ẹ̀kọ́$[1:3]      // [1,2,3] — kanna, síntaksì ti o da lórí ìyè
+wà = arr$? 3            // #1 — ni ninu
+awọn_ipo = arr$?? 3           // [3] — gbogbo awọn atọka ti iye (1-ipilẹ)
+ge = arr$[1..3]          // [1,2,3] — ge (1-ipilẹ, opin pẹlu)
+ge2 = arr$[1:3]          // [1,2,3] — kanna, sintasi orisun kika
 
-ìgun = ẹ̀kọ́$^+          // tò ìgun (àwọn àkọ́bẹ̀rẹ̀ nikan)
-ìsọ̀kalẹ̀ = ẹ̀kọ́$^-          // tò ìsọ̀kalẹ̀ (àwọn àkọ́bẹ̀rẹ̀ nikan)
+òkè = arr$^+             // to òkè (awọn alakọbẹrẹ nikan)
+isalẹ = arr$^-            // to isalẹ (awọn alakọbẹrẹ nikan)
 
-// Àwọn ẹ̀kọ́ túpù ti o ni orúkọ/ipô — lo $^ pẹ̀lú lambda láfiwé
-data = [(orúkọ: "Káálà", ọdún: 28), (orúkọ: "Ana", ọdún: 25), (orúkọ: "Bọbọ", ọdún: 30)]
-nípa_ọdún   = data$^ (a, b -> a.ọdún < b.ọdún)     // ìgun nípa ọdún (<)
-nípa_orúkọ   = data$^ (a, b -> a.orúkọ > b.orúkọ)   // ìsọ̀kalẹ̀ nípa orúkọ (>)
->> nípa_ọdún[1].orúkọ ¶    // → Ana
->> nípa_orúkọ[1].orúkọ ¶   // → Káálà
+// Awọn ọ̀wọ̀ tuple ti a npè ni/ipo — lo $^ pẹlu lambda afiwera
+data_base = [(orúkọ: "Carla", ọjọ_ori: 28), (orúkọ: "Ana", ọjọ_ori: 25), (orúkọ: "Bob", ọjọ_ori: 30)]
+ni_ibamu_si_ọjọ_ori  = data_base$^ (a, b -> a.ọjọ_ori < b.ọjọ_ori)    // ni ibamu si ọjọ-ori òkè (<)
+ni_ibamu_si_orúkọ = data_base$^ (a, b -> a.orúkọ > b.orúkọ)   // ni ibamu si orúkọ isalẹ (>)
+>> ni_ibamu_si_ọjọ_ori[1].orúkọ ¶     // → Ana
+>> ni_ibamu_si_orúkọ[1].orúkọ ¶    // → Carla
 
-// Ìmúdojún ohun tààrà (àwọn ẹ̀kọ́ nikan)
-ẹ̀kọ́[1] = 99              // àfífun
-ẹ̀kọ́[2] += 5              // àkápò: +=  -=  *=  /=  %=  ^=
+// Imudojuiwọn eroja taara (awọn ọ̀wọ̀ nikan)
+arr[1] = 99              // sọtọ
+arr[2] += 5              // akojọpọ: +=  -=  *=  /=  %=  ^=
 
-// Ìmúdojún ìṣé — ó padà ẹ̀kọ́ tuntun; àkọ́kọ́ kò yí padà
-ẹ̀kọ́2 = ẹ̀kọ́[2]$~ 99
+// Imudojuiwọn iṣẹ — pada ọ̀wọ̀ tuntun; atilẹba ko yipada
+arr2 = arr[2]$~ 99
 ```
 
-> Gbogbo àwọn òṣìṣẹ́ àkojọpò padà **ẹ̀kọ́ tuntun**. Fi fun láì: `ẹ̀kọ́ = ẹ̀kọ́$+ 4`.
-> `$+` lè di ṣísopọ̀: `ẹ̀kọ́ = ẹ̀kọ́$+ 5$+ 6$+ 7`. Àwọn òṣìṣẹ́ mìírà lo àwọn àfífun àgbedemeji.
-> **Àmì ìtọ́ka si ìpilò-1**: `ẹ̀kọ́[1]` ni ohun àkọ́kọ́; `ẹ̀kọ́[0]` jẹ́ aṣìṣe àkọ́ọ̀lé.
+> Gbogbo awọn oniṣẹ ikojọpọ pada **ọ̀wọ̀ tuntun**. Sọtọ pada: `arr = arr$+ 4`.
+> `$+` le ṣe pq: `arr = arr$+ 5$+ 6$+ 7`. Awọn oniṣẹ miiran lo awọn sọtọ agbedemeji.
+> **Atọka jẹ 1-ipilẹ**: `arr[1]` jẹ eroja akọkọ; `arr[0]` jẹ aṣiṣe akoko ṣiṣe.
+> `$^+` / `$^-` to **awọn ọ̀wọ̀ alakọbẹrẹ** (awọn nọmba, awọn okun). Fun awọn ọ̀wọ̀ tuple, lo `$^` pẹlu lambda afiwera — itọsọna ti wa ni koodu sinu lambda (`<` = òkè, `>` = isalẹ).
 
-> `$^+` / `$^-` ń tò **àwọn ẹ̀kọ́ àkọ́bẹ̀rẹ̀** (àwọn nòmbá, àwọn òkún). Fun àwọn ẹ̀kọ́ túpù, lo $^ pẹ̀lú lambda láfiwé — ìtònisọ́ǹsì jẹ́ aìfìwé nínú lambda (`<` = ìgun, `>` = ìsọ̀kalẹ̀).
-
-**Ìtúmọ iye** — fífun ẹ̀kọ́ sí oniyipada mìírà ń ṣẹ̀dá ẹ̀dà òminira:
+**Ìtumọ iye** — sọtọ ọ̀wọ̀ si oniyipada miiran ṣẹda ẹda ominira:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
 a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b kò nípa
+>> b ¶    // → [1, 2, 3]   ← b ko ni ipa
 ```
 
 ```zymbol
-// Àwọn ẹ̀kọ́ ìkọra-ara (àmì ìtọ́ka si ìpilò-1)
-mátírísí = [[1,2,3],[4,5,6],[7,8,9]]
->> mátírísí[2][3] ¶    // → 6  (ìlà 2, ìwé 3)
+// Awọn ọ̀wọ̀ ti o wa ni itosi (atọka 1-ipilẹ)
+matrix = [[1,2,3],[4,5,6],[7,8,9]]
+>> matrix[2][3] ¶    // → 6  (ila 2, ọwọn 3)
 ```
 
 ---
 
-## Ìtúkàlẹ̀
+## Itusilẹ Ilana
 
 ```zymbol
-// Ẹ̀kọ́
-ẹ̀kọ́ = [10, 20, 30, 40, 50]
-[a, b, c] = ẹ̀kọ́               // a=10  b=20  c=30
-[àkọ́kọ́, *àyọ̀kù] = ẹ̀kọ́     // àkọ́kọ́=10  àyọ̀kù=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ ń fí silẹ̀
+// Ọ̀wọ̀
+arr = [10, 20, 30, 40, 50]
+[a, b, c] = arr              // a=10  b=20  c=30
+[akọkọ, *iṣẹku] = arr         // akọkọ=10  iṣẹku=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ danu
 
-// Túpù ìpò
-ojúami = (100, 200)
-(px, py) = ojúami             // px=100  py=200
+// Tuple ipo
+ojuami = (100, 200)
+(px, py) = ojuami             // px=100  py=200
 
-// Túpù ti a sọ lorúkọ
-ènìyàn = (orúkọ: "Ana", ọdún: 25, ìlú: "Madrid")
-(orúkọ: o, ọdún: ọd) = ènìyàn   // o="Ana"  ọd=25
+// Tuple ti a npè ni
+eniyan = (orúkọ: "Ana", ọjọ_ori: 25, ilu: "Madrid")
+(orúkọ: n, ọjọ_ori: o) = eniyan   // n="Ana"  o=25
 ```
 
 ---
 
-## Àwọn Túpù
+## Tuple
 
-Àwọn túpù jẹ́ àwọn àpò ìtólẹ̀ **ti kò lè yí padà** ti o lè di àwọn iye **ti àwọn irú ọ̀tọ̀ọ̀tọ̀** mú.
-Bí ìyàtọ̀ sí àwọn ẹ̀kọ́, àwọn ohun kò lè yí padà lẹ́yìn ìṣẹ̀dá.
+Awọn tuple jẹ awọn apoti ti a ṣe lẹsẹsẹ **ti ko le yipada** ti o le ni awọn iye **ti awọn iru oriṣiriṣi**.
+Ko dabi awọn ọ̀wọ̀, awọn eroja ko le yipada lẹhin ẹda.
 
 ```zymbol
-// Nípò — àwọn irú àdarapọ̀ ti yọ̀ndà
-ojúami = (10, 20)
->> ojúami[1] ¶     // → 10
+// Ipo — awọn iru idapọmọra gba laaye
+ojuami = (10, 20)
+>> ojuami[1] ¶    // → 10
 
-data = (42, "kààbò", #1, 3.14)
->> data[3] ¶       // → #1
+data = (42, "Káàbọ", #1, 3.14)
+>> data[3] ¶     // → #1
 
-// Ti a sọ lorúkọ
-ènìyàn = (orúkọ: "Aliisi", ọdún: 25)
->> ènìyàn.orúkọ ¶   // → Aliisi
->> ènìyàn[1] ¶      // → Aliisi  (àmì ìtọ́ka tún ń ṣiṣẹ́, ìpilò-1)
+// Ti a npè ni
+eniyan = (orúkọ: "Alice", ọjọ_ori: 25)
+>> eniyan.orúkọ ¶    // → Alice
+>> eniyan[1] ¶      // → Alice  (atọka tun ṣiṣẹ, 1-ipilẹ)
 
-// Ìkọra-ara
-ipò = (x: 10, y: 20)
-p = (ipò: ipò, àmì: "ìpilẹ̀ṣẹ̀")
->> p.ipò.x ¶        // → 10
+// Ti o wa ni itosi
+ipo = (x: 10, y: 20)
+p = (ipo: ipo, àmì: "ipilẹṣẹ")
+>> p.ipo.x ¶        // → 10
 ```
 
-**Àìyípadà** — ìgbíyànjú èyè keyi lati ṣàtúnṣe ohun túpù jẹ́ aṣìṣe àkọ́ọ̀lé:
+**Ailipadabọ** — eyikeyi igbiyanju lati paarọ eroja tuple jẹ aṣiṣe akoko ṣiṣe:
 
 ```zymbol
 t = (10, 20, 30)
-// t[1] = 99    // ❌ aṣìṣe àkọ́ọ̀lé: àwọn túpù kò lè yí padà
-// t[1] += 5    // ❌ aṣìṣe kanna
-
-// Túpù ti a sọ lorúkọ — ṣe ìmọ̀lẹ̀ tún
-ènìyàn = (orúkọ: "Aliisi", ọdún: 25)
-tóbi = (orúkọ: ènìyàn.orúkọ, ọdún: 26)
->> ènìyàn.ọdún ¶    // → 25
->> tóbi.ọdún ¶       // → 26
+// t[1] = 99    // ❌ aṣiṣe akoko ṣiṣe: awọn tuple ko le yipada
+// t[1] += 5    // ❌ aṣiṣe kanna
 ```
 
-Láti gba iye ti o ṣàtúnṣe, lo `$~` (ìmúdojún ìṣé) — ó padà túpù **tuntun**:
+Lati gba iye ti a ṣe atunṣe lo `$~` (imudojuiwọn iṣẹ) — pada **tuple tuntun**:
 
 ```zymbol
 t = (10, 20, 30)
 t2 = t[2]$~ 999
->> t ¶     // → (10, 20, 30)   ← àkọ́kọ́ kò yí padà
+>> t ¶     // → (10, 20, 30)   ← atilẹba ko yipada
 >> t2 ¶    // → (10, 999, 30)
+
+// Tuple ti a npè ni — tun kọ ni gbangba
+eniyan = (orúkọ: "Alice", ọjọ_ori: 25)
+àgbà  = (orúkọ: eniyan.orúkọ, ọjọ_ori: 26)
+>> eniyan.ọjọ_ori ¶    // → 25
+>> àgbà.ọjọ_ori ¶     // → 26
 ```
 
 ---
 
----
-
-## Àwọn Ìṣé Ipele Gíga
+## Awọn Iṣẹ Ipele-giga
 
 ```zymbol
-àwọn nòmbá = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+awọn_nọmba = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-ìlọ́po-méjì = àwọn nòmbá$> (x -> x * 2)                // máàpù → [2,4,6…20]
-àwọn ìbọ̀   = àwọn nòmbá$| (x -> x % 2 == 0)          // àlẹ̀yọ → [2,4,6,8,10]
-àpapọ̀    = àwọn nòmbá$< (0, (ìṣùjò, x) -> ìṣùjò + x) // ìdínkù → 55
+ìlọpo_meji  = awọn_nọmba$> (x -> x * 2)                  // map  → [2,4,6…20]
+afẹfẹ    = awọn_nọmba$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
+lapapọ    = awọn_nọmba$< (0, (akopọ, x) -> akopọ + x)     // reduce → 55
 
-// Ìsopọ̀ nípa àwọn àgbedemeji
-ìpele1 = àwọn nòmbá$| (x -> x > 3)
-ìpele2 = ìpele1$> (x -> x * x)
->> ìpele2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+// Pọ pẹlu awọn agbedemeji
+igbesẹ1 = awọn_nọmba$| (x -> x > 3)
+igbesẹ2 = igbesẹ1$> (x -> x * x)
+>> igbesẹ2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Àwọn ìṣé ti a sọ lorúkọ lè fì ránṣẹ́ ní tààrà si àwọn ìṣé ipele gíga
-ìlọ́po méjì(x) { <~ x * 2 }
-ó tóbi(x) { <~ x > 5 }
-r = àwọn nòmbá$> ìlọ́po méjì       // ✅ ìtókasí tààrà
-r = àwọn nòmbá$| ó tóbi        // ✅ ìtókasí tààrà
+// Awọn iṣẹ ti a npè ni ni a le fi taara si HOF ranṣẹ
+ìlọpo_meji(x) { <~ x * 2 }
+tóbi(x) { <~ x > 5 }
+r = awọn_nọmba$> ìlọpo_meji       // ✅ itọkasi taara
+r = awọn_nọmba$| tóbi       // ✅ itọkasi taara
 ```
 
 ---
 
----
+## Oniṣẹ Paipu
 
-## Òṣìṣẹ́ Àrò
-
-Ọwọ́ ọ̀tún ń bèèrè `_` nígbà gbogbo bí aayè for ohun ti o wá ní àrò:
+Apa ọtun nigbagbogbo nilo `_` bi ohun idaduro fun iye ti a fi paipu:
 
 ```zymbol
-ìlọ́po méjì = x -> x * 2
-fìkún = (a, b) -> a + b
-fìkún-ọ̀kan = x -> x + 1
+ìlọpo_meji = x -> x * 2
+fi_ku_n = (a, b) -> a + b
+afikun = x -> x + 1
 
-5 |> ìlọ́po méjì(_)        // → 10
-10 |> fìkún(_, 5)         // → 15
-5 |> fìkún(2, _)          // → 7
+ab1 = 5 |> ìlọpo_meji(_)        // → 10
+ab2 = 10 |> fi_ku_n(_, 5)       // → 15
+ab3 = 5 |> fi_ku_n(2, _)        // → 7
 
-// Ìsopọ̀
-r = 5 |> ìlọ́po méjì(_) |> fìkún-ọ̀kan(_) |> ìlọ́po méjì(_)
->> r ¶    // → 22  (5→10→11→22)
+// Ti a so po
+ab = 5 |> ìlọpo_meji(_) |> afikun(_) |> ìlọpo_meji(_)
+>> ab ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## Ìmú Mú Aṣìṣe
+## Mimu Aṣiṣe
 
 ```zymbol
 !? {
     x = 10 / 0
 } :! ##Div {
-    >> "pínpín pàtàpàtà pàtàpàtà" ¶
+    >> "pipa nipasẹ odo" ¶
 } :! {
-    >> "aṣìṣe mìírà: " _err ¶    // _err ń di ìpè aṣìṣe mú
+    >> "omiiran: " _err ¶    // _err mu ifiranṣẹ aṣiṣe
 } :> {
-    >> "ó ń ṣiṣẹ́ nígbà gbogbo" ¶
+    >> "nigbagbogbo nṣiṣẹ" ¶
 }
 ```
 
-| Irú | Ìgbà |
-|------|-------|
-| `##Div` | Pínpín pàtàpàtà pàtàpàtà |
-| `##IO` | Fáìlì / ètò |
-| `##Index` | Àmì ìtọ́ka si ìta àlà |
-| `##Type` | Aìbámu irú |
-| `##Parse` | Àtúpalẹ̀ data |
-| `##Network` | Àṣìṣe náẹ́tiwọ́ọ̀kì |
-| `##_` | Àṣìṣe eyikeyi (mú gbogbo) |
+| Iru | Nigbawo |
+|------|------|
+| `##Div` | Pipa nipasẹ odo |
+| `##IO` | Faili / eto |
+| `##Index` | Atọka ita agbegbe |
+| `##Type` | Aibamu iru |
+| `##Parse` | Itupalẹ data |
+| `##Network` | Awọn aṣiṣe nẹtiwọọki |
+| `##_` | Eyikeyi aṣiṣe (mu-gbogbo) |
 
 ---
 
----
-
-## Àwọn Module
+## Awọn Modulu
 
 ```zymbol
-// lib/calc.zy — ara module wà láàrin àwọn àmì ìhà ìkọra-ara
+// lib/calc.zy — ara modulu ti wa ni pipade ni awọn àmì-ọ̀rọ̀
 # calc {
-    #> { fìkún, get_PI }
+    #> { fi_ku_n, get_PI }
 
-    _PI := 3.14159
-    fìkún(a, b) { <~ a + b }
-    get_PI() { <~ _PI }
+    _π := 3.14159
+    fi_ku_n(a, b) { <~ a + b }
+    get_PI() { <~ _π }
 }
 ```
 
 ```zymbol
 // main.zy
-<# ./lib/calc <= c    // àmì àwarọ rẹ̀ jẹ́ díndá
+<# ./lib/calc => c    // orukọ ikẹhin nilo
 
->> c::fìkún(5, 3) ¶   // → 8
-pi = c::get_PI()
->> pi ¶              // → 3.14159
+>> c::fi_ku_n(5, 3) ¶     // → 8
+π = c::get_PI()
+>> π ¶               // → 3.14159
 ```
 
 ```zymbol
-// Fítádé pẹ̀lú orúkọ ìta mìírà
-# ìkàwè_mi {
-    #> { _fìkún_inú <= àpapọ̀ }
+// Ṣe okeere pẹlu orukọ gbangba ti o yatọ
+# mylib {
+    #> { _fi_ku_n_inu => apapọ }
 
-    _fìkún_inú(a, b) { <~ a + b }
+    _fi_ku_n_inu(a, b) { <~ a + b }
 }
 ```
 
 ```zymbol
-<# ./ìkàwè_mi <= m
+<# ./mylib => m
 
->> m::àpapọ̀(3, 4) ¶    // → 7  (orúkọ inú _fìkún_inú ti farasin)
+>> m::apapọ(3, 4) ¶    // → 7  (orukọ inu _fi_ku_n_inu ti farasin)
 ```
 
-> **Àwọn òfin module**: nínú `# orúkọ { }`, `#>`, àwọn àlàyé ìṣé, ati àwọn ìpilẹ̀ṣẹ̀ oniyipadà/iduróṣínṣin litáli nikan ni a yọ̀ndà. Àwọn lànà ti o lè mú ṣiṣẹ́ (`>>`, `<<`, ìyípò, bẹẹbẹẹ) ń fa aṣìṣe E013.
+> **Awọn ofin modulu**: inu `# orúkọ { }`, `#>`, awọn itumọ iṣẹ, ati awọn olupilẹṣẹ oniyipada/iduro litiriki nikan ni a gba laaye. Awọn alaye ti o le ṣiṣẹ (`>>`, `<<`, awọn lupu, ati bẹbẹ lọ) nfa aṣiṣe E013.
 
 ---
 
----
+## Awọn Ipo Nọmba
 
-## Àwọn Ipo Nòmbá
+Zymbol le ṣe afihan awọn nọmba ni **awọn iwe afọwọkọ nọmba Unicode 69** — Devanagari, Arab-India, Thai, Klingon pIqaD, Iwoye Iṣiro, awọn apa LCD, ati diẹ sii. Ipo ti nṣiṣẹ nikan ni ipa lori ijade `>>`; iṣiro inu nigbagbogbo jẹ alakomeji.
 
-Zymbol lè fi àwọn nòmbá hàn ní **àwọn bulọ́ọ̀ki àmì nòmbá Unicode 69** — Devanagari, Larubawa-India, Tailandi, Klingon pIqaD, Mathematical bold, àwọn apá LCD, ati ìyoku. Ipo ti o ń ṣiṣẹ́ ń kan àwùjò `>>` nikan; ìṣìrò inú jẹ́ alápà méjì nígbà gbogbo.
+### Mu iwe afọwọkọ ṣiṣẹ
 
-### Mú ìṣìlẹ̀ ṣiṣẹ́
-
-Ko àmì nòmbá `0` ati `9` ti ìṣìlẹ̀ ète sí inú `#…#`:
+Kọ awọn nọmba `0` ati `9` ti iwe afọwọkọ ibi-afẹde laarin `#…#`:
 
 ```zymbol
-#०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // Larubawa-India (U+0660–U+0669)
-#๐๙#    // Tailandi      (U+0E50–U+0E59)
-#09#    // tún ṣeto si ASCII
+#०९#    // Devanagari   (U+0966–U+096F)
+#٠٩#    // Arab-India (U+0660–U+0669)
+#๐๙#    // Thai         (U+0E50–U+0E59)
+#09#    // tun ṣe eto si ASCII
 ```
 
----
-
-### Àwùjò ati Boolian
+### Ijade ati booleans
 
 ```zymbol
 x = 42
->> x ¶          // → 42   (ASCII àiyàfi)
+>> x ¶          // → 42   (aiyipada ASCII)
 
 #०९#
 >> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४   (àmì èèjò ń jẹ́ ASCII nígbà gbogbo)
+>> 3.14 ¶       // → ३.१४   (aami eleemewa nigbagbogbo ASCII)
 >> 1 + 2 ¶      // → ३
 
-// Boolian: àmì ìṣájú # jẹ́ ASCII nígbà gbogbo, àmì nòmbá ń bára mú
->> #1 ¶         // → #१   (òtitó ní Devanagari)
->> #0 ¶         // → #०   (ìró — yàtọ̀ si ० nòmbá òdó)
+// Booleans: iṣaju # nigbagbogbo ASCII, nọmba ṣe atunṣe
+>> #1 ¶         // → #१   (otito ni Devanagari)
+>> #0 ¶         // → #०   (iro — yato si ० odidi nọmba odo)
 
 x = 28 > 4
->> x ¶          // → #१   (àbájáde láfiwé ń tẹ̀lé ipo ti o ń ṣiṣẹ́)
+>> x ¶          // → #१   (abajade ifiwera tẹle ipo ti nṣiṣẹ)
 ```
 
----
+### Awọn litiriki nọmba abinibi ninu orisun
 
-## Àwọn litáli àmì nòmbá ìbílẹ̀ nínú kóọ̀dú orísun
-
-Àmì nòmbá ìṣìlẹ̀ kankan ti o ni àtilyẹ́wo jẹ́ litáli tó wọ́ — nínú àwọn àlà, nínú modulo, nínú àwọn láfiwé:
+Awọn nọmba ti eyikeyi iwe afọwọkọ ti o ni atilẹyin jẹ litiriki to wulo — ninu awọn sakani, modulo, awọn ifiwera:
 
 ```zymbol
 #०९#
@@ -621,54 +648,50 @@ Àmì nòmbá ìṣìlẹ̀ kankan ti o ni àtilyẹ́wo jẹ́ litáli 
 }
 ```
 
----
+### Awọn litiriki Boolean ni eyikeyi iwe afọwọkọ
 
-### Àwọn litáli Boolian nínú ìṣìlẹ̀ eyikeyi
-
-`#` + àmì nòmbá `0` tàbí `1` láti bulọ́ọ̀ki eyikeyi jẹ́ litáli Boolian tó wọ́:
+`#` + nọmba `0` tabi `1` lati eyikeyi bulọki jẹ litiriki boolean to wulo:
 
 ```zymbol
-#०९#
-ṣiṣẹ = #१        // bakanna bi #1
->> ṣiṣẹ ¶         // → #१
->> (#१ && #०) ¶   // → #०
+#٠٩#
+lọwọ = #١        // bakanna bi #1
+>> lọwọ ¶        // → #१
+>> (#١ && #०) ¶ // → #०
 ```
 
-> `#` **jẹ́ ASCII nígbà gbogbo**. `#0` (ìró) nígbà gbogbo yàtọ̀ ní ojú si `0` (nòmbá òdó) nínú ìṣìlẹ̀ kọ̀ọ̀kan.
+> `#` **nigbagbogbo ASCII** ni. `#0` (iro) nigbagbogbo yato ni oju si `0` (odidi nọmba odo) ni gbogbo iwe afọwọkọ.
 
 ---
 
----
-
-## Àwọn Òṣìṣẹ́ Data
+## Awọn Oniṣẹ Data
 
 ```zymbol
-// Ìyípadà irú
-##.42         // → 42.0  (si Lilefòfò)
-###3.7        // → 4     (si Nòmbá òdó, yípò)
-##!3.7        // → 3     (si Nòmbá òdó, ìgégé)
+// Awọn simẹnti iyipada iru
+f = ##.42         // → 42.0  (si lilefoofo)
+i = ###3.7        // → 4     (si odidi, yika)
+t = ##!3.7        // → 3     (si odidi, ge)
 
-// Ṣìṣàtúpalẹ̀ òkún si nòmbá
-v1 = #|"42"|      // → 42  (Nòmbá òdó)
-v2 = #|"3.14"|    // → 3.14  (Lilefòfò)
-v3 = #|"abc"|     // → "abc"  (ailewu, kò sí aṣìṣe)
+// Parse okun si nọmba
+v1 = #|"42"|      // → 42  (odidi)
+v2 = #|"3.14"|    // → 3.14  (lilefoofo)
+v3 = #|"abc"|     // → "abc"  (ailewu, ko si aṣiṣe)
 
-// Yípò / ìgégé
-pi = 3.14159265
-yípò2 = #.2|pi|     // → 3.14  (yípò si àwọn ipò èèjò 2)
-yípò4 = #.4|pi|     // → 3.1416
-ìgégé2 = #!2|pi|    // → 3.14  (ìgégé)
+// Yika / Ge
+π = 3.14159265
+yika2 = #.2|π|      // → 3.14  (yika si awọn aaye eleemewa 2)
+yika4 = #.4|π|      // → 3.1416
+ge2 = #!2|π|      // → 3.14  (ge)
 
-// Ọ̀nà ìṣeto nòmbá
-ọ̀nà = #,|1234567|   // → 1,234,567  (ti a ya sí ọ̀tọ̀ nípa àmì àáyè)
-ìmọ̀ = #^|12345.678| // → 1.2345678e4  (ìmọ̀)
+// Ṣiṣeto nọmba
+ọna_kika = #,|1234567|  // → 1,234,567  (aami idẹsẹ-ipinya)
+imọ_jinlẹ = #^|12345.678|    // → 1.2345678e4  (imọ-jinlẹ)
 
-// Àwọn litáli ìpilò
+// Awọn litiriki ipilẹ
 a = 0x41         // → 'A'  (hexadecimal)
-b = 0b01000001   // → 'A'  (alápà méjì)
-c = 0o101        // → 'A'  (ókùta)
+b = 0b01000001   // → 'A'  (binary)
+c = 0o101        // → 'A'  (octal)
 
-// Àwùjò ìyípadà ìpilò
+// Ijade iyipada ipilẹ
 hex = 0x|255|    // → "0x00FF"
 bin = 0b|65|     // → "0b1000001"
 oct = 0o|8|      // → "0o10"
@@ -677,138 +700,147 @@ dec = 0d|255|    // → "0d0255"
 
 ---
 
----
-
-## Ìfìkarà Shell
+## Ijọpọ Shell
 
 ```zymbol
-ọjọ́ = <\ date +%Y-%m-%d \>     // ń mu stdout (nínú \n ní ìkẹyìn)
->> "Lónìí: " ọjọ́
+ọjọ = <\ date +%Y-%m-%d \>     // mu stdout (pẹlu \n ni opin)
+>> "Loni: " ọjọ
 
-fáìlì = "data.txt"
-ohun inú = <\ cat {fáìlì} \>     // ifísí nínú àwọn pàṣẹ
+faili = "data.txt"
+akoonu = <\ cat {faili} \>      // ifisi ninu awọn aṣẹ
 
-àwùjò = </"./subscript.zy"/>   // ṣiṣẹ́ ìwé Zymbol mìírà, mu àwùjò
->> àwùjò
+ijade = </"./subscript.zy"/>   // ṣiṣẹ iwe afọwọkọ Zymbol miiran, mu ijade
+>> ijade
 ```
 
-> `><` ń mu àwọn aríyànjì CLI gégé bi ẹ̀kọ́ òkún (mọ ni ẹni ti o ń rìn igi nikan).
+> `><` mu awọn ariyanjiyan CLI gẹgẹbi ọ̀wọ̀ okun (tree-walker nikan).
 
 ---
 
----
-
-## Àpérè Ìkikun: FizzBuzz
+## Apeere Pipe: FizzBuzz
 
 ```zymbol
-ìpín(nòmbá) {
-    ? nòmbá % 15 == 0 { <~ "FizzBuzz" }
-    _? nòmbá % 3  == 0 { <~ "Fizz" }
-    _? nòmbá % 5  == 0 { <~ "Buzz" }
-    _ { <~ nòmbá }
+pin(nọmba) {
+    ? nọmba % 15 == 0 { <~ "FizzBuzz" }
+    _? nọmba % 3  == 0 { <~ "Fizz" }
+    _? nọmba % 5  == 0 { <~ "Buzz" }
+    _ { <~ nọmba }
 }
 
-@ i:1..20 { >> ìpín(i) ¶ }
+@ i:1..20 { >> pin(i) ¶ }
 ```
 
 ---
 
-## Ìtókasí Àmì
+## Itọkasi Aami
 
-| Àmì | Ìṣé | Àmì | Ìṣé |
-|------|------|------|------|
-| `=` | oniyipada | `$#` | gígí |
-| `:=` | iduróṣínṣin | `$+` | fìkún (lè ṣọpọ̀) |
-| `>>` | àwùjò | `$+[i]` | físí ní àmì ìtọ́ka àtọ̀ (ìpilò-1) |
-| `<<` | ìgbáwọlé | `$-` | yọ àkọ́kọ́ nípa iye |
-| `¶` / `\\` | ìlà tuntun | `$--` | yọ gbogbo nípa iye |
-| `?` | bí | `$-[i]` | yọ ní àmì ìtọ́ka (ìpilò-1) |
-| `_?` | bí kò ṣe bí | `$-[i..j]` | yọ àlà (ìpilò-1) |
-| `_` | bí kò ṣe / ìgbà gbogbo | `$?` | nínú |
-| `??` | ìbámu | `$??` | wá gbogbo àwọn àmì ìtọ́ka (ìpilò-1) |
-| `@` | ìyípò | `$[s..e]` | ìgéré (ìpilò-1) |
-| `@ N { }` | ìyípò ìyè N | `$>` | máàpù |
-| `@!` | bú | `$|` | àlẹ̀yọ |
-| `@>` | tèsiwájú | `$<` | ìdínkù |
-| `@:orúkọ { }` | ìyípò ti o ní àmì | `$/ àlàyà` | pínpín òkún |
-| `@:orúkọ!` | bú ti o ní àmì | `$++ a b c` | ì̀ṣọ́pọ̀ ìkọ́lé |
-| `@:orúkọ>` | tèsiwájú ti o ní àmì | `ẹ̀kọ́[i>j>k]` | àmì ìtọ́ka ìlàrìn |
-| `->` | lambda | `ẹ̀kọ́[i] = iye` | ṣàtúnṣe ohun (àwọn ẹ̀kọ́ nikan) |
-| `ẹ̀kọ́[i] += iye` | ìmúdojún ìṣọ̀kan | `ẹ̀kọ́[i]$~` | ìmúdojún ìṣé (ẹ̀dà tuntun) |
-| `$^+` | tò ìgun (àkọ́bẹ̀rẹ̀) | `$^-` | tò ìsọ̀kalẹ̀ (àkọ́bẹ̀rẹ̀) |
-| `$^` | tò pẹ̀lú àfìwé (àwọn túpù) | `<~` | padà |
-| `|>` | àrò | `!?` | gbíyànjú |
-| `:!` | mú | `:>` | níkẹyìn |
-| `#1` | òtitó | `#0` | ìró |
-| `$!` | jẹ́ aṣìṣe | `$!!` | tánká aṣìṣe |
-| `<#` | gbe wọlé | `#>` | fítádé |
-| `#` | ṣe àlàyé module | `::` | pe module |
-| `.` | ìwádé aaye | `#?` | ìtọ́kasí ìjẹ́ irú |
-| `#\|..\|` | ṣàtúpalẹ̀ nòmbá | `##.` | yí padà si Lilefòfò |
-| `###` | yí padà si Nòmbá òdó (yípò) | `##!` | yí padà si Nòmbá òdó (ìgégé) |
-| `#.N\|..\|` | yípò | `#!N\|..\|` | ìgégé |
-| `#,\|..\|` | ọ̀nà àmì àáyè | `#^\|..\|` | ìmọ̀ |
-| `#d0d9#` | yí ipo nòmbá padà | `#09#` | tún ṣeto si ASCII |
-| `<\ ..\>` | ṣiṣẹ́ shell | `>\<` | àwọn aríyànjì CLI |
-| `\ var` | pa oniyipada run tú | | |
-
----
-
----
-
-## Àkọọ́lẹ́ Àwọn Ìyípadà ìtújade
-
-### v0.0.4 — Ìtọ́ka si Ìpilò-1, Àwọn Ìṣé Ipele Kíní & Àwọn Bulọ́ọ̀ki Module _(Kẹsán 2026)_
-
-- **Bú** Gbogbo àmì ìtọ́ka si ni a yí padà si **ìpilò-1** — `ẹ̀kọ́[1]` ni ohun àkọ́kọ́; `ẹ̀kọ́[0]` jẹ́ aṣìṣe àkọ́ọ̀lé
-- **Fìkún** Àwọn ìṣé ti a sọ lorúkọ **jẹ́ àwọn iye ipele kíní** — fì ránṣẹ́ ní tààrà si àwọn ìṣé ipele gíga: `àwọn nòmbá$> ìlọ́po méjì`
-- **Fìkún** **Síntaksì bulọ́ọ̀ki** module jẹ́ díndá — `# orúkọ { ... }` — síntaksì ìpẹ̀tẹ́ ni a yóọ̀
-- **Fìkún** Ìtọ́ka si ìwọ̀n púpọ̀: `ẹ̀kọ́[i>j>k]` (ìlàrìn), `ẹ̀kọ́[p ; q]` (ìfádá ìpẹ̀tẹ́)
-- **Fìkún** Ìyípadà irú: `##.ọ̀rọ̀` (Lilefòfò), `###ọ̀rọ̀` (Nòmbá òdó yípò), `##!ọ̀rọ̀` (Nòmbá òdó ìgégé)
-- **Fìkún** Pínpín òkún: `òkún$/ àlàyà` — ó padà `Array(Òkún)`
-- **Fìkún** Ì̀ṣọ́pọ̀ ìkọ́lé: `ìpilò$++ a b c` — ó fi kún àwọn ohun púpọ̀
-- **Fìkún** Ìyípò àwọn N ìyè: `@ N { }` — tún ṣe ní kàkà N nígbà
-- **Fìkún** Síntaksì àwọn ìyípò ti o ní àmì: `@:orúkọ { }`, `@:orúkọ!`, `@:orúkọ>` — rópò `@ @orúkọ` / `@! orúkọ`
-- **Fìkún** Àwọn òfin àyìkà oniyipada: àwọn oniyipada `_orúkọ` ní àyikà bulọ́ọ̀ki ti o pèye; `\ var` pa ní kutukutu
-- **Fìkún** Àwọn ìlanà láfiwé ìbámu: `< 0 :`, `> 5 :`, `== 42 :`, bẹẹbẹẹ
-- **Fìkún** Aṣìṣe module E013: àwọn ìlànà ti o lè mú ṣiṣẹ́ nínú ara module ti fàṣẹ̀
-- **Ṣàtúnṣe** `take_variable` kò bá àwọn iduróṣínṣin module jé mó nigbà ti o ń ṣìwé sẹ́yìn
-- **Ṣàtúnṣe** `alias.CONST` nígbà yíi ń yàn ní ìtàn; `#>` lè fi ara hàn lẹ́yìn àwọn àlàyé ìṣé
-- **VM** Ìgbá pipe: 393/393 àwọn ìdánwò koja
-
-### v0.0.3 — Àwọn Ètò Nòmbá Unicode & Àwọn Ìmúdara LSP _(Kẹsán 2026)_
-
-- **Fìkún** Àwọn bulọ́ọ̀ki àmì nòmbá 69 pẹ̀lú àmì yípadà ipo `#d0d9#`
-- **Fìkún** Àwọn litáli Boolian nínú ìṣìlẹ̀ eyikeyi — `#१` / `#०`, `#१` / `#०`, bẹẹbẹẹ
-- **Fìkún** Àwọn àmì nòmbá Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
-- **Fìkún** `SetNumeralMode` opcode VM — ìgbá pipe pẹ̀lú ẹni ti ń rìn igi
-- **Fìkún** REPL ń bòwò fun ipo nòmbá ti o ń ṣiṣẹ́ ní ìwòn-ọ̀rọ̀ ati ìfihàn oniyipada
-- **Yí padà** Àwùjò Boolian `>>` nígbà yíi ní àmì ìṣájú `#` (`#0` / `#1`) ní gbogbo àwọn ipo
-
-### v0.0.2_01 — Àtúnlórúkọ Òṣìṣẹ́ _(30 Òkùdu 2026)_
-
-- **Yí padà** `c|..|` → `#,|..|` ati `e|..|` → `#^|..|` — ìbámu pẹ̀lú ìlà àwọn àmì ìṣájú ọ̀nà `#`
-- **Fìkún** Àmì àwarọ fitádé — ṣe fítádé àwọn ọmọ ẹgbẹ module lábí orúkọ mìírà
-
-### v0.0.2 — Àtúntò API Àkojọpò & Àwọn àtùnfi sí _(24 Òkùdu 2026)_
-
-- **Fìkún** Ìlà òṣìṣẹ́ `$` ìṣọ̀kan fún àwọn ẹ̀kọ́ ati òkún (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Fìkún** Àfífun ìtúkàlẹ̀ fún àwọn ẹ̀kọ́, àwọn túpù, ati àwọn túpù ti a sọ lorúkọ
-- **Fìkún** Àwọn àmì ìtọ́ka òdì (`ẹ̀kọ́[-1]` = ohun ìkẹyìn)
-- **Fìkún** Àwọn àtùnfi sí ìbílẹ̀ — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
-
-### v0.0.1-patch _(25 Òkùdu 2026)_
-
-- **Fìkún** Àfífun ìṣọ̀kan `^=`
-- **Ṣàtúnṣe** Àwọn ìgbànúla ìṣìrò atúpalẹ̀; àwọn àtúnṣìwé ìwé ìmọ̀
-
-### v0.0.1 — Ìtújade Àkókó fẹ̀nùkán _(22 Òkùdu 2026)_
-
-- Atúpalẹ̀ ẹni ti ń rìn igi + VM ìkọ-sílẹ̀ (`--vm`, ~4× yára, ~95% ìgbá)
-- Gbogbo àwọn ìkọ́lé àríku: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Àwọn ìdámú Unicode ní ìkikun, ètò module, àwọn lambda, àtiọ̀ràn, ìmú mú aṣìṣe
-- REPL, LSP, Àtèlé VS Code, ọ̀nà ìṣeto (`zymbol fmt`)
+| Aami | Iṣiṣẹ | Aami | Iṣiṣẹ |
+|--------|-----------|--------|-----------|
+| `=` | oniyipada | `$#` | gigun |
+| `:=` | iduro | `$+` | fi kun (pq) |
+| `>>` | ijade | `$+[i]` | fi sii ni atọka (1-ipilẹ) |
+| `<<` | iṣiṣẹsi | `$-` | yọ akọkọ nipasẹ iye |
+| `¶` / `\\` | laini tuntun | `$--` | yọ gbogbo nipasẹ iye |
+| `?` | ti o ba jẹ | `$-[i]` | yọ ni atọka (1-ipilẹ) |
+| `_?` | bibẹẹkọ-ti o ba jẹ | `$-[i..j]` | yọ sakani (1-ipilẹ) |
+| `_` | bibẹẹkọ / kaadi egan | `$?` | ni ninu |
+| `??` | ibamu | `$??` | wa gbogbo atọka (1-ipilẹ) |
+| `@` | lupu | `$[s..e]` | ge (1-ipilẹ) |
+| `@ N { }` | lupu N igba | `$>` | map |
+| `@!` | bu | `$\|` | filter |
+| `@>` | tẹsiwaju | `$<` | reduce |
+| `@:orúkọ { }` | lupu ti o ni aami | `$/ oluyapa` | pin okun |
+| `@:orúkọ!` | bu aami | `$++ a b c` | kọ akojọpọ |
+| `@:orúkọ>` | tẹsiwaju aami | `arr[i>j>k]` | atọka lilọ kiri |
+| `->` | lambda | `arr[i] = iye` | mu eroja dojuiwọn (awọn ọ̀wọ̀ nikan) |
+| `arr[i] += iye` | imudojuiwọn akojọpọ | `arr[i]$~` | imudojuiwọn iṣẹ (ẹda tuntun) |
+| `$^+` | to òkè (alakọbẹrẹ) | `$^-` | to isalẹ (alakọbẹrẹ) |
+| `$^` | to pẹlu afiwera (tuple) | `<~` | pada |
+| `\|>` | paipu | `!?` | gbiyanju |
+| `:!` | mu | `:>` | nikẹhin |
+| `#1` | otito | `#0` | iro |
+| `$!` | ṣe aṣiṣe ni | `$!!` | tan aṣiṣe kaakiri |
+| `<#` | ṣe agbewọle | `#>` | ṣe okeere |
+| `#` | kede modulu | `::` | pe modulu |
+| `.` | iraye si aaye | `#?` | metadata iru |
+| `#\|..\|` | parse nọmba | `##.` | yipada si lilefoofo |
+| `###` | yipada si odidi (yika) | `##!` | yipada si odidi (ge) |
+| `#.N\|..\|` | yika | `#!N\|..\|` | ge |
+| `#,\|..\|` | ọna kika aami idẹsẹ | `#^\|..\|` | imọ-jinlẹ |
+| `#d0d9#` | yipada ipo nọmba | `#09#` | tun ṣe eto si ASCII |
+| `<\ ..\>` | ṣiṣẹ shell | `>\<` | awọn ariyanjiyan CLI |
+| `\ oniyipada` | pa oniyipada run ni gbangba | `°x` / `x°` | itumọ gbigbona (ipilẹṣẹ laifọwọyi) |
+| `>>|` | bulọki TUI (iboju aropo) | `>>~` | ijade ipo |
+| `>>!` | nu iboju | `>>?` | beere iwọn ebute |
+| `<<\|` | titẹ bọtini idilọwọ | `<<\|?` | idibo titẹ bọtini ti kii ṣe idilọwọ |
+| `@~ N` | sun N miliseconds | `$*` | tun okun ṣe N igba |
 
 ---
 
-_Zymbol-Lang — Àmì. Ìkákẹ̀. Ti kò lè yí padà._
+## Iwe-akọọlẹ Iyipada Itusilẹ
+
+### v0.0.5 — Awọn Ipilẹ TUI, Itumọ Gbigbona & Atunwi Okun _(May 2026)_
+
+- **Ikọrin** Oluyapa apa ibamu: `apẹrẹ : abajade` → `apẹrẹ => abajade`
+- **Ikọrin** Orukọ ikẹhin agbewọle: `<# ọna <= orukọ_ikẹhin` → `<# ọna => orukọ_ikẹhin`
+- **Ikọrin** Tun orukọ okeere: `#> { fn <= gbangba }` → `#> { fn => gbangba }`
+- **Ṣafikun** Bulọki TUI `>>| { }` — iboju aropo + ipo aise; nu nigbati o ba jade
+- **Ṣafikun** Ijade ipo `>>~ (ila, ọwọn, BKS, fg, bg) > awọn ohun kan` — awọn aaye ti o ṣọwọn, awọ ANSI 256
+- **Ṣafikun** Iṣiṣẹsi bọtini `<<| oniyipada` (idilọwọ) ati `<<|? oniyipada` (idibo ti kii ṣe idilọwọ)
+- **Ṣafikun** `>>!` nu iboju, `>>?` beere iwọn ebute, `@~ N` sun N miliseconds
+- **Ṣafikun** Itumọ gbigbona `°x` / `x°` — ipilẹṣẹ oniyipada laifọwọyi ni lilo akọkọ ninu awọn lupu
+- **Ṣafikun** Atunwi okun `okun $* N` — tun okun kan ṣe N igba
+- **VM** Afiwera: awọn idanwo 436/436 kọja
+
+### v0.0.4 — Atọka 1-ipilẹ, Awọn Iṣẹ Ipele-akọkọ & Awọn Modulu Bulọki _(Kẹrin 2026)_
+
+- **Ikọrin** Gbogbo atọka ti yipada si **1-ipilẹ** — `arr[1]` jẹ eroja akọkọ; `arr[0]` jẹ aṣiṣe akoko ṣiṣe
+- **Ṣafikun** Awọn iṣẹ ti a npè ni jẹ **awọn iye ipele-akọkọ** — fi taara ranṣẹ si HOF: `awọn_nọmba$> ìlọpo_meji`
+- **Ṣafikun** **Sintasi bulọki dandan** fun awọn modulu: `# orúkọ { ... }` — sintasi alapin ti yọ kuro
+- **Ṣafikun** Atọka onisẹpo pupọ: `arr[i>j>k]` (lilọ kiri), `arr[p ; q]` (iyọkuro alapin)
+- **Ṣafikun** Awọn simẹnti iyipada iru: `##.ọrọ` (lilefoofo), `###ọrọ` (odidi yika), `##!ọrọ` (odidi ge)
+- **Ṣafikun** Pipin okun: `okun$/ oluyapa` — pada `Array(okun)`
+- **Ṣafikun** Kọ akojọpọ: `ipilẹ$++ a b c` — fi awọn ohun kan pupọ sii
+- **Ṣafikun** Lupu iye igba: `@ N { }` — tun ṣe deede N igba
+- **Ṣafikun** Sintasi lupu ti o ni aami: `@:orúkọ { }`, `@:orúkọ!`, `@:orúkọ>` — rọpo `@ @orúkọ` / `@! orúkọ`
+- **Ṣafikun** Awọn ofin agbegbe oniyipada: awọn oniyipada `_orúkọ` ni agbegbe bulọki to peye; `\ oniyipada` pa run ni kutukutu
+- **Ṣafikun** Awọn apẹrẹ ifiwera ibamu: `< 0 =>`, `> 5 =>`, `== 42 =>` ati bẹbẹ lọ
+- **Ṣafikun** Aṣiṣe modulu E013: awọn alaye ti o le ṣiṣẹ ni ara modulu jẹ eewọ
+- **Ṣatunṣe** `alias.CONST` bayi ṣe ipinnu ni deede; `#>` le han lẹhin awọn itumọ iṣẹ
+- **VM** Afiwera pipe: awọn idanwo 393/393 kọja
+
+### v0.0.3 — Awọn Eto Nọmba Unicode & Awọn Ilọsiwaju LSP _(Kẹrin 2026)_
+
+- **Ṣafikun** Awọn bulọki nọmba Unicode 69 pẹlu aami iyipada ipo `#d0d9#`
+- **Ṣafikun** Awọn litiriki Boolean ni eyikeyi iwe afọwọkọ — `#१` / `#०`, `#١` / `#٠`, ati bẹbẹ lọ
+- **Ṣafikun** Awọn nọmba Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Ṣafikun** Opcode VM `SetNumeralMode` — afiwera pipe pẹlu tree-walker
+- **Ṣe atunṣe** Ijade Boolean `>>` bayi pẹlu iṣaju `#` (`#0` / `#1`) ni gbogbo awọn ipo
+
+### v0.0.2_01 — Tun Orukọ Oniṣẹ _(30 Oṣu Kẹta 2026)_
+
+- **Ṣe atunṣe** `c|..|` → `#,|..|` ati `e|..|` → `#^|..|` — ni ibamu pẹlu idile iṣaju `#`
+- **Ṣafikun** Orukọ ikẹhin okeere: tun ṣe okeere awọn ọmọ ẹgbẹ modulu labẹ orukọ miiran
+
+### v0.0.2 — Atunto API Ikojọpọ & Awọn Olufiṣii _(24 Oṣu Kẹta 2026)_
+
+- **Ṣafikun** Idile oniṣẹ `$` iṣọkan fun awọn ọ̀wọ̀ ati awọn okun (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Ṣafikun** Sọtọ itusilẹ ilana fun awọn ọ̀wọ̀, tuple, ati tuple ti a npè ni
+- **Ṣafikun** Awọn atọka odi (`arr[-1]` = eroja ikẹhin)
+- **Ṣafikun** Awọn olufiisii abinibi — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(25 Oṣu Kẹta 2026)_
+
+- **Ṣafikun** Sọtọ akojọpọ `^=`
+- **Ṣatunṣe** Awọn ọran eti iṣiro ti olutọpa; awọn atunṣe iwe
+
+### v0.0.1 — Itusilẹ Akọkọ si Gbogbo Eniyan _(22 Oṣu Kẹta 2026)_
+
+- Onitumọ tree-walker + VM iforukọsilẹ (`--vm`, ~4× yiyara, ~95% afiwera)
+- Gbogbo awọn itumọ ipilẹ: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Awọn idamo Unicode ni kikun, eto modulu, awọn lambda, awọn pipade, mimu aṣiṣe
+- REPL, LSP, ifaagun VS Code, oluṣeto (`zymbol fmt`)
+
+---
+
+_Zymbol-Lang — Aami. Gbogbo agbaye. Aileyipada._

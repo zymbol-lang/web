@@ -1,32 +1,32 @@
-> **Chiziviso:** Gwaro iri rakagadzirwa nerubatsiro rwehungwaru hwekugadzira (AI).
+> **Ziviso:** Gwaro iri rakagadzirwa nekushandurwa nehungwaru hwekugadzira (AI).
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 >
-> Referensi yechokwadi ndeye **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** mudura redududziro.
+> Chirevo chepamutemo ndeche **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** mudura redudziro.
 
 ---
 
 # Bhuku reZymbol-Lang
 
-**Zymbol-Lang** mutauro wekuronga wechiratidzo. Hapana mazwi akakosha — zvese chiratidzo. Inoshanda zvakafanana mumutauro upi noupi wevanhu.
+> **Rakaongororwa kune v0.0.5 — 2026-05-14**
+
+**Zymbol-Lang** mutauro wepurogiramu wezviratidzo. Hapana mazwi akakosha — zvose chiratidzo. Inoshanda zvakafanana mumutauro wevanhu upi noupi.
 
 - Hapana `if`, `while`, `return` — chete `?`, `@`, `<~`
-- Unicode yakazara — zviziviso mumutauro upi noupi kana emoji
-- Haina hanya nemutauro wevanhu — kodhi yakafanana kwese kwese
+- Unicode yakazara — ziviso mumutauro upi noupi kana emoji
+- Haina hanya nemutauro wevanhu — kodhi yakafanana kwose kwose
 
-**Shanduro yedududziro**: v0.0.4 | **Kufukidzwa kweyedzo**: 393/393 (kuenzana kwe TW ↔ VM)
-
----
+**Rudzi rwemuturikiri**: v0.0.5 | **Kufukidza kwekuedza**: 436/436 (kuenzana kweTW ↔ VM)
 
 ---
 
-## Zvinoshanduka nezvinogara
+## Zvinoshanduka uye Zvisingachinji
 
 ```zymbol
-x = 10              // zvinoshanduka zvinogona kuchinjwa
-PI := 3.14159       // chinogara — kugoverazve kukanganisa kwenguva yekumhanya
+x = 10              // zvinoshanduka zvinochinjika
+π := 3.14159        // zvisingachinji — kupihazve ibasa nguva yekumhanya
 zita = "Alice"
-chinoshanda = #1      // Boolean chechokwadi
+kushanda = #1         // boolean chokwadi
 👋 := "Mhoro"
 ```
 
@@ -42,25 +42,39 @@ x++        // 5
 x--        // 4
 ```
 
+`°` (chiratidzo chedhigirii, U+00B0) inotanga zvinoshanduka zvoga kukosha kwayo kusina kwayakarerekera pakushandiswa kwekutanga:
+
+```zymbol
+nhamba = [3, 1, 4, 1, 5]
+@ n:nhamba {
+    °huwandu += n    // kutanga otomatiki ku 0 pamusoro pechitenderera; inorarama mushure me@
+}
+>> huwandu ¶         // → 14
+```
+
+> `°x` (chivakashure) inosungira pamusoro pechitenderera — mhedzisiro inowanikwa mushure me`@`.
+> `x°` (chivakashure chekupedzisira) inosungira mukati mechitenderera — inofa kana chitenderera chapera.
+> Tree-walker chete.
+
 ---
 
 ## Mhando dzeData
 
-| Mhando | Chirevo | Tag `#?` | Zvinyorwa |
-|--------|---------|----------|-----------|
-| Nhamba | `42`, `-7` | `###` | 64-bit ine chiratidzo |
-| Inoyangarara | `3.14`, `1.5e10` | `##.` | Kunyorwa kwesainzi kunobvumirwa |
-| Tambo | `"zvinyorwa"` | `##"` | Kupindirira: `"Mhoro {zita}"` |
-| Hunhu | `'A'` | `##'` | Hunhu hweUnicode humwe |
-| Boolean | `#1`, `#0` | `##?` | HAKUCHI nhamba — `#1 ≠ 1` |
+| Mhando | Chirevo chaicho | Chiratidzo `#?` | Zvinyorwa |
+|------|---------|----------|---------|
+| Nhamba yakazara | `42`, `-7` | `###` | 64-bit ine chiratidzo |
+| Inoyangarara | `3.14`, `1.5e10` | `##.` | Kunyora kwesainzi kunobvumirwa |
+| Tambo | `"zvinyorwa"` | `##"` | Kupinza: `"Mhoro {zita}"` |
+| Tsamba | `'A'` | `##'` | Tsamba imwe yeUnicode |
+| Boolean | `#1`, `#0` | `##?` | Haisi nhamba — `#1 ≠ 1` |
 | Rondedzero | `[1, 2, 3]` | `##]` | Zvinhu zvakafanana |
-| Tuple | `(a, b)` | `##)` | Kwenzvimbo |
-| Tuple ine zita | `(x: 1, y: 2)` | `##)` | Minda ine mazita |
-| Basa | referensi yebasa rine zita | `##()` | Giredhi yekutanga; inoratidza `<funct/N>` |
-| Lambda | `x -> x * 2` | `##->` | Giredhi yekutanga; inoratidza `<lambd/N>` |
+| Tuple | `(a, b)` | `##)` | Zvinzvimbo |
+| Tuple rine zita | `(x: 1, y: 2)` | `##)` | Minda ine mazita |
+| Basa | referensi yebasa rine zita | `##()` | Giredhi rekutanga; inoratidza `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Giredhi rekutanga; inoratidza `<lambd/N>` |
 
 ```zymbol
-// Kuongorora mhando — inodzosa (mhando, manhamba, kukosha)
+// Kuongorora mhando — inodzosera (mhando, manhamba, kukosha)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
 t = meta[1]
@@ -69,48 +83,78 @@ t = meta[1]
 
 ---
 
-## Kubuda neKupinda
+## Kubuda uye Kupinda
 
 ```zymbol
 >> "Mhoro" ¶                       // ¶ kana \\ kune mutsara mutsva wakajeka
->> "a=" a " b=" b ¶               // kuiswa padivi — kukosha kwakawanda
->> (arr$#) ¶                      // vashandisi vepostfix vanoda ( ) mukati me >>
+>> "a=" a " b=" b ¶               // kusangana — kukosha kwakawanda
+>> (arr$#) ¶                      // zvivakashure zvekupedzisira zvinoda ( ) mu>>
 
-<< zita                           // verenga muchinoshanda (pasina kukurudzira)
-<< "Isa zita rako: " zita         // nekukurudzira
+>> zita                           // verenga muchinja (pasina kurudziro)
+>> "Isa zita: " zita            // nekurudziro
 ```
 
-> `¶` (AltGr+R pakeyibhodhi yeSpanish) na `\\` zvakaenzana pamutsara mutsva.
+> `¶` (AltGr+R pachibato cheSpanish) na`\\` mitsara mitsva yakaenzana.
 
 ---
 
----
+## Zvekutanga zveTUI
 
-## Vashandisi
+Zvishandiso zvechipo chezvishandiso zvekupedzisira zvezvirongwa zvinopindirana. Zvizhinji zvinoda bhuroko `>>| { }` (skrini inotsiva + modhi mbishi).
 
 ```zymbol
-// Masvomhu — shandisa migove; vamwe vashandisi vane hunhu hwakananga mukati me >>
+>>| {
+    >>!                             // chenesa skrini inotsiva
+    >>~ (1, 1, 0, 10) > "Kushanda"   // mutsara 1, mbiru 1, fg=10 (girini)
+    @~ 1000                         // mira sekondi imwe (1000 ms)
+    >>~ (2, 1) > "Zvapera."
+}
+// terminal inodzoserwa zvoga pakubuda
+```
+
+```zymbol
+// Kudzvanya kiyi uye saizi yeterminal
+>>| {
+    [mitsara, mbiru] = >>?              // bvunza zviyero zveterminal
+    >>~ (1, 1) > "Terminal: " mitsara " x " mbiru
+    <<| kiyi                         // verenga kudzvanya kiyi kunovharira
+    >>~ (2, 1) > "Wadzvanya: " kiyi
+}
+```
+
+> `>>!` inochenesa skrini. `>>?` inodzosera `[mitsara, mbiru]`. `@~ N` inorara N mirisekondi.
+> `<<|` inoverenga kudzvanya kiyi kumwe (kunovharira); `<<|?` inoongorora isingavhariri (inodzosera `'\0'` kana isipo).
+> Tuple yekubuda kwenzvimbo: `(mutsara, mbiru, BKS, fg, bg)` — nzvimbo ipi neipi inogona kusiiwa nekoma (`>>~ (,,, 196) > "tsvuku"`).
+> BKS bitmask: `1`=zvindori, `2`=kutsetsenura, `4`=mutsara wepasi. Palette yemavara 256 eANSI (`0`=default yeterminal).
+> Tree-walker chete (kunze kwe `>>!`, `>>?`, `@~`, `>>~` zvinoshandawo mu`--vm`).
+
+---
+
+## Zvishandiso
+
+```zymbol
+// Masvomhu
 a = 10
 b = 3
-r1 = a + b    // 13
-r2 = a - b    // 7
-r3 = a * b    // 30
-r4 = a / b    // 3  (kupatsanura nhamba)
-r5 = a % b    // 1
-r6 = a ^ b    // 1000  (kusimudzira)
+m1 = a + b    // 13
+m2 = a - b    // 7
+m3 = a * b    // 30
+m4 = a / b    // 3  (kupatsanura nhamba yakazara)
+m5 = a % b    // 1
+m6 = a ^ b    // 1000  (kusimudzira)
 
-// Kuenzanisa
-a == b    // #0    
-a <> b    // #1    
-a < b     // #0
-a <= b    // #0   
-a > b     // #1    
-a >= b    // #1
+// Enzanisa — pa kuti uongorore
+e1 = a == b    // #0
+e2 = a <> b    // #1
+e3 = a < b     // #0
+e4 = a <= b    // #0
+e5 = a > b     // #1
+e6 = a >= b    // #1
 
-// Zvepfungwa
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
+// Zvine musoro
+z1 = #1 && #0    // #0
+z2 = #1 || #0    // #1
+z3 = !#1         // #0
 ```
 
 ---
@@ -118,45 +162,44 @@ a >= b    // #1
 ## Tambo
 
 ```zymbol
-// Nzira mbiri dzekubatanidza
+// Maitiro maviri ekubatanidza
 zita = "Alice"
 n = 42
 
->> "Mhoro " zita " une " n ¶       // kuiswa padivi — mukati me >>
-tsananguro = "Mhoro {zita}, une {n}"   // kupindirira — chero kupi
+>> "Mhoro " zita " une " n ¶       // kusangana — mu>>
+tsananguro = "Mhoro {zita}, une {n}"     // kupinza — chero kupi
 ```
 
 ```zymbol
-s = "Mhoro Nyika"
-urefu = s$#                  // 10
-chidimbu = s$[1..5]          // "Mhoro"  (hwaro-1, kusanganisira magumo)
-kune = s$? "Nyika"           // #1
-zvikamu = "a,b,c,d"$/ ','    // [a, b, c, d]  (kupatsanura nemupatsanuri)
-zvakatsiviwa = s$~~["a":"o"] // "Mhoro Nyiko"
-zvakatsiviwa1 = s$~~["a":"o":1] // "Mhoro Nyiko" (N dzekutanga chete)
+s = "Mhoro nyika"
+urefu = s$#                  // 11
+chikamu = s$[1..5]             // "Mhoro"  (1-hwaro, magumo akaverengwa)
+iripo = s$? "nyika"          // #1
+zvikamu = "a,b,c,d"$/ ','   // [a, b, c, d]  (patsanura nechitsauri)
+chinja = s$~~["l":"r"]        // "Mhoro nyika" (hapana 'l' muShona)
+chinja1 = s$~~["l":"r":1]     // "Mhoro nyika"
+mutsetse = "─" $* 20           // "────────────────────"  (dzokorora N nguva)
 ```
 
-> `+` ndeye nhamba chete. Kune tambo, shandisa `,`, kuiswa padivi, kana kupindirira.
+> `+` ndeyenhamba chete. Kune tambo, shandisa `,`, kusangana, kana kupinza.
 
 ---
 
----
-
-## Kufamba Kwekutonga
+## Kufamba kwekutonga
 
 ```zymbol
 x = 7
 
-? x > 0 { >> "chakanaka" ¶ }
+? x > 0 { >> "zvakanaka" ¶ }
 
 ? x > 100 {
     >> "hombe" ¶
 } _? x > 0 {
-    >> "chakanaka" ¶
+    >> "zvakanaka" ¶
 } _? x == 0 {
     >> "zero" ¶
 } _ {
-    >> "chakashata" ¶
+    >> "zvakaipa" ¶
 }
 ```
 
@@ -164,44 +207,43 @@ x = 7
 
 ---
 
----
-
 ## Kuenzanisa
 
 ```zymbol
-// Renji
+// Miganhu
 zvibodzwa = 85
 giredhi = ?? zvibodzwa {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+    90..100 => 'A'
+    80..89  => 'B'
+    70..79  => 'C'
+    _       => 'D'
 }
->> giredhi ¶     // → B
+>> giredhi ¶    // → B
 
 // Tambo
 rangi = "tsvuku"
-kodi = ?? rangi {
-    "tsvuku"  : "#FF0000"
-    "girinhi" : "#00FF00"
-    _         : "#000000"
+kodhi = ?? rangi {
+    "tsvuku"   => "#FF0000"
+    "girini" => "#00FF00"
+    _       => "#000000"
 }
 
-// Mapatani ekuenzanisa
-tempericha = -5
-chimiro = ?? tempericha {
-    < 0  : "chando"
-    < 20 : "kutonhora"
-    < 35 : "kudziya"
-    _    : "kupisa"
+// Mapateni ekuenzanisa
+tembiricha = -5
+chimiro = ?? tembiricha {
+    < 0  => "chando"
+    < 20 => "kutonhora"
+    < 35 => "kudziya"
+    _    => "kupisa"
 }
->> chimiro ¶     // → chando
+>> chimiro ¶    // → chando
 
-// Chimiro chechirevo (mabhuroko)
+// Chimiro chechirevo (maoko ebhuroko)
+n = -3
 ?? n {
-    0        : { >> "zero" ¶ }
-    _? n < 0 : { >> "chakashata" ¶ }
-    _        : { >> "chakanaka" ¶ }
+    0    => { >> "zero" ¶ }
+    < 0  => { >> "zvakaipa" ¶ }
+    _    => { >> "zvakanaka" ¶ }
 }
 ```
 
@@ -210,28 +252,28 @@ chimiro = ?? tempericha {
 ## Zvishwe
 
 ```zymbol
-@ i:0..4  { >> i " " }        // renji rinosanganisira:  0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // nenhanho:              1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // kudzokera shure:       5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // muganhu unosanganisira:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // nenhanho:         1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // kumashure:           5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶                        // → 128  (apo)
+>> n ¶                        // → 128  (while)
 
-zvibereko = ["apuro", "peya", "muzambiringa"]
-@ z:zvibereko { >> z ¶ }          // kune chinhu chese murondedzero
+michero = ["apuro", "peya", "mazambiringa"]
+@ m:michero { >> m ¶ }         // kune chinhu chimwe nechimwe murondedzero
 
-@ h:"mhoro" { >> h "-" }
->> ¶                          // → m-h-o-r-o-  (kune hunhu hwese mukati metambo)
+@ b:"hello" { >> b "-" }
+>> ¶                          // → h-e-l-l-o-  (kune tsamba imwe neimwe mutambo)
 
 @ i:1..10 {
     ? i % 2 == 0 { @> }       // @> enderera
-    ? i > 7 { @! }            // @! tyora
+    ? i > 7 { @! }             // @! tyora
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
 
-// Zvishwe zvisina magumo
+// Chitenderera chisingaperi
 i = 0
 @ {
     i++
@@ -240,16 +282,14 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Zvishwe zvine mucherechedzo (kutyora kwakadzika)
-kaunda = 0
+// Chitenderera chine chikwangwani (kutyora kwakadzika)
+kuverenga = 0
 @:kunze {
-    kaunda++
-    ? kaunda >= 3 { @:kunze! }
+    kuverenga++
+    ? kuverenga >= 3 { @:kunze! }
 }
->> kaunda ¶                   // → 3
+>> kuverenga ¶                    // → 3
 ```
-
----
 
 ---
 
@@ -257,22 +297,22 @@ kaunda = 0
 
 ```zymbol
 wedzera(a, b) { <~ a + b }
->> wedzera(3, 4) ¶   // → 7
+>> wedzera(3, 4) ¶    // → 7
 
-zvinowanda(n) {
-    ? n <= 1 { <~ 1 }
-    <~ n * zvinowanda(n - 1)
+fakitori(y) {
+    ? y <= 1 { <~ 1 }
+    <~ y * fakitori(y - 1)
 }
->> zvinowanda(5) ¶    // → 120
+>> fakitori(5) ¶    // → 120
 ```
 
-Mabasa ane **nzvimbo yakasarudzika** — haakwanise kuverenga zvinoshanduka zvekunze. Shandisa magedhi ekubuda `<~>` kushandura zvinoshanduka zveanodana:
+Mabasa ane **nzvimbo yakaparadzana** — haakwanise kuverenga zvinoshanduka zvekunze. Shandisa paramita yekubuda `<~>` kushandura zvinoshanduka zveanodana:
 
 ```zymbol
 chinjanisa(a<~, b<~) {
-    chengetedzo = a
+    kwenguva = a
     a = b
-    b = chengetedzo
+    b = kwenguva
 }
 x = 10
 y = 20
@@ -280,222 +320,214 @@ chinjanisa(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Mabasa ane mazita **ndiwo makosho egiredhi yekutanga** — tumira zvakananga: `nums$> kaviri`. `x -> fn(x)` inoshandawo.
+> Mabasa ane mazita **akukosha kwegiredhi rekutanga** — tora zvakananga: `nhamba$> kaviri`. Kuputira: `x -> fn(x)` inoshandawo.
 
 ---
 
----
-
-## Lambda uye Zvivharo
+## Lambda neClosure
 
 ```zymbol
 kaviri = x -> x * 2
 wedzera = (a, b) -> a + b
->> kaviri(5) ¶   // → 10
+>> kaviri(5) ¶    // → 10
 >> wedzera(3, 7) ¶  // → 10
 
 // Lambda yebhuroko
-chikamu = x -> {
-    ? x > 0 { <~ "chakanaka" }
-    _? x < 0 { <~ "chakashata" }
+patsanura = x -> {
+    ? x > 0 { <~ "zvakanaka" }
+    _? x < 0 { <~ "zvakaipa" }
     <~ "zero"
 }
 
-// Chivharo — chinotora nzvimbo yekunze
+// Closure — inotora nzvimbo yekunze
 chinhu = 3
 katatu = x -> x * chinhu
 >> katatu(7) ¶    // → 21
 
 // Fekitari
-gadza_muwedzeri(n) { <~ x -> x + n }
-wedzera_gumi = gadza_muwedzeri(10)
->> wedzera_gumi(5) ¶   // → 15
+mugadziri_wewedzero(n) { <~ x -> x + n }
+wedzera_gumi = mugadziri_wewedzero(10)
+>> wedzera_gumi(5) ¶    // → 15
 
 // Murondedzero
-maop = [x -> x+1, x -> x*2, x -> x*x]
->> maop[3](5) ¶      // → 25
+zvishandiso = [x -> x+1, x -> x*2, x -> x*x]
+>> zvishandiso[3](5) ¶    // → 25
 ```
 
 ---
 
 ## Rondedzero
 
-Rondedzero **dzinochinjika** uye dzine zvinhu **zverudzi rumwe chete**.
+Rondedzero **dzinochinjika** uye dzine zvinhu **zvemhando imwechete**.
 
 ```zymbol
-rondedzero = [1, 2, 3, 4, 5]
+arr = [1, 2, 3, 4, 5]
 
-rondedzero[1]          // 1 — kuwana (hwaro-1: chinhu chekutanga)
-rondedzero[-1]         // 5 — indekisi isina kunaka (chinhu chekupedzisira)
-rondedzero$#           // 5 — urefu (shandisa (rondedzero$#) mukati me >>)
+x = arr[1]      // 1 — kuwana (1-hwaro: chinhu chekutanga)
+x = arr[-1]     // 5 — indekisi isina kunaka (chinhu chekupedzisira)
+x = arr$#       // 5 — urefu (shandisa (arr$#) mu>>)
 
-rondedzero = rondedzero$+ 6            // wedzera → [1,2,3,4,5,6]
-rondedzero2 = rondedzero$+[2] 99       // isa panzvimbo 2 (hwaro-1)
-rondedzero3 = rondedzero$- 3           // bvisa kuonekwa kwekutanga kwekukosha
-rondedzero4 = rondedzero$-- 3          // bvisa kuonekwa kwese
-rondedzero5 = rondedzero$-[1]          // bvisa paindeksi 1 (chinhu chekutanga)
-rondedzero6 = rondedzero$-[2..3]       // bvisa renji (hwaro-1, kusanganisira magumo)
+arr = arr$+ 6            // wedzera → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // isa panzvimbo 2 (1-hwaro)
+arr3 = arr$- 3           // bvisa chiitiko chekutanga cheukoshi
+arr4 = arr$-- 3          // bvisa zviitiko zvese
+arr5 = arr$-[1]          // bvisa paindekisi 1 (chinhu chekutanga)
+arr6 = arr$-[2..3]       // bvisa muganhu (1-hwaro, magumo akaverengwa)
 
-kune = rondedzero$? 3           // #1 — ine
-nzvimbo = rondedzero$?? 3       // [3] — indekisi dzese dzekukosha (hwaro-1)
-chimedu = rondedzero$[1..3]     // [1,2,3] — chimedu (hwaro-1, kusanganisira magumo)
-chimedu2 = rondedzero$[1:3]     // [1,2,3] — zvakafanana, syntax yehuwandu
+iripo = arr$? 3            // #1 — ine
+nzvimbo = arr$?? 3           // [3] — indekisi dzese dzeukoshi (1-hwaro)
+chikamu = arr$[1..3]          // [1,2,3] — chikamu (1-hwaro, magumo akaverengwa)
+chikamu2 = arr$[1:3]          // [1,2,3] — zvakafanana, syntax yekuverenga-yakavakirwa
 
-kukwira = rondedzero$^+         // kuronga kukwira (ezvepakutanga chete)
-kudzika = rondedzero$^-         // kuronga kudzika (ezvepakutanga chete)
+kukwira = arr$^+             // ronga kukwira (zvekutanga chete)
+kudzika = arr$^-            // ronga kudzika (zvekutanga chete)
 
-// Rondedzero yetuple ine mazita/nenzvimbo — shandisa $^ ne lambda yekuenzanisa
-data = [(zita: "Carla", makore: 28), (zita: "Ana", makore: 25), (zita: "Bob", makore: 30)]
-maererano_nemakore   = data$^ (a, b -> a.makore < b.makore)   // kukwira maererano nemakore (<)
-maererano_nezita   = data$^ (a, b -> a.zita > b.zita)         // kudzika maererano nezita (>)
->> maererano_nemakore[1].zita ¶   // → Ana
->> maererano_nezita[1].zita ¶     // → Carla
+// Rondedzero dzetuple dzine mazita/nzvimbo — shandisa $^ nelambda yekuenzanisa
+dhatabhesi = [(zita: "Carla", zera: 28), (zita: "Ana", zera: 25), (zita: "Bob", zera: 30)]
+nezera  = dhatabhesi$^ (a, b -> a.zera < b.zera)    // nezera kukwira (<)
+nezita = dhatabhesi$^ (a, b -> a.zita > b.zita)   // nezita kudzika (>)
+>> nezera[1].zita ¶     // → Ana
+>> nezita[1].zita ¶    // → Carla
 
-// Kugadzirisa chinhu zvakananga (rondedzero chete)
-rondedzero[1] = 99              // gova
-rondedzero[2] += 5              // yakasanganiswa: +=  -=  *=  /=  %=  ^=
+// Kugadziridza chinhu chakananga (rondedzero chete)
+arr[1] = 99              // pa
+arr[2] += 5              // mubatanidzwa: +=  -=  *=  /=  %=  ^=
 
-// Kugadzirisa kwebasa — inodzosera rondedzero itsva; yekutanga haichinji
-rondedzero2 = rondedzero[2]$~ 99
+// Kugadziridza kwebasa — inodzosera rondedzero itsva; yekutanga haichinji
+arr2 = arr[2]$~ 99
 ```
 
-> Vashandisi vese vekuunganidza vanodzosera **rondedzero itsva**. Govazve: `rondedzero = rondedzero$+ 4`.
-> `$+` inogona kutevedzana: `rondedzero = rondedzero$+ 5$+ 6$+ 7`. Vamwe vashandisi vanoshandisa migove yepakati.
-> **Indekisi ndeye hwaro-1**: `rondedzero[1]` ndicho chinhu chekutanga; `rondedzero[0]` kukanganisa kwenguva yekumhanya.
-> `$^+` / `$^-` inoronga **rondedzero dzechinyakare** (nhamba, tambo). Kune rondedzero yetuple, shandisa $^ ne lambda yekuenzanisa — gwara rakanyorwa mukati me lambda (`<` = kukwira, `>` = kudzika).
+> Zvose zvekushandisa zveunganidzo zvinodzosera **rondedzero itsva**. Dzosa: `arr = arr$+ 4`.
+> `$+` inogona kuketana: `arr = arr$+ 5$+ 6$+ 7`. Zvimwe zvishandiso zvinoshandisa kupihwa kwepakati.
+> **Kupihwa kweindekisi kuri 1-hwaro**: `arr[1]` ndicho chinhu chekutanga; `arr[0]` ibasa nguva yekumhanya.
+> `$^+` / `$^-` zvinoronga **rondedzero dzezvekutanga** (nhamba, tambo). Kune rondedzero dzetuple, shandisa `$^` nelambda yekuenzanisa — gwara rakanyorwa mulambda (`<` = kukwira, `>` = kudzika).
 
-**Semantiki yekukosha** — kugovera rondedzero kune imwe shanduko kunogadzira kopi yakazvimirira:
+**Semantiki yekukosha** — kupira rondedzero kune chimwe chinoshanduka kunogadzira kopi yakazvimirira:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
 a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b haina kukanganiswa
+>> b ¶    // → [1, 2, 3]   ← b haitanganidzwe
 ```
 
 ```zymbol
-// Rondedzero dzakadzika (indekisi yehwaro-1)
+// Rondedzero dzakadzika (indekisi 1-hwaro)
 matrix = [[1,2,3],[4,5,6],[7,8,9]]
->> matrix[2][3] ¶    // → 6  (mutsetse 2, mbiru 3)
+>> matrix[2][3] ¶    // → 6  (mutsara 2, mbiru 3)
 ```
 
 ---
 
----
-
-## Kuparura
+## Kuputsa Chimiro
 
 ```zymbol
 // Rondedzero
-rondedzero = [10, 20, 30, 40, 50]
-[a, b, c] = rondedzero              // a=10  b=20  c=30
-[yekutanga, *zvakasara] = rondedzero   // yekutanga=10  zvakasara=[20,30,40,50]
-[x, _, z] = [1, 2, 3]            // _ inorasa
+arr = [10, 20, 30, 40, 50]
+[a, b, c] = arr              // a=10  b=20  c=30
+[chekutanga, *vasara] = arr         // chekutanga=10  vasara=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ inorasa
 
 // Tuple yenzvimbo
 pfungwa = (100, 200)
-(px, py) = pfungwa               // px=100  py=200
+(px, py) = pfungwa             // px=100  py=200
 
-// Tuple ine zita
-munhu = (zita: "Ana", makore: 25, guta: "Madrid")
-(zita: z, makore: m) = munhu     // z="Ana"  m=25
+// Tuple rine zita
+munhu = (zita: "Ana", zera: 25, guta: "Madrid")
+(zita: n, zera: z) = munhu   // n="Ana"  z=25
 ```
 
 ---
 
 ## Tuple
 
-Tuple midziyo **isingachinjiki** yakarongeka inogona kutakura kukosha **kwemhando dzakasiyana**.
+Tuple midziyo yakarongeka **isingachinjiki** inogona kubata kukosha **kwemhando dzakasiyana**.
 Kusiyana nerondedzero, zvinhu hazvigone kuchinjwa mushure mekusikwa.
 
 ```zymbol
-// Kwenzvimbo — mhando dzakavhengana dzinobvumirwa
+// Nzvimbo — mhando dzakavhengana dzinobvumirwa
 pfungwa = (10, 20)
->> pfungwa[1] ¶     // → 10
+>> pfungwa[1] ¶    // → 10
 
-data = (42, "mhoro", #1, 3.14)
->> data[3] ¶       // → #1
+data = (42, "Mhoro", #1, 3.14)
+>> data[3] ¶     // → #1
 
-// Ine zita
-munhu = (zita: "Alice", makore: 25)
->> munhu.zita ¶      // → Alice
->> munhu[1] ¶        // → Alice  (indekisi inoshandawo, hwaro-1)
+// Rine zita
+munhu = (zita: "Alice", zera: 25)
+>> munhu.zita ¶    // → Alice
+>> munhu[1] ¶      // → Alice  (indekisi inoshandawo, 1-hwaro)
 
 // Yakadzika
 nzvimbo = (x: 10, y: 20)
-p = (nzvimbo: nzvimbo, mucherechedzo: "mavambo")
->> p.nzvimbo.x ¶      // → 10
+p = (nzvimbo: nzvimbo, chikwangwani: "mavambo")
+>> p.nzvimbo.x ¶        // → 10
 ```
 
-**Kusachinjika** — chero kuedza kushandura chinhu chetuple kukanganisa kwenguva yekumhanya:
+**Kusachinjika** — chero kuedza kugadzirisa chinhu chetuple ibasa nguva yekumhanya:
 
 ```zymbol
 t = (10, 20, 30)
-// t[1] = 99    // ❌ kukanganisa kwenguva yekumhanya: tuple haichinjiki
-// t[1] += 5    // ❌ kukanganisa kwakafanana
-
-// Tuple ine zita — vaka zvakajeka
-munhu = (zita: "Alice", makore: 25)
-hombe = (zita: munhu.zita, makore: 26)
->> munhu.makore ¶    // → 25
->> hombe.makore ¶    // → 26
+// t[1] = 99    // ❌ basa nguva yekumhanya: tuple haichinjike
+// t[1] += 5    // ❌ basa rimwe chete
 ```
 
-Kuwana kukosha kwakachinjwa shandisa `$~` (kugadzirisa kwebasa) — inodzosera tuple **itsva**:
+Kuti uwane kukosha kwakagadziridzwa shandisa `$~` (kugadziridza kwebasa) — inodzosera **tuple itsva**:
 
 ```zymbol
 t = (10, 20, 30)
 t2 = t[2]$~ 999
 >> t ¶     // → (10, 20, 30)   ← yekutanga haichinji
 >> t2 ¶    // → (10, 999, 30)
+
+// Tuple rine zita — vaka patsva zvakajeka
+munhu = (zita: "Alice", zera: 25)
+mukuru  = (zita: munhu.zita, zera: 26)
+>> munhu.zera ¶    // → 25
+>> mukuru.zera ¶     // → 26
 ```
 
 ---
 
----
-
-## Mabasa Epamusoro-soro
+## Mabasa epamusoro-soro
 
 ```zymbol
 nhamba = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-dzakapetwa_kaviri = nhamba$> (x -> x * 2)                // mepu → [2,4,6…20]
-nhamba_huru   = nhamba$| (x -> x % 2 == 0)              // sefa → [2,4,6,8,10]
-huwandu   = nhamba$< (0, (chiumbwa, x) -> chiumbwa + x) // kudzikisira → 55
+kaviri  = nhamba$> (x -> x * 2)                  // map  → [2,4,6…20]
+zvakaenzana    = nhamba$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
+huwandu    = nhamba$< (0, (muunganidzi, x) -> muunganidzi + x)     // reduce → 55
 
-// Kutevedzana kuburikidza nezviri pakati
+// Ketana kuburikidza nepakati
 nhanho1 = nhamba$| (x -> x > 3)
 nhanho2 = nhanho1$> (x -> x * x)
 >> nhanho2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Mabasa ane mazita anogona kutumirwa zvakananga kumabasa epamusoro-soro
+// Mabasa ane mazita anogona kupfuudzwa zvakananga kuHOF
 kaviri(x) { <~ x * 2 }
 hombe(x) { <~ x > 5 }
 r = nhamba$> kaviri       // ✅ referensi yakananga
-r = nhamba$| hombe        // ✅ referensi yakananga
+r = nhamba$| hombe       // ✅ referensi yakananga
 ```
 
 ---
 
----
+## Mushandisi wepombi
 
-## Mubati wepombi
-
-Rutivi rwerudyi runogara ruchida `_` sechigadziko chekukosha kwakapombwa:
+Rutivi rwerudyi runogara rwuchida `_` sechinzvimbo chekukosha kwepombi:
 
 ```zymbol
 kaviri = x -> x * 2
 wedzera = (a, b) -> a + b
-wedzera_imwe = x -> x + 1
+kuwedzera = x -> x + 1
 
-5 |> kaviri(_)        // → 10
-10 |> wedzera(_, 5)   // → 15
-5 |> wedzera(2, _)    // → 7
+m1 = 5 |> kaviri(_)        // → 10
+m2 = 10 |> wedzera(_, 5)       // → 15
+m3 = 5 |> wedzera(2, _)        // → 7
 
-// Yakatevedzana
-r = 5 |> kaviri(_) |> wedzera_imwe(_) |> kaviri(_)
->> r ¶    // → 22  (5→10→11→22)
+// Rakatanhamara
+m = 5 |> kaviri(_) |> kuwedzera(_) |> kaviri(_)
+>> m ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -508,110 +540,102 @@ r = 5 |> kaviri(_) |> wedzera_imwe(_) |> kaviri(_)
 } :! ##Div {
     >> "kupatsanura ne zero" ¶
 } :! {
-    >> "kumwe kukanganisa: " _err ¶    // _err inobata meseji yekukanganisa
+    >> "zvimwe: " _err ¶    // _err inochengeta meseji yekukanganisa
 } :> {
-    >> "inomhanya nguva dzose" ¶
+    >> "inogara ichishanda" ¶
 }
 ```
 
-| Mhando | Rinhi |
-|--------|-------|
+| Mhando | Rini |
+|------|------|
 | `##Div` | Kupatsanura ne zero |
 | `##IO` | Faira / sisitimu |
-| `##Index` | Indekisi iri kunze kwemiganhu |
-| `##Type` | Mhando dzisingaenderani |
+| `##Index` | Indekisi iri kunze kwemuganhu |
+| `##Type` | Kusawirirana kwemhando |
 | `##Parse` | Kuongorora data |
-| `##Network` | Kukanganisa kwetiweki |
-| `##_` | Chero kukanganisa (kunobata zvese) |
+| `##Network` | Zvikanganiso zvenetiweki |
+| `##_` | Chero kukanganisa (kubata-zvose) |
 
 ---
 
----
-
-## Zvikamu
+## Modules
 
 ```zymbol
-// lib/calc.zy — muviri wechikamu uri mumabrace
+// lib/calc.zy — muviri wemodule wakavharirwa mumabrace
 # calc {
     #> { wedzera, get_PI }
 
-    _PI := 3.14159
+    _π := 3.14159
     wedzera(a, b) { <~ a + b }
-    get_PI() { <~ _PI }
+    get_PI() { <~ _π }
 }
 ```
 
 ```zymbol
 // main.zy
-<# ./lib/calc <= c    // alias inodiwa
+<# ./lib/calc => c    // zita renhema rinodiwa
 
->> c::wedzera(5, 3) ¶   // → 8
-pi = c::get_PI()
->> pi ¶              // → 3.14159
+>> c::wedzera(5, 3) ¶     // → 8
+π = c::get_PI()
+>> π ¶               // → 3.14159
 ```
 
 ```zymbol
-// Kubudisa neimwe zita reruzhinji
-# raibhurari_yangu {
-    #> { _wedzera_mukati <= chiverengero }
+// Budisa nezita reruzhinji rakasiyana
+# mylib {
+    #> { _wedzera_mukati => huwandu }
 
     _wedzera_mukati(a, b) { <~ a + b }
 }
 ```
 
 ```zymbol
-<# ./raibhurari_yangu <= m
+<# ./mylib => m
 
->> m::chiverengero(3, 4) ¶    // → 7  (zita remukati _wedzera_mukati rakavanzika)
+>> m::huwandu(3, 4) ¶    // → 7  (zita remukati _wedzera_mukati rakavanzika)
 ```
 
-> **Mitemo yezvikamu**: mukati me `# zita { }`, `#>`, tsanangudzo dzebasa, uye zvinotangisa zvinoshanduka/zvinogara zvechirevo chete ndizvo zvinobvumirwa. Zvirevo zvinogona kuitwa (`>>`, `<<`, zvishwe, nezvimwe) zvinokonzeresa kukanganisa E013.
-
----
+> **Mitemo yemodule**: mukati me`# zita { }`, chete `#>`, tsananguro dzebasa, uye zvinotanga zvinoshanduka/zvisingachinji zvechirevo zviri pamutemo. Zvirevo zvinoshanda (`>>`, `<<`, zvishwe, nezvimwe) zvinokonzeresa kukanganisa E013.
 
 ---
 
 ## Mamodhi eNhamba
 
-Zymbol inogona kuratidza nhamba mu **69 mabhuroko emanhamba eUnicode** — Devanagari, Arabic-Indic, Thai, Klingon pIqaD, Mathematical bold, zvikamu zveLCD, nezvimwe. Modhi inoshanda inokanganisa kubuda kwe `>>` chete; masvomhu emukati anogara ari mabhinari.
+Zymbol inogona kuratidza nhamba mu **nhamba dzeUnicode 69** — Devanagari, Arab-Indian, Thai, Klingon pIqaD, Mathematical Bold, zvikamu zveLCD, nezvimwe. Modhi inoshanda inobata chete kubuda kwe`>>`; masvomhu emukati anogara ari binary.
 
-### Kuita kuti chinyorwa chishande
+### Kuita kuti nyora ishande
 
-Nyora manhamba `0` na `9` echinyorwa chauri kunanga mukati me `#…#`:
+Nyora manhamba `0` uye `9` enyora yaunoda mukati me`#…#`:
 
 ```zymbol
-#०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // Arabic-Indic   (U+0660–U+0669)
-#๐๙#    // Thai           (U+0E50–U+0E59)
-#09#    // reset ku ASCII
+#०९#    // Devanagari   (U+0966–U+096F)
+#٠٩#    // Arab-Indian (U+0660–U+0669)
+#๐๙#    // Thai         (U+0E50–U+0E59)
+#09#    // reset kuna ASCII
 ```
 
----
-
-### Kubuda neBoolean
+### Kubuda uye maboolean
 
 ```zymbol
 x = 42
->> x ¶          // → 42   (standard ASCII)
+>> x ¶          // → 42   (default yeASCII)
 
 #०९#
 >> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४   (poidhi yedesimali inogara iri ASCII)
+>> 3.14 ¶       // → ३.१४   (nzvimbo yedhesimali inogara iri ASCII)
 >> 1 + 2 ¶      // → ३
 
-// Boolean: chivakamberi # chinogara chiri ASCII, nhamba inoenderana
+// Maboolean: chivakashure # chinogara chiri ASCII, nhamba inochinjika
 >> #1 ¶         // → #१   (chokwadi muDevanagari)
->> #0 ¶         // → #०   (nhema — inosiyana ne ० nhamba zero)
+>> #0 ¶         // → #०   (nhema — inosiyana na० nhamba yakazara zero)
 
 x = 28 > 4
 >> x ¶          // → #१   (mhedzisiro yekuenzanisa inotevera modhi inoshanda)
 ```
 
----
+### Manhamba ega ega mubviro
 
-## Manhamba echinyakare mukodhi yekutanga
-
-Manhamba echinyorwa chipi nechipi chinotsigirwa zvirevo zvinoshanda — murenji, mumodhulo, mukuenzanisa:
+Manhamba echero nyora inotsigirwa anokosha — mumiganhu, modulo, kuenzanisa:
 
 ```zymbol
 #०९#
@@ -624,194 +648,199 @@ Manhamba echinyorwa chipi nechipi chinotsigirwa zvirevo zvinoshanda — murenji,
 }
 ```
 
----
+### Maboolean ega ega mune chero nyora
 
-### Zvirevo zveBoolean mune chero chinyorwa
-
-`#` + nhamba `0` kana `1` kubva kubhuroko chero ripi zvacho chirevo cheBoolean chinoshanda:
+`#` + nhamba `0` kana `1` kubva kubhuroko ripi neripi inokosha yeboolean:
 
 ```zymbol
-#०९#
-chinoshanda = #१        // zvakafanana ne #1
->> chinoshanda ¶        // → #१
->> (#१ && #०) ¶         // → #०
+#٠٩#
+kushanda = #١        // yakafanana ne#1
+>> kushanda ¶        // → #१
+>> (#१ && #०) ¶ // → #०
 ```
 
-> `#` **inogara iri ASCII**. `#0` (nhema) inogara ichisiyana pakuonekwa kubva ku `0` (nhamba zero) mune chero chinyorwa.
+> `#` **inogara iri ASCII**. `#0` (nhema) inogara yakasiyana ne `0` (nhamba yakazara zero) munyora dzose.
 
 ---
 
----
-
-## Vashandisi veData
+## Zvishandiso zveData
 
 ```zymbol
-// Kushandura mhando
-##.42         // → 42.0  (ku Inoyangarara)
-###3.7        // → 4     (ku Nhamba, kutenderera)
-##!3.7        // → 3     (ku Nhamba, kucheka)
+// Kutendeuka kwemhando
+f = ##.42         // → 42.0  (kuinoyangarara)
+i = ###3.7        // → 4     (kunhamba yakazara, tenderera)
+t = ##!3.7        // → 3     (kunhamba yakazara, cheka)
 
-// Kuchinjura tambo kuita nhamba
-v1 = #|"42"|      // → 42  (Nhamba)
-v2 = #|"3.14"|    // → 3.14  (Inoyangarara)
+// Ongorora tambo kuita nhamba
+v1 = #|"42"|      // → 42  (nhamba yakazara)
+v2 = #|"3.14"|    // → 3.14  (inoyangarara)
 v3 = #|"abc"|     // → "abc"  (yakachengeteka, hapana kukanganisa)
 
-// Kutenderera / kucheka
-pi = 3.14159265
-kutenderera2 = #.2|pi|     // → 3.14  (tenderera kunzvimbo 2 dzedesimali)
-kutenderera4 = #.4|pi|     // → 3.1416
-kucheka2 = #!2|pi|         // → 3.14  (cheka)
+// Tenderera / Cheka
+π = 3.14159265
+tenderera2 = #.2|π|      // → 3.14  (tenderera kunzvimbo 2 dzedhesimali)
+tenderera4 = #.4|π|      // → 3.1416
+cheka2 = #!2|π|      // → 3.14  (cheka)
 
-// Kugadzira nhamba
-chimiro = #,|1234567|   // → 1,234,567  (kupatsanurwa nekoma)
-sainzi = #^|12345.678|  // → 1.2345678e4  (sainzi)
+// Kuumbwa kwenhamba
+maumbwe = #,|1234567|  // → 1,234,567  (kakomana-kakaparadzaniswa)
+sainzi = #^|12345.678|    // → 1.2345678e4  (sainzi)
 
-// Zvirevo zvehwaro
-a = 0x41         // → 'A'  (hexadecimal)
-b = 0b01000001   // → 'A'  (bhinari)
+// Zvekutanga zvehwaro
+a = 0x41         // → 'A'  (hex)
+b = 0b01000001   // → 'A'  (binary)
 c = 0o101        // → 'A'  (octal)
 
 // Kubuda kwekushandura hwaro
 hex = 0x|255|    // → "0x00FF"
-bin = 0b|65|     // → "0b1000001"
-oct = 0o|8|      // → "0o10"
-dec = 0d|255|    // → "0d0255"
+bhinari = 0b|65|     // → "0b1000001"
+okutari = 0o|8|      // → "0o10"
+decimal = 0d|255|    // → "0d0255"
 ```
 
 ---
 
----
-
-## Kubatanidza Sheli
+## Kubatanidzwa kweShell
 
 ```zymbol
-zuva = <\ date +%Y-%m-%d \>     // inotora stdout (inosanganisira \n kumagumo)
+zuva = <\ date +%Y-%m-%d \>     // tora stdout (inosanganisira \n kumagumo)
 >> "Nhasi: " zuva
 
 faira = "data.txt"
-zviri_mukati = <\ cat {faira} \>    // kupindirira mumirairo
+zvirimo = <\ cat {faira} \>      // kupinza mumirairo
 
-kubuda = </"./subscript.zy"/>   // mhanyisa imwe skiripiti yeZymbol, tora kubuda
+kubuda = </"./subscript.zy"/>   // shandisa imwe script yeZymbol, tora kubuda
 >> kubuda
 ```
 
-> `><` inotora magedhi eCLI serondedzero yetambo (tree-walker chete).
-
----
+> `><` inotora nharo dzeCLI serondedzero yetambo (tree-walker chete).
 
 ---
 
 ## Muenzaniso Wakazara: FizzBuzz
 
 ```zymbol
-chikamu(nhamba) {
+patsanura(nhamba) {
     ? nhamba % 15 == 0 { <~ "FizzBuzz" }
     _? nhamba % 3  == 0 { <~ "Fizz" }
     _? nhamba % 5  == 0 { <~ "Buzz" }
     _ { <~ nhamba }
 }
 
-@ i:1..20 { >> chikamu(i) ¶ }
+@ i:1..20 { >> patsanura(i) ¶ }
 ```
 
 ---
 
 ## Referensi yezviratidzo
 
-| Chiratidzo | Basa | Chiratidzo | Basa |
-|------------|------|------------|------|
+| Chiratidzo | Kushanda | Chiratidzo | Kushanda |
+|--------|-----------|--------|-----------|
 | `=` | zvinoshanduka | `$#` | urefu |
-| `:=` | chinogara | `$+` | wedzera (zvinotevedzana) |
-| `>>` | kubuda | `$+[i]` | isa paindeksi (hwaro-1) |
-| `<<` | kupinda | `$-` | bvisa yekutanga maererano nekukosha |
-| `¶` / `\\` | mutsara mutsva | `$--` | bvisa zvese maererano nekukosha |
-| `?` | kana | `$-[i]` | bvisa paindeksi (hwaro-1) |
-| `_?` | zvikasadaro kana | `$-[i..j]` | bvisa renji (hwaro-1) |
-| `_` | zvikasadaro / mhando dzese | `$?` | ine |
-| `??` | kuenzanisa | `$??` | tsvaga indekisi dzese (hwaro-1) |
-| `@` | zvishwe | `$[s..e]` | chimedu (hwaro-1) |
-| `@ N { }` | zvishwe N nguva | `$>` | mepu |
-| `@!` | tyora | `$|` | sefa |
-| `@>` | enderera | `$<` | kudzikisira |
-| `@:zita { }` | zvishwe zvine mucherechedzo | `$/ mupatsanuri` | kupatsanura tambo |
-| `@:zita!` | tyora zvine mucherechedzo | `$++ a b c` | kuvaka kubatanidza |
-| `@:zita>` | enderera zvine mucherechedzo | `rondedzero[i>j>k]` | indekisi yekufambisa |
-| `->` | lambda | `rondedzero[i] = kukosha` | gadzirisa chinhu (rondedzero chete) |
-| `rondedzero[i] += kukosha` | kugadzirisa kwakasanganiswa | `rondedzero[i]$~` | kugadzirisa kwebasa (kopi itsva) |
-| `$^+` | kuronga kukwira (zvepakutanga) | `$^-` | kuronga kudzika (zvepakutanga) |
-| `$^` | kuronga nechienzanisi (tuple) | `<~` | dzosa |
-| `|>` | pombi | `!?` | edza |
+| `:=` | zvisingachinji | `$+` | wedzera (inogona kuketana) |
+| `>>` | kubuda | `$+[i]` | isa paindekisi (1-hwaro) |
+| `<<` | kupinda | `$-` | bvisa chekutanga nekukosha |
+| `¶` / `\\` | mutsara mutsva | `$--` | bvisa zvese nekukosha |
+| `?` | kana | `$-[i]` | bvisa paindekisi (1-hwaro) |
+| `_?` | kana zvisina kudaro-kana | `$-[i..j]` | bvisa muganhu (1-hwaro) |
+| `_` | kana zvisina kudaro / kachozi | `$?` | ine |
+| `??` | enzanisa | `$??` | tsvaga indekisi dzose (1-hwaro) |
+| `@` | chitenderera | `$[s..e]` | chikamu (1-hwaro) |
+| `@ N { }` | chitenderera N nguva | `$>` | map |
+| `@!` | tyora | `$\|` | filter |
+| `@>` | enderera | `$<` | reduce |
+| `@:zita { }` | chitenderera chine chikwangwani | `$/ chitsauri` | patsanura tambo |
+| `@:zita!` | tyora chikwangwani | `$++ a b c` | kuvaka kubatanidza |
+| `@:zita>` | enderera nechikwangwani | `arr[i>j>k]` | indekisi yekufamba |
+| `->` | lambda | `arr[i] = kukosha` | gadzirisa chinhu (rondedzero chete) |
+| `arr[i] += kukosha` | kugadziridza kwakasanganiswa | `arr[i]$~` | kugadziridza kwebasa (kopi nyowani) |
+| `$^+` | ronga kukwira (zvekutanga) | `$^-` | ronga kudzika (zvekutanga) |
+| `$^` | ronga nemuenzanisi (tuple) | `<~` | dzosa |
+| `\|>` | pombi | `!?` | edza |
 | `:!` | bata | `:>` | pakupedzisira |
 | `#1` | chokwadi | `#0` | nhema |
-| `$!` | kukanganisa | `$!!` | paradzira kukanganisa |
+| `$!` | ikukanganisa here | `$!!` | paradzira kukanganisa |
 | `<#` | pinza | `#>` | budisa |
-| `#` | zivisa chikamu | `::` | dana chikamu |
+| `#` | zivisa module | `::` | daidza module |
 | `.` | kuwana munda | `#?` | metadata yemhando |
-| `#\|..\|` | chinjura nhamba | `##.` | shandura ku Inoyangarara |
-| `###` | shandura ku Nhamba (tenderera) | `##!` | shandura ku Nhamba (cheka) |
+| `#\|..\|` | ongorora nhamba | `##.` | shandura kuinoyangarara |
+| `###` | shandura kunhamba yakazara (tenderera) | `##!` | shandura kunhamba yakazara (cheka) |
 | `#.N\|..\|` | tenderera | `#!N\|..\|` | cheka |
-| `#,\|..\|` | chimiro chekoma | `#^\|..\|` | sainzi |
-| `#d0d9#` | shandura modhi yenhamba | `#09#` | reset ku ASCII |
-| `<\ ..\>` | mhanyisa sheli | `>\<` | magedhi eCLI |
-| `\ var` | paradza zvinoshanduka pachena | | |
+| `#,\|..\|` | umbo hwekakomana | `#^\|..\|` | sainzi |
+| `#d0d9#` | chinja modhi yenhamba | `#09#` | reset kuna ASCII |
+| `<\ ..\>` | shandisa shell | `>\<` | nharo dzeCLI |
+| `\ zvinoshanduka` | paradza zvinoshanduka pachena | `°x` / `x°` | tsananguro inopisa (kutanga otomatiki) |
+| `>>|` | bhuroko reTUI (skrini inotsiva) | `>>~` | kubuda kwenzvimbo |
+| `>>!` | chenesa skrini | `>>?` | bvunza saizi yeterminal |
+| `<<\|` | kudzvanya kiyi kunovharira | `<<\|?` | ongorora kudzvanya kiyi kusingavhariri |
+| `@~ N` | rara N mirisekondi | `$*` | dzokorora tambo N nguva |
 
 ---
 
----
+## Chinyorwa cheKushandurwa kweKuburitswa
 
-## Dhindindi rekuchinja kwekubuditswa
+### v0.0.5 — Zvekutanga zveTUI, Tsananguro Inopisa & Kudzokorora Tambo _(Chivabvu 2026)_
 
-### v0.0.4 — Indekisi yeHwaro-1, Mabasa eGiredhi Yekutanga & Zvikamu Zvemabhuroko _(Kubvumbi 2026)_
+- **Kutyora** Chitsauri cheruoko rwekuenzanisa: `muenzaniso : mhedzisiro` → `muenzaniso => mhedzisiro`
+- **Kutyora** Zita renhema rekupinza: `<# nzira <= zita_renhema` → `<# nzira => zita_renhema`
+- **Kutyora** Kutumidza zita rekubudisa: `#> { fn <= veruzhinji }` → `#> { fn => veruzhinji }`
+- **Yakawedzerwa** Bhuroko reTUI `>>| { }` — skrini inotsiva + modhi mbishi; inochenesa pakubuda
+- **Yakawedzerwa** Kubuda kwenzvimbo `>>~ (mutsara, mbiru, BKS, fg, bg) > zvinhu` — nzvimbo dzisingawanzo, mavara 256 eANSI
+- **Yakawedzerwa** Kupinda kwekiyi `<<| zvinoshanduka` (kunovharira) uye `<<|? zvinoshanduka` (kuongorora kusingavhariri)
+- **Yakawedzerwa** `>>!` chenesa skrini, `>>?` bvunza saizi yeterminal, `@~ N` rara N mirisekondi
+- **Yakawedzerwa** Tsananguro inopisa `°x` / `x°` — kutanga zvinoshanduka otomatiki pakushandiswa kwekutanga muzvishwe
+- **Yakawedzerwa** Kudzokorora tambo `tambo $* N` — dzokorora tambo N nguva
+- **VM** Kuenzana: 436/436 bvunzo dzakapfuura
 
-- **Inotyora** Indekisi dzese dzakashandurwa kuva **hwaro-1** — `rondedzero[1]` ndicho chinhu chekutanga; `rondedzero[0]` kukanganisa kwenguva yekumhanya
-- **Yakawedzerwa** Mabasa ane mazita **ndiwo makosho egiredhi yekutanga** — tumira zvakananga kumabasa epamusoro-soro: `nums$> kaviri`
-- **Yakawedzerwa** **Syntax yemabhuroko** yezvikamu inodiwa: `# zita { ... }` — syntax yakati sandara yabviswa
-- **Yakawedzerwa** Indekisi yemativi akawanda: `rondedzero[i>j>k]` (kufambisa), `rondedzero[p ; q]` (kuburitsa kwakati sandara)
-- **Yakawedzerwa** Kushandura mhando: `##.chirevo` (Inoyangarara), `###chirevo` (Nhamba tenderera), `##!chirevo` (Nhamba cheka)
-- **Yakawedzerwa** Kupatsanura tambo: `tambo$/ mupatsanuri` — inodzosera `Array(Tambo)`
+### v0.0.4 — Indekesi 1-hwaro, Mabasa eGiredhi rekutanga & Module eBhuroko _(Kubvumbi 2026)_
+
+- **Kutyora** Indekesi dzose dzakachinjirwa ku **1-hwaro** — `arr[1]` ndicho chinhu chekutanga; `arr[0]` ibasa nguva yekumhanya
+- **Yakawedzerwa** Mabasa ane mazita **akukosha kwegiredhi rekutanga** — tora zvakananga kuHOF: `nhamba$> kaviri`
+- **Yakawedzerwa** **Syntax yebhuroko inodiwa** kune module: `# zita { ... }` — syntax yakadzikama yakabviswa
+- **Yakawedzerwa** Indekisi yedhigirii dzakawanda: `arr[i>j>k]` (kufamba), `arr[p ; q]` (kubvisa kwakadzikama)
+- **Yakawedzerwa** Kutendeuka kwemhando: `##.chirevo` (inoyangarara), `###chirevo` (nhamba yakazara tenderera), `##!chirevo` (nhamba yakazara cheka)
+- **Yakawedzerwa** Kupatsanura tambo: `tambo$/ chitsauri` — inodzosera `Array(tambo)`
 - **Yakawedzerwa** Kuvaka kubatanidza: `hwaro$++ a b c` — inowedzera zvinhu zvakawanda
-- **Yakawedzerwa** Zvishwe N nguva: `@ N { }` — dzokorora kanhivi kaN
-- **Yakawedzerwa** Syntax yezvishwe zvine mucherechedzo: `@:zita { }`, `@:zita!`, `@:zita>` — inotsiva `@ @zita` / `@! zita`
-- **Yakawedzerwa** Mitemo yenzvimbo yezvinoshanduka: zvinoshanduka `_zita` zvine nzvimbo yebhuroko chaiyo; `\ var` inoparadza nekukurumidza
-- **Yakawedzerwa** Mapatani ekuenzanisa ekuenzanisa: `< 0 :`, `> 5 :`, `== 42 :`, nezvimwe
-- **Yakawedzerwa** Kukanganisa kwechikamu E013: zvirevo zvinogona kuitwa mumuviri wechikamu zvinorambidzwa
-- **Yakagadziriswa** `take_variable` haichakanganisi zvinogara zvechikamu pakunyora kumashure
-- **Yakagadziriswa** `alias.CONST` ikozvino inogadziriswa nenzira kwayo; `#>` inogona kuoneka mushure mekutsanangurwa kwebasa
-- **VM** Kuenzana kwakazara: 393/393 yedzo dzinopfuura
+- **Yakawedzerwa** Chitenderera chenguva: `@ N { }` — dzokorora N nguva
+- **Yakawedzerwa** Syntax yechitenderera chine chikwangwani: `@:zita { }`, `@:zita!`, `@:zita>` — inotsiva `@ @zita` / `@! zita`
+- **Yakawedzerwa** Mitemo yenzvimbo yezvinoshanduka: zvinoshanduka `_zita` zvine nzvimbo yebhuroko chaiyo; `\ zvinoshanduka` zvinoparadza nekukurumidza
+- **Yakawedzerwa** Mapateni ekuenzanisa ekuenzanisa: `< 0 =>`, `> 5 =>`, `== 42 =>`, nezvimwe
+- **Yakawedzerwa** Kukanganisa kweModule E013: zvirevo zvinoshanda mumuviri wemodule hazvibvumirwi
+- **Yakagadziriswa** `alias.CONST` ikozvino inogadzirisa nenzira kwayo; `#>` inogona kuoneka mushure metsananguro dzebasa
+- **VM** Kuenzana kwakazara: 393/393 bvunzo dzakapfuura
 
-### v0.0.3 — Sisitimu dzenhamba dzeUnicode & Natsiridzo dzeLSP _(Kubvumbi 2026)_
+### v0.0.3 — Hurongwa hweNhamba dzeUnicode & Kuvandudzwa kweLSP _(Kubvumbi 2026)_
 
-- **Yakawedzerwa** 65 mabhuroko emanhamba eUnicode ane tokeni yekuchinja modhi `#d0d9#`
-- **Yakawedzerwa** Zvirevo zveBoolean mune chero chinyorwa — `#१` / `#०`, `#१` / `#०`, nezvimwe
+- **Yakawedzerwa** Mabhuroko manhamba eUnicode makumi matanhatu nepfumbamwe ane chiratidzo chekuchinja modhi `#d0d9#`
+- **Yakawedzerwa** Maboolean ega ega mune chero nyora — `#१` / `#०`, `#१` / `#०`, nezvimwe
 - **Yakawedzerwa** Manhamba eKlingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
-- **Yakawedzerwa** `SetNumeralMode` opkoodi yeVM — kuenzana kwakazara nemufambi wemuti
-- **Yakawedzerwa** REPL inoremekedza modhi yenhamba inoshanda mumaeki nekuratidzwa kwezvinoshanduka
-- **Yakachinjwa** Boolean `>>` kubuda ikozvino kunosanganisira chivakamberi `#` (`#0` / `#1`) mumamodhi ese
+- **Yakawedzerwa** Opcode yeVM `SetNumeralMode` — kuenzana kwakazara netree-walker
+- **Yakachinjwa** Kubuda kweboolean `>>` ikozvino kunosanganisira chivakashure `#` (`#0` / `#1`) mumamodhi ese
 
-### v0.0.2_01 — Kupihwa zita idzva kwevashandisi _(30 Kurume 2026)_
+### v0.0.2_01 — Kutumidza zita reMushandisi _(30 Kurume 2026)_
 
-- **Yakachinjwa** `c|..|` → `#,|..|` uye `e|..|` → `#^|..|` — kuenderana nemhuri yechivakamberi chechimiro `#`
-- **Yakawedzerwa** Alias yekubudisa — budisa zvakare nhengo dzechikamu nezita rakasiyana
+- **Yakachinjwa** `c|..|` → `#,|..|` uye `e|..|` → `#^|..|` — kuenderana nemhuri yechivakashure `#`
+- **Yakawedzerwa** Zita renhema rekubudisa: budisa zve module zvakare pasi pezita rakasiyana
 
-### v0.0.2 — Kugadzirwazve kweAPI yekuunganidza & Zvinogadzirisa _(24 Kurume 2026)_
+### v0.0.2 — Kugadzirwazve kweAPI yeUunganidzo & Zvinhuisa _(24 Kurume 2026)_
 
-- **Yakawedzerwa** Mhuri yakabatana yevashandisi `$` yezvakatevedzana netambo (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Yakawedzerwa** Kugovera kwekuparura kwezvakatevedzana, tuple, netuple zvine mazita
-- **Yakawedzerwa** Indekisi dzisina kunaka (`rondedzero[-1]` = chinhu chekupedzisira)
-- **Yakawedzerwa** Zvinogadzirisa zvechizvarwa — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+- **Yakawedzerwa** Mhuri yemushandisi `$` yakabatana yerondedzero netambo (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Yakawedzerwa** Kupiwa kwekuputsa chimiro kune rondedzero, tuple, uye tuple dzine mazita
+- **Yakawedzerwa** Indekisi dzisina kunaka (`arr[-1]` = chinhu chekupedzisira)
+- **Yakawedzerwa** Zvinhuisa zvemuno — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
 
 ### v0.0.1-patch _(25 Kurume 2026)_
 
-- **Yakawedzerwa** Kugovera kwakasanganiswa `^=`
-- **Yakagadziriswa** Nyaya dzemumucheto dzemasvomhu dzeanopatsanura; kugadziriswa kwegwaro
+- **Yakawedzerwa** Kupiwa kwakasanganiswa `^=`
+- **Yakagadziriswa** Zviitiko zvemumucheto wemasvomhu wepatsanuri; kugadziriswa kwegwaro
 
-### v0.0.1 — Kubuditswa kwekutanga kuruzhinji _(22 Kurume 2026)_
+### v0.0.1 — Kuburitswa kwekutanga kweruzhinji _(22 Kurume 2026)_
 
-- Dududziro yemufambi wemuti + VM yerejista (`--vm`, ~4× nekukurumidza, ~95% kuenzana)
-- Zvivakwa zvese zvepamusoro: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Zviziviso zveUnicode zvizere, sisitimu yezvikamu, lambda, zvivharo, kubata kukanganisa
-- REPL, LSP, Kuwedzera kweVS Code, muchimiro (`zymbol fmt`)
+- Muturikiri wetree-walker + VM yerejista (`--vm`, ~4× inokurumidza, ~95% kuenzana)
+- Zvese zvivakwa zvepakutanga: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Ziviso dzeUnicode dzakazara, hurongwa hwemodule, lambda, closure, kubata kukanganisa
+- REPL, LSP, kuwedzera kweVS Code, muumbi (`zymbol fmt`)
 
 ---
 
-_Zymbol-Lang — Chiratidzo. Kwese kwese. Hachichinjiki._
+_Zymbol-Lang — Chiratidzo. Chepasi rose. Chisingachinjiki._

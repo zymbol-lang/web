@@ -1,20 +1,22 @@
-> **Napomena:** Ova dokumentacija je kreirana uz pomoć umjetne inteligencije (UI).
->
+> **Napomena:** Ova dokumentacija je stvorena i prevedena od strane umjetne inteligencije (UI).
+> 
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
->
-> Kanonska referenca je **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** u repozitoriju interpretera.
+> 
+> The canonical reference is **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** in the interpreter repository.
 
 ---
 
 # Priručnik Zymbol-Lang
 
-**Zymbol-Lang** je simbolički programski jezik. Nema ključnih riječi — sve je simbol. Funkcionira jednako u svakom ljudskom jeziku.
+> **Pregledano za v0.0.5 — 2026-05-12**
 
-- Nema `if`, `while`, `return` — samo `?`, `@`, `<~`
-- Puna podrška za Unicode — identifikatori u bilo kojem jeziku ili emoji
-- Neovisno o ljudskom jeziku — kod je identičan u svim jezicima
+**Zymbol-Lang** je simbolički programski jezik. Bez ključnih riječi — sve je simbol. Radi identično na svakom ljudskom jeziku.
 
-**Verzija interpretera**: v0.0.4 | **Pokrivenost testovima**: 393/393 (TW ↔ VM paritet)
+- Bez `if`, `while`, `return` — samo `?`, `@`, `<~`
+- Puni Unicode — identifikatori na bilo kojem jeziku ili emojiju
+- Neovisan o ljudskom jeziku — kod je svuda isti
+
+**Verzija interpretera**: v0.0.5 | **Pokrivenost testovima**: 436/436 (TW ↔ VM paritet)
 
 ---
 
@@ -22,10 +24,10 @@
 
 ```zymbol
 x = 10              // promjenjiva varijabla
-PI := 3.14159       // konstanta — greška pri ponovnoj dodjeli
+PI := 3.14159       // konstanta — ponovna dodjela je greška pri izvođenju
 ime = "Alice"
-aktivan = #1        // logička istina
-👋 := "Zdravo"
+aktivno = #1        // logička istina
+👋 := "Pozdrav"
 ```
 
 ```zymbol
@@ -36,29 +38,43 @@ x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
+
+`°` (znak stupnja, U+00B0) automatski inicijalizira varijablu na njenu neutralnu vrijednost pri prvoj upotrebi:
+
+```zymbol
+brojevi = [3, 1, 4, 1, 5]
+@ n:brojevi {
+    °ukupno += n    // auto-inicijalizacija na 0 iznad petlje; dostupna nakon @
+}
+>> ukupno ¶         // → 14
+```
+
+> `°x` (prefiks) sidri iznad petlje — rezultat je dostupan nakon `@`.
+> `x°` (sufiks) sidri unutar petlje — nestaje kada petlja završi.
+> Samo tree-walker.
 
 ---
 
 ## Tipovi Podataka
 
-| Tip | Literal | Tag `#?` | Napomena |
-|-----|---------|----------|----------|
-| Int | `42`, `-7` | `###` | 64-bitni s predznakom |
-| Float | `3.14`, `1.5e10` | `##.` | Znanstvena notacija OK |
-| String | `"tekst"` | `##"` | Interpolacija: `"Zdravo {ime}"` |
-| Char | `'A'` | `##'` | Jedan Unicode znak |
-| Bool | `#1`, `#0` | `##?` | NIJE numeričko — `#1 ≠ 1` |
+| Tip | Literal | Tag `#?` | Napomene |
+|-----|---------|----------|---------|
+| Cijeli | `42`, `-7` | `###` | 64-bitni s predznakom |
+| Decimalni | `3.14`, `1.5e10` | `##.` | Znanstvena notacija OK |
+| Niz | `"tekst"` | `##"` | Interpolacija: `"Pozdrav {ime}"` |
+| Znak | `'A'` | `##'` | Jedan Unicode znak |
+| Logički | `#1`, `#0` | `##?` | NIJE numerički — `#1 ≠ 1` |
 | Polje | `[1, 2, 3]` | `##]` | Homogeni elementi |
-| Tuple | `(a, b)` | `##)` | Pozicijsko |
-| Imenovani Tuple | `(x: 1, y: 2)` | `##)` | Imenovana polja |
-| Funkcija | ref na imenovanu funkciju | `##()` | Prva klasa; prikaz `<funct/N>` |
-| Lambda | `x -> x * 2` | `##->` | Prva klasa; prikaz `<lambd/N>` |
+| Torka | `(a, b)` | `##)` | Pozicijska |
+| Imenovana Torka | `(x: 1, y: 2)` | `##)` | Imenovana polja |
+| Funkcija | imenovana referenca | `##()` | Prvog reda; prikazuje `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Prvog reda; prikazuje `<lambd/N>` |
 
 ```zymbol
-// Introspekicija tipa — vraća (tip, znamenke, vrijednost)
+// Introspekcija tipa — vraća (tip, znamenke, vrijednost)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
 t = meta[1]
@@ -70,43 +86,75 @@ t = meta[1]
 ## Izlaz i Ulaz
 
 ```zymbol
->> "Zdravo" ¶                      // ¶ ili \\ za eksplicitni novi red
->> "a=" a " b=" b ¶                // juxtapozicija — više vrijednosti
->> (arr$#) ¶                       // postfiks operatori zahtijevaju ( )
+>> "Pozdrav" ¶                    // ¶ ili \\ za eksplicitni novi red
+>> "a=" a " b=" b ¶               // jukstapozicija — više vrijednosti
+>> (polje$#) ¶                    // postfiksni operatori zahtijevaju ( ) u >>
 
-<< ime                             // čitanje u varijablu (bez upita)
-<< "Unesite ime: " ime             // s upitom
+<< ime                            // čitanje u varijablu (bez upita)
+<< "Unesite ime: " ime            // s upitom
 ```
 
 > `¶` (AltGr+R na španjolskoj tipkovnici) i `\\` su ekvivalentni novi redovi.
 
 ---
 
+## TUI Primitivi
+
+Terminalni UI operatori za interaktivne programe. Većina zahtijeva blok `>>| { }` (alternativni ekran + sirovi način).
+
+```zymbol
+>>| {
+    >>!                             // brisanje alternativnog ekrana
+    >>~ (1, 1, 0, 10) > "Pokrenuto"  // redak 1, stupac 1, fg=10 (zelena)
+    @~ 1000                         // pauza 1 sekunda (1000 ms)
+    >>~ (2, 1) > "Gotovo."
+}
+// terminal automatski obnovljen pri izlasku
+```
+
+```zymbol
+// Pritisak tipke i veličina terminala
+>>| {
+    [redovi, stupci] = >>?              // upit za dimenzije terminala
+    >>~ (1, 1) > "Terminal: " redovi " x " stupci
+    <<| tipka                           // blokirajuće čitanje tipke
+    >>~ (2, 1) > "Pritisnuto: " tipka
+}
+```
+
+> `>>!` briše ekran. `>>?` vraća `[redovi, stupci]`. `@~ N` spava N milisekundi.
+> `<<|` čita jedan pritisak tipke (blokirajuće); `<<|?` provjerava bez blokiranja (vraća `'\0'` ako nema).
+> Torka pozicioniranog izlaza: `(redak, stupac, PDM, fg, bg)` — bilo koji utor može se izostaviti zarezom (`>>~ (,,, 196) > "crvena"`).
+> PDM maska: `1`=Podebljano, `2`=Kurziv, `4`=Podcrtano. ANSI 256-bojni paletni (`0`=zadani terminal).
+> Samo tree-walker (osim `>>!`, `>>?`, `@~`, `>>~` koji rade i s `--vm`).
+
+---
+
 ## Operatori
 
 ```zymbol
-// Aritmetika — koristite dodjele; neki operatori imaju posebnosti izravno u >>
+// Aritmetika
 a = 10
 b = 3
-r1 = a + b    // 13     
+r1 = a + b    // 13
 r2 = a - b    // 7
-r3 = a * b    // 30     
+r3 = a * b    // 30
 r4 = a / b    // 3  (cjelobrojno dijeljenje)
-r5 = a % b    // 1      
+r5 = a % b    // 1
 r6 = a ^ b    // 1000  (potenciranje)
 
-// Usporedba
-a == b    // #0    
-a <> b    // #1    
-a < b      // #0
-a <= b    // #0   
-a > b      // #1    
-a >= b     // #1
+// Usporedba — dodjela za provjeru
+u1 = a == b    // #0
+u2 = a <> b    // #1
+u3 = a < b     // #0
+u4 = a <= b    // #0
+u5 = a > b     // #1
+u6 = a >= b    // #1
 
-// Logika
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
+// Logički
+l1 = #1 && #0    // #0
+l2 = #1 || #0    // #1
+l3 = !#1         // #0
 ```
 
 ---
@@ -114,29 +162,30 @@ a >= b     // #1
 ## Nizovi
 
 ```zymbol
-// Dva oblika spajanja
+// Dva oblika ulančavanja
 ime = "Alice"
 n = 42
 
->> "Zdravo " ime " imaš " n ¶    // juxtapozicija — u >>
-opis = "Zdravo {ime}, imaš {n}"  // interpolacija — svugdje
+>> "Pozdrav " ime " imate " n ¶    // jukstapozicija — u >>
+opis = "Pozdrav {ime}, imate {n}"  // interpolacija — bilo gdje
 ```
 
 ```zymbol
-s = "Zdravo Svijete"
-len = s$#                  // 14
-sub = s$[1..6]             // "Zdravo"  (od 1, kraj uključiv)
-has = s$? "Svijete"        // #1
-dijelovi = "a,b,c,d"$/ ',' // [a, b, c, d]  (dijeljenje po odjelnici)
-rep = s$~~["a":"A"]        // zamijeni sve
-rep1 = s$~~["a":"A":1]     // zamijeni prvih N
+s = "Pozdrav Svijet"
+duz = s$#                  // 14
+pod = s$[1..7]             // "Pozdrav"  (1-bazno, kraj uključen)
+ima = s$? "Svijet"          // #1
+dijelovi = "a,b,c,d"$/ ','  // [a, b, c, d]  (dijeljenje odvojnikom)
+zam = s$~~["a":"A"]         // zamjena
+zam1 = s$~~["a":"A":1]      // samo prvih N
+red = "─" $* 20             // "────────────────────"  (ponavljanje N puta)
 ```
 
-> `+` je samo za brojeve. Za nizove koristite `,`, juxtapoziciju ili interpolaciju.
+> `+` je samo za brojeve. Za nizove koristite `,`, jukstapoziciju ili interpolaciju.
 
 ---
 
-## Kontrola Toka
+## Upravljanje Tokom
 
 ```zymbol
 x = 7
@@ -164,36 +213,37 @@ x = 7
 // Rasponi
 bodovi = 85
 ocjena = ?? bodovi {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+    90..100 => 'A'
+    80..89  => 'B'
+    70..79  => 'C'
+    _       => 'F'
 }
 >> ocjena ¶    // → B
 
 // Nizovi
 boja = "crvena"
 kod = ?? boja {
-    "crvena"  : "#FF0000"
-    "zelena"  : "#00FF00"
-    _         : "#000000"
+    "crvena"  => "#FF0000"
+    "zelena"  => "#00FF00"
+    _         => "#000000"
 }
 
 // Uzorci usporedbe
 temp = -5
 stanje = ?? temp {
-    < 0  : "led"
-    < 20 : "hladno"
-    < 35 : "toplo"
-    _    : "vruće"
+    < 0  => "led"
+    < 20 => "hladno"
+    < 35 => "toplo"
+    _    => "vruće"
 }
 >> stanje ¶    // → led
 
-// Izjavni oblik (blok grane)
+// Naredbeni oblik (blokovske grane)
+n = -3
 ?? n {
-    0       : { >> "nula" ¶ }
-    _? n < 0: { >> "negativno" ¶ }
-    _       : { >> "pozitivno" ¶ }
+    0    => { >> "nula" ¶ }
+    < 0  => { >> "negativno" ¶ }
+    _    => { >> "pozitivno" ¶ }
 }
 ```
 
@@ -202,19 +252,19 @@ stanje = ?? temp {
 ## Petlje
 
 ```zymbol
-@ i:0..4  { >> i " " }        // raspon uključivo:  0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // s korakom:          1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // unazad:             5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // raspon uključen:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // s korakom:         1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // obrnuto:           5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
 >> n ¶                        // → 128  (while)
 
-voće = ["jabuka", "kruška", "grožđe"]
-@ f:voće { >> f ¶ }           // for-each polje
+voce = ["jabuka", "kruška", "grožđe"]
+@ v:voce { >> v ¶ }           // for-each polje
 
-@ c:"zdravo" { >> c "-" }
->> ¶                          // → z-d-r-a-v-o-  (for-each niz)
+@ c:"pozdrav" { >> c "-" }
+>> ¶                          // → p-o-z-d-r-a-v-  (for-each niz)
 
 @ i:1..10 {
     ? i % 2 == 0 { @> }       // @> nastavi
@@ -232,13 +282,13 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Označena petlja (ugniježđeno prekidanje)
-count = 0
+// Označena petlja (ugniježđeni prekid)
+brojac = 0
 @:vanjska {
-    count++
-    ? count >= 3 { @:vanjska! }
+    brojac++
+    ? brojac >= 3 { @:vanjska! }
 }
->> count ¶                    // → 3
+>> brojac ¶                   // → 3
 ```
 
 ---
@@ -246,8 +296,8 @@ count = 0
 ## Funkcije
 
 ```zymbol
-zbrojiti(a, b) { <~ a + b }
->> zbrojiti(3, 4) ¶    // → 7
+zbroji(a, b) { <~ a + b }
+>> zbroji(3, 4) ¶    // → 7
 
 faktorijel(n) {
     ? n <= 1 { <~ 1 }
@@ -259,49 +309,49 @@ faktorijel(n) {
 Funkcije imaju **izolirani opseg** — ne mogu čitati vanjske varijable. Koristite izlazne parametre `<~` za izmjenu varijabli pozivatelja:
 
 ```zymbol
-zamijeniti(a<~, b<~) {
+zamijeni(a<~, b<~) {
     tmp = a
     a = b
     b = tmp
 }
 x = 10
 y = 20
-zamijeniti(x, y)
+zamijeni(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Imenovane funkcije su **vrijednosti prve klase** — prosljeđuje se izravno: `nums$> udvostruči`. Za omotavanje: `x -> fn(x)` je također valjano.
+> Imenovane funkcije su **vrijednosti prvog reda** — prosljeđujte izravno: `brojevi$> udvostruci`. Za omotavanje: `x -> fn(x)` je također valjano.
 
 ---
 
-## Lambde i Zatvorenja
+## Lambde i Zatvaranja
 
 ```zymbol
-dvostruki = x -> x * 2
+udvostruci = x -> x * 2
 zbroj = (a, b) -> a + b
->> dvostruki(5) ¶    // → 10
->> zbroj(3, 7) ¶     // → 10
+>> udvostruci(5) ¶    // → 10
+>> zbroj(3, 7) ¶      // → 10
 
-// Blok lambda
-klasificirati = x -> {
+// Blokovna lambda
+klasificiraj = x -> {
     ? x > 0 { <~ "pozitivno" }
     _? x < 0 { <~ "negativno" }
     <~ "nula"
 }
 
-// Zatvorenje — hvata vanjski opseg
+// Zatvaranje — hvata vanjski opseg
 faktor = 3
-trostruki = x -> x * faktor
->> trostruki(7) ¶    // → 21
+utrostruci = x -> x * faktor
+>> utrostruci(7) ¶    // → 21
 
 // Tvornica
-make_adder(n) { <~ x -> x + n }
-dodaj10 = make_adder(10)
+napravi_zbrajac(n) { <~ x -> x + n }
+dodaj10 = napravi_zbrajac(10)
 >> dodaj10(5) ¶    // → 15
 
 // U poljima
-ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[3](5) ¶    // → 25
+operacije = [x -> x+1, x -> x*2, x -> x*x]
+>> operacije[3](5) ¶    // → 25
 ```
 
 ---
@@ -311,61 +361,61 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 Polja su **promjenjiva** i sadrže elemente **istog tipa**.
 
 ```zymbol
-arr = [1, 2, 3, 4, 5]
+polje = [1, 2, 3, 4, 5]
 
-arr[1]          // 1 — pristup (indeksiranje od 1: prvi element)
-arr[-1]         // 5 — negativni indeks (zadnji element)
-arr$#           // 5 — duljina (koristite (arr$#) u >>)
+x = polje[1]      // 1 — pristup (1-bazno: prvi element)
+x = polje[-1]     // 5 — negativni indeks (zadnji element)
+x = polje$#       // 5 — duljina (koristite (polje$#) u >>)
 
-arr = arr$+ 6            // dodaj → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // umetni na poziciju 2 (od 1)
-arr3 = arr$- 3           // ukloni prvo pojavljivanje vrijednosti
-arr4 = arr$-- 3          // ukloni sva pojavljivanja
-arr5 = arr$-[1]          // ukloni na indeksu 1 (prvi element)
-arr6 = arr$-[2..3]       // ukloni raspon (od 1, kraj uključiv)
+polje = polje$+ 6            // dodavanje → [1,2,3,4,5,6]
+polje2 = polje$+[2] 99       // umetanje na poziciju 2 (1-bazno)
+polje3 = polje$- 3           // uklanjanje prvog pojavljivanja vrijednosti
+polje4 = polje$-- 3          // uklanjanje svih pojavljivanja
+polje5 = polje$-[1]          // uklanjanje na indeksu 1 (prvi element)
+polje6 = polje$-[2..3]       // uklanjanje raspona (1-bazno, kraj uključen)
 
-has = arr$? 3            // #1 — sadrži
-pos = arr$?? 3           // [3] — svi indeksi vrijednosti (od 1)
-sl = arr$[1..3]          // [1,2,3] — isječak (od 1, kraj uključiv)
-sl2 = arr$[1:3]          // [1,2,3] — isto, sintaksa brojanja
+ima = polje$? 3              // #1 — sadrži
+poz = polje$?? 3             // [3] — svi indeksi vrijednosti (1-bazno)
+rez = polje$[1..3]           // [1,2,3] — isječak (1-bazno, kraj uključen)
+rez2 = polje$[1:3]           // [1,2,3] — isto, sintaksa s brojem
 
-asc = arr$^+             // sortirano uzlazno  (samo primitivi)
-desc = arr$^-            // sortirano silazno  (samo primitivi)
+uzl = polje$^+               // sortirano uzlazno (samo primitivni)
+sil = polje$^-               // sortirano silazno (samo primitivni)
 
-// Tuple polja — koristite $^ s usporednom lambdom
-db = [(ime: "Carla", dob: 28), (ime: "Ana", dob: 25), (ime: "Bob", dob: 30)]
-po_dobi  = db$^ (a, b -> a.dob < b.dob)    // uzlazno po dobi (<)
-po_imenu = db$^ (a, b -> a.ime > b.ime)    // silazno po imenu (>)
->> po_dobi[1].ime ¶     // → Ana
->> po_imenu[1].ime ¶    // → Carla
+// Polja imenovanih/pozicijskih torki — koristite $^ s lambda komparatorom
+bp = [(ime: "Karla", god: 28), (ime: "Ana", god: 25), (ime: "Bob", god: 30)]
+po_godinama = bp$^ (a, b -> a.god < b.god)    // uzlazno po godinama  (<)
+po_imenu    = bp$^ (a, b -> a.ime > b.ime)    // silazno po imenu (>)
+>> po_godinama[1].ime ¶     // → Ana
+>> po_imenu[1].ime ¶        // → Karla
 
 // Izravno ažuriranje elementa (samo polja)
-arr[1] = 99              // dodijeli
-arr[2] += 5              // složeno: +=  -=  *=  /=  %=  ^=
+polje[1] = 99              // dodjela
+polje[2] += 5              // složeno: +=  -=  *=  /=  %=  ^=
 
 // Funkcionalno ažuriranje — vraća novo polje; original nepromijenjen
-arr2 = arr[2]$~ 99
+polje2 = polje[2]$~ 99
 ```
 
-> Svi operatori kolekcija vraćaju **novo polje**. Dodjeli natrag: `arr = arr$+ 4`.
-> `$+` se može ulančati: `arr = arr$+ 5$+ 6$+ 7`. Ostali operatori koriste međunje dodjele.
-> **Indeksiranje je od 1**: `arr[1]` je prvi element; `arr[0]` je greška izvođenja.
-> `$^+` / `$^-` sortiraju **primitivna polja** (brojevi, nizovi). Za tuple polja koristite `$^` s usporednom lambdom — smjer je kodiran u lambdi (`<` = uzlazno, `>` = silazno).
+> Svi operatori kolekcija vraćaju **novo polje**. Dodijelite natrag: `polje = polje$+ 4`.
+> `$+` se može ulančati: `polje = polje$+ 5$+ 6$+ 7`. Ostali operatori koriste međuassignacije.
+> **Indeksiranje je 1-bazno**: `polje[1]` je prvi element; `polje[0]` je greška pri izvođenju.
+> `$^+` / `$^-` sortiraju **primitivna polja** (brojevi, nizovi). Za polja torki koristite `$^` s lambda komparatorom — smjer je kodiran u lambdi (`<` = uzlazno, `>` = silazno).
 
-**Vrijednosna semantika** — dodjeljivanje polja drugoj varijabli stvara neovisnu kopiju:
+**Semantika vrijednosti** — dodjela polja drugoj varijabli stvara neovisnu kopiju:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
 a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b nije pogođeno
+>> b ¶    // → [1, 2, 3]   ← b nije pod utjecajem
 ```
 
 ```zymbol
-// Ugniježđena polja (indeksiranje od 1)
+// Ugniježđena polja (1-bazno indeksiranje)
 matrica = [[1,2,3],[4,5,6],[7,8,9]]
->> matrica[2][3] ¶    // → 6  (red 2, stupac 3)
+>> matrica[2][3] ¶    // → 6  (redak 2, stupac 3)
 ```
 
 ---
@@ -374,55 +424,55 @@ matrica = [[1,2,3],[4,5,6],[7,8,9]]
 
 ```zymbol
 // Polje
-arr = [10, 20, 30, 40, 50]
-[a, b, c] = arr              // a=10  b=20  c=30
-[prvi, *ostatak] = arr       // prvi=10  ostatak=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ odbacuje
+polje = [10, 20, 30, 40, 50]
+[a, b, c] = polje              // a=10  b=20  c=30
+[prvi, *ostalo] = polje        // prvi=10  ostalo=[20,30,40,50]
+[x, _, z] = [1, 2, 3]          // _ odbacuje
 
-// Pozicijsko tuple
-točka = (100, 200)
-(px, py) = točka             // px=100  py=200
+// Pozicijska torka
+tocka = (100, 200)
+(tx, ty) = tocka               // tx=100  ty=200
 
-// Imenovano tuple
-osoba = (ime: "Ana", dob: 25, grad: "Madrid")
-(ime: i, dob: d) = osoba    // i="Ana"  d=25
+// Imenovana torka
+osoba = (ime: "Ana", god: 25, grad: "Zagreb")
+(ime: i, god: g) = osoba       // i="Ana"  g=25
 ```
 
 ---
 
-## Tuple
+## Torke
 
-Tupleovi su **nepromjenjivi** uređeni kontejneri koji mogu sadržavati vrijednosti **različitih tipova**.
+Torke su **nepromjenjivi** uređeni kontejneri koji mogu sadržavati vrijednosti **različitih tipova**.
 Za razliku od polja, elementi se ne mogu mijenjati nakon stvaranja.
 
 ```zymbol
-// Pozicijsko — miješani tipovi su dozvoljeni
-točka = (10, 20)
->> točka[1] ¶    // → 10
+// Pozicijske — dozvoljeni miješani tipovi
+tocka = (10, 20)
+>> tocka[1] ¶    // → 10
 
-podatak = (42, "hello", #1, 3.14)
->> podatak[3] ¶     // → #1
+podaci = (42, "pozdrav", #1, 3.14)
+>> podaci[3] ¶   // → #1
 
-// Imenovano
-osoba = (ime: "Alice", dob: 25)
+// Imenovane
+osoba = (ime: "Alice", god: 25)
 >> osoba.ime ¶    // → Alice
->> osoba[1] ¶     // → Alice  (indeks također radi, od 1)
+>> osoba[1] ¶     // → Alice  (indeks također radi, 1-bazno)
 
-// Ugniježđeno
-pos = (x: 10, y: 20)
-p = (pos: pos, oznaka: "ishodište")
->> p.pos.x ¶        // → 10
+// Ugniježđene
+poz = (x: 10, y: 20)
+p = (poz: poz, oznaka: "ishodište")
+>> p.poz.x ¶      // → 10
 ```
 
-**Nepromjenjivost** — svaki pokušaj izmjene elementa tuplea je greška pri izvođenju:
+**Nepromjenjivost** — svaki pokušaj izmjene elementa torke je greška pri izvođenju:
 
 ```zymbol
 t = (10, 20, 30)
-// t[1] = 99    // ❌ greška izvođenja: tupleovi su nepromjenjivi
+// t[1] = 99    // ❌ greška pri izvođenju: torke su nepromjenjive
 // t[1] += 5    // ❌ ista greška
 ```
 
-Za izvođenje izmijenjene vrijednosti koristite `$~` (funkcionalno ažuriranje) — vraća **novi** tuple:
+Za izvođenje izmijenjene vrijednosti koristite `$~` (funkcionalno ažuriranje) — vraća **novu** torku:
 
 ```zymbol
 t = (10, 20, 30)
@@ -430,11 +480,11 @@ t2 = t[2]$~ 999
 >> t ¶     // → (10, 20, 30)   ← original nepromijenjen
 >> t2 ¶    // → (10, 999, 30)
 
-// Imenovani tuple — eksplicitno obnoviti
-osoba = (ime: "Alice", dob: 25)
-starija = (ime: osoba.ime, dob: 26)
->> osoba.dob ¶    // → 25
->> starija.dob ¶  // → 26
+// Imenovana torka — eksplicitna rekonstrukcija
+osoba = (ime: "Alice", god: 25)
+starija = (ime: osoba.ime, god: 26)
+>> osoba.god ¶    // → 25
+>> starija.god ¶  // → 26
 ```
 
 ---
@@ -444,64 +494,64 @@ starija = (ime: osoba.ime, dob: 26)
 ```zymbol
 brojevi = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-udvostručeni = brojevi$> (x -> x * 2)                // map  → [2,4,6…20]
+udvostruceni = brojevi$> (x -> x * 2)                // map  → [2,4,6…20]
 parni        = brojevi$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
-ukupno       = brojevi$< (0, (acc, x) -> acc + x)     // reduce → 55
+ukupno       = brojevi$< (0, (akum, x) -> akum + x)  // reduce → 55
 
-// Lanac kroz međunje
+// Ulančavanje kroz međuvrijednosti
 korak1 = brojevi$| (x -> x > 3)
 korak2 = korak1$> (x -> x * x)
 >> korak2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Imenovane funkcije se mogu izravno proslijediti HOF-u
-udvostruči(x) { <~ x * 2 }
-je_velik(x) { <~ x > 5 }
-r = brojevi$> udvostruči       // ✅ izravna referenca
-r = brojevi$| je_velik         // ✅ izravna referenca
+// Imenovane funkcije mogu se izravno proslijediti HOF
+udvostruci(x) { <~ x * 2 }
+je_veliko(x) { <~ x > 5 }
+r = brojevi$> udvostruci    // ✅ izravna referenca
+r = brojevi$| je_veliko     // ✅ izravna referenca
 ```
 
 ---
 
-## Operator Cjevovoda
+## Operator Cijevi
 
-Desna strana uvijek zahtijeva `_` kao zamjensko mjesto za proslijeđenu vrijednost:
+Desna strana uvijek zahtijeva `_` kao rezervno mjesto za proslijeđenu vrijednost:
 
 ```zymbol
-dvostruki = x -> x * 2
+udvostruci = x -> x * 2
 zbroji = (a, b) -> a + b
-inc = x -> x + 1
+povecaj = x -> x + 1
 
-5 |> dvostruki(_)     // → 10
-10 |> zbroji(_, 5)    // → 15
-5 |> zbroji(2, _)     // → 7
+r1 = 5 |> udvostruci(_)       // → 10
+r2 = 10 |> zbroji(_, 5)       // → 15
+r3 = 5 |> zbroji(2, _)        // → 7
 
-// Lanac
-r = 5 |> dvostruki(_) |> inc(_) |> dvostruki(_)
+// Ulančano
+r = 5 |> udvostruci(_) |> povecaj(_) |> udvostruci(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## Rukovanje Greškama
+## Upravljanje Greškama
 
 ```zymbol
 !? {
     x = 10 / 0
 } :! ##Div {
-    >> "dijeljenje s nulom" ¶
+    >> "dijeljenje nulom" ¶
 } :! {
-    >> "ostalo: " _err ¶    // _err drži poruku greške
+    >> "ostalo: " _err ¶    // _err sadrži poruku greške
 } :> {
-    >> "uvijek se izvršava" ¶
+    >> "uvijek se izvodi" ¶
 }
 ```
 
 | Tip | Kada |
 |-----|------|
-| `##Div` | Dijeljenje s nulom |
+| `##Div` | Dijeljenje nulom |
 | `##IO` | Datoteka / sustav |
-| `##Index` | Indeks izvan raspona |
-| `##Type` | Greška tipa |
+| `##Index` | Indeks izvan granica |
+| `##Type` | Neusklađenost tipova |
 | `##Parse` | Parsiranje podataka |
 | `##Network` | Mrežne greške |
 | `##_` | Bilo koja greška (catch-all) |
@@ -511,60 +561,60 @@ r = 5 |> dvostruki(_) |> inc(_) |> dvostruki(_)
 ## Moduli
 
 ```zymbol
-// lib/izracun.zy — tijelo modula je omeđeno vitičastim zagradama
-# izracun {
-    #> { zbrojiti, get_PI }
+// lib/calc.zy — tijelo modula je zatvoreno u vitičaste zagrade
+# calc {
+    #> { zbroji, dohvati_PI }
 
     _PI := 3.14159
-    zbrojiti(a, b) { <~ a + b }
-    get_PI() { <~ _PI }
+    zbroji(a, b) { <~ a + b }
+    dohvati_PI() { <~ _PI }
 }
 ```
 
 ```zymbol
 // main.zy
-<# ./lib/izracun <= i    // alias obavezan
+<# ./lib/calc => k    // alias je obavezan
 
->> i::zbrojiti(5, 3) ¶   // → 8
-pi = i::get_PI()
->> pi ¶               // → 3.14159
+>> k::zbroji(5, 3) ¶     // → 8
+pi = k::dohvati_PI()
+>> pi ¶                  // → 3.14159
 ```
 
 ```zymbol
-// Izvoz pod drugim javnim imenom
+// Izvoz s drugačijim javnim imenom
 # mojalib {
-    #> { _interni_zbrojiti <= zbroj }
+    #> { _unutarnji_zbroj => suma }
 
-    _interni_zbrojiti(a, b) { <~ a + b }
+    _unutarnji_zbroj(a, b) { <~ a + b }
 }
 ```
 
 ```zymbol
-<# ./mojalib <= m
+<# ./mojalib => m
 
->> m::zbroj(3, 4) ¶    // → 7  (interni naziv _interni_zbrojiti je skriven)
+>> m::suma(3, 4) ¶    // → 7  (unutarnje ime _unutarnji_zbroj je skriveno)
 ```
 
-> **Pravila modula**: unutar `# naziv { }` su dozvoljeni samo `#>`, definicije funkcija i inicijalizatori varijabli/konstanti. Izvršne naredbe (`>>`, `<<`, petlje, itd.) podižu grešku E013.
+> **Pravila modula**: samo `#>`, definicije funkcija i literalni inicijalizatori varijabli/konstanti dopušteni su unutar `# ime { }`. Izvršive naredbe (`>>`, `<<`, petlje itd.) uzrokuju grešku E013.
 
 ---
 
 ## Numerički Načini
 
-Zymbol može prikazivati brojeve u **69 Unicode pisama s znamenkama** — Devanagari, Arapsko-indijsko, Tajlandsko, Klingon pIqaD, Matematički podebljano, LCD segmenti i više. Aktivni način utječe samo na `>>`-izlaz; interna aritmetika uvijek je binarna.
+Zymbol može prikazivati brojeve u **69 Unicode skripti znamenki** — Devanagari, Arapsko-Indijski, Tajlandski, Klingonski pIqaD, Matematički podebljani, LCD segmenti i još. Aktivni način utječe samo na `>>` izlaz; unutarnja aritmetika je uvijek binarna.
 
-### Aktiviranje pisma
+### Aktiviranje skripte
 
-Zapišite znamenku `0` i `9` ciljnog pisma unutar `#…#`:
+Napišite znamenke `0` i `9` ciljane skripte zatvorene u `#…#`:
 
 ```zymbol
-#०९#    // Devanagari      (U+0966–U+096F)
-#٠٩#    // Arapsko-ind.    (U+0660–U+0669)
-#๐๙#    // Tajlandsko      (U+0E50–U+0E59)
-#09#    // resetirati na ASCII
+#०९#    // Devanagari   (U+0966–U+096F)
+#٠٩#    // Arapsko-Indijski (U+0660–U+0669)
+#๐๙#    // Tajlandski   (U+0E50–U+0E59)
+#09#    // reset na ASCII
 ```
 
-### Izlaz i booleani
+### Izlaz i logičke vrijednosti
 
 ```zymbol
 x = 42
@@ -575,9 +625,9 @@ x = 42
 >> 3.14 ¶       // → ३.१४   (decimalna točka uvijek ASCII)
 >> 1 + 2 ¶      // → ३
 
-// Booleani: prefiks # uvijek ASCII, znamenka se prilagođava
+// Logičke: prefiks # uvijek ASCII, znamenka se prilagođava
 >> #1 ¶         // → #१   (istina u Devanagari)
->> #0 ¶         // → #०   (neistina — različito od ०  cijeli broj nula)
+>> #0 ¶         // → #०   (laž — različito od ०  cijelog broja nula)
 
 x = 28 > 4
 >> x ¶          // → #१   (rezultat usporedbe prati aktivni način)
@@ -585,7 +635,7 @@ x = 28 > 4
 
 ### Nativni literali znamenki u izvornom kodu
 
-Znamenke bilo kojeg podržanog pisma su valjani literali — u rasponima, modulo, usporedbama:
+Znamenke bilo koje podržane skripte su valjani literali — u rasponima, modulo, usporedbama:
 
 ```zymbol
 #०९#
@@ -598,50 +648,50 @@ Znamenke bilo kojeg podržanog pisma su valjani literali — u rasponima, modulo
 }
 ```
 
-### Boolovske literale u bilo kojem pismu
+### Logički literali u bilo kojoj skripti
 
-`#` + znamenka `0` ili `1` iz bilo kojeg bloka je valjani boolov literal:
+`#` + znamenka `0` ili `1` iz bilo kojeg bloka je valjan logički literal:
 
 ```zymbol
 #٠٩#
-نشط = #١        // isto kao #1
->> نشط ¶        // → #١
->> (#١ && #٠) ¶ // → #٠
+aktivno = #١        // isto kao #1
+>> aktivno ¶        // → #١
+>> (#١ && #٠) ¶     // → #٠
 ```
 
-> `#` je **uvijek ASCII**. `#0` (neistina) uvijek je vizualno različit od `0` (cijeli broj nula) u svakom pismu.
+> `#` je **uvijek ASCII**. `#0` (laž) je uvijek vizualno različito od `0` (cijeli broj nula) u svakoj skripti.
 
 ---
 
 ## Operatori Podataka
 
 ```zymbol
-// Konverzija tipova
-##.42         // → 42.0  (u Float)
-###3.7        // → 4     (u Int, zaokruži)
-##!3.7        // → 3     (u Int, skrati)
+// Konverzije tipova
+f = ##.42         // → 42.0  (u Decimalni)
+i = ###3.7        // → 4     (u Cijeli, zaokruživanje)
+t = ##!3.7        // → 3     (u Cijeli, odsijecanje)
 
 // Parsiranje niza u broj
-v1 = #|"42"|      // → 42  (Int)
-v2 = #|"3.14"|    // → 3.14  (Float)
+v1 = #|"42"|      // → 42  (Cijeli)
+v2 = #|"3.14"|    // → 3.14  (Decimalni)
 v3 = #|"abc"|     // → "abc"  (sigurni neuspjeh, bez greške)
 
-// Zaokruživanje / skraćivanje
+// Zaokruživanje / odsijecanje
 pi = 3.14159265
-r2 = #.2|pi|      // → 3.14  (zaokruži na 2 decimale)
-r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14  (skrati)
+v2 = #.2|pi|      // → 3.14  (zaokruži na 2 decimalna mjesta)
+v4 = #.4|pi|      // → 3.1416
+t2 = #!2|pi|      // → 3.14  (odsijecanje)
 
 // Formatiranje brojeva
 fmt = #,|1234567|  // → 1,234,567  (odvojeno zarezima)
-sci = #^|12345.678|    // → 1.2345678e4  (znanstveni zapis)
+znan = #^|12345.678|    // → 1.2345678e4  (znanstvena notacija)
 
-// Bazni literali
-a = 0x41         // → 'A'  (heksadecimalni)
-b = 0b01000001   // → 'A'  (binarni)
-c = 0o101        // → 'A'  (oktalni)
+// Literali baza
+a = 0x41         // → 'A'  (heksadecimalno)
+b = 0b01000001   // → 'A'  (binarno)
+c = 0o101        // → 'A'  (oktalno)
 
-// Izlaz s konverzijom baze
+// Izlaz konverzije baze
 hex = 0x|255|    // → "0x00FF"
 bin = 0b|65|     // → "0b1000001"
 oct = 0o|8|      // → "0o10"
@@ -650,34 +700,34 @@ dec = 0d|255|    // → "0d0255"
 
 ---
 
-## Integracija Ljuske
+## Integracija Shell-a
 
 ```zymbol
-datum = <\ date +%Y-%m-%d \>     // hvata stdout (uključuje \n)
+datum = <\ date +%Y-%m-%d \>     // hvata stdout (uključuje završni \n)
 >> "Danas: " datum
 
-datoteka = "data.txt"
+datoteka = "podaci.txt"
 sadrzaj = <\ cat {datoteka} \>   // interpolacija u naredbama
 
-izlaz = </"./podskript.zy"/>     // izvršiti drugi Zymbol skript, uhvatiti izlaz
+izlaz = </"./podskript.zy"/>     // izvodi drugi Zymbol skript, hvata izlaz
 >> izlaz
 ```
 
-> `><` hvata argumente CLI kao polje nizova (samo tree-walker).
+> `><` hvata CLI argumente kao polje nizova (samo tree-walker).
 
 ---
 
 ## Potpuni Primjer: FizzBuzz
 
 ```zymbol
-klasificirati(broj) {
+klasificiraj(broj) {
     ? broj % 15 == 0 { <~ "FizzBuzz" }
     _? broj % 3  == 0 { <~ "Fizz" }
     _? broj % 5  == 0 { <~ "Buzz" }
     _ { <~ broj }
 }
 
-@ i:1..20 { >> klasificirati(i) ¶ }
+@ i:1..20 { >> klasificiraj(i) ¶ }
 ```
 
 ---
@@ -687,95 +737,112 @@ klasificirati(broj) {
 | Simbol | Operacija | Simbol | Operacija |
 |--------|-----------|--------|-----------|
 | `=` | varijabla | `$#` | duljina |
-| `:=` | konstanta | `$+` | dodavanje (lančano) |
-| `>>` | izlaz | `$+[i]` | umetanje na indeks (od 1) |
-| `<<` | ulaz | `$-` | ukloni prvo pojavl. |
-| `¶` / `\\` | novi red | `$--` | ukloni sva pojavl. |
-| `?` | ako | `$-[i]` | ukloni na indeksu (od 1) |
-| `_?` | inače-ako | `$-[i..j]` | ukloni raspon (od 1) |
-| `_` | inače / zamjenski | `$?` | sadrži |
-| `??` | podudaranje | `$??` | pronađi sve indekse (od 1) |
-| `@` | petlja | `$[s..e]` | isječak (od 1) |
-| `@ N { }` | petlja N puta (N iteracija) | `$>` | mapiranje |
-| `@!` | prekid | `$\|` | filtriranje |
-| `@>` | nastavak | `$<` | redukcija |
-| `@:naziv { }` | označena petlja | `$/ delim` | dijeljenje niza |
-| `@:naziv!` | prekid oznake | `$++ a b c` | izgradnja spajanjem |
-| `@:naziv>` | nastavak oznake | `arr[i>j>k]` | navigacijski indeks |
-| `->` | lambda | `arr[i] = val` | ažuriranje elementa (samo polja) |
-| `arr[i] += val` | složeno ažuriranje | `arr[i]$~` | funkcionalno ažuriranje (nova kopija) |
-| `$^+` | sortiraj uzlazno (primitivi) | `$^-` | sortiraj silazno (primitivi) |
-| `$^` | sortiraj s usporedbom (tuple) | `<~` | povratak |
-| `\|>` | cjevovod | `!?` | pokušaj |
-| `:!` | uhvati | `:>` | na kraju |
+| `:=` | konstanta | `$+` | dodavanje (ulančivo) |
+| `>>` | izlaz | `$+[i]` | umetanje na indeks (1-bazno) |
+| `<<` | ulaz | `$-` | uklanjanje prvog po vrijednosti |
+| `¶` / `\\` | novi red | `$--` | uklanjanje svih po vrijednosti |
+| `?` | ako | `$-[i]` | uklanjanje na indeksu (1-bazno) |
+| `_?` | inače-ako | `$-[i..j]` | uklanjanje raspona (1-bazno) |
+| `_` | inače / uzorak | `$?` | sadrži |
+| `??` | podudaranje | `$??` | pronalaženje svih indeksa (1-bazno) |
+| `@` | petlja | `$[s..e]` | isječak (1-bazno) |
+| `@ N { }` | petlja N puta | `$>` | map |
+| `@!` | prekid | `$\|` | filter |
+| `@>` | nastavi | `$<` | reduce |
+| `@:ime { }` | označena petlja | `$/ razdv` | dijeljenje niza |
+| `@:ime!` | prekid označene | `$++ a b c` | konkatenacija |
+| `@:ime>` | nastavi označenu | `polje[i>j>k]` | navigacijski indeks |
+| `->` | lambda | `polje[i] = vrij` | ažuriranje elementa (samo polja) |
+| `polje[i] += vrij` | složeno ažuriranje | `polje[i]$~` | funkcionalno ažuriranje (nova kopija) |
+| `$^+` | sortiranje uzlazno (prim.) | `$^-` | sortiranje silazno (prim.) |
+| `$^` | sortiranje s komparatorom (torke) | `<~` | povratak |
+| `\|>` | cijev | `!?` | pokušaj |
+| `:!` | hvatanje | `:>` | na kraju |
 | `#1` | istina | `#0` | laž |
-| `$!` | je greška | `$!!` | propagiraj grešku |
-| `<#` | uvoz | `#>` | izvozi |
-| `#` | deklariraj modul | `::` | poziv modula |
+| `$!` | je greška | `$!!` | propagacija greške |
+| `<#` | uvoz | `#>` | izvoz |
+| `#` | deklaracija modula | `::` | poziv modula |
 | `.` | pristup polju | `#?` | metapodaci tipa |
-| `#\|..\|` | parsiraj broj | `##.` | pretvori u Float |
-| `###` | pretvori u Int (zaokruži) | `##!` | pretvori u Int (skrati) |
-| `#.N\|..\|` | zaokruži | `#!N\|..\|` | skrati |
-| `#,\|..\|` | format s odjelnicom | `#^\|..\|` | znanstveni |
-| `#d0d9#` | prekidač numeričkog načina | `#09#` | resetirati na ASCII |
-| `<\ ..\>` | izvršiti ljusku | `>\<` | argumenti CLI |
-| `\ var` | eksplicitno uništi varijablu | | |
+| `#\|..\|` | parsiranje broja | `##.` | konverzija u Decimalni |
+| `###` | konverzija u Cijeli (zaokr.) | `##!` | konverzija u Cijeli (odsjec.) |
+| `#.N\|..\|` | zaokruživanje | `#!N\|..\|` | odsijecanje |
+| `#,\|..\|` | format sa zarezima | `#^\|..\|` | znanstvena notacija |
+| `#d0d9#` | prebacivanje načina znamenki | `#09#` | reset na ASCII |
+| `<\ ..\>` | izvođenje shell-a | `>\<` | CLI argumenti |
+| `\ var` | eksplicitno uništavanje | `°x` / `x°` | vrela definicija (auto-init) |
+| `>>|` | TUI blok (alt. ekran) | `>>~` | pozicionirani izlaz |
+| `>>!` | brisanje ekrana | `>>?` | upit veličine terminala |
+| `<<\|` | blokirajuća tipka | `<<\|?` | neblokirajuća tipka |
+| `@~ N` | spavanje N milisekundi | `$*` | ponavljanje niza N puta |
 
 ---
 
-## Povijest Verzija
+## Evidencija Promjena
 
-### v0.0.4 — Indeksiranje od 1, Funkcije Prve Klase i Blokovi Modula _(Travanj 2026)_
+### v0.0.5 — TUI Primitivi, Vrela Definicija i Ponavljanje Niza _(svibanj 2026)_
 
-- **Promjena** Svo indeksiranje prebačeno na **od 1** — `arr[1]` je prvi element; `arr[0]` je greška izvođenja
-- **Dodano** Imenovane funkcije su **vrijednosti prve klase** — prosljeđuju se izravno HOF-u: `nums$> udvostruči`
-- **Dodano** Sintaksa **bloka modula** obavezna: `# naziv { ... }` — ravna sintaksa uklonjena
-- **Dodano** Višedimenzionalno indeksiranje: `arr[i>j>k]` (navigacija), `arr[p ; q]` (ravno izlučivanje)
-- **Dodano** Konverzija tipova: `##.izraz` (Float), `###izraz` (Int zaokruži), `##!izraz` (Int skrati)
-- **Dodano** Dijeljenje niza: `niz$/ delim` — vraća `Array(String)`
-- **Dodano** Izgradnja spajanjem: `baza$++ a b c` — dodaje više stavki
+- **Promjena** Odvojnik grane podudaranja: `uzorak : rezultat` → `uzorak => rezultat`
+- **Promjena** Alias uvoza: `<# put <= alias` → `<# put => alias`
+- **Promjena** Preimenovanje pri izvozu: `#> { fn <= pub }` → `#> { fn => pub }`
+- **Dodano** TUI blok `>>| { }` — alternativni ekran + sirovi način; čisti pri izlasku
+- **Dodano** Pozicionirani izlaz `>>~ (redak, stupac, PDM, fg, bg) > elementi` — rijetki utori, 256-bojni ANSI
+- **Dodano** Ulaz tipke `<<| var` (blokirajuće) i `<<|? var` (neblokirajuće ispitivanje)
+- **Dodano** `>>!` brisanje, `>>?` upit veličine, `@~ N` spavanje N milisekundi
+- **Dodano** Vrela definicija `°x` / `x°` — auto-inicijalizacija pri prvoj upotrebi u petljama
+- **Dodano** Ponavljanje niza `niz $* N` — ponavlja niz N puta
+- **VM** Paritet: 436/436 testova prolazi
+
+### v0.0.4 — 1-Bazno Indeksiranje, Funkcije Prvog Reda i Blokovi Modula _(travanj 2026)_
+
+- **Promjena** Sve indeksiranje prebačeno na **1-bazno** — `polje[1]` je prvi element; `polje[0]` je greška
+- **Dodano** Imenovane funkcije su **vrijednosti prvog reda** — prosljeđujte izravno HOF: `brojevi$> udvostruci`
+- **Dodano** Obavezan **blokovni sintaktički oblik** modula: `# ime { ... }` — ravni oblik uklonjen
+- **Dodano** Višedimenzionalno indeksiranje: `polje[i>j>k]` (navigacija), `polje[p ; q]` (ravno ekstrakcija)
+- **Dodano** Konverzije tipova: `##.izr` (Decimalni), `###izr` (Cijeli zaokr.), `##!izr` (Cijeli odsjec.)
+- **Dodano** Dijeljenje niza: `niz$/ razdv` — vraća `Array(String)`
+- **Dodano** Konkatenacija: `baza$++ a b c` — dodaje više elemenata
 - **Dodano** Petlja N puta: `@ N { }` — ponavlja točno N puta
-- **Dodano** Sintaksa označene petlje: `@:naziv { }`, `@:naziv!`, `@:naziv>` — zamjenjuje `@ @naziv` / `@! naziv`
-- **Dodano** Pravila opsega varijabli: varijable `_naziv` imaju točan opseg bloka; `\ var` uništava rano
-- **Dodano** Uzorci usporedbe za podudaranje: `< 0 :`, `> 5 :`, `== 42 :` itd.
-- **Dodano** Greška E013 modula: izvršne naredbe u tijelu modula su zabranjene
-- **Ispravljeno** `take_variable` više ne kvari konstante modula pri pisanju natrag
-- **Ispravljeno** `alias.CONST` se sada ispravno razrješava; `#>` može biti iza definicija funkcija
-- **VM** Puni paritet: 393/393 testova prolaze
+- **Dodano** Sintaksa označene petlje: `@:ime { }`, `@:ime!`, `@:ime>` — zamjenjuje `@ @ime` / `@! ime`
+- **Dodano** Pravila opsega varijabli: `_ime` ima točan blokovski opseg; `\ var` uništava rano
+- **Dodano** Uzorci usporedbe u podudaranju: `< 0 :`, `> 5 :`, `== 42 :` itd.
+- **Dodano** Greška E013 modula: izvršive naredbe u tijelu modula su zabranjene
+- **Ispravljeno** `take_variable` više ne oštećuje konstante modula pri povratu
+- **Ispravljeno** `alias.CONST` se sada ispravno razrješuje; `#>` može se pojaviti nakon definicija funkcija
+- **VM** Puni paritet: 393/393 testova prolazi
 
-### v0.0.3 — Unicode Brojevni Sustavi & Poboljšanja LSP _(Travanj 2026)_
+### v0.0.3 — Unicode Numerički Sustavi i Poboljšanja LSP _(travanj 2026)_
 
-- **Dodano** 69 Unicode blokova znamenki s token za prekidanje načina `#d0d9#`
-- **Dodano** Boolovske literale u bilo kojem pismu — `#१` / `#०`, `#١` / `#٠`, itd.
-- **Dodano** Klingon pIqaD znamenke (CSUR PUA U+F8F0–U+F8F9)
-- **Dodano** VM opkod `SetNumeralMode` — potpuni paritet s tree-walkerom
-- **Dodano** REPL poštuje aktivni numerički način u echu i prikazu varijabli
-- **Promijenjeno** `>>`-izlaz booleana sada uključuje prefiks `#` (`#0` / `#1`) u svim načinima
+- **Dodano** 69 Unicode blokova znamenki s prebacivačkim tokenom `#d0d9#`
+- **Dodano** Logički literali u bilo kojoj skripti — `#१` / `#०`, `#١` / `#٠` itd.
+- **Dodano** Klingonske pIqaD znamenke (CSUR PUA U+F8F0–U+F8F9)
+- **Dodano** Operacijski kod VM `SetNumeralMode` — puni paritet s tree-walker
+- **Promjena** REPL poštuje aktivni numerički način pri ehu i prikazu varijabli
+- **Promjena** `>>` izlaz za logičke vrijednosti sada uključuje prefiks `#` (`#0` / `#1`) u svim načinima
 
-### v0.0.2_01 — Preimenovanje Operatora _(30 Mar 2026)_
+### v0.0.2_01 — Preimenovanje Operatora _(30 ožu 2026)_
 
-- **Promijenjeno** `c|..|` → `#,|..|` i `e|..|` → `#^|..|` — dosljedno obitelji prefiksa `#`
-- **Dodano** Alias izvoza: ponovni izvoz članova modula pod drugim imenom
+- **Promjena** `c|..|` → `#,|..|` i `e|..|` → `#^|..|` — konzistentno s obitelji prefiksa `#`
+- **Dodano** Alias izvoza: ponovno izvozi module pod različitim imenom
 
-### v0.0.2 — Redizajn API Kolekcija & Instalatori _(24 Mar 2026)_
+### v0.0.2 — Redizajn API Kolekcija i Instalatori _(24 ožu 2026)_
 
-- **Dodano** Ujedinjena obitelj operatora `$` za polja i nizove (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Dodano** Destrukturiranje za polja, tuple i imenovane tuple
-- **Dodano** Negativni indeksi (`arr[-1]` = zadnji element)
+- **Dodano** Unificirana obitelj operatora `$` za polja i nizove (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Dodano** Destrukturiranje za polja, torke i imenovane torke
+- **Dodano** Negativni indeksi (`polje[-1]` = zadnji element)
 - **Dodano** Nativni instalatori — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
 
-### v0.0.1-patch _(25 Mar 2026)_
+### v0.0.1-patch _(25 ožu 2026)_
 
 - **Dodano** Složena dodjela `^=`
-- **Ispravljeno** Rubni slučajevi aritmetičkog parsera; ispravci dokumentacije
+- **Ispravljeno** Rubni slučajevi aritmetike parsera; ispravci dokumentacije
 
-### v0.0.1 — Prvo Javno Izdanje _(22 Mar 2026)_
+### v0.0.1 — Početno Javno Izdanje _(22 ožu 2026)_
 
 - Tree-walker interpreter + registarski VM (`--vm`, ~4× brži, ~95% paritet)
 - Svi osnovni konstrukti: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Puni Unicode identifikatori, modularni sustav, lambde, zatvorenja, rukovanje greškama
+- Puni Unicode identifikatori, modulski sustav, lambde, zatvaranja, upravljanje greškama
 - REPL, LSP, VS Code proširenje, formater (`zymbol fmt`)
 
 ---
 
-*Zymbol-Lang — Simbolički. Univerzalan. Nepromjenjiv.*
+_Zymbol-Lang — Simbolički. Univerzalni. Nepromjenjivi._

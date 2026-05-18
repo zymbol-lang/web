@@ -1,4 +1,4 @@
-> **Qoylu'meH:** Wej qelnISbe'lu' 'e' wIlaD. qar'a'? 'e' wISovbe'. (Dochvam Data' HomwI' (AI) ghojmoHwI'pu' ghIj.)
+> **QunDu':** Wej Dochvam chenmoHmeH 'e' chenmoHmo' ghantoH 'e' ja'chuqmoHwI' (AI). qar'a'? 'e' wISovbe'.
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 >
@@ -8,56 +8,70 @@
 
 # Zymbol-Lang ghItlh
 
+> **v0.0.5 vaD wIv — 2026-05-15**
+
 **Zymbol-Lang** chenmoHwI' Hol 'oH. mughato' tu'lu'be' — Hoch 'oH mughom'e'. Hoch HolDaq rur.
 
 - `if`, `while`, `return` tu'lu'be' — 'oH neH 'oH `?`, `@`, `<~`
 - naQ 'oH Unicode'e' — yu' HomwI' HolDaq 'ej emoji'Daq
 - HolDaq rarHa' — ghItlhvetlhDaq rur Hoch
 
-**chenmoHwI' versIon**: v0.0.4 | **QelpIn**: 393/393 (TW ↔ VM rur)
-
----
+**chenmoHwI' versIon**: v0.0.5 | **QelpIn**: 436/436 (TW ↔ VM rur)
 
 ---
 
 ## lIwmey 'ej rurbuS
 
 ```zymbol
-x = 10              // lIw Dor
-PI := 3.14159       // rurbuS — chenmoHmeH qaStaHvIS wej qel
-pong = "'alIS"
+j = 10              // lIw Dor
+π := 3.14159        // rurbuS — chenmoHmeH qaStaHvIS wej qel
+pong = "alIS"
 Suq = #1            // boQyIn bot
 👋 := "nuqneH"
 ```
 
 ```zymbol
-x = 10    // 10
-x += 5    // 15
-x -= 3    // 12
-x *= 2    // 24
-x /= 3    // 8
-x %= 3    // 2
-x ^= 2    // 4
-x++        // 5
-x--        // 4
+j = 10    // 10
+j += 5    // 15
+j -= 3    // 12
+j *= 2    // 24
+j /= 3    // 8
+j %= 3    // 2
+j ^= 2    // 4
+j++        // 5
+j--        // 4
 ```
+
+`°` (degree chenmoH, U+00B0) lIw chenmoH nagh poH wa'DIch lo':
+
+```zymbol
+mI'mey = [3, 1, 4, 1, 5]
+@ n:mI'mey {
+    °nay' += n    // nagh chenmoH 0Daq Dung mIw; yInpa' @
+}
+>> nay' ¶         // → 14
+```
+
+> `°j` (chan) Dung mIw — chIch `@` QaH.
+> `j°` (tam) pa' mIw — Hegh mIw bIr.
+> neH tree-walker.
 
 ---
 
 ## De' wabmey
 
-| wab | ghalqI' | `#?` tagh | qelmeH |
+| wab | ghalqI' | tagh `#?` | qelmeH |
 |-----|---------|-----------|--------|
 | mI' | `42`, `-7` | `###` | 64-bit |
 | yon | `3.14`, `1.5e10` | `##.` | QeD ghItlhwIj luq |
 | chIch | `"ghItlh"` | `##"` | lI': `"nuqneH {pong}"` |
 | mu'ghom | `'A'` | `##'` | wa' Unicode mu'ghom |
-| boQyIn | `#1`, `#0` | `##?` | mI'be' — `#1 = 1` ghobe' |
+| boQyIn | `#1`, `#0` | `##?` | mI'be' — `#1 ≠ 1` |
 | gev | `[1, 2, 3]` | `##]` | roD wabmey |
 | tup | `(a, b)` | `##)` | Doch |
-| pong tup | `(x: 1, y: 2)` | `##)` | pong ghItlhmey |
+| pong tup | `(j: 1, y: 2)` | `##)` | pong ghItlhmey |
 | Qun | pong Qun mIgh | `##()` | wa'DIch boq; legh `<funct/N>` |
-| lambda | `x -> x * 2` | `##->` | wa'DIch boq; legh `<lambd/N>` |
+| lambda | `j -> j * 2` | `##->` | wa'DIch boq; legh `<lambd/N>` |
 
 ```zymbol
 // tach - HeS (ghItlhwab, mI'mey, qay)
@@ -78,17 +92,48 @@ t = meta[1]
 
 << pong                           // lIwDaq HIvoy (ghItlhtaHghach Hutlh)
 << "pong yIghItlh: " pong         // ghItlhtaHghach ghaj
-
 ```
 
 > `¶` (AltGr+R spanish QI' lombuQ Dung) 'ej `\\` chu' ghItlh 'oH.
 
 ---
 
+## TUI mI' Qunmey
+
+terminal UI Qunmey chenmoHwI' Holvam ngevDaq. HochHom `>>| { }` taj neH (lan chu' + raw mode).
+
+```zymbol
+>>| {
+    >>!                                // lan chu' HIch
+    >>~ (1, 1, 0, 10) > "ghoS"        // 'ur 1, Hev 1, fg=10 (SuD)
+    @~ 1000                            // wa' tup (1000 ms) QIt
+    >>~ (2, 1) > "rIn."
+}
+// terminal SuvwI' tI'Ha' 'e' Qap rIntaH
+```
+
+```zymbol
+// mu'tay' Hev 'ej terminal mI'mey
+>>| {
+    [cheb, Hev] = >>?                  // terminal mI' tlhab
+    >>~ (1, 1) > "De'wI': " cheb " j " Hev
+    <<| mu'tay'                        // lo' mu'tay' (block)
+    >>~ (2, 1) > "yItlhap: " mu'tay'
+}
+```
+
+> `>>!` lan chu' HIch. `>>?` `[cheb, Hev]` lIta'. `@~ N` N millisecond QIt.
+> `<<|` mu'tay' wa' lo' (block); `<<|?` HajmoHbe' lo' (`'\0'` chev pagh).
+> Doch 'ang tup: `(ur, Hev, BKS, fg, bg)` — Hoch Daq `,`Daq Qaw'lu' (`>>~ (,,, 196) > "Doq"`).
+> BKS bitmask: `1`=tIn, `2`=lIHmoH, `4`=Dung. ANSI 256-Qaj palette (`0`=terminal nab).
+> tree-walker neH (`>>!`, `>>?`, `@~`, `>>~` `--vm`Daq je Qap).
+
+---
+
 ## SeHwI'
 
 ```zymbol
-// mI' — lI'wI'; 'op SeHwI' 'e' qay' >>Daq
+// mI'
 a = 10
 b = 3
 r1 = a + b    // 13
@@ -99,17 +144,17 @@ r5 = a % b    // 1
 r6 = a ^ b    // 1000  (Dung)
 
 // 'ang
-a == b    // #0    
-a <> b    // #1    
-a < b      // #0
-a <= b    // #0   
-a > b      // #1    
-a >= b    // #1
+c1 = a == b    // #0
+c2 = a <> b    // #1
+c3 = a < b     // #0
+c4 = a <= b    // #0
+c5 = a > b     // #1
+c6 = a >= b    // #1
 
 // QeD
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
+l1 = #1 && #0    // #0
+l2 = #1 || #0    // #1
+l3 = !#1         // #0
 ```
 
 ---
@@ -118,50 +163,47 @@ a >= b    // #1
 
 ```zymbol
 // cha' ghap rurbu'
-pong = "'alIS"
+pong = "alIS"
 n = 42
 
 >> "nuqneH " pong " SoH ghaj " n ¶       // qabDaq — >>Daq
-ghItlh = "nuqneH {pong}, SoH ghaj {n}"   // lI' — DatDaq
+ghItlh = "nuqneH " pong ", SoH ghaj " n   // loQ — qabDaq je
 ```
 
 ```zymbol
-s = "nuqneH 'u'
-chab = s$#                  // 7
+s = "nuqneH 'u'"
+chab = s$#                  // 10
 bI'reS = s$[1..4]           // "nuqn"  (nab-1, rInDaq)
 ghaj = s$? "'u'"            // #1
-'uch = "a,b,c,d"$/ ','      // [a, b, c, d]  (chetlI' lo'taHvIS QAw)
+'uch = "a,b,v,w"$/ ","      // [a, b, c, d]  (chetlI' lo'taHvIS QAw)
 lIw = s$~~["n":"q"]         // "quqneH 'u'"
 lIw1 = s$~~["n":"q":1]      // "quqneH 'u'"  (nab n neH)
+line = "─" $* 20           // "────────────────────"  (Qav N logh)
 ```
 
 > `+` 'oH mI''e'. chIchyeyDaq lo' `,`, qabDaq, joq lI'.
 
 ---
 
----
-
 ## Do
 
 ```zymbol
-x = 7
+j = 7
 
-? x > 0 { >> "poS" ¶ }
+? j > 0 { >> "poS" ¶ }
 
-? x > 100 {
+? j > 100 {
     >> "tIn" ¶
-} _? x > 0 {
+} _? j > 0 {
     >> "poS" ¶
-} _? x == 0 {
+} _? j == 0 {
     >> "pagh" ¶
 } _ {
     >> "Ha'DIbaH" ¶
 }
 ```
 
-> `{ }` *parHa'* neH wa' ghItlhtaHghach je.
-
----
+> `{ }` **parHa'** neH wa' ghItlhtaHghach je.
 
 ---
 
@@ -171,36 +213,37 @@ x = 7
 // 'ur
 pIn = 85
 latlh = ?? pIn {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+    90..100 => 'A'
+    80..89  => 'B'
+    70..79  => 'C'
+    _       => 'F'
 }
 >> latlh ¶    // → B
 
 // chIchyey
 Qaj = "Doq"
 code = ?? Qaj {
-    "Doq"   : "#FF0000"
-    "SuD"   : "#00FF00"
-    _       : "#000000"
+    "Doq"   => "#FF0000"
+    "SuD"   => "#00FF00"
+    _       => "#000000"
 }
 
 // 'ang rurbu'
-'oj = -5
-Qap = ?? 'oj {
-    < 0  : "bIS"
-    < 20 : "bIr"
-    < 35 : "wIj"
-    _    : "tuj"
+waH = -5
+Qap = ?? waH {
+    < 0  => "bIS"
+    < 20 => "bIr"
+    < 35 => "wIj"
+    _    => "tuj"
 }
 >> Qap ¶      // → bIS
 
 // ghItlhtaHghach rurbu' (tajmey)
+n = -3
 ?? n {
-    0        : { >> "pagh" ¶ }
-    _? n < 0 : { >> "Ha'DIbaH" ¶ }
-    _        : { >> "poS" ¶ }
+    0    => { >> "pagh" ¶ }
+    < 0  => { >> "Ha'DIbaH" ¶ }
+    _    => { >> "poS" ¶ }
 }
 ```
 
@@ -217,8 +260,8 @@ n = 1
 @ n <= 64 { n *= 2 }
 >> n ¶                        // → 128  (bID)
 
-'ep = ["Hara'", "pe'ar", "tIqIp"]
-@ 'e:'ep { >> 'e ¶ }           // gevDaq Hoch wab
+naHmey = ["Hara'", "pe'ar", "tIqIp"]
+@ Soj:naHmey { >> Soj ¶ }      // gevDaq Hoch wab
 
 @ ch:"nuqneH" { >> ch "-" }
 >> ¶                          // → n-u-q-n-e-H-  (chIchyeyDaq Hoch mu'ghom)
@@ -240,12 +283,12 @@ i = 0
 >> ¶                          // → 1 2 3 4
 
 // pong pe'meH (ruD Qaw')
-'Ir = 0
+naQ = 0
 @:Hur {
-    'Ir++
-    ? 'Ir >= 3 { @:Hur! }
+    naQ++
+    ? naQ >= 3 { @:Hur! }
 }
->> 'Ir ¶                     // → 3
+>> naQ ¶                     // → 3
 ```
 
 ---
@@ -256,11 +299,11 @@ i = 0
 boq(a, b) { <~ a + b }
 >> boq(3, 4) ¶   // → 7
 
-'archu' (n) {
+'archu'(n) {
     ? n <= 1 { <~ 1 }
-    <~ n * 'archu' (n - 1)
+    <~ n * 'archu'(n - 1)
 }
->> 'archu' (5) ¶    // → 120
+>> 'archu'(5) ¶    // → 120
 ```
 
 Qunpu' ghaj **Ha'DIbaH Dung** — laDmeH 'e' tulbe'. lo' `meq.` mutlh `<~>` chenmoHwI' lIw:
@@ -271,45 +314,43 @@ boq'egh(a<~, b<~) {
     a = b
     b = lIwwIj
 }
-x = 10
+j = 10
 y = 20
-boq'egh(x, y)
->> "x=" x " y=" y ¶    // → x=20 y=10
+boq'egh(j, y)
+>> "j=" j " y=" y ¶    // → j=20 y=10
 ```
 
-> pong Qunpu' 'oH **wa'DIch boq qay**. DIl: `nums$> cha'logh`. `x -> fn(x)` je Qap.
+> pong Qunpu' 'oH **wa'DIch boq qay**. DIl: `mI'mey$> cha'logh`. `j -> Qun(j)` je Qap.
 
 ---
 
----
-
-## lambdabogh 'ej 'eDSeH
+## lambda bogh 'ej 'eDSeH
 
 ```zymbol
-cha'logh = x -> x * 2
+cha'logh = j -> j * 2
 boq = (a, b) -> a + b
 >> cha'logh(5) ¶   // → 10
 >> boq(3, 7) ¶    // → 10
 
 // taj lambda
-nIv = x -> {
-    ? x > 0 { <~ "poS" }
-    _? x < 0 { <~ "Ha'DIbaH" }
+nIv = j -> {
+    ? j > 0 { <~ "poS" }
+    _? j < 0 { <~ "Ha'DIbaH" }
     <~ "pagh"
 }
 
 // 'eDSeH — Hur Dung pe'
 tIn = 3
-wejlogh = x -> x * tIn
+wejlogh = j -> j * tIn
 >> wejlogh(7) ¶   // → 21
 
 // chen
-chenmoHboq(n) { <~ x -> x + n }
+chenmoHboq(n) { <~ j -> j + n }
 wa'maH boq = chenmoHboq(10)
 >> wa'maH boq(5) ¶   // → 15
 
 // gevDaq
-SeH = [x -> x+1, x -> x*2, x -> x*x]
+SeH = [j -> j+1, j -> j*2, j -> j*j]
 >> SeH[3](5) ¶      // → 25
 ```
 
@@ -322,9 +363,9 @@ gev **Dor** 'ej ghaj **roD wabmey**.
 ```zymbol
 gev = [1, 2, 3, 4, 5]
 
-gev[1]          // 1 — 'uch (nab-1: wa'DIch wab)
-gev[-1]         // 5 — nagh nugh (Qav wab)
-gev$#           // 5 — chab (lo' (gev$#) >>Daq)
+j = gev[1]      // 1 — 'uch (nab-1: wa'DIch wab)
+j = gev[-1]     // 5 — nagh nugh (Qav wab)
+j = gev$#       // 5 — chab (lo' (gev$#) >>Daq)
 
 gev = gev$+ 6            // boq → [1,2,3,4,5,6]
 gev2 = gev$+[2] 99       // 'eD chen 2Daq (nab-1)
@@ -341,7 +382,7 @@ Qav2 = gev$[1:3]        // [1,2,3] — rur, mI'nab ghItlh
 Dung = gev$^+           // Dung (nab rurbu')
 bIng = gev$^-           // bIng (nab rurbu')
 
-// pong/ Doch tup gev — lo' $^ 'ang lambdabogh
+// pong/Doch tup gev — lo' $^ 'ang lambda
 De' = [(pong: "qarla", ben: 28), (pong: "'ana", ben: 25), (pong: "bob", ben: 30)]
 benDung   = De'$^ (a, b -> a.ben < b.ben)     // Dung ben (<)
 pongbIng   = De'$^ (a, b -> a.pong > b.pong)  // bIng pong (>)
@@ -385,15 +426,15 @@ logh = [[1,2,3],[4,5,6],[7,8,9]]
 // gev
 gev = [10, 20, 30, 40, 50]
 [a, b, c] = gev              // a=10  b=20  c=30
-[wa'DIch, *ngI'], = gev      // wa'DIch=10  ngI'=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ Qaw'
+[wa'DIch, *ngI'] = gev       // wa'DIch=10  ngI'=[20,30,40,50]
+[j, _, z] = [1, 2, 3]        // _ Qaw'
 
 // Doch tup
 nav = (100, 200)
 (px, py) = nav              // px=100  py=200
 
 // pong tup
-tlhIngan = (pong: "'ana", ben: 25, Qo'noS: "madrid")
+tlhIngan = (pong: "'ana", ben: 25, Qo'noS: "Qo'noS")
 (pong: p, ben: b) = tlhIngan   // p="'ana"  b=25
 ```
 
@@ -417,9 +458,9 @@ tlhIngan = (pong: "alIS", ben: 25)
 >> tlhIngan[1] ¶     // → alIS  (nugh je Qap, nab-1)
 
 // ruD
-nagh = (x: 10, y: 20)
+nagh = (j: 10, y: 20)
 p = (nagh: nagh, tagh: "ghoS")
->> p.nagh.x ¶       // → 10
+>> p.nagh.j ¶       // → 10
 ```
 
 **Ha'DIbaH** — tup wab Qap 'e' Qapbe':
@@ -428,12 +469,6 @@ p = (nagh: nagh, tagh: "ghoS")
 t = (10, 20, 30)
 // t[1] = 99    // ❌ Ha'DIbaH: tup Ha'DIbaH 'oH
 // t[1] += 5    // ❌ rur
-
-// pong tup — lI' Qap
-tlhIngan = (pong: "alIS", ben: 25)
-tIn = (pong: tlhIngan.pong, ben: 26)
->> tlhIngan.ben ¶    // → 25
->> tIn.ben ¶         // → 26
 ```
 
 chenmoHmeH Qap, lo' `$~` (Qun Qap) — **chu'** tup 'ang:
@@ -443,6 +478,12 @@ t = (10, 20, 30)
 t2 = t[2]$~ 999
 >> t ¶     // → (10, 20, 30)   ← Sov Ha'DIbaH
 >> t2 ¶    // → (10, 999, 30)
+
+// pong tup — 'angtaH qevlu'
+tlhIngan = (pong: "alIS", ben: 25)
+tIn = (pong: tlhIngan.pong, ben: 26)
+>> tlhIngan.ben ¶    // → 25
+>> tIn.ben ¶         // → 26
 ```
 
 ---
@@ -452,23 +493,21 @@ t2 = t[2]$~ 999
 ```zymbol
 mI'mey = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-cha'loghpu' = mI'mey$> (x -> x * 2)                // meq → [2,4,6…20]
-chatlh   = mI'mey$| (x -> x % 2 == 0)             // ghItlhtaH → [2,4,6,8,10]
-nI'     = mI'mey$< (0, (boq, x) -> boq + x)       // Qaw' → 55
+cha'loghpu' = mI'mey$> (j -> j * 2)                // meq → [2,4,6…20]
+chatlh   = mI'mey$| (j -> j % 2 == 0)             // ghItlhtaH → [2,4,6,8,10]
+nay'     = mI'mey$< (0, (boq, j) -> boq + j)       // Qaw' → 55
 
 // Hogh 'ugh
-tep1 = mI'mey$| (x -> x > 3)
-tep2 = tep1$> (x -> x * x)
+tep1 = mI'mey$| (j -> j > 3)
+tep2 = tep1$> (j -> j * j)
 >> tep2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
 // pong Qun lo' Dung Qun
-cha'logh(x) { <~ x * 2 }
-tIn'a' (x) { <~ x > 5 }
+cha'logh(j) { <~ j * 2 }
+tIn'a'(j) { <~ j > 5 }
 r = mI'mey$> cha'logh       // ✅ Hoch mIgh
 r = mI'mey$| tIn'a'         // ✅ Hoch mIgh
 ```
-
----
 
 ---
 
@@ -477,13 +516,13 @@ r = mI'mey$| tIn'a'         // ✅ Hoch mIgh
 nIH poS jarDaq 'oH `_` 'e' lo':
 
 ```zymbol
-cha'logh = x -> x * 2
+cha'logh = j -> j * 2
 boq = (a, b) -> a + b
-nIq = x -> x + 1
+nIq = j -> j + 1
 
-5 |> cha'logh(_)        // → 10
-10 |> boq(_, 5)         // → 15
-5 |> boq(2, _)          // → 7
+r1 = 5 |> cha'logh(_)        // → 10
+r2 = 10 |> boq(_, 5)         // → 15
+r3 = 5 |> boq(2, _)          // → 7
 
 // Hogh
 r = 5 |> cha'logh(_) |> nIq(_) |> cha'logh(_)
@@ -496,7 +535,7 @@ r = 5 |> cha'logh(_) |> nIq(_) |> cha'logh(_)
 
 ```zymbol
 !? {
-    x = 10 / 0
+    j = 10 / 0
 } :! ##Div {
     >> "pagh boqHa''a'" ¶
 } :! {
@@ -525,39 +564,37 @@ r = 5 |> cha'logh(_) |> nIq(_) |> cha'logh(_)
 # calc {
     #> { boq, get_PI }
 
-    _PI := 3.14159
+    _π := 3.14159
     boq(a, b) { <~ a + b }
-    get_PI() { <~ _PI }
+    get_PI() { <~ _π }
 }
 ```
 
 ```zymbol
 // main.zy
-<# ./lib/calc <= c    // pong tIqIp parHa'
+<# ./lib/calc => c    // pong tIqIp parHa'
 
 >> c::boq(5, 3) ¶   // → 8
-pi = c::get_PI()
->> pi ¶              // → 3.14159
+π = c::get_PI()
+>> π ¶              // → 3.14159
 ```
 
 ```zymbol
 // 'ang latlh pong
 # moy'taHghach {
-    #> { _boqDaq <= boqHom }
+    #> { _boqDaq => boqHom }
 
     _boqDaq(a, b) { <~ a + b }
 }
 ```
 
 ```zymbol
-<# ./moy'taHghach <= m
+<# ./moy'taHghach => m
 
 >> m::boqHom(3, 4) ¶    // → 7  (_boqDaq pong So'lu')
 ```
 
 > **modul malja':** `# pong { }`Daq reH `#>`, Qun rurbu', 'ej ghalqI' lIw/rurbu' dam — parHa'. ghItlhtaHghach SeH (`>>`, `<<`, pe'meH, latlh) qay E013 'ang.
-
----
 
 ---
 
@@ -570,21 +607,20 @@ Zymbol mI'mey 'anglaH **69 Unicode mI' tajmey**Daq — Devanagari, 'arAb-Hindu, 
 `0` 'ej `9` mI' tIqIp `#…#`Daq:
 
 ```zymbol
-#०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // 'arAb-Hindu   (U+0660–U+0669)
-#๐๙#    // thay          (U+0E50–U+0E59)
+#०९#    // Devanagari   (U+0966–U+096F)
+#٠٩#    // 'arAb-Hindu (U+0660–U+0669)
+#๐๙#    // thay         (U+0E50–U+0E59)
 #09#    // ASCII DIr
-
 ```
 
 ### 'ang 'ej boQyIn
 
 ```zymbol
-x = 42
->> x ¶          // → 42   (ASCII nab)
+j = 42
+>> j ¶          // → 42   (ASCII nab)
 
 #०९#
->> x ¶          // → ४२
+>> j ¶          // → ४२
 >> 3.14 ¶       // → ३.१४   (yon nugh 'oH ASCII)
 >> 1 + 2 ¶      // → ३
 
@@ -592,13 +628,11 @@ x = 42
 >> #1 ¶         // → #१   (bot DevanagariDaq)
 >> #0 ¶         // → #०   (botHa' — ० mI' pagh je)
 
-x = 28 > 4
->> x ¶          // → #१   ('ang rurbu' legh)
+j = 28 > 4
+>> j ¶          // → #१   ('ang rurbu' legh)
 ```
 
----
-
-## ghalqI' mI'mey De'Daq
+### ghalqI' mI'mey De'Daq
 
 Hoch rurbu' mI'mey 'oH **ghalqI'** — 'urDaq, moduloDaq, 'angDaq:
 
@@ -606,14 +640,12 @@ Hoch rurbu' mI'mey 'oH **ghalqI'** — 'urDaq, moduloDaq, 'angDaq:
 #०९#
 
 @ i:१..१५ {
-    ? i % १५ == ० { >> "FizzBuzz" ¶ }
-    _? i % ३  == ० { >> "Fizz" ¶ }
-    _? i % ५  == ० { >> "Buzz" ¶ }
+    ? i % १५ == ० { >> "buqmoQ" ¶ }
+    _? i % ३  == ० { >> "buq" ¶ }
+    _? i % ५  == ० { >> "moQ" ¶ }
     _ { >> i ¶ }
 }
 ```
-
----
 
 ### Hoch rurbu' boQyIn ghalqI'
 
@@ -630,26 +662,24 @@ Suq = #१        // rur #1
 
 ---
 
----
-
 ## De' SeHwI'
 
 ```zymbol
 // wab 'ang
-##.42         // → 42.0  (yonDaq)
-###3.7        // → 4     (mI'Daq, bow)
-##!3.7        // → 3     (mI'Daq, Qor)
+f = ##.42         // → 42.0  (yonDaq)
+i = ###3.7        // → 4     (mI'Daq, bow)
+t = ##!3.7        // → 3     (mI'Daq, Qor)
 
 // chIch mI'Daq tIqIp
 v1 = #|"42"|      // → 42  (mI')
 v2 = #|"3.14"|    // → 3.14  (yon)
-v3 = #|"abc"|     // → "abc"  (DeSDu', qaybe')
+v3 = #|"Hol"|     // → "Hol"  (DeSDu', qaybe')
 
 // bow / Qor
-pi = 3.14159265
-bow2 = #.2|pi|     // → 3.14  (yoS 2Daq bow)
-bow4 = #.4|pi|     // → 3.1416
-Qor2 = #!2|pi|     // → 3.14  (Qor)
+π = 3.14159265
+bow2 = #.2|π|      // → 3.14  (yoS 2Daq bow)
+bow4 = #.4|π|      // → 3.1416
+Qor2 = #!2|π|      // → 3.14  (Qor)
 
 // mI' ghItlh
 ghItlh = #,|1234567|   // → 1,234,567  (Qo'noS)
@@ -658,13 +688,13 @@ QeD = #^|12345.678|    // → 1.2345678e4  (QeD)
 // nab ghalqI'
 a = 0x41         // → 'A'  (hex)
 b = 0b01000001   // → 'A'  (binary)
-c = 0o101        // → 'A'  (octal)
+qa = 0o101        // → 'A'  (octal)
 
 // nab 'ang
-hex = 0x|255|    // → "0x00FF"
-bin = 0b|65|     // → "0b1000001"
-oct = 0o|8|      // → "0o10"
-dec = 0d|255|    // → "0d0255"
+Huj = 0x|255|    // → "0x00FF"
+bIn = 0b|65|     // → "0b1000001"
+'un = 0o|8|      // → "0o10"
+Daq = 0d|255|    // → "0d0255"
 ```
 
 ---
@@ -675,10 +705,10 @@ dec = 0d|255|    // → "0d0255"
 jaj = <\ date +%Y-%m-%d \>     // stdout chav (rInDaq \n je)
 >> "DaHjaj: " jaj
 
-De'wI' = "De'.txt"
+De'wI' = "De'.tlh"
 ghItlh = <\ cat {De'wI'} \>       // ra'Daq lI'
 
-'ang = </"./subscript.zy"/>      // latlh Zymbol ghItlh Qap, 'ang chav
+'ang = </"./Hol.tlh"/>      // latlh Zymbol ghItlh Qap, 'ang chav
 >> 'ang
 ```
 
@@ -690,9 +720,9 @@ ghItlh = <\ cat {De'wI'} \>       // ra'Daq lI'
 
 ```zymbol
 nIv(mI') {
-    ? mI' % 15 == 0 { <~ "FizzBuzz" }
-    _? mI' % 3  == 0 { <~ "Fizz" }
-    _? mI' % 5  == 0 { <~ "Buzz" }
+    ? mI' % 15 == 0 { <~ "buqmoQ" }
+    _? mI' % 3  == 0 { <~ "buq" }
+    _? mI' % 5  == 0 { <~ "moQ" }
     _ { <~ mI' }
 }
 
@@ -725,7 +755,7 @@ nIv(mI') {
 | `gev[i] += qay` | lI' Qap | `gev[i]$~` | Qun Qap (ghIq copy) |
 | `$^+` | Dung (rurbu') | `$^-` | bIng (rurbu') |
 | `$^` | 'ang (tup) | `<~` | 'ang |
-| `|>` | pel | `!?` | Qap |
+| `\|>` | pel | `!?` | Qap |
 | `:!` | chav | `:>` | rIn |
 | `#1` | bot | `#0` | botHa' |
 | `$!` | qay | `$!!` | qay 'ang |
@@ -738,16 +768,33 @@ nIv(mI') {
 | `#,\|..\|` | Qo'noS ghItlh | `#^\|..\|` | QeD |
 | `#d0d9#` | mI' rurbu' choH | `#09#` | ASCII DIr |
 | `<\ ..\>` | DIvI' Hol Qap | `>\<` | CLI SeH |
-| `\ var` | lIw Qaw' | | |
+| `\ lIw` | lIw Qaw' | `°j` / `j°` | DIr Qun (nagh chenmoH) |
+| `>>|` | TUI taj (lan chu') | `>>~` | Doch 'ang |
+| `>>!` | ghItlhmey HIch | `>>?` | terminal mI' tlhab |
+| `<<\|` | lo' (block) | `<<\|?` | lo' (blockHa') |
+| `@~ N` | QIt N millisecond | `$*` | chIch Qav N logh |
 
 ---
 
 ## 'ang logh
 
-### v0.0.4 — nab-1 nugh, wa'DIch boq Qun, modul taj '(April 2026)
+### v0.0.5 — TUI taj, DIr Qun, chIch Qav _(May 2026)_
+
+- **Qaw'** 'ang: `pattern : result` → `pattern => result`
+- **Qaw'** 'ong pong: `<# path <= alias` → `<# path => alias`
+- **Qaw'** 'ang pong: `#> { fn <= pub }` → `#> { fn => pub }`
+- **boq** TUI taj `>>| { }` — lan chu' + raw mode; ghItlhmey HIch 'angtaHvIS
+- **boq** Doch 'ang `>>~ (line, column, BKS, fg, bg) > items` — Hoch, ANSI 256 Qap
+- **boq** lo' `<<| lIw` (block) 'ej `<<|? lIw` (blockHa')
+- **boq** `>>!` ghItlhmey HIch, `>>?` terminal mI' tlhab, `@~ N` QIt N millisecond
+- **boq** DIr Qun `°j` / `j°` — lIw nagh chenmoH wa'DIch lo' pe'meHDaq
+- **boq** chIch Qav `chIch $* N` — chIch Qav N logh
+- **VM** rur: 436/436 QelpIn Qap
+
+### v0.0.4 — nab-1 nugh, wa'DIch boq Qun, modul taj _(April 2026)_
 
 - **Qaw'** Hoch nugh **nab-1** — `arr[1]` 'oH wa'DIch wab; `arr[0]` 'oH qaStaHvIS wej qel
-- **boq** pong Qun 'oH **wa'DIch boq qay** — Dung QunDaq DIl: `nums$> cha'logh`
+- **boq** pong Qun 'oH **wa'DIch boq qay** — Dung QunDaq DIl: `mI'mey$> cha'logh`
 - **boq** modul **taj ghItlh** parHa': `# pong { ... }` — Sut ghItlh Qaw'lu'
 - **boq** law' nugh: `arr[i>j>k]` (Do), `arr[p ; q]` (Sut)
 - **boq** wab 'ang: `##.ghItlh` (yon), `###ghItlh` (mI' bow), `##!ghItlh` (mI' Qor)
@@ -755,8 +802,8 @@ nIv(mI') {
 - **boq** boq chen: `nab$++ a b c` — 'op wab boq
 - **boq** N logh pe'meH: `@ N { }` — N logh Qap
 - **boq** pong pe'meH ghItlh: `@:pong { }`, `@:pong!`, `@:pong>` — Sut `@ @pong` / `@! pong`
-- **boq** lIw Dung malja': `_pong` lIw ghaj taj Dung; `\ var` Qaw' Qap
-- **boq** 'ang 'ang rurbu': `< 0 :`, `> 5 :`, `== 42 :` latlh
+- **boq** lIw Dung malja': `_pong` lIw ghaj taj Dung; `\ lIw` Qaw' Qap
+- **boq** 'ang 'ang rurbu': `< 0 =>`, `> 5 =>`, `== 42 =>`, latlh
 - **boq** modul qay E013: Sut ghItlhtaHghach modulDaq 'e' 'angbe'
 - **Qap** `take_variable` modul rurbuS Qaw'Ha' vay'
 - **Qap** `alias.RURBUS` Daq Qap; `#>` Qun rurbu' 'anglaH
@@ -765,10 +812,9 @@ nIv(mI') {
 ### v0.0.3 — Unicode mI' rurbu' 'ej LSP Qap _(April 2026)_
 
 - **boq** 69 Unicode mI' tajmey lo' `#d0d9#` rurbu' choH
-- **boq** boQyIn ghalqI' Hoch rurbu' — `#१` / `#०`, `#१` / `#०`, latlh
+- **boq** boQyIn ghalqI' Hoch rurbu' — `#१` / `#०`, `#١` / `#٠`, latlh
 - **boq** tlhIngan pIqaD mI'mey (CSUR PUA U+F8F0–U+F8F9)
 - **boq** `SetNumeralMode` VM SeHwI' — rur tree-walker
-- **boq** REPL rurbu' tu'lu'bogh 'angtaHvIS 'ej lIw legh
 - **choH** boQyIn `>>` 'ang 'oH `#` tagh (`#0` / `#1`) Hoch rurbu'Daq
 
 ### v0.0.2_01 — SeHwI' pong choH _(30 'IwlIj 2026)_
@@ -797,4 +843,4 @@ nIv(mI') {
 
 ---
 
-_Zymbol-Lang — mughom. Hoch 'u'. Ha'DIbaH._
+**Zymbol-Lang — mughom. Hoch 'u'. Ha'DIbaH.**

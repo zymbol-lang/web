@@ -1,93 +1,160 @@
-# Zymbol-Lang Tlahtoa Amatl
-
-**Zymbol-Lang** ce tlahtoa mecatl tlapōhualli. Āmo quitequi tlahtōlli — mochi tlapōhualoni. Nochi tlahtolli ipan nemi iuhquin.
-
-- Āmo tlahtōlli (`if`, `while`, `return` āmo nemi — zan tlapōhualoni `?`, `@`, `<~`)
-- Unicode mochi — tocāitl nochi tlahtolli itech iā emoji 👋
-- Tlahtolli āmo quitequi — código nochi tlahtolli ipan iuhquin
+> **Tlapopolhuitl:** Ko tlahtol IA (inteligencia artificial) oquichiuh.
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Achtopa tlahtol **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** intérprete itech oitztia.
 
 ---
 
-## Tēxtli Ihuan Tlapōhualoni Mochi
+# Zymbol-Lang Manual
+
+> **Tlapoa v0.0.5 — 2026-05-12**
+
+**Zymbol-Lang** ce tlahzohtlaliztli machiyotl rupi. Ahmo ñe'ẽtee — mochi machiyotl. Mochi tlaca ñe'ẽ itech monequi.
+
+- Ahmo `if`, `while`, `return` — oitztia `?`, `@`, `<~` zan
+- Unicode mochi — tocaitl mochi tlaca ñe'ẽ itech
+- Tlaca ñe'ẽ ahmo monequi — tlahtol ko'agaite peteĩhawa
+
+**Versión tlahtol**: v0.0.5 | **Jehecha**: 436/436 (TW ↔ VM ukhamawa)
+
+---
+
+## Tlahtol ihuan Tlazotl
 
 ```zymbol
-x = 10              // tēxtli (huel mopatla)
-PI := 3.14159       // tlapōhualoni (āmo mopatla — ītlahtlacohua)
-tocāitl = "Ana"
-nemi = #1           // neltiliztli
+x = 10              // tlahtol nemohua
+PI := 3.14159       // tlazotl — nemohua tlatlazohtlaliztli
+tocait = "Sonia"
+yoltok = #1         // nelli (verdadero)
 👋 := "Niltze"
 ```
 
 ```zymbol
-x = 10
+x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
+
+`°` (U+00B0) tlahtol necia mochipa achtopa xicmonanquili itech:
+
+```zymbol
+tlapohk = [3, 1, 4, 1, 5]
+@ n:tlapohk {
+    °mochi += n    // 0-pan tlahtoa; @ tlapoa quiza
+}
+>> mochi ¶         // → 14
+```
+
+> `°x` (achtopa) malinalliztli itech tlaxelhuia — quiza @ tlapoa.
+> `x°` (tlami) malinalliztli itech — tlapoa @ tlapoa.
+> Tree-walker zan.
 
 ---
 
-## Imaymana Tēxtli
+## Tlapaliztli
 
-| Tlapaltic      | Techiyotl            | Símbolo `#?` | Neltiliztli                         |
-|----------------|----------------------|--------------|-------------------------------------|
-| Tlapōhualli    | `42`, `-7`           | `###`        | 64-bit                              |
-| Chichintic     | `3.14`, `1.5e10`     | `##.`        | Chichintoc tlapōhualli              |
-| Tlahtōl        | `"niltze"`           | `##"`        | Centlāliztli: `"Niltze {tocāitl}"`  |
-| Ce tlapal      | `'A'`                | `##'`        | Ce Unicode tlapal                   |
-| Neltia/Āmo     | `#1`, `#0`           | `##?`        | ĀQUIQUE 1 iā 0 tlapōhualli          |
-| Centlāliztli   | `[1, 2, 3]`          | `##]`        | Nochi iuhquin tlapaltic             |
-| Tupla          | `(a, b)`             | `##)`        | Ītlan                               |
-| Tupla tocāitl  | `(x: 1, y: 2)`       | `##)`        | Quitlalia tocāitl iā tlapōhualli    |
+| Tlapaliztli | Machiyotl | `#?` | Tlahtol |
+|-------------|-----------|------|---------|
+| Int | `42`, `-7` | `###` | 64-bit firmado |
+| Float | `3.14`, `1.5e10` | `##.` | Tlapaliztli OK |
+| Tlahtolli | `"arandu"` | `##"` | Calaqui: `"Niltze {tocait}"` |
+| Ce Machiyotl | `'A'` | `##'` | Ce Unicode |
+| Nellitoni | `#1`, `#0` | `##?` | Ahmo tlapohualli — `#1 ≠ 1` |
+| Tlapallehua | `[1, 2, 3]` | `##]` | Ce tlapaliztli |
+| Cehcehtl | `(a, b)` | `##)` | Ichtaca rupi |
+| Tocaitl Cehcehtl | `(x: 1, y: 2)` | `##)` | Tocaitl renda |
+| Tequitl | tocaitl ref | `##()` | Achtopa; `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Achtopa; `<lambd/N>` |
 
 ```zymbol
-// Type introspection — returns (type, digits, value)
-meta = 42#?
->> meta ¶         // → (###, 2, 42)
-t = meta[0]
+// Tlapaliztli itta — quiza (tlapaliztli, tlapoa, tlahtolli)
+nechca = 42#?
+>> nechca ¶         // → (###, 2, 42)
+t = nechca[1]
 >> t ¶            // → ###
 ```
 
 ---
 
-## Tēxtli Quitēhua Ihuan Caltia
+## Quiza ihuan Calaqui
 
 ```zymbol
->> "Niltze" ¶                    // ¶ iā \\ quichihua tzacuiliztli
->> "a=" a " b=" b ¶              // miec tlapōhualoni centlāliztli
->> (arr$#) ¶                     // postfix parenthesis monequi
+>> "Niltze" ¶                     // ¶ anoce \\ tlahtol ihuan
+>> "a=" a " b=" b ¶               // tlanextia — miec tlahtolli
+>> (arr$#) ¶                      // tlamachtilli itech ( ) >> monequi
 
-<< tocāitl                       // āmo prompt — caltiameh
-<< "Monocāitl? " tocāitl         // prompt ipan
+<< tocait                         // calaqui tlahtolco (ahmo tlanextia)
+<< "Ximomachti tocait: " tocait   // tlanextia ihuan
 ```
 
-> `¶` (AltGr+R teclado españolpe) iā `\\` iuhquin nemi tzacuiliztli.
+> `¶` (AltGr+R español tlatecpantli itech) ihuan `\\` mochi tlahtol ihuan.
 
 ---
 
-## Tlamachtilmachiyotl
+## TUI Achtopa
+
+Terminal UI tlamachtilli tequitl amanchan. `>>| { }` monequi (pantalla tlacpac + modo cecec).
 
 ```zymbol
-// Arithmetic — use assignments; some operators have quirks directly in >>
+>>| {
+    >>!                               // pantalla poxahui
+    >>~ (1, 1, 0, 10) > "Quiza"      // ren 1, col 1, fg=10 (xoxoctic)
+    @~ 1000                           // cochi 1 tonatiuh (1000 ms)
+    >>~ (2, 1) > "Tlapoa."
+}
+// terminal cueitla quiza tlapoa
+```
+
+```zymbol
+// Señal ihuan terminal tlapoa
+>>| {
+    [ren, col] = >>?              // terminal tlapoa monequi
+    >>~ (1, 1) > "Terminal: " ren " x " col
+    <<| señal                     // señal quita (cochi)
+    >>~ (2, 1) > "Quita: " señal
+}
+```
+
+> `>>!` pantalla poxahui. `>>?` quita `[ren, col]`. `@~ N` cochi N ms.
+> `<<|` ce señal (cochi); `<<|?` ahmo cochi (quita `'\0'` ahmo oitztia).
+> Quiza tupla: `(ren, col, BKS, fg, bg)` — coma itech (`>>~ (,,, 196) > "chichiltic"`).
+> BKS: `1`=Huehue, `2`=Itzpa, `4`=Tlaxixtli. ANSI 256 tlapal (`0`=terminal achtopa).
+> Tree-walker zan (ahmo `>>!`, `>>?`, `@~`, `>>~` `--vm` itech quiza).
+
+---
+
+## Tlamachtilli
+
+```zymbol
+// Tlapohualiztli
 a = 10
 b = 3
-r1 = a + b    // 13     r2 = a - b    // 7
-r3 = a * b    // 30     r4 = a / b    // 3  (integer division)
-r5 = a % b    // 1      r6 = a ^ b    // 1000  (exponentiation)
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (tlapohualli tlatectli)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (tupã)
 
-// Comparison
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
+// Tlanextia — quiza amantli
+c1 = a == b    // #0
+c2 = a <> b    // #1
+c3 = a < b     // #0
+c4 = a <= b    // #0
+c5 = a > b     // #1
+c6 = a >= b    // #1
 
-// Logical
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
+// Nellitoni Tlamachtilli
+l1 = #1 && #0    // #0
+l2 = #1 || #0    // #1
+l3 = !#1         // #0
 ```
 
 ---
@@ -95,117 +162,118 @@ a <= b    // #0   a > b     // #1    a >= b   // #1
 ## Tlahtolli
 
 ```zymbol
-// Three concatenation forms
-tocāitl = "Ana"
-n = 25
+// Omentin tlanextia
+tocait = "Sonia"
+n = 42
 
-tlahtōl = "Niltze ", tocāitl, "!"          // tecōmatl — tēxtli = iā :=
->> "Niltze " tocāitl " motlapōhualli " n ¶  // centlāliztli — >> ipan
-tlahpalōlli = "Niltze {tocāitl}, motlapōhualli {n}" // omoteneuh — nochi ipan
+>> "Niltze " tocait " tlapohua " n ¶    // tlanextia — >> itech
+arupa = "Niltze {tocait}, tlapohua {n}"  // calaqui — nochipa
 ```
 
 ```zymbol
-s = "Niltze Tlaltipac"
-len = s$#                  // 16
-sub = s$[0..6]             // "Niltze"  (tukuy mana)
-has = s$? "Tlaltipac"      // #1
-parts = "a,b,c,d" / ','    // [a, b, c, d]
-rep = s$~~["l":"L"]        // "NiLtze TLaLtipac"
-rep1 = s$~~["l":"L":1]     // "NiLtze Tlaltipac"  (ñawpaq N kama)
+s = "Niltze Cemanahuac"
+tlapoh = s$#                  // 17
+tlaxel = s$[1..6]             // "Niltze"  (1-itech, tlami ihuan)
+necia_k = s$? "Cemanahuac"   // #1
+xeloa = "a,b,c,d"$/ ','      // [a, b, c, d]  (tlaxeloa)
+tlaquetz = s$~~["a":"A"]     // "NiltzeE CemAnAhuAc"
+tlaquetz1 = s$~~["a":"A":1]  // "NiltzeE Cemanahuac"  (ce zan)
+tlail = "─" $* 20            // "────────────────────"  (N tlami)
 ```
 
-> `+` zan tlapōhualli. Tlahtōl ipan quichihua tlahtlacohuiliztli `,`, centlāliztli, iā omoteneuh.
+> `+` tlapohualli zan. Xicmonanquili `,`, tlanextia, anoce calaqui tlahtolli itech.
 
 ---
 
-## Ītlan Nemiliztli
+## Tlaneltoca
 
 ```zymbol
 x = 7
 
-? x > 0 { >> "huēyi" ¶ }
+? x > 0 { >> "cualli" ¶ }
 
 ? x > 100 {
-    >> "ueuetl" ¶
+    >> "huehca" ¶
 } _? x > 0 {
-    >> "huēyi" ¶
+    >> "cualli" ¶
 } _? x == 0 {
-    >> "āzo" ¶
+    >> "apan" ¶
 } _ {
-    >> "tepiton" ¶
+    >> "amo" ¶
 }
 ```
 
-> Bloque `{ }` **monequi** mā zan ce renglón catqui.
+> `{ }` **monequi** ahmo mochi tequitl peteĩ itech.
 
 ---
 
-## Match
+## Tlanextia
 
 ```zymbol
-// Match tlapōhualli ītlan
-tlapōhualli = 85
-grado = ?? tlapōhualli {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+// Tlaxeloa Tlapohuali
+tlapohk = 85
+tleyo = ?? tlapohk {
+    90..100 => 'A'
+    80..89  => 'B'
+    70..79  => 'C'
+    _       => 'F'
 }
->> grado ¶    // → B
+>> tleyo ¶    // → B
 
-// Match tlahtōl
-tlapalli = "chichiltic"
-código = ?? tlapalli {
-    "chichiltic": "#FF0000"
-    "xoxoctic"  : "#00FF00"
-    _           : "#000000"
+// Tlahtolli
+tlapal = "chichiltic"
+codigo = ?? tlapal {
+    "chichiltic" => "#FF0000"
+    "xoxoctic"   => "#00FF00"
+    _            => "#000000"
 }
 
-// Match quīmilōlli (nochi tlamantli)
-iztac = -5
-neltiliztli = ?? iztac {
-    _? iztac < 0  : "cepayahuitl"
-    _? iztac < 20 : "cecec"
-    _? iztac < 35 : "totonqui"
-    _             : "tlatia"
+// Tlanextia Tlapaliztli
+toton = -5
+necia = ?? toton {
+    < 0  => "cepayahuitl"
+    < 20 => "cecec"
+    < 35 => "yeyec"
+    _    => "totonqui"
 }
->> neltiliztli ¶    // → cepayahuitl
+>> necia ¶    // → cepayahuitl
 
-// Bloque ukupi
+// Tequitl (bloque tequitl)
+n = -3
 ?? n {
-    0       : { >> "āzo" ¶ }
-    _? n < 0: { >> "tepiton" ¶ }
-    _       : { >> "huēyi" ¶ }
+    0    => { >> "apan" ¶ }
+    < 0  => { >> "amo" ¶ }
+    _    => { >> "cualli" ¶ }
 }
 ```
 
 ---
 
-## Nahuatilli
+## Malinalliztli
 
 ```zymbol
-@ i:0..4  { >> i " " }        // tlapōhualli ītlan:  0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // pahpaqui:            1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // tlapōhualli nochi:   5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // tlapohua:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // tlazpoa:   1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // tlatzacua:  5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶                        // → 128  (while)
+>> n ¶                        // → 128  (malinalliztli)
 
-totolin = ["chilli", "elotl", "āmatl"]
-@ f:totolin { >> f ¶ }       // nochi tlamantli array
+tlapal_k = ["tzapotl", "ahuacatl", "tomatl"]
+@ f:tlapal_k { >> f ¶ }       // @ tlapallehua itech
 
 @ c:"niltze" { >> c "-" }
->> ¶                          // → n-i-l-t-z-e-  (tlahtōl tlapalloh)
+>> ¶                          // → n-i-l-t-z-e-  (@ tlahtolli itech)
 
 @ i:1..10 {
-    ? i % 2 == 0 { @> }    // @> nemi
-    ? i > 7 { @! }          // @! tlamia
+    ? i % 2 == 0 { @> }       // @> tlatoca
+    ? i > 7 { @! }             // @! tlatzacua
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
 
-// Tlapōhualli nahuatilli
+// Malinalliztli ahmo tlami
 i = 0
 @ {
     i++
@@ -214,355 +282,360 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Tocāitl nahuatilli (ukupi tlamia)
-count = 0
-@ @outer {
-    count++
-    ? count >= 3 { @! outer }
+// Malinalliztli tocaitl (tlazpoa tlami)
+contador = 0
+@:tloc {
+    contador++
+    ? contador >= 3 { @:tloc! }
 }
->> count ¶                    // → 3
+>> contador ¶                 // → 3
 ```
 
 ---
 
-## Tlapalēhuia
+## Tequitl
 
 ```zymbol
-xelihui(a, b) { <~ a + b }
->> xelihui(3, 4) ¶    // → 7
+cehmehua(a, b) { <~ a + b }
+>> cehmehua(3, 4) ¶    // → 7
 
-factorial(n) {
+tlapaloa(n) {
     ? n <= 1 { <~ 1 }
-    <~ n * factorial(n - 1)
+    <~ n * tlapaloa(n - 1)
 }
->> factorial(5) ¶    // → 120
+>> tlapaloa(5) ¶    // → 120
 ```
 
-Tlapalēhuia **quitlalia** — āmo quimotoa huehuē tēxtli. Salida parámetro `<~` apaykachaña:
+Tequitl **zan tlaxelhuia** — ahmo quimati tlacpac tlahtol. Xicmonanquili `<~` tlacatl tlahtol monequi:
 
 ```zymbol
-swap(a<~, b<~) {
-    tmp = a
+nahna(a<~, b<~) {
+    tloc = a
     a = b
-    b = tmp
+    b = tloc
 }
 x = 10
 y = 20
-swap(x, y)
+nahna(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Tocāitl tlapalēhuia `tocāitl(params){ }` āmo tlapōhualoni nemi. Quimacah: `x -> tocāitl(x)`.
+> Tocaitl tequitl **achtopa amantli** — mana itech: `tlapohk$> ompohua`. Calaqui: `x -> fn(x)` zan.
 
 ---
 
-## Lambda ihuan Closure
+## Lambda ihuan Tlalnamiquia
 
 ```zymbol
-ōmome = x -> x * 2
-xelihui = (a, b) -> a + b
->> ōmome(5) ¶    // → 10
->> xelihui(3, 7) ¶  // → 10
+ompohua = x -> x * 2
+cehmehua = (a, b) -> a + b
+>> ompohua(5) ¶    // → 10
+>> cehmehua(3, 7) ¶    // → 10
 
-// Lambda bloque
-xelihui2 = x -> {
-    ? x > 0 { <~ "huēyi" }
-    _? x < 0 { <~ "tepiton" }
-    <~ "āzo"
+// Bloque lambda
+tlanextia = x -> {
+    ? x > 0 { <~ "cualli" }
+    _? x < 0 { <~ "amo" }
+    <~ "apan"
 }
 
-// Closure — lambda quimomachilia huehuē tēxtli
+// Tlalnamiquia — ome tlahtol quiza
 factor = 3
-ēyi = x -> x * factor    // quimomachilia 'factor'
->> ēyi(7) ¶    // → 21
+eitechmati = x -> x * factor
+>> eitechmati(7) ¶    // → 21
 
-// Tlapalēhuia quichihua tlapalēhuia
-make_adder(n) { <~ x -> x + n }
-add10 = make_adder(10)
->> add10(5) ¶    // → 15
+// Tequitl chihua
+cehmehuach(n) { <~ x -> x + n }
+cehm_matlac = cehmehuach(10)
+>> cehm_matlac(5) ¶    // → 15
 
-// Lambda tlapōhualoni: centlāliztli ipan
-ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[2](5) ¶    // → 25
+// Tlapallehua itech
+tequit_k = [x -> x+1, x -> x*2, x -> x*x]
+>> tequit_k[3](5) ¶    // → 25
 ```
 
 ---
 
-## Centlāliztli
+## Tlapallehua
 
-Arrays are **mutable** and hold elements of the **same type**. _(Centlāliztli **huel mopatla** yéetel tlahtoa **bey kex tlapaltic**.)_
+Tlapallehua **nemohua** ihuan amantli **ce tlapaliztli** necia.
 
 ```zymbol
-arr = [1, 2, 3, 4, 5]
+tlapal_k = [1, 2, 3, 4, 5]
 
-arr[0]          // 1 — quimōmana (0-base)
-arr[-1]         // 5 — tlapōhualli āmo (qipa)
-arr$#           // 5 — tlapōhualli (parenthesis monequi >>pe)
+x = tlapal_k[1]      // 1 — itta (1-itech: achtopa)
+x = tlapal_k[-1]     // 5 — tlapohua amo (tlami)
+x = tlapal_k$#       // 5 — tlapoa (jeporua (tlapal_k$#) >> itech)
 
-arr = arr$+ 6            // calāquia → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // jakhu 2 calāquia
-arr3 = arr$- 3           // ñawpaq valor quichihua
-arr4 = arr$-- 3          // nochi valor quichihua
-arr5 = arr$-[0]          // tlapōhualli quichihua
-arr6 = arr$-[1..3]       // ītlan quichihua (tukuy mana)
+tlapal_k = tlapal_k$+ 6            // calaqui → [1,2,3,4,5,6]
+tlap_k2 = tlapal_k$+[2] 99       // calaqui 2 itech (1-itech)
+tlap_k3 = tlapal_k$- 3           // quiza achtopa
+tlap_k4 = tlapal_k$-- 3          // quiza mochi
+tlap_k5 = tlapal_k$-[1]          // quiza 1 itech (achtopa)
+tlap_k6 = tlapal_k$-[2..3]       // quiza tlaxeloa (1-itech, tlami ihuan)
 
-nemi = arr$? 3           // #1 — utjiñ
-pos = arr$?? 3           // [2] — nochi tlapōhuallinak
-sl = arr$[0..3]          // [1,2,3] — ītlan (tukuy mana)
-sl2 = arr$[0:3]          // [1,2,3] — kikillan, tlapōhualliw
+oiv_k = tlapal_k$? 3             // #1 — oitztia
+pos_k = tlapal_k$?? 3            // [3] — mochi itech (1-itech)
+sl_k = tlapal_k$[1..3]           // [1,2,3] — tlaxeloa (1-itech)
+sl2_k = tlapal_k$[1:3]           // [1,2,3] — ukhamaki, tlapohualli
 
-asc = arr$^+             // wichay (primitivos kama)
-desc = arr$^-            // nochi (primitivos kama)
+asc_k = tlapal_k$^+              // tlahtoa ichtaca (achtopa)
+desc_k = tlapal_k$^-             // tlahtoa cueitl (achtopa)
 
-// Tocāitl/tlapōhualli tuple centlāliztli — $^ comparador lambdawan
-db = [(tocāitl: "Carla", xiuh: 28), (tocāitl: "Ana", xiuh: 25), (tocāitl: "Bob", xiuh: 30)]
-xiuhpan  = db$^ (a, b -> a.xiuh < b.xiuh)
-tocāpan  = db$^ (a, b -> a.tocāitl > b.tocāitl)
->> xiuhpan[0].tocāitl ¶     // → Ana
->> tocāpan[0].tocāitl ¶     // → Carla
+// Tocaitl tlapal_k — tlapal_k$^ lambda ihuan
+db = [(name: "Carla", age: 28), (name: "Ana", age: 25), (name: "Bob", age: 30)]
+por_iy = db$^ (a, b -> a.age < b.age)    // ichtaca xiuh (<)
+por_tc = db$^ (a, b -> a.name > b.name)  // cueitl tocait (>)
+>> por_iy[1].name ¶     // → Ana
+>> por_tc[1].name ¶     // → Carla
 
-// Tlapōhualoni patla (centlāliztli cha'an)
-arr[1] = 99              // tlapōhualoni patla (calāquia)
-arr[0] += 5              // ōme tlapōhualoni: +=  -=  *=  /=  %=  ^=
+// Tlahtol tlacuilo (tlapal_k zan)
+tlapal_k[1] = 99              // calaqui
+tlapal_k[2] += 5              // cehmehua: +=  -=  *=  /=  %=  ^=
 
-// Tlapōhualli patla funcional — yancuic centlāliztli quitemoa; nayc mana tikiti
-arr2 = arr[1]$~ 99
+// Tequitl calaqui — calaqui tlapal_k oco; achtopa ahmo nemohua
+tlap_k2 = tlapal_k[2]$~ 99
 ```
 
-> Nochi colección tlapōhualoni **yancuic centlāliztli** quitemoa. Calāquia: `arr = arr$+ 4`.
-> Āmo ōmome — ōme tēxtli quichihua.
-> `$^+` / `$^-` **primitivo centlāliztli** (tlapōhuallinak, tlahtōl). Tuple centlāliztliw `$^` comparador lambdawan — ñanqa lambdapi churasqa (`<` = wichay, `>` = nochi).
+> Mochi tlapallehua tlamachtilli quiza **tlapallehua oco**. Cueitla: `tlapal_k = tlapal_k$+ 4`.
+> `$+` cehcehtla: `tlapal_k = tlapal_k$+ 5$+ 6$+ 7`. Oc no tlamachtilli amantli itech.
+> **Tlapohualli 1-itech**: `tlapal_k[1]` achtopa; `tlapal_k[0]` tlatlazohtlaliztli.
+> `$^+` / `$^-` **achtopa tlapallehua** (tlapohualli, tlahtolli). Cehcehtl `$^` lambda — lambda (`<` = ichtaca, `>` = cueitl).
 
-**Tlapaltic neltiliztli** — centlāliztli tēxtli mopatla yancuic centlāliztli quichihua:
+**Amantli tlapaliztli** — tlapallehua cueitla oco amantli quiza:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b āmo mopatla
+>> b ¶    // → [1, 2, 3]   ← b ahmo nemohua
 ```
 
 ```zymbol
-// Ukupi centlāliztli
-matriz = [[1,2,3],[4,5,6],[7,8,9]]
->> matriz[1][2] ¶    // → 6
-```
-
----
-
-## Tlapolihuiliztli
-
-```zymbol
-// Centlāliztli
-arr = [10, 20, 30, 40, 50]
-[a, b, c] = arr              // a=10  b=20  c=30
-[first, *rest] = arr         // first=10  rest=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ āmo monequi
-
-// Tlapōhualli tupla
-punto = (100, 200)
-(px, py) = punto             // px=100  py=200
-
-// Tocāitl tupla
-tlacatl = (tocāitl: "Ana", xiuh: 25, altepetl: "Tenochtitlan")
-(tocāitl: t, xiuh: x) = tlacatl   // t="Ana"  x=25
+// Tlapallehua ihuan (1-itech)
+patana = [[1,2,3],[4,5,6],[7,8,9]]
+>> patana[2][3] ¶    // → 6  (metztli 2, tlapoa 3)
 ```
 
 ---
 
-## Tupla
-
-Tuples are **immutable** ordered containers that can hold values of **different types**. Unlike arrays, elements cannot be changed after creation. _(Tupla **āmo mopatla** ōmome tlahtoa quimomachilia — **ōme tlapaltic** yéetel bey kex. Centlāliztliwa āmo ōme — ba'al āmo mopatla ts'o'ok u ts'aak.)_
+## Tlatectli
 
 ```zymbol
-// Tlapōhualli
-punto = (10, 20)
->> punto[0] ¶    // → 10
+// Tlapallehua
+tlapal_k = [10, 20, 30, 40, 50]
+[a, b, c] = tlapal_k              // a=10  b=20  c=30
+[achtopa, *tlami_k] = tlapal_k    // achtopa=10  tlami_k=[20,30,40,50]
+[x, _, z] = [1, 2, 3]             // _ quiza
 
-tlahtōl = (42, "niltze", #1, 3.14)
->> tlahtōl[2] ¶     // → #1
+// Cehcehtl Ichtaca
+yolic = (100, 200)
+(px, py) = yolic                  // px=100  py=200
 
-// Tocāitl
-tlacatl = (tocāitl: "Alice", xiuhpōhualli: 25)
->> tlacatl.tocāitl ¶       // → Alice
->> tlacatl[0] ¶             // → Alice  (tlapōhualli cuali)
+// Tocaitl Cehcehtl
+tlaca = (name: "Ana", age: 25, city: "Tenochtitlan")
+(name: n, age: a) = tlaca      // n="Ana"  a=25
+```
 
-// Ukupi
-pos = (x: 10, y: 20)
-p = (pos: pos, tocāitl: "qallta")
+---
+
+## Cehcehtl
+
+Cehcehtl **ahmo nemohua** ihuan amantli **mochi tlapaliztli** monequi.
+Tlapallehua ahmo, amantli ahmo nemohua tlapoa quiza.
+
+```zymbol
+// Ichtaca — mochi tlapaliztli
+yolic = (10, 20)
+>> yolic[1] ¶    // → 10
+
+nechca = (42, "niltze", #1, 3.14)
+>> nechca[3] ¶     // → #1
+
+// Tocaitl
+tlaca = (name: "Sonia", age: 25)
+>> tlaca.name ¶    // → Sonia
+>> tlaca[1] ¶      // → Sonia  (tlapohualli ihuan, 1-itech)
+
+// Cehcehtl
+yolic_k = (x: 10, y: 20)
+p = (pos: yolic_k, label: "achtopa")
 >> p.pos.x ¶        // → 10
 ```
 
-**Āmo mopatla** — quemman tēxtli tupla mopatla ku beet tlahtlacohuiliztli:
+**Ahmo Nemohua** — amantli cueitla tlatlazohtlaliztli quiza:
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ tlahtlacohuiliztli: tupla āmo mopatla
-// t[0] += 5    // ❌ bey kex tlahtlacohuiliztli
+// t[1] = 99    // ❌ tlatlazohtlaliztli: cehcehtl ahmo nemohua
+// t[1] += 5    // ❌ oc no
 ```
 
-Ti' u ts'o'okol ba'al cháajil apaykachaña `$~` (tlahtoa yáanal) — **yancuic** tupla quitemoa:
+Xicmonanquili `$~` cueitla (tequitl cueitla) — **cehcehtl oco** quiza:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[1]$~ 999
->> t ¶     // → (10, 20, 30)   ← nayc mana tikiti
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← achtopa ahmo nemohua
 >> t2 ¶    // → (10, 999, 30)
 
-// Tupla tocāitl — yancuic ts'aak
-tlacatl = (tocāitl: "Alice", xiuhpōhualli: 25)
-tlacatl2 = (tocāitl: tlacatl.tocāitl, xiuhpōhualli: 26)
->> tlacatl.xiuhpōhualli ¶    // → 25
->> tlacatl2.xiuhpōhualli ¶   // → 26
+// Tocaitl cehcehtl — oco chihua
+tlaca = (name: "Sonia", age: 25)
+pyahura  = (name: tlaca.name, age: 26)
+>> tlaca.age ¶    // → 25
+>> pyahura.age ¶     // → 26
 ```
 
 ---
 
-## Huēyi Tlapalēhuia
-
-> HOF tlapōhualoni monequi **lambda inline** — āmo variable lambda.
+## Tequitl Huehue
 
 ```zymbol
-nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+tlapohk = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-ōmomeh   = nums$> (x -> x * 2)                // map  → [2,4,6…20]
-nahualeh = nums$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
-nochi    = nums$< (0, (acc, x) -> acc + x)     // reduce → 55
+ompoha  = tlapohk$> (x -> x * 2)              // map  → [2,4,6…20]
+yoli    = tlapohk$| (x -> x % 2 == 0)         // filter → [2,4,6,8,10]
+mochi   = tlapohk$< (0, (acc, x) -> acc + x)  // reduce → 55
 
-// Ōme tēxtliw huñiy
-step1 = nums$| (x -> x > 3)
-step2 = step1$> (x -> x * x)
->> step2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+// Tlanextia tlapallehua
+tlaz1 = tlapohk$| (x -> x > 3)
+tlaz2 = tlaz1$> (x -> x * x)
+>> tlaz2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Tocāitl tlapalēhuia HOF ipan — lambdawan hapiy
-double(x) { <~ x * 2 }
-r = nums$> (x -> double(x))    // ✅
+// Tequitl mana HOF itech
+ompohua(x) { <~ x * 2 }
+huehca(x) { <~ x > 5 }
+r = tlapohk$> ompohua       // ✅ mana
+r = tlapohk$| huehca        // ✅ mana
 ```
 
 ---
 
-## Tlacaxtlahuiliztli
+## Tlanahuatilli
 
-RHS siempre `_` placeholder monequi piped tlapōhualoni:
+Tlami `_` monequi amantli ahmo nemohua itech:
 
 ```zymbol
-ōmome = x -> x * 2
-yapxitaña = (a, b) -> a + b
-yapxtaña = x -> x + 1
+ompohua = x -> x * 2
+cehmehua = (a, b) -> a + b
+tlacah = x -> x + 1
 
-5 |> ōmome(_)            // → 10
-10 |> yapxitaña(_, 5)    // → 15
-5 |> yapxitaña(2, _)     // → 7
+r1 = 5 |> ompohua(_)        // → 10
+r2 = 10 |> cehmehua(_, 5)       // → 15
+r3 = 5 |> cehmehua(2, _)        // → 7
 
-// Chiqanchasiña
-r = 5 |> ōmome(_) |> yapxtaña(_) |> ōmome(_)
+// Cehcehtla
+r = 5 |> ompohua(_) |> tlacah(_) |> ompohua(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## Tlahtlacohuiliztli Quipia
+## Tlapopolhuitl
 
 ```zymbol
 !? {
     x = 10 / 0
 } :! ##Div {
-    >> "xelihui āmo nemi" ¶
+    >> "tlaxeloa apan" ¶
 } :! {
-    >> "huehuē tlahtlacohuiliztli: " _err ¶    // _err tlahtlacohuiliztli quitlalia
+    >> "oc no: " _err ¶    // _err quimati tlatlazohtlaliztli
 } :> {
-    >> "nochi nemi" ¶
+    >> "mochipa quiza" ¶
 }
 ```
 
-| Tlapaltic   | Āquin nemi                  |
-|-------------|----------------------------|
-| `##Div`     | Xelihui āmo nemi            |
-| `##IO`      | Āmatl / sistema             |
-| `##Index`   | Tlapōhualli ōca āmo nemi    |
-| `##Type`    | Tlapaltic tlahtlacohuiliztli|
-| `##Parse`   | Parsing                     |
-| `##Network` | Red tlahtlacohuiliztli      |
-| `##_`       | Nochi tlahtlacohuiliztli    |
+| Tlapaliztli | Itca |
+|-------------|------|
+| `##Div` | Apan pan tlaxeloa |
+| `##IO` | Tlahtolli / sistema |
+| `##Index` | Itech tlatlazohtlaliztli |
+| `##Type` | Tlapaliztli tlatlazohtlaliztli |
+| `##Parse` | Tlahtolli tlapohua |
+| `##Network` | Red tlatlazohtlaliztli |
+| `##_` | Mochi tlatlazohtlaliztli (taqini) |
 
 ---
 
-## Módulo
+## Tlaxelhuia
 
 ```zymbol
-// Āmatl: lib/calc.zy
-# calc
+// lib/calc.zy — módulo { } itech
+# calc {
+    #> { cehmehua, getPI }
 
-#> { xelihui, get_PI }    // ÑAWPAQ definiciones
-
-_PI := 3.14159
-xelihui(a, b) { <~ a + b }
-get_PI() { <~ _PI }
+    _PI := 3.14159
+    cehmehua(a, b) { <~ a + b }
+    getPI() { <~ _PI }
+}
 ```
 
 ```zymbol
-// Āmatl: main.zy
-<# ./lib/calc <= c    // alias monequi
+// main.zy
+<# ./lib/calc => c    // tocaitl monequi
 
->> c::xelihui(5, 3) ¶  // → 8
-pi = c::get_PI()
->> pi ¶                // → 3.14159
+>> c::cehmehua(5, 3) ¶   // → 8
+pi = c::getPI()
+>> pi ¶               // → 3.14159
 ```
 
 ```zymbol
-// Tocāitl yancuic exportar
-# mylib
-#> { _internal_add <= sum }
+// Quiza tocaitl oco ihuan
+# tlaxelhuia {
+    #> { _cehmehua_tloc => cehmehua }
 
-_internal_add(a, b) { <~ a + b }
+    _cehmehua_tloc(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
-<# ./mylib <= m
+<# ./tlaxelhuia => m
 
->> m::sum(3, 4) ¶    // → 7  (tocāitl _internal_add pakasqa)
+>> m::cehmehua(3, 4) ¶    // → 7  (_cehmehua_tloc poliuh)
 ```
+
+> **Módulo monequi**: zan `#>`, tequitl tlahtoa, ihuan tlahtol `# tocaitl { }` itech. Tequitl ejecutable (`>>`, `<<`, malinalliztli, etc.) tlatlazohtlaliztli E013.
 
 ---
 
-## Tlapōhualli Tēixpōhua
+## Tlapohualiztli
 
-Zymbol weli quinamaca tlapōhualli **Unicode tlapalteōtl 69** — Devanagari, Arabe-India, Thai, Klingon pIqaD, Tlahtoa Chicāhuac, LCD ihuan oc cequi. In tlapōhualli quinamaca zancuel `>>`; tlanāhuatilli binary.
+Zymbol quita tlapohualli **69 Unicode tlapohualiztli machiyotl** — Devanagari, Árabe-Índico, Thai, Klingon pIqaD, Matemática Negrita, LCD, ihuan oc no. Achtopa tlapaliztli zan `>>` quiza itech; tlapohualli binario zan.
 
-### Tlapalteōtl quizaliztli
+### Tlapehualia
 
-Tlacuilo tlapōhualōni `0` ihuan `9` nāhuatl `#…#`:
+Xicmonanquili `0` ihuan `9` tlapohualli `#…#` itech:
 
 ```zymbol
-#०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // Arabe-India   (U+0660–U+0669)
-#๐๙#    // Thai          (U+0E50–U+0E59)
-#09#    // ASCII-co cuepa
+#०९#    // Devanagari   (U+0966–U+096F)
+#٠٩#    // Árabe-Índico (U+0660–U+0669)
+#๐๙#    // Thai         (U+0E50–U+0E59)
+#09#    // ASCII-pan cueitla
 ```
 
-### Tlahtoa ihuan boolean
+### Quiza ihuan Nellitoni
 
 ```zymbol
 x = 42
->> x ¶          // → 42
+>> x ¶          // → 42   (ASCII achtopa)
 
 #०९#
 >> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४
+>> 3.14 ¶       // → ३.१४   (punto ASCII zan)
 >> 1 + 2 ¶      // → ३
 
-// Boolean: # ASCII, tlapōhualōni yoliztli
->> #1 ¶         // → #१
->> #0 ¶         // → #०
+// Nellitoni: # ASCII zan, tlapohualli itech
+>> #1 ¶         // → #१   (nelli Devanagari itech)
+>> #0 ¶         // → #०   (amo — ahmo ० tlapohualli apan)
 
 x = 28 > 4
->> x ¶          // → #१
+>> x ¶          // → #१   (tlanextia tequitl achtopa itech)
 ```
 
-### Tlapōhualōni asli código-co
+### Tlapohualiztli Machiyotl Achtopa
 
-Tlapōhualōni literal — range, modulo:
+Mochi tlapohualiztli machiyotl cualli — malinalliztli, modulo, tlanextia itech:
 
 ```zymbol
 #०९#
@@ -575,45 +648,50 @@ Tlapōhualōni literal — range, modulo:
 }
 ```
 
-### Boolean literal tlapalteōtl
+### Nellitoni Machiyotl Mochi Tlapaliztlica
 
-`#` + tlapōhualōni `0` anozo `1` bloc boolean:
+`#` + tlapohualli `0` anoce `1` mochi tlapaliztli itech nellitoni machiyotl:
 
 ```zymbol
 #٠٩#
-نشط = #١
->> نشط ¶        // → #١
+yoltok = #١        // oc no #1
+>> yoltok ¶        // → #١
 >> (#١ && #٠) ¶ // → #٠
 ```
 
-> `#` **ASCII**. `#0` (amo) `0` (ce tlapōhualōni) yoliztli.
+> `#` **ASCII zan**. `#0` (amo) ahmo `0` (tlapohualli apan) mochi tlapaliztli itech.
 
 ---
 
-## Tlahtolmachiyotl
+## Tlahtol Tlamachtilli
 
 ```zymbol
-// Tlahtōl tlapōhualliñ tikraña
+// Tlapaliztli cueitla
+f = ##.42         // → 42.0  (Float-pan)
+i = ###3.7        // → 4     (Int-pan, tlahtoa)
+t = ##!3.7        // → 3     (Int-pan, tlaxeloa)
+
+// Tlahtolli tlapohua-pan
 v1 = #|"42"|      // → 42  (Int)
 v2 = #|"3.14"|    // → 3.14  (Float)
-v3 = #|"abc"|     // → "abc"  (āmo tlahtlacohuiliztli)
+v3 = #|"abc"|     // → "abc"  (ahmo tlatlazohtlaliztli)
 
-// Xocotl / ch'iqtaña
+// Tlahtoa / Tlaxeloa
 pi = 3.14159265
-r2 = #.2|pi|      // → 3.14  (ōme decimal)
+r2 = #.2|pi|      // → 3.14  (2 itech tlahtoa)
 r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14  (ch'iqtaña)
+t2 = #!2|pi|      // → 3.14  (tlaxeloa)
 
-// Tlapōhualli formato
-fmt = #,|1234567|      // → 1,234,567  (coma huñisqa)
-sci = #^|12345.678|    // → 1.2345678e4  (científico)
+// Tlapohualiztli neci
+fmt = #,|1234567|  // → 1,234,567  (coma ihuan)
+sci = #^|12345.678|    // → 1.2345678e4  (tlapaliztli)
 
-// Base literal
-a = 0x41         // → 'A'  (hex)
+// Tlahtol machiyotl
+a = 0x41         // → 'A'  (hexadecimal)
 b = 0b01000001   // → 'A'  (binario)
 c = 0o101        // → 'A'  (octal)
 
-// Base tikraña sartañataki
+// Tlahtol quiza
 hex = 0x|255|    // → "0x00FF"
 bin = 0b|65|     // → "0b1000001"
 oct = 0o|8|      // → "0o10"
@@ -622,111 +700,149 @@ dec = 0d|255|    // → "0d0255"
 
 ---
 
-## Tlatlazohtlaliztli Shell
+## Tlanecoca
 
 ```zymbol
-ilhuitl = <\ date +%Y-%m-%d \>     // stdout hap'iy (tukuy \n hapikun)
->> "Axcān: " ilhuitl
+ilhuitl = <\ date +%Y-%m-%d \>     // quita stdout (\n ihuan)
+>> "Axcan: " ilhuitl
 
-āmatl = "data.txt"
-tlahtōl = <\ cat {āmatl} \>      // interpolación comando ukupi
+tlahtol = "tequitl.txt"
+neci = <\ cat {tlahtol} \>          // calaqui tlahtolli itech
 
-lluqsiña = </"./subscript.zy"/>   // huk Zymbol āmatl quichihua, sartaña hap'iy
->> lluqsiña
+quizquia = </"./tequitl.zy"/>   // Zymbol tequitl, quita quizquia
+>> quizquia
 ```
 
-> `><` CLI argumentonak arunak centlāliztli hina hap'iy (tree-walker kama).
+> `><` CLI tlahtolli tlapallehua quiza (tree-walker zan).
 
 ---
 
-## Moch Techiyotl: FizzBuzz
+## Neci Tlamachiliztli: FizzBuzz
 
 ```zymbol
-xelihui(tlapōhualli) {
-    ? tlapōhualli % 15 == 0 { <~ "PopochtliTzatziliztli" }
-    _? tlapōhualli % 3  == 0 { <~ "Popochtli" }
-    _? tlapōhualli % 5  == 0 { <~ "Tzatziliztli" }
-    _ { <~ tlapōhualli }
+tlanextia(tlapohua) {
+    ? tlapohua % 15 == 0 { <~ "FizzBuzz" }
+    _? tlapohua % 3  == 0 { <~ "Fizz" }
+    _? tlapohua % 5  == 0 { <~ "Buzz" }
+    _ { <~ tlapohua }
 }
 
-@ i:1..20 { >> xelihui(i) ¶ }
+@ i:1..20 { >> tlanextia(i) ¶ }
 ```
 
 ---
 
-## Tlapōhualoni Tēpōztli
+## Machiyotl Tlapalliztli
 
-| Tlapōhualoni | Tlapalēhuia       | Tlapōhualoni | Tlapalēhuia        |
-|--------------|-------------------|--------------|--------------------|
-| `=`          | tēxtli            | `$#`         | tlapōhualli        |
-| `:=`         | āmo mopatla       | `$+`         | calāquia           |
-| `>>`         | quitēhua          | `$+[i]`      | tlapōhuallipi churay |
-| `<<`         | caltia            | `$-`         | ñawpaq quichihua   |
-| `¶`/`\\`     | tzacuiliztli      | `$--`        | nochi quichihua    |
-| `?`          | neltia            | `$-[i]`      | tlapōhualli quichihua |
-| `_?`         | iā                | `$-[i..j]`   | ītlan quichihua    |
-| `_`          | āmo / nochi       | `$?`         | nemi               |
-| `??`         | match             | `$??`        | nochi tlapōhuallinak |
-| `@`          | nahuatilli        | `$[s..e]`    | ītlan              |
-| `@!`         | tlamia            | `$>`         | map                |
-| `@>`         | nemi              | `$\|`        | filter             |
-| `->`         | lambda            | `$<`         | reduce             |
-| `arr[i] = val` | tlapōhualoni patla (centlāliztli cha'an) | `arr[i] += val` | ōme tlapōhualoni |
-| `arr[i]$~` | tlahtoa yáanal (yancuic copia) | `$^+` | wichay (primitivos) |
-| `$^-`        | nochi (primitivos) | `$^`       | comparador (tuples) |
-| `<~`         | tenehualiztli     | `!?`         | quipia             |
-| `\|>`        | pipe              | `:!`         | quitemohua         |
-| `#1`         | neltia            | `:>`         | nochi nemi         |
-| `#0`         | āmo               | `$!`         | tlahtlacohuia      |
-| `<#`         | calāquia          | `$!!`        | quicahua           |
-| `#`          | módulo            | `#>`         | quitēhua           |
-| `::`         | módulo xelihui    | `.`          | campo taripay      |
-| `#\|..\|`    | tlapōhualli tikraña | `#?`       | tipo metadata      |
-| `#.N\|..\|`  | xocotl            | `#!N\|..\|`  | ch'iqtaña          |
-| `#,\|..\|`    | coma formato      | `#^\|..\|`    | científico         |
-| `#d0d9#` | tlapōhualli tēixpōhua | `#09#` | ASCII-co cuepa |
-| `<\ ..\>`    | shell luraña      | `><`         | CLI argumentonak   |
-
-## Yancuic Tlamachiliz
-
-### v0.0.3 — Unicode Tlapōhualōni & LSP _(Abril 2026)_
-
-- **Calaquilli** Unicode bloc 69 token `#d0d9#`
-- **Calaquilli** Boolean literals — `#१` / `#०`, `#١` / `#٠`
-- **Calaquilli** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
-- **Calaquilli** VM opcode `SetNumeralMode` — tree-walker
-- **Calaquilli** REPL tlapōhualli echo variable
-- **Tlamachtilli** `>>` boolean `#` (`#0` / `#1`)
-
-### v0.0.2_01 _(30 Mar 2026)_
-
-- **Tlamachtilli** `c|..|` → `#,|..|` ihuan `e|..|` → `#^|..|`
-- **Calaquilli** Export alias
-
-### v0.0.2 _(24 Mar 2026)_
-
-- **Calaquilli** `$` arrays ihuan strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Calaquilli** Destructuring arrays, tuples
-- **Calaquilli** Index amo (`arr[-1]`)
-- **Calaquilli** Instalador — Linux, macOS, Windows
-
-### v0.0.1-patch _(25 Mar 2026)_
-
-- **Calaquilli** `^=`
-
-### v0.0.1 _(22 Mar 2026)_
-
-- Tree-walker + register VM (`--vm`, ~4×, ~95%)
-- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- REPL, LSP, VS Code, formatter (`zymbol fmt`)
+| Machiyotl | Tlahtol | Machiyotl | Tlahtol |
+|-----------|---------|-----------|---------|
+| `=` | tlahtol | `$#` | tlapoa |
+| `:=` | tlazotl | `$+` | calaqui (cehcehtla) |
+| `>>` | quiza | `$+[i]` | calaqui itech (1-itech) |
+| `<<` | tlahtoa | `$-` | quiza achtopa |
+| `¶` / `\\` | tlahtol ihuan | `$--` | quiza mochi |
+| `?` | nellitoni | `$-[i]` | quiza itech (1-itech) |
+| `_?` | amo ukhamako | `$-[i..j]` | quiza tlaxeloa |
+| `_` | oc no | `$?` | oitztia |
+| `??` | tlanextia | `$??` | mochi itech |
+| `@` | malinalliztli | `$[s..e]` | tlatectli |
+| `@ N { }` | N malinalliztli | `$>` | map |
+| `@!` | tlatzacua | `$\|` | tlapaliztli |
+| `@>` | tlatoca | `$<` | cehmehualiztli |
+| `@:name { }` | tocaitl malinalliztli | `$/ delim` | tlahtolli tlaxeloa |
+| `@:name!` | tlatzacua tocaitl | `$++ a b c` | cehcehtla |
+| `@:name>` | tlatoca tocaitl | `arr[i>j>k]` | tlapoa itech |
+| `->` | lambda | `arr[i] = val` | tlapohualli cueitla |
+| `arr[i] += val` | cehmehua cueitla | `arr[i]$~` | tequitl cueitla |
+| `$^+` | tlahtoa ichtaca | `$^-` | tlahtoa cueitl |
+| `$^` | tlahtoa lambda | `<~` | cueitla |
+| `\|>` | tlanahuatilli | `!?` | tlapopolhuitl |
+| `:!` | tlatlazohtlaliztli | `:>` | mochipa quiza |
+| `#1` | nelli | `#0` | amo |
+| `$!` | tlatlazohtlaliztli kimün | `$!!` | sartaña |
+| `<#` | tlahtoa | `#>` | quiza |
+| `#` | tlaxelhuia | `::` | tlaxelhuia runa |
+| `.` | renda | `#?` | tlapaliztli amantli |
+| `#\|..\|` | tlahtolli tlapohualli | `##.` | Float-pan |
+| `###` | Int-pan tlahtoa | `##!` | Int-pan tlaxeloa |
+| `#.N\|..\|` | tlahtoa N | `#!N\|..\|` | tlaxeloa N |
+| `#,\|..\|` | coma neci | `#^\|..\|` | tlapaliztli |
+| `#d0d9#` | tlapohualiztli | `#09#` | ASCII cueitla |
+| `<\ ..\>` | shell tequitl | `>\<` | CLI tlahtolli |
+| `\ var` | tlahtol poxahui | `°x` / `x°` | achtopa tlahtol |
+| `>>|` | TUI tlapallehua | `>>~` | tlapoa quiza |
+| `>>!` | pantalla poxahui | `>>?` | terminal tlapoa |
+| `<<\|` | señal tlahtoa | `<<\|?` | ahmo cochi señal |
+| `@~ N` | cochi N ms | `$*` | tlahtolli N tlami |
 
 ---
 
-*Zymbol-Lang — Tlapōhualoni. Nochi. Āmo Mopatla.*
+## Moyolnonotzaliztli
 
-> **Tlahtōliztli:** In āmatl xinechihua ihuan xinemojtlapaloeh inteligencia artificial (IA) tlen.
-> Ohualchīuhque zan nochi, amo in tlahtōl anozo techiyotl ihquihqueh māhuiztli.
-> In tlaneltocā: [Zymbol-Lang](https://github.com/zymbol-lang/interpreter).
->
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
+### v0.0.5 — TUI Achtopa, Tlahtol ihuan Tlahtolli _(Mayu 2026)_
+
+- **Tlapoloa** Tlanextia machiyotl: `pattern : result` → `pattern => result`
+- **Tlapoloa** Tlahtoa tocaitl: `<# sara <= tocaitl` → `<# sara => tocaitl`
+- **Tlapoloa** Quiza tocaitl: `#> { fn <= pub }` → `#> { fn => pub }`
+- **Calaqui** TUI `>>| { }` — pantalla tlacpac + modo cecec; tlapoa cueitla
+- **Calaqui** Tlapoa quiza `>>~ (ren, col, BKS, fg, bg) > amantli` — slot, ANSI 256
+- **Calaqui** Señal `<<| tlahtol` (cochi) ihuan `<<|? tlahtol` (ahmo cochi)
+- **Calaqui** `>>!` pantalla poxahui, `>>?` terminal tlapoa, `@~ N` cochi N ms
+- **Calaqui** Tlahtol achtopa `°x` / `x°` — necia malinalliztli itech
+- **Calaqui** Tlahtolli malinalliztli `str $* N` — tlahtolli N tlami
+- **VM** Ukhamawa: 436/436 yatiqawi wali
+
+### v0.0.4 — 1-Itech, Tequitl Achtopa & Tlaxelhuia _(Abrilpe 2026)_
+
+- **Tlapoloa** Mochi tlapohualli **1-itech** — `tlapal_k[1]` achtopa; `tlapal_k[0]` tlatlazohtlaliztli
+- **Calaqui** Tocaitl tequitl **achtopa amantli** — mana itech HOF: `tlapohk$> ompohua`
+- **Calaqui** Tlaxelhuia **tlapallehua tlapaliztli** monequi: `# tocaitl { ... }` — zan tlapaliztli
+- **Calaqui** Patankiri tlapohualli: `arr[i>j>k]` (tlapoa), `arr[p ; q]` (quiza)
+- **Calaqui** Tlapaliztli cueitla: `##.expr` (Float), `###expr` (Int tlahtoa), `##!expr` (Int tlaxeloa)
+- **Calaqui** Tlahtolli tlaxeloa: `str$/ delim` — cueitla `Array(String)`
+- **Calaqui** Cehcehtla: `base$++ a b c` — miec amantli calaqui
+- **Calaqui** N malinalliztli: `@ N { }` — N tlami tequitl
+- **Calaqui** Tocaitl malinalliztli: `@:tocaitl { }`, `@:tocaitl!`, `@:tocaitl>` — amo `@ @tocaitl`
+- **Calaqui** Tlahtol tlapoa: `_tocaitl` itech; `\ tlahtol` achtopa poxahui
+- **Calaqui** Tlanextia tlapaliztli: `< 0 :`, `> 5 :`, `== 42 :` etc.
+- **Calaqui** Tlaxelhuia E013 tlatlazohtlaliztli: tequitl ejecutable itech tlatlazohtlaliztli
+- **Cueitla** `take_variable` ahmo nemohua tlaxelhuia amantli
+- **Cueitla** `alias.CONST` cualli cueitla; `#>` tequitl tlami itech
+- **VM** Ukhamawa: 393/393 yatiqawi wali
+
+### v0.0.3 — Unicode Tlapohualiztli & LSP Cueitla _(Abrilpe 2026)_
+
+- **Calaqui** 69 Unicode tlapohualiztli machiyotl `#d0d9#` itech
+- **Calaqui** Nellitoni machiyotl mochi tlapaliztli — `#१` / `#०`, `#١` / `#٠`, etc.
+- **Calaqui** Klingon pIqaD tlapohualli (CSUR PUA U+F8F0–U+F8F9)
+- **Calaqui** `SetNumeralMode` VM opcode — ukhamawa tree-walker itech
+- **Calaqui** REPL tlapohualiztli quiza ihuan tlahtol itech
+- **Cueitla** Nellitoni `>>` quiza `#` ihuan (`#0` / `#1`) mochi tlapaliztli
+
+### v0.0.2_01 — Machiyotl Ñe'ẽ _(Marzepe 2026)_
+
+- **Cueitla** `c|..|` → `#,|..|` ihuan `e|..|` → `#^|..|` — ukhamawa `#` amantli
+- **Calaqui** Quiza tocaitl: tlaxelhuia amantli tocaitl oc no quiza
+
+### v0.0.2 — Tlapallehua API Cueitla & Instaladores _(Marzepe 2026)_
+
+- **Calaqui** `$` tlamachtilli tlapallehua ihuan tlahtolli itech (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Calaqui** Tlatectli tlapallehua, cehcehtl, ihuan tocaitl cehcehtl itech
+- **Calaqui** Tlapohualli amo (`tlapal_k[-1]` = tlami)
+- **Calaqui** Instaladores — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+
+### v0.0.1-patch _(Marzepe 2026)_
+
+- **Calaqui** Cehmehua `^=`
+- **Cueitla** Parser tlapohualli tequitl; tlahtoa cueitla
+
+### v0.0.1 — Achtopa Quiza _(Marzepe 2026)_
+
+- Tree-walker tlahtol + register VM (`--vm`, ~4× cualli, ~95% ukhamawa)
+- Mochi tlahtol: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Mochi Unicode tocaitl, tlaxelhuia, lambda, tlalnamiquia, tlapopolhuitl
+- REPL, LSP, VS Code, tlahtoa (`zymbol fmt`)
+
+---
+
+_Zymbol-Lang — Machiyotl. Mochi ihuan. Ahmo Nemohua._

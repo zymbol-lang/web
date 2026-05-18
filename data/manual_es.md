@@ -8,13 +8,15 @@
 
 # Manual de Zymbol-Lang
 
+> **Revisado para v0.0.5 — 2026-05-13**
+
 **Zymbol-Lang** es un lenguaje de programación simbólico. Sin palabras clave — todo son símbolos. Funciona igual en cualquier idioma humano.
 
 - Sin `if`, `while`, `return` — solo `?`, `@`, `<~`
 - Unicode completo — identificadores en cualquier idioma o emoji
 - Agnóstico al idioma humano — el código es el mismo en todos lados
 
-**Versión del intérprete**: v0.0.4 | **Cobertura de tests**: 393/393 (paridad TW ↔ VM)
+**Versión del intérprete**: v0.0.5 | **Cobertura de tests**: 436/436 (paridad TW ↔ VM)
 
 ---
 
@@ -39,6 +41,20 @@ x ^= 2    // 4
 x++        // 5
 x--        // 4
 ```
+
+`°` (signo de grado, U+00B0) auto-inicializa una variable a su valor neutro en el primer uso:
+
+```zymbol
+nums = [3, 1, 4, 1, 5]
+@ n:nums {
+    °total += n    // auto-init a 0 sobre el bucle; sobrevive después de @
+}
+>> total ¶         // → 14
+```
+
+> `°x` (prefijo) ancla sobre el bucle — resultado accesible después de `@`.
+> `x°` (postfijo) ancla dentro del bucle — muere cuando termina.
+> Solo tree-walker.
 
 ---
 
@@ -82,10 +98,42 @@ t = meta[1]
 
 ---
 
+## Primitivas TUI
+
+Operadores para interfaces de terminal interactivas. La mayoría requieren un bloque `>>| { }` (pantalla alternativa + modo raw).
+
+```zymbol
+>>| {
+    >>!                                  // limpiar pantalla alternativa
+    >>~ (1, 1, 0, 10) > "Ejecutando"     // fila 1, col 1, fg=10 (verde)
+    @~ 1000                              // pausa 1 segundo (1000 ms)
+    >>~ (2, 1) > "Listo."
+}
+// terminal restaurado automáticamente al salir
+```
+
+```zymbol
+// Tecla y tamaño del terminal
+>>| {
+    [filas, cols] = >>?                  // consultar dimensiones del terminal
+    >>~ (1, 1) > "Terminal: " filas " x " cols
+    <<| tecla                            // leer tecla bloqueante
+    >>~ (2, 1) > "Presionaste: " tecla
+}
+```
+
+> `>>!` limpia la pantalla. `>>?` retorna `[filas, cols]`. `@~ N` duerme N milisegundos.
+> `<<|` lee una tecla (bloqueante); `<<|?` sondea sin bloquear (retorna `'\0'` si ninguna).
+> Tupla de posición: `(fila, col, BKS, fg, bg)` — cualquier slot puede omitirse con coma (`>>~ (,,, 196) > "rojo"`).
+> BKS bitmask: `1`=Negrita, `2`=Cursiva, `4`=Subrayado. Paleta ANSI 256 colores (`0`=color del terminal).
+> Solo tree-walker (excepto `>>!`, `>>?`, `@~`, `>>~` que también funcionan en `--vm`).
+
+---
+
 ## Operadores
 
 ```zymbol
-// Aritmética — usar asignaciones; algunos operadores tienen quirks directo en >>
+// Aritmética
 a = 10
 b = 3
 r1 = a + b    // 13
@@ -95,18 +143,18 @@ r4 = a / b    // 3  (división entera)
 r5 = a % b    // 1
 r6 = a ^ b    // 1000  (exponenciación)
 
-// Comparación
-a == b    // #0    
-a <> b    // #1    
-a < b    // #0
-a <= b    // #0   
-a > b     // #1    
-a >= b   // #1
+// Comparación — asignar para inspeccionar
+c1 = a == b    // #0
+c2 = a <> b    // #1
+c3 = a < b     // #0
+c4 = a <= b    // #0
+c5 = a > b     // #1
+c6 = a >= b    // #1
 
 // Lógica
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
+l1 = #1 && #0    // #0
+l2 = #1 || #0    // #1
+l3 = !#1         // #0
 ```
 
 ---
@@ -125,11 +173,12 @@ desc = "Hola {nombre}, tienes {n}"     // interpolación — en cualquier contex
 ```zymbol
 s = "Hola Mundo"
 len = s$#                  // 10
-sub = s$[1..4]             // "Hola"  (1-base, fin inclusivo)
+sub = s$[1..4]             // "Hola"  (base 1, fin inclusivo)
 has = s$? "Mundo"          // #1
 partes = "a,b,c,d"$/ ','   // [a, b, c, d]  (separar por delimitador)
 rep = s$~~["o":"0"]        // "H0la Mund0"
 rep1 = s$~~["o":"0":1]     // "H0la Mundo"  (solo la primera)
+linea = "─" $* 20          // "────────────────────"  (repetir N veces)
 ```
 
 > `+` es solo para números. Usar `,`, yuxtaposición o interpolación para cadenas.
@@ -162,38 +211,39 @@ x = 7
 
 ```zymbol
 // Rangos
-score = 85
-grade = ?? score {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+puntuacion = 85
+nota = ?? puntuacion {
+    90..100 => 'A'
+    80..89  => 'B'
+    70..79  => 'C'
+    _       => 'F'
 }
->> grade ¶    // → B
+>> nota ¶    // → B
 
 // Cadenas
 color = "rojo"
 codigo = ?? color {
-    "rojo"  : "#FF0000"
-    "verde" : "#00FF00"
-    _       : "#000000"
+    "rojo"  => "#FF0000"
+    "verde" => "#00FF00"
+    _       => "#000000"
 }
 
 // Patrones de comparación
 temp = -5
 estado = ?? temp {
-    < 0  : "hielo"
-    < 20 : "frío"
-    < 35 : "cálido"
-    _    : "caliente"
+    < 0  => "hielo"
+    < 20 => "frío"
+    < 35 => "cálido"
+    _    => "caliente"
 }
 >> estado ¶    // → hielo
 
 // Forma de sentencia (bloques)
+n = -3
 ?? n {
-    0        : { >> "cero" ¶ }
-    _? n < 0 : { >> "negativo" ¶ }
-    _        : { >> "positivo" ¶ }
+    0    => { >> "cero" ¶ }
+    < 0  => { >> "negativo" ¶ }
+    _    => { >> "positivo" ¶ }
 }
 ```
 
@@ -299,7 +349,7 @@ crear_sumador(n) { <~ x -> x + n }
 suma10 = crear_sumador(10)
 >> suma10(5) ¶    // → 15
 
-// En arrays
+// En arreglos
 ops = [x -> x+1, x -> x*2, x -> x*x]
 >> ops[3](5) ¶    // → 25
 ```
@@ -313,9 +363,9 @@ Los arreglos son **mutables** y contienen elementos del **mismo tipo**.
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
-arr[1]          // 1 — acceso (base 1: primer elemento)
-arr[-1]         // 5 — índice negativo (último elemento)
-arr$#           // 5 — longitud (usar (arr$#) en >>)
+x = arr[1]      // 1 — acceso (base 1: primer elemento)
+x = arr[-1]     // 5 — índice negativo (último elemento)
+x = arr$#       // 5 — longitud (usar (arr$#) en >>)
 
 arr = arr$+ 6            // agregar → [1,2,3,4,5,6]
 arr2 = arr$+[2] 99       // insertar en posición 2 (base 1)
@@ -324,7 +374,7 @@ arr4 = arr$-- 3          // quitar todas las ocurrencias
 arr5 = arr$-[1]          // quitar en índice 1 (primer elemento)
 arr6 = arr$-[2..3]       // quitar rango (base 1, fin inclusivo)
 
-has = arr$? 3            // #1 — contiene
+hay = arr$? 3            // #1 — contiene
 pos = arr$?? 3           // [3] — todos los índices del valor (base 1)
 sl = arr$[1..3]          // [1,2,3] — slice (base 1, fin inclusivo)
 sl2 = arr$[1:3]          // [1,2,3] — igual, sintaxis por conteo
@@ -471,9 +521,9 @@ doble = x -> x * 2
 sumar = (a, b) -> a + b
 inc = x -> x + 1
 
-5 |> doble(_)        // → 10
-10 |> sumar(_, 5)    // → 15
-5 |> sumar(2, _)     // → 7
+r1 = 5 |> doble(_)        // → 10
+r2 = 10 |> sumar(_, 5)    // → 15
+r3 = 5 |> sumar(2, _)     // → 7
 
 // Encadenado
 r = 5 |> doble(_) |> inc(_) |> doble(_)
@@ -523,7 +573,7 @@ r = 5 |> doble(_) |> inc(_) |> doble(_)
 
 ```zymbol
 // main.zy
-<# ./lib/calc <= c    // alias obligatorio
+<# ./lib/calc => c    // alias obligatorio
 
 >> c::sumar(5, 3) ¶   // → 8
 pi = c::get_PI()
@@ -533,14 +583,14 @@ pi = c::get_PI()
 ```zymbol
 // Exportar con nombre público diferente
 # milib {
-    #> { _sumar_interno <= suma }
+    #> { _sumar_interno => suma }
 
     _sumar_interno(a, b) { <~ a + b }
 }
 ```
 
 ```zymbol
-<# ./milib <= m
+<# ./milib => m
 
 >> m::suma(3, 4) ¶    // → 7  (nombre interno _sumar_interno queda oculto)
 ```
@@ -617,9 +667,9 @@ Los dígitos de cualquier sistema soportado son literales válidos — en rangos
 
 ```zymbol
 // Conversión de tipos
-##.42         // → 42.0  (a Flotante)
-###3.7        // → 4     (a Entero, redondear)
-##!3.7        // → 3     (a Entero, truncar)
+f = ##.42         // → 42.0  (a Flotante)
+i = ###3.7        // → 4     (a Entero, redondear)
+t = ##!3.7        // → 3     (a Entero, truncar)
 
 // Parsear cadena a número
 v1 = #|"42"|      // → 42  (Entero)
@@ -713,33 +763,49 @@ clasificar(numero) {
 | `<#` | importar | `#>` | exportar |
 | `#` | declarar módulo | `::` | llamar módulo |
 | `.` | acceso a campo | `#?` | metadato de tipo |
-| `#\|..\|` | parsear número | `##.` | convertir a Float |
-| `###` | convertir a Int (redondear) | `##!` | convertir a Int (truncar) |
+| `#\|..\|` | parsear número | `##.` | convertir a Flotante |
+| `###` | convertir a Entero (redondear) | `##!` | convertir a Entero (truncar) |
 | `#.N\|..\|` | redondear | `#!N\|..\|` | truncar |
 | `#,\|..\|` | formato comas | `#^\|..\|` | notación científica |
 | `#d0d9#` | cambio de sistema numérico | `#09#` | restablecer ASCII |
 | `<\ ..\>` | ejecutar shell | `>\<` | argumentos CLI |
-| `\ var` | destruir variable explícitamente | | |
+| `\ var` | destruir variable explícitamente | `°x` / `x°` | definición en caliente (auto-init) |
+| `>>|` | bloque TUI (pantalla alt.) | `>>~` | salida posicionada |
+| `>>!` | limpiar pantalla | `>>?` | consultar tamaño de terminal |
+| `<<\|` | leer tecla bloqueante | `<<\|?` | sondeo de tecla no bloqueante |
+| `@~ N` | dormir N milisegundos | `$*` | repetir cadena N veces |
 
 ---
 
 ## Historial de Versiones
 
+### v0.0.5 — Primitivas TUI, Definición en Caliente & Repetición de Cadena _(Mayo 2026)_
+
+- **Rompedor** Separador de arm de match: `patrón : resultado` → `patrón => resultado`
+- **Rompedor** Alias de importación: `<# ruta <= alias` → `<# ruta => alias`
+- **Rompedor** Renombrado de exportación: `#> { fn <= pub }` → `#> { fn => pub }`
+- **Añadido** Bloque TUI `>>| { }` — pantalla alternativa + modo raw; limpia al salir
+- **Añadido** Salida posicionada `>>~ (fila, col, BKS, fg, bg) > items` — slots dispersos, ANSI 256 colores
+- **Añadido** Lectura de tecla `<<| var` (bloqueante) y `<<|? var` (sondeo no bloqueante)
+- **Añadido** `>>!` limpiar pantalla, `>>?` tamaño del terminal, `@~ N` dormir N milisegundos
+- **Añadido** Definición en caliente `°x` / `x°` — auto-inicializar variable en primer uso dentro de bucles
+- **Añadido** Repetición de cadena `str $* N` — repetir una cadena N veces
+- **VM** Paridad: 436/436 tests pasan
+
 ### v0.0.4 — Indexación Base 1, Funciones de Primer Orden & Módulos con Bloque _(Abril 2026)_
 
 - **Rompedor** Indexación cambiada a **base 1** — `arr[1]` es el primer elemento; `arr[0]` es error en tiempo de ejecución
-- **Añadido** Funciones nombradas son **valores de primer orden** — pasar directo a HOF: `nums$> doble`
+- **Añadido** Funciones nombradas son **valores de primera clase** — pasar directo a HOF: `nums$> doble`
 - **Añadido** **Sintaxis de bloque obligatoria** en módulos: `# nombre { ... }` — sintaxis plana removida
 - **Añadido** Indexación multidimensional: `arr[i>j>k]` (navegación), `arr[p ; q]` (extracción plana)
-- **Añadido** Conversión de tipos: `##.expr` (Float), `###expr` (Int redondear), `##!expr` (Int truncar)
-- **Añadido** Separar cadena: `str$/ delim` — retorna `Array(String)`
+- **Añadido** Conversión de tipos: `##.expr` (Flotante), `###expr` (Entero redondear), `##!expr` (Entero truncar)
+- **Añadido** Separar cadena: `str$/ delim` — retorna `Array(Cadena)`
 - **Añadido** Concat build: `base$++ a b c` — agrega múltiples elementos
 - **Añadido** Bucle N veces: `@ N { }` — ejecuta exactamente N iteraciones
-- **Añadido** Sintaxis de bucles etiquetados: `@:nombre { }`, `@:nombre!`, `@:nombre>` — reemplaza `@ @nombre` / `@! nombre`
-- **Añadido** Reglas de scope de variables: `_nombre` tiene scope exacto de bloque; `\ var` destruye early
-- **Añadido** Patrones de comparación en match: `< 0 :`, `> 5 :`, `== 42 :`, etc.
+- **Añadido** Sintaxis de bucles etiquetados: `@:nombre { }`, `@:nombre!`, `@:nombre>`
+- **Añadido** Reglas de scope: `_nombre` tiene scope exacto de bloque; `\ var` destruye early
+- **Añadido** Patrones de comparación en match: `< 0 =>`, `> 5 =>`, `== 42 =>`, etc.
 - **Añadido** Error E013 en módulos: sentencias ejecutables en cuerpo de módulo son inválidas
-- **Corregido** `take_variable` ya no corrompe constantes de módulo al escribir de vuelta
 - **Corregido** `alias.CONST` resuelve correctamente; `#>` puede ir después de definiciones de funciones
 - **VM** Paridad total: 393/393 tests pasan
 
@@ -749,7 +815,6 @@ clasificar(numero) {
 - **Añadido** Literales booleanos en cualquier sistema — `#१` / `#०`, `#١` / `#٠`, etc.
 - **Añadido** Dígitos Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
 - **Añadido** Opcode VM `SetNumeralMode` — paridad completa con el árbol de evaluación
-- **Añadido** REPL respeta el modo numérico activo en eco y visualización de variables
 - **Cambiado** Salida booleana `>>` incluye prefijo `#` (`#0` / `#1`) en todos los modos
 
 ### v0.0.2_01 — Renombrado de Operadores _(30 Mar 2026)_
@@ -779,4 +844,3 @@ clasificar(numero) {
 ---
 
 _Zymbol-Lang — Simbólico. Universal. Inmutable._
-

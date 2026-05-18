@@ -1,30 +1,32 @@
-> **Hinweis:** Diese Dokumentation wurde mit Unterstützung von künstlicher Intelligenz (KI) erstellt und übersetzt.
+> **Hinweis:** Diese Dokumentation wurde mit Unterstützung künstlicher Intelligenz (KI) erstellt.
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 >
-> Die maßgebliche Referenz ist **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** im Interpreter-Repository.
+> Die kanonische Referenz ist **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** im Interpreter-Repository.
 
 ---
 
 # Zymbol-Lang Handbuch
 
-**Zymbol-Lang** ist eine symbolische Programmiersprache. Keine Schlüsselwörter — alles sind Symbole. Funktioniert identisch in jeder menschlichen Sprache.
+> **Überarbeitet für v0.0.5 — 2026-05-12**
+
+**Zymbol-Lang** ist eine symbolische Programmiersprache. Keine Schlüsselwörter — alles ist ein Symbol. Funktioniert in jeder menschlichen Sprache identisch.
 
 - Kein `if`, `while`, `return` — nur `?`, `@`, `<~`
-- Vollständiges Unicode — Bezeichner in jeder Sprache oder als Emoji
+- Vollständiges Unicode — Bezeichner in jeder Sprache oder Emoji
 - Sprachunabhängig — der Code ist überall gleich
 
-**Interpreter-Version**: v0.0.4 | **Testabdeckung**: 393/393 (Parität TW ↔ VM)
+**Interpreter-Version**: v0.0.5 | **Testabdeckung**: 436/436 (TW ↔ VM Parität)
 
 ---
 
-## Variablen und Konstanten
+## Variablen & Konstanten
 
 ```zymbol
 x = 10              // veränderliche Variable
 PI := 3.14159       // Konstante — Neuzuweisung ist ein Laufzeitfehler
 name = "Alice"
-aktiv = #1          // boolesches Wahr
+aktiv = #1          // Boolescher Wert wahr
 👋 := "Hallo"
 ```
 
@@ -40,25 +42,39 @@ x++        // 5
 x--        // 4
 ```
 
+`°` (Gradzeichen, U+00B0) initialisiert eine Variable beim ersten Gebrauch automatisch auf ihren Neutralwert:
+
+```zymbol
+zahlen = [3, 1, 4, 1, 5]
+@ n:zahlen {
+    °gesamt += n    // Auto-Init auf 0 über Schleife; bleibt nach @
+}
+>> gesamt ¶         // → 14
+```
+
+> `°x` (Präfix) verankert oberhalb der Schleife — Ergebnis nach `@` verfügbar.
+> `x°` (Postfix) verankert innerhalb der Schleife — endet wenn die Schleife endet.
+> Nur Tree-Walker.
+
 ---
 
 ## Datentypen
 
-| Typ | Literal | `#?`-Tag | Hinweise |
-|-----|---------|----------|----------|
-| Ganzzahl | `42`, `-7` | `###` | 64-Bit-Vorzeichen |
+| Typ | Literal | `#?` tag | Hinweise |
+|-----|---------|----------|---------|
+| Ganzzahl | `42`, `-7` | `###` | 64-Bit vorzeichenbehaftet |
 | Gleitkomma | `3.14`, `1.5e10` | `##.` | Wissenschaftliche Notation OK |
 | Zeichenkette | `"text"` | `##"` | Interpolation: `"Hallo {name}"` |
 | Zeichen | `'A'` | `##'` | Einzelnes Unicode-Zeichen |
-| Boolesch | `#1`, `#0` | `##?` | NICHT numerisch — `#1 ≠ 1` |
+| Wahrheitswert | `#1`, `#0` | `##?` | NICHT numerisch — `#1 ≠ 1` |
 | Feld | `[1, 2, 3]` | `##]` | Homogene Elemente |
-| Tupel | `(a, b)` | `##)` | Positionsbezogen |
+| Tupel | `(a, b)` | `##)` | Positionell |
 | Benanntes Tupel | `(x: 1, y: 2)` | `##)` | Benannte Felder |
 | Funktion | benannte Funktionsreferenz | `##()` | Erstklassig; Anzeige `<funct/N>` |
 | Lambda | `x -> x * 2` | `##->` | Erstklassig; Anzeige `<lambd/N>` |
 
 ```zymbol
-// Typinspektion — gibt (Typ, Stellen, Wert) zurück
+// Typinspektion — gibt (typ, stellen, wert) zurück
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
 t = meta[1]
@@ -67,46 +83,78 @@ t = meta[1]
 
 ---
 
-## Ausgabe und Eingabe
+## Ausgabe & Eingabe
 
 ```zymbol
->> "Hallo Welt" ¶                 // ¶ oder \\ für expliziten Zeilenumbruch
->> "a=" a " b=" b ¶               // Juxtaposition — mehrere Werte
->> (arr$#) ¶                      // Postfix-Operatoren benötigen ( ) in >>
+>> "Hallo" ¶                       // ¶ oder \\ für expliziten Zeilenumbruch
+>> "a=" a " b=" b ¶                // Nebeneinanderstellung — mehrere Werte
+>> (feld$#) ¶                      // Postfix-Operatoren benötigen ( ) in >>
 
-<< name                           // in Variable einlesen (ohne Eingabeaufforderung)
-<< "Namen eingeben: " name        // mit Eingabeaufforderung
+<< name                            // in Variable einlesen (kein Prompt)
+<< "Namen eingeben: " name         // mit Prompt
 ```
 
-> `¶` (AltGr+R auf spanischer Tastatur) und `\\` sind äquivalente Zeilenumbrüche.
+> `¶` (AltGr+R auf spanischer Tastatur) und `\\` sind gleichwertige Zeilenumbrüche.
+
+---
+
+## TUI-Grundbausteine
+
+Terminal-UI-Operatoren für interaktive Programme. Die meisten benötigen einen `>>| { }` Block (Alternativbildschirm + Rohmodus).
+
+```zymbol
+>>| {
+    >>!                              // Alternativbildschirm löschen
+    >>~ (1, 1, 0, 10) > "Läuft"     // Zeile 1, Spalte 1, fg=10 (grün)
+    @~ 1000                          // 1 Sekunde pausieren (1000 ms)
+    >>~ (2, 1) > "Fertig."
+}
+// Terminal wird beim Beenden automatisch wiederhergestellt
+```
+
+```zymbol
+// Tastendruck und Terminalgröße
+>>| {
+    [zeilen, spalten] = >>?          // Terminal-Dimensionen abfragen
+    >>~ (1, 1) > "Terminal: " zeilen " x " spalten
+    <<| taste                        // blockierendes Tastenlesen
+    >>~ (2, 1) > "Gedrückt: " taste
+}
+```
+
+> `>>!` löscht Bildschirm. `>>?` gibt `[zeilen, spalten]` zurück. `@~ N` wartet N Millisekunden.
+> `<<|` liest eine Taste (blockierend); `<<|?` fragt ohne Blockierung ab (gibt `'\0'` zurück wenn keine).
+> Positioniertes Ausgabe-Tupel: `(zeile, spalte, BKS, fg, bg)` — jeder Slot kann mit Komma weggelassen werden (`>>~ (,,, 196) > "rot"`).
+> BKS-Bitmaske: `1`=Fett, `2`=Kursiv, `4`=Unterstrichen. ANSI-256-Farb-Palette (`0`=Terminal-Standard).
+> Nur Tree-Walker (außer `>>!`, `>>?`, `@~`, `>>~` die auch in `--vm` funktionieren).
 
 ---
 
 ## Operatoren
 
 ```zymbol
-// Arithmetik — Zuweisungen verwenden; einige Operatoren haben Eigenheiten direkt in >>
+// Arithmetik
 a = 10
 b = 3
-ergebnis1 = a + b    // 13
-ergebnis2 = a - b    // 7
-ergebnis3 = a * b    // 30
-ergebnis4 = a / b    // 3  (Ganzzahldivision)
-ergebnis5 = a % b    // 1
-ergebnis6 = a ^ b    // 1000  (Potenzierung)
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (Ganzzahldivision)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (Potenzierung)
 
-// Vergleich
-a == b    // #0
-a <> b    // #1
-a < b      // #0
-a <= b    // #0
-a > b      // #1
-a >= b     // #1
+// Vergleich — zuweisen um zu prüfen
+c1 = a == b    // #0
+c2 = a <> b    // #1
+c3 = a < b     // #0
+c4 = a <= b    // #0
+c5 = a > b     // #1
+c6 = a >= b    // #1
 
-// Logisch
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
+// Logik
+l1 = #1 && #0    // #0
+l2 = #1 || #0    // #1
+l3 = !#1         // #0
 ```
 
 ---
@@ -118,21 +166,22 @@ a >= b     // #1
 name = "Alice"
 n = 42
 
->> "Hallo " name " du hast " n ¶     // Juxtaposition — in >>
-beschr = "Hallo {name}, du hast {n}" // Interpolation — überall
+>> "Hallo " name " du hast " n ¶    // Nebeneinanderstellung — in >>
+beschr = "Hallo {name}, du hast {n}"  // Interpolation — überall
 ```
 
 ```zymbol
 s = "Hallo Welt"
-len = s$#                  // 10
-sub = s$[1..5]             // "Hallo"  (1-basiert, Ende inklusive)
-hat = s$? "Welt"           // #1
-teile = "a,b,c,d"$/ ','   // [a, b, c, d]  (Trennung nach Trennzeichen)
-ers = s$~~["l":"L"]        // "HaLLo WeLt"
-ers1 = s$~~["l":"L":1]    // "HaLlo Welt"  (nur erste N)
+laenge = s$#                  // 11
+teil = s$[1..5]               // "Hallo"  (1-basiert, Ende inklusive)
+hat = s$? "Welt"              // #1
+teile = "a,b,c,d"$/ ','       // [a, b, c, d]  (nach Trennzeichen aufteilen)
+ers = s$~~["l":"L"]           // "HaLLo WeLt"
+ers1 = s$~~["l":"L":1]        // "HaLlo Welt"  (nur erste N)
+linie = "─" $* 20             // "────────────────────"  (N-mal wiederholen)
 ```
 
-> `+` ist nur für Zahlen. Verwende `,`, Juxtaposition oder Interpolation für Zeichenketten.
+> `+` ist nur für Zahlen. Verwende `,`, Nebeneinanderstellung oder Interpolation für Zeichenketten.
 
 ---
 
@@ -154,46 +203,47 @@ x = 7
 }
 ```
 
-> `{ }` geschweifte Klammern sind **erforderlich**, auch bei einer einzelnen Anweisung.
+> Geschweifte Klammern `{ }` sind **erforderlich** auch für eine einzelne Anweisung.
 
 ---
 
-## Match
+## Muster-Abgleich
 
 ```zymbol
 // Bereiche
 punkte = 85
 note = ?? punkte {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+    90..100 => 'S'
+    80..89  => 'G'
+    70..79  => 'B'
+    _       => 'U'
 }
->> note ¶    // → B
+>> note ¶    // → G
 
 // Zeichenketten
 farbe = "rot"
 code = ?? farbe {
-    "rot"   : "#FF0000"
-    "gruen" : "#00FF00"
-    _       : "#000000"
+    "rot"   => "#FF0000"
+    "grün"  => "#00FF00"
+    _       => "#000000"
 }
 
 // Vergleichsmuster
 temp = -5
 zustand = ?? temp {
-    < 0  : "eis"
-    < 20 : "kalt"
-    < 35 : "warm"
-    _    : "heiss"
+    < 0  => "eis"
+    < 20 => "kalt"
+    < 35 => "warm"
+    _    => "heiß"
 }
 >> zustand ¶    // → eis
 
-// Anweisungsform (Block-Arme)
+// Anweisungsform (Block-Zweige)
+n = -3
 ?? n {
-    0       : { >> "null" ¶ }
-    _? n < 0: { >> "negativ" ¶ }
-    _       : { >> "positiv" ¶ }
+    0    => { >> "null" ¶ }
+    < 0  => { >> "negativ" ¶ }
+    _    => { >> "positiv" ¶ }
 }
 ```
 
@@ -203,17 +253,17 @@ zustand = ?? temp {
 
 ```zymbol
 @ i:0..4  { >> i " " }        // Bereich inklusive:  0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // mit Schritt:         1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // rückwärts:           5 4 3 2 1 0
+@ i:1..9:2 { >> i " " }       // mit Schritt:        1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // rückwärts:          5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
 >> n ¶                        // → 128  (while)
 
-fruechte = ["Apfel", "Birne", "Traube"]
-@ f:fruechte { >> f ¶ }       // für jedes Feldelement
+fruechte = ["apfel", "birne", "traube"]
+@ f:fruechte { >> f ¶ }       // für jedes Element des Felds
 
-@ c:"hallo" { >> c "-" }
+@ z:"hallo" { >> z "-" }
 >> ¶                          // → h-a-l-l-o-  (für jedes Zeichen)
 
 @ i:1..10 {
@@ -232,7 +282,7 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Benannte Schleife (verschachtelter Abbruch)
+// Beschriftete Schleife (verschachtelter Abbruch)
 zaehler = 0
 @:aussen {
     zaehler++
@@ -256,7 +306,7 @@ fakultaet(n) {
 >> fakultaet(5) ¶    // → 120
 ```
 
-Funktionen haben **isolierten Geltungsbereich** — sie können keine äußeren Variablen lesen. Verwende Ausgabeparameter `<~`, um Variablen des Aufrufers zu ändern:
+Funktionen haben **isolierten Gültigkeitsbereich** — sie können keine äußeren Variablen lesen. Verwende Ausgabeparameter `<~` um Aufrufervariablen zu ändern:
 
 ```zymbol
 tauschen(a<~, b<~) {
@@ -274,7 +324,7 @@ tauschen(x, y)
 
 ---
 
-## Lambdas und Closures
+## Lambdas & Closures
 
 ```zymbol
 verdoppeln = x -> x * 2
@@ -283,21 +333,21 @@ summe = (a, b) -> a + b
 >> summe(3, 7) ¶      // → 10
 
 // Block-Lambda
-klassifizieren = x -> {
+einordnen = x -> {
     ? x > 0 { <~ "positiv" }
     _? x < 0 { <~ "negativ" }
     <~ "null"
 }
 
-// Closure — erfasst äußeren Geltungsbereich
+// Closure — erfasst äußeren Bereich
 faktor = 3
 dreifach = x -> x * faktor
 >> dreifach(7) ¶    // → 21
 
 // Fabrik
-erstelle_addierer(n) { <~ x -> x + n }
-add10 = erstelle_addierer(10)
->> add10(5) ¶    // → 15
+addierer_erstellen(n) { <~ x -> x + n }
+plus10 = addierer_erstellen(10)
+>> plus10(5) ¶    // → 15
 
 // In Feldern
 ops = [x -> x+1, x -> x*2, x -> x*x]
@@ -308,58 +358,58 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Felder
 
-Felder sind **veränderlich** und enthalten Elemente des **gleichen Typs**.
+Felder sind **veränderlich** und enthalten Elemente desselben **Typs**.
 
 ```zymbol
-arr = [1, 2, 3, 4, 5]
+feld = [1, 2, 3, 4, 5]
 
-arr[1]          // 1 — Zugriff (1-basiert: erstes Element)
-arr[-1]         // 5 — negativer Index (letztes Element)
-arr$#           // 5 — Länge (verwende (arr$#) in >>)
+x = feld[1]      // 1 — Zugriff (1-basiert: erstes Element)
+x = feld[-1]     // 5 — negativer Index (letztes Element)
+x = feld$#       // 5 — Länge (verwende (feld$#) in >>)
 
-arr = arr$+ 6            // anhängen → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // einfügen an Position 2 (1-basiert)
-arr3 = arr$- 3           // erstes Vorkommen des Werts entfernen
-arr4 = arr$-- 3          // alle Vorkommen entfernen
-arr5 = arr$-[1]          // an Index 1 entfernen (erstes Element)
-arr6 = arr$-[2..3]       // Bereich entfernen (1-basiert, Ende inklusive)
+feld = feld$+ 6             // anhängen → [1,2,3,4,5,6]
+feld2 = feld$+[2] 99        // einfügen an Position 2 (1-basiert)
+feld3 = feld$- 3            // erste Vorkommen des Werts entfernen
+feld4 = feld$-- 3           // alle Vorkommen entfernen
+feld5 = feld$-[1]           // bei Index 1 entfernen (erstes Element)
+feld6 = feld$-[2..3]        // Bereich entfernen (1-basiert, Ende inklusive)
 
-hat = arr$? 3            // #1 — enthält
-pos = arr$?? 3           // [3] — alle Indizes des Werts (1-basiert)
-ausschn = arr$[1..3]     // [1,2,3] — Ausschnitt (1-basiert, Ende inklusive)
-ausschn2 = arr$[1:3]     // [1,2,3] — gleich, anzahlbasierte Syntax
+hat = feld$? 3              // #1 — enthält
+pos = feld$?? 3             // [3] — alle Indizes des Werts (1-basiert)
+ausschnitt = feld$[1..3]    // [1,2,3] — Ausschnitt (1-basiert, Ende inklusive)
+ausschnitt2 = feld$[1:3]    // [1,2,3] — gleich, anzahlbasierte Syntax
 
-aufst = arr$^+           // aufsteigend sortiert  (nur Primitive)
-abst = arr$^-            // absteigend sortiert   (nur Primitive)
+aufst = feld$^+             // aufsteigend sortiert  (nur Primitive)
+abst = feld$^-              // absteigend sortiert (nur Primitive)
 
-// Benannte/positionelle Tupel-Felder — $^ mit Vergleichs-Lambda verwenden
+// Benannte/positionelle Tupel-Felder — $^ mit Vergleichslambda verwenden
 db = [(name: "Carla", alter: 28), (name: "Ana", alter: 25), (name: "Bob", alter: 30)]
-nach_alter = db$^ (a, b -> a.alter < b.alter)     // aufsteigend nach Alter (<)
-nach_name  = db$^ (a, b -> a.name > b.name)       // absteigend nach Name (>)
+nach_alter = db$^ (a, b -> a.alter < b.alter)    // aufsteigend nach Alter  (<)
+nach_name  = db$^ (a, b -> a.name > b.name)      // absteigend nach Name (>)
 >> nach_alter[1].name ¶     // → Ana
 >> nach_name[1].name ¶      // → Carla
 
 // Direktes Element-Update (nur Felder)
-arr[1] = 99              // zuweisen
-arr[2] += 5              // zusammengesetzt: +=  -=  *=  /=  %=  ^=
+feld[1] = 99             // zuweisen
+feld[2] += 5             // zusammengesetzt: +=  -=  *=  /=  %=  ^=
 
-// Funktionales Update — gibt ein neues Feld zurück; Original unverändert
-arr2 = arr[2]$~ 99
+// Funktionales Update — gibt neues Feld zurück; Original unverändert
+feld2 = feld[2]$~ 99
 ```
 
-> Alle Sammlungsoperatoren geben ein **neues Feld** zurück. Zurückzuweisen: `arr = arr$+ 4`.
-> `$+` ist verkettbar: `arr = arr$+ 5$+ 6$+ 7`. Andere Operatoren verwenden Zwischenzuweisungen.
-> **Indizierung ist 1-basiert**: `arr[1]` ist das erste Element; `arr[0]` ist ein Laufzeitfehler.
-> `$^+` / `$^-` sortiert **primitive Felder** (Zahlen, Zeichenketten). Für Tupel-Felder `$^` mit Vergleichs-Lambda verwenden — Richtung wird im Lambda kodiert (`<` = aufsteigend, `>` = absteigend).
+> Alle Kollektionsoperatoren geben ein **neues Feld** zurück. Zurückweisen: `feld = feld$+ 4`.
+> `$+` kann verkettet werden: `feld = feld$+ 5$+ 6$+ 7`. Andere Operatoren verwenden Zwischenzuweisungen.
+> **Indizierung ist 1-basiert**: `feld[1]` ist das erste Element; `feld[0]` ist ein Laufzeitfehler.
+> `$^+` / `$^-` sortiert **primitive Felder** (Zahlen, Zeichenketten). Für Tupel-Felder verwende `$^` mit Vergleichslambda — die Richtung ist in der Lambda kodiert (`<` = aufsteigend, `>` = absteigend).
 
-**Wertsemantik** — eine Zuweisung eines Feldes an eine andere Variable erzeugt eine unabhängige Kopie:
+**Wertsemantik** — das Zuweisen eines Felds an eine andere Variable erstellt eine unabhängige Kopie:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
 a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b ist nicht betroffen
+>> b ¶    // → [1, 2, 3]   ← b unberührt
 ```
 
 ```zymbol
@@ -374,26 +424,26 @@ matrix = [[1,2,3],[4,5,6],[7,8,9]]
 
 ```zymbol
 // Feld
-arr = [10, 20, 30, 40, 50]
-[a, b, c] = arr              // a=10  b=20  c=30
-[erstes, *rest] = arr        // erstes=10  rest=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ verwirft
+feld = [10, 20, 30, 40, 50]
+[a, b, c] = feld              // a=10  b=20  c=30
+[erstes, *rest] = feld        // erstes=10  rest=[20,30,40,50]
+[x, _, z] = [1, 2, 3]         // _ verwerfen
 
 // Positionelles Tupel
 punkt = (100, 200)
-(px, py) = punkt             // px=100  py=200
+(px, py) = punkt              // px=100  py=200
 
 // Benanntes Tupel
 person = (name: "Ana", alter: 25, stadt: "Berlin")
-(name: n, alter: a) = person // n="Ana"  a=25
+(name: n, alter: a) = person  // n="Ana"  a=25
 ```
 
 ---
 
 ## Tupel
 
-Tupel sind **unveränderliche** geordnete Container, die Werte **verschiedener Typen** enthalten können.
-Im Gegensatz zu Feldern können Elemente nach der Erstellung nicht geändert werden.
+Tupel sind **unveränderliche** geordnete Container, die Werte **verschiedener Typen** halten können.
+Anders als Felder können Elemente nach der Erstellung nicht geändert werden.
 
 ```zymbol
 // Positionell — gemischte Typen erlaubt
@@ -401,7 +451,7 @@ punkt = (10, 20)
 >> punkt[1] ¶    // → 10
 
 daten = (42, "hallo", #1, 3.14)
->> daten[3] ¶     // → #1
+>> daten[3] ¶    // → #1
 
 // Benannt
 person = (name: "Alice", alter: 25)
@@ -410,11 +460,11 @@ person = (name: "Alice", alter: 25)
 
 // Verschachtelt
 pos = (x: 10, y: 20)
-p = (pos: pos, bezeichner: "ursprung")
+p = (pos: pos, bezeichnung: "ursprung")
 >> p.pos.x ¶        // → 10
 ```
 
-**Unveränderlichkeit** — jeder Versuch, ein Tupel-Element zu ändern, ist ein Laufzeitfehler:
+**Unveränderlichkeit** — jeder Versuch ein Tupel-Element zu ändern ist ein Laufzeitfehler:
 
 ```zymbol
 t = (10, 20, 30)
@@ -422,7 +472,7 @@ t = (10, 20, 30)
 // t[1] += 5    // ❌ gleicher Fehler
 ```
 
-Um einen abgeleiteten Wert zu erhalten, verwende `$~` (funktionales Update) — gibt ein **neues** Tupel zurück:
+Um einen geänderten Wert abzuleiten, verwende `$~` (funktionales Update) — gibt ein **neues** Tupel zurück:
 
 ```zymbol
 t = (10, 20, 30)
@@ -439,25 +489,25 @@ aelter  = (name: person.name, alter: 26)
 
 ---
 
-## Höhere Funktionen
+## Funktionen höherer Ordnung
 
 ```zymbol
 zahlen = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-verdoppelt = zahlen$> (x -> x * 2)               // map  → [2,4,6…20]
-gerade     = zahlen$| (x -> x % 2 == 0)          // filter → [2,4,6,8,10]
-gesamt     = zahlen$< (0, (akk, x) -> akk + x)   // reduce → 55
+verdoppelt  = zahlen$> (x -> x * 2)               // map  → [2,4,6…20]
+gerade      = zahlen$| (x -> x % 2 == 0)          // filter → [2,4,6,8,10]
+gesamt      = zahlen$< (0, (acc, x) -> acc + x)    // reduce → 55
 
-// Verkettung über Zwischenschritte
+// Kette über Zwischenergebnisse
 schritt1 = zahlen$| (x -> x > 3)
 schritt2 = schritt1$> (x -> x * x)
 >> schritt2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Benannte Funktionen können direkt an höhere Funktionen übergeben werden
+// Benannte Funktionen können direkt an HOF übergeben werden
 verdoppeln(x) { <~ x * 2 }
 ist_gross(x) { <~ x > 5 }
-ergebnis = zahlen$> verdoppeln    // ✅ direkte Referenz
-ergebnis = zahlen$| ist_gross     // ✅ direkte Referenz
+r = zahlen$> verdoppeln    // ✅ direkte Referenz
+r = zahlen$| ist_gross     // ✅ direkte Referenz
 ```
 
 ---
@@ -471,13 +521,13 @@ verdoppeln = x -> x * 2
 addieren = (a, b) -> a + b
 erhoehen = x -> x + 1
 
-5 |> verdoppeln(_)        // → 10
-10 |> addieren(_, 5)      // → 15
-5 |> addieren(2, _)       // → 7
+r1 = 5 |> verdoppeln(_)             // → 10
+r2 = 10 |> addieren(_, 5)           // → 15
+r3 = 5 |> addieren(2, _)            // → 7
 
 // Verkettet
-ergebnis = 5 |> verdoppeln(_) |> erhoehen(_) |> verdoppeln(_)
->> ergebnis ¶    // → 22  (5→10→11→22)
+r = 5 |> verdoppeln(_) |> erhoehen(_) |> verdoppeln(_)
+>> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
@@ -488,11 +538,11 @@ ergebnis = 5 |> verdoppeln(_) |> erhoehen(_) |> verdoppeln(_)
 !? {
     x = 10 / 0
 } :! ##Div {
-    >> "Division durch null" ¶
+    >> "division durch null" ¶
 } :! {
-    >> "sonstiger Fehler: " _err ¶    // _err enthält die Fehlermeldung
+    >> "sonstiger fehler: " _err ¶    // _err enthält die Fehlermeldung
 } :> {
-    >> "wird immer ausgeführt" ¶
+    >> "läuft immer" ¶
 }
 ```
 
@@ -500,94 +550,92 @@ ergebnis = 5 |> verdoppeln(_) |> erhoehen(_) |> verdoppeln(_)
 |-----|------|
 | `##Div` | Division durch null |
 | `##IO` | Datei / System |
-| `##Index` | Index außerhalb des Bereichs |
-| `##Type` | Typfehler |
+| `##Index` | Index außerhalb Grenzen |
+| `##Type` | Typkonflikt |
 | `##Parse` | Daten-Parsing |
 | `##Network` | Netzwerkfehler |
-| `##_` | Beliebiger Fehler (Sammelklausel) |
+| `##_` | Beliebiger Fehler (Auffangklausel) |
 
 ---
 
 ## Module
 
 ```zymbol
-// lib/rechner.zy — Modulrumpf ist in geschweifte Klammern eingeschlossen
+// lib/rechner.zy — Modulrumpf in geschweiften Klammern
 # rechner {
-    #> { addieren, get_PI }
+    #> { addieren, pi_holen }
 
     _PI := 3.14159
     addieren(a, b) { <~ a + b }
-    get_PI() { <~ _PI }
+    pi_holen() { <~ _PI }
 }
 ```
 
 ```zymbol
 // haupt.zy
-<# ./lib/rechner <= r    // Alias erforderlich
+<# ./lib/rechner => r    // Alias erforderlich
 
 >> r::addieren(5, 3) ¶   // → 8
-pi = r::get_PI()
+pi = r::pi_holen()
 >> pi ¶                  // → 3.14159
 ```
 
 ```zymbol
-// Export unter einem anderen öffentlichen Namen
-# meinelib {
-    #> { _interner_addierer <= summe }
+// Mit anderem öffentlichem Namen exportieren
+# meinmodul {
+    #> { _intern_addieren => summe }
 
-    _interner_addierer(a, b) { <~ a + b }
+    _intern_addieren(a, b) { <~ a + b }
 }
 ```
 
 ```zymbol
-<# ./meinelib <= m
+<# ./meinmodul => m
 
->> m::summe(3, 4) ¶    // → 7  (interner Name _interner_addierer ist versteckt)
+>> m::summe(3, 4) ¶    // → 7  (interner Name _intern_addieren ist verborgen)
 ```
 
-> **Modulregeln**: Nur `#>`, Funktionsdefinitionen und literale Variablen-/Konstanteninitialisierungen sind innerhalb von `# name { }` erlaubt. Ausführbare Anweisungen (`>>`, `<<`, Schleifen usw.) lösen Fehler E013 aus.
+> **Modulregeln**: nur `#>`, Funktionsdefinitionen und literale Variablen-/Konstanteninitialisierungen sind innerhalb `# name { }` erlaubt. Ausführbare Anweisungen (`>>`, `<<`, Schleifen usw.) lösen Fehler E013 aus.
 
 ---
 
-## Numerische Systeme
+## Zahlenmodi
 
-Zymbol kann Zahlen in **69 Unicode-Ziffernskripten** anzeigen — Devanagari, Arabisch-Indisch, Thailändisch, Klingonisches pIqaD, Mathematisch Fett, LCD-Segmente und mehr. Der aktive Modus beeinflusst nur die `>>`-Ausgabe; die interne Arithmetik ist immer binär.
+Zymbol kann Zahlen in **69 Unicode-Ziffernskripten** anzeigen — Devanagari, Arabisch-Indisch, Thai, Klingon pIqaD, Mathematisch-Fett, LCD-Segmente und mehr. Der aktive Modus beeinflusst nur die `>>`-Ausgabe; interne Arithmetik ist stets binär.
 
-### Ein System aktivieren
+### Skript aktivieren
 
-Schreibe die Ziffern `0` und `9` des Zielskripts eingeschlossen in `#…#`:
+Schreibe die Ziffer `0` und `9` des Zielskripts in `#…#`:
 
 ```zymbol
-#०९#    // Devanagari       (U+0966–U+096F)
+#०९#    // Devanagari   (U+0966–U+096F)
 #٠٩#    // Arabisch-Indisch (U+0660–U+0669)
-#๐๙#    // Thailändisch     (U+0E50–U+0E59)
+#๐๙#    // Thai         (U+0E50–U+0E59)
 #09#    // auf ASCII zurücksetzen
 ```
 
-Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9) wird ebenfalls unterstützt und kann auf dieselbe Weise aktiviert werden.
-
-### Ausgabe und Boolesche Werte
+### Ausgabe und Wahrheitswerte
 
 ```zymbol
 x = 42
->> x ¶          // → 42   (ASCII-Standard)
+>> x ¶          // → 42   (ASCII Standard)
 
 #०९#
 >> x ¶          // → ४२
 >> 3.14 ¶       // → ३.१४   (Dezimalpunkt immer ASCII)
 >> 1 + 2 ¶      // → ३
 
-// Boolesche Werte: # Präfix immer ASCII, Ziffer passt sich an
->> #1 ¶         // → #१   (wahr  auf Devanagari)
->> #0 ¶         // → #०   (falsch — unterscheidet sich von ०  ganzzahlig null)
+// Wahrheitswerte: # Präfix immer ASCII, Ziffer passt sich an
+>> #1 ¶         // → #१   (wahr in Devanagari)
+>> #0 ¶         // → #०   (falsch — unterschiedlich von ० Ganzzahl-Null)
 
 x = 28 > 4
 >> x ¶          // → #१   (Vergleichsergebnis folgt aktivem Modus)
 ```
 
-### Native Ziffernsymbole im Quellcode
+### Native Ziffernliterale im Quellcode
 
-Ziffern aller unterstützten Skripte sind gültige Literale — in Bereichen, Modulo, Vergleichen:
+Ziffern jedes unterstützten Skripts sind gültige Literale — in Bereichen, Modulo, Vergleichen:
 
 ```zymbol
 #०९#
@@ -600,18 +648,18 @@ Ziffern aller unterstützten Skripte sind gültige Literale — in Bereichen, Mo
 }
 ```
 
-### Boolesche Literale in jedem System
+### Wahrheitswertliterale in jedem Skript
 
-`#` + Ziffer `0` oder `1` aus einem beliebigen Block ist ein gültiges boolesches Literal:
+`#` + Ziffer `0` oder `1` aus jedem Block ist ein gültiges Wahrheitswertliteral:
 
 ```zymbol
 #٠٩#
 نشط = #١        // entspricht #1
 >> نشط ¶        // → #١
->> (#١ && #٠) ¶ // → #٠
+>> (#१ && #٠) ¶ // → #٠
 ```
 
-> `#` ist **immer ASCII**. `#0` (falsch) ist in jedem Skript visuell immer von `0` (ganzzahlig null) zu unterscheiden.
+> `#` ist **immer ASCII**. `#0` (falsch) ist in jedem Skript optisch klar von `0` (Ganzzahl-Null) unterscheidbar.
 
 ---
 
@@ -619,31 +667,31 @@ Ziffern aller unterstützten Skripte sind gültige Literale — in Bereichen, Mo
 
 ```zymbol
 // Typkonvertierungs-Casts
-##.42         // → 42.0  (zu Gleitkomma)
-###3.7        // → 4     (zu Ganzzahl, runden)
-##!3.7        // → 3     (zu Ganzzahl, abschneiden)
+f = ##.42         // → 42.0  (zu Gleitkomma)
+i = ###3.7        // → 4     (zu Ganzzahl, gerundet)
+t = ##!3.7        // → 3     (zu Ganzzahl, abgeschnitten)
 
-// Zeichenkette zu Zahl parsen
-v1 = #|"42"|      // → 42  (Ganzzahl)
-v2 = #|"3.14"|    // → 3.14  (Gleitkomma)
-v3 = #|"abc"|     // → "abc"  (sicher, kein Fehler)
+// Zeichenkette in Zahl umwandeln
+w1 = #|"42"|      // → 42  (Ganzzahl)
+w2 = #|"3.14"|    // → 3.14  (Gleitkomma)
+w3 = #|"abc"|     // → "abc"  (fehlersicher, kein Fehler)
 
 // Runden / Abschneiden
 pi = 3.14159265
-r2 = #.2|pi|      // → 3.14  (auf 2 Dezimalstellen runden)
+r2 = #.2|pi|      // → 3.14  (auf 2 Stellen runden)
 r4 = #.4|pi|      // → 3.1416
 t2 = #!2|pi|      // → 3.14  (abschneiden)
 
 // Zahlenformatierung
-fmt = #,|1234567|      // → 1,234,567  (kommagetrennt)
-wiss = #^|12345.678|   // → 1.2345678e4  (wissenschaftlich)
+fmt = #,|1234567|      // → 1,234,567  (tausendergetrennt)
+wiss = #^|12345.678|  // → 1.2345678e4  (wissenschaftlich)
 
-// Basis-Literale
+// Basisliterale
 a = 0x41         // → 'A'  (hexadezimal)
 b = 0b01000001   // → 'A'  (binär)
 c = 0o101        // → 'A'  (oktal)
 
-// Basis-Konvertierungsausgabe
+// Basiskonversions-Ausgabe
 hex = 0x|255|    // → "0x00FF"
 bin = 0b|65|     // → "0b1000001"
 okt = 0o|8|      // → "0o10"
@@ -655,13 +703,13 @@ dez = 0d|255|    // → "0d0255"
 ## Shell-Integration
 
 ```zymbol
-datum = <\ date +%Y-%m-%d \>     // stdout erfassen (mit abschließendem \n)
+datum = <\ date +%Y-%m-%d \>      // erfasst stdout (einschließlich \n)
 >> "Heute: " datum
 
 datei = "daten.txt"
-inhalt = <\ cat {datei} \>       // Interpolation in Befehlen
+inhalt = <\ cat {datei} \>        // Interpolation in Befehlen
 
-ausgabe = </"./teilskript.zy"/>  // weiteres Zymbol-Skript ausführen, Ausgabe erfassen
+ausgabe = </"./teilskript.zy"/>   // anderes Zymbol-Skript ausführen, Ausgabe erfassen
 >> ausgabe
 ```
 
@@ -672,14 +720,14 @@ ausgabe = </"./teilskript.zy"/>  // weiteres Zymbol-Skript ausführen, Ausgabe e
 ## Vollständiges Beispiel: FizzBuzz
 
 ```zymbol
-klassifizieren(zahl) {
+einordnen(zahl) {
     ? zahl % 15 == 0 { <~ "FizzBuzz" }
     _? zahl % 3  == 0 { <~ "Fizz" }
     _? zahl % 5  == 0 { <~ "Buzz" }
     _ { <~ zahl }
 }
 
-@ i:1..20 { >> klassifizieren(i) ¶ }
+@ i:1..20 { >> einordnen(i) ¶ }
 ```
 
 ---
@@ -689,89 +737,106 @@ klassifizieren(zahl) {
 | Symbol | Operation | Symbol | Operation |
 |--------|-----------|--------|-----------|
 | `=` | Variable | `$#` | Länge |
-| `:=` | Konstante | `$+` | anhängen (verkettbar) |
-| `>>` | Ausgabe | `$+[i]` | einfügen an Index (1-basiert) |
-| `<<` | Eingabe | `$-` | erstes Vorkommen nach Wert entfernen |
-| `¶` / `\\` | Zeilenumbruch | `$--` | alle Vorkommen nach Wert entfernen |
-| `?` | wenn | `$-[i]` | an Index entfernen (1-basiert) |
+| `:=` | Konstante | `$+` | Anhängen (verkettbar) |
+| `>>` | Ausgabe | `$+[i]` | Einfügen bei Index (1-basiert) |
+| `<<` | Eingabe | `$-` | Erste nach Wert entfernen |
+| `¶` / `\\` | Zeilenumbruch | `$--` | Alle nach Wert entfernen |
+| `?` | wenn | `$-[i]` | Bei Index entfernen (1-basiert) |
 | `_?` | sonst-wenn | `$-[i..j]` | Bereich entfernen (1-basiert) |
-| `_` | sonst / Platzhalter | `$?` | enthält |
-| `??` | Match | `$??` | alle Indizes finden (1-basiert) |
+| `_` | sonst / Wildcard | `$?` | Enthält |
+| `??` | Musterabgleich | `$??` | Alle Indizes finden (1-basiert) |
 | `@` | Schleife | `$[s..e]` | Ausschnitt (1-basiert) |
-| `@ N { }` | N-mal-Schleife (N Iterationen) | `$>` | map |
+| `@ N { }` | N-mal-Schleife | `$>` | map |
 | `@!` | abbrechen | `$\|` | filter |
 | `@>` | weiter | `$<` | reduce |
 | `@:name { }` | benannte Schleife | `$/ trenn` | Zeichenkette teilen |
-| `@:name!` | Bezeichner abbrechen | `$++ a b c` | Verkettungsaufbau |
-| `@:name>` | Bezeichner weiter | `arr[i>j>k]` | Navigationsindex |
-| `->` | Lambda | `arr[i] = val` | Element aktualisieren (nur Felder) |
-| `arr[i] += val` | zusammengesetztes Update | `arr[i]$~` | funktionales Update (neue Kopie) |
-| `$^+` | aufsteigend sortieren (Primitive) | `$^-` | absteigend sortieren (Primitive) |
-| `$^` | sortieren mit Vergleicher (Tupel) | `<~` | zurückgeben |
+| `@:name!` | Abbruch mit Bezeichnung | `$++ a b c` | Verkettungs-Build |
+| `@:name>` | Weiter mit Bezeichnung | `feld[i>j>k]` | Navigationsindex |
+| `->` | Lambda | `feld[i] = wert` | Element aktualisieren (nur Felder) |
+| `feld[i] += wert` | Zusammengesetztes Update | `feld[i]$~` | Funktionales Update (neue Kopie) |
+| `$^+` | Aufsteigend sortieren (Primitive) | `$^-` | Absteigend sortieren (Primitive) |
+| `$^` | Mit Vergleich sortieren (Tupel) | `<~` | zurückgeben |
 | `\|>` | Pipe | `!?` | versuchen |
-| `:!` | fangen | `:>` | abschließend |
+| `:!` | abfangen | `:>` | abschließend |
 | `#1` | wahr | `#0` | falsch |
-| `$!` | ist Fehler | `$!!` | Fehler weitergeben |
+| `$!` | ist Fehler | `$!!` | Fehler weiterleiten |
 | `<#` | importieren | `#>` | exportieren |
 | `#` | Modul deklarieren | `::` | Modulaufruf |
 | `.` | Feldzugriff | `#?` | Typ-Metadaten |
-| `#\|..\|` | Zahl parsen | `##.` | zu Gleitkomma casten |
-| `###` | zu Ganzzahl casten (runden) | `##!` | zu Ganzzahl casten (abschneiden) |
+| `#\|..\|` | Zahl parsen | `##.` | zu Gleitkomma konvertieren |
+| `###` | zu Ganzzahl konvertieren (runden) | `##!` | zu Ganzzahl konvertieren (abschneiden) |
 | `#.N\|..\|` | runden | `#!N\|..\|` | abschneiden |
-| `#,\|..\|` | Kommaformat | `#^\|..\|` | wissenschaftlich |
-| `#d0d9#` | Ziffernsystem wechseln | `#09#` | auf ASCII zurücksetzen |
-| `<\ ..\>` | Shell ausführen | `>\<` | CLI-Argumente |
-| `\ var` | Variable explizit löschen | | |
+| `#,\|..\|` | Tausenderformat | `#^\|..\|` | wissenschaftlich |
+| `#z0z9#` | Zahlenmodus-Wechsel | `#09#` | auf ASCII zurücksetzen |
+| `<\ ..\>` | Shell-Ausführung | `>\<` | CLI-Argumente |
+| `\ var` | Variable explizit zerstören | `°x` / `x°` | Heißdefinition (Auto-Init) |
+| `>>|` | TUI-Block (Alternativbildschirm) | `>>~` | Positionierte Ausgabe |
+| `>>!` | Bildschirm löschen | `>>?` | Terminalgröße abfragen |
+| `<<\|` | Blockierendes Tastenlesen | `<<\|?` | Nicht-blockierendes Tastenlesen |
+| `@~ N` | N Millisekunden warten | `$*` | Zeichenkette N-mal wiederholen |
 
 ---
 
-## Versionsverlauf
+## Versions-Changelog
+
+### v0.0.5 — TUI-Grundbausteine, Heißdefinition & Zeichenkettenwied. _(Mai 2026)_
+
+- **Breaking** Musterabgleich-Zweig-Trennzeichen: `muster : ergebnis` → `muster => ergebnis`
+- **Breaking** Import-Alias: `<# pfad <= alias` → `<# pfad => alias`
+- **Breaking** Export-Umbenennung: `#> { fn <= pub }` → `#> { fn => pub }`
+- **Added** TUI-Block `>>| { }` — Alternativbildschirm + Rohmodus; räumt beim Beenden auf
+- **Added** Positionierte Ausgabe `>>~ (zeile, spalte, BKS, fg, bg) > elemente` — spärliche Slots, ANSI-256-Farben
+- **Added** Tasteneingabe `<<| var` (blockierend) und `<<|? var` (nicht-blockierendes Polling)
+- **Added** `>>!` Bildschirm löschen, `>>?` Terminalgröße abfragen, `@~ N` N Millisekunden warten
+- **Added** Heißdefinition `°x` / `x°` — Variable beim ersten Gebrauch in Schleifen auto-initialisieren
+- **Added** Zeichenkettenwiederholung `str $* N` — Zeichenkette N-mal wiederholen
+- **VM** Parität: 436/436 Tests bestanden
 
 ### v0.0.4 — 1-basierte Indizierung, Erstklassige Funktionen & Modulblöcke _(April 2026)_
 
-- **Brechend** Alle Indizierung auf **1-basiert** umgestellt — `arr[1]` ist das erste Element; `arr[0]` ist ein Laufzeitfehler
-- **Hinzugefügt** Benannte Funktionen sind **erstklassige Werte** — direkt an höhere Funktionen übergeben: `zahlen$> verdoppeln`
-- **Hinzugefügt** Modul-**Blocksyntax** erforderlich: `# name { ... }` — flache Syntax entfernt
-- **Hinzugefügt** Mehrdimensionale Indizierung: `arr[i>j>k]` (Navigation), `arr[p ; q]` (flache Extraktion)
-- **Hinzugefügt** Typkonvertierungs-Casts: `##.ausdr` (Gleitkomma), `###ausdr` (Ganzzahl runden), `##!ausdr` (Ganzzahl abschneiden)
-- **Hinzugefügt** Zeichenketten-Teilung: `str$/ trenn` — gibt `Feld(Zeichenkette)` zurück
-- **Hinzugefügt** Verkettungsaufbau: `basis$++ a b c` — hängt mehrere Elemente an
-- **Hinzugefügt** N-mal-Schleife: `@ N { }` — genau N-mal wiederholen
-- **Hinzugefügt** Benannte Schleifen-Syntax: `@:name { }`, `@:name!`, `@:name>` — ersetzt `@ @name` / `@! name`
-- **Hinzugefügt** Variablen-Geltungsbereichsregeln: `_name`-Variablen haben exakten Blockbereich; `\ var` löscht früh
-- **Hinzugefügt** Match-Vergleichsmuster: `< 0 :`, `> 5 :`, `== 42 :` usw.
-- **Hinzugefügt** Modul-Fehler E013: Ausführbare Anweisungen im Modulrumpf sind verboten
-- **Behoben** `take_variable` beschädigt beim Zurückschreiben keine Modulkonstanten mehr
-- **Behoben** `alias.CONST` wird jetzt korrekt aufgelöst; `#>` kann nach Funktionsdefinitionen erscheinen
-- **VM** Vollständige Parität: 393/393 Tests bestanden
+- **Breaking** Alle Indizierung auf **1-basiert** umgestellt — `feld[1]` ist das erste Element; `feld[0]` ist ein Laufzeitfehler
+- **Added** Benannte Funktionen sind **erstklassige Werte** — direkt an HOF übergeben: `zahlen$> verdoppeln`
+- **Added** Modul-**Blocksyntax** erforderlich: `# name { ... }` — flache Syntax entfernt
+- **Added** Mehrdimensionale Indizierung: `feld[i>j>k]` (Navigation), `feld[p ; q]` (flache Extraktion)
+- **Added** Typkonvertierungs-Casts: `##.ausdruck` (Gleitkomma), `###ausdruck` (Ganzzahl runden), `##!ausdruck` (Ganzzahl abschneiden)
+- **Added** Zeichenketten-Teilen: `str$/ trenn` — gibt `Array(String)` zurück
+- **Added** Verkettungs-Build: `basis$++ a b c` — mehrere Elemente anhängen
+- **Added** N-mal-Schleife: `@ N { }` — genau N-mal wiederholen
+- **Added** Benannte Schleifen-Syntax: `@:name { }`, `@:name!`, `@:name>` — ersetzt `@ @name` / `@! name`
+- **Added** Variablen-Gültigkeitsbereichsregeln: `_name` Variablen haben genauen Blockbereich; `\ var` zerstört frühzeitig
+- **Added** Musterabgleich-Vergleichsmuster: `< 0 :`, `> 5 :`, `== 42 :` usw.
+- **Added** Modul-E013-Fehler: ausführbare Anweisungen im Modulrumpf sind verboten
+- **Fixed** `take_variable` korrumpiert Modulkonstanten beim Zurückschreiben nicht mehr
+- **Fixed** `alias.CONST` wird nun korrekt aufgelöst; `#>` kann nach Funktionsdefinitionen erscheinen
+- **VM** Volle Parität: 393/393 Tests bestanden
 
-### v0.0.3 — Unicode-Ziffernsysteme & LSP-Verbesserungen _(April 2026)_
+### v0.0.3 — Unicode-Zahlensysteme & LSP-Verbesserungen _(April 2026)_
 
-- **Hinzugefügt** 69 Unicode-Ziffernblöcke mit Moduswechsel-Token `#d0d9#`
-- **Hinzugefügt** Boolesche Literale in jedem Skript — `#१` / `#०`, `#١` / `#٠` usw.
-- **Hinzugefügt** Klingonische pIqaD-Ziffern (CSUR PUA U+F8F0–U+F8F9)
-- **Hinzugefügt** `SetNumeralMode` VM-Opcode — vollständige Parität mit Tree-Walker
-- **Hinzugefügt** REPL berücksichtigt aktiven Ziffernsystem-Modus in Echo und Variablenanzeige
-- **Geändert** Boolesche `>>`-Ausgabe enthält jetzt `#`-Präfix (`#0` / `#1`) in allen Modi
+- **Added** 69 Unicode-Ziffernblöcke mit Moduswechsel-Token `#d0d9#`
+- **Added** Wahrheitswertliterale in jedem Skript — `#१` / `#०`, `#١` / `#٠` usw.
+- **Added** Klingon-pIqaD-Ziffern (CSUR PUA U+F8F0–U+F8F9)
+- **Added** `SetNumeralMode`-VM-Opcode — vollständige Parität mit Tree-Walker
+- **Added** REPL respektiert aktiven Zahlenmodus in Echo und Variablenanzeige
+- **Changed** Wahrheitswert-`>>`-Ausgabe enthält nun `#`-Präfix (`#0` / `#1`) in allen Modi
 
-### v0.0.2_01 — Operator-Umbenennung _(30. Mär. 2026)_
+### v0.0.2_01 — Operatorumbenennung _(30. März 2026)_
 
-- **Geändert** `c|..|` → `#,|..|` und `e|..|` → `#^|..|` — konsistent mit `#`-Format-Präfix-Familie
-- **Hinzugefügt** Export-Alias: Modulelemente unter einem anderen Namen re-exportieren
+- **Changed** `c|..|` → `#,|..|` und `e|..|` → `#^|..|` — konsistent mit `#`-Formatpräfix-Familie
+- **Added** Export-Alias: Modulelemente unter anderem Namen re-exportieren
 
-### v0.0.2 — Sammlungs-API-Neugestaltung & Installationsprogramme _(24. Mär. 2026)_
+### v0.0.2 — Kollektions-API-Überarbeitung & Installationsprogramme _(24. März 2026)_
 
-- **Hinzugefügt** Einheitliche `$`-Operatorfamilie für Felder und Zeichenketten (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Hinzugefügt** Destrukturierungszuweisung für Felder, Tupel und benannte Tupel
-- **Hinzugefügt** Negative Indizes (`arr[-1]` = letztes Element)
-- **Hinzugefügt** Native Installationsprogramme — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+- **Added** Einheitliche `$`-Operatorfamilie für Felder und Zeichenketten (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Added** Destrukturierungszuweisung für Felder, Tupel und benannte Tupel
+- **Added** Negative Indizes (`feld[-1]` = letztes Element)
+- **Added** Native Installationsprogramme — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
 
-### v0.0.1-patch _(25. Mär. 2026)_
+### v0.0.1-patch _(25. März 2026)_
 
-- **Hinzugefügt** Zusammengesetzte Zuweisung `^=`
-- **Behoben** Parser-Arithmetik-Randfälle; Dokumentationskorrekturen
+- **Added** Zusammengesetzte Zuweisung `^=`
+- **Fixed** Parser-Arithmetik-Randfälle; Dokumentationskorrektionen
 
-### v0.0.1 — Erste öffentliche Veröffentlichung _(22. Mär. 2026)_
+### v0.0.1 — Erste öffentliche Veröffentlichung _(22. März 2026)_
 
 - Tree-Walker-Interpreter + Register-VM (`--vm`, ~4× schneller, ~95% Parität)
 - Alle Kernkonstrukte: `?` `@` `<~` `->` `>>` `<<` `¶` `??`

@@ -16,7 +16,7 @@
 - Full Unicode — identifiers in any language or emoji
 - Human-language agnostic — the code is the same everywhere
 
-**Interpreter version**: v0.0.4 | **Test coverage**: 393/393 (TW ↔ VM parity)
+**Interpreter version**: v0.0.5 | **Test coverage**: 436/436 (TW ↔ VM parity)
 
 ---
 
@@ -41,6 +41,20 @@ x ^= 2    // 4
 x++        // 5
 x--        // 4
 ```
+
+`°` (degree sign, U+00B0) auto-initializes a variable to its neutral value on first use:
+
+```zymbol
+nums = [3, 1, 4, 1, 5]
+@ n:nums {
+    °total += n    // auto-init to 0 above loop; survives after @
+}
+>> total ¶         // → 14
+```
+
+> `°x` (prefix) anchors above the loop — result accessible after `@`.
+> `x°` (postfix) anchors inside the loop — dies when the loop ends.
+> Tree-walker only.
 
 ---
 
@@ -84,31 +98,63 @@ t = meta[1]
 
 ---
 
+## TUI Primitives
+
+Terminal UI operators for interactive programs. Most require a `>>| { }` block (alternate screen + raw mode).
+
+```zymbol
+>>| {
+    >>!                             // clear alternate screen
+    >>~ (1, 1, 0, 10) > "Running"  // row 1, col 1, fg=10 (green)
+    @~ 1000                         // pause 1 second (1000 ms)
+    >>~ (2, 1) > "Done."
+}
+// terminal restored automatically on exit
+```
+
+```zymbol
+// Keypress and terminal size
+>>| {
+    [rows, cols] = >>?              // query terminal dimensions
+    >>~ (1, 1) > "Terminal: " rows " x " cols
+    <<| key                         // blocking keypress read
+    >>~ (2, 1) > "Pressed: " key
+}
+```
+
+> `>>!` clears screen. `>>?` returns `[rows, cols]`. `@~ N` sleeps N milliseconds.
+> `<<|` reads one keypress (blocking); `<<|?` polls without blocking (returns `'\0'` if none).
+> Positioned output tuple: `(row, col, BKS, fg, bg)` — any slot may be omitted with a comma (`>>~ (,,, 196) > "red"`).
+> BKS bitmask: `1`=Bold, `2`=Italic, `4`=Underline. ANSI 256-color palette (`0`=terminal default).
+> Tree-walker only (except `>>!`, `>>?`, `@~`, `>>~` which also run in `--vm`).
+
+---
+
 ## Operators
 
 ```zymbol
-// Arithmetic — use assignments; some operators have quirks directly in >>
+// Arithmetic
 a = 10
 b = 3
-r1 = a + b    // 13     
+r1 = a + b    // 13
 r2 = a - b    // 7
-r3 = a * b    // 30     
+r3 = a * b    // 30
 r4 = a / b    // 3  (integer division)
-r5 = a % b    // 1      
+r5 = a % b    // 1
 r6 = a ^ b    // 1000  (exponentiation)
 
-// Comparison
-a == b    // #0    
-a <> b    // #1    
-a < b      // #0
-a <= b    // #0   
-a > b      // #1    
-a >= b     // #1
+// Comparison — assign to inspect
+c1 = a == b    // #0
+c2 = a <> b    // #1
+c3 = a < b     // #0
+c4 = a <= b    // #0
+c5 = a > b     // #1
+c6 = a >= b    // #1
 
 // Logical
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
+l1 = #1 && #0    // #0
+l2 = #1 || #0    // #1
+l3 = !#1         // #0
 ```
 
 ---
@@ -132,6 +178,7 @@ has = s$? "World"          // #1
 parts = "a,b,c,d"$/ ','    // [a, b, c, d]  (split by delimiter)
 rep = s$~~["l":"L"]        // "HeLLo WorLd"
 rep1 = s$~~["l":"L":1]     // "HeLlo World"  (first N only)
+line = "─" $* 20           // "────────────────────"  (repeat N times)
 ```
 
 > `+` is for numbers only. Use `,`, juxtaposition, or interpolation for strings.
@@ -166,36 +213,37 @@ x = 7
 // Ranges
 score = 85
 grade = ?? score {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+    90..100 => 'A'
+    80..89  => 'B'
+    70..79  => 'C'
+    _       => 'F'
 }
 >> grade ¶    // → B
 
 // Strings
 color = "red"
 code = ?? color {
-    "red"   : "#FF0000"
-    "green" : "#00FF00"
-    _       : "#000000"
+    "red"   => "#FF0000"
+    "green" => "#00FF00"
+    _       => "#000000"
 }
 
 // Comparison patterns
 temp = -5
 state = ?? temp {
-    < 0  : "ice"
-    < 20 : "cold"
-    < 35 : "warm"
-    _    : "hot"
+    < 0  => "ice"
+    < 20 => "cold"
+    < 35 => "warm"
+    _    => "hot"
 }
 >> state ¶    // → ice
 
 // Statement form (block arms)
+n = -3
 ?? n {
-    0       : { >> "zero" ¶ }
-    _? n < 0: { >> "negative" ¶ }
-    _       : { >> "positive" ¶ }
+    0    => { >> "zero" ¶ }
+    < 0  => { >> "negative" ¶ }
+    _    => { >> "positive" ¶ }
 }
 ```
 
@@ -315,9 +363,9 @@ Arrays are **mutable** and hold elements of the **same type**.
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
-arr[1]          // 1 — access (1-indexed: first element)
-arr[-1]         // 5 — negative index (last element)
-arr$#           // 5 — length (use (arr$#) in >>)
+x = arr[1]      // 1 — access (1-indexed: first element)
+x = arr[-1]     // 5 — negative index (last element)
+x = arr$#       // 5 — length (use (arr$#) in >>)
 
 arr = arr$+ 6            // append → [1,2,3,4,5,6]
 arr2 = arr$+[2] 99       // insert at position 2 (1-based)
@@ -473,9 +521,9 @@ double = x -> x * 2
 add = (a, b) -> a + b
 inc = x -> x + 1
 
-5 |> double(_)        // → 10
-10 |> add(_, 5)       // → 15
-5 |> add(2, _)        // → 7
+r1 = 5 |> double(_)        // → 10
+r2 = 10 |> add(_, 5)       // → 15
+r3 = 5 |> add(2, _)        // → 7
 
 // Chained
 r = 5 |> double(_) |> inc(_) |> double(_)
@@ -525,7 +573,7 @@ r = 5 |> double(_) |> inc(_) |> double(_)
 
 ```zymbol
 // main.zy
-<# ./lib/calc <= c    // alias required
+<# ./lib/calc => c    // alias required
 
 >> c::add(5, 3) ¶     // → 8
 pi = c::get_PI()
@@ -535,14 +583,14 @@ pi = c::get_PI()
 ```zymbol
 // Export with a different public name
 # mylib {
-    #> { _internal_add <= sum }
+    #> { _internal_add => sum }
 
     _internal_add(a, b) { <~ a + b }
 }
 ```
 
 ```zymbol
-<# ./mylib <= m
+<# ./mylib => m
 
 >> m::sum(3, 4) ¶    // → 7  (internal name _internal_add is hidden)
 ```
@@ -619,9 +667,9 @@ Any supported script's digits are valid literals — in ranges, modulo, comparis
 
 ```zymbol
 // Type conversion casts
-##.42         // → 42.0  (to Float)
-###3.7        // → 4     (to Int, round)
-##!3.7        // → 3     (to Int, truncate)
+f = ##.42         // → 42.0  (to Float)
+i = ###3.7        // → 4     (to Int, round)
+t = ##!3.7        // → 3     (to Int, truncate)
 
 // Parse string to number
 v1 = #|"42"|      // → 42  (Int)
@@ -721,11 +769,28 @@ classify(number) {
 | `#,\|..\|` | comma format | `#^\|..\|` | scientific |
 | `#d0d9#` | numeral mode switch | `#09#` | reset to ASCII |
 | `<\ ..\>` | shell exec | `>\<` | CLI args |
-| `\ var` | explicit destroy variable | | |
+| `\ var` | explicit destroy variable | `°x` / `x°` | hot definition (auto-init) |
+| `>>|` | TUI block (alt screen) | `>>~` | positioned output |
+| `>>!` | clear screen | `>>?` | query terminal size |
+| `<<\|` | blocking keypress | `<<\|?` | non-blocking keypress |
+| `@~ N` | sleep N milliseconds | `$*` | string repeat N times |
 
 ---
 
 ## Release Changelog
+
+### v0.0.5 — TUI Primitives, Hot Definition & String Repeat _(May 2026)_
+
+- **Breaking** Match arm separator: `pattern : result` → `pattern => result`
+- **Breaking** Import alias: `<# path <= alias` → `<# path => alias`
+- **Breaking** Export rename: `#> { fn <= pub }` → `#> { fn => pub }`
+- **Added** TUI block `>>| { }` — alternate screen + raw mode; cleans up on exit
+- **Added** Positioned output `>>~ (row, col, BKS, fg, bg) > items` — sparse slots, 256-color ANSI
+- **Added** Key input `<<| var` (blocking) and `<<|? var` (non-blocking poll)
+- **Added** `>>!` clear screen, `>>?` query terminal size, `@~ N` sleep N milliseconds
+- **Added** Hot definition `°x` / `x°` — auto-initialize variable on first use in loops
+- **Added** String repeat `str $* N` — repeat a string N times
+- **VM** Parity: 436/436 tests pass
 
 ### v0.0.4 — 1-Based Indexing, First-Class Functions & Module Blocks _(April 2026)_
 
@@ -781,3 +846,4 @@ classify(number) {
 ---
 
 _Zymbol-Lang — Symbolic. Universal. Immutable._
+

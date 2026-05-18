@@ -1,4 +1,4 @@
-> **Avís:** Aquesta documentació ha estat creada amb l'assistència d'intel·ligència artificial (IA).
+> **Avís:** Aquesta documentació ha estat creada amb l'assistència de la intel·ligència artificial (IA).
 >
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 >
@@ -8,22 +8,24 @@
 
 # Manual de Zymbol-Lang
 
-**Zymbol-Lang** és un llenguatge de programació simbòlic. Sense paraules clau — tot és un símbol. Funciona de manera idèntica en qualsevol idioma humà.
+> **Revisat per a v0.0.5 — 2026-05-12**
+
+**Zymbol-Lang** és un llenguatge de programació simbòlic. Sense paraules clau — tot és un símbol. Funciona de manera idèntica en qualsevol llengua humana.
 
 - Sense `if`, `while`, `return` — només `?`, `@`, `<~`
-- Unicode complet — identificadors en qualsevol idioma o emoji
-- Agnòstic al llenguatge humà — el codi és el mateix arreu
+- Unicode complet — identificadors en qualsevol llengua o emoji
+- Independent de la llengua — el codi és idèntic a tot arreu
 
-**Versió de l'intèrpret**: v0.0.4 | **Cobertura de proves**: 393/393 (paritat TW ↔ VM)
+**Versió de l'intèrpret**: v0.0.5 | **Cobertura de proves**: 436/436 (TW ↔ VM paritat)
 
 ---
 
-## Variables i Constants
+## Variables & Constants
 
 ```zymbol
 x = 10              // variable mutable
 PI := 3.14159       // constant — la reassignació és un error en temps d'execució
-nom = "Alícia"
+nom = "Alice"
 actiu = #1          // booleà cert
 👋 := "Hola"
 ```
@@ -40,21 +42,35 @@ x++        // 5
 x--        // 4
 ```
 
+`°` (signe de grau, U+00B0) inicialitza automàticament una variable al seu valor neutre en el primer ús:
+
+```zymbol
+nums = [3, 1, 4, 1, 5]
+@ n:nums {
+    °total += n    // auto-init a 0 per sobre del bucle; sobreviu després de @
+}
+>> total ¶         // → 14
+```
+
+> `°x` (prefix) s'ancora per sobre del bucle — resultat accessible després de `@`.
+> `x°` (postfix) s'ancora dins del bucle — desapareix quan el bucle acaba.
+> Només Tree-Walker.
+
 ---
 
 ## Tipus de Dades
 
-| Tipus | Literal | Etiqueta `#?` | Notes |
-|-------|---------|---------------|-------|
-| Sencer | `42`, `-7` | `###` | 64 bits amb signe |
+| Tipus | Literal | `#?` tag | Notes |
+|-------|---------|----------|-------|
+| Enter | `42`, `-7` | `###` | 64-bit amb signe |
 | Decimal | `3.14`, `1.5e10` | `##.` | Notació científica OK |
 | Cadena | `"text"` | `##"` | Interpolació: `"Hola {nom}"` |
-| Caràcter | `'A'` | `##'` | Un sol caràcter Unicode |
+| Caràcter | `'A'` | `##'` | Únic caràcter Unicode |
 | Booleà | `#1`, `#0` | `##?` | NO numèric — `#1 ≠ 1` |
-| Vector | `[1, 2, 3]` | `##]` | Elements homogenis |
+| Matriu | `[1, 2, 3]` | `##]` | Elements homogenis |
 | Tupla | `(a, b)` | `##)` | Posicional |
-| Tupla nomenada | `(x: 1, y: 2)` | `##)` | Camps nomenats |
-| Funció | ref. funció nomenada | `##()` | Primera classe; mostra `<funct/N>` |
+| Tupla Nominada | `(x: 1, y: 2)` | `##)` | Camps nominats |
+| Funció | referència a funció nominada | `##()` | Primera classe; mostra `<funct/N>` |
 | Lambda | `x -> x * 2` | `##->` | Primera classe; mostra `<lambd/N>` |
 
 ```zymbol
@@ -67,25 +83,57 @@ t = meta[1]
 
 ---
 
-## Sortida i Entrada
+## Sortida & Entrada
 
 ```zymbol
->> "Hola" ¶                       // ¶ o \\ per a salt de línia explícit
->> "a=" a " b=" b ¶               // juxtaposició — múltiples valors
->> (arr$#) ¶                      // els operadors postfix requereixen ( ) a >>
+>> "Hola" ¶                       // ¶ o \\ per a nova línia explícita
+>> "a=" a " b=" b ¶               // juxtaposició — valors múltiples
+>> (mat$#) ¶                      // els operadors postfixos requereixen ( ) en >>
 
-<< nom                            // llegir en variable (sense indicació)
-<< "Introduïu el nom: " nom       // amb indicació
+<< nom                            // llegeix en variable (sense indicació)
+<< "Introdueix el nom: " nom      // amb indicació
 ```
 
-> `¶` (AltGr+R al teclat espanyol) i `\\` són salts de línia equivalents.
+> `¶` (AltGr+R en teclat espanyol) i `\\` són noves línies equivalents.
+
+---
+
+## Primitives TUI
+
+Operadors d'interfície de terminal per a programes interactius. La majoria requereix un bloc `>>| { }` (pantalla alternativa + mode raw).
+
+```zymbol
+>>| {
+    >>!                              // neteja la pantalla alternativa
+    >>~ (1, 1, 0, 10) > "Executant"  // fila 1, col 1, fg=10 (verd)
+    @~ 1000                          // pausa 1 segon (1000 ms)
+    >>~ (2, 1) > "Fet."
+}
+// terminal restaurat automàticament en sortir
+```
+
+```zymbol
+// Tecla premuda i mida del terminal
+>>| {
+    [files, cols] = >>?              // consulta dimensions del terminal
+    >>~ (1, 1) > "Terminal: " files " x " cols
+    <<| tecla                        // lectura de tecla bloquejant
+    >>~ (2, 1) > "Premuda: " tecla
+}
+```
+
+> `>>!` neteja pantalla. `>>?` retorna `[files, cols]`. `@~ N` dorm N mil·lisegons.
+> `<<|` llegeix una tecla (bloquejant); `<<|?` sondeja sense bloquejar (retorna `'\0'` si cap).
+> Tupla de sortida posicionada: `(fila, col, BKS, fg, bg)` — qualsevol ranura pot ometre's amb coma (`>>~ (,,, 196) > "vermell"`).
+> Màscara BKS: `1`=Negreta, `2`=Cursiva, `4`=Subratllat. Paleta ANSI 256 colors (`0`=predeterminat terminal).
+> Només Tree-Walker (excepte `>>!`, `>>?`, `@~`, `>>~` que també funcionen en `--vm`).
 
 ---
 
 ## Operadors
 
 ```zymbol
-// Aritmètica — usar assignacions; alguns operadors tenen peculiaritats directament a >>
+// Aritmètica
 a = 10
 b = 3
 r1 = a + b    // 13
@@ -95,18 +143,18 @@ r4 = a / b    // 3  (divisió entera)
 r5 = a % b    // 1
 r6 = a ^ b    // 1000  (exponenciació)
 
-// Comparació
-a == b    // #0
-a <> b    // #1
-a < b      // #0
-a <= b    // #0
-a > b      // #1
-a >= b     // #1
+// Comparació — assignar per inspeccionar
+c1 = a == b    // #0
+c2 = a <> b    // #1
+c3 = a < b     // #0
+c4 = a <= b    // #0
+c5 = a > b     // #1
+c6 = a >= b    // #1
 
 // Lògica
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
+l1 = #1 && #0    // #0
+l2 = #1 || #0    // #1
+l3 = !#1         // #0
 ```
 
 ---
@@ -115,24 +163,25 @@ a >= b     // #1
 
 ```zymbol
 // Dues formes de concatenació
-nom = "Alícia"
+nom = "Alice"
 n = 42
 
->> "Hola " nom " tens " n ¶      // juxtaposició — a >>
-desc = "Hola {nom}, tens {n}"    // interpolació — en qualsevol lloc
+>> "Hola " nom " tens " n ¶         // juxtaposició — en >>
+descr = "Hola {nom}, tens {n}"      // interpolació — a qualsevol lloc
 ```
 
 ```zymbol
-s = "Hola Mon"
-lon = s$#                  // 8
-sub = s$[1..4]             // "Hola"  (1-basat, final inclusiu)
-te = s$? "Mon"             // #1
-parts = "a,b,c,d"$/ ','    // [a, b, c, d]  (separar per delimitador)
-rep = s$~~["o":"0"]        // "H0la M0n"
-rep1 = s$~~["o":"0":1]     // "H0la Mon"  (primer N solament)
+s = "Hola Món"
+long = s$#                  // 11
+sub = s$[1..4]              // "Hola"  (1-base, final inclòs)
+te = s$? "Món"              // #1
+parts = "a,b,c,d"$/ ','     // [a, b, c, d]  (dividir per delimitador)
+rep = s$~~["o":"0"]         // "H0la M0n"
+rep1 = s$~~["o":"0":1]      // "H0la Món"  (sols primers N)
+linia = "─" $* 20           // "────────────────────"  (repetir N vegades)
 ```
 
-> `+` és només per a números. Useu `,`, juxtaposició o interpolació per a cadenes.
+> `+` és només per a nombres. Usa `,`, juxtaposició o interpolació per a cadenes.
 
 ---
 
@@ -164,36 +213,37 @@ x = 7
 // Rangs
 puntuacio = 85
 nota = ?? puntuacio {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+    90..100 => 'A'
+    80..89  => 'B'
+    70..79  => 'C'
+    _       => 'F'
 }
 >> nota ¶    // → B
 
 // Cadenes
 color = "vermell"
 codi = ?? color {
-    "vermell" : "#FF0000"
-    "verd"    : "#00FF00"
-    _         : "#000000"
+    "vermell" => "#FF0000"
+    "verd"    => "#00FF00"
+    _         => "#000000"
 }
 
 // Patrons de comparació
 temp = -5
 estat = ?? temp {
-    < 0  : "gel"
-    < 20 : "fred"
-    < 35 : "calid"
-    _    : "calent"
+    < 0  => "gel"
+    < 20 => "fred"
+    < 35 => "tebi"
+    _    => "calent"
 }
 >> estat ¶    // → gel
 
-// Forma d'instrucció (braços de bloc)
+// Forma d'instrucció (branques de bloc)
+n = -3
 ?? n {
-    0       : { >> "zero" ¶ }
-    _? n < 0: { >> "negatiu" ¶ }
-    _       : { >> "positiu" ¶ }
+    0    => { >> "zero" ¶ }
+    < 0  => { >> "negatiu" ¶ }
+    _    => { >> "positiu" ¶ }
 }
 ```
 
@@ -203,22 +253,22 @@ estat = ?? temp {
 
 ```zymbol
 @ i:0..4  { >> i " " }        // rang inclusiu:  0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // amb pas:         1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // invers:          5 4 3 2 1 0
+@ i:1..9:2 { >> i " " }       // amb pas:        1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // invers:         5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
 >> n ¶                        // → 128  (while)
 
-fruites = ["poma", "pera", "raim"]
-@ f:fruites { >> f ¶ }        // per a cada element del vector
+fruites = ["poma", "pera", "raïm"]
+@ f:fruites { >> f ¶ }        // per a cada element de la matriu
 
 @ c:"hola" { >> c "-" }
 >> ¶                          // → h-o-l-a-  (per a cada caràcter)
 
 @ i:1..10 {
-    ? i % 2 == 0 { @> }       // @> continuar
-    ? i > 7 { @! }             // @! sortir
+    ? i % 2 == 0 { @> }       // @> continua
+    ? i > 7 { @! }             // @! atura
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
@@ -232,7 +282,7 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Bucle etiquetat (sortida imbricada)
+// Bucle etiquetat (trencament anidat)
 comptador = 0
 @:extern {
     comptador++
@@ -256,7 +306,7 @@ factorial(n) {
 >> factorial(5) ¶    // → 120
 ```
 
-Les funcions tenen un **àmbit aïllat** — no poden llegir variables exteriors. Useu paràmetres de sortida `<~` per modificar variables del cridador:
+Les funcions tenen **àmbit aïllat** — no poden llegir variables exteriors. Usa paràmetres de sortida `<~` per modificar variables del cridador:
 
 ```zymbol
 intercanviar(a<~, b<~) {
@@ -270,17 +320,17 @@ intercanviar(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Les funcions nomenades són **valors de primera classe** — passeu-les directament: `nums$> doble`. Per embolcallar: `x -> fn(x)` també és vàlid.
+> Les funcions nominades són **valors de primera classe** — passa directament: `nums$> doblar`. Per embolcallar: `x -> fn(x)` també és vàlid.
 
 ---
 
-## Lambdes i Tancaments
+## Lambdes & Closures
 
 ```zymbol
-doble = x -> x * 2
-suma = (a, b) -> a + b
->> doble(5) ¶    // → 10
->> suma(3, 7) ¶    // → 10
+doblar = x -> x * 2
+sumar = (a, b) -> a + b
+>> doblar(5) ¶    // → 10
+>> sumar(3, 7) ¶  // → 10
 
 // Lambda de bloc
 classificar = x -> {
@@ -289,81 +339,81 @@ classificar = x -> {
     <~ "zero"
 }
 
-// Tancament — captura l'àmbit exterior
+// Closure — captura àmbit exterior
 factor = 3
-triple = x -> x * factor
->> triple(7) ¶    // → 21
+triplicar = x -> x * factor
+>> triplicar(7) ¶    // → 21
 
 // Fàbrica
 crear_sumador(n) { <~ x -> x + n }
 sumar10 = crear_sumador(10)
 >> sumar10(5) ¶    // → 15
 
-// En vectors
+// En matrius
 ops = [x -> x+1, x -> x*2, x -> x*x]
 >> ops[3](5) ¶    // → 25
 ```
 
 ---
 
-## Vectors
+## Matrius
 
-Els vectors són **mutables** i contenen elements del **mateix tipus**.
+Les matrius són **mutables** i contenen elements del **mateix tipus**.
 
 ```zymbol
-arr = [1, 2, 3, 4, 5]
+mat = [1, 2, 3, 4, 5]
 
-arr[1]          // 1 — accés (1-basat: primer element)
-arr[-1]         // 5 — índex negatiu (darrer element)
-arr$#           // 5 — longitud (useu (arr$#) a >>)
+x = mat[1]      // 1 — accés (1-base: primer element)
+x = mat[-1]     // 5 — índex negatiu (darrer element)
+x = mat$#       // 5 — longitud (usa (mat$#) en >>)
 
-arr = arr$+ 6            // afegir → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // inserir a la posició 2 (1-basat)
-arr3 = arr$- 3           // eliminar primera aparició del valor
-arr4 = arr$-- 3          // eliminar totes les aparicions
-arr5 = arr$-[1]          // eliminar a l'índex 1 (primer element)
-arr6 = arr$-[2..3]       // eliminar rang (1-basat, final inclusiu)
+mat = mat$+ 6            // afegeix → [1,2,3,4,5,6]
+mat2 = mat$+[2] 99       // insereix a la posició 2 (1-base)
+mat3 = mat$- 3           // elimina la primera ocurrència del valor
+mat4 = mat$-- 3          // elimina totes les ocurrències
+mat5 = mat$-[1]          // elimina a l'índex 1 (primer element)
+mat6 = mat$-[2..3]       // elimina rang (1-base, final inclòs)
 
-te = arr$? 3             // #1 — conté
-pos = arr$?? 3           // [3] — tots els índexs del valor (1-basat)
-sl = arr$[1..3]          // [1,2,3] — tall (1-basat, final inclusiu)
-sl2 = arr$[1:3]          // [1,2,3] — mateix, sintaxi basada en recompte
+te = mat$? 3             // #1 — conté
+pos = mat$?? 3           // [3] — tots els índexs del valor (1-base)
+sl = mat$[1..3]          // [1,2,3] — tall (1-base, final inclòs)
+sl2 = mat$[1:3]          // [1,2,3] — mateix, sintaxi basada en recompte
 
-asc = arr$^+             // ordenat ascendent  (sols primitius)
-desc = arr$^-            // ordenat descendent (sols primitius)
+asc = mat$^+             // ordenat ascendent  (sols primitius)
+desc = mat$^-            // ordenat descendent (sols primitius)
 
-// Vectors de tuples nomenades/posicionals — usar $^ amb lambda comparadora
-bd = [(nom: "Carla", edat: 28), (nom: "Ana", edat: 25), (nom: "Bob", edat: 30)]
-per_edat  = bd$^ (a, b -> a.edat < b.edat)    // ascendent per edat  (<)
-per_nom   = bd$^ (a, b -> a.nom > b.nom)       // descendent per nom (>)
+// Matrius de tuples nominades/posicionals — usa $^ amb lambda comparadora
+db = [(nom: "Carla", edat: 28), (nom: "Ana", edat: 25), (nom: "Bob", edat: 30)]
+per_edat = db$^ (a, b -> a.edat < b.edat)    // ascendent per edat  (<)
+per_nom  = db$^ (a, b -> a.nom > b.nom)      // descendent per nom (>)
 >> per_edat[1].nom ¶     // → Ana
 >> per_nom[1].nom ¶      // → Carla
 
-// Actualització directa d'element (sols vectors)
-arr[1] = 99              // assignar
-arr[2] += 5              // compost: +=  -=  *=  /=  %=  ^=
+// Actualització directa d'element (sols matrius)
+mat[1] = 99              // assigna
+mat[2] += 5              // compost: +=  -=  *=  /=  %=  ^=
 
-// Actualització funcional — retorna un nou vector; l'original no canvia
-arr2 = arr[2]$~ 99
+// Actualització funcional — retorna nova matriu; original inalterat
+mat2 = mat[2]$~ 99
 ```
 
-> Tots els operadors de col·lecció retornen un **nou vector**. Assigneu de nou: `arr = arr$+ 4`.
-> `$+` es pot encadenar: `arr = arr$+ 5$+ 6$+ 7`. Altres operadors usen assignacions intermèdies.
-> **L'indexació és 1-basada**: `arr[1]` és el primer element; `arr[0]` és un error en temps d'execució.
-> `$^+` / `$^-` ordenen **vectors de primitius** (números, cadenes). Per a vectors de tuples useu `$^` amb una lambda comparadora — la direcció s'encoda a la lambda (`<` = ascendent, `>` = descendent).
+> Tots els operadors de col·lecció retornen una **nova matriu**. Reassigna: `mat = mat$+ 4`.
+> `$+` pot encadenar-se: `mat = mat$+ 5$+ 6$+ 7`. Altres operadors usen assignacions intermèdies.
+> **L'indexació és 1-base**: `mat[1]` és el primer element; `mat[0]` és un error en temps d'execució.
+> `$^+` / `$^-` ordenen **matrius primitives** (nombres, cadenes). Per a matrius de tuples usa `$^` amb lambda comparadora — la direcció es codifica a la lambda (`<` = ascendent, `>` = descendent).
 
-**Semàntica de valor** — assignar un vector a una altra variable crea una còpia independent:
+**Semàntica de valor** — assignar una matriu a una altra variable crea una còpia independent:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
 a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b no es veu afectat
+>> b ¶    // → [1, 2, 3]   ← b no és afectat
 ```
 
 ```zymbol
-// Vectors imbricats (indexació 1-basada)
+// Matrius niades (indexació 1-base)
 matriu = [[1,2,3],[4,5,6],[7,8,9]]
 >> matriu[2][3] ¶    // → 6  (fila 2, columna 3)
 ```
@@ -373,17 +423,17 @@ matriu = [[1,2,3],[4,5,6],[7,8,9]]
 ## Desestructuració
 
 ```zymbol
-// Vector
-arr = [10, 20, 30, 40, 50]
-[a, b, c] = arr              // a=10  b=20  c=30
-[primer, *resta] = arr       // primer=10  resta=[20,30,40,50]
+// Matriu
+mat = [10, 20, 30, 40, 50]
+[a, b, c] = mat              // a=10  b=20  c=30
+[primer, *resta] = mat       // primer=10  resta=[20,30,40,50]
 [x, _, z] = [1, 2, 3]        // _ descarta
 
 // Tupla posicional
 punt = (100, 200)
 (px, py) = punt              // px=100  py=200
 
-// Tupla nomenada
+// Tupla nominada
 persona = (nom: "Ana", edat: 25, ciutat: "Barcelona")
 (nom: n, edat: e) = persona  // n="Ana"  e=25
 ```
@@ -392,8 +442,8 @@ persona = (nom: "Ana", edat: 25, ciutat: "Barcelona")
 
 ## Tuples
 
-Les tuples són contenidors ordenats **immutables** que poden contenir valors de **tipus diferents**.
-A diferència dels vectors, els elements no es poden canviar un cop creats.
+Les tuples són **contenidors ordenats immutables** que poden contenir valors de **tipus diferents**.
+A diferència de les matrius, els elements no es poden canviar després de la creació.
 
 ```zymbol
 // Posicional — tipus mixtos permesos
@@ -401,14 +451,14 @@ punt = (10, 20)
 >> punt[1] ¶    // → 10
 
 dades = (42, "hola", #1, 3.14)
->> dades[3] ¶     // → #1
+>> dades[3] ¶   // → #1
 
-// Nomenada
-persona = (nom: "Alicia", edat: 25)
->> persona.nom ¶    // → Alicia
->> persona[1] ¶      // → Alicia  (l'índex també funciona, 1-basat)
+// Nominada
+persona = (nom: "Alice", edat: 25)
+>> persona.nom ¶    // → Alice
+>> persona[1] ¶     // → Alice  (l'índex també funciona, 1-base)
 
-// Imbricada
+// Niada
 pos = (x: 10, y: 20)
 p = (pos: pos, etiqueta: "origen")
 >> p.pos.x ¶        // → 10
@@ -422,19 +472,19 @@ t = (10, 20, 30)
 // t[1] += 5    // ❌ mateix error
 ```
 
-Per derivar un valor modificat useu `$~` (actualització funcional) — retorna una **nova** tupla:
+Per derivar un valor modificat usa `$~` (actualització funcional) — retorna una **nova** tupla:
 
 ```zymbol
 t = (10, 20, 30)
 t2 = t[2]$~ 999
->> t ¶     // → (10, 20, 30)   ← original no canvia
+>> t ¶     // → (10, 20, 30)   ← original inalterat
 >> t2 ¶    // → (10, 999, 30)
 
-// Tupla nomenada — reconstruir explícitament
-persona = (nom: "Alicia", edat: 25)
-major   = (nom: persona.nom, edat: 26)
+// Tupla nominada — reconstrueix explícitament
+persona = (nom: "Alice", edat: 25)
+mes_gran  = (nom: persona.nom, edat: 26)
 >> persona.edat ¶    // → 25
->> major.edat ¶     // → 26
+>> mes_gran.edat ¶   // → 26
 ```
 
 ---
@@ -444,39 +494,39 @@ major   = (nom: persona.nom, edat: 26)
 ```zymbol
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-doblats  = nums$> (x -> x * 2)                // map  → [2,4,6…20]
-parells  = nums$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
-total    = nums$< (0, (acc, x) -> acc + x)     // reduce → 55
+doblats  = nums$> (x -> x * 2)               // map  → [2,4,6…20]
+parells  = nums$| (x -> x % 2 == 0)          // filter → [2,4,6,8,10]
+total    = nums$< (0, (acc, x) -> acc + x)    // reduce → 55
 
-// Encadenar via intermediaris
+// Cadena via intermediaris
 pas1 = nums$| (x -> x > 3)
 pas2 = pas1$> (x -> x * x)
 >> pas2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Les funcions nomenades es poden passar directament a HOF
-doble(x) { <~ x * 2 }
+// Les funcions nominades es poden passar directament a HOF
+doblar(x) { <~ x * 2 }
 es_gran(x) { <~ x > 5 }
-r = nums$> doble       // ✅ referència directa
-r = nums$| es_gran     // ✅ referència directa
+r = nums$> doblar     // ✅ referència directa
+r = nums$| es_gran    // ✅ referència directa
 ```
 
 ---
 
-## Operador Canonada
+## Operador Pipe
 
 El costat dret sempre requereix `_` com a marcador de posició per al valor canalitzat:
 
 ```zymbol
-doble = x -> x * 2
+doblar = x -> x * 2
 sumar = (a, b) -> a + b
-incr = x -> x + 1
+incrementar = x -> x + 1
 
-5 |> doble(_)        // → 10
-10 |> sumar(_, 5)    // → 15
-5 |> sumar(2, _)     // → 7
+r1 = 5 |> doblar(_)              // → 10
+r2 = 10 |> sumar(_, 5)           // → 15
+r3 = 5 |> sumar(2, _)            // → 7
 
 // Encadenat
-r = 5 |> doble(_) |> incr(_) |> doble(_)
+r = 5 |> doblar(_) |> incrementar(_) |> doblar(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
@@ -500,18 +550,18 @@ r = 5 |> doble(_) |> incr(_) |> doble(_)
 |-------|------|
 | `##Div` | Divisió per zero |
 | `##IO` | Fitxer / sistema |
-| `##Index` | Índex fora de rang |
+| `##Index` | Índex fora de límits |
 | `##Type` | Desajust de tipus |
 | `##Parse` | Anàlisi de dades |
 | `##Network` | Errors de xarxa |
-| `##_` | Qualsevol error (captura general) |
+| `##_` | Qualsevol error (catch-all) |
 
 ---
 
 ## Mòduls
 
 ```zymbol
-// lib/calc.zy — el cos del mòdul està tancat entre claus
+// lib/calc.zy — el cos del mòdul és tancat entre claus
 # calc {
     #> { sumar, obtenir_PI }
 
@@ -523,7 +573,7 @@ r = 5 |> doble(_) |> incr(_) |> doble(_)
 
 ```zymbol
 // principal.zy
-<# ./lib/calc <= c    // àlies obligatori
+<# ./lib/calc => c    // àlies obligatori
 
 >> c::sumar(5, 3) ¶   // → 8
 pi = c::obtenir_PI()
@@ -531,44 +581,44 @@ pi = c::obtenir_PI()
 ```
 
 ```zymbol
-// Exportar amb un nom públic diferent
-# mellib {
-    #> { _sumar_intern <= suma }
+// Exporta amb un nom públic diferent
+# mevalib {
+    #> { _sumar_interna => suma }
 
-    _sumar_intern(a, b) { <~ a + b }
+    _sumar_interna(a, b) { <~ a + b }
 }
 ```
 
 ```zymbol
-<# ./mellib <= m
+<# ./mevalib => m
 
->> m::suma(3, 4) ¶    // → 7  (el nom intern _sumar_intern queda ocult)
+>> m::suma(3, 4) ¶    // → 7  (el nom intern _sumar_interna està amagat)
 ```
 
-> **Regles dels mòduls**: només `#>`, definicions de funcions i inicialitzadors de variables/constants literals estan permesos dins `# nom { }`. Les instruccions executables (`>>`, `<<`, bucles, etc.) generen l'error E013.
+> **Regles de mòduls**: només `#>`, definicions de funcions i inicialitzadors literals de variables/constants estan permesos dins `# nom { }`. Les instruccions executables (`>>`, `<<`, bucles, etc.) generen l'error E013.
 
 ---
 
 ## Modes Numèrics
 
-Zymbol pot mostrar números en **69 scripts de dígits Unicode** — Devanagari, àrab-índic, tailandès, pIqaD klingon, negreta matemàtica, segments LCD i més. El mode actiu sols afecta la sortida `>>`; l'aritmètica interna sempre és binària.
+Zymbol pot mostrar nombres en **69 scripts de dígits Unicode** — Devanagari, Àrab-Índic, Thai, Klingon pIqaD, Matemàtic Negreta, segments LCD i més. El mode actiu afecta només la sortida `>>`; l'aritmètica interna és sempre binària.
 
 ### Activar un script
 
-Escriviu el dígit `0` i `9` del script de destinació entre `#…#`:
+Escriu els dígits `0` i `9` de l'script objectiu tancats en `#…#`:
 
 ```zymbol
 #०९#    // Devanagari   (U+0966–U+096F)
-#٠٩#    // Àrab-índic   (U+0660–U+0669)
-#๐๙#    // Tailandès    (U+0E50–U+0E59)
-#09#    // restablir a ASCII
+#٠٩#    // Àrab-Índic (U+0660–U+0669)
+#๐๙#    // Thai         (U+0E50–U+0E59)
+#09#    // restableix a ASCII
 ```
 
 ### Sortida i booleans
 
 ```zymbol
 x = 42
->> x ¶          // → 42   (ASCII per defecte)
+>> x ¶          // → 42   (ASCII predeterminat)
 
 #०९#
 >> x ¶          // → ४२
@@ -577,13 +627,13 @@ x = 42
 
 // Booleans: prefix # sempre ASCII, dígit s'adapta
 >> #1 ¶         // → #१   (cert en Devanagari)
->> #0 ¶         // → #०   (fals — diferent de ०  zero enter)
+>> #0 ¶         // → #०   (fals — distint de ० zero enter)
 
 x = 28 > 4
->> x ¶          // → #१   (resultat de comparació segueix el mode actiu)
+>> x ¶          // → #१   (resultat comparació segueix el mode actiu)
 ```
 
-### Literals de dígits nadius a la font
+### Literals de dígits natius en el codi font
 
 Els dígits de qualsevol script suportat són literals vàlids — en rangs, mòdul, comparacions:
 
@@ -604,37 +654,37 @@ Els dígits de qualsevol script suportat són literals vàlids — en rangs, mò
 
 ```zymbol
 #٠٩#
-actiu = #١        // igual que #1
->> actiu ¶        // → #١
->> (#١ && #٠) ¶   // → #٠
+نشط = #١        // igual que #1
+>> نشط ¶        // → #١
+>> (#१ && #٠) ¶ // → #٠
 ```
 
-> `#` és **sempre ASCII**. `#0` (fals) és sempre visualment diferent de `0` (zero enter) en tots els scripts.
+> `#` és **sempre ASCII**. `#0` (fals) és sempre visualment distint de `0` (zero enter) en qualsevol script.
 
 ---
 
 ## Operadors de Dades
 
 ```zymbol
-// Conversions de tipus
-##.42         // → 42.0  (a Decimal)
-###3.7        // → 4     (a Sencer, arrodonir)
-##!3.7        // → 3     (a Sencer, truncar)
+// Càsting de conversió de tipus
+f = ##.42         // → 42.0  (a Decimal)
+i = ###3.7        // → 4     (a Enter, arrodoneix)
+t = ##!3.7        // → 3     (a Enter, trunca)
 
-// Analitzar cadena a número
-v1 = #|"42"|      // → 42  (Sencer)
+// Analitza cadena a nombre
+v1 = #|"42"|      // → 42  (Enter)
 v2 = #|"3.14"|    // → 3.14  (Decimal)
-v3 = #|"abc"|     // → "abc"  (sense error)
+v3 = #|"abc"|     // → "abc"  (fail-safe, sense error)
 
-// Arrodonir / truncar
+// Arrodonir / Truncar
 pi = 3.14159265
 r2 = #.2|pi|      // → 3.14  (arrodonir a 2 decimals)
 r4 = #.4|pi|      // → 3.1416
 t2 = #!2|pi|      // → 3.14  (truncar)
 
-// Format de número
+// Format de nombres
 fmt = #,|1234567|      // → 1,234,567  (separat per comes)
-sci = #^|12345.678|    // → 1.2345678e4  (científic)
+cient = #^|12345.678|  // → 1.2345678e4  (científic)
 
 // Literals de base
 a = 0x41         // → 'A'  (hexadecimal)
@@ -650,31 +700,31 @@ dec = 0d|255|    // → "0d0255"
 
 ---
 
-## Integració amb Shell
+## Integració Shell
 
 ```zymbol
-data = <\ date +%Y-%m-%d \>       // captura stdout (inclou \n final)
+data = <\ date +%Y-%m-%d \>        // captura stdout (inclou \n final)
 >> "Avui: " data
 
 fitxer = "dades.txt"
-contingut = <\ cat {fitxer} \>    // interpolació a les comandes
+contingut = <\ cat {fitxer} \>     // interpolació en ordres
 
-sortida = </"./subscript.zy"/>    // executar un altre script Zymbol, capturar sortida
+sortida = </"./subscript.zy"/>     // executa altre script Zymbol, captura sortida
 >> sortida
 ```
 
-> `><` captura els arguments CLI com a vector de cadenes (sols tree-walker).
+> `><` captura arguments CLI com a matriu de cadenes (només Tree-Walker).
 
 ---
 
 ## Exemple Complet: FizzBuzz
 
 ```zymbol
-classificar(nombre) {
-    ? nombre % 15 == 0 { <~ "FizzBuzz" }
-    _? nombre % 3  == 0 { <~ "Fizz" }
-    _? nombre % 5  == 0 { <~ "Buzz" }
-    _ { <~ nombre }
+classificar(numero) {
+    ? numero % 15 == 0 { <~ "FizzBuzz" }
+    _? numero % 3  == 0 { <~ "Fizz" }
+    _? numero % 5  == 0 { <~ "Buzz" }
+    _ { <~ numero }
 }
 
 @ i:1..20 { >> classificar(i) ¶ }
@@ -687,93 +737,110 @@ classificar(nombre) {
 | Símbol | Operació | Símbol | Operació |
 |--------|----------|--------|----------|
 | `=` | variable | `$#` | longitud |
-| `:=` | constant | `$+` | afegir (encadenable) |
-| `>>` | sortida | `$+[i]` | inserir a l'índex (1-basat) |
-| `<<` | entrada | `$-` | eliminar primer per valor |
-| `¶` / `\\` | salt de línia | `$--` | eliminar tots per valor |
-| `?` | si | `$-[i]` | eliminar a l'índex (1-basat) |
-| `_?` | si no si | `$-[i..j]` | eliminar rang (1-basat) |
-| `_` | si no / comodí | `$?` | conté |
-| `??` | coincidència | `$??` | trobar tots els índexs (1-basat) |
-| `@` | bucle | `$[s..e]` | tall (1-basat) |
-| `@ N { }` | bucle N vegades (N iteracions) | `$>` | map |
-| `@!` | sortir | `$\|` | filter |
-| `@>` | continuar | `$<` | reduce |
-| `@:nom { }` | bucle etiquetat | `$/ delim` | separar cadena |
-| `@:nom!` | sortir etiqueta | `$++ a b c` | construir concatenació |
-| `@:nom>` | continuar etiqueta | `arr[i>j>k]` | índex de navegació |
-| `->` | lambda | `arr[i] = val` | actualitzar element (sols vectors) |
-| `arr[i] += val` | actualització composta | `arr[i]$~` | actualització funcional (nova còpia) |
-| `$^+` | ordenar ascendent (primitius) | `$^-` | ordenar descendent (primitius) |
-| `$^` | ordenar amb comparador (tuples) | `<~` | retornar |
-| `\|>` | canonada | `!?` | intentar |
-| `:!` | capturar | `:>` | finalment |
+| `:=` | constant | `$+` | afegeix (encadenable) |
+| `>>` | sortida | `$+[i]` | insereix a l'índex (1-base) |
+| `<<` | entrada | `$-` | elimina primer per valor |
+| `¶` / `\\` | nova línia | `$--` | elimina tots per valor |
+| `?` | si | `$-[i]` | elimina a l'índex (1-base) |
+| `_?` | si no | `$-[i..j]` | elimina rang (1-base) |
+| `_` | sinó / comodí | `$?` | conté |
+| `??` | coincidència | `$??` | troba tots els índexs (1-base) |
+| `@` | bucle | `$[s..e]` | tall (1-base) |
+| `@ N { }` | bucle N vegades | `$>` | map |
+| `@!` | atura | `$\|` | filter |
+| `@>` | continua | `$<` | reduce |
+| `@:nom { }` | bucle etiquetat | `$/ delim` | divideix cadena |
+| `@:nom!` | atura etiqueta | `$++ a b c` | concat build |
+| `@:nom>` | continua etiqueta | `mat[i>j>k]` | índex navegació |
+| `->` | lambda | `mat[i] = val` | actualitza element (sols matrius) |
+| `mat[i] += val` | actualització composta | `mat[i]$~` | actualització funcional (nova còpia) |
+| `$^+` | ordena ascendent (primitius) | `$^-` | ordena descendent (primitius) |
+| `$^` | ordena amb comparador (tuples) | `<~` | retorna |
+| `\|>` | pipe | `!?` | prova |
+| `:!` | captura | `:>` | finalment |
 | `#1` | cert | `#0` | fals |
-| `$!` | és error | `$!!` | propagar error |
-| `<#` | importar | `#>` | exportar |
-| `#` | declarar mòdul | `::` | crida de mòdul |
+| `$!` | és error | `$!!` | propaga error |
+| `<#` | importa | `#>` | exporta |
+| `#` | declara mòdul | `::` | crida de mòdul |
 | `.` | accés a camp | `#?` | metadades de tipus |
-| `#\|..\|` | analitzar número | `##.` | convertir a Decimal |
-| `###` | convertir a Sencer (arrodonir) | `##!` | convertir a Sencer (truncar) |
-| `#.N\|..\|` | arrodonir | `#!N\|..\|` | truncar |
-| `#,\|..\|` | format de comes | `#^\|..\|` | científic |
-| `#d0d9#` | canvi de mode numeral | `#09#` | restablir a ASCII |
-| `<\ ..\>` | executar shell | `>\<` | args CLI |
-| `\ var` | destruir variable explícitament | | |
+| `#\|..\|` | analitza nombre | `##.` | converteix a Decimal |
+| `###` | converteix a Enter (arrodoneix) | `##!` | converteix a Enter (trunca) |
+| `#.N\|..\|` | arrodoneix | `#!N\|..\|` | trunca |
+| `#,\|..\|` | format coma | `#^\|..\|` | científic |
+| `#d0d9#` | canvia mode numèric | `#09#` | restableix a ASCII |
+| `<\ ..\>` | execució shell | `>\<` | arguments CLI |
+| `\ var` | destrueix variable explícitament | `°x` / `x°` | definició en calent (auto-init) |
+| `>>|` | bloc TUI (pantalla alt.) | `>>~` | sortida posicionada |
+| `>>!` | neteja pantalla | `>>?` | consulta mida terminal |
+| `<<\|` | lectura de tecla bloquejant | `<<\|?` | lectura de tecla no bloquejant |
+| `@~ N` | dorm N mil·lisegons | `$*` | repeteix cadena N vegades |
 
 ---
 
-## Historial de Canvis
+## Changelog de Versions
 
-### v0.0.4 — Indexació 1-basada, Funcions de Primera Classe i Blocs de Mòdul _(Abril 2026)_
+### v0.0.5 — Primitives TUI, Definició en Calent & Repetició de Cadena _(Maig 2026)_
 
-- **Ruptura** Tota la indexació canviada a **1-basada** — `arr[1]` és el primer element; `arr[0]` és un error en temps d'execució
-- **Afegit** Les funcions nomenades són **valors de primera classe** — passar directament a HOF: `nums$> doble`
-- **Afegit** **Sintaxi de bloc** de mòdul obligatòria: `# nom { ... }` — la sintaxi plana s'ha eliminat
-- **Afegit** Indexació multidimensional: `arr[i>j>k]` (navegació), `arr[p ; q]` (extracció plana)
-- **Afegit** Conversions de tipus: `##.expr` (Decimal), `###expr` (Sencer arrodonir), `##!expr` (Sencer truncar)
-- **Afegit** Separació de cadena: `str$/ delim` — retorna `Vector(Cadena)`
-- **Afegit** Construcció de concatenació: `base$++ a b c` — afegeix múltiples elements
-- **Afegit** Bucle N vegades: `@ N { }` — repetir exactament N vegades
-- **Afegit** Sintaxi de bucle etiquetat: `@:nom { }`, `@:nom!`, `@:nom>` — reemplaça `@ @nom` / `@! nom`
-- **Afegit** Regles d'àmbit de variables: les variables `_nom` tenen àmbit de bloc exacte; `\ var` destrueix aviat
-- **Afegit** Patrons de comparació de coincidència: `< 0 :`, `> 5 :`, `== 42 :` etc.
-- **Afegit** Error de mòdul E013: les instruccions executables al cos del mòdul estan prohibides
-- **Corregit** `take_variable` ja no corromp les constants del mòdul en la reescriptura
-- **Corregit** `alias.CONST` ara es resol correctament; `#>` pot aparèixer després de les definicions de funció
-- **VM** Paritat total: 393/393 proves passen
+- **Breaking** Separador de branca match: `patró : resultat` → `patró => resultat`
+- **Breaking** Àlies d'import: `<# camí <= àlies` → `<# camí => àlies`
+- **Breaking** Reanomenament d'export: `#> { fn <= pub }` → `#> { fn => pub }`
+- **Added** Bloc TUI `>>| { }` — pantalla alternativa + mode raw; neteja en sortir
+- **Added** Sortida posicionada `>>~ (fila, col, BKS, fg, bg) > elements` — ranures escasses, paleta ANSI 256 colors
+- **Added** Entrada de tecla `<<| var` (bloquejant) i `<<|? var` (polling no bloquejant)
+- **Added** `>>!` neteja pantalla, `>>?` consulta mida terminal, `@~ N` dorm N mil·lisegons
+- **Added** Definició en calent `°x` / `x°` — auto-inicialitza variable en el primer ús en bucles
+- **Added** Repetició de cadena `str $* N` — repeteix una cadena N vegades
+- **VM** Paritat: 436/436 proves passen
 
-### v0.0.3 — Sistemes Numèrics Unicode i Millores LSP _(Abril 2026)_
+### v0.0.4 — Indexació 1-Base, Funcions Primera Classe & Blocs de Mòdul _(Abril 2026)_
 
-- **Afegit** 69 blocs de dígits Unicode amb el testimoni de canvi de mode `#d0d9#`
-- **Afegit** Literals booleans en qualsevol script — `#१` / `#०`, `#١` / `#٠`, etc.
-- **Afegit** Dígits pIqaD klingon (CSUR PUA U+F8F0–U+F8F9)
-- **Afegit** Opcode VM `SetNumeralMode` — paritat total amb el tree-walker
-- **Afegit** El REPL respecta el mode numeral actiu en l'eco i la visualització de variables
-- **Canviat** La sortida `>>` de booleans ara inclou el prefix `#` (`#0` / `#1`) en tots els modes
+- **Breaking** Tota la indexació canviada a **1-base** — `mat[1]` és el primer element; `mat[0]` és un error en temps d'execució
+- **Added** Les funcions nominades són **valors de primera classe** — passa directament a HOF: `nums$> doblar`
+- **Added** Sintaxi de **bloc de mòdul** obligatòria: `# nom { ... }` — sintaxi plana eliminada
+- **Added** Indexació multidimensional: `mat[i>j>k]` (navegació), `mat[p ; q]` (extracció plana)
+- **Added** Càstings de conversió de tipus: `##.expr` (Decimal), `###expr` (Enter arrodoneix), `##!expr` (Enter trunca)
+- **Added** Divisió de cadena: `str$/ delim` — retorna `Array(String)`
+- **Added** Concat build: `base$++ a b c` — afegeix múltiples elements
+- **Added** Bucle N vegades: `@ N { }` — repeteix exactament N vegades
+- **Added** Sintaxi de bucle etiquetat: `@:nom { }`, `@:nom!`, `@:nom>` — substitueix `@ @nom` / `@! nom`
+- **Added** Regles d'àmbit de variables: variables `_nom` tenen àmbit exacte del bloc; `\ var` destrueix aviat
+- **Added** Patrons de comparació match: `< 0 :`, `> 5 :`, `== 42 :` etc.
+- **Added** Error de mòdul E013: les instruccions executables al cos del mòdul estan prohibides
+- **Fixed** `take_variable` ja no corromp les constants del mòdul en el write-back
+- **Fixed** `alias.CONST` ara es resol correctament; `#>` pot aparèixer després de les definicions de funcions
+- **VM** Paritat completa: 393/393 proves passen
 
-### v0.0.2_01 — Canvi de Nom d'Operadors _(30 Mar 2026)_
+### v0.0.3 — Sistemes de Numerals Unicode & Millores LSP _(Abril 2026)_
 
-- **Canviat** `c|..|` → `#,|..|` i `e|..|` → `#^|..|` — consistent amb la família de prefixos de format `#`
-- **Afegit** Àlies d'exportació: reexportar membres del mòdul amb un nom diferent
+- **Added** 69 blocs de dígits Unicode amb token de canvi de mode `#d0d9#`
+- **Added** Literals booleans en qualsevol script — `#१` / `#०`, `#١` / `#٠`, etc.
+- **Added** Dígits Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Added** Opcode de VM `SetNumeralMode` — paritat completa amb tree-walker
+- **Added** REPL respecta el mode numèric actiu en l'eco i la visualització de variables
+- **Changed** Sortida booleana `>>` ara inclou prefix `#` (`#0` / `#1`) en tots els modes
 
-### v0.0.2 — Redisseny de l'API de Col·lecció i Instal·ladors _(24 Mar 2026)_
+### v0.0.2_01 — Reanomenament d'Operadors _(30 Mar 2026)_
 
-- **Afegit** Família d'operadors `$` unificada per a vectors i cadenes (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Afegit** Assignació per desestructuració per a vectors, tuples i tuples nomenades
-- **Afegit** Índexs negatius (`arr[-1]` = darrer element)
-- **Afegit** Instal·ladors nadius — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+- **Changed** `c|..|` → `#,|..|` i `e|..|` → `#^|..|` — consistent amb família de prefix de format `#`
+- **Added** Àlies d'export: re-exporta membres del mòdul amb nom diferent
+
+### v0.0.2 — Redisseny de l'API de Col·leccions & Instal·ladors _(24 Mar 2026)_
+
+- **Added** Família unificada d'operadors `$` per a matrius i cadenes (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Added** Assignació de desestructuració per a matrius, tuples i tuples nominades
+- **Added** Índexos negatius (`mat[-1]` = darrer element)
+- **Added** Instal·ladors natius — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
 
 ### v0.0.1-patch _(25 Mar 2026)_
 
-- **Afegit** Assignació composta `^=`
-- **Corregit** Casos límit aritmètics del parser; correccions de documentació
+- **Added** Assignació composta `^=`
+- **Fixed** Casos límit aritmètics del parser; correccions de documentació
 
-### v0.0.1 — Llançament Públic Inicial _(22 Mar 2026)_
+### v0.0.1 — Primera Versió Pública _(22 Mar 2026)_
 
 - Intèrpret tree-walker + VM de registres (`--vm`, ~4× més ràpid, ~95% paritat)
-- Tots els constructs principals: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Identificadors Unicode complets, sistema de mòduls, lambdes, tancaments, gestió d'errors
+- Tots els constructes base: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Identificadors Unicode complets, sistema de mòduls, lambdes, closures, gestió d'errors
 - REPL, LSP, extensió VS Code, formatador (`zymbol fmt`)
 
 ---

@@ -1,211 +1,279 @@
-# Zymbol-Lang Aküjawaa
-
-**Zymbol-Lang** süpüla aküjalin wayuunaiki. Nnojolüin tü aküjaliakat — pütchi anüikat pümüin. Wayuunaiki aküjaa süpüla tü pütchiikat.
-
-- Nnojolüin aküjaliaka (`if`, `while`, `return` nnojolüin — pütchi anüikat `?`, `@`, `<~`)
-- Wayuunaiki kepiain — aküjalin sünain wayuunaiki o emoji 👋
-- Aküjaliaka sünain outka — tü pütchiikat sünainjee wayuunaiki
+> **Pirlirlipa yimi:** Kuruwarri yalumpu AI-rlu yirrarnu.
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Yimi kirlangu **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** interpreter-kurra.
 
 ---
 
-## Pütchi mîna Nnojolüin Paainjüin
+# Zymbol-Lang — Yimi Kirlangu
+
+> **Kankarlurlu v0.0.5 — 2026-05-12**
+
+**Zymbol-Lang** yimi-kurlu programming language. Lawa keyword — tu lakal pirnki. Kuja-manu bey yapa-patu t'aan-juku.
+
+- Lawa `if`, `while`, `return` — chen `?`, `@`, `<~`
+- Unicode wiri — wangka-juku yapa t'aan wa emoji
+- T'aan yapa lawa ku pirnkinja — kod kuja-manu tu lakal ngurra
+
+**Interpreter version**: v0.0.5 | **Test coverage**: 436/436 (TW ↔ VM parity)
+
+---
+
+## Jalangu & Pirlirlipa
 
 ```zymbol
-x = 10           // Pütchi (achikirawaa)
-PI := 3.14159    // Nnojolüin paainjüin (nnojolüin achikiraain — pütchi sünain kachon)
-suulu = "Wayuu"
-wanee = #1       // pütchi anüikat wanee
-👋 := "Jamaya"
+x = 10              // jalangu ku pirnkinja
+PI := 3.14159       // pirlirlipa — kankarlurlu k'as ka pirnkinja
+wangka = "Nampijinpa"
+yuwarli = #1        // bool yuwayi
+👋 := "Yuwayi"
 ```
 
 ```zymbol
-x = 10
+x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
+
+`°` (U+00B0) ku kaajil jalangu jarda lawa-pala jinta-pala:
+
+```zymbol
+jardajarda = [3, 1, 4, 1, 5]
+@ n:jardajarda {
+    °jardamanu += n    // ku kaajil 0 pirli-pirli ngurra; ku bin @-ka
+}
+>> jardamanu ¶         // → 14
+```
+
+> `°x` (prefix) pirli-pirli ngurra ku kaajil — ku bin @-kari.
+> `x°` (postfix) pirli-pirli kankarlurlu — ku kari pirli-pirli.
+> Tree-walker chen.
 
 ---
 
-## Kasa Pütchi
+## Yimi Panu
 
-| Kasa            | Süchiki             | Symbol `#?`  | Aküjaa                              |
-|-----------------|---------------------|--------------|-------------------------------------|
-| Akumajaa        | `42`, `-7`          | `###`        | 64-bit sünain                       |
-| Pütchi Akumajaa | `3.14`, `1.5e10`    | `##.`        | Pütchi anüikat aküjain              |
-| Pütchirua       | `"jamaya"`          | `##"`        | Aküjaa: `"Jamaya {suulu}"`          |
-| Pütchi Wanee    | `'A'`               | `##'`        | Wanee pütchi unicode                |
-| Pütchi Anüikat  | `#1`, `#0`          | `##?`        | NNOJOLÜIN akumajaa 1 o 0            |
-| Pütchiirua      | `[1, 2, 3]`         | `##]`        | Kasa sünainjee                      |
-| Tuple           | `(a, b)`            | `##)`        | Pütchi akumajaa                     |
-| Tuple Suulu     | `(x: 1, y: 2)`      | `##)`        | Aküjaa sünain suulu o akumajaa      |
+| Yimi | Tziib | `#?` | Yirninja |
+|------|---------|----------|-------|
+| Int | `42`, `-7` | `###` | 64-bit signed |
+| Float | `3.14`, `1.5e10` | `##.` | Scientific notation OK |
+| T'aan | `"yimi"` | `##"` | Pirlirlipa: `"Yuwayi {wangka}"` |
+| Char | `'A'` | `##'` | Jinta Unicode |
+| Bool | `#1`, `#0` | `##?` | Lawa jarda — `#1 ≠ 1` |
+| Jalama | `[1, 2, 3]` | `##]` | Kuja-manu yimi |
+| Tupla | `(a, b)` | `##)` | Jarda-panu |
+| Tupla Wangka | `(x: 1, y: 2)` | `##)` | Wangka jarda-panu |
+| Function | named function ref | `##()` | First-class; `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | First-class; `<lambd/N>` |
 
 ```zymbol
-// Kasa süchiki — bora (kasa, akumajaa, süchiki)
-meta = 42#?
->> meta ¶         // → (###, 2, 42)
-t = meta[0]
+// yimi panu — ku ookol (panu, jarda, nilai)
+yimipanu = 42#?
+>> yimipanu ¶         // → (###, 2, 42)
+t = yimipanu[1]
 >> t ¶            // → ###
 ```
 
 ---
 
-## Ayaawataa mîna Ekirajaa
+## Wangkanja & Ngurnturninja
 
 ```zymbol
->> "Jamaya" ¶                       // ¶ o \\ pütchi jüpüla
->> "a=" a " b=" b ¶                 // pütchi jünüin sünain jüpüshua
->> (pütchiirua$#) ¶                 // postfix süpüla parantesis
+>> "Yuwayi" ¶                     // ¶ wa \\ jinta-palu yimi
+>> "a=" a " b=" b ¶               // yalumpu — yimi panu
+>> (jalama$#) ¶                   // pirnki posfijo k'uchul ( ) ti' >>
 
-<< suulu                            // nnojolüin pütchi — ekirajaa sünain pütchi
-<< "Tü suuluka? " suulu             // sünain pütchi
+<< wangka                         // ngurnturninja (lawa yimi pirlirlipa)
+<< "Wangka yimi: " wangka         // yéetel yimi pirlirlipa
 ```
 
-> `¶` o `\\` wayuunaiki sünain jüpüla.
+> `¶` (AltGr+R Spanish teclado-ku) yéetel `\\` kuja-manu yimi.
 
 ---
 
-## Wyrops
+## TUI Primitivos
+
+Terminal UI pirnki interactive programa-juku. Yaab ku k'uchul `>>| { }` bloque.
 
 ```zymbol
-// Akumajaa aküjaa — pütchi sünain
+>>| {
+    >>!                              // ku su'uk pantalla alterna
+    >>~ (1, 1, 0, 10) > "Yuwarli"   // jelen 1, col 1, fg=10 (yaax)
+    @~ 1000                          // ku k'uchul 1 segundo (1000 ms)
+    >>~ (2, 1) > "Yirrarnu."
+}
+// terminal ku ts'o'oksik automatiko
+```
+
+```zymbol
+// Teclado yéetel warlalku wiri
+>>| {
+    [jeleno, kolumo] = >>?           // ku k'amik warlalku wiri
+    >>~ (1, 1) > "Warlalku: " jeleno " x " kolumo
+    <<| klave                        // ku ngurnturninja tecla
+    >>~ (2, 1) > "Kankarlurlu: " klave
+}
+```
+
+> `>>!` ku su'uk tziib. `>>?` ku ookol `[rows, cols]`. `@~ N` ku k'uchul N milliseconds.
+> `<<|` ku ngurnturninja tecla; `<<|?` lawa ku k'uchul (ku ookol `'\0'` wa lawa).
+> Tupla: `(row, col, BKS, fg, bg)` — ba'al slot lawa yéetel coma (`>>~ (,,, 196) > "chak"`).
+> BKS: `1`=Pirlirlipa, `2`=Kankarlurlu, `4`=Yirninja. ANSI 256 colores (`0`=predeterminado).
+> Tree-walker chen (lawa `>>!`, `>>?`, `@~`, `>>~` ku bin `--vm`).
+
+---
+
+## Pirnki Yimi
+
+```zymbol
+// Jarda pirnki
 a = 10
 b = 3
-r1 = a + b    // 13     r2 = a - b    // 7
-r3 = a * b    // 30     r4 = a / b    // 3  (akumajaa wanee)
-r5 = a % b    // 1      r6 = a ^ b    // 1000  (akumajaa naas)
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (jarda ts'iit'ik)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (potencia)
 
-// Kasa süchiki
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
+// Kuja-manu — ku kaab jalangu
+c1 = a == b    // #0
+c2 = a <> b    // #1
+c3 = a < b     // #0
+c4 = a <= b    // #0
+c5 = a > b     // #1
+c6 = a >= b    // #1
 
-// Aküjaa wayuunaiki
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
+// Lógico
+l1 = #1 && #0    // #0
+l2 = #1 || #0    // #1
+l3 = !#1         // #0
 ```
 
 ---
 
-## Waystryn
+## Yimi Yirninja
 
 ```zymbol
-// Wayuu müshi sünain — wanee sünain süchikua
-suulu = "Wayuu"
+// Jirrama bey yimi pirlirlipa
+wangka = "Nampijinpa"
 n = 42
 
-pütchi = "Jamaya ", suulu, "!"           // comma — sünain = o :=
->> "Jamaya " suulu " süpüla " n ¶        // jüpüshua — sünain ayaawataa >>
-aküja = "Jamaya {suulu}, süpüla {n}"     // aküjaa — sünain outka
+>> "Yuwayi " wangka " jardamanu " n ¶  // yalumpu — ti' >>
+yimijuku = "Yuwayi {wangka}, jardamanu {n}"  // pirlirlipa — tu lakal
 ```
 
 ```zymbol
-s = "Jamaya Wayuu"
-len = s$#                  // 12
-sub = s$[0..6]             // "Jamaya"  (nnojolüin süchiki)
-has = s$? "Wayuu"          // #1
-parts = "a,b,c,d" / ','    // [a, b, c, d]
-rep = s$~~["a":"A"]        // "JAmAyA WAyuu"
-rep1 = s$~~["a":"A":1]     // "JAmaya Wayuu"
+s = "Yuwayi Yapa-Patu"
+nampula = s$#                  // 16
+wita = s$[1..6]                // "Yuwayi"  (jinta-panu, yirninja)
+yinpirni = s$? "Yapa"          // #1
+kirlangu = "a,b,c,d"$/ ','    // [a, b, c, d]  (ts'iit'ik)
+jirramba_yimi = s$~~["a":"A"]        // ku yirninja
+jirramba_yimi1 = s$~~["a":"A":1]     // jinta chen
+pirnki_yimi = "─" $* 20           // "────────────────────"  (N kuja-manu)
 ```
 
-> **Aküjaa**: `+` süpüla akumajaa pümüin. Pütchiirua sünain pütchi jüpüshua.
+> `+` jarda chen. Yóok'ol t'aan `,`, yalumpu, wa pirlirlipa.
 
 ---
 
-## Kasain
+## Jukurrpa Yuwarli
 
 ```zymbol
 x = 7
 
-? x > 0 { >> "anüikat" ¶ }
+? x > 0 { >> "ngurrju" ¶ }
 
 ? x > 100 {
-    >> "wayuu" ¶
+    >> "wiri" ¶
 } _? x > 0 {
-    >> "anüikat" ¶
+    >> "ngurrju" ¶
 } _? x == 0 {
-    >> "süchon" ¶
+    >> "lawa" ¶
 } _ {
-    >> "nnojolüin" ¶
+    >> "kari-juku" ¶
 }
 ```
 
-> Pütchi `{ }` **süpüla**, wanee sünain aküjaa.
+> `{ }` ku k'uchul siempre jinta-palu yimi.
 
 ---
 
-## Match
+## Kuja-Manu
 
 ```zymbol
-// Match sünain pütchi akumajaa
-akumajaa = 85
-pütchi = ?? akumajaa {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+// Jarda-jarda
+warumpa = 85
+yirninja = ?? warumpa {
+    90..100 => 'A'
+    80..89  => 'B'
+    70..79  => 'C'
+    _       => 'F'
 }
->> pütchi ¶    // → B
+>> yirninja ¶    // → B
 
-// Match sünain pütchirua
-wanüiki = "wayuu"
-kasa = ?? wanüiki {
-    "wayuu"   : "#FF0000"
-    "anüikat" : "#00FF00"
-    _         : "#000000"
+// Yimi
+yarli = "chak"
+kudi = ?? yarli {
+    "chak"   => "#FF0000"
+    "yaax"   => "#00FF00"
+    _        => "#000000"
 }
 
-// Match sünain kasain
-temp = -5
-kasa = ?? temp {
-    _? temp < 0  : "kachon"
-    _? temp < 20 : "wayuu"
-    _? temp < 35 : "anüikat"
-    _            : "wanee"
+// Kuja-manu pirnki
+yalara = -5
+kujamanu = ?? yalara {
+    < 0  => "yarlungku"
+    < 20 => "jintiku"
+    < 35 => "jinti"
+    _    => "yalara"
 }
->> kasa ¶    // → kachon
+>> kujamanu ¶    // → yarlungku
 
-// Match sünain bloque
+// Yimi yirninja (bloque)
+n = -3
 ?? n {
-    0       : { >> "süchon" ¶ }
-    _? n < 0: { >> "nnojolüin" ¶ }
-    _       : { >> "anüikat" ¶ }
+    0    => { >> "lawa" ¶ }
+    < 0  => { >> "kari-juku" ¶ }
+    _    => { >> "ngurrju" ¶ }
 }
 ```
 
 ---
 
-## Naülaajaa
+## Pirli-Pirli
 
 ```zymbol
-@ i:0..4  { >> i " " }        // pütchi akumajaa:  0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // pütchi step:       1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // pütchi süchon:     5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // jarda-jarda:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // yéetel pirli:  1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // kari-palu:     5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶                        // → 128  (kasain)
+>> n ¶                        // → 128  (pirli-pirli)
 
-müsia = ["wayuu", "anüikat", "wanee"]
-@ f:müsia { >> f ¶ }          // naülaajaa sünain pütchiirua
+watiyajarda = ["watiyanguru", "pajarra", "wapirra"]
+@ f:watiyajarda { >> f ¶ }    // ti' jalama
 
-@ c:"jamaya" { >> c "-" }
->> ¶                          // → j-a-m-a-y-a-
+@ c:"yuwayi" { >> c "-" }
+>> ¶                          // → y-u-w-a-y-i-  (ti' yimi)
 
 @ i:1..10 {
-    ? i % 2 == 0 { @> }       // @> naülaajain
-    ? i > 7 { @! }             // @! süpüla
+    ? i % 2 == 0 { @> }       // @> ku bin
+    ? i > 7 { @! }             // @! ku kari
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
 
-// Naülaajaa wanee
+// Pirli-pirli lawa kaaj
 i = 0
 @ {
     i++
@@ -214,356 +282,360 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Naülaajaa suulu (süpüla naasad)
-count = 0
-@ @outer {
-    count++
-    ? count >= 3 { @! outer }
+// Wangka pirli-pirli (kaaj kijaka)
+jarda = 0
+@:ngurra {
+    jarda++
+    ? jarda >= 3 { @:ngurra! }
 }
->> count ¶                    // → 3
+>> jarda ¶                    // → 3
 ```
 
 ---
 
-## Süpüla
+## Ngurra-Kurlangu
 
 ```zymbol
-ayaawataa(a, b) { <~ a + b }
->> ayaawataa(3, 4) ¶    // → 7
+wantiki(a, b) { <~ a + b }
+>> wantiki(3, 4) ¶    // → 7
 
-süpülain(n) {
+factorial(n) {
     ? n <= 1 { <~ 1 }
-    <~ n * süpülain(n - 1)
+    <~ n * factorial(n - 1)
 }
->> süpülain(5) ¶    // → 120
+>> factorial(5) ¶    // → 120
 ```
 
-Süpüla sünainjee pütchi — **nnojolüin aküjaa sünain outka**. Hut'unn `<~` pütchi achikirawaa:
+Ngurra-kurlangu ku k'uchul **scope aislado** — lawa ku kaajil jalangu tu yóok'ol. `<~` ku bin:
 
 ```zymbol
-swap(a<~, b<~) {
-    tmp = a
+kijamanu(a<~, b<~) {
+    pinamanu = a
     a = b
-    b = tmp
+    b = pinamanu
 }
 x = 10
 y = 20
-swap(x, y)
+kijamanu(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> **Aküjaa**: Süpüla `suulu(nüchukua){ }` nnojolüin pütchi anüikat.
-> Süpüla sünain nüchukua: `x -> suulu(x)`.
+> Ngurra-kurlangu wangka **first-class** — ku bin: `jardajarda$> jirramba`. Waye: `x -> fn(x)` ku bin.
 
 ---
 
-## Lambda mîna Tü
+## Lambdas & Tarlipirni
 
 ```zymbol
-wayuusein = x -> x * 2
-sümaa = (a, b) -> a + b
->> wayuusein(5) ¶    // → 10
->> sümaa(3, 7) ¶     // → 10
+jirramba = x -> x * 2
+jardamanu = (a, b) -> a + b
+>> jirramba(5) ¶    // → 10
+>> jardamanu(3, 7) ¶    // → 10
 
-// Lambda sünain pütchi
-kasain = x -> {
-    ? x > 0 { <~ "anüikat" }
-    _? x < 0 { <~ "nnojolüin" }
-    <~ "süchon"
+// Lambda bloque
+yirdijimanu = x -> {
+    ? x > 0 { <~ "ngurrju" }
+    _? x < 0 { <~ "kari-juku" }
+    <~ "lawa"
 }
 
-// Tü — lambda sünainjee pütchi outka
-wayuuka = 3
-wayuusein3 = x -> x * wayuuka
->> wayuusein3(7) ¶    // → 21
+// Tarlipirni — ku kaajil tu yóok'ol
+factor = 3
+marnkurrpa = x -> x * factor
+>> marnkurrpa(7) ¶    // → 21
 
-// Süpüla anüikat
-make_wayuu(n) { <~ x -> x + n }
-wayuu10 = make_wayuu(10)
->> wayuu10(5) ¶    // → 15
+// Wantikimanu
+wantikimanu(n) { <~ x -> x + n }
+wantiki10 = wantikimanu(10)
+>> wantiki10(5) ¶    // → 15
 
-// Lambda sünain pütchiirua
-kasas = [x -> x+1, x -> x*2, x -> x*x]
->> kasas[2](5) ¶    // → 25
+// Ti' jalama
+pirnkijuku = [x -> x+1, x -> x*2, x -> x*x]
+>> pirnkijuku[3](5) ¶    // → 25
 ```
 
 ---
 
-## Pütchiirua
+## Jalama-Jarda
 
-Pütchiirua **achikirawaa** (mutable) na wanee **kasa akatsa kasa**.
+Jalama-jarda **ku pirnkinja** yéetel yimi **kuja-manu panu**.
 
 ```zymbol
-pütchiirua = [1, 2, 3, 4, 5]
+jalama = [1, 2, 3, 4, 5]
 
-pütchiirua[0]          // 1 — aküjaa (0-sünain akumajaa)
-pütchiirua[-1]         // 5 — akumajaa nnojolüin (paainjüin)
-pütchiirua$#           // 5 — süchikua (parantesis sünain >> süpüla)
+x = jalama[1]      // 1 — ok'ol (jinta-panu: jinta)
+x = jalama[-1]     // 5 — kari-palu (u kaajil)
+x = jalama$#       // 5 — nampula (ti' (jalama$#) ti' >>)
 
-pütchiirua = pütchiirua$+ 6            // jünüin → [1,2,3,4,5,6]
-pütchiirua2 = pütchiirua$+[2] 99       // jünüin sünain índice 2
-pütchiirua3 = pütchiirua$- 3           // süpüla wanee
-pütchiirua4 = pütchiirua$-- 3          // süpüla tuláakal
-pütchiirua5 = pütchiirua$-[0]          // süpüla sünain índice
-pütchiirua6 = pütchiirua$-[1..3]       // süpüla rango (nnojolüin süchiki)
+jalama = jalama$+ 6            // ku kaab → [1,2,3,4,5,6]
+arr2 = jalama$+[2] 99       // ti' yirninja 2 (jinta-panu)
+arr3 = jalama$- 3           // ku kari jinta-palu yimi
+arr4 = jalama$-- 3          // ku kari tu lakal
+arr5 = jalama$-[1]          // ku kari yirninja 1
+arr6 = jalama$-[2..3]       // ku kari jarda-panu
 
-has = pütchiirua$? 3                   // #1 — kasain
-pos = pütchiirua$?? 3                  // [2] — outka índice
-sl = pütchiirua$[0..3]                 // [1,2,3] — pütchi (nnojolüin süchiki)
-sl2 = pütchiirua$[0:3]                 // [1,2,3] — akumajaa süchiki
+yinpirni = jalama$? 3            // #1 — ku bin
+nguwo = jalama$?? 3           // [3] — tu lakal yirninja (jinta-panu)
+wita = jalama$[1..3]          // [1,2,3] — kijaka (jinta-panu)
+wita2 = jalama$[1:3]          // [1,2,3] — biy kuja-manu, jarda-ku
 
-asc = pütchiirua$^+                    // gai'tayl anüikat (naas solus)
-desc = pütchiirua$^-                   // gai'tayl nnojolüin (naas solus)
+naats_bin = jalama$^+             // ku tsool naats (xook chen)
+keban_bin = jalama$^-             // ku tsool keban (xook chen)
 
-// Tuple Suulu — hut'unn $^ mîna lambda
-db = [(suulu: "Carla", akumajaa: 28), (suulu: "Ana", akumajaa: 25), (suulu: "Bob", akumajaa: 30)]
-by_akumajaa = db$^ (a, b -> a.akumajaa < b.akumajaa)
-by_suulu    = db$^ (a, b -> a.suulu > b.suulu)
->> by_akumajaa[0].suulu ¶     // → Ana
->> by_suulu[0].suulu ¶        // → Carla
+// Tupla jalama — $^ yéetel tarlipirni
+db = [(wangka: "Nampijinpa", jardangu: 28), (wangka: "Nakamarra", jardangu: 25), (wangka: "Jakamarra", jardangu: 30)]
+jardaku  = db$^ (a, b -> a.jardangu < b.jardangu)    // jarda naats  (<)
+wangkaku = db$^ (a, b -> a.wangka > b.wangka)         // wangka keban (>)
+>> jardaku[1].wangka ¶     // → Nakamarra
+>> wangkaku[1].wangka ¶    // → Nampijinpa
 
-// Pütchi achikirawaa sünain ples (pütchiirua tasol)
-pütchiirua[1] = 99              // achikirawaa
-pütchiirua[0] += 5              // compound: +=  -=  *=  /=  %=  ^=
+// Ku pirnkinja jinta (jalama chen)
+jalama[1] = 99              // ku kaab
+jalama[2] += 5              // yalumpu: +=  -=  *=  /=  %=  ^=
 
-// Achikirawaa wanee — bora pütchiirua; jalqabaa hin jijjiiramu
-pütchiirua2 = pütchiirua[1]$~ 99
+// Ku pirnkinja yimi — ku ookol jalama nok'; original lawa ku bis
+arr2 = jalama[2]$~ 99
 ```
 
-> `$+`, `$-`, `$[..]` pütchiirua **wanee** — achikirawaa: `pütchiirua = pütchiirua$+ 4`.
-> Nnojolüin jünüin: wayuu pütchi wanee sünain.
-> `$^+` / `$^-` gai'tayl **naas solus**. Tuple Suulu — hut'unn `$^` mîna lambda.
+> Tu lakal pirnki colección ku ookol **jalama nok'**. Ku kaab: `jalama = jalama$+ 4`.
+> `$+` ku tsoolte: `jalama = jalama$+ 5$+ 6$+ 7`. Yali pirnki yalumpu intermedios.
+> **Jinta-panu**: `jalama[1]` jinta; `jalama[0]` kankarlurlu k'as.
+> `$^+` / `$^-` **jalama jarda** (xooknalob, yimi). Tupla-ku `$^` yéetel tarlipirni.
 
-**Semantik süchikua** — achikirawaa pütchiirua sünain variable wanee meküin kopia anüikat:
+**Nilai kuja-manu** — ku kaab jalama ku ookol kopi jinta:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b nnojolüin achikirawaa
+>> b ¶    // → [1, 2, 3]   ← b lawa ku bis
 ```
 
 ```zymbol
-// Pütchiirua naasad
-matrix = [[1,2,3],[4,5,6],[7,8,9]]
->> matrix[1][2] ¶    // → 6
-```
-
----
-
-## Waydstr
-
-```zymbol
-// Pütchiirua
-pütchiirua = [10, 20, 30, 40, 50]
-[a, b, c] = pütchiirua              // a=10  b=20  c=30
-[first, *rest] = pütchiirua         // first=10  rest=[20,30,40,50]
-[x, _, z] = [1, 2, 3]               // _ nnojolüin süpüla
-
-// Tuple akumajaa
-point = (100, 200)
-(px, py) = point                    // px=100  py=200
-
-// Tuple Suulu
-person = (suulu: "Ana", akumajaa: 25, city: "Maracaibo")
-(suulu: n, akumajaa: a) = person    // n="Ana"  a=25
+// Jalama-jarda anidado (jinta-panu)
+matriz = [[1,2,3],[4,5,6],[7,8,9]]
+>> matriz[2][3] ¶    // → 6  (jelen 2, kolu 3)
 ```
 
 ---
 
-## Tuple
-
-Tuple **nnojolüin achikirawaa** (immutable) na kasa **sulu'u kasa kasa**. Kala pütchiirua, wanee nnojolüin beddel tü aainkuajaa.
+## Yimi Kijaka
 
 ```zymbol
-// Akumajaa
-point = (10, 20)
->> point[0] ¶    // → 10
+// Jalama
+jalama = [10, 20, 30, 40, 50]
+[a, b, c] = jalama              // a=10  b=20  c=30
+[jinta, *yalimpa] = jalama      // jinta=10  yalimpa=[20,30,40,50]
+[x, _, z] = [1, 2, 3]          // _ ku kari
 
-wayuusain = (42, "kasa", #1, 3.14)
->> wayuusain[2] ¶     // → #1
+// Tupla jarda-panu
+wurnturu = (100, 200)
+(px, py) = wurnturu             // px=100  py=200
 
-// Suulu
-wayuu = (suulu: "Wayuu", akumajaa: 25)
->> wayuu.suulu ¶      // → Wayuu
->> wayuu[0] ¶         // → Wayuu  (akumajaa süpüla)
-
-// Naasad
-pos = (x: 10, y: 20)
-p = (pos: pos, label: "wayuunaiki")
->> p.pos.x ¶        // → 10
+// Tupla wangka
+yapa = (wangka: "Nakamarra", jardangu: 25, ngurra: "Yuendumu")
+(wangka: n, jardangu: a) = yapa  // n="Nakamarra"  a=25
 ```
 
-**Nnojolüin achikirawaa (Immutabilité)** — tü wanee achikirawaa kasa sünain tuple dü'üsü waktu:
+---
+
+## Jalama-Wita
+
+Jalama-wita **lawa ku pirnkinja** ku kaajil yimi **yimi panu jirrama**.
+Lawa jalama, yimi lawa ku pirnkinja ka yirrarnu.
+
+```zymbol
+// Jarda-panu — yimi panu yuwayi
+wurnturu = (10, 20)
+>> wurnturu[1] ¶    // → 10
+
+yimipanu = (42, "yuwayi", #1, 3.14)
+>> yimipanu[3] ¶     // → #1
+
+// Wangka
+yapa = (wangka: "Nampijinpa", jardangu: 25)
+>> yapa.wangka ¶    // → Nampijinpa
+>> yapa[1] ¶        // → Nampijinpa  (jarda ku bin, jinta-panu)
+
+// Kijaka
+nguwo = (x: 10, y: 20)
+p = (nguwo: nguwo, wangka: "murungku")
+>> p.nguwo.x ¶        // → 10
+```
+
+**Lawa ku pirnkinja** — ka ku pirnkinja jalama-wita yimi kankarlurlu k'as:
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ dü'üsü waktu: tuple nnojolüin achikirawaa
-// t[0] += 5    // ❌ dü'üsü ai
+// t[1] = 99    // ❌ kankarlurlu k'as: jalama-wita lawa ku pirnkinja
+// t[1] += 5    // ❌ kuja-manu k'as
 ```
 
-Yusim `$~` (achikirawaa wanee) süpüla kisim valyu i senisim — **nupela tuple** givim:
+`$~` ku bin — ku ookol **nok'** jalama-wita:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[1]$~ 999
->> t ¶     // → (10, 20, 30)   ← jalqabaa hin jijjiiramu
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← original lawa ku bis
 >> t2 ¶    // → (10, 999, 30)
 
-// Tuple Suulu — achikirawaa stret
-wayuu = (suulu: "Alice", akumajaa: 25)
-wayuu2  = (suulu: wayuu.suulu, akumajaa: 26)
->> wayuu.akumajaa ¶    // → 25
->> wayuu2.akumajaa ¶   // → 26
+// Tupla wangka — ku kankarlurlu yirrarnu
+yapa = (wangka: "Nampijinpa", jardangu: 25)
+kurdiji  = (wangka: yapa.wangka, jardangu: 26)
+>> yapa.jardangu ¶    // → 25
+>> kurdiji.jardangu ¶  // → 26
 ```
 
 ---
 
-## Süpüla Nüchukua
-
-> Süpüla nüchukua süpüla **lambda inline** — nnojolüin lambda pütchi wanee.
+## Nampula Ngurra-Kurlangu
 
 ```zymbol
-akumajaat = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+jardajarda = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-wayuusein = akumajaat$> (x -> x * 2)                // map → [2,4,6…20]
-wanüikat  = akumajaat$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
-sümaa     = akumajaat$< (0, (acc, x) -> acc + x)     // reduce → 55
+jirramba_jalama  = jardajarda$> (x -> x * 2)              // map  → [2,4,6…20]
+jirramba_jarda   = jardajarda$| (x -> x % 2 == 0)         // filter → [2,4,6,8,10]
+jardamanu        = jardajarda$< (0, (acc, x) -> acc + x)  // reduce → 55
 
-// Kasa wanee
-step1 = akumajaat$| (x -> x > 3)
-step2 = step1$> (x -> x * x)
->> step2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+// Pirlirlipa yalumpu
+pirli1 = jardajarda$| (x -> x > 3)
+pirli2 = pirli1$> (x -> x * x)
+>> pirli2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Süpüla naasad — bora lambda
-ayaawataa2(x) { <~ x * 2 }
-r = akumajaat$> (x -> ayaawataa2(x))    // ✅
+// Ngurra-kurlangu wangka ku bin ti' HOF
+jirramba(x) { <~ x * 2 }
+wiripa(x) { <~ x > 5 }
+r = jardajarda$> jirramba     // ✅ referencia pirlirlipa
+r = jardajarda$| wiripa        // ✅ referencia pirlirlipa
 ```
 
 ---
 
-## Waypipe
+## Pirnki Pipe
 
-Ibac süchiki süpüla `_` dachi pütchi:
+RHS ku k'uchul siempre `_` jarda-ku:
 
 ```zymbol
-wayuusein = x -> x * 2
-sümaa = (a, b) -> a + b
-inc = x -> x + 1
+jirramba = x -> x * 2
+wantiki = (a, b) -> a + b
+jinta_pirnki = x -> x + 1
 
-5 |> wayuusein(_)        // → 10
-10 |> sümaa(_, 5)        // → 15
-5 |> sümaa(2, _)         // → 7
+r1 = 5 |> jirramba(_)          // → 10
+r2 = 10 |> wantiki(_, 5)       // → 15
+r3 = 5 |> wantiki(2, _)        // → 7
 
-// Naasad
-r = 5 |> wayuusein(_) |> inc(_) |> wayuusein(_)
+// Pirlirlipa
+r = 5 |> jirramba(_) |> jinta_pirnki(_) |> jirramba(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## Nnojo
+## Kankarlurlu Yirninja
 
 ```zymbol
 !? {
     x = 10 / 0
 } :! ##Div {
-    >> "Nnojo sünain akumajaa" ¶
+    >> "yirninja lawa-juku" ¶
 } :! {
-    >> "Nnojo wanee: " _err ¶    // _err pütchi nnojo
+    >> "yali: " _err ¶    // _err ku kaajil k'as yimi
 } :> {
-    >> "Naülaajain wanee" ¶
+    >> "pirli-pirli yuwarli" ¶
 }
 ```
 
-| Kasa        | Wayuunaiki                        |
-|-------------|-----------------------------------|
-| `##Div`     | Nnojo sünain akumajaa             |
-| `##IO`      | Pütchi / Kasa                     |
-| `##Index`   | Akumajaa nnojolüin pütchi         |
-| `##Type`    | Nnojo sünain kasa pütchi          |
-| `##Parse`   | Nnojo sünain aküjaa               |
-| `##Network` | Nnojo sünain wayuunaiki           |
-| `##_`       | Outka nnojo (catch-all)           |
+| Panu | Kuja |
+|------|------|
+| `##Div` | Yirninja lawa-juku |
+| `##IO` | Tziib / sistema |
+| `##Index` | Yirninja lawa |
+| `##Type` | Panu kankarlurlu |
+| `##Parse` | Yimi kijaka |
+| `##Network` | Ka'anal k'as |
+| `##_` | Tu lakal k'as (catch-all) |
 
 ---
 
-## Aküjaliaka
+## Modulaso
 
 ```zymbol
-// lib/calc.zy
-# calc
+// lib/wantiki.zy — modulaso kankarlurlu llaves-ku
+# wantiki {
+    #> { wantiki_jool, get_PI }
 
-#> { ayaawataa, get_PI }    // Outka SÜNAIN aküjaliaka
-
-_PI := 3.14159
-ayaawataa(a, b) { <~ a + b }
-get_PI() { <~ _PI }
+    _PI := 3.14159
+    wantiki_jool(a, b) { <~ a + b }
+    get_PI() { <~ _PI }
+}
 ```
 
 ```zymbol
-// main.zy
-<# ./lib/calc <= c    // Alias süpüla
+// kaajil.zy
+<# ./lib/wantiki => c    // alias ku k'uchul
 
->> c::ayaawataa(5, 3) ¶  // → 8
+>> c::wantiki_jool(5, 3) ¶    // → 8
 pi = c::get_PI()
->> pi ¶                  // → 3.14159
+>> pi ¶               // → 3.14159
 ```
 
 ```zymbol
-// Outka suulu naas
-# mylib
-#> { _ibac_ayaawataa <= ibac }
+// Exportar yéetel wangka nok'
+# yimijuku {
+    #> { _wantiki_kari => jardamanu }
 
-_ibac_ayaawataa(a, b) { <~ a + b }
+    _wantiki_kari(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
-<# ./mylib <= m
+<# ./yimijuku => m
 
->> m::ibac(3, 4) ¶    // → 7
+>> m::jardamanu(3, 4) ¶    // → 7  (wangka _wantiki_kari lawa ku yil)
 ```
+
+> **Reglas modulaso**: chen `#>`, ngurra-kurlangu, yéetel jalangu-jarda ti' `# wangka { }`. Yimi yirrarnu (`>>`, `<<`, pirli-pirli) E013 k'as.
 
 ---
 
-## Wayjakhu
+## Jarda Yirninja
 
-Zymbol alataka süpüla **Unicode jakhu 69** — Devanagari, Arabi-India, Thai, Klingon pIqaD, Matemáticas, LCD. Kasain aktivo `>>`-pe; jakhu binary.
+Zymbol ku ookol jarda ti' **69 Unicode** — Devanagari, Árabe-Índico, Thai, Maya, yéetel yali. Modo activo ku pirnkinja chen `>>` wangkanja; aritmética ASCII siempre.
 
-### Pütchi alataka
+### Pirlirlipa Pirnkinja
 
-Ts'íib jakhu `0` mîna `9` `#…#`:
+Ku tziib `0` yéetel `9` ti' script destino `#…#`-ku:
 
 ```zymbol
-#०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // Arabi-India   (U+0660–U+0669)
-#๐๙#    // Thai          (U+0E50–U+0E59)
-#09#    // ASCII anüiki
+#०९#    // Devanagari   (U+0966–U+096F)
+#٠٩#    // Árabe-Índico (U+0660–U+0669)
+#๐๙#    // Thai         (U+0E50–U+0E59)
+#09#    // ku kuchul ASCII
 ```
 
-### Anüiki mîna boolean
+### Wangkanja & Jarda Pirlirlipa
 
 ```zymbol
 x = 42
->> x ¶          // → 42
+>> x ¶          // → 42   (ASCII jinta)
 
 #०९#
 >> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४
+>> 3.14 ¶       // → ३.१४   (decimal ASCII siempre)
 >> 1 + 2 ¶      // → ३
 
-// Boolean: # ASCII, jakhu kasain
->> #1 ¶         // → #१
->> #0 ¶         // → #०
+// Bool: # ASCII siempre, jarda ku pirnkinja
+>> #1 ¶         // → #१   (yuwayi Devanagari-ku)
+>> #0 ¶         // → #०   (lawa — lawa ० jarda-wita)
 
 x = 28 > 4
->> x ¶          // → #१
+>> x ¶          // → #१   (kuja-manu ku bin modo-ku)
 ```
 
-### Jakhu asli kódigo
+### Jarda Yimi Ti Kod
 
-Jakhu literal — rango, modulo:
+Ba'al script jarda ku bin — jarda-jarda, modulo, kuja-manu:
 
 ```zymbol
 #०९#
@@ -576,45 +648,50 @@ Jakhu literal — rango, modulo:
 }
 ```
 
-### Boolean literal
+### Jarda Pirlirlipa Ti Yirninja
 
-`#` + jakhu `0` walla `1` bloc boolean:
+`#` + jarda `0` wa `1` ti' ba'al bloque ku bin bool literal:
 
 ```zymbol
 #٠٩#
-نشط = #١
->> نشط ¶        // → #١
+yuwarli = #١        // kuja-manu #1
+>> yuwarli ¶        // → #١
 >> (#١ && #٠) ¶ // → #٠
 ```
 
-> `#` **ASCII**. `#0` (nnojolüin) `0` (jakhu zero) anüiki.
+> `#` **ASCII siempre**. `#0` (lawa) lawa kuja-manu `0` (jarda-wita) ti' ba'al script.
 
 ---
 
-## Waydatops
+## Yimi-Panu Pirnki
 
 ```zymbol
-// Bora akumajaa sünain pütchirua
-v1 = #|"42"|      // → 42  (Akumajaa)
-v2 = #|"3.14"|    // → 3.14  (Pütchi Akumajaa)
-v3 = #|"abc"|     // → "abc"  (nnojo nnojolüin)
+// Ku pirnkinja panu
+f = ##.42         // → 42.0  (ti' Float)
+i = ###3.7        // → 4     (ti' Int, ku tsool)
+t = ##!3.7        // → 3     (ti' Int, ku bisik)
 
-// Tracyn / süpüla
+// Ku kijaka yimi jarda-ku
+v1 = #|"42"|      // → 42  (Int)
+v2 = #|"3.14"|    // → 3.14  (Float)
+v3 = #|"abc"|     // → "abc"  (lawa k'as)
+
+// Ku tsool / ku bisik
 pi = 3.14159265
-r2 = #.2|pi|      // → 3.14
+r2 = #.2|pi|      // → 3.14  (jirrama decimal)
 r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14  (süpüla)
+t2 = #!2|pi|      // → 3.14  (ku bisik)
 
-// Aküjaa akumajaa
-fmt = #,|1234567|      // → 1,234,567
-sci = #^|12345.678|    // → 1.2345678e4
+// Formato jarda
+fmt = #,|1234567|  // → 1,234,567
+sci = #^|12345.678|    // → 1.2345678e4  (científico)
 
-// Naas akumajaa
+// Jarda base tziib
 a = 0x41         // → 'A'  (hex)
 b = 0b01000001   // → 'A'  (binary)
 c = 0o101        // → 'A'  (octal)
 
-// Bora naas
+// Ku ookol base kijaka
 hex = 0x|255|    // → "0x00FF"
 bin = 0b|65|     // → "0b1000001"
 oct = 0o|8|      // → "0o10"
@@ -623,112 +700,145 @@ dec = 0d|255|    // → "0d0255"
 
 ---
 
-## Wayshell
+## Shell Ngurra
 
 ```zymbol
-date = <\ date +%Y-%m-%d \>     // chuuyil stdout (bal pütchi jüpüla)
->> "Eetaa: " date
+jurnta = <\ date +%Y-%m-%d \>     // ku kaajil stdout (yéetel \n)
+>> "Jurnta: " jurnta
 
-tebec = "data.txt"
-content = <\ cat {tebec} \>     // aküjaa hut'unn
+kuruwarri = "yimipanu.txt"
+yimijuku = <\ cat {kuruwarri} \>  // pirlirlipa ti' comando
 
-output = </"./sub.zy"/>         // ayaawataa zy pütchi, ekirajaa
->> output
+wangkanja = </"./subscript.zy"/>  // ku bin Zymbol nok', ku kaajil
+>> wangkanja
 ```
 
-> `><` ekirajaa CLI pütchi wanee pütchiirua (wanee cha'an).
+> `><` ku kaajil CLI jarda bey jalama yimi (tree-walker chen).
 
 ---
 
-## Pütchi Anüikat: FizzBuzz
+## Yimi Kirlangu: FizzBuzz
 
 ```zymbol
-ayaawataa(nüchukua) {
-    ? nüchukua % 15 == 0 { <~ "PütchiWanüiki" }
-    _? nüchukua % 3  == 0 { <~ "Pütchi" }
-    _? nüchukua % 5  == 0 { <~ "Wanüiki" }
-    _ { <~ nüchukua }
+yirdijimanu(jarda) {
+    ? jarda % 15 == 0 { <~ "FizzBuzz" }
+    _? jarda % 3  == 0 { <~ "Fizz" }
+    _? jarda % 5  == 0 { <~ "Buzz" }
+    _ { <~ jarda }
 }
 
-@ i:1..20 { >> ayaawataa(i) ¶ }
+@ i:1..20 { >> yirdijimanu(i) ¶ }
 ```
 
 ---
 
-## Pütchi Kasain
+## Pirnki Kuruwarri
 
-| Symbol  | Aküjaa             | Symbol       | Aküjaa                |
-|---------|--------------------|--------------|------------------------|
-| `=`     | Pütchi             | `$#`         | Süchikua              |
-| `:=`    | Nnojolüin          | `$+`         | Jünüin                |
-| `>>`    | Ayaawataa          | `$+[i]`      | Jünüin índice         |
-| `<<`    | Ekirajaa           | `$-`         | Süpüla wanee          |
-| `¶`/`\\`| Pütchi Jüpüla      | `$--`        | Süpüla tuláakal       |
-| `?`     | Kasain (if)        | `$-[i]`      | Süpüla índice         |
-| `_?`    | Pütchi kasain      | `$-[i..j]`   | Süpüla rango          |
-| `_`     | Nnojolüin / outka  | `$?`         | Kasain                |
-| `??`    | match              | `$??`        | Outka índice          |
-| `@`     | Naülaajaa          | `$[s..e]`    | Pütchi akumajaa       |
-| `@!`    | Süpüla (break)     | `$>`         | map                   |
-| `@>`    | Naülaajain         | `$\|`        | filter                |
-| `->`    | Lambda             | `$<`         | reduce                |
-| `pütchiirua[i] = val` | achikirawaa (pütchiirua tasol) | `pütchiirua[i] += val` | compound achikirawaa |
-| `pütchiirua[i]$~` | achikirawaa wanee (kopia bora) | `$^+` | Gai'tayl anüikat |
-| `$^-`   | Gai'tayl nnojolüin | `$^`         | Gai'tayl lambda (tuples) |
-| `<~`    | Pütchi jüpüla      | `!?`         | Nnojo kasain (try)    |
-| `\|>`   | Pipe               | `:!`         | Nnojo (catch)         |
-| `#1`    | Wanee              | `:>`         | Wanee (finally)       |
-| `#0`    | Nnojolüin          | `$!`         | Kasa nnojo            |
-| `<#`    | Ekirajaa           | `$!!`        | Nnojo jünüin          |
-| `#`     | Aküjaliaka         | `#>`         | Outka                 |
-| `::`    | Aküjaliaka ayaawataa | `.`        | Süchiki aküjaa        |
-| `#\|..\|`| Bora akumajaa    | `#?`         | Kasa süchiki          |
-| `#.N\|..\|`| Tracyn         | `#!N\|..\|`  | Süpüla                |
-| `#,\|..\|`| Aküjaa comma     | `#^\|..\|`    | Naas'ika              |
-| `#d0d9#` | wayjakhu kasain | `#09#` | ASCII anüiki |
-| `<\ ..\>`| Shell ayaawataa  | `>\<`        | CLI pütchi            |
+| Pirnki | Yirrarnu | Pirnki | Yirrarnu |
+|--------|-----------|--------|-----------|
+| `=` | jalangu | `$#` | nampula |
+| `:=` | pirlirlipa | `$+` | ku kaab (pirlirlipa) |
+| `>>` | wangkanja | `$+[i]` | ti' yirninja (jinta-panu) |
+| `<<` | ngurnturninja | `$-` | ku kari jinta yimi |
+| `¶` / `\\` | yimi jinta | `$--` | ku kari tu lakal |
+| `?` | kuja | `$-[i]` | ku kari yirninja (jinta-panu) |
+| `_?` | yali kuja | `$-[i..j]` | ku kari jarda-panu |
+| `_` | yali / tu lakal | `$?` | ku bin |
+| `??` | kuja-manu | `$??` | tu lakal yirninja (jinta-panu) |
+| `@` | pirli-pirli | `$[s..e]` | kijaka (jinta-panu) |
+| `@ N { }` | pirli-pirli N kuja | `$>` | ku bis |
+| `@!` | ku kari | `$\|` | ku tseeltik |
+| `@>` | ku bin | `$<` | ku tsol |
+| `@:wangka { }` | wangka pirli-pirli | `$/ delim` | ku kijaka yimi |
+| `@:wangka!` | ku kari wangka | `$++ a b c` | ku tsoolte |
+| `@:wangka>` | ku bin wangka | `arr[i>j>k]` | yirninja kijaka |
+| `->` | lambda | `arr[i] = nilai` | ku pirnkinja (jalama chen) |
+| `arr[i] += nilai` | yalumpu ku pirnkinja | `arr[i]$~` | ku pirnkinja yimi |
+| `$^+` | ku tsool naats (xook) | `$^-` | ku tsool keban (xook) |
+| `$^` | ku tsool tarlipirni-ku | `<~` | ku ookol |
+| `\|>` | pipe | `!?` | ku bin kijaka |
+| `:!` | ku kaajil k'as | `:>` | pirli-pirli ku bin |
+| `#1` | yuwayi | `#0` | lawa |
+| `$!` | k'as ku bin | `$!!` | ku bisik k'as |
+| `<#` | ku hochpahal | `#>` | ku ookol |
+| `#` | modulaso wangka | `::` | modulaso ku bin |
+| `.` | wangka ku bin | `#?` | yimi panu |
+| `#\|..\|` | ku kijaka jarda | `##.` | ti' Float |
+| `###` | ti' Int (ku tsool) | `##!` | ti' Int (ku bisik) |
+| `#.N\|..\|` | ku tsool | `#!N\|..\|` | ku bisik |
+| `#,\|..\|` | formato jarda | `#^\|..\|` | científico |
+| `#d0d9#` | ku pirnkinja jarda | `#09#` | ku kuchul ASCII |
+| `<\ ..\>` | shell ku bin | `>\<` | CLI jarda |
+| `\ jalangu` | ku bisik jalangu | `°x` / `x°` | jinta pirlirlipa (auto-init) |
+| `>>\|` | TUI bloque (pantalla alterna) | `>>~` | wangkanja jarda |
+| `>>!` | ku su'uk tziib | `>>?` | ku k'amik warlalku wiri |
+| `<<\|` | tecla pirlirlipa | `<<\|?` | tecla lawa pirlirlipa |
+| `@~ N` | ku k'uchul N milliseconds | `$*` | yimi pirli-pirli N kuja |
 
-## Versión Taarikuya
+---
 
-### v0.0.3 — Unicode Jakhu & LSP _(Abril 2026)_
+## Yimi Kankarlurlu
 
-- **Ts'áab** Unicode bloc 69 token `#d0d9#`
-- **Ts'áab** Boolean literals — `#१` / `#०`, `#١` / `#٠`
-- **Ts'áab** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
-- **Ts'áab** VM opcode `SetNumeralMode` — tree-walker
-- **Ts'áab** REPL jakhu echo variable
-- **Bisik** `>>` boolean `#` (`#0` / `#1`)
+### v0.0.5 — TUI Primitivos, Jinta Pirlirlipa & Yimi Pirli-Pirli _(Ngurrju Jurnta 2026)_
 
-### v0.0.2_01 _(30 Mar 2026)_
+- **Ku bis** Match arm: `pattern : result` → `pattern => result`
+- **Ku bis** Import alias: `<# path <= alias` → `<# path => alias`
+- **Ku bis** Export rename: `#> { fn <= pub }` → `#> { fn => pub }`
+- **Ku kaab** TUI bloque `>>| { }` — pantalla alterna + modo raw
+- **Ku kaab** Wangkanja jarda `>>~ (jelen, col, BKS, fg, bg) > yimi`
+- **Ku kaab** Ngurnturninja `<<| jalangu` (pirlirlipa) yéetel `<<|? jalangu`
+- **Ku kaab** `>>!`, `>>?`, `@~ N`
+- **Ku kaab** `°x` / `x°` — jinta ku kaajil pirli-pirli ngurra-ku
+- **Ku kaab** Yimi pirli-pirli `yimi $* N`
+- **VM** Parity: 436/436
 
-- **Bisik** `c|..|` → `#,|..|` mîna `e|..|` → `#^|..|`
-- **Ts'áab** Export alias
+### v0.0.4 — Jinta-Panu, First-Class Ngurra-Kurlangu & Bloque Modulaso _(Ngurrju Jurnta 2026)_
 
-### v0.0.2 _(24 Mar 2026)_
+- **Ku bis** Tu lakal **jinta-panu** — `jalama[1]` jinta; `jalama[0]` k'as
+- **Ku kaab** Ngurra-kurlangu **first-class** — `jardajarda$> jirramba`
+- **Ku kaab** Modulaso **bloque sintaxis**: `# wangka { ... }`
+- **Ku kaab** Jarda-panu: `jalama[i>j>k]`, `jalama[p ; q]`
+- **Ku kaab** Ku pirnkinja: `##.expr` (Float), `###expr` (Int), `##!expr` (Int)
+- **Ku kaab** Yimi kijaka: `yimi$/ delim`
+- **Ku kaab** Pirlirlipa: `base$++ a b c`
+- **Ku kaab** Pirli-pirli N: `@ N { }`
+- **Ku kaab** Wangka pirli-pirli: `@:wangka { }`, `@:wangka!`, `@:wangka>`
+- **Ku kaab** `_wangka` scope; `\ jalangu`
+- **Ku kaab** Kuja-manu pirnki: `< 0 :`, `> 5 :`, `== 42 :`
+- **VM** 393/393
 
-- **Ts'áab** `$` arrays mîna strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Ts'áab** Destructuring arrays, tuples
-- **Ts'áab** Índice nnojolüin (`arr[-1]`)
-- **Ts'áab** Instalar — Linux, macOS, Windows
+### v0.0.3 — Unicode Jarda & LSP _(Ngurrju Jurnta 2026)_
+
+- **Ku kaab** 69 Unicode `#d0d9#`
+- **Ku kaab** Bool ti' ba'al script — `#1` / `#0`
+- **Ku kaab** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Ku kaab** `SetNumeralMode` VM opcode
+- **Ku bis** Bool `>>` yéetel `#` prefix (`#0` / `#1`)
+
+### v0.0.2_01 — Pirnki Kankarlurlu _(30 Mar 2026)_
+
+- **Ku bis** `c|..|` → `#,|..|` yéetel `e|..|` → `#^|..|`
+- **Ku kaab** Export alias
+
+### v0.0.2 — Jalama API Kankarlurlu & Yukarninja _(24 Mar 2026)_
+
+- **Ku kaab** `$` pirnki (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Ku kaab** Yimi kijaka jalama, tupla, wangka tupla
+- **Ku kaab** Kari-palu jarda (`jalama[-1]`)
+- **Ku kaab** Installers — Linux, macOS, Windows
 
 ### v0.0.1-patch _(25 Mar 2026)_
 
-- **Ts'áab** `^=`
+- **Ku kaab** Compound assignment `^=`
+- **Ku bis** Parser edge cases
 
-### v0.0.1 _(22 Mar 2026)_
+### v0.0.1 — Jinta Wangkanja _(22 Mar 2026)_
 
-- Tree-walker + register VM (`--vm`, ~4×, ~95%)
-- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Tree-walker yéetel register VM (`--vm`, ~4× wiri, ~95% parity)
+- Tu lakal pirnki: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Unicode jalangu, modulaso, lambdas, tarlipirni, k'as yirninja
 - REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 
-*Zymbol-Lang — Pütchi. Wayuu. Nnojolüin Paainjüin.*
-
-> **Aküjaa Wayuunaiki:** Tü aküjaliakat sünainjee inteligencia artificial (IA) aküjain.
-> Ayaawataa sünain tü pütchiikat, süka wanee pütchi o aküjaa nnojolüin anüikat.
-> Tü pütchi anüikat sünain [Zymbol-Lang aküjaliaka](https://github.com/zymbol-lang/interpreter).
->
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
-> The authoritative reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).
+_Zymbol-Lang — Pirnki. Tu Lakal. Lawa Ku Pirnkinja._

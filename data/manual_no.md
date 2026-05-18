@@ -1,28 +1,30 @@
-> **Ansvarsfraskrivelse:** Denne dokumentasjonen ble opprettet og oversatt av kunstig intelligens (KI).
+> **Advarsel:** Denne dokumentasjonen er opprettet og oversatt av kunstig intelligens (KI).
 > 
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
 > 
-> Den kanoniske referansen er **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** i tolk-repositoriet.
+> The canonical reference is **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** in the interpreter repository.
 
 ---
 
 # Zymbol-Lang Håndbok
 
-**Zymbol-Lang** er et symbolsk programmeringsspråk. Ingen nøkkelord — alt er et symbol. Fungerer identisk på alle menneskelige språk.
+> **Revidert for v0.0.5 — 2026-05-12**
 
-- Ingen `if`, `while`, `return` — kun `?`, `@`, `<~`
-- Full Unicode — identifikatorer på alle språk eller emoji
-- Språkuavhengig — koden er den samme overalt
+**Zymbol-Lang** er et symbolsk programmeringsspråk. Ingen nøkkelord — alt er et symbol. Fungerer identisk på ethvert menneskespråk.
 
-**Tolkversjon**: v0.0.4 | **Testdekning**: 393/393 (TW ↔ VM paritet)
+- Ingen `if`, `while`, `return` — bare `?`, `@`, `<~`
+- Full Unicode — identifikatorer på ethvert språk eller emoji
+- Menneskespråksuavhengig — koden er den samme overalt
+
+**Tolkversjon**: v0.0.5 | **Testdekning**: 436/436 (TW ↔ VM paritet)
 
 ---
 
-## Variabler og konstanter
+## Variabler & Konstanter
 
 ```zymbol
 x = 10              // muterbar variabel
-PI := 3.14159       // konstant — ny tildeling er en kjøretidsfeil
+PI := 3.14159       // konstant — ny tildeling er en kjørefeil
 navn = "Alice"
 aktiv = #1          // boolsk sann
 👋 := "Hei"
@@ -40,22 +42,36 @@ x++        // 5
 x--        // 4
 ```
 
+`°` (gradtegn, U+00B0) initialiserer automatisk en variabel til sin nøytrale verdi ved første bruk:
+
+```zymbol
+tall = [3, 1, 4, 1, 5]
+@ n:tall {
+    °total += n    // auto-init til 0 over løkken; overlever etter @
+}
+>> total ¶         // → 14
+```
+
+> `°x` (prefiks) forankrer over løkken — resultatet er tilgjengelig etter `@`.
+> `x°` (suffiks) forankrer inni løkken — forsvinner når løkken slutter.
+> Bare tregjennomgang.
+
 ---
 
 ## Datatyper
 
 | Type | Literal | `#?`-tag | Merknader |
 |------|---------|----------|-----------|
-| Heltall | `42`, `-7` | `###` | 64-bit med fortegn |
+| Heltall | `42`, `-7` | `###` | 64-bit fortegnet |
 | Desimaltall | `3.14`, `1.5e10` | `##.` | Vitenskapelig notasjon OK |
-| Streng | `"tekst"` | `##"` | Interpolasjon: `"Hei {navn}"` |
+| Tekst | `"tekst"` | `##"` | Interpolering: `"Hei {navn}"` |
 | Tegn | `'A'` | `##'` | Enkelt Unicode-tegn |
 | Boolsk | `#1`, `#0` | `##?` | IKKE numerisk — `#1 ≠ 1` |
-| Array | `[1, 2, 3]` | `##]` | Homogene elementer |
+| Tabell | `[1, 2, 3]` | `##]` | Homogene elementer |
 | Tuppel | `(a, b)` | `##)` | Posisjonsbasert |
-| Navngitt tuppel | `(x: 1, y: 2)` | `##)` | Navngitte felt |
-| Funksjon | navngitt funksjonsreferanse | `##()` | Førsteklasses; viser `<funct/N>` |
-| Lambda | `x -> x * 2` | `##->` | Førsteklasses; viser `<lambd/N>` |
+| Navngitt Tuppel | `(x: 1, y: 2)` | `##)` | Navngitte felt |
+| Funksjon | navngitt funksjonsreferanse | `##()` | Første klasse; visning `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Første klasse; visning `<lambd/N>` |
 
 ```zymbol
 // Typeintrospeksjon — returnerer (type, sifre, verdi)
@@ -67,76 +83,109 @@ t = meta[1]
 
 ---
 
-## Utdata og inndata
+## Utdata & Inndata
 
 ```zymbol
->> "Hei" ¶                        // ¶ eller \\ for eksplisitt linjeskift
->> "a=" a " b=" b ¶               // juxtaposisjon — flere verdier
->> (arr$#) ¶                      // postfix-operatorer krever ( ) i >>
+>> "Hei" ¶                        // ¶ eller \\ for eksplisitt ny linje
+>> "a=" a " b=" b ¶               // sammenstilling — flere verdier
+>> (tab$#) ¶                      // postfiks-operatorer krever ( ) i >>
 
-<< navn                           // les inn i variabel (ingen prompt)
-<< "Skriv inn navn: " navn        // med prompt
+<< navn                           // les inn i variabel (ingen oppfordring)
+<< "Skriv inn navn: " navn        // med oppfordring
 ```
 
-> `¶` (AltGr+R på spansk tastatur) og `\\` er ekvivalente linjeskiftmarkeringer.
+> `¶` (AltGr+R på spansk tastatur) og `\\` er likeverdige nye linjer.
+
+---
+
+## TUI-primitiver
+
+Terminalbrukergrensesnitt-operatorer for interaktive programmer. De fleste krever en `>>| { }`-blokk (alternativ skjerm + rå modus).
+
+```zymbol
+>>| {
+    >>!                             // tøm alternativ skjerm
+    >>~ (1, 1, 0, 10) > "Kjører"   // rad 1, kol 1, fg=10 (grønn)
+    @~ 1000                         // pause 1 sekund (1000 ms)
+    >>~ (2, 1) > "Ferdig."
+}
+// terminalen gjenopprettes automatisk ved avslutning
+```
+
+```zymbol
+// Tastetrykk og skjermstørrelse
+>>| {
+    [rader, kolonner] = >>?              // spørr om skjermstørrelse
+    >>~ (1, 1) > "Terminal: " rader " x " kolonner
+    <<| tast                             // blokkerende tastetrykk
+    >>~ (2, 1) > "Trykket: " tast
+}
+```
+
+> `>>!` tømmer skjerm. `>>?` returnerer `[rader, kolonner]`. `@~ N` sover N millisekunder.
+> `<<|` leser ett tastetrykk (blokkerende); `<<|?` poller uten blokkering (returnerer `'\0'` hvis ingen).
+> Posisjonsbasert utdata-tuppel: `(rad, kol, BKS, fg, bg)` — ethvert spor kan utelates med komma (`>>~ (,,, 196) > "rød"`).
+> BKS-bitmaske: `1`=Fet, `2`=Kursiv, `4`=Understreket. ANSI 256-fargepalett (`0`=terminalstandard).
+> Bare tregjennomgang (unntatt `>>!`, `>>?`, `@~`, `>>~` som også kjører i `--vm`).
 
 ---
 
 ## Operatorer
 
 ```zymbol
-// Aritmetikk — bruk tildelinger; noen operatorer har særegenheter direkte i >>
+// Aritmetikk
 a = 10
 b = 3
-r1 = a + b    // 13     
+r1 = a + b    // 13
 r2 = a - b    // 7
-r3 = a * b    // 30     
+r3 = a * b    // 30
 r4 = a / b    // 3  (heltallsdivisjon)
-r5 = a % b    // 1      
-r6 = a ^ b    // 1000  (eksponentiering)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (potensering)
 
-// Sammenligning
-a == b    // #0    
-a <> b    // #1    
-a < b      // #0
-a <= b    // #0   
-a > b      // #1    
-a >= b     // #1
+// Sammenligning — tildel for å inspisere
+c1 = a == b    // #0
+c2 = a <> b    // #1
+c3 = a < b     // #0
+c4 = a <= b    // #0
+c5 = a > b     // #1
+c6 = a >= b    // #1
 
-// Logisk
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
+// Logiske
+l1 = #1 && #0    // #0
+l2 = #1 || #0    // #1
+l3 = !#1         // #0
 ```
 
 ---
 
-## Strenger
+## Tekst
 
 ```zymbol
-// To sammenkoblingsformer
+// To sammenstillingsformer
 navn = "Alice"
 n = 42
 
->> "Hei " navn " du har " n ¶    // juxtaposisjon — i >>
-beskr = "Hei {navn}, du har {n}"  // interpolasjon — overalt
+>> "Hei " navn " du har " n ¶        // sammenstilling — i >>
+beskr = "Hei {navn}, du har {n}"     // interpolering — overalt
 ```
 
 ```zymbol
-s = "Hei verden"
+s = "Hei Verden"
 len = s$#                  // 10
-sub = s$[1..3]             // "Hei"  (1-basert, slutt inklusiv)
-har = s$? "verden"         // #1
-deler = "a,b,c,d"$/ ','   // [a, b, c, d]  (del ved skilletegn)
-bytt = s$~~["e":"E"]          // "HEi vErdEn"
-bytt1 = s$~~["e":"E":1]       // "HEi verden"  (bare de første N)
+del = s$[1..3]             // "Hei"  (1-basert, slutt inklusiv)
+har = s$? "Verden"         // #1
+deler = "a,b,c,d"$/ ','    // [a, b, c, d]  (del på skilletegn)
+erstat = s$~~["e":"E"]     // "HEi VErdEn"  (erstatt alle)
+erstat1 = s$~~["e":"E":1]  // "HEi Verden"  (første N)
+linje = "─" $* 20          // "────────────────────"  (gjenta N ganger)
 ```
 
-> `+` er kun for tall. Bruk `,`, juxtaposisjon eller interpolasjon for strenger.
+> `+` er bare for tall. Bruk `,`, sammenstilling eller interpolering for tekst.
 
 ---
 
-## Kontrollflyten
+## Kontrollflyt
 
 ```zymbol
 x = 7
@@ -154,46 +203,47 @@ x = 7
 }
 ```
 
-> `{ }` klammeparenteser er **påkrevd** selv for en enkelt setning.
+> `{ }`-klammere er **påkrevd** selv for en enkelt setning.
 
 ---
 
-## Match
+## Mønstermatching
 
 ```zymbol
 // Intervaller
 poeng = 85
 karakter = ?? poeng {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+    90..100 => 'A'
+    80..89  => 'B'
+    70..79  => 'C'
+    _       => 'F'
 }
 >> karakter ¶    // → B
 
-// Strenger
-farge = "rød"
+// Tekst
+farge = "roed"
 kode = ?? farge {
-    "rød"    : "#FF0000"
-    "grønn"  : "#00FF00"
-    _        : "#000000"
+    "roed"   => "#FF0000"
+    "groenn" => "#00FF00"
+    _        => "#000000"
 }
 
-// Sammenligningsmønstre
+// Sammenligningsmomstre
 temp = -5
 tilstand = ?? temp {
-    < 0  : "is"
-    < 20 : "kald"
-    < 35 : "varm"
-    _    : "hed"
+    < 0  => "is"
+    < 20 => "kald"
+    < 35 => "varm"
+    _    => "het"
 }
 >> tilstand ¶    // → is
 
 // Setningsform (blokkarmer)
+n = -3
 ?? n {
-    0       : { >> "null" ¶ }
-    _? n < 0: { >> "negativ" ¶ }
-    _       : { >> "positiv" ¶ }
+    0    => { >> "null" ¶ }
+    < 0  => { >> "negativ" ¶ }
+    _    => { >> "positiv" ¶ }
 }
 ```
 
@@ -210,11 +260,11 @@ n = 1
 @ n <= 64 { n *= 2 }
 >> n ¶                        // → 128  (mens)
 
-frukter = ["eple", "pære", "drue"]
-@ f:frukter { >> f ¶ }        // for hvert array
+frukter = ["eple", "paere", "drue"]
+@ f:frukter { >> f ¶ }        // for-hvert tabell
 
 @ t:"hei" { >> t "-" }
->> ¶                          // → h-e-i-  (for hvert streng)
+>> ¶                          // → h-e-i-  (for-hvert tekst)
 
 @ i:1..10 {
     ? i % 2 == 0 { @> }       // @> fortsett
@@ -232,13 +282,13 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Merket løkke (nestet bryt)
-antall = 0
+// Merket løkke (nestet brudd)
+teller = 0
 @:ytre {
-    antall++
-    ? antall >= 3 { @:ytre! }
+    teller++
+    ? teller >= 3 { @:ytre! }
 }
->> antall ¶                    // → 3
+>> teller ¶                    // → 3
 ```
 
 ---
@@ -256,7 +306,7 @@ fakultet(n) {
 >> fakultet(5) ¶    // → 120
 ```
 
-Funksjoner har **isolert omfang** — de kan ikke lese ytre variabler. Bruk utdataparametre `<~` til å endre kallervariable:
+Funksjoner har **isolert omfang** — de kan ikke lese ytre variabler. Bruk utgangsparametere `<~` til å endre kallervariabeler:
 
 ```zymbol
 bytt(a<~, b<~) {
@@ -270,11 +320,11 @@ bytt(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Navngitte funksjoner er **førsteklasses verdier** — send direkte: `tall$> dobbel`. Til innpakking er `x -> fn(x)` også gyldig.
+> Navngitte funksjoner er **første klasses verdier** — send direkte: `tall$> dobbel`. For innpakking: `x -> fn(x)` er også gyldig.
 
 ---
 
-## Lambdaer og lukninger
+## Lambda & Lukking
 
 ```zymbol
 dobbel = x -> x * 2
@@ -289,7 +339,7 @@ klassifiser = x -> {
     <~ "null"
 }
 
-// Lukning — fanger ytre omfang
+// Lukking — fanger ytre omfang
 faktor = 3
 tredobbel = x -> x * faktor
 >> tredobbel(7) ¶    // → 21
@@ -299,60 +349,60 @@ lag_adder(n) { <~ x -> x + n }
 legg10_til = lag_adder(10)
 >> legg10_til(5) ¶    // → 15
 
-// I arrays
+// I tabeller
 operasjoner = [x -> x+1, x -> x*2, x -> x*x]
 >> operasjoner[3](5) ¶    // → 25
 ```
 
 ---
 
-## Arrays
+## Tabeller
 
-Arrays er **muterbare** og inneholder elementer av **samme type**.
+Tabeller er **muterbare** og inneholder elementer av **samme type**.
 
 ```zymbol
-arr = [1, 2, 3, 4, 5]
+tab = [1, 2, 3, 4, 5]
 
-arr[1]          // 1 — tilgang (1-basert: første element)
-arr[-1]         // 5 — negativt indeks (siste element)
-arr$#           // 5 — lengde (bruk (arr$#) i >>)
+x = tab[1]      // 1 — tilgang (1-basert: første element)
+x = tab[-1]     // 5 — negativ indeks (siste element)
+x = tab$#       // 5 — lengde (bruk (tab$#) i >>)
 
-arr = arr$+ 6            // legg til → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // sett inn ved posisjon 2 (1-basert)
-arr3 = arr$- 3           // fjern første forekomst av verdi
-arr4 = arr$-- 3          // fjern alle forekomster
-arr5 = arr$-[1]          // fjern ved indeks 1 (første element)
-arr6 = arr$-[2..3]       // fjern intervall (1-basert, slutt inklusiv)
+tab = tab$+ 6            // legg til → [1,2,3,4,5,6]
+tab2 = tab$+[2] 99       // sett inn ved posisjon 2 (1-basert)
+tab3 = tab$- 3           // fjern første forekomst av verdi
+tab4 = tab$-- 3          // fjern alle forekomster
+tab5 = tab$-[1]          // fjern ved indeks 1 (første element)
+tab6 = tab$-[2..3]       // fjern intervall (1-basert, slutt inklusiv)
 
-har = arr$? 3            // #1 — inneholder
-pos = arr$?? 3           // [3] — alle indekser for verdi (1-basert)
-utsnitt = arr$[1..3]     // [1,2,3] — utsnitt (1-basert, slutt inklusiv)
-utsnitt2 = arr$[1:3]     // [1,2,3] — samme, antallsbasert syntaks
+har = tab$? 3            // #1 — inneholder
+pos = tab$?? 3           // [3] — alle indekser for verdi (1-basert)
+utsnitt = tab$[1..3]     // [1,2,3] — utsnitt (1-basert, slutt inklusiv)
+utsnitt2 = tab$[1:3]     // [1,2,3] — samme, antallbasert syntaks
 
-stigende = arr$^+        // sortert stigende  (kun primitive)
-synkende = arr$^-        // sortert synkende (kun primitive)
+stigende = tab$^+        // sortert stigende  (bare primitiver)
+fallende = tab$^-        // sortert fallende  (bare primitiver)
 
-// Navngitte/posisjonsbaserte tuppel-arrays — bruk $^ med komparator-lambda
+// Navngitte/posisjonsbaserte tuppel-tabeller — bruk $^ med sammenlignerlambda
 db = [(navn: "Carla", alder: 28), (navn: "Ana", alder: 25), (navn: "Bob", alder: 30)]
 etter_alder = db$^ (a, b -> a.alder < b.alder)    // stigende etter alder  (<)
-etter_navn  = db$^ (a, b -> a.navn > b.navn)       // synkende etter navn (>)
+etter_navn  = db$^ (a, b -> a.navn > b.navn)       // fallende etter navn (>)
 >> etter_alder[1].navn ¶     // → Ana
 >> etter_navn[1].navn ¶      // → Carla
 
-// Direkte elementoppdatering (kun arrays)
-arr[1] = 99              // tildel
-arr[2] += 5              // sammensatt: +=  -=  *=  /=  %=  ^=
+// Direkte elementoppdatering (bare tabeller)
+tab[1] = 99              // tildel
+tab[2] += 5              // sammensatt: +=  -=  *=  /=  %=  ^=
 
-// Funksjonell oppdatering — returnerer en ny array; originalet uendret
-arr2 = arr[2]$~ 99
+// Funksjonell oppdatering — returnerer ny tabell; originalen uendret
+tab2 = tab[2]$~ 99
 ```
 
-> Alle samlingsoperatorer returnerer en **ny array**. Tildel tilbake: `arr = arr$+ 4`.
-> `$+` kan kjedes: `arr = arr$+ 5$+ 6$+ 7`. Andre operatorer bruker mellomliggende tildelinger.
-> **Indeksering er 1-basert**: `arr[1]` er det første elementet; `arr[0]` er en kjøretidsfeil.
-> `$^+` / `$^-` sorterer **primitive arrays** (tall, strenger). For tuppel-arrays bruk `$^` med en komparator-lambda — retning er kodet i lambdaen (`<` = stigende, `>` = synkende).
+> Alle samlingsoperatorer returnerer en **ny tabell**. Tildel tilbake: `tab = tab$+ 4`.
+> `$+` kan kjedes: `tab = tab$+ 5$+ 6$+ 7`. Andre operatorer bruker mellomliggende tildelinger.
+> **Indeksering er 1-basert**: `tab[1]` er første element; `tab[0]` er en kjørefeil.
+> `$^+` / `$^-` sorterer **primitive tabeller** (tall, tekst). For tuppel-tabeller bruk `$^` med sammenlignerlambda — retning er kodet i lambda (`<` = stigende, `>` = fallende).
 
-**Verdisemantikk** — å tildele en array til en annen variabel oppretter en uavhengig kopi:
+**Verdiavtale** — tildeling av en tabell til en annen variabel oppretter en uavhengig kopi:
 
 ```zymbol
 a = [1, 2, 3]
@@ -363,7 +413,7 @@ a[1] = 99
 ```
 
 ```zymbol
-// Nestede arrays (1-basert indeksering)
+// Nestede tabeller (1-basert indeksering)
 matrise = [[1,2,3],[4,5,6],[7,8,9]]
 >> matrise[2][3] ¶    // → 6  (rad 2, kolonne 3)
 ```
@@ -373,11 +423,11 @@ matrise = [[1,2,3],[4,5,6],[7,8,9]]
 ## Destrukturering
 
 ```zymbol
-// Array
-arr = [10, 20, 30, 40, 50]
-[a, b, c] = arr              // a=10  b=20  c=30
-[første, *resten] = arr      // første=10  resten=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ kasserer
+// Tabell
+tab = [10, 20, 30, 40, 50]
+[a, b, c] = tab              // a=10  b=20  c=30
+[foerste, *rest] = tab       // foerste=10  rest=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ kaster bort
 
 // Posisjonsbasert tuppel
 punkt = (100, 200)
@@ -390,10 +440,10 @@ person = (navn: "Ana", alder: 25, by: "Madrid")
 
 ---
 
-## Tupler
+## Tuppeler
 
-Tupler er **uforanderlige** ordnede beholdere som kan inneholde verdier av **forskjellige typer**.
-I motsetning til arrays kan elementer ikke endres etter opprettelse.
+Tuppeler er **uforanderlige** ordnede beholdere som kan inneholde verdier av **forskjellige typer**.
+I motsetning til tabeller kan elementer ikke endres etter opprettelse.
 
 ```zymbol
 // Posisjonsbasert — blandede typer tillatt
@@ -414,11 +464,11 @@ p = (pos: pos, etikett: "opprinnelse")
 >> p.pos.x ¶        // → 10
 ```
 
-**Uforanderlighet** — ethvert forsøk på å endre et tuppelelement er en kjøretidsfeil:
+**Uforanderlighet** — ethvert forsøk på å endre et tuppel-element er en kjørefeil:
 
 ```zymbol
 t = (10, 20, 30)
-// t[1] = 99    // ❌ kjøretidsfeil: tupler er uforanderlige
+// t[1] = 99    // ❌ kjørefeil: tuppeler er uforanderlige
 // t[1] += 5    // ❌ samme feil
 ```
 
@@ -427,10 +477,10 @@ For å avlede en endret verdi bruk `$~` (funksjonell oppdatering) — returnerer
 ```zymbol
 t = (10, 20, 30)
 t2 = t[2]$~ 999
->> t ¶     // → (10, 20, 30)   ← originalet uendret
+>> t ¶     // → (10, 20, 30)   ← originalen uendret
 >> t2 ¶    // → (10, 999, 30)
 
-// Navngitt tuppel — bygg om eksplisitt
+// Navngitt tuppel — gjenoppbygg eksplisitt
 person = (navn: "Alice", alder: 25)
 eldre  = (navn: person.navn, alder: 26)
 >> person.alder ¶    // → 25
@@ -439,44 +489,44 @@ eldre  = (navn: person.navn, alder: 26)
 
 ---
 
-## Høyereordens funksjoner
+## Høyere Ordens Funksjoner
 
 ```zymbol
 tall = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-doblet     = tall$> (x -> x * 2)                // map  → [2,4,6…20]
-partall    = tall$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
-total      = tall$< (0, (akk, x) -> akk + x)    // reduser → 55
+doblet   = tall$> (x -> x * 2)                // map  → [2,4,6…20]
+like     = tall$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
+total    = tall$< (0, (acc, x) -> acc + x)     // reduce → 55
 
-// Kjede via mellomvariabler
-trinn1 = tall$| (x -> x > 3)
-trinn2 = trinn1$> (x -> x * x)
->> trinn2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+// Kjede via mellomliggende
+steg1 = tall$| (x -> x > 3)
+steg2 = steg1$> (x -> x * x)
+>> steg2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
 // Navngitte funksjoner kan sendes direkte til HOF
 dobbel(x) { <~ x * 2 }
 er_stor(x) { <~ x > 5 }
-r = tall$> dobbel       // ✅ direkte referanse
-r = tall$| er_stor      // ✅ direkte referanse
+r = tall$> dobbel      // ✅ direkte referanse
+r = tall$| er_stor     // ✅ direkte referanse
 ```
 
 ---
 
-## Røroperator
+## Pipe-operator
 
-Høyre side krever alltid `_` som plassholder for den rørlagte verdien:
+Høyre side krever alltid `_` som plassholder for den piped verdien:
 
 ```zymbol
 dobbel = x -> x * 2
 legg_til = (a, b) -> a + b
-øk = x -> x + 1
+oek = x -> x + 1
 
-5 |> dobbel(_)        // → 10
-10 |> legg_til(_, 5)  // → 15
-5 |> legg_til(2, _)   // → 7
+r1 = 5 |> dobbel(_)          // → 10
+r2 = 10 |> legg_til(_, 5)    // → 15
+r3 = 5 |> legg_til(2, _)     // → 7
 
 // Kjedet
-r = 5 |> dobbel(_) |> øk(_) |> dobbel(_)
+r = 5 |> dobbel(_) |> oek(_) |> dobbel(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
@@ -490,9 +540,9 @@ r = 5 |> dobbel(_) |> øk(_) |> dobbel(_)
 } :! ##Div {
     >> "divisjon med null" ¶
 } :! {
-    >> "annet: " _err ¶    // _err inneholder feilmeldingen
+    >> "annen feil: " _err ¶    // _err inneholder feilmeldingen
 } :> {
-    >> "kjøres alltid" ¶
+    >> "kjører alltid" ¶
 }
 ```
 
@@ -500,8 +550,8 @@ r = 5 |> dobbel(_) |> øk(_) |> dobbel(_)
 |------|-----|
 | `##Div` | Divisjon med null |
 | `##IO` | Fil / system |
-| `##Index` | Indeks utenfor rekkevidde |
-| `##Type` | Typefeil |
+| `##Index` | Indeks utenfor grenser |
+| `##Type` | Typemismatch |
 | `##Parse` | Dataparsing |
 | `##Network` | Nettverksfeil |
 | `##_` | Enhver feil (fang-alt) |
@@ -511,51 +561,51 @@ r = 5 |> dobbel(_) |> øk(_) |> dobbel(_)
 ## Moduler
 
 ```zymbol
-// lib/kalkulus.zy — modulinnholdet er omgitt av klammeparenteser
-# kalkulus {
-    #> { legg_til, hent_PI }
+// lib/kalkulator.zy — modulkroppen er omsluttet i klammere
+# kalkulator {
+    #> { legg_til, get_PI }
 
     _PI := 3.14159
     legg_til(a, b) { <~ a + b }
-    hent_PI() { <~ _PI }
+    get_PI() { <~ _PI }
 }
 ```
 
 ```zymbol
 // main.zy
-<# ./lib/kalkulus <= k    // alias påkrevd
+<# ./lib/kalkulator => k    // alias påkrevd
 
 >> k::legg_til(5, 3) ¶     // → 8
-pi = k::hent_PI()
+pi = k::get_PI()
 >> pi ¶               // → 3.14159
 ```
 
 ```zymbol
 // Eksporter med et annet offentlig navn
-# mittlib {
-    #> { _intern_legg_til <= sum }
+# mittbibliotek {
+    #> { _intern_legg_til => sum }
 
     _intern_legg_til(a, b) { <~ a + b }
 }
 ```
 
 ```zymbol
-<# ./mittlib <= m
+<# ./mittbibliotek => m
 
 >> m::sum(3, 4) ¶    // → 7  (det interne navnet _intern_legg_til er skjult)
 ```
 
-> **Modulregler**: kun `#>`, funksjonsdefinsjoner og bokstavelige variabel-/konstantinitialiserer er tillatt inne i `# navn { }`. Kjørbare setninger (`>>`, `<<`, løkker osv.) gir feil E013.
+> **Modulregler**: bare `#>`, funksjonsdefinisioner og bokstavelige variabel-/konstantinitialiserere er tillatt i `# navn { }`. Kjørbare setninger (`>>`, `<<`, løkker, etc.) gir feil E013.
 
 ---
 
-## Tallmodi
+## Tallsystemer
 
-Zymbol kan vise tall i **69 Unicode-sifferskrifter** — Devanagari, arabisk-indisk, thai, klingon pIqaD, matematisk fet, LCD-segmenter og mer. Den aktive modusen påvirker kun `>>`-utdata; intern aritmetikk er alltid binær.
+Zymbol kan vise tall i **69 Unicode-siferskrifter** — Devanagari, arabisk-indisk, thai, Klingon pIqaD, matematisk fet, LCD-segmenter og mer. Den aktive modusen påvirker bare `>>`-utdata; intern aritmetikk er alltid binær.
 
 ### Aktivere et skrift
 
-Skriv `0`- og `9`-sifferet fra målskriften omgitt av `#…#`:
+Skriv `0`- og `9`-sifferet for målskriften omgitt av `#…#`:
 
 ```zymbol
 #०९#    // Devanagari   (U+0966–U+096F)
@@ -564,7 +614,7 @@ Skriv `0`- og `9`-sifferet fra målskriften omgitt av `#…#`:
 #09#    // tilbakestill til ASCII
 ```
 
-### Utdata og booleaner
+### Utdata og boolske verdier
 
 ```zymbol
 x = 42
@@ -575,15 +625,15 @@ x = 42
 >> 3.14 ¶       // → ३.१४   (desimaltegn alltid ASCII)
 >> 1 + 2 ¶      // → ३
 
-// Booleaner: # prefiks alltid ASCII, siffer tilpasser seg
+// Boolske verdier: #-prefiks alltid ASCII, siffer tilpasser seg
 >> #1 ¶         // → #१   (sann i Devanagari)
->> #0 ¶         // → #०   (usann — atskilt fra ०  heltall null)
+>> #0 ¶         // → #०   (usann — adskilt fra ०  heltallsnull)
 
 x = 28 > 4
 >> x ¶          // → #१   (sammenligningsresultat følger aktiv modus)
 ```
 
-### Innebygde sifferliteraler i kildekode
+### Innfødde sifferliteraler i kildekode
 
 Sifre fra ethvert støttet skrift er gyldige literaler — i intervaller, modulo, sammenligninger:
 
@@ -600,48 +650,48 @@ Sifre fra ethvert støttet skrift er gyldige literaler — i intervaller, modulo
 
 ### Boolske literaler i ethvert skrift
 
-`#` + siffer `0` eller `1` fra en hvilken som helst blokk er en gyldig boolsk literal:
+`#` + siffer `0` eller `1` fra ethvert blokk er en gyldig boolsk literal:
 
 ```zymbol
 #٠٩#
-نشط = #١        // samme som #1
->> نشط ¶        // → #١
+aktiv = #١        // samme som #1
+>> aktiv ¶        // → #١
 >> (#١ && #٠) ¶ // → #٠
 ```
 
-> `#` er **alltid ASCII**. `#0` (usann) er alltid visuelt atskilt fra `0` (heltall null) i ethvert skrift.
+> `#` er **alltid ASCII**. `#0` (usann) er alltid visuelt adskilt fra `0` (heltallsnull) i ethvert skrift.
 
 ---
 
 ## Dataoperatorer
 
 ```zymbol
-// Typekonverteringskast
-##.42         // → 42.0  (til Desimaltall)
-###3.7        // → 4     (til Heltall, rund)
-##!3.7        // → 3     (til Heltall, avkort)
+// Typekonverteringscast
+f = ##.42         // → 42.0  (til Desimaltall)
+i = ###3.7        // → 4     (til Heltall, rund)
+t = ##!3.7        // → 3     (til Heltall, avskjær)
 
-// Analyser streng til tall
+// Parse tekst til tall
 v1 = #|"42"|      // → 42  (Heltall)
 v2 = #|"3.14"|    // → 3.14  (Desimaltall)
 v3 = #|"abc"|     // → "abc"  (feilsikker, ingen feil)
 
-// Rund / avkort
+// Avrunding / avskjæring
 pi = 3.14159265
-r2 = #.2|pi|      // → 3.14  (rund til 2 desimalplasser)
+r2 = #.2|pi|      // → 3.14  (rund til 2 desimaler)
 r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14  (avkort)
+t2 = #!2|pi|      // → 3.14  (avskjær)
 
 // Tallformatering
 fmt = #,|1234567|  // → 1,234,567  (kommaseparert)
 sci = #^|12345.678|    // → 1.2345678e4  (vitenskapelig)
 
-// Baseliteraler
-a = 0x41         // → 'A'  (hex)
+// Basisliteraler
+a = 0x41         // → 'A'  (heks)
 b = 0b01000001   // → 'A'  (binær)
 c = 0o101        // → 'A'  (oktal)
 
-// Basekonverteringsutdata
+// Basiskonverteringsutdata
 hex = 0x|255|    // → "0x00FF"
 bin = 0b|65|     // → "0b1000001"
 oct = 0o|8|      // → "0o10"
@@ -650,24 +700,24 @@ dec = 0d|255|    // → "0d0255"
 
 ---
 
-## Skalintegrasjon
+## Shell-integrasjon
 
 ```zymbol
-dato = <\ date +%Y-%m-%d \>     // fanger stdout (inkl. avsluttende \n)
+dato = <\ date +%Y-%m-%d \>     // fanger stdout (inkluderer avsluttende \n)
 >> "I dag: " dato
 
 fil = "data.txt"
-innhold = <\ cat {fil} \>       // interpolasjon i kommandoer
+innhold = <\ cat {fil} \>       // interpolering i kommandoer
 
-utdata = </"./underscript.zy"/>  // kjør et annet Zymbol-skript, fang utdata
+utdata = </"./underscript.zy"/> // kjør et annet Zymbol-skript, fang utdata
 >> utdata
 ```
 
-> `><` fanger CLI-argumenter som en strengarray (kun trevandrer).
+> `><` fanger CLI-argumenter som en tekst-tabell (bare tregjennomgang).
 
 ---
 
-## Komplett eksempel: FizzBuzz
+## Fullstendig Eksempel: FizzBuzz
 
 ```zymbol
 klassifiser(tall) {
@@ -689,92 +739,109 @@ klassifiser(tall) {
 | `=` | variabel | `$#` | lengde |
 | `:=` | konstant | `$+` | legg til (kjedbar) |
 | `>>` | utdata | `$+[i]` | sett inn ved indeks (1-basert) |
-| `<<` | inndata | `$-` | fjern første ved verdi |
-| `¶` / `\\` | linjeskift | `$--` | fjern alle ved verdi |
+| `<<` | inndata | `$-` | fjern første etter verdi |
+| `¶` / `\\` | ny linje | `$--` | fjern alle etter verdi |
 | `?` | hvis | `$-[i]` | fjern ved indeks (1-basert) |
 | `_?` | ellers-hvis | `$-[i..j]` | fjern intervall (1-basert) |
-| `_` | ellers / jokertegn | `$?` | inneholder |
-| `??` | match | `$??` | finn alle indekser (1-basert) |
+| `_` | ellers / wildcard | `$?` | inneholder |
+| `??` | matching | `$??` | finn alle indekser (1-basert) |
 | `@` | løkke | `$[s..e]` | utsnitt (1-basert) |
-| `@ N { }` | teller-løkke (N iterasjoner) | `$>` | map |
-| `@!` | bryt | `$\|` | filtrer |
-| `@>` | fortsett | `$<` | reduser |
-| `@:navn { }` | merket løkke | `$/ delim` | strengdeling |
-| `@:navn!` | bryt merke | `$++ a b c` | sammenkoblings-bygg |
-| `@:navn>` | fortsett merke | `arr[i>j>k]` | navigasjonsindeks |
-| `->` | lambda | `arr[i] = val` | oppdater element (kun arrays) |
-| `arr[i] += val` | sammensatt oppdatering | `arr[i]$~` | funksjonell oppdatering (ny kopi) |
-| `$^+` | sorter stigende (primitive) | `$^-` | sorter synkende (primitive) |
-| `$^` | sorter med komparator (tupler) | `<~` | returner |
-| `\|>` | rør | `!?` | prøv |
-| `:!` | fang | `:>` | alltid |
+| `@ N { }` | N-ganger-løkke | `$>` | map |
+| `@!` | bryt | `$\|` | filter |
+| `@>` | fortsett | `$<` | reduce |
+| `@:navn { }` | merket løkke | `$/ delim` | tekst splitt |
+| `@:navn!` | bryt merke | `$++ a b c` | sammenslå bygg |
+| `@:navn>` | fortsett merke | `tab[i>j>k]` | navigasjonsindeks |
+| `->` | lambda | `tab[i] = val` | oppdater element (bare tabeller) |
+| `tab[i] += val` | sammensatt oppdatering | `tab[i]$~` | funksjonell oppdatering (ny kopi) |
+| `$^+` | sorter stigende (primitiver) | `$^-` | sorter fallende (primitiver) |
+| `$^` | sorter med sammenligner (tuppeler) | `<~` | returner |
+| `\|>` | pipe | `!?` | prøv |
+| `:!` | fang | `:>` | til slutt |
 | `#1` | sann | `#0` | usann |
-| `$!` | er feil | `$!!` | videresend feil |
+| `$!` | er feil | `$!!` | spred feil |
 | `<#` | importer | `#>` | eksporter |
 | `#` | deklarer modul | `::` | modulkall |
-| `.` | felttilgang | `#?` | type-metadata |
-| `#\|..\|` | analyser tall | `##.` | konverter til Desimaltall |
-| `###` | konverter til Heltall (rund) | `##!` | konverter til Heltall (avkort) |
-| `#.N\|..\|` | rund | `#!N\|..\|` | avkort |
+| `.` | felttilgang | `#?` | typemetadata |
+| `#\|..\|` | parse tall | `##.` | cast til Desimaltall |
+| `###` | cast til Heltall (rund) | `##!` | cast til Heltall (avskjær) |
+| `#.N\|..\|` | rund | `#!N\|..\|` | avskjær |
 | `#,\|..\|` | kommaformat | `#^\|..\|` | vitenskapelig |
-| `#d0d9#` | tallsystembytte | `#09#` | tilbakestill til ASCII |
-| `<\ ..\>` | skalutførelse | `>\<` | CLI-argumenter |
-| `\ var` | eksplisitt slett variabel | | |
+| `#d0d9#` | tallsystemskifte | `#09#` | tilbakestill til ASCII |
+| `<\ ..\>` | shell-kjør | `>\<` | CLI-argumenter |
+| `\ var` | eksplisitt ødelegg variabel | `°x` / `x°` | varm definisjon (auto-init) |
+| `>>|` | TUI-blokk (alternativ skjerm) | `>>~` | posisjonsbasert utdata |
+| `>>!` | tøm skjerm | `>>?` | spørr om skjermstørrelse |
+| `<<\|` | blokkerende tastetrykk | `<<\|?` | ikke-blokkerende tastetrykk |
+| `@~ N` | sov N millisekunder | `$*` | gjenta tekst N ganger |
 
 ---
 
-## Versjonshistorikk
+## Versjons-Changelog
 
-### v0.0.4 — 1-basert indeksering, førsteklasses funksjoner og modulblokker _(april 2026)_
+### v0.0.5 — TUI-primitiver, Varm Definisjon & Tekstgjentagelse _(Mai 2026)_
 
-- **Endring** All indeksering byttet til **1-basert** — `arr[1]` er det første elementet; `arr[0]` er en kjøretidsfeil
-- **Lagt til** Navngitte funksjoner er **førsteklasses verdier** — send direkte til HOF: `tall$> dobbel`
-- **Lagt til** Modul **blokksyntaks** påkrevd: `# navn { ... }` — flat syntaks fjernet
-- **Lagt til** Flerdimensjonal indeksering: `arr[i>j>k]` (navigasjon), `arr[p ; q]` (flat uttak)
-- **Lagt til** Typekonverteringskast: `##.uttr` (Desimaltall), `###uttr` (Heltall rund), `##!uttr` (Heltall avkort)
-- **Lagt til** Strengdeling: `str$/ delim` — returnerer `Array(Streng)`
-- **Lagt til** Sammenkoblings-bygg: `base$++ a b c` — legger til flere elementer
-- **Lagt til** Teller-løkke: `@ N { }` — gjentar nøyaktig N ganger
+- **Brytende** Match-arm-skilletegn: `mønster : resultat` → `mønster => resultat`
+- **Brytende** Import-alias: `<# sti <= alias` → `<# sti => alias`
+- **Brytende** Eksport-omdøping: `#> { fn <= pub }` → `#> { fn => pub }`
+- **Lagt til** TUI-blokk `>>| { }` — alternativ skjerm + rå modus; rydder opp ved avslutning
+- **Lagt til** Posisjonsbasert utdata `>>~ (rad, kol, BKS, fg, bg) > elementer` — glisne spor, ANSI 256-farger
+- **Lagt til** Tastinndata `<<| var` (blokkerende) og `<<|? var` (ikke-blokkerende poll)
+- **Lagt til** `>>!` tøm skjerm, `>>?` spørr om skjermstørrelse, `@~ N` sov N millisekunder
+- **Lagt til** Varm definisjon `°x` / `x°` — auto-initialiser variabel ved første bruk i løkker
+- **Lagt til** Tekstgjentagelse `str $* N` — gjenta en tekst N ganger
+- **VM** Paritet: 436/436 tester bestått
+
+### v0.0.4 — 1-Basert Indeksering, Første Klasses Funksjoner & Modulblokker _(April 2026)_
+
+- **Brytende** All indeksering byttet til **1-basert** — `tab[1]` er første element; `tab[0]` er en kjørefeil
+- **Lagt til** Navngitte funksjoner er **første klasses verdier** — send direkte til HOF: `tall$> dobbel`
+- **Lagt til** Modul-**blokksyntaks** påkrevd: `# navn { ... }` — flat syntaks fjernet
+- **Lagt til** Multi-dimensjonal indeksering: `tab[i>j>k]` (navigasjon), `tab[p ; q]` (flat uttrekk)
+- **Lagt til** Typekonverteringscast: `##.expr` (Desimaltall), `###expr` (Heltall rund), `##!expr` (Heltall avskjær)
+- **Lagt til** Tekstsplitt: `str$/ delim` — returnerer `Tabell(Tekst)`
+- **Lagt til** Sammenslå bygg: `basis$++ a b c` — legger til flere elementer
+- **Lagt til** N-ganger-løkke: `@ N { }` — gjenta nøyaktig N ganger
 - **Lagt til** Merket løkkesyntaks: `@:navn { }`, `@:navn!`, `@:navn>` — erstatter `@ @navn` / `@! navn`
-- **Lagt til** Variabelomfangsregler: `_navn`-variabler har nøyaktig blokkscope; `\ var` sletter tidlig
-- **Lagt til** Match-sammenligningsmønstre: `< 0 :`, `> 5 :`, `== 42 :` osv.
+- **Lagt til** Variabelomfangsregler: `_navn`-variabler har nøyaktig blokkereomfang; `\ var` ødelegger tidlig
+- **Lagt til** Match-sammenligningsmomstre: `< 0 :`, `> 5 :`, `== 42 :` osv.
 - **Lagt til** Modul E013-feil: kjørbare setninger i modulkropp er forbudt
-- **Rettet** `take_variable` ødelegger ikke lenger modulkonstanter ved skrivetilbake
-- **Rettet** `alias.CONST` løses nå riktig; `#>` kan vises etter funksjonsdefinsjoner
+- **Rettet** `take_variable` korrupterer ikke lenger modulkonstanter ved tilbakeskrivning
+- **Rettet** `alias.CONST` løses nå korrekt; `#>` kan vises etter funksjonsdefinisioner
 - **VM** Full paritet: 393/393 tester bestått
 
-### v0.0.3 — Unicode-tallsystemer og LSP-forbedringer _(april 2026)_
+### v0.0.3 — Unicode Tallsystemer & LSP-forbedringer _(April 2026)_
 
-- **Lagt til** 69 Unicode-sifferblokker med modusbyttetoken `#d0d9#`
-- **Lagt til** Boolske literaler i ethvert skrift — `#१` / `#०`, `#١` / `#٠` osv.
+- **Lagt til** 69 Unicode-siferblokker med modusbytte-token `#d0d9#`
+- **Lagt til** Boolske literaler i ethvert skrift — `#१` / `#०`, `#١` / `#٠`, osv.
 - **Lagt til** Klingon pIqaD-sifre (CSUR PUA U+F8F0–U+F8F9)
-- **Lagt til** `SetNumeralMode` VM-opkode — full paritet med trevandrer
+- **Lagt til** `SetNumeralMode` VM-opkode — full paritet med tregjennomgang
 - **Lagt til** REPL respekterer aktiv tallmodus i ekko og variabelvisning
-- **Endret** Boolsk `>>`-utdata inkluderer nå `#`-prefiks (`#0` / `#1`) i alle modi
+- **Endret** Boolsk `>>`-utdata inkluderer nå `#`-prefiks (`#0` / `#1`) i alle moduser
 
-### v0.0.2_01 — Operatornavn _(30. mar. 2026)_
+### v0.0.2_01 — Operatøromdøping _(30 Mar 2026)_
 
-- **Endret** `c|..|` → `#,|..|` og `e|..|` → `#^|..|` — konsistent med `#`-formatprefiksfamilien
-- **Lagt til** Eksportalias: reeksporter modulmedlemmer under et annet navn
+- **Endret** `c|..|` → `#,|..|` og `e|..|` → `#^|..|` — konsistent med `#`-formatprefiks-familie
+- **Lagt til** Eksportalias: re-eksporter modulmedlemmer under et annet navn
 
-### v0.0.2 — Samlings-API-redesign og installasjonsprogrammer _(24. mar. 2026)_
+### v0.0.2 — Samlings-API-redesign & Installasjonsprogrammer _(24 Mar 2026)_
 
-- **Lagt til** Samlet `$`-operatorfamilie for arrays og strenger (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Lagt til** Destruktureringtildeling for arrays, tupler og navngitte tupler
-- **Lagt til** Negative indekser (`arr[-1]` = siste element)
+- **Lagt til** Samlet `$`-operatorfamilie for tabeller og tekst (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Lagt til** Destruktureringsopdrag for tabeller, tuppeler og navngitte tuppeler
+- **Lagt til** Negative indekser (`tab[-1]` = siste element)
 - **Lagt til** Native installasjonsprogrammer — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
 
-### v0.0.1-patch _(25. mar. 2026)_
+### v0.0.1-patch _(25 Mar 2026)_
 
 - **Lagt til** Sammensatt tildeling `^=`
-- **Rettet** Parser-aritmetikk-hjørnetilfeller; dokumentasjonsrettelser
+- **Rettet** Parser-aritmetiske kanttilfeller; dokumentasjonsrettelser
 
-### v0.0.1 — Første offentlige utgivelse _(22. mar. 2026)_
+### v0.0.1 — Første Offentlige Utgivelse _(22 Mar 2026)_
 
-- Trevandrer-tolk + register-VM (`--vm`, ~4× raskere, ~95% paritet)
-- Alle kjernekonstruksjoner: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Fulle Unicode-identifikatorer, modulsystem, lambdaer, lukninger, feilhåndtering
-- REPL, LSP, VS Code-utvidelse, formaterer (`zymbol fmt`)
+- Tregjennomgangstolk + register-VM (`--vm`, ~4× raskere, ~95% paritet)
+- Alle kjernestrukturer: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Full Unicode-identifikatorer, modulsystem, lambdas, lukkinger, feilhåndtering
+- REPL, LSP, VS Code-utvidelse, formatering (`zymbol fmt`)
 
 ---
 

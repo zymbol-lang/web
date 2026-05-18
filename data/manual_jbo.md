@@ -1,211 +1,280 @@
-# Zymbol-Lang karni poi cmalu
-
-**Zymbol-Lang** cu selsni bangu poi se ciska le tadji be lo sampu ciska. Noda valsi cu nitcu — ro da tadji. Gi'e simsa lo prenu bangu ro da.
-
-- Noda valsi (lo `if`, `while`, `return` cu na zasti — ka'e tadji `?`, `@`, `<~`)
-- Mulno Unikodi — cmene fi ro bangu ji'a emoji 👋
-- Bangu-sarcu na — lo ciska cu dunli fi ro bangu
+> **xusra:** ti'e fi'e la .ai .i la'e di'u se finti gi'e se fanva fi la .ai.
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> lo krefu cu zasti bu'u la **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** poi ke'a se cpacu la .interpreter. noi gunma kiste
 
 ---
 
-## stika je stodi
+# lo cukta be la .zymbol.lang.
+
+> **se vrici v0.0.5 — 2026-05-15**
+
+la .zymbol.lang. cu logji .i ro valsi cu sinxa .i no krasi valsi .i ri snada ro bangu
+
+- no valsi zo'u la .if. .e la .ynile. .e la .return. na zasti .i za'u la .? .a la .@ .a la .<~. cu zasti
+- lo ro .unikuad. cu zasti .i ro cmene ku se finti ro bangu .e ro .imodji.
+- lo bangu na se sukpa .i ro kisto snada zu'o noi lo kisti cu mintu
+
+---
+
+## lo zmadu be la .stero. be'o .e lo zmadu be la .stero. na'e zmadu
 
 ```zymbol
-x = 10              // stika (ka'e galfi)
-PI := 3.14159       // stodi (na ka'e galfi — srera fi lo nu stika)
-cmene = "Ana"
-jetnu_ = #1         // jetnu bulea
+x = 10              // lo stero poi binxo
+π := 3.14159        // lo stero noi na binxo .i lo za'ure'u tertcu'u cu fliba nu
+cmene = "alis."
+acti = #1         // lo jetnu
 👋 := "coi"
 ```
 
 ```zymbol
-x = 10
+x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
+
+la'o .°.,° zo'u poi'i lo vlina cu sinxa lo grad be lo tanxe .i ke'a se gasnu lo nu lo stero co'a se tuple fi lo nu za'ure'u pilno
+
+```zymbol
+namcu = [3, 1, 4, 1, 5]
+@ n:namcu {
+    °roi += n    // lo co'a se tuple cu fai 0 bu'u le zu'o .i ri jmive ba lo .@.
+}
+>> roi ¶         // → 14
+```
+
+> la'o .°x.,° cu se sinxa va'o lo zu'o .i lo selcmi cu se cpacu ba lo .@.
+> la'o .x°.,° cu se sinxa va'o lo cnita be lo zu'o .i ri mrobi'o ca lo nu lo zu'o za'u
 
 ---
 
-## klesi be lo datni
+## lo drata
 
-| klesi           | va'u              | tadji `#?` | notci                               |
-|-----------------|-------------------|------------|-------------------------------------|
-| namcu           | `42`, `-7`        | `###`      | 64-bitni                            |
-| flanu namcu     | `3.14`, `1.5e10`  | `##.`      | saientifi notci OK                  |
-| valsi           | `"coi"`           | `##"`      | zbasu: `"coi {cmene}"`              |
-| lerfu           | `'A'`             | `##'`      | pa Unikodi lerfu                    |
-| jetnu/jitfa     | `#1`, `#0`        | `##?`      | NA lo namcu 1 e 0                   |
-| porsi           | `[1, 2, 3]`       | `##]`      | ro se porsi cu dunli klesi          |
-| tuple           | `(a, b)`          | `##)`      | tcita                               |
-| cmene tuple     | `(x: 1, y: 2)`    | `##)`      | ka'e catlu fi cmene ji'a tcita      |
+| drata | valsi litki | tcita .#?. | notci |
+|-------|-------------|------------|-------|
+| lo namcu | .42. .e .-7. | .###. | .64 bit. noi selzi'o |
+| lo pruce | .3.14. .e .1.5e10. | .##.. | lo cnino notci ku curmi |
+| lo gismu | ."val". | .##". | lo se snidu .i la .{cmene}. zo'u ."coi {cmene}". |
+| lo lerfu | .'A'. | .##'. | lo pa .unikuad. lerfu |
+| lo jetnu | .#1. .e .#0. | .##?. | na namcu .i la .#1. du la .1. na'i |
+| lo liste | .[1, 2, 3]. | .##]. | lo selcmi poi mintu drata |
+| lo tuple | .(a, b). | .##). | lo se stuzi |
+| lo tuple poi se cmene | .(x: 1, y: 2). | .##). | lo se klani poi se cmene |
+| lo fanva | lo se fanva be lo cmene | .##(). | lo drata be la .klasa pamoi. .i go'i cu cfari .<funct/N>. |
+| lo lambda | .x -> x * 2. | .##->. | lo drata be la .klasa pamoi. .i go'i cu cfari .<lambd/N>. |
 
 ```zymbol
-// klesi catlu — krefu (klesi, cifni, nilji)
-meta = 42#?
->> meta ¶         // → (###, 2, 42)
-t = meta[0]
+// lo se fanva be lo drata .i go'i cu se cpacu (lo drata .a lo namcu .a lo stero)
+leta = 42#?
+>> leta ¶         // → (###, 2, 42)
+t = leta[1]
 >> t ¶            // → ###
 ```
 
 ---
 
-## cusku je ckaji
+## lo se cliva .e lo se nerkla
 
 ```zymbol
->> "coi, munje!" ¶                      // ¶ ji'a \\ cu cusku salpo
->> "a=" a " b=" b ¶                     // so'i valsi fi jecta
->> (arr$#) ¶                            // postfiksi cu nitcu kresa
+>> "coi" ¶                       // lo se darsi poi ke'a se sinxa lo nu se dzipo'o
+>> "a=" a " b=" b ¶               // lo se dzukla .i ro namcu
+>> (arr$#) ¶                      // lo selcmi ku pilno lo .(). bu'u la .>>.
 
-<< cmene                                // noda cmana — tcidu fi stika
-<< "do cmene ma? " cmene                // fi cmana
+>> cmene                           // lo velcli cu cpacu lo stero
+>> "do'e .i ti cmene: " cmene            // lo se nerkla
 ```
 
-> `¶` (AltGr+R lo hispana) ji'a `\\` cu dunli fi lo salpo tadji.
+> la .¶. (la'o .AltGr+R. bu'u la .espanias.) .e la .\\. cu mintu
 
 ---
 
-## mekso
+## lo te stu
+
+lo se pilno be lo te stu be'o ku noi lo terbilma cu se pilno .i so'ada cu te cpedu lo lo'e bliku be la .>>| { }. .i la .skrine drata. .a la .cistce.
 
 ```zymbol
-// sumji mekso — pilno stika; drata ka'e ranmi fi >>
+>>| {
+    >>!                             // lo skrine cu se snipa
+    >>~ (1, 1, 0, 10) > "ca'o"   // lo jmive 1, lo mapku 1, la .fg. cu du 10 (lo crino)
+    @~ 1000                         // lo nu ce'u se zmanei .i lo 1 sek.
+    >>~ (2, 1) > "fa'u"
+}
+// lo te stu cu se za'u
+```
+
+```zymbol
+// lo kihi .e lo canlu be lo te stu
+>>| {
+    [jmive, mapku] = >>?              // lo te stu cu te cpedu
+    >>~ (1, 1) > "te stu: " jmive " x " mapku
+    <<| kihi                         // lo kihi cu se cpacu
+    >>~ (2, 1) > "do'a: " kihi
+}
+```
+
+> la .>>!. cu se snipa lo skrine .i la .>>?. cu se cpacu .[jmive, mapku]. .i la .@~ N. cu se zmanei N .milisek.
+
+> la .<<|. cu se cpacu lo .ki'i. .i la .<<|?. cu se stidi lo jicmu .i la .'\0'. cu te cpacu fo lo nu no
+
+> la .tuple. be lo te stuzi zo'u .(jmive, mapku, BKS, fg, bg). .i ro jbini cu se fi'u lo .komma. .i la .>>~ (,,, 196) > "xunre".
+
+> la .BKS. cu se bitmask .i .1. du lo .bold. .i .2. du lo .italic. .i .4. du lo .underline. .i lo .ANSI 256. cu se sinxa .i .0. du lo te stu namcu
+
+> lo .tree-walker. cu se pilno .i ku'i la .>>!. .e la .>>?. .e la .@~. .e la .>>~. cu se pilno vi la .--vm.
+
+---
+
+## lo selci'u
+
+```zymbol
+// lo namcu
 a = 10
 b = 3
-r1 = a + b    // 13     r2 = a - b    // 7
-r3 = a * b    // 30     r4 = a / b    // 3  (namcu tenfa)
-r5 = a % b    // 1      r6 = a ^ b    // 1000  (tenfa)
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (lo te djica be lo namcu)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (lo te zenba)
 
-// cimni
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
+// lo du'u klesi .i go'i cu se gunka lo nu te ciksi
+c1 = a == b    // #0
+c2 = a <> b    // #1
+c3 = a < b     // #0
+c4 = a <= b    // #0
+c5 = a > b     // #1
+c6 = a >= b    // #1
 
-// nibli
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
+// lo jetnu
+l1 = #1 && #0    // #0
+l2 = #1 || #0    // #1
+l3 = !#1         // #0
 ```
 
 ---
 
-## lerfu valsi
+## lo gismu
 
 ```zymbol
-// ci klesi — ro pa fi ri tcita
-cmene = "Ana"
+// lo ka ce'u simxu
+cmene = "alis."
 n = 42
 
-notci = "coi ", cmene, "!"              // koma — fi stika
->> "coi " cmene " do namcu " n ¶        // jecta — fi cusku >>
-skicu = "coi {cmene}, do namcu {n}"     // zbasu — fi ro tcita
+>> "coi " cmene " do zvati " n ¶       // lo se dzukla .i bu'u la .>>.
+sefiksi = "coi {cmene}, do zvati {n}"     // lo se snidu .i bu'u ro kampu
 ```
 
 ```zymbol
-s = "coi munje"
-clani = s$#                  // 9
-pagbu = s$[0..3]             // "coi"  (fanmo na ckaji)
-ckaji = s$? "munje"          // #1
-porsi = "a,b,c,d" / ','     // [a, b, c, d]
-anst = s$~~["o":"0"]         // "c0i munj0"
-anst1 = s$~~["o":"0":1]      // "c0i munje"  (pa N toi)
+s = "coi lo terdi"
+lo ni clani = s$#                  // 11
+lo se viknu = s$[1..5]             // "coi l"  (1-za'u, lo se viknu cu se manku)
+lo du'u zvati = s$? "terdi"          // #1
+lo se daski = "a,b,c,d"$/ ','   // [a, b, c, d]  (lo se ciste)
+lo se stika = s$~~["l":"r"]        // "coi ro terdi"
+lo se stika = s$~~["l":"r":1]     // "coi r terdi"  (lo pa N cu se djica)
+lo jmive = "─" $* 20           // "────────────────────"  (lo te dzukla N)
 ```
 
-> `+` ka'e namcu. fi valsi cu cusku peske.
+> la .+. cu se pilno bu'u lo namcu .i tu'a lo gismu .a lo .komma. .a lo se dzukla .a lo se snidu
 
 ---
 
-## minde be lo pluta
+## lo finti be lo nu se manri
 
 ```zymbol
 x = 7
 
-? x > 0 { >> "zenba" ¶ }
+? x > 0 { >> "co'e" ¶ }
 
 ? x > 100 {
-    >> "mutce" ¶
+    >> "banli" ¶
 } _? x > 0 {
-    >> "zenba" ¶
+    >> "co'e" ¶
 } _? x == 0 {
     >> "no" ¶
 } _ {
-    >> "jdika" ¶
+    >> "palci" ¶
 }
 ```
 
-> Lo bloku `{ }` cu **nitcu**, ji'a fi pa loi.
+> lo .{ }. cu **te nitcu** .i ki'u lo nu pa .ciksi.
 
 ---
 
-## Match
+## lo .nelci.
 
 ```zymbol
-// cmana fi porsi
-noda = 85
-jdice = ?? noda {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+// lo namcu
+pa = 85
+trano = ?? pa {
+    90..100 => 'A'
+    80..89  => 'B'
+    70..79  => 'C'
+    _       => 'D'
 }
->> jdice ¶    // → B
+>> trano ¶    // → B
 
-// valsi
+// lo gismu
 skari = "xunre"
-kodi = ?? skari {
-    "xunre"  : "#FF0000"
-    "crino"  : "#00FF00"
-    _        : "#000000"
+kode = ?? skari {
+    "xunre"   => "#FF0000"
+    "crino" => "#00FF00"
+    _       => "#000000"
 }
 
-// ganse
-temp = -5
-stato = ?? temp {
-    _? temp < 0  : "bisli"
-    _? temp < 20 : "lenku"
-    _? temp < 35 : "glare"
-    _            : "mutce glare"
+// lo mupli be lo du'u klesi
+temci = -5
+cista = ?? temci {
+    < 0  => "bisymi"
+    < 20 => "berta"
+    < 35 => "glare"
+    _    => "finti"
 }
->> stato ¶    // → bisli
+>> cista ¶    // → bisymi
 
-// bloku tadji
+// lo mupli be lo .ciksi. .i la .bliku.
+n = -3
 ?? n {
-    0        : { >> "no" ¶ }
-    _? n < 0 : { >> "jdika" ¶ }
-    _        : { >> "zenba" ¶ }
+    0    => { >> "no" ¶ }
+    < 0  => { >> "palci" ¶ }
+    _    => { >> "co'e" ¶ }
 }
 ```
 
 ---
 
-## rapli
+## lo .li.
 
 ```zymbol
-@ i:0..4  { >> i " " }        // inkluzivi cmana:  0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // fi plana:         1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // bapli cmana:      5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // lo namcu cu se manku:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // lo .stapa. cu se manku:         1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // lo se dzukla:           5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶                        // → 128  (nandu)
+>> n ¶                        // → 128  (lo nu citri)
 
-grute = ["plise", "perli", "vreji"]
-@ f:grute { >> f ¶ }          // ro se porsi
+plise = ["plise", "peara", "vitis"]
+@ p:plise { >> p ¶ }         // lo ro selcmi
 
-@ c:"coi" { >> c "-" }
->> ¶                          // → c-o-i-  (ro lerfu be valsi)
+@ c:"hello" { >> c "-" }
+>> ¶                          // → h-e-l-l-o-  (lo ro lerfu)
 
 @ i:1..10 {
-    ? i % 2 == 0 { @> }       // @> dauno
-    ? i > 7 { @! }             // @! sisti
+    ? i % 2 == 0 { @> }       // lo nu @> se sinxa lo nu se
+    ? i > 7 { @! }             // lo nu @! se sinxa lo nu fanmo
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
 
-// siste rapli
+// lo li noi na fanmo
 i = 0
 @ {
     i++
@@ -214,355 +283,362 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// cmene rapli (nestita sisti)
-konto = 0
-@ @bartu {
-    konto++
-    ? konto >= 3 { @! bartu }
+// lo li poi se cmene .i lo se cpacu
+co = 0
+@:drani {
+    co++
+    ? co >= 3 { @:drani! }
 }
->> konto ¶                    // → 3
+>> co ¶                    // → 3
 ```
 
 ---
 
-## fancu
+## lo fanva
 
 ```zymbol
 sumji(a, b) { <~ a + b }
 >> sumji(3, 4) ¶    // → 7
 
-faktori(n) {
+fahu(n) {
     ? n <= 1 { <~ 1 }
-    <~ n * faktori(n - 1)
+    <~ n * fahu(n - 1)
 }
->> faktori(5) ¶    // → 120
+>> fahu(5) ¶    // → 120
 ```
 
-fancu cu **solji tcita** — na ka'e catlu lo bartu stika. pilno exo parametri `<~` fi galfi stika be lo vokei:
+lo fanva cu se steci lo du'u **se manri lo drata** .i na cpacu lo stero be lo drata .i ku'i lo nu se cpacu lo se cliva cu se pilno lo .<~>.
 
 ```zymbol
-barti(a<~, b<~) {
-    tmp = a
+basti(a<~, b<~) {
+    tempa = a
     a = b
-    b = tmp
+    b = tempa
 }
 x = 10
 y = 20
-barti(x, y)
+basti(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> cmene fancu na se jdima. fi pase fi tcita, pilno: `x -> fn(x)`.
+> lo fanva be lo cmene cu **lo drata be la .klasa pamoi.** .i se cpacu bu'u lo se selpli .i lo .x -> fn(x). cu se sinxa lo nu se ciste
 
 ---
 
-## lambda je bende
+## lo lambda .e lo .cista.
 
 ```zymbol
-relkai = x -> x * 2
+mentu = x -> x * 2
 sumji = (a, b) -> a + b
->> relkai(5) ¶    // → 10
->> sumji(3, 7) ¶   // → 10
+>> mentu(5) ¶    // → 10
+>> sumji(3, 7) ¶  // → 10
 
-// bloku lambda
-fancu = x -> {
-    ? x > 0 { <~ "zenba" }
-    _? x < 0 { <~ "jdika" }
+// lo lambda be lo bliku
+vrici = x -> {
+    ? x > 0 { <~ "co'e" }
+    _? x < 0 { <~ "palci" }
     <~ "no"
 }
 
-// bende — lambda cu kei lo bartu stika
-facto = 3
-cimei = x -> x * facto
->> cimei(7) ¶    // → 21
+// lo cista .i ke'a se cpacu lo drata be lo manri
+sezga = 3
+cihu = x -> x * sezga
+>> cihu(7) ¶    // → 21
 
-// fancu zbasu
-make_adder(n) { <~ x -> x + n }
-add10 = make_adder(10)
->> add10(5) ¶    // → 15
+// lo finti
+zbasu(n) { <~ x -> x + n }
+sumjideka = zbasu(10)
+>> sumjideka(5) ¶    // → 15
 
-// lambda fi porsi
-ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[2](5) ¶    // → 25
+// bu'u lo liste
+selcihu = [x -> x+1, x -> x*2, x -> x*x]
+>> selcihu[3](5) ¶    // → 25
 ```
 
 ---
 
-## porsi
+## lo liste
 
-Porsi cu **galfi** je ka'e — ro stika cu **pa klesi**. Porsi cu na stodi — stika ka'e galfi.
+lo liste cu se stika .i ke'a cu te ckaji lo nu ro selcmi cu mintu drata
 
 ```zymbol
 arr = [1, 2, 3, 4, 5]
 
-arr[0]          // 1 — catlu (0-bazi)
-arr[-1]         // 5 — bapli tcita (fanmo)
-arr$#           // 5 — clani (kresa nitcu fi >>)
+x = arr[1]      // 1 — lo se cpacu (1-za'u: lo pa selcmi)
+x = arr[-1]     // 5 — lo namcu be lo du'u noroi (lo se fanmo)
+x = arr$#       // 5 — lo ni clani (lo .(arr$#). bu'u la .>>.)
 
-arr = arr$+ 6            // jmina → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // jmina fi tcita 2
-arr3 = arr$- 3           // vimcu pa nilji be valsi
-arr4 = arr$-- 3          // vimcu ro nilji
-arr5 = arr$-[0]          // vimcu fi tcita
-arr6 = arr$-[1..3]       // vimcu cmana (fanmo na ckaji)
+arr = arr$+ 6            // lo nu zenba → [1,2,3,4,5,6]
+arr2 = arr$+[2] 99       // lo nu tcita bu'u la .2. (1-za'u)
+arr3 = arr$- 3           // lo nu cpacu lo pa selcmi
+arr4 = arr$-- 3          // lo nu cpacu ro selcmi
+arr5 = arr$-[1]          // lo nu cpacu bu'u la .1. (lo pa selcmi)
+arr6 = arr$-[2..3]       // lo nu cpacu lo namcu (1-za'u, lo se viknu cu se manku)
 
-ckaji = arr$? 3          // #1 — ckaji
-tcita = arr$?? 3         // [2] — ro tcita be valsi
-pagbu = arr$[0..3]       // [1,2,3] — pagbu (fanmo na ckaji)
-pagbu2 = arr$[0:3]       // [1,2,3] — sama, namcu tadji
+zvati = arr$? 3            // #1 — lo du'u zvati
+stuzi = arr$?? 3           // [3] — lo ro namcu (1-za'u)
+viknu = arr$[1..3]          // [1,2,3] — lo se viknu (1-za'u, lo se viknu cu se manku)
+viknu2 = arr$[1:3]          // [1,2,3] — lo mintu .i la se tcita cu se jicmu lo nu tcita
 
-zenba = arr$^+           // sorto zenba  (sampu toi)
-jdika = arr$^-           // sorto jdika  (sampu toi)
+berta = arr$^+             // lo nu se tcita (lo se primitive)
+banli = arr$^-            // lo nu se tcita (lo se primitive)
 
-// cmene/tcita tuple porsi — pilno $^ fi cimni lambda
-db = [(cmene: "Karla", nanca: 28), (cmene: "Ana", nanca: 25), (cmene: "Bob", nanca: 30)]
-fi_nanca  = db$^ (a, b -> a.nanca < b.nanca)    // zenba fi nanca  (<)
-fi_cmene  = db$^ (a, b -> a.cmene > b.cmene)    // jdika fi cmene (>)
->> fi_nanca[0].cmene ¶     // → Ana
->> fi_cmene[0].cmene ¶     // → Karla
+// lo liste be lo tuple poi se cmene .a lo se stuzi .i la $^ .e la lambda be lo du'u klesi
+canja = [(cmene: "Carla", nanca: 28), (cmene: "Ana", nanca: 25), (cmene: "Bob", nanca: 30)]
+barnananca  = canja$^ (a, b -> a.nanca < b.nanca)    // lo berta (<)
+barnacmene = canja$^ (a, b -> a.cmene > b.cmene)   // lo banli (>)
+>> barnananca[1].cmene ¶     // → Ana
+>> barnacmene[1].cmene ¶    // → Carla
 
-// Galfi fi tcita (porsi toi) — Direct element update (arrays only)
-arr[1] = 99              // stika — assign
-arr[0] += 5              // sujni galfi: +=  -=  *=  /=  %=  ^= — compound
+// lo nu se stika (lo liste cu se stika)
+arr[1] = 99              // lo nu te cpacu
+arr[2] += 5              // lo nu se stika .i la .+=. .e la .-=. .e la .*=. .e la ./. .e la .%. .e la .^=.
 
-// Fancu galfi — krefu cnino porsi; original na galfi
-arr2 = arr[1]$~ 99
+// lo nu se stika be lo fanva .i go'i cu se cpacu lo liste noi zasti .i lo zasti na ba se stika
+arr2 = arr[2]$~ 99
 ```
 
-> Ro kolekto tadji cu krefu **cnino porsi**. stika: `arr = arr$+ 4`.
-> Na jonta: pilno re drata stika.
-> `$^+` / `$^-` sorto **sampu porsi** (namcu, valsi). fi tuple porsi pilno `$^` fi cimni lambda — direkco fi lambda (`<` = zenba, `>` = jdika).
+> ro selci'u be lo gunma cu se cpacu **lo liste noi zasti** .i lo .arr = arr$+ 4. cu se gunka
 
-**Valsi semantiko (Value semantics)** — Stika porsi cu krefu cnino kopio rarna:
+> la .$+. cu se krasi .i lo .arr = arr$+ 5$+ 6$+ 7. .i drata selci'u cu pilno lo nu se stika
+
+> **lo .index. cu du 1-za'u** .i la .arr[1]. cu du lo pa selcmi .i la .arr[0]. cu se fliba
+
+> lo .$^+. .e la .$^-. cu se tcita **lo liste be lo .primitive.** (lo namcu .e lo gismu) .i tu'a lo liste be lo .tuple. cu pilno la .$^. .e la .lambda. be lo du'u klesi .i lo du'u .<. cu sinxa lo .berta. .i lo .>. cu sinxa lo .banli.
+
+**lo .semantics. be lo stero** .i lo nu se cpacu liste bu'u lo stero drata cu se cpacu lo liste noi se fukpi
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b na galfi
+>> b ¶    // → [1, 2, 3]   ← b na se stika
 ```
 
 ```zymbol
-// nestita porsi
-matrico = [[1,2,3],[4,5,6],[7,8,9]]
->> matrico[1][2] ¶    // → 6
+// lo liste poi se cmpacu (lo index 1-za'u)
+matci = [[1,2,3],[4,5,6],[7,8,9]]
+>> matci[2][3] ¶    // → 6  (lo jmive 2, lo mapku 3)
 ```
 
 ---
 
-## vimcu pagbu
+## lo te viknu
 
 ```zymbol
-// porsi
+// lo liste
 arr = [10, 20, 30, 40, 50]
 [a, b, c] = arr              // a=10  b=20  c=30
-[cfari, *resto] = arr        // cfari=10  resto=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ na tcidu
+[pa, *drata] = arr         // pa=10  drata=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // lo _ cu se cpacu
 
-// tcita tuple
-punkto = (100, 200)
-(px, py) = punkto            // px=100  py=200
+// lo tuple be lo se stuzi
+pinta = (100, 200)
+(px, py) = pinta             // px=100  py=200
 
-// cmene tuple
-prenu = (cmene: "Ana", nanca: 25, tcadu: "Madrido")
-(cmene: n, nanca: a) = prenu  // n="Ana"  a=25
+// lo tuple poi se cmene
+remna = (cmene: "Ana", nanca: 25, tcadu: "Madrid")
+(cmene: n, nanca: n) = remna   // n="Ana"  n=25
 ```
 
 ---
 
-## tuple
+## lo .tuple.
 
-Tuple cu **na galfi** — ka'e teni **drata klesi**. Na porsi — stika na ka'e galfi ca zbasu.
+lo .tuple. cu **na binxo** .i ke'a cu te ckaji lo nu ro selcmi cu se drata drata .i tu'a lo liste na se stika
 
 ```zymbol
-// tcita
-punkto = (10, 20)
->> punkto[0] ¶    // → 10
+// lo se stuzi .i lo drata cu curmi
+pinta = (10, 20)
+>> pinta[1] ¶    // → 10
 
 datni = (42, "coi", #1, 3.14)
->> datni[2] ¶     // → #1
+>> datni[3] ¶     // → #1
 
-// cmene
-prenu = (cmene: "Alice", nanca: 25)
->> prenu.cmene ¶    // → Alice
->> prenu[0] ¶       // → Alice  (tcita ji'a ka'e)
+// lo se cmene
+remna = (cmene: "alis.", nanca: 25)
+>> remna.cmene ¶    // → alis.
+>> remna[1] ¶      // → alis.  (lo index cu se pilno, 1-za'u)
 
-// nestita
-poz = (x: 10, y: 20)
-p = (poz: poz, cmene: "cfari")
->> p.poz.x ¶        // → 10
+// lo se cmpacu
+stuzi = (x: 10, y: 20)
+p = (stuzi: stuzi, tcita: "frati")
+>> p.stuzi.x ¶        // → 10
 ```
 
-**Na galfi (Immutability)** — Ro nu troci galfi stika be tuple cu srera:
+**lo nu na binxo** .i ro se pilno be lo nu se stika tu'a lo .tuple. cu se fliba
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ srera: tuple cu na galfi
-// t[0] += 5    // ❌ sama srera
+// t[1] = 99    // ❌ lo .tuple. na binxo
+// t[1] += 5    // ❌ lo .tuple. na binxo
 ```
 
-Fi krefu galfi valsi pilno `$~` (fancu galfi) — krefu **cnino** tuple:
+lo .$~. cu se pilno .i go'i cu se cpacu **lo .tuple. noi zasti**
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[1]$~ 999
->> t ¶     // → (10, 20, 30)   ← original na galfi
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← lo zasti na binxo
 >> t2 ¶    // → (10, 999, 30)
 
-// Cmene tuple — zbasu naur
-prenu = (cmene: "Alice", nanca: 25)
-ci_prenu = (cmene: prenu.cmene, nanca: 26)
->> prenu.nanca ¶       // → 25
->> ci_prenu.nanca ¶    // → 26
+// lo tuple poi se cmene .i go'i cu se finti
+remna = (cmene: "alis.", nanca: 25)
+banli  = (cmene: remna.cmene, nanca: 26)
+>> remna.nanca ¶    // → 25
+>> banli.nanca ¶     // → 26
 ```
 
 ---
 
-## fancu poi galtu
-
-> HOF cu nitcu **enlinia lambda** — na stika-lambda tcita.
+## lo fanva be lo .Higher-Order.
 
 ```zymbol
-nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+namcu = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-relkai  = nums$> (x -> x * 2)               // map  → [2,4,6…20]
-relti   = nums$| (x -> x % 2 == 0)          // filter → [2,4,6,8,10]
-sumji   = nums$< (0, (acc, x) -> acc + x)   // reduce → 55
+mentu  = namcu$> (x -> x * 2)                  // lo map  → [2,4,6…20]
+stero  = namcu$| (x -> x % 2 == 0)           // lo filter → [2,4,6,8,10]
+roi    = namcu$< (0, (sebna, x) -> sebna + x)     // lo reduce → 55
 
-// jonta fi meza stika
-pazo1 = nums$| (x -> x > 3)
-pazo2 = pazo1$> (x -> x * x)
->> pazo2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+// lo krasi .e lo krasi
+stapa1 = namcu$| (x -> x > 3)
+stapa2 = stapa1$> (x -> x * x)
+>> stapa2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// cmene fancu fi HOF — envolvar fi lambda
-relkai(x) { <~ x * 2 }
-r = nums$> (x -> relkai(x))    // ✅
+// lo fanva be lo cmene cu se cpacu bu'u lo HOF
+mentu(x) { <~ x * 2 }
+banli(x) { <~ x > 5 }
+r = namcu$> mentu       // ✅ lo se cpacu
+r = namcu$| banli       // ✅ lo se cpacu
 ```
 
 ---
 
-## pipe jufra
+## lo .pipe.
 
-Lo dextra cu nitcu `_` fi tcita be lo pipe valsi:
+lo .pipe. cu te cpedu lo du'u la ._. cu se pilno
 
 ```zymbol
-relkai = x -> x * 2
+mentu = x -> x * 2
 sumji = (a, b) -> a + b
-jmina = x -> x + 1
+zenba = x -> x + 1
 
-5 |> relkai(_)        // → 10
-10 |> sumji(_, 5)     // → 15
-5 |> sumji(2, _)      // → 7
+r1 = 5 |> mentu(_)        // → 10
+r2 = 10 |> sumji(_, 5)       // → 15
+r3 = 5 |> sumji(2, _)        // → 7
 
-// jonta
-r = 5 |> relkai(_) |> jmina(_) |> relkai(_)
+// lo krasi
+r = 5 |> mentu(_) |> zenba(_) |> mentu(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## fapro be lo srera
+## lo .fliba.
 
 ```zymbol
 !? {
     x = 10 / 0
 } :! ##Div {
-    >> "tenfa fi no" ¶
+    >> "lo nu se jersi lo no" ¶
 } :! {
-    >> "drata srera: " _err ¶    // _err cu stika lo srera notci
+    >> "lo drata: " _err ¶    // lo ._err. cu te ckaji lo notci be lo .fliba.
 } :> {
-    >> "ro roi gasnu" ¶
+    >> "lo nu snada" ¶
 }
 ```
 
-| klesi       | ca gasnu                        |
-|-------------|---------------------------------|
-| `##Div`     | Tenfa fi no                     |
-| `##IO`      | Datni / Sistemi                 |
-| `##Index`   | Tcita bartu                     |
-| `##Type`    | Klesi srera                     |
-| `##Parse`   | Porsi srera                     |
-| `##Network` | Muvdu srera                     |
-| `##_`       | Ro srera (kaptu ro)             |
+| lo .fliba. | lo nu |
+|------------|-------|
+| `##Div` | lo nu se jersi lo no |
+| `##IO` | lo te jersi .a lo te ciste |
+| `##Index` | lo .index. be lo nu se jersi |
+| `##Type` | lo drata .a lo drata na mintu |
+| `##Parse` | lo .datni. |
+| `##Network` | lo .fliba. be lo .network. |
+| `##_` | lo ro .fliba. |
 
 ---
 
-## modli
+## lo .module.
 
 ```zymbol
-// datni: lib/calc.zy
-# calc
+// lo .lib/calc.zy. .i lo te tcita cu se tcita bu'u lo .{ }.
+# calc {
+    #> { lo .sumji., lo .get_PI. }
 
-#> { sumji, get_PI }    // cusku PURCI lo jarco
-
-_PI := 3.14159
-sumji(a, b) { <~ a + b }
-get_PI() { <~ _PI }     // getter — direkta stodi catlu fi cmena na subtenata
+    lo ._π. := 3.14159
+    lo .sumji.(a, b) { <~ a + b }
+    lo .get_PI.() { <~ lo ._π. }
+}
 ```
 
 ```zymbol
-// datni: main.zy
-<# ./lib/calc <= c    // cmena nitcu
+// lo .main.zy.
+<# ./lib/calc => c    // lo .alias. cu te nitcu
 
->> c::sumji(5, 3) ¶   // → 8
-pi = c::get_PI()
->> pi ¶               // → 3.14159
+>> c::lo .sumji.(5, 3) ¶     // → 8
+π = c::lo .get_PI.()
+>> π ¶               // → 3.14159
 ```
 
 ```zymbol
-// cusku fi drata cmene
-# modli_mi
-#> { _jbocme_sumji <= sumji }
+// lo nu se cpacu fo lo drata cmene
+# mylib {
+    #> { lo ._sumji. => lo .roi. }
 
-_jbocme_sumji(a, b) { <~ a + b }
+    lo ._sumji.(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
-<# ./modli_mi <= m
+<# ./mylib => m
 
->> m::sumji(3, 4) ¶    // → 7  (cmene _jbocme_sumji cu na jarco)
+>> m::lo .roi.(3, 4) ¶    // → 7  (lo ._sumji. cu se stu)
 ```
+
+> **lo .module. .i lo te tcita** .i bu'u lo .# cmene { }. .i ro .#>. .e lo fanva .e lo stero be lo .literal. cu curmi .i lo .>>. .e lo .<<. .e lo .li. .e lo drata cu te zenba lo .fliba. E013
 
 ---
 
-## namcu liste
+## lo .namcu. be lo .numeral.
 
-Zymbol ka'e jarco namcu fo **Unicode namcu liste 69** — Devanagari, arabi-xindo, tai, klingon pIqaD, cmaci tumla, LCD je drata. zo'e liste co'a srana le `>>`-judri; namcu ke'a binary.
+la .zymbol.lang. cu cfari lo namcu bu'u lo **69 .Unicode. be lo .numeral.** — la .Devanagari., la .Arab-Indian., la .Thai., la .Klingon. pIqaD, la .Mathematical Bold., la .LCD., etc. lo .mode. cu se gunka bu'u la .>>. .i ku'i lo te namcu be lo .binary. cu se gunka
 
-### liste co'a pilno
+### lo .script. cu se gasnu
 
-ciska le namcu `0` e `9` fo le liste fo `#…#`:
+lo .script. cu se gasnu bu'u lo .#…#.
 
 ```zymbol
-#०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // arabi-xindo   (U+0660–U+0669)
-#๐๙#    // tai           (U+0E50–U+0E59)
-#09#    // ASCII co'a
+#०९#    // la .Devanagari.   (U+0966–U+096F)
+#٠٩#    // la .Arab-Indian. (U+0660–U+0669)
+#๐๙#    // la .Thai.         (U+0E50–U+0E59)
+#09#    // lo .ASCII. cu se za'u
 ```
 
-### judri e jitfa jetnu
+### lo .cliva. .e lo .jetnu.
 
 ```zymbol
 x = 42
->> x ¶          // → 42   (ASCII ni'a)
+>> x ¶          // → 42   (lo .ASCII. cu se za'u)
 
 #०९#
 >> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४   (decimal ASCII)
+>> 3.14 ¶       // → ३.१४   (lo .point. decimal cu .ASCII.)
 >> 1 + 2 ¶      // → ३
 
-// jetnu: # ASCII, namcu galfi
->> #1 ¶         // → #१
->> #0 ¶         // → #०
+// lo .jetnu. .i lo .#. cu .ASCII. .i lo .numeral. cu se stika
+>> #1 ¶         // → #१   (lo .jetnu. bu'u la .Devanagari.)
+>> #0 ¶         // → #०   (lo .jifnu. .i drata la .०. lo .zero.)
 
 x = 28 > 4
->> x ¶          // → #१
+>> x ¶          // → #१   (lo .klesi. cu se manri fo lo .mode.)
 ```
 
-### asli namcu fo liste
+### lo .numeral. be lo .literal. bu'u lo .source.
 
-ro namcu liste literal — porsi, modulo, vreji:
+lo .numeral. be lo .script. cu se pilno — bu'u lo .range., lo .modulo., lo .klesi.:
 
 ```zymbol
 #०९#
@@ -575,158 +651,199 @@ ro namcu liste literal — porsi, modulo, vreji:
 }
 ```
 
-### jetnu literal fo liste
+### lo .jetnu. be lo .literal. bu'u lo .script.
 
-`#` + namcu `0` a `1` bloc jetnu literal:
+`#` + lo .numeral. `0` .a `1` cu se pilno
 
 ```zymbol
 #٠٩#
-نشط = #١
->> نشط ¶        // → #١
+acti = #١        // lo #1
+>> acti ¶        // → #١
 >> (#١ && #٠) ¶ // → #٠
 ```
 
-> `#` **ASCII**. `#0` (jitfa) drata `0` (namcu nomo) ro liste.
+> `#` **lo .ASCII.** .i lo .#0. (lo .jifnu.) cu drata la .0. (lo .zero.)
 
 ---
 
-## datni mekso
+## lo selci'u be lo .datni.
 
 ```zymbol
-// porsi valsi fi namcu
-v1 = #|"42"|      // → 42  (namcu)
-v2 = #|"3.14"|    // → 3.14  (flanu namcu)
-v3 = #|"abc"|     // → "abc"  (fail-safe, na srera)
+// lo .type. .i lo .cast.
+f = ##.42         // → 42.0  (la .float.)
+i = ###3.7        // → 4     (la .int., lo .round.)
+t = ##!3.7        // → 3     (la .int., lo .truncate.)
 
-// cimni / vimcu
-pi = 3.14159265
-r2 = #.2|pi|      // → 3.14  (cimni fi 2 ki'o)
-r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14  (vimcu)
+// lo .parse. be lo gismu
+v1 = #|"42"|      // → 42  (la .int.)
+v2 = #|"3.14"|    // → 3.14  (la .float.)
+v3 = #|"abc"|     // → "abc"  (lo .safe., lo .fliba. na)
 
-// namcu tadji
-fmt = #,|1234567|      // → 1,234,567  (koma tadji)
-sci = #^|12345.678|    // → 1.2345678e4  (saientifi)
+// lo .round. / lo .truncate.
+π = 3.14159265
+r2 = #.2|π|      // → 3.14  (la .2. place decimal)
+r4 = #.4|π|      // → 3.1416
+t2 = #!2|π|      // → 3.14  (lo .truncate.)
 
-// baze valsi
-a = 0x41         // → 'A'  (hexadecimala)
-b = 0b01000001   // → 'A'  (binara)
-c = 0o101        // → 'A'  (oktala)
+// lo fanva be lo namcu
+formato = #,|1234567|  // → 1,234,567  (lo komma)
+saske = #^|12345.678|    // → 1.2345678e4  (lo saske)
 
-// baze galfi cusku
-heks = 0x|255|    // → "0x00FF"
-bin  = 0b|65|     // → "0b1000001"
-okt  = 0o|8|      // → "0o10"
-dec  = 0d|255|    // → "0d0255"
+// lo .base.
+a = 0x41         // → 'A'  (lo .hex.)
+b = 0b01000001   // → 'A'  (lo .binary.)
+c = 0o101        // → 'A'  (lo .octal.)
+
+// lo .base. .i lo .output.
+hex = 0x|255|    // → "0x00FF"
+bin = 0b|65|     // → "0b1000001"
+oct = 0o|8|      // → "0o10"
+dec = 0d|255|    // → "0d0255"
 ```
 
 ---
 
-## samru gunma
+## lo .shell. .i lo .integrate.
 
 ```zymbol
-detri = <\ date +%Y-%m-%d \>     // kei stdout (inkluzas fanmo \n)
->> "cabna: " detri
+lo .detri. = <\ date +%Y-%m-%d \>     // lo .stdout. cu se cpacu .i lo .\n. cu se manku
+>> "cino: " lo .detri.
 
-datni = "datni.txt"
-nei = <\ cat {datni} \>          // zbasu fi samru
+lo .file. = "data.txt"
+lo .se kansa. = <\ cat {lo .file.} \>      // lo .interpolate. bu'u lo .command.
 
-cusku = </"./selpre.zy"/>        // gasnu drata Zymbol, kei cusku
->> cusku
+lo .cliva. = </"./subscript.zy"/>   // lo .zymbol. script .i lo .cliva. cu se cpacu
+>> lo .cliva.
 ```
 
-> `><` cu kei CLI tcita fi valsi porsi (arba-pedna toi).
+> `><` lo .argument. be lo .CLI. cu se cpacu (lo .tree-walker. cu se pilno)
 
 ---
 
-## gasnu co mulno: FizzBuzz
+## lo .FizzBuzz.
 
 ```zymbol
-fancu(namcu) {
-    ? namcu % 15 == 0 { <~ "FizzBuzz" }
-    _? namcu % 3  == 0 { <~ "Fizz" }
-    _? namcu % 5  == 0 { <~ "Buzz" }
-    _ { <~ namcu }
+vrici(n) {
+    ? n % 15 == 0 { <~ "FizzBuzz" }
+    _? n % 3  == 0 { <~ "Fizz" }
+    _? n % 5  == 0 { <~ "Buzz" }
+    _ { <~ n }
 }
 
-@ i:1..20 { >> fancu(i) ¶ }
+@ i:1..20 { >> vrici(i) ¶ }
 ```
 
 ---
 
-## liste be lo tadji
+## lo .refs. be lo .sinxa.
 
-| tadji      | gasnu              | tadji        | gasnu                   |
-|------------|--------------------|--------------|-------------------------|
-| `=`        | stika              | `$#`         | clani                   |
-| `:=`       | stodi              | `$+`         | jmina                   |
-| `>>`       | cusku              | `$+[i]`      | jmina fi tcita          |
-| `<<`       | ckaji              | `$-`         | vimcu pa fi valsi       |
-| `¶` / `\\` | salpo              | `$--`        | vimcu ro fi valsi       |
-| `?`        | go'i               | `$-[i]`      | vimcu fi tcita          |
-| `_?`       | alisego'i          | `$-[i..j]`   | vimcu cmana             |
-| `_`        | alie / tcita       | `$?`         | ckaji                   |
-| `??`       | match              | `$??`        | ro tcita be valsi       |
-| `@`        | rapli              | `$[s..e]`    | pagbu                   |
-| `@!`       | sisti (break)      | `$>`         | map                     |
-| `@>`       | dauno              | `$\|`        | filter                  |
-| `->`       | lambda             | `$<`         | reduce                  |
-| `arr[i] = val` | galfi fi tcita (update in-place) | `arr[i] +=` | sujni galfi (compound update) |
-| `arr[i]$~` | fancu galfi (functional update) | `$^+` | sorto zenba             |
-| `$^-`      | sorto jdika        | `$^`         | sorto fi cimni          |
-| `<~`       | krefu              | `!?`         | troci (try)             |
-| `\|>`      | pipe               | `:!`         | kei (catch)             |
-| `#1`       | jetnu              | `:>`         | ro roi (finally)        |
-| `#0`       | jitfa              | `$!`         | srera ckaji             |
-| `<#`       | ckaji modli        | `$!!`        | disvastigi srera        |
-| `#`        | jarco modli        | `#>`         | cusku modli             |
-| `::`       | modli vokei        | `.`          | kampo catlu             |
-| `#\|..\|`  | porsi namcu        | `#?`         | klesi datni             |
-| `#.N\|..\|` | cimni             | `#!N\|..\|`  | vimcu                   |
-| `#,\|..\|`  | koma tadji         | `#^\|..\|`    | saientifi               |
-| `#d0d9#` | liste galfi | `#09#` | ASCII co'a |
-| `<\ ..\>`  | samru gasnu        | `><`         | CLI tcita               |
-
-## versio-notci
-
-### v0.0.3 — Unicode namcu & LSP _(abril 2026)_
-
-- **jdika** Unicode bloc 69 token `#d0d9#`
-- **jdika** jetnu literal fo liste — `#१` / `#०`, `#१` / `#٠`, e drata
-- **jdika** klingon pIqaD namcu (CSUR PUA U+F8F0–U+F8F9)
-- **jdika** VM opcode `SetNumeralMode` — tree-walker
-- **jdika** REPL liste echo variable
-- **galfi** `>>` jetnu `#` (`#0` / `#1`) liste
-
-### v0.0.2_01 _(30 Mar 2026)_
-
-- **galfi** `c|..|` → `#,|..|` e `e|..|` → `#^|..|`
-- **jdika** export alias
-
-### v0.0.2 _(24 Mar 2026)_
-
-- **jdika** `$` arrays e strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **jdika** destructuring arrays, tuples
-- **jdika** index ni'a (`arr[-1]`)
-- **jdika** instali — Linux, macOS, Windows
-
-### v0.0.1-patch _(25 Mar 2026)_
-
-- **jdika** `^=`
-
-### v0.0.1 _(22 Mar 2026)_
-
-- tree-walker + register VM (`--vm`, ~4×, ~95%)
-- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- REPL, LSP, VS Code, formatter (`zymbol fmt`)
+| lo .sinxa. | lo .operator. | lo .sinxa. | lo .operator. |
+|------------|---------------|------------|---------------|
+| `=` | lo .stero. | `$#` | lo .ni clani. |
+| `:=` | lo .stero. noi na binxo | `$+` | lo .se zenba. (lo .krasi.) |
+| `>>` | lo .cliva. | `$+[i]` | lo .tcita. bu'u lo .index. (1-za'u) |
+| `<<` | lo .nerkla. | `$-` | lo .cpacu. be lo pa selcmi |
+| `¶` / `\\` | lo .dzipo'o. | `$--` | lo .cpacu. be lo ro selcmi |
+| `?` | lo .ga. | `$-[i]` | lo .cpacu. bu'u lo .index. (1-za'u) |
+| `_?` | lo .ga'onai. | `$-[i..j]` | lo .cpacu. bu'u lo .range. (1-za'u) |
+| `_` | lo .ga'onai. / lo .wildcard. | `$?` | lo .du'u zvati |
+| `??` | lo .nelci. | `$??` | lo .stuzi. be lo ro selcmi (1-za'u) |
+| `@` | lo .li. | `$[s..e]` | lo .viknu. (1-za'u) |
+| `@ N { }` | lo .li. be lo N | `$>` | lo .map. |
+| `@!` | lo .fanmo. | `$\|` | lo .filter. |
+| `@>` | lo .se. | `$<` | lo .reduce. |
+| `@:cmene { }` | lo .li. poi se cmene | `$/ lo .separator.` | lo .split. |
+| `@:cmene!` | lo .fanmo. be lo .label. | `$++ a b c` | lo .concat. |
+| `@:cmene>` | lo .se. be lo .label. | `arr[i>j>k]` | lo .index. be lo .navigate. |
+| `->` | lo .lambda. | `arr[i] = lo .stero.` | lo .stika. (lo liste cu se pilno) |
+| `arr[i] += lo .stero.` | lo .stika. be lo .compound. | `arr[i]$~` | lo .stika. be lo .functional. (lo .copy. noi zasti) |
+| `$^+` | lo .tcita. be lo .berta. (lo .primitive.) | `$^-` | lo .tcita. be lo .banli. (lo .primitive.) |
+| `$^` | lo .tcita. be lo .comparator. (lo .tuple.) | `<~` | lo .cpacu. |
+| `\|>` | lo .pipe. | `!?` | lo .try. |
+| `:!` | lo .catch. | `:>` | lo .finally. |
+| `#1` | lo .jetnu. | `#0` | lo .jifnu. |
+| `$!` | lo .fliba. | `$!!` | lo .propagate. |
+| `<#` | lo .import. | `#>` | lo .export. |
+| `#` | lo .module. | `::` | lo .call. |
+| `.` | lo .access. | `#?` | lo .metadata. |
+| `#\|..\|` | lo .parse. | `##.` | lo .cast. la .float. |
+| `###` | lo .cast. la .int. (lo .round.) | `##!` | lo .cast. la .int. (lo .truncate.) |
+| `#.N\|..\|` | lo .round. | `#!N\|..\|` | lo .truncate. |
+| `#,\|..\|` | lo .format. be lo .komma. | `#^\|..\|` | lo .scientific. |
+| `#d0d9#` | lo .switch. be lo .numeral. | `#09#` | lo .restore. la .ASCII. |
+| `<\ ..\>` | lo .shell. | `>\<` | lo .argument. be lo .CLI. |
+| `\ lo .stero.` | lo .destroy. | `°x` / `x°` | lo .hot. (lo .auto.) |
+| `>>|` | lo .bliku. be la .TUI. | `>>~` | lo .output. be lo .position. |
+| `>>!` | lo .clear. | `>>?` | lo .query. |
+| `<<\|` | lo .key. (lo .block.) | `<<\|?` | lo .poll. (lo .non-block.) |
+| `@~ N` | lo .sleep. | `$*` | lo .repeat. |
 
 ---
 
-*Zymbol-Lang — tadji. ro prenu. na galfi.*
+## lo .changelog.
 
-> **notci:** karni ca windu gi'e fukpi fi le AI (fanva makina).
-> Ro nu snada cu troci, ku'i drata valsi ja gasnu ka'e srera.
-> le jibni krasi cu [Zymbol-Lang notci](https://github.com/zymbol-lang/interpreter).
+### v0.0.5 — lo .TUI. .e lo .hot. .e lo .repeat. _(la .mai. 2026)_
 
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors. The canonical reference is the [Zymbol-Lang specification](https://github.com/zymbol-lang/interpreter).
+- **lo .break.** lo .separator. be lo .nelci. .i la .: . -> la .=>.
+- **lo .break.** lo .alias. be lo .import. .i la .<=. -> la .=>.
+- **lo .break.** lo .rename. be lo .export. .i la .<=. -> la .=>.
+- **lo .add.** lo .bliku. be la .TUI. la .>>| { }.
+- **lo .add.** lo .output. be lo .position. la .>>~ (jmive, mapku, BKS, fg, bg) > mekso.
+- **lo .add.** lo .input. be lo .key. la .<<| lo stero. (lo .block.) .e la .<<|? lo stero. (lo .non-block.)
+- **lo .add.** la .>>!. (lo .clear.), la .>>?. (lo .query.), la .@~ N. (lo .sleep.)
+- **lo .add.** lo .hot. la .°x. / la .x°.
+- **lo .add.** lo .repeat. la .$*.
+- **lo .VM.** lo .parity. 436/436
+
+### v0.0.4 — lo .index. (1-za'u), lo .function. (lo .first-class.), lo .module. (lo .block.) _(la .apr. 2026)_
+
+- **lo .break.** lo .index. cu du 1-za'u .i la .arr[0]. cu fliba
+- **lo .add.** lo .function. be lo .cmene. cu du lo .value. be lo .first-class.
+- **lo .add.** lo .module. cu cpedu lo .block. (la .# cmene { }.)
+- **lo .add.** lo .index. be lo .multi-dimension. (la .arr[i>j>k]., la .arr[p ; q].)
+- **lo .add.** lo .cast. (la .##.expr. (lo .float.), la .###expr. (lo .int. .i lo .round.), la .##!expr. (lo .int. .i lo .truncate.))
+- **lo .add.** lo .split. (la .$/. .i lo .Array(lo gismu).)
+- **lo .add.** lo .concat. (la .$++ a b c.)
+- **lo .add.** lo .li. be lo .N. (la .@ N { }.)
+- **lo .add.** lo .li. poi se cmene (la .@:cmene { }., la .@:cmene!., la .@:cmene>.)
+- **lo .add.** lo .scope. be lo .stero. (lo ._cmene., lo .\ stero.)
+- **lo .add.** lo .pattern. be lo .nelci. (la .< 0 =>., la .> 5 =>., la .== 42 =>.)
+- **lo .add.** lo .error. be lo .module. (la .E013.)
+- **lo .fix.** la .alias.CONST.
+- **lo .VM.** lo .parity. 393/393
+
+### v0.0.3 — lo .Unicode. .e lo .LSP. _(la .apr. 2026)_
+
+- **lo .add.** lo .numeral. be lo .Unicode. 69
+- **lo .add.** lo .literal. be lo .boolean. bu'u lo ro script
+- **lo .add.** lo .Klingon. pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **lo .add.** lo .opcode. (la .SetNumeralMode.)
+- **lo .change.** lo .output. be lo .boolean. cu se sinxa lo .#. (la .#0., la .#1.)
+
+### v0.0.2_01 — lo .rename. be lo .operator. _(la .30 mar. 2026)_
+
+- **lo .change.** la .c|..|. -> la .#,|..|. .e la .e|..|. -> la .#^|..|.
+- **lo .add.** lo .alias. be lo .export.
+
+### v0.0.2 — lo .redesign. be lo .collection. .e lo .installer. _(la .24 mar. 2026)_
+
+- **lo .add.** lo .family. be lo .$. (la .$#., la .$+., la .$?., la .$-., la .$[..].)
+- **lo .add.** lo .destructuring.
+- **lo .add.** lo .index. be lo .negative. (la .arr[-1].)
+- **lo .add.** lo .installer. (la .Linux., la .macOS., la .Windows.)
+
+### v0.0.1-patch _(la .25 mar. 2026)_
+
+- **lo .add.** lo .compound. (la .^=.)
+- **lo .fix.** lo .parser. .e lo .documentation.
+
+### v0.0.1 — lo .first. _(la .22 mar. 2026)_
+
+- lo .tree-walker. .e lo .VM. (la .--vm., ~4× lo .fast., ~95% lo .parity.)
+- lo .core. (la .?., la .@., la .<~., la .->., la .>>., la .<<., la .¶., la .??.)
+- lo .Unicode., lo .module., lo .lambda., lo .closure., lo .error.
+- lo .REPL., lo .LSP., lo .extension., lo .formatter. (la .zymbol fmt.)
+
+---
+
+_la .zymbol.lang. — lo .sinxa. .i lo .ro bangu. .i lo .na binxo._

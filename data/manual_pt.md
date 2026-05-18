@@ -6,23 +6,25 @@
 
 ---
 
-# Manual do Zymbol-Lang
+# Manual de Zymbol-Lang
 
-**Zymbol-Lang** é uma linguagem de programação simbólica. Sem palavras-chave — tudo são símbolos. Funciona igualmente em qualquer idioma humano.
+> **Revisado para v0.0.5 — 2026-05-12**
+
+**Zymbol-Lang** é uma linguagem de programação simbólica. Sem palavras-chave — tudo é um símbolo. Funciona de forma idêntica em qualquer língua humana.
 
 - Sem `if`, `while`, `return` — apenas `?`, `@`, `<~`
 - Unicode completo — identificadores em qualquer idioma ou emoji
-- Agnóstico ao idioma humano — o código é o mesmo em todos os lugares
+- Independente de idioma — o código é igual em todo lugar
 
-**Versão do interpretador**: v0.0.4 | **Cobertura de testes**: 393/393 (paridade TW ↔ VM)
+**Versão do interpretador**: v0.0.5 | **Cobertura de testes**: 436/436 (TW ↔ VM paridade)
 
 ---
 
-## Variáveis e Constantes
+## Variáveis & Constantes
 
 ```zymbol
 x = 10              // variável mutável
-PI := 3.14159       // constante — reatribuir é um erro em tempo de execução
+PI := 3.14159       // constante — reatribuição é um erro em tempo de execução
 nome = "Alice"
 ativo = #1          // booleano verdadeiro
 👋 := "Olá"
@@ -40,22 +42,36 @@ x++        // 5
 x--        // 4
 ```
 
+`°` (símbolo de grau, U+00B0) auto-inicializa uma variável ao seu valor neutro no primeiro uso:
+
+```zymbol
+numeros = [3, 1, 4, 1, 5]
+@ n:numeros {
+    °total += n    // auto-init para 0 acima do laço; sobrevive após @
+}
+>> total ¶         // → 14
+```
+
+> `°x` (prefixo) ancora acima do laço — resultado acessível após `@`.
+> `x°` (sufixo) ancora dentro do laço — desaparece quando o laço termina.
+> Apenas Tree-Walker.
+
 ---
 
 ## Tipos de Dados
 
-| Tipo | Literal | Etiqueta `#?` | Notas |
-|------|---------|---------------|-------|
-| Inteiro | `42`, `-7` | `###` | 64 bits com sinal |
-| Flutuante | `3.14`, `1.5e10` | `##.` | Notação científica OK |
-| Cadeia | `"texto"` | `##"` | Interpolação: `"Olá {nome}"` |
-| Caractere | `'A'` | `##'` | Um caractere Unicode |
-| Booleano | `#1`, `#0` | `##?` | NÃO é numérico — `#1 ≠ 1` |
+| Tipo | Literal | `#?` tag | Observações |
+|------|---------|----------|-------------|
+| Inteiro | `42`, `-7` | `###` | 64-bit com sinal |
+| Decimal | `3.14`, `1.5e10` | `##.` | Notação científica OK |
+| Texto | `"texto"` | `##"` | Interpolação: `"Olá {nome}"` |
+| Caractere | `'A'` | `##'` | Único caractere Unicode |
+| Booleano | `#1`, `#0` | `##?` | NÃO numérico — `#1 ≠ 1` |
 | Vetor | `[1, 2, 3]` | `##]` | Elementos homogêneos |
 | Tupla | `(a, b)` | `##)` | Posicional |
-| Tupla nomeada | `(x: 1, y: 2)` | `##)` | Campos nomeados |
-| Função | referência a função | `##()` | Primeira classe; exibe `<funct/N>` |
-| Lambda | `x -> x * 2` | `##->` | Primeira classe; exibe `<lambd/N>` |
+| Tupla Nomeada | `(x: 1, y: 2)` | `##)` | Campos nomeados |
+| Função | ref. a função nomeada | `##()` | Primeira classe; mostra `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Primeira classe; mostra `<lambd/N>` |
 
 ```zymbol
 // Introspecção de tipo — retorna (tipo, dígitos, valor)
@@ -67,25 +83,57 @@ t = meta[1]
 
 ---
 
-## Saída e Entrada
+## Saída & Entrada
 
 ```zymbol
->> "Olá Mundo" ¶                  // ¶ ou \\ para quebra de linha explícita
+>> "Olá" ¶                        // ¶ ou \\ para nova linha explícita
 >> "a=" a " b=" b ¶               // justaposição — múltiplos valores
->> (arr$#) ¶                      // operadores postfix exigem ( ) em >>
+>> (vet$#) ¶                      // operadores pós-fixos requerem ( ) em >>
 
-<< nome                           // ler em variável (sem prompt)
+<< nome                           // leia para variável (sem prompt)
 << "Digite o nome: " nome         // com prompt
 ```
 
-> `¶` (AltGr+R no teclado espanhol) e `\\` são equivalentes como quebra de linha.
+> `¶` (AltGr+R no teclado espanhol) e `\\` são novas linhas equivalentes.
+
+---
+
+## Primitivas TUI
+
+Operadores de interface de terminal para programas interativos. A maioria requer um bloco `>>| { }` (tela alternativa + modo raw).
+
+```zymbol
+>>| {
+    >>!                              // limpar tela alternativa
+    >>~ (1, 1, 0, 10) > "Executando"  // linha 1, col 1, fg=10 (verde)
+    @~ 1000                          // pausa 1 segundo (1000 ms)
+    >>~ (2, 1) > "Pronto."
+}
+// terminal restaurado automaticamente ao sair
+```
+
+```zymbol
+// Tecla pressionada e tamanho do terminal
+>>| {
+    [linhas, colunas] = >>?          // consultar dimensões do terminal
+    >>~ (1, 1) > "Terminal: " linhas " x " colunas
+    <<| tecla                        // leitura de tecla bloqueante
+    >>~ (2, 1) > "Pressionado: " tecla
+}
+```
+
+> `>>!` limpa tela. `>>?` retorna `[linhas, colunas]`. `@~ N` dorme N milissegundos.
+> `<<|` lê uma tecla (bloqueante); `<<|?` sonda sem bloquear (retorna `'\0'` se nenhuma).
+> Tupla de saída posicionada: `(linha, coluna, BKS, fg, bg)` — qualquer slot pode ser omitido com vírgula (`>>~ (,,, 196) > "vermelho"`).
+> Máscara BKS: `1`=Negrito, `2`=Itálico, `4`=Sublinhado. Paleta ANSI 256 cores (`0`=padrão do terminal).
+> Apenas Tree-Walker (exceto `>>!`, `>>?`, `@~`, `>>~` que também funcionam em `--vm`).
 
 ---
 
 ## Operadores
 
 ```zymbol
-// Aritmética — usar atribuições; alguns operadores têm quirks direto em >>
+// Aritmética
 a = 10
 b = 3
 r1 = a + b    // 13
@@ -95,48 +143,49 @@ r4 = a / b    // 3  (divisão inteira)
 r5 = a % b    // 1
 r6 = a ^ b    // 1000  (exponenciação)
 
-// Comparação
-a == b    // #0
-a <> b    // #1
-a < b     // #0
-a <= b    // #0
-a > b     // #1
-a >= b    // #1
+// Comparação — atribuir para inspecionar
+c1 = a == b    // #0
+c2 = a <> b    // #1
+c3 = a < b     // #0
+c4 = a <= b    // #0
+c5 = a > b     // #1
+c6 = a >= b    // #1
 
 // Lógica
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
+l1 = #1 && #0    // #0
+l2 = #1 || #0    // #1
+l3 = !#1         // #0
 ```
 
 ---
 
-## Cadeias
+## Textos
 
 ```zymbol
-// Duas formas de concatenar
+// Duas formas de concatenação
 nome = "Alice"
 n = 42
 
->> "Olá " nome " você tem " n ¶        // justaposição — em >>
-desc = "Olá {nome}, você tem {n}"      // interpolação — em qualquer contexto
+>> "Olá " nome " você tem " n ¶      // justaposição — em >>
+descr = "Olá {nome}, você tem {n}"   // interpolação — em qualquer lugar
 ```
 
 ```zymbol
 s = "Olá Mundo"
-len = s$#                  // 9
-sub = s$[1..3]             // "Olá"  (base 1, fim inclusivo)
-has = s$? "Mundo"          // #1
-partes = "a,b,c,d"$/ ','   // [a, b, c, d]  (separar por delimitador)
-rep = s$~~["o":"0"]        // "Olá Mund0"
-rep1 = s$~~["o":"0":1]     // "Olá Mundo"  (somente o primeiro)
+tam = s$#                   // 11
+sub = s$[1..3]              // "Olá"  (1-based, fim inclusivo)
+tem = s$? "Mundo"           // #1
+partes = "a,b,c,d"$/ ','    // [a, b, c, d]  (dividir por delimitador)
+sub2 = s$~~["o":"0"]        // "0lá Mund0"
+sub3 = s$~~["o":"0":1]      // "0lá Mundo"  (apenas os primeiros N)
+linha = "─" $* 20           // "────────────────────"  (repetir N vezes)
 ```
 
-> `+` é apenas para números. Usar `,`, justaposição ou interpolação para cadeias.
+> `+` é apenas para números. Use `,`, justaposição ou interpolação para textos.
 
 ---
 
-## Controle de Fluxo
+## Fluxo de Controle
 
 ```zymbol
 x = 7
@@ -154,46 +203,47 @@ x = 7
 }
 ```
 
-> Os blocos `{ }` são **obrigatórios** mesmo para uma única linha.
+> As chaves `{ }` são **obrigatórias** mesmo para uma única instrução.
 
 ---
 
-## Match
+## Correspondência
 
 ```zymbol
 // Intervalos
-score = 85
-grade = ?? score {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+pontuacao = 85
+nota = ?? pontuacao {
+    90..100 => 'A'
+    80..89  => 'B'
+    70..79  => 'C'
+    _       => 'F'
 }
->> grade ¶    // → B
+>> nota ¶    // → B
 
-// Cadeias
+// Textos
 cor = "vermelho"
 codigo = ?? cor {
-    "vermelho" : "#FF0000"
-    "verde"    : "#00FF00"
-    _          : "#000000"
+    "vermelho" => "#FF0000"
+    "verde"    => "#00FF00"
+    _          => "#000000"
 }
 
 // Padrões de comparação
 temp = -5
 estado = ?? temp {
-    < 0  : "gelo"
-    < 20 : "frio"
-    < 35 : "quente"
-    _    : "escaldante"
+    < 0  => "gelo"
+    < 20 => "frio"
+    < 35 => "morno"
+    _    => "quente"
 }
 >> estado ¶    // → gelo
 
-// Forma de instrução (blocos)
+// Forma de instrução (braços em bloco)
+n = -3
 ?? n {
-    0        : { >> "zero" ¶ }
-    _? n < 0 : { >> "negativo" ¶ }
-    _        : { >> "positivo" ¶ }
+    0    => { >> "zero" ¶ }
+    < 0  => { >> "negativo" ¶ }
+    _    => { >> "positivo" ¶ }
 }
 ```
 
@@ -203,22 +253,22 @@ estado = ?? temp {
 
 ```zymbol
 @ i:0..4  { >> i " " }        // intervalo inclusivo:  0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // com passo:             1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // reverso:               5 4 3 2 1 0
+@ i:1..9:2 { >> i " " }       // com passo:            1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // reverso:              5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶                        // → 128  (enquanto)
+>> n ¶                        // → 128  (while)
 
 frutas = ["maçã", "pera", "uva"]
-@ f:frutas { >> f ¶ }         // para cada elemento
+@ f:frutas { >> f ¶ }         // para cada elemento do vetor
 
 @ c:"ola" { >> c "-" }
->> ¶                          // → o-l-a-  (sobre caracteres)
+>> ¶                          // → o-l-a-  (para cada caractere)
 
 @ i:1..10 {
     ? i % 2 == 0 { @> }       // @> continuar
-    ? i > 7 { @! }             // @! romper
+    ? i > 7 { @! }             // @! parar
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
@@ -232,13 +282,13 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Laço com rótulo (romper laço externo)
-conta = 0
+// Laço rotulado (parada aninhada)
+contador = 0
 @:externo {
-    conta++
-    ? conta >= 3 { @:externo! }
+    contador++
+    ? contador >= 3 { @:externo! }
 }
->> conta ¶                    // → 3
+>> contador ¶                 // → 3
 ```
 
 ---
@@ -256,7 +306,7 @@ fatorial(n) {
 >> fatorial(5) ¶    // → 120
 ```
 
-As funções têm **escopo isolado** — não podem ler variáveis externas. Usar parâmetros de saída `<~` para modificar variáveis do chamador:
+Funções têm **escopo isolado** — não podem ler variáveis externas. Use parâmetros de saída `<~` para modificar variáveis do chamador:
 
 ```zymbol
 trocar(a<~, b<~) {
@@ -270,11 +320,11 @@ trocar(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> As funções nomeadas são **valores de primeira classe** — podem ser passadas diretamente: `nums$> dobrar`. Envolvê-las também é válido: `x -> fn(x)`.
+> Funções nomeadas são **valores de primeira classe** — passe diretamente: `numeros$> dobrar`. Para encapsular: `x -> fn(x)` também é válido.
 
 ---
 
-## Lambdas e Closures
+## Lambdas & Closures
 
 ```zymbol
 dobrar = x -> x * 2
@@ -282,22 +332,22 @@ somar = (a, b) -> a + b
 >> dobrar(5) ¶    // → 10
 >> somar(3, 7) ¶  // → 10
 
-// Lambda com bloco
+// Lambda em bloco
 classificar = x -> {
     ? x > 0 { <~ "positivo" }
     _? x < 0 { <~ "negativo" }
     <~ "zero"
 }
 
-// Closure — captura o escopo externo
+// Closure — captura escopo externo
 fator = 3
-triple = x -> x * fator
->> triple(7) ¶    // → 21
+triplicar = x -> x * fator
+>> triplicar(7) ¶    // → 21
 
-// Factory
+// Fábrica
 criar_somador(n) { <~ x -> x + n }
-soma10 = criar_somador(10)
->> soma10(5) ¶    // → 15
+somar10 = criar_somador(10)
+>> somar10(5) ¶    // → 15
 
 // Em vetores
 ops = [x -> x+1, x -> x*2, x -> x*x]
@@ -308,49 +358,49 @@ ops = [x -> x+1, x -> x*2, x -> x*x]
 
 ## Vetores
 
-Os vetores são **mutáveis** e contêm elementos do **mesmo tipo**.
+Vetores são **mutáveis** e contêm elementos do **mesmo tipo**.
 
 ```zymbol
-arr = [1, 2, 3, 4, 5]
+vet = [1, 2, 3, 4, 5]
 
-arr[1]          // 1 — acesso (base 1: primeiro elemento)
-arr[-1]         // 5 — índice negativo (último elemento)
-arr$#           // 5 — comprimento (usar (arr$#) em >>)
+x = vet[1]      // 1 — acesso (1-based: primeiro elemento)
+x = vet[-1]     // 5 — índice negativo (último elemento)
+x = vet$#       // 5 — tamanho (use (vet$#) em >>)
 
-arr = arr$+ 6            // adicionar → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // inserir na posição 2 (base 1)
-arr3 = arr$- 3           // remover primeira ocorrência do valor
-arr4 = arr$-- 3          // remover todas as ocorrências
-arr5 = arr$-[1]          // remover no índice 1 (primeiro elemento)
-arr6 = arr$-[2..3]       // remover intervalo (base 1, fim inclusivo)
+vet = vet$+ 6            // adicionar → [1,2,3,4,5,6]
+vet2 = vet$+[2] 99       // inserir na posição 2 (1-based)
+vet3 = vet$- 3           // remover primeira ocorrência do valor
+vet4 = vet$-- 3          // remover todas as ocorrências
+vet5 = vet$-[1]          // remover no índice 1 (primeiro elemento)
+vet6 = vet$-[2..3]       // remover intervalo (1-based, fim inclusivo)
 
-has = arr$? 3            // #1 — contém
-pos = arr$?? 3           // [3] — todos os índices do valor (base 1)
-sl = arr$[1..3]          // [1,2,3] — slice (base 1, fim inclusivo)
-sl2 = arr$[1:3]          // [1,2,3] — igual, sintaxe por contagem
+tem = vet$? 3            // #1 — contém
+pos = vet$?? 3           // [3] — todos os índices do valor (1-based)
+sl = vet$[1..3]          // [1,2,3] — fatia (1-based, fim inclusivo)
+sl2 = vet$[1:3]          // [1,2,3] — mesmo, sintaxe baseada em contagem
 
-asc = arr$^+             // ordenado ascendente  (apenas primitivos)
-desc = arr$^-            // ordenado descendente (apenas primitivos)
+asc = vet$^+             // ordenado crescente  (apenas primitivos)
+desc = vet$^-            // ordenado decrescente (apenas primitivos)
 
-// Vetores de tuplas nomeadas/posicionais — usar $^ com lambda comparadora
-dados = [(nome: "Carla", idade: 28), (nome: "Ana", idade: 25), (nome: "Bob", idade: 30)]
-por_idade  = dados$^ (a, b -> a.idade < b.idade)       // ascendente por idade  (<)
-por_nome   = dados$^ (a, b -> a.nome > b.nome)         // descendente por nome  (>)
+// Vetores de tuplas nomeadas/posicionais — use $^ com lambda comparadora
+db = [(nome: "Carla", idade: 28), (nome: "Ana", idade: 25), (nome: "Bob", idade: 30)]
+por_idade = db$^ (a, b -> a.idade < b.idade)    // crescente por idade  (<)
+por_nome  = db$^ (a, b -> a.nome > b.nome)      // decrescente por nome (>)
 >> por_idade[1].nome ¶     // → Ana
 >> por_nome[1].nome ¶      // → Carla
 
 // Atualização direta de elemento (apenas vetores)
-arr[1] = 99              // atribuir
-arr[2] += 5              // composto: +=  -=  *=  /=  %=  ^=
+vet[1] = 99              // atribuir
+vet[2] += 5              // composto: +=  -=  *=  /=  %=  ^=
 
-// Atualização funcional — retorna um novo vetor; o original não muda
-arr2 = arr[2]$~ 99
+// Atualização funcional — retorna novo vetor; original inalterado
+vet2 = vet[2]$~ 99
 ```
 
-> Todos os operadores de coleção retornam um **novo vetor**. Atribuir de volta: `arr = arr$+ 4`.
-> `$+` pode ser encadeado: `arr = arr$+ 5$+ 6$+ 7`. Os demais operadores usam atribuições intermediárias.
-> **Indexação base 1**: `arr[1]` é o primeiro elemento; `arr[0]` é erro em tempo de execução.
-> `$^+` / `$^-` ordenam **vetores de primitivos** (números, cadeias). Para vetores de tuplas, usar `$^` com lambda comparadora — a direção é codificada na lambda (`<` = ascendente, `>` = descendente).
+> Todos os operadores de coleção retornam um **novo vetor**. Reatribuir: `vet = vet$+ 4`.
+> `$+` pode ser encadeado: `vet = vet$+ 5$+ 6$+ 7`. Outros operadores usam atribuições intermediárias.
+> **Indexação é 1-based**: `vet[1]` é o primeiro elemento; `vet[0]` é um erro em tempo de execução.
+> `$^+` / `$^-` ordenam **vetores primitivos** (números, textos). Para vetores de tuplas use `$^` com lambda comparadora — a direção é codificada na lambda (`<` = crescente, `>` = decrescente).
 
 **Semântica de valor** — atribuir um vetor a outra variável cria uma cópia independente:
 
@@ -363,7 +413,7 @@ a[1] = 99
 ```
 
 ```zymbol
-// Vetores aninhados (indexação base 1)
+// Vetores aninhados (indexação 1-based)
 matriz = [[1,2,3],[4,5,6],[7,8,9]]
 >> matriz[2][3] ¶    // → 6  (linha 2, coluna 3)
 ```
@@ -374,9 +424,9 @@ matriz = [[1,2,3],[4,5,6],[7,8,9]]
 
 ```zymbol
 // Vetor
-arr = [10, 20, 30, 40, 50]
-[a, b, c] = arr              // a=10  b=20  c=30
-[primeiro, *resto] = arr     // primeiro=10  resto=[20,30,40,50]
+vet = [10, 20, 30, 40, 50]
+[a, b, c] = vet              // a=10  b=20  c=30
+[primeiro, *resto] = vet     // primeiro=10  resto=[20,30,40,50]
 [x, _, z] = [1, 2, 3]        // _ descarta
 
 // Tupla posicional
@@ -384,16 +434,16 @@ ponto = (100, 200)
 (px, py) = ponto             // px=100  py=200
 
 // Tupla nomeada
-pessoa = (nome: "Ana", idade: 25, cidade: "Lisboa")
-(nome: n, idade: e) = pessoa   // n="Ana"  e=25
+pessoa = (nome: "Ana", idade: 25, cidade: "São Paulo")
+(nome: n, idade: i) = pessoa // n="Ana"  i=25
 ```
 
 ---
 
 ## Tuplas
 
-As tuplas são contêineres ordenados **imutáveis** que podem conter valores de **tipos diferentes**.
-Ao contrário dos vetores, os elementos não podem ser alterados após a criação.
+Tuplas são **contêineres ordenados imutáveis** que podem conter valores de **tipos diferentes**.
+Ao contrário de vetores, elementos não podem ser alterados após a criação.
 
 ```zymbol
 // Posicional — tipos mistos permitidos
@@ -401,12 +451,12 @@ ponto = (10, 20)
 >> ponto[1] ¶    // → 10
 
 dados = (42, "olá", #1, 3.14)
->> dados[3] ¶     // → #1
+>> dados[3] ¶    // → #1
 
 // Nomeada
 pessoa = (nome: "Alice", idade: 25)
 >> pessoa.nome ¶    // → Alice
->> pessoa[1] ¶      // → Alice  (índice também funciona, base 1)
+>> pessoa[1] ¶      // → Alice  (índice também funciona, 1-based)
 
 // Aninhada
 pos = (x: 10, y: 20)
@@ -414,7 +464,7 @@ p = (pos: pos, rotulo: "origem")
 >> p.pos.x ¶        // → 10
 ```
 
-**Imutabilidade** — qualquer tentativa de modificar um elemento de uma tupla é um erro em tempo de execução:
+**Imutabilidade** — qualquer tentativa de modificar um elemento de tupla é um erro em tempo de execução:
 
 ```zymbol
 t = (10, 20, 30)
@@ -422,19 +472,19 @@ t = (10, 20, 30)
 // t[1] += 5    // ❌ mesmo erro
 ```
 
-Para derivar um valor modificado usar `$~` (atualização funcional) — retorna uma **nova** tupla:
+Para derivar um valor modificado use `$~` (atualização funcional) — retorna uma **nova** tupla:
 
 ```zymbol
 t = (10, 20, 30)
 t2 = t[2]$~ 999
->> t ¶     // → (10, 20, 30)   ← original sem alterações
+>> t ¶     // → (10, 20, 30)   ← original inalterado
 >> t2 ¶    // → (10, 999, 30)
 
 // Tupla nomeada — reconstruir explicitamente
 pessoa = (nome: "Alice", idade: 25)
-mais_velha = (nome: pessoa.nome, idade: 26)
->> pessoa.idade ¶       // → 25
->> mais_velha.idade ¶   // → 26
+mais_velha  = (nome: pessoa.nome, idade: 26)
+>> pessoa.idade ¶      // → 25
+>> mais_velha.idade ¶  // → 26
 ```
 
 ---
@@ -442,41 +492,41 @@ mais_velha = (nome: pessoa.nome, idade: 26)
 ## Funções de Ordem Superior
 
 ```zymbol
-nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+numeros = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-dobrados = nums$> (x -> x * 2)                 // map    → [2,4,6…20]
-pares    = nums$| (x -> x % 2 == 0)            // filter → [2,4,6,8,10]
-total    = nums$< (0, (acc, x) -> acc + x)      // reduce → 55
+dobrados  = numeros$> (x -> x * 2)               // map  → [2,4,6…20]
+pares     = numeros$| (x -> x % 2 == 0)          // filter → [2,4,6,8,10]
+total     = numeros$< (0, (acc, x) -> acc + x)    // reduce → 55
 
-// Encadear com variáveis intermediárias
-passo1 = nums$| (x -> x > 3)
+// Encadear via intermediários
+passo1 = numeros$| (x -> x > 3)
 passo2 = passo1$> (x -> x * x)
 >> passo2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
 // Funções nomeadas podem ser passadas diretamente para HOF
 dobrar(x) { <~ x * 2 }
-eh_grande(x) { <~ x > 5 }
-r = nums$> dobrar       // ✅ referência direta
-r = nums$| eh_grande    // ✅ referência direta
+e_grande(x) { <~ x > 5 }
+r = numeros$> dobrar     // ✅ referência direta
+r = numeros$| e_grande   // ✅ referência direta
 ```
 
 ---
 
 ## Operador Pipe
 
-O lado direito sempre requer `_` como marcador de posição do valor:
+O lado direito sempre requer `_` como marcador de posição para o valor canalizado:
 
 ```zymbol
 dobrar = x -> x * 2
 somar = (a, b) -> a + b
-inc = x -> x + 1
+incrementar = x -> x + 1
 
-5 |> dobrar(_)        // → 10
-10 |> somar(_, 5)     // → 15
-5 |> somar(2, _)      // → 7
+r1 = 5 |> dobrar(_)              // → 10
+r2 = 10 |> somar(_, 5)           // → 15
+r3 = 5 |> somar(2, _)            // → 7
 
 // Encadeado
-r = 5 |> dobrar(_) |> inc(_) |> dobrar(_)
+r = 5 |> dobrar(_) |> incrementar(_) |> dobrar(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
@@ -490,19 +540,19 @@ r = 5 |> dobrar(_) |> inc(_) |> dobrar(_)
 } :! ##Div {
     >> "divisão por zero" ¶
 } :! {
-    >> "outro erro: " _err ¶    // _err contém a mensagem
+    >> "outro: " _err ¶    // _err contém a mensagem de erro
 } :> {
-    >> "sempre executado" ¶
+    >> "sempre executa" ¶
 }
 ```
 
-| Tipo | Quando ocorre |
-|------|---------------|
+| Tipo | Quando |
+|------|--------|
 | `##Div` | Divisão por zero |
 | `##IO` | Arquivo / sistema |
-| `##Index` | Índice fora do intervalo |
-| `##Type` | Erro de tipo |
-| `##Parse` | Parsing de dados |
+| `##Index` | Índice fora dos limites |
+| `##Type` | Incompatibilidade de tipo |
+| `##Parse` | Análise de dados |
 | `##Network` | Erros de rede |
 | `##_` | Qualquer erro (catch-all) |
 
@@ -511,57 +561,57 @@ r = 5 |> dobrar(_) |> inc(_) |> dobrar(_)
 ## Módulos
 
 ```zymbol
-// lib/calc.zy — o corpo do módulo fica entre chaves
+// lib/calc.zy — o corpo do módulo está entre chaves
 # calc {
-    #> { somar, get_PI }
+    #> { somar, obter_PI }
 
     _PI := 3.14159
     somar(a, b) { <~ a + b }
-    get_PI() { <~ _PI }
+    obter_PI() { <~ _PI }
 }
 ```
 
 ```zymbol
-// main.zy
-<# ./lib/calc <= c    // alias obrigatório
+// principal.zy
+<# ./lib/calc => c    // alias obrigatório
 
 >> c::somar(5, 3) ¶   // → 8
-pi = c::get_PI()
+pi = c::obter_PI()
 >> pi ¶               // → 3.14159
 ```
 
 ```zymbol
 // Exportar com nome público diferente
 # minhalib {
-    #> { _somar_interno <= soma }
+    #> { _somar_interna => soma }
 
-    _somar_interno(a, b) { <~ a + b }
+    _somar_interna(a, b) { <~ a + b }
 }
 ```
 
 ```zymbol
-<# ./minhalib <= m
+<# ./minhalib => m
 
->> m::soma(3, 4) ¶    // → 7  (nome interno _somar_interno fica oculto)
+>> m::soma(3, 4) ¶    // → 7  (o nome interno _somar_interna está oculto)
 ```
 
-> **Regras de módulos**: apenas `#>`, definições de funções e inicializadores literais são permitidos dentro de `# nome { }`. Instruções executáveis (`>>`, `<<`, laços, etc.) geram o erro E013.
+> **Regras de módulos**: apenas `#>`, definições de funções e inicializadores literais de variáveis/constantes são permitidos dentro de `# nome { }`. Instruções executáveis (`>>`, `<<`, laços, etc.) geram erro E013.
 
 ---
 
-## Sistemas Numéricos
+## Modos Numéricos
 
-Zymbol pode exibir números em **69 sistemas de dígitos Unicode** — Devanagari, Árabe-Índico, Tailandês, Klingon pIqaD, Negrito Matemático, dígitos LCD e mais. O modo ativo afeta apenas a saída `>>`; a aritmética interna é sempre binária.
+Zymbol pode exibir números em **69 scripts de dígitos Unicode** — Devanagari, Árabe-Índico, Thai, Klingon pIqaD, Matemático Negrito, segmentos LCD e mais. O modo ativo afeta apenas a saída `>>`; a aritmética interna é sempre binária.
 
-### Ativar um sistema
+### Ativar um script
 
-Escreva o dígito `0` e o dígito `9` do sistema desejado entre `#…#`:
+Escreva os dígitos `0` e `9` do script alvo entre `#…#`:
 
 ```zymbol
-#०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // Árabe-Índico  (U+0660–U+0669)
-#๐๙#    // Tailandês     (U+0E50–U+0E59)
-#09#    // restaurar ASCII
+#०९#    // Devanagari   (U+0966–U+096F)
+#٠٩#    // Árabe-Índico (U+0660–U+0669)
+#๐๙#    // Thai         (U+0E50–U+0E59)
+#09#    // redefinir para ASCII
 ```
 
 ### Saída e booleanos
@@ -577,15 +627,15 @@ x = 42
 
 // Booleanos: prefixo # sempre ASCII, dígito se adapta
 >> #1 ¶         // → #१   (verdadeiro em Devanagari)
->> #0 ¶         // → #०   (falso — distinto de ०  zero inteiro)
+>> #0 ¶         // → #०   (falso — distinto de ० zero inteiro)
 
 x = 28 > 4
 >> x ¶          // → #१   (resultado de comparação segue o modo ativo)
 ```
 
-### Dígitos nativos no código-fonte
+### Literais de dígitos nativos no código-fonte
 
-Os dígitos de qualquer sistema suportado são literais válidos — em intervalos, módulo, comparações:
+Dígitos de qualquer script suportado são literais válidos — em intervalos, módulo, comparações:
 
 ```zymbol
 #०९#
@@ -598,50 +648,50 @@ Os dígitos de qualquer sistema suportado são literais válidos — em interval
 }
 ```
 
-### Literais booleanos em qualquer sistema
+### Literais booleanos em qualquer script
 
-`#` + dígito `0` ou `1` de qualquer bloco suportado é um literal booleano válido:
+`#` + dígito `0` ou `1` de qualquer bloco é um literal booleano válido:
 
 ```zymbol
 #٠٩#
-نشط = #١        // igual a #1
+نشط = #١        // equivale a #1
 >> نشط ¶        // → #١
->> (#١ && #٠) ¶ // → #٠
+>> (#१ && #٠) ¶ // → #٠
 ```
 
-> `#` é **sempre ASCII**. `#0` (falso) é sempre visualmente distinto de `0` (zero inteiro) em qualquer sistema.
+> `#` é **sempre ASCII**. `#0` (falso) é sempre visualmente distinto de `0` (zero inteiro) em qualquer script.
 
 ---
 
 ## Operadores de Dados
 
 ```zymbol
-// Conversão de tipos
-##.42         // → 42.0  (para Flutuante)
-###3.7        // → 4     (para Inteiro, arredondar)
-##!3.7        // → 3     (para Inteiro, truncar)
+// Conversões de tipo
+f = ##.42         // → 42.0  (para Decimal)
+i = ###3.7        // → 4     (para Inteiro, arredonda)
+t = ##!3.7        // → 3     (para Inteiro, trunca)
 
-// Interpretar cadeia como número
+// Analisar texto em número
 v1 = #|"42"|      // → 42  (Inteiro)
-v2 = #|"3.14"|    // → 3.14  (Flutuante)
-v3 = #|"abc"|     // → "abc"  (sem erro, retorna original)
+v2 = #|"3.14"|    // → 3.14  (Decimal)
+v3 = #|"abc"|     // → "abc"  (fail-safe, sem erro)
 
-// Arredondar / truncar
+// Arredondar / Truncar
 pi = 3.14159265
-r2 = #.2|pi|      // → 3.14  (arredondar a 2 casas)
+r2 = #.2|pi|      // → 3.14  (arredondar para 2 casas decimais)
 r4 = #.4|pi|      // → 3.1416
 t2 = #!2|pi|      // → 3.14  (truncar)
 
-// Formato numérico
-fmt = #,|1234567|      // → 1,234,567  (com vírgulas)
-sci = #^|12345.678|    // → 1.2345678e4  (notação científica)
+// Formatação de números
+fmt = #,|1234567|      // → 1,234,567  (separado por vírgulas)
+cient = #^|12345.678|  // → 1.2345678e4  (científico)
 
-// Literais em outras bases
-a = 0x41         // → 'A'  (hexadecimal → caractere)
-b = 0b01000001   // → 'A'  (binário → caractere)
-c = 0o101        // → 'A'  (octal → caractere)
+// Literais de base
+a = 0x41         // → 'A'  (hexadecimal)
+b = 0b01000001   // → 'A'  (binário)
+c = 0o101        // → 'A'  (octal)
 
-// Conversão para representação em base
+// Saída de conversão de base
 hex = 0x|255|    // → "0x00FF"
 bin = 0b|65|     // → "0b1000001"
 oct = 0o|8|      // → "0o10"
@@ -650,10 +700,10 @@ dec = 0d|255|    // → "0d0255"
 
 ---
 
-## Integração com o Shell
+## Integração com Shell
 
 ```zymbol
-data = <\ date +%Y-%m-%d \>    // captura stdout (inclui \n no final)
+data = <\ date +%Y-%m-%d \>       // captura stdout (inclui \n final)
 >> "Hoje: " data
 
 arquivo = "dados.txt"
@@ -663,7 +713,7 @@ saida = </"./subscript.zy"/>      // executar outro script Zymbol, capturar saí
 >> saida
 ```
 
-> `><` captura os argumentos CLI como vetor de cadeias (apenas tree-walker).
+> `><` captura argumentos CLI como vetor de textos (apenas Tree-Walker).
 
 ---
 
@@ -686,92 +736,109 @@ classificar(numero) {
 
 | Símbolo | Operação | Símbolo | Operação |
 |---------|----------|---------|----------|
-| `=` | variável | `$#` | comprimento |
+| `=` | variável | `$#` | tamanho |
 | `:=` | constante | `$+` | adicionar (encadeável) |
-| `>>` | saída | `$+[i]` | inserir no índice (base 1) |
-| `<<` | entrada | `$-` | remover 1ª ocorrência |
-| `¶` / `\\` | quebra de linha | `$--` | remover todas |
-| `?` | se | `$-[i]` | remover no índice (base 1) |
-| `_?` | senão se | `$-[i..j]` | remover intervalo (base 1) |
+| `>>` | saída | `$+[i]` | inserir no índice (1-based) |
+| `<<` | entrada | `$-` | remover primeiro por valor |
+| `¶` / `\\` | nova linha | `$--` | remover todos por valor |
+| `?` | se | `$-[i]` | remover no índice (1-based) |
+| `_?` | senão-se | `$-[i..j]` | remover intervalo (1-based) |
 | `_` | senão / curinga | `$?` | contém |
-| `??` | match | `$??` | encontrar todos os índices (base 1) |
-| `@` | laço | `$[s..e]` | slice (base 1) |
+| `??` | correspondência | `$??` | encontrar todos os índices (1-based) |
+| `@` | laço | `$[s..e]` | fatia (1-based) |
 | `@ N { }` | laço N vezes | `$>` | map |
-| `@!` | romper | `$\|` | filter |
+| `@!` | parar | `$\|` | filter |
 | `@>` | continuar | `$<` | reduce |
-| `@:nome { }` | laço com rótulo | `$/ delim` | separar cadeia |
-| `@:nome!` | romper rótulo | `$++ a b c` | concat build |
-| `@:nome>` | continuar rótulo | `arr[i>j>k]` | navegação de índice |
-| `->` | lambda | `arr[i] = val` | atualizar elemento (apenas vetores) |
-| `arr[i] += val` | atualização composta | `arr[i]$~` | atualização funcional (nova cópia) |
-| `$^+` | ordenar asc (primitivos) | `$^-` | ordenar desc (primitivos) |
-| `$^` | ordenar com comparadora (tuplas) | `<~` | retornar |
+| `@:nome { }` | laço rotulado | `$/ delim` | dividir texto |
+| `@:nome!` | parar rótulo | `$++ a b c` | concat build |
+| `@:nome>` | continuar rótulo | `vet[i>j>k]` | índice de navegação |
+| `->` | lambda | `vet[i] = val` | atualizar elemento (apenas vetores) |
+| `vet[i] += val` | atualização composta | `vet[i]$~` | atualização funcional (nova cópia) |
+| `$^+` | ordenar crescente (primitivos) | `$^-` | ordenar decrescente (primitivos) |
+| `$^` | ordenar com comparador (tuplas) | `<~` | retornar |
 | `\|>` | pipe | `!?` | tentar |
-| `:!` | capturar | `:>` | sempre |
+| `:!` | capturar | `:>` | finalmente |
 | `#1` | verdadeiro | `#0` | falso |
 | `$!` | é erro | `$!!` | propagar erro |
 | `<#` | importar | `#>` | exportar |
-| `#` | declarar módulo | `::` | chamar módulo |
-| `.` | acesso a campo | `#?` | metadado de tipo |
-| `#\|..\|` | interpretar número | `##.` | converter para Flutuante |
+| `#` | declarar módulo | `::` | chamada de módulo |
+| `.` | acesso a campo | `#?` | metadados de tipo |
+| `#\|..\|` | analisar número | `##.` | converter para Decimal |
 | `###` | converter para Inteiro (arredondar) | `##!` | converter para Inteiro (truncar) |
 | `#.N\|..\|` | arredondar | `#!N\|..\|` | truncar |
-| `#,\|..\|` | formato vírgulas | `#^\|..\|` | notação científica |
-| `#d0d9#` | mudança de sistema numérico | `#09#` | restaurar ASCII |
-| `<\ ..\>` | executar shell | `>\<` | argumentos CLI |
-| `\ var` | destruir variável explicitamente | | |
+| `#,\|..\|` | formato vírgula | `#^\|..\|` | científico |
+| `#d0d9#` | mudar modo numérico | `#09#` | redefinir para ASCII |
+| `<\ ..\>` | execução shell | `>\<` | argumentos CLI |
+| `\ var` | destruir variável explicitamente | `°x` / `x°` | definição a quente (auto-init) |
+| `>>|` | bloco TUI (tela alt.) | `>>~` | saída posicionada |
+| `>>!` | limpar tela | `>>?` | consultar tamanho do terminal |
+| `<<\|` | leitura de tecla bloqueante | `<<\|?` | leitura de tecla não-bloqueante |
+| `@~ N` | dormir N milissegundos | `$*` | repetir texto N vezes |
 
 ---
 
-## Histórico de Versões
+## Changelog de Versões
 
-### v0.0.4 — Indexação Base 1, Funções de Primeira Classe & Módulos com Bloco _(Abril 2026)_
+### v0.0.5 — Primitivas TUI, Definição a Quente & Repetição de Texto _(Maio 2026)_
 
-- **Quebra de compatibilidade** Indexação alterada para **base 1** — `arr[1]` é o primeiro elemento; `arr[0]` é erro em tempo de execução
-- **Adicionado** Funções nomeadas são **valores de primeira classe** — passar diretamente para HOF: `nums$> dobrar`
-- **Adicionado** **Sintaxe de bloco obrigatória** em módulos: `# nome { ... }` — sintaxe plana removida
-- **Adicionado** Indexação multidimensional: `arr[i>j>k]` (navegação), `arr[p ; q]` (extração plana)
-- **Adicionado** Conversão de tipos: `##.expr` (Flutuante), `###expr` (Inteiro arredondar), `##!expr` (Inteiro truncar)
-- **Adicionado** Separar cadeia: `str$/ delim` — retorna `Vetor(Cadeia)`
-- **Adicionado** Concat build: `base$++ a b c` — adiciona múltiplos elementos
-- **Adicionado** Laço N vezes: `@ N { }` — executa exatamente N iterações
-- **Adicionado** Sintaxe de laços com rótulo: `@:nome { }`, `@:nome!`, `@:nome>` — substitui `@ @nome` / `@! nome`
-- **Adicionado** Regras de escopo de variáveis: `_nome` tem escopo exato de bloco; `\ var` destrói antecipadamente
-- **Adicionado** Padrões de comparação em match: `< 0 :`, `> 5 :`, `== 42 :`, etc.
-- **Adicionado** Erro E013 em módulos: instruções executáveis no corpo do módulo são inválidas
-- **Corrigido** `take_variable` não corrompe mais constantes de módulo ao escrever de volta
-- **Corrigido** `alias.CONST` resolve corretamente; `#>` pode aparecer após definições de funções
-- **VM** Paridade total: 393/393 testes passam
+- **Breaking** Separador de braço match: `padrão : resultado` → `padrão => resultado`
+- **Breaking** Alias de import: `<# caminho <= alias` → `<# caminho => alias`
+- **Breaking** Renomear export: `#> { fn <= pub }` → `#> { fn => pub }`
+- **Added** Bloco TUI `>>| { }` — tela alternativa + modo raw; limpa ao sair
+- **Added** Saída posicionada `>>~ (linha, col, BKS, fg, bg) > itens` — slots esparsos, paleta ANSI 256 cores
+- **Added** Entrada de tecla `<<| var` (bloqueante) e `<<|? var` (polling não-bloqueante)
+- **Added** `>>!` limpar tela, `>>?` consultar tamanho do terminal, `@~ N` dormir N milissegundos
+- **Added** Definição a quente `°x` / `x°` — auto-inicializar variável no primeiro uso em laços
+- **Added** Repetição de texto `str $* N` — repetir um texto N vezes
+- **VM** Paridade: 436/436 testes passam
 
-### v0.0.3 — Sistemas Numéricos Unicode & Melhorias LSP _(Abril 2026)_
+### v0.0.4 — Indexação 1-Based, Funções de Primeira Classe & Blocos de Módulo _(Abril 2026)_
 
-- **Adicionado** 69 blocos de dígitos Unicode com token de mudança de modo `#d0d9#`
-- **Adicionado** Literais booleanos em qualquer sistema — `#१` / `#०`, `#١` / `#٠`, etc.
-- **Adicionado** Dígitos Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
-- **Adicionado** Opcode VM `SetNumeralMode` — paridade completa com a árvore de avaliação
-- **Adicionado** REPL respeita o modo numérico ativo no eco e exibição de variáveis
-- **Alterado** Saída booleana `>>` inclui prefixo `#` (`#0` / `#1`) em todos os modos
+- **Breaking** Toda indexação alterada para **1-based** — `vet[1]` é o primeiro elemento; `vet[0]` é um erro em tempo de execução
+- **Added** Funções nomeadas são **valores de primeira classe** — passe diretamente para HOF: `numeros$> dobrar`
+- **Added** Sintaxe de **bloco de módulo** obrigatória: `# nome { ... }` — sintaxe plana removida
+- **Added** Indexação multidimensional: `vet[i>j>k]` (navegação), `vet[p ; q]` (extração plana)
+- **Added** Conversões de tipo: `##.expr` (Decimal), `###expr` (Inteiro arredonda), `##!expr` (Inteiro trunca)
+- **Added** Divisão de texto: `str$/ delim` — retorna `Array(String)`
+- **Added** Concat build: `base$++ a b c` — adiciona múltiplos itens
+- **Added** Laço N vezes: `@ N { }` — repetir exatamente N vezes
+- **Added** Sintaxe de laço rotulado: `@:nome { }`, `@:nome!`, `@:nome>` — substitui `@ @nome` / `@! nome`
+- **Added** Regras de escopo de variáveis: variáveis `_nome` têm escopo exato do bloco; `\ var` destrói cedo
+- **Added** Padrões de comparação match: `< 0 :`, `> 5 :`, `== 42 :` etc.
+- **Added** Erro de módulo E013: instruções executáveis no corpo do módulo são proibidas
+- **Fixed** `take_variable` não corrompe mais constantes de módulo no write-back
+- **Fixed** `alias.CONST` agora resolve corretamente; `#>` pode aparecer após definições de funções
+- **VM** Paridade completa: 393/393 testes passam
 
-### v0.0.2_01 — Renomeação de Operadores _(30 Mar 2026)_
+### v0.0.3 — Sistemas de Numerais Unicode & Melhorias LSP _(Abril 2026)_
 
-- **Alterado** `c|..|` → `#,|..|` e `e|..|` → `#^|..|` — consistente com a família de prefixo `#`
-- **Adicionado** Alias de exportação: re-exportar membros de módulo com nome diferente
+- **Added** 69 blocos de dígitos Unicode com token de troca de modo `#d0d9#`
+- **Added** Literais booleanos em qualquer script — `#१` / `#०`, `#١` / `#٠`, etc.
+- **Added** Dígitos Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Added** Opcode de VM `SetNumeralMode` — paridade completa com tree-walker
+- **Added** REPL respeita o modo numérico ativo no echo e exibição de variáveis
+- **Changed** Saída booleana `>>` agora inclui prefixo `#` (`#0` / `#1`) em todos os modos
 
-### v0.0.2 — Redesenho de Coleções & Instaladores _(24 Mar 2026)_
+### v0.0.2_01 — Renomear Operadores _(30 Mar 2026)_
 
-- **Adicionado** Família unificada de operadores `$` para vetores e cadeias (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Adicionado** Desestruturação para vetores, tuplas e tuplas nomeadas
-- **Adicionado** Índices negativos (`arr[-1]` = último elemento)
-- **Adicionado** Instaladores nativos — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+- **Changed** `c|..|` → `#,|..|` e `e|..|` → `#^|..|` — consistente com família de prefixo de formato `#`
+- **Added** Alias de export: re-exportar membros do módulo com nome diferente
+
+### v0.0.2 — Redesenho da API de Coleções & Instaladores _(24 Mar 2026)_
+
+- **Added** Família unificada de operadores `$` para vetores e textos (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Added** Atribuição de desestruturação para vetores, tuplas e tuplas nomeadas
+- **Added** Índices negativos (`vet[-1]` = último elemento)
+- **Added** Instaladores nativos — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
 
 ### v0.0.1-patch _(25 Mar 2026)_
 
-- **Adicionado** Atribuição composta `^=`
-- **Corrigido** Casos extremos na aritmética do parser; correções de documentação
+- **Added** Atribuição composta `^=`
+- **Fixed** Casos de borda na aritmética do parser; correções de documentação
 
 ### v0.0.1 — Primeira Versão Pública _(22 Mar 2026)_
 
-- Interpretador de árvore de avaliação + VM de registros (`--vm`, ~4× mais rápido, ~95% paridade)
+- Interpretador tree-walker + VM de registros (`--vm`, ~4× mais rápido, ~95% paridade)
 - Todos os construtos base: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
 - Identificadores Unicode completos, sistema de módulos, lambdas, closures, tratamento de erros
 - REPL, LSP, extensão VS Code, formatador (`zymbol fmt`)

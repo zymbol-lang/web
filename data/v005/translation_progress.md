@@ -210,13 +210,13 @@
 |--------|---------|--------|------|
 | ✅ | manual_emb.md | Emoji-based | ★ solo emojis |
 | ✅ | manual_tlh.md | Klingon Hol (Latin) | |
-| ✅ | manual_thl_iq.md | Klingon pIqaD | ★ chars pIqaD & ★ numerales pIqaD ✔️ |
+| ✅ | manual_tlh_iq.md | Klingon pIqaD | ★ chars pIqaD & ★ numerales pIqaD ✔️ |
 | ✅ | manual_way.md | Warlpiri | ★ indígena Australia ✔️ |
 | ✅ | manual_yno.md | Yiddish | ★ script hebreo |
 
 ---
 
-**Total pendientes:** 0 · **Completados:** 110 (en, es, fr, it, pt, pt_eu, ca, gl, ro, de, da, is, nl, no, sv, be, bg, cs, hr, mk, pl, ru, sk, sl, sr, uk, et, fi, lv, lt, eu, el, sq, az, hy, ka, tr, am, ar, fa, he, ti, ur, ku, ps, bn, gu, hi, kn, ml, mr, ne, pa, si, ta, te, zh, ja, ko, vi, th, my, id, ms, tl, ha, yo, ig, sw, af, bm, ff, ln, om, sn, so, wo, xh, zu, qu, ay, gn, nah, nav, nv, arn, eo, ia, io, jbo, tp, chr, emb, tlh, thl_iq, jam, ht, jv, su, km, lo, lg, ny, tn, pcm, quc, cr_syl, myn, way, yno) · **Referencias:** 2
+**Total pendientes:** 0 · **Completados:** 110 (en, es, fr, it, pt, pt_eu, ca, gl, ro, de, da, is, nl, no, sv, be, bg, cs, hr, mk, pl, ru, sk, sl, sr, uk, et, fi, lv, lt, eu, el, sq, az, hy, ka, tr, am, ar, fa, he, ti, ur, ku, ps, bn, gu, hi, kn, ml, mr, ne, pa, si, ta, te, zh, ja, ko, vi, th, my, id, ms, tl, ha, yo, ig, sw, af, bm, ff, ln, om, sn, so, wo, xh, zu, qu, ay, gn, nah, nav, nv, arn, eo, ia, io, jbo, tp, chr, emb, tlh, tlh_iq, jam, ht, jv, su, km, lo, lg, ny, tn, pcm, quc, cr_syl, myn, way, yno) · **Referencias:** 2
 
 ---
 

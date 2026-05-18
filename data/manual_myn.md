@@ -1,211 +1,279 @@
-# Zymbol-Lang U Tzíibil Nojoch Kaaj
-
-**Zymbol-Lang** jun tzíibil t'aan. Ma' k'aaba'ob u tia'al — bey síimbolo'. Le xan jach kex bix t'aan.
-
-- Ma' k'aaba'ob (`if`, `while`, `return` ma' yaan — cha'an síimbolo' `?`, `@`, `<~`)
-- Unicode tuláakal — k'aaba'ob ti' tuláakal t'aan wáa emoji 👋
-- Ma' k'abeet t'aan — código beyo' ti' tuláakal t'aan
+> **K'aaba Tsikbal:** Lela' tziib ku beetik yéetel ku bixaaktik AI.
+>
+> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
+>
+> Le tsikbal ku kaajil **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** ti' le bejlae tsoolil.
 
 ---
 
-## K'aaba' yéetel Ma' Tikrakuq
+# Yucatec Maya — Zymbol-Lang
+
+> **Ku kaakabil v0.0.5 — 2026-05-12**
+
+**Zymbol-Lang** bey tziib ku beetik xook. Mix taan — bey tsikbal. Ma' chan xok ti' bix u kaajil.
+
+- Mix `if`, `while`, `return` — ti' `?`, `@`, `<~`
+- Ka'a xook Unicode — kaab ti' bix taan
+- Ti' bejlae — bey tsikbal ti' bejlae taan
+
+**Tsikbal yaalil**: v0.0.5 | **Tsol xook**: 436/436 (TW ↔ VM parity)
+
+---
+
+## Tsool yéetel Kaabal
 
 ```zymbol
-x = 10           // k'aaba' (páajtal u cháajil)
-PI := 3.14159    // ma' cháajil (ma' páajtal u cháajil — ya'ab u páajtal)
-k'aaba' = "Ana"
-ku'ubul = #1     // jaaj
-👋 := "Ba'ax ka wa'alik"
+x = 10              // tsool kaabal
+PI := 3.14159       // kaabal — ku bisik k'as
+kaab = "Sak"
+kiimil = #1        // tsol kaab true
+👋 := "Bix"
 ```
 
 ```zymbol
-x = 10
+x = 10    // 10
 x += 5    // 15
 x -= 3    // 12
 x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
+
+`°` (degree sign, U+00B0) ku kaajil tsol kaabal ti' ka'a bin:
+
+```zymbol
+tsool = [3, 1, 4, 1, 5]
+@ n:tsool {
+    °kaachi += n    // ku kaajil 0 ti' ka'a hochpahal; ku kuchul
+}
+>> kaachi ¶         // → 14
+```
+
+> `°x` (prefix) ku kaajil ti' ka'a hochpahal — ku kuchul tun @.
+> `x°` (postfix) ku kaajil ti' hochpahal — ku kaaj tun tu ka'a.
+> Tree-walker bey.
 
 ---
 
-## Ba'ax K'aaba'
+## Xook Tziib
 
-| Chuuyil        | U jela'anil              | Símbolo `#?` | Tzikbal                              |
-|----------------|--------------------------|--------------|--------------------------------------|
-| Xook           | `42`, `-7`               | `###`        | 64-bit                               |
-| Chiru xook     | `3.14`, `1.5e10`         | `##.`        | Científico xook páajtal              |
-| T'aan          | `"ba'ax ka wa'alik"`     | `##"`        | Páajtal: `"Ba'ax ka wa'alik {k'aaba'}"`|
-| Jun t'aan      | `'A'`                    | `##'`        | Jun Unicode t'aan                    |
-| Jaaj/Ma'       | `#1`, `#0`               | `##?`        | MA' xook 1 wáa 0                     |
-| Tzikbal        | `[1, 2, 3]`              | `##]`        | Tuláakal bey chuuyil                 |
-| Tupla          | `(a, b)`                 | `##)`        | Chuuyil                              |
-| Tupla k'aaba'  | `(x: 1, y: 2)`           | `##)`        | Bey k'aaba' wáa xook                 |
+| Xook | Tziib | `#?` | Bey |
+|------|---------|----------|-------|
+| Int | `42`, `-7` | `###` | 64-bit signed |
+| Float | `3.14`, `1.5e10` | `##.` | Scientific notation OK |
+| String | `"tziib"` | `##"` | Ku tziib: `"Bix {kaab}"` |
+| Char | `'A'` | `##'` | Ka'a tziib Unicode |
+| Bool | `#1`, `#0` | `##?` | Ma' xook — `#1 ≠ 1` |
+| Array | `[1, 2, 3]` | `##]` | Ka'a tsol |
+| Tuple | `(a, b)` | `##)` | Yaalil |
+| Named Tuple | `(x: 1, y: 2)` | `##)` | Kaab yaalil |
+| Function | named function ref | `##()` | First-class; `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | First-class; `<lambd/N>` |
 
 ```zymbol
-// Chuuyil xook — bora (chuuyil, xook, ba'al)
-meta = 42#?
->> meta ¶         // → (###, 2, 42)
-t = meta[0]
+// xook tziib — ku ookol (xook, yaalil, bey)
+meentaan = 42#?
+>> meentaan ¶         // → (###, 2, 42)
+t = meentaan[1]
 >> t ¶            // → ###
 ```
 
 ---
 
-## Páajtal T'aanil yéetel Cháanbal
+## Ookol yéetel Hochpahal
 
 ```zymbol
->> "Ba'ax ka wa'alik" ¶             // ¶ wáa \\ u ts'o'ok línea
->> "a=" a " b=" b ¶                 // ya'ab ba'alche' ti' leti'
->> (arr$#) ¶                        // postfix paréntesis k'abeet
+>> "Bix" ¶                      // ¶ waye \\ ku bin
+>> "a=" a " b=" b ¶               // ka'a bej — ti' >>
+>> (tsoolil$#) ¶            // bey tsikbal ti' ( ) tu >>
 
-<< k'aaba'                          // ma' prompt — k'uchul ti' k'aaba'
-<< "Ba'ax a k'aaba'? " k'aaba'      // prompt yéetel
+<< kaab                           // ku hochpahal (mix bey)
+<< "Ka'a k'aab: " kaab  // yéetel bey
 ```
 
-> `¶` wáa `\\` bey kex ts'o'ok línea.
+> `¶` (AltGr+R ti' Spanish keyboard) yéetel `\\` ka'a bejlae.
 
 ---
 
-## Patatín Operatoru
+## TUI Bey
+
+TUI bey tsikbal ku beetik bix xook. Mix ku k'aabtik `>>| { }`.
 
 ```zymbol
-// Xook borarir — k'aaba' sünain
+>>| {
+    >>!                             // ku bisik ookol tziib
+    >>~ (1, 1, 0, 10) > "Bin"  // yaalil 1, kaab 1, tsukul=10 (yax)
+    @~ 1000                         // ku kaajtik 1 tsol (1000 ms)
+    >>~ (2, 1) > "Listo."
+}
+// tziib ku kuchul ti' ka'a bej
+```
+
+```zymbol
+// tsuul yéetel tsol tziib
+>>| {
+    [tsolile, naakal] = >>?              // ku k'amik tsol tziib
+    >>~ (1, 1) > "Tziib: " tsolile " x " naakal
+    <<| tsuul                         // ku kaajtik tsuul
+    >>~ (2, 1) > "Kuchul: " tsuul
+}
+```
+
+> `>>!` ku bisik tziib. `>>?` ku ookol `[rows, cols]`. `@~ N` ku kaajtik N milliseconds.
+> `<<|` ku kaajtik tsuul; `<<|?` ku bin (ku ookol `'\0'` mix).
+> `(row, col, BKS, fg, bg)` — tsol waye ku bisik (`>>~ (,,, 196) > "red"`).
+> BKS: `1`=Bold, `2`=Italic, `4`=Underline. ANSI 256-color (`0`=terminal default).
+> Tree-walker bey (mix `>>!`, `>>?`, `@~`, `>>~` ku bin `--vm`).
+
+---
+
+## Bey Xook Tsikbal
+
+```zymbol
+// tsol xook
 a = 10
 b = 3
-r1 = a + b    // 13     r2 = a - b    // 7
-r3 = a * b    // 30     r4 = a / b    // 3  (xook chuuyil)
-r5 = a % b    // 1      r6 = a ^ b    // 1000  (xook naas)
+r1 = a + b    // 13
+r2 = a - b    // 7
+r3 = a * b    // 30
+r4 = a / b    // 3  (xook tsol)
+r5 = a % b    // 1
+r6 = a ^ b    // 1000  (k'ina tsol)
 
-// Tzikbal chuuyil
-a == b    // #0    a <> b    // #1    a < b    // #0
-a <= b    // #0   a > b     // #1    a >= b   // #1
+// tseeltik — ku kaab xook
+c1 = a == b    // #0
+c2 = a <> b    // #1
+c3 = a < b     // #0
+c4 = a <= b    // #0
+c5 = a > b     // #1
+c6 = a >= b    // #1
 
-// T'aan jaaj
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
+// tsol kaab
+l1 = #1 && #0    // #0
+l2 = #1 || #0    // #1
+l3 = !#1         // #0
 ```
 
 ---
 
-## Bello Stringi
+## Tziib
 
 ```zymbol
-// Óox chuuyil — bix ken beey
-k'aaba' = "Ana"
+// ka'a bej ku tsoolte
+kaab = "Sak"
 n = 42
 
-t'aan = "Ba'ax ka wa'alik ", k'aaba', "!"   // koma — k'aaba' = wáa :=
->> "Ba'ax ka wa'alik " k'aaba' " a xook " n ¶  // ti' leti' — >>
-tzikbal = "Ba'ax ka wa'alik {k'aaba'}, a xook {n}"  // u úuchben — ken
+>> "Bix " kaab " tu " n ¶    // ka'a bej — ti' >>
+meentaan = "Bix {kaab}, tu {n}"  // ku tziib — ti' bejlae
 ```
 
 ```zymbol
-s = "Ba'ax ka wa'alik Kaaj"
-len = s$#                  // 22
-sub = s$[0..5]             // "Ba'ax"  (nayc chuuyil)
-has = s$? "Kaaj"           // #1
-parts = "a,b,c,d" / ','    // [a, b, c, d]
-rep = s$~~["a":"A"]        // "BA'Ax kA wA'Alik KAAj"
-rep1 = s$~~["a":"A":1]     // "BA'ax ka wa'alik Kaaj"
+s = "Bix Kaab"
+yalak = s$#                  // 8
+tsoolbis = s$[1..3]          // "Bix"  (1-yaalil, yéetel kaab)
+uchul = s$? "Kaab"              // #1
+laak = "a,b,c,d"$/ ','      // [a, b, c, d]
+bisik = s$~~["i":"e"]       // ku bisik
+bisik1 = s$~~["i":"e":1]   // ka'a ku bisik
+tsol = "─" $* 20           // "────────────────────"
 ```
 
-> **Tzikbal**: `+` xook cha'an. T'aan yéetel u ya'ab ichil.
+> `+` xook bey. Ti' `,`, ka'a bej, yéetel ku tziib tziib bey.
 
 ---
 
-## U Beetik Noj
+## Bejlae Béeytal
 
 ```zymbol
 x = 7
 
-? x > 0 { >> "nojoch" ¶ }
+? x > 0 { >> "Maalo" ¶ }
 
 ? x > 100 {
-    >> "noj" ¶
+    >> "Nohoch" ¶
 } _? x > 0 {
-    >> "nojoch" ¶
+    >> "Maalo" ¶
 } _? x == 0 {
-    >> "ma'" ¶
+    >> "Mix" ¶
 } _ {
-    >> "chan" ¶
+    >> "Maat" ¶
 }
 ```
 
-> Bloque `{ }` **k'abeet** kex jun línea.
+> `{ }` ku k'aabtik ka'a tsikbal waye.
 
 ---
 
-## Match
+## Tseeltik
 
 ```zymbol
-// Match xook chuuyil
-xook = 85
-grado = ?? xook {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+// tsol xook
+tsool = 85
+beetaan = ?? tsool {
+    90..100 => 'A'
+    80..89  => 'B'
+    70..79  => 'C'
+    _       => 'F'
 }
->> grado ¶    // → B
+>> beetaan ¶    // → B
 
-// Match t'aan
-chak = "chak"
-código = ?? chak {
-    "chak" : "#FF0000"
-    "ya'x" : "#00FF00"
-    _      : "#000000"
+// tziib
+tsukul = "Seel"
+meentaan = ?? tsukul {
+    "Seel"   => "#FF0000"
+    "Yax" => "#00FF00"
+    _       => "#000000"
 }
 
-// Match wáa (tuláakal taamil)
-k'áak' = -5
-estado = ?? k'áak' {
-    _? k'áak' < 0  : "sak"
-    _? k'áak' < 20 : "síis"
-    _? k'áak' < 35 : "le'ek"
-    _              : "k'áak'"
+// tsol bey tseeltik
+choko = -5
+tuux = ?? choko {
+    < 0  => "Seel"
+    < 20 => "Xib"
+    < 35 => "Choko"
+    _    => "Tabi"
 }
->> estado ¶    // → sak
+>> tuux ¶    // → Seel
 
-// Match bloque
+// bey tsikbal (bey xook)
+n = -3
 ?? n {
-    0       : { >> "ma'" ¶ }
-    _? n < 0: { >> "chan" ¶ }
-    _       : { >> "nojoch" ¶ }
+    0    => { >> "Mix" ¶ }
+    < 0  => { >> "Maat" ¶ }
+    _    => { >> "Maalo" ¶ }
 }
 ```
 
 ---
 
-## Chuuyil
+## Hochpahal
 
 ```zymbol
-@ i:0..4  { >> i " " }        // xook chuuyil:  0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // xook xookol:   1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // xook noj:      5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // tsol xook:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // yéetel yaan:         1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // ka'a bej:           5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶                        // → 128  (peve)
+>> n ¶                        // → 128  (ka'a hochpahal)
 
-ixi'im = ["nal", "box", "k'aan nal"]
-@ f:ixi'im { >> f ¶ }         // tuláakal ba'al
+janal = ["Ixim", "Chico", "Uts"]
+@ f:janal { >> f ¶ }         // tu tsoolil
 
-@ c:"kaaj" { >> c "-" }
->> ¶                          // → k-a-a-j-
+@ c:"Bix" { >> c "-" }
+>> ¶                          // → B-i-x-  (tu tziib)
 
 @ i:1..10 {
-    ? i % 2 == 0 { @> }       // @> xíimbal
-    ? i > 7 { @! }             // @! ts'o'ok
+    ? i % 2 == 0 { @> }       // @> ka'a bin
+    ? i > 7 { @! }             // @! kaaj
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
 
-// Chuuyil darasuum
+// hochpahal mix kaaj
 i = 0
 @ {
     i++
@@ -214,407 +282,416 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Chuuyil k'aaba' (ts'o'ok naasad)
-count = 0
-@ @outer {
-    count++
-    ? count >= 3 { @! outer }
+// tsol kaab hochpahal (bisik kaaj)
+yalak = 0
+@:waye {
+    yalak++
+    ? yalak >= 3 { @:waye! }
 }
->> count ¶                    // → 3
+>> yalak ¶                    // → 3
 ```
 
 ---
 
-## Tsibtik
+## Bey Xook
 
 ```zymbol
-k'áatik(a, b) { <~ a + b }
->> k'áatik(3, 4) ¶    // → 7
+suutu(a, b) { <~ a + b }
+>> suutu(3, 4) ¶    // → 7
 
-factorial(n) {
+factoriaal(n) {
     ? n <= 1 { <~ 1 }
-    <~ n * factorial(n - 1)
+    <~ n * factoriaal(n - 1)
 }
->> factorial(5) ¶    // → 120
+>> factoriaal(5) ¶    // → 120
 ```
 
-Función **ma' u yilaj hool k'aaba'** — ma' páajtal u yilaj k'aaba' hool. Hut'unn `<~` k'aaba' tzikbal:
+Bey xook ku k'aabtik — ma' ku kaajil ti' laak tsool. Ti' `<~` ku bin:
 
 ```zymbol
-swap(a<~, b<~) {
-    tmp = a
+bisik(a<~, b<~) {
+    chukaan = a
     a = b
-    b = tmp
+    b = chukaan
 }
 x = 10
 y = 20
-swap(x, y)
+bisik(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> **Noj tzikbal**: Función `k'aaba'(params){ }` ma' ba'al.
-> Ti' argumento: `x -> k'aaba'(x)`.
+> Bey xook **first-class** — ku bin: `tsool$> kaap`. Waye: `x -> fn(x)` ku bin.
 
 ---
 
-## Lambda yéetel Closure
+## Lambdas yéetel Tseeltik
 
 ```zymbol
-ka'p'éel = x -> x * 2
-k'áatik = (a, b) -> a + b
->> ka'p'éel(5) ¶    // → 10
->> k'áatik(3, 7) ¶  // → 10
+kaap = x -> x * 2
+suutu = (a, b) -> a + b
+>> kaap(5) ¶    // → 10
+>> suutu(3, 7) ¶    // → 10
 
-// Lambda bloque
-tsibtik = x -> {
-    ? x > 0 { <~ "nojoch" }
-    _? x < 0 { <~ "chan" }
-    <~ "ma'"
+// bey xook tsikbal
+tsoolte = x -> {
+    ? x > 0 { <~ "Maalo" }
+    _? x < 0 { <~ "Maat" }
+    <~ "Mix"
 }
 
-// Closure — lambda u tzikbal hool
+// tseeltik — ku kaajil ti'
 factor = 3
-óox = x -> x * factor
->> óox(7) ¶    // → 21
+oxte = x -> x * factor
+>> oxte(7) ¶    // → 21
 
-// Función u beeta función
-make_adder(n) { <~ x -> x + n }
-add10 = make_adder(10)
->> add10(5) ¶    // → 15
+// bey xook
+okol(n) { <~ x -> x + n }
+suutu10 = okol(10)
+>> suutu10(5) ¶    // → 15
 
-// Lambda ba'al: tzikbal ichil
-ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[2](5) ¶    // → 25
+// ti' tsoolil
+tsoolop = [x -> x+1, x -> x*2, x -> x*x]
+>> tsoolop[3](5) ¶    // → 25
 ```
 
 ---
 
-## Tzikbal
+## Tsoolil
 
-Arrays are **mutable** and hold elements of the **same type**. _(Tzikbal **páajtal u cháajil** yéetel u tzikbal **bey kex chuuyil**.)_
+Tsoolil **ku kaab** yéetel ku kaajil tsol **ka'a tsol**.
 
 ```zymbol
-arr = [1, 2, 3, 4, 5]
+tsoolil = [1, 2, 3, 4, 5]
 
-arr[0]          // 1 — u yilaj (0-base)
-arr[-1]         // 5 — xook noj (ts'o'ok)
-arr$#           // 5 — xook (paréntesis k'abeet >>)
+x = tsoolil[1]      // 1 — ku kaajil (1-yaalil: cha'a)
+x = tsoolil[-1]     // 5 — tsol kaab (u kaajil)
+x = tsoolil$#       // 5 — yaalil (ti' (tsoolil$#) tu >>)
 
-arr = arr$+ 6            // ts'aak → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // ts'aak ti' índice 2
-arr3 = arr$- 3           // kíinsik jun chuuyil
-arr4 = arr$-- 3          // kíinsik tuláakal
-arr5 = arr$-[0]          // kíinsik ti' índice
-arr6 = arr$-[1..3]       // kíinsik rango (nayc chuuyil)
+tsoolil = tsoolil$+ 6            // ku kaab → [1,2,3,4,5,6]
+arr2 = tsoolil$+[2] 99       // ti' yaalil 2 (1-yaalil)
+arr3 = tsoolil$- 3           // ku bisik ka'a ka'a
+arr4 = tsoolil$-- 3          // ku bisik bejlae
+arr5 = tsoolil$-[1]          // ku bisik yaalil 1
+arr6 = tsoolil$-[2..3]       // ku bisik tsol
 
-has = arr$? 3            // #1 — yaan
-pos = arr$?? 3           // [2] — tuláakal índice
-sl = arr$[0..3]          // [1,2,3] — chuuyil (nayc chuuyil)
-sl2 = arr$[0:3]          // [1,2,3] — xook chuuyil
+uchul = tsoolil$? 3            // #1 — ti'
+naats = tsoolil$?? 3           // [3] — bejlae yaalil (1-yaalil)
+tsoolbis = tsoolil$[1..3]          // [1,2,3]
+tsoolbis2 = tsoolil$[1:3]          // [1,2,3]
 
-asc = arr$^+             // gai'tayl jate (naas solus)
-desc = arr$^-            // gai'tayl nayc (naas solus)
+naats_bin = tsoolil$^+             // ku tsool (xook)
+keban_bin = tsoolil$^-            // ku tsool (tsol)
 
-// Tupla tzikbal — hut'unn $^ yéetel lambda
-db = [(k'aaba': "Carla", ja'ab: 28), (k'aaba': "Ana", ja'ab: 25), (k'aaba': "Bob", ja'ab: 30)]
-by_ja'ab  = db$^ (a, b -> a.ja'ab < b.ja'ab)
-by_k'aaba' = db$^ (a, b -> a.k'aaba' > b.k'aaba')
->> by_ja'ab[0].k'aaba' ¶     // → Ana
->> by_k'aaba'[0].k'aaba' ¶   // → Carla
+// ka'a kaab tsoolil — $^ yéetel tseeltik
+meentaan = [(kaab: "Yax", tsol: 28), (kaab: "Ik", tsol: 25), (kaab: "Sak", tsol: 30)]
+kin_tsool  = meentaan$^ (a, b -> a.tsol < b.tsol)    // ku tsool tsol  (<)
+kaab_tsool = meentaan$^ (a, b -> a.kaab > b.kaab)  // ku tsool kaab (>)
+>> kin_tsool[1].kaab ¶     // → Ik
+>> kaab_tsool[1].kaab ¶    // → Yax
 
-// U cháajil ba'al (tzikbal cha'an)
-arr[1] = 99              // ba'al tikrakuq (ts'aak)
-arr[0] += 5              // noj ts'aak: +=  -=  *=  /=  %=  ^=
+// ku bis xook (tsoolil bey)
+tsoolil[1] = 99              // ku kaab
+tsoolil[2] += 5              // ka'a bey: +=  -=  *=  /=  %=  ^=
 
-// Ba'al yáanal — bora tzikbal ku yúuchul; nayc ma' cháajil
-arr2 = arr[1]$~ 99
+// ku bis xook — ku ookol bey; ma' ku bis
+arr2 = tsoolil[2]$~ 99
 ```
 
-> `$+`, `$-`, `$[..]` u ts'o'okol **tzikbal yáanal** — ts'aak: `arr = arr$+ 4`.
-> Ma' tz'aab — ka'p'éel tz'iibil.
-> `$^+` / `$^-` gai'tayl **naas solus**. Tupla tzikbal — hut'unn `$^` yéetel lambda.
+> Ka'a bey tsikbal ku ookol **bejlae tsoolil**.
+> `$+` ku tsoolte: `tsoolil = tsoolil$+ 5$+ 6$+ 7`.
+> **1-yaalil**: `tsoolil[1]` cha'a; `tsoolil[0]` k'as.
+> `$^+` / `$^-` tsol xook. Ka'akaab ti' `$^` yéetel tseeltik.
 
-**Ba'al chuuyil** — ts'aak tzikbal ti' k'aaba' yáanal ku beet bora tzikbal ku ts'o'okol:
+**Tsol kaab** — ku tsoolte ka'a tsoolil yéetel ka'a kaab ku ookol bejlae:
 
 ```zymbol
 a = [1, 2, 3]
 b = a
-a[0] = 99
+a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b ma' u cháajil
+>> b ¶    // → [1, 2, 3]   ← b ma' ku bis
 ```
 
 ```zymbol
-// Tzikbal naasad
-matrix = [[1,2,3],[4,5,6],[7,8,9]]
->> matrix[1][2] ¶    // → 6
-```
-
----
-
-## Splittini
-
-```zymbol
-// Tzikbal
-arr = [10, 20, 30, 40, 50]
-[a, b, c] = arr              // a=10  b=20  c=30
-[first, *rest] = arr         // first=10  rest=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ ma' k'abeet
-
-// Tupla chuuyil
-point = (100, 200)
-(px, py) = point             // px=100  py=200
-
-// Tupla k'aaba'
-person = (k'aaba': "Ana", ja'ab: 25, city: "Mérida")
-(k'aaba': n, ja'ab: a) = person   // n="Ana"  a=25
+// ka'a tsoolil (1-yaalil)
+patal = [[1,2,3],[4,5,6],[7,8,9]]
+>> patal[2][3] ¶    // → 6  (tsol 2, kaab 3)
 ```
 
 ---
 
-## Tupla
-
-Tuples are **immutable** ordered containers that can hold values of **different types**. Unlike arrays, elements cannot be changed after creation. _(Tupla **ma' páajtal u cháajil** — u tzikbal **bey kex chuuyil**. Tzikbal bey ma', ba'al ma' páajtal u cháajil ts'o'ok u ts'aak.)_
+## Bisaal
 
 ```zymbol
-// Chuuyil
-point = (10, 20)
->> point[0] ¶    // → 10
+// tsoolil
+tsoolil = [10, 20, 30, 40, 50]
+[a, b, c] = tsoolil              // a=10  b=20  c=30
+[naats, *laak] = tsoolil         // naats=10  laak=[20,30,40,50]
+[x, _, z] = [1, 2, 3]        // _ ku bisik
 
-ba'alche' = (42, "ba'ax ka wa'alik", #1, 3.14)
->> ba'alche'[2] ¶     // → #1
+// yaalil ka'akaab
+kamas = (100, 200)
+(px, py) = kamas             // px=100  py=200
 
-// K'aaba'
-winik = (k'aaba': "Alice", ja'ab: 25)
->> winik.k'aaba' ¶    // → Alice
->> winik[0] ¶         // → Alice  (xook xan páajtal)
-
-// Naasad
-pos = (x: 10, y: 20)
-p = (pos: pos, label: "kaaj")
->> p.pos.x ¶        // → 10
+// kaab ka'akaab
+winik = (kaab: "Ik", tsol: 25, bejlae: "Chichen")
+(kaab: n, tsol: a) = winik   // n="Ik"  a=25
 ```
 
-**Ma' páajtal u cháajil** — ken bix u ts'aak tupla ba'al ku beet chaambel:
+---
+
+## Ka'akaab
+
+Ka'akaab **ma' ku bis** ku kaajil tsol **ka'a xook tziib**.
+Ma' tsoolil, ma' ku bis.
+
+```zymbol
+// yaalil — ka'a tsol ku bin
+kamas = (10, 20)
+>> kamas[1] ¶    // → 10
+
+meentaan = (42, "Bix", #1, 3.14)
+>> meentaan[3] ¶     // → #1
+
+// kaab
+winik = (kaab: "Sak", tsol: 25)
+>> winik.kaab ¶    // → Sak
+>> winik[1] ¶      // → Sak  (ku bin, 1-yaalil)
+
+// ka'a tsol
+kamas2 = (x: 10, y: 20)
+p = (kamas2: kamas2, kaab: "Chichen")
+>> p.kamas2.x ¶        // → 10
+```
+
+**Ma' ku bis** — ku tsoolte ka'akaab k'as:
 
 ```zymbol
 t = (10, 20, 30)
-// t[0] = 99    // ❌ chaambel: tupla ma' páajtal u cháajil
-// t[0] += 5    // ❌ bey kex chaambel
+// t[1] = 99    // ❌ k'as: ka'akaab ma' ku bis
+// t[1] += 5    // ❌ k'as waye
 ```
 
-Ti' u ts'o'okol ba'al cháajil apaykachaña `$~` (ba'al yáanal) — ku bisik **bora** tupla:
+Ti' `$~` (ku bin) — ku ookol **bejlae** ka'akaab:
 
 ```zymbol
 t = (10, 20, 30)
-t2 = t[1]$~ 999
->> t ¶     // → (10, 20, 30)   ← nayc ma' cháajil
+t2 = t[2]$~ 999
+>> t ¶     // → (10, 20, 30)   ← ma' ku bis
 >> t2 ¶    // → (10, 999, 30)
 
-// Tupla k'aaba' — bora ts'aak
-winik = (k'aaba': "Alice", ja'ab: 25)
-winik2 = (k'aaba': winik.k'aaba', ja'ab: 26)
->> winik.ja'ab ¶    // → 25
->> winik2.ja'ab ¶   // → 26
+// kaab ka'akaab — ku ka'a xook
+winik = (kaab: "Sak", tsol: 25)
+nohoch  = (kaab: winik.kaab, tsol: 26)
+>> winik.tsol ¶    // → 25
+>> nohoch.tsol ¶     // → 26
 ```
 
 ---
 
-## Noj Función
-
-> HOF señal k'abeet **lambda inline** — ma' variable lambda.
+## Nohoch Bey Xook
 
 ```zymbol
-nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+akihtasona = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-ka'p'eelil = nums$> (x -> x * 2)                // map → [2,4,6…20]
-ka'p'eelob = nums$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
-tuláakal   = nums$< (0, (acc, x) -> acc + x)     // reduce → 55
+kaapt  = akihtasona$> (x -> x * 2)                // ku bis  → [2,4,6…20]
+nisowatam   = akihtasona$| (x -> x % 2 == 0)           // ku tseeltik → [2,4,6,8,10]
+kaachi    = akihtasona$< (0, (acc, x) -> acc + x)     // ku tsol → 55
 
-// Tracyn mhi'ade
-step1 = nums$| (x -> x > 3)
+// ku tsoolte
+step1 = akihtasona$| (x -> x > 3)
 step2 = step1$> (x -> x * x)
 >> step2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Función naasad — bora lambda
-k'áatik2(x) { <~ x * 2 }
-r = nums$> (x -> k'áatik2(x))    // ✅
+// bey xook ku bin ti' HOF
+kaap(x) { <~ x * 2 }
+nohoch(x) { <~ x > 5 }
+r = akihtasona$> kaap       // ✅ ku bin
+r = akihtasona$| nohoch          // ✅ ku bin
 ```
 
 ---
 
-## Pipo Operatoru
+## Bin Yookol Bey
 
-Ibac chuuyil k'abeet `_` meg'haat tzikbal:
+Ku k'aabtik `_` bey tsikbal:
 
 ```zymbol
-ka'p'éel = x -> x * 2
-k'áatik = (a, b) -> a + b
-inc = x -> x + 1
+kaap = x -> x * 2
+suutu = (a, b) -> a + b
+yaan = x -> x + 1
 
-5 |> ka'p'éel(_)        // → 10
-10 |> k'áatik(_, 5)     // → 15
-5 |> k'áatik(2, _)      // → 7
+r1 = 5 |> kaap(_)        // → 10
+r2 = 10 |> suutu(_, 5)       // → 15
+r3 = 5 |> suutu(2, _)        // → 7
 
-// Naasad
-r = 5 |> ka'p'éel(_) |> inc(_) |> ka'p'éel(_)
+// ku tsoolte
+r = 5 |> kaap(_) |> yaan(_) |> kaap(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## Chaambel Beetik
+## Xook Meenel
 
 ```zymbol
 !? {
     x = 10 / 0
 } :! ##Div {
-    >> "xook ma' páajtal" ¶
+    >> "Division tu mix" ¶
 } :! {
-    >> "hool chaambel: " _err ¶    // _err chuuyil chaambel
+    >> "Laak: " _err ¶    // _err ku kaajil k'as
 } :> {
-    >> "tuláakal ku beetik" ¶
+    >> "Siempre bin" ¶
 }
 ```
 
-| Chuuyil     | Tu' ku yúuchul            |
-|-------------|--------------------------|
-| `##Div`     | Xook ma' páajtal          |
-| `##IO`      | Tzikbal / sistema         |
-| `##Index`   | Xook ma'alob              |
-| `##Type`    | Chuuyil chaambel          |
-| `##Parse`   | Parsing                   |
-| `##Network` | Red chaambel              |
-| `##_`       | Tuláakal chaambel         |
+| Xook | Tun |
+|------|------|
+| `##Div` | Division tu mix |
+| `##IO` | Tziib / tsikbal |
+| `##Index` | Yaalil k'as |
+| `##Type` | Xook k'as |
+| `##Parse` | Ka'a xook |
+| `##Network` | Ka'anal k'as |
+| `##_` | Bejlae k'as (catch-all) |
 
 ---
 
-## Módulo
+## Bejlae Tsoolil
 
 ```zymbol
-// lib/calc.zy
-# calc
+// lib/tsol.zy — tsoolil bey tsikbal
+# tsol {
+    #> { suutu, mamo_PI }
 
-#> { k'áatik, get_PI }    // ÑAWPAQ definiciones
-
-_PI := 3.14159
-k'áatik(a, b) { <~ a + b }
-get_PI() { <~ _PI }
+    _PI := 3.14159
+    suutu(a, b) { <~ a + b }
+    mamo_PI() { <~ _PI }
+}
 ```
 
 ```zymbol
-// main.zy
-<# ./lib/calc <= c    // alias k'abeet
+// kaajil.zy
+<# ./lib/tsol => c    // ka'a tsikbal
 
->> c::k'áatik(5, 3) ¶  // → 8
-pi = c::get_PI()
->> pi ¶                // → 3.14159
+>> c::suutu(5, 3) ¶     // → 8
+pi = c::mamo_PI()
+>> pi ¶               // → 3.14159
 ```
 
 ```zymbol
-// Nob k'aaba' naas
-# mylib
-#> { _ibac_k'áatik <= ibac }
+// ku ookol ka'a kaab
+# laaktsoolil {
+    #> { _xibsuutu => kaachi }
 
-_ibac_k'áatik(a, b) { <~ a + b }
+    _xibsuutu(a, b) { <~ a + b }
+}
 ```
 
 ```zymbol
-<# ./mylib <= m
+<# ./laaktsoolil => m
 
->> m::ibac(3, 4) ¶    // → 7
+>> m::kaachi(3, 4) ¶    // → 7  (ku bisik _xibsuutu)
 ```
+
+> **Tsoolil bey**: `#>`, bey xook, yéetel tsool kaabal ti' `# kaab { }`. Tsikbal (`>>`, `<<`, hochpahal, etc.) E013 k'as.
 
 ---
 
-## Xook Operatoru
+## Tsol Xook Tziib
 
-Zymbol u bisik xook ichil **Unicode xook tz'íib 69** — Devanagari, Árabe-India, Tailandés, Klingon pIqaD, Matemáticas, LCD. U kúuchil aktibo ku páajtal ti' bix u `>>`; xook ku beel binary.
+Zymbol ku ookol xook ti' **69 Unicode** — Devanagari, Arabic-Indic, Thai, Maya, yéetel laak. Ku bin `>>` bey; arithmetic ASCII.
 
-### U chíikpajal tz'íib
+### Paktik Tsol Xook
 
-Ts'íib xook `0` yéetel `9` ichil `#…#`:
+Ku tziib `0` yéetel `9` ti' `#…#`:
 
 ```zymbol
-#०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // Árabe-India   (U+0660–U+0669)
-#๐๙#    // Tailandés     (U+0E50–U+0E59)
-#09#    // ASCII-e bisik
+#𝋠𝋩#    // Maya Numerals  (U+1D2E0–U+1D2F3)
+#٠٩#    // Arabic-Indic (U+0660–U+0669)
+#๐๙#    // Thai         (U+0E50–U+0E59)
+#09#    // ku kuchul ASCII
 ```
 
-### Bix u yilik ka' boolean
+### Ookol yéetel Tsol Kaab
 
 ```zymbol
+#𝋠𝋩#
 x = 42
->> x ¶          // → 42
+>> x ¶          // → 𝋤𝋢   (modo maya activo)
+>> 3.14 ¶       // → 𝋣.𝋡𝋤   (punto decimal ASCII siempre)
 
-#०९#
->> x ¶          // → ४२
->> 3.14 ¶       // → ३.१४
->> 1 + 2 ¶      // → ३
+#09#
+>> x ¶          // → 42   (ASCII yéetel)
 
-// Boolean: # ASCII, xook ku beel
->> #1 ¶         // → #१
->> #0 ¶         // → #०
+// Bool: # ASCII siempre, xook ku p'áatal
+>> #1 ¶         // → #𝋡   (jaajil ti' Maya)
+>> #0 ¶         // → #𝋠   (ma'atech — ma' ti' 𝋠 entero cero)
 
 x = 28 > 4
->> x ¶          // → #१
+>> x ¶          // → #𝋡   (resultado comparación ku bin ti' modo)
 ```
 
-### Xook asli ichil código
+### Tziib Tsol Xook Ti Kaan
 
-Xook ku páajtal literal — rango, modulo:
+Ka'a xook ku bin — ti' tsol, modulo, tseeltik:
 
 ```zymbol
-#०९#
+#𝋠𝋩#
 
-@ i:१..१५ {
-    ? i % १५ == ० { >> "FizzBuzz" ¶ }
-    _? i % ३  == ० { >> "Fizz" ¶ }
-    _? i % ५  == ० { >> "Buzz" ¶ }
+@ i:𝋡..𝋯 {
+    ? i % 𝋯 == 𝋠 { >> "FizzBuzz" ¶ }
+    _? i % 𝋣  == 𝋠 { >> "Fizz" ¶ }
+    _? i % 𝋥  == 𝋠 { >> "Buzz" ¶ }
     _ { >> i ¶ }
 }
 ```
 
-### Boolean literal ichil tz'íib
+### Tsol Kaab Ti Bejlae Tsol Xook
 
-`#` + xook `0` waa `1` bloc boolean:
+`#` + xook `0` waye `1` ti' bejlae tsol ku bin:
 
 ```zymbol
-#٠٩#
-نشط = #١
->> نشط ¶        // → #١
->> (#١ && #٠) ¶ // → #٠
+#𝋠𝋩#
+kiimil = #𝋡        // same as #1
+>> kiimil ¶        // → #𝋡
+>> (#𝋡 && #𝋠) ¶ // → #𝋠
 ```
 
-> `#` **ASCII**. `#0` (mina'an) xook `0` (p'aat) ku séeb.
+> `#` **ASCII**. `#0` (false) ma' `0` (xook mix) ti' bejlae tsol.
 
 ---
 
-## Datinu Operatoru
+## Tsol Bey
 
 ```zymbol
-// Bora xook naas t'aan
-v1 = #|"42"|      // → 42  (Xook)
-v2 = #|"3.14"|    // → 3.14  (Chiru xook)
-v3 = #|"abc"|     // → "abc"  (ma' chaambel)
+// ku bis xook tziib
+f = ##.42         // → 42.0  (ti' Float)
+i = ###3.7        // → 4     (ti' Int, tsol)
+t = ##!3.7        // → 3     (ti' Int, bisik)
 
-// Tracyn / kíinsik
+// ku tziib xook
+v1 = #|"42"|      // → 42  (Int)
+v2 = #|"3.14"|    // → 3.14  (Float)
+v3 = #|"abc"|     // → "abc"  (mix k'as)
+
+// tsol / bisik
 pi = 3.14159265
-r2 = #.2|pi|      // → 3.14
+r2 = #.2|pi|      // → 3.14  (tsol 2)
 r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14  (kíinsik)
+t2 = #!2|pi|      // → 3.14  (bisik)
 
-// Gai'tayl xook
-fmt = #,|1234567|      // → 1,234,567
-sci = #^|12345.678|    // → 1.2345678e4
+// tziib xook
+itwewin = #,|1234567|  // → 1,234,567
+akihtasiskahkew = #^|12345.678|    // → 1.2345678e4
 
-// Naas xook
+// bey tsol
 a = 0x41         // → 'A'  (hex)
 b = 0b01000001   // → 'A'  (binary)
 c = 0o101        // → 'A'  (octal)
 
-// Bora naas
+// ku ookol bey tsol
 hex = 0x|255|    // → "0x00FF"
 bin = 0b|65|     // → "0b1000001"
 oct = 0o|8|      // → "0o10"
@@ -623,111 +700,145 @@ dec = 0d|255|    // → "0d0255"
 
 ---
 
-## Shelli Integratinu
+## Ka'anal Bin
 
 ```zymbol
-date = <\ date +%Y-%m-%d \>     // chuuyil stdout (bal ts'o'ok línea)
->> "Bejla'e': " date
+kin = <\ date +%Y-%m-%d \>     // ku kaajil stdout (yéetel \n)
+>> "Bejlae: " kin
 
-tebec = "data.txt"
-content = <\ cat {tebec} \>     // bora hut'unn
+huun = "tipahinamowin.txt"
+tiich = <\ cat {huun} \>      // ku tziib xook
 
-output = </"./sub.zy"/>         // beetik zy tzikbal, chuuyil
->> output
+kuchul = </"./subscript.zy"/>   // ku bin Zymbol, ku kaajil
+>> kuchul
 ```
 
-> `><` chuuyil CLI k'aaba' jun t'aan tzikbal (jun chuuyil cha'an).
+> `><` ku kaajil CLI xook (tree-walker bey).
 
 ---
 
-## Tuláakal U Jela'anil: FizzBuzz
+## Yaanal Xook: FizzBuzz
 
 ```zymbol
-tsibtik(xook) {
-    ? xook % 15 == 0 { <~ "ChichTs'oots'" }
-    _? xook % 3  == 0 { <~ "Chich" }
-    _? xook % 5  == 0 { <~ "Ts'oots'" }
-    _ { <~ xook }
+tsoolte(akihtam) {
+    ? akihtam % 15 == 0 { <~ "FizzBuzz" }
+    _? akihtam % 3  == 0 { <~ "Fizz" }
+    _? akihtam % 5  == 0 { <~ "Buzz" }
+    _ { <~ akihtam }
 }
 
-@ i:1..20 { >> tsibtik(i) ¶ }
+@ i:1..20 { >> tsoolte(i) ¶ }
 ```
 
 ---
 
-## Síimbolo' Tzikbal
+## Bey Tziib
 
-| Símbolo | U beetik          | Símbolo      | U beetik           |
-|---------|-------------------|--------------|--------------------|
-| `=`     | k'aaba'           | `$#`         | xook               |
-| `:=`    | ma' tikrakuq      | `$+`         | ts'aak             |
-| `>>`    | páajtal           | `$+[i]`      | ts'aak ti' índice  |
-| `<<`    | cháanbal          | `$-`         | kíinsik jun        |
-| `¶`/`\\`| ts'o'ok línea     | `$--`        | kíinsik tuláakal   |
-| `?`     | jaaj              | `$-[i]`      | kíinsik índice     |
-| `_?`    | wáa               | `$-[i..j]`   | kíinsik rango      |
-| `_`     | ma' / tuláakal    | `$?`         | yaan               |
-| `??`    | match             | `$??`        | tuláakal índice    |
-| `@`     | chuuyil           | `$[s..e]`    | chuuyil            |
-| `@!`    | ts'o'ok           | `$>`         | map                |
-| `@>`    | xíimbal           | `$\|`        | filter             |
-| `->`    | lambda            | `$<`         | reduce             |
-| `arr[i] = val` | ba'al tikrakuq (tzikbal cha'an) | `arr[i] += val` | noj ts'aak |
-| `arr[i]$~` | ba'al yáanal (bora copia) | `$^+` | gai'tayl jate (naas solus) |
-| `$^-`   | gai'tayl nayc (naas solus) | `$^` | gai'tayl lambda   |
-| `<~`    | tz'ibik           | `!?`         | kaab               |
-| `\|>`   | pipe              | `:!`         | k'aak'al           |
-| `#1`    | jaaj              | `:>`         | tuláakal           |
-| `#0`    | ma'               | `$!`         | chaambel           |
-| `<#`    | cháanbal          | `$!!`        | chaambel hibira    |
-| `#`     | módulo            | `#>`         | páajtal            |
-| `::`    | módulo k'áatik    | `.`          | chuuyil yilaj      |
-| `#\|..\|`| bora xook        | `#?`         | chuuyil naas       |
-| `#.N\|..\|`| tracyn         | `#!N\|..\|`  | kíinsik            |
-| `#,\|..\|`| gai'tayl comma   | `#^\|..\|`    | científico         |
-| `#d0d9#` | u bisik xook kúuchil | `#09#` | ASCII-e bisik |
-| `<\ ..\>`| shell beetik     | `>\<`        | CLI k'aaba'        |
+| Bey | Tsikbal | Bey | Tsikbal |
+|--------|-----------|--------|-----------|
+| `=` | tsool | `$#` | yaalil |
+| `:=` | kaabal | `$+` | ku kaab |
+| `>>` | ookol | `$+[i]` | ti' yaalil (1-yaalil) |
+| `<<` | hochpahal | `$-` | ku bisik ka'a |
+| `¶` / `\` | ka'a k'iin | `$--` | ku bisik bejlae |
+| `?` | wa | `$-[i]` | ku bisik yaalil (1-yaalil) |
+| `_?` | waye ka | `$-[i..j]` | ku bisik tsol |
+| `_` | waye / bejlae | `$?` | ti' |
+| `??` | tseeltik | `$??` | bejlae yaalil (1-yaalil) |
+| `@` | hochpahal | `$[s..e]` | tsol (1-yaalil) |
+| `@ N { }` | hochpahal N tsol | `$>` | ku bis |
+| `@!` | kaaj | `$\|` | ku tseeltik |
+| `@>` | ka'a bin | `$<` | ku tsol |
+| `@:kaab { }` | tsol kaab hochpahal | `$/ delim` | ku tsoolte tziib |
+| `@:kaab!` | kaaj tsol kaab | `$++ a b c` | ku tsoolte |
+| `@:kaab>` | ka'a bin tsol kaab | `arr[i>j>k]` | tsol yaalil |
+| `->` | lambda | `arr[i] = val` | ku bis (tsoolil bey) |
+| `arr[i] += val` | ka'a bey ku bis | `arr[i]$~` | ku bis bey |
+| `$^+` | tsol naats (xook) | `$^-` | tsol keban (xook) |
+| `$^` | tsol yéetel tseeltik | `<~` | ku ookol |
+| `\|>` | bin yookol | `!?` | ku bin |
+| `:!` | ku kaajil k'as | `:>` | siempre ku bin |
+| `#1` | tsol true | `#0` | tsol false |
+| `$!` | k'as ti' | `$!!` | ku bis k'as |
+| `<#` | ku hochpahal | `#>` | ku ookol |
+| `#` | tsoolil kaab | `::` | tsoolil ku bin |
+| `.` | kaab ku bin | `#?` | xook tziib |
+| `#\|..\|` | ku tziib xook | `##.` | ti' Float |
+| `###` | ti' Int (tsol) | `##!` | ti' Int (bisik) |
+| `#.N\|..\|` | tsol | `#!N\|..\|` | bisik |
+| `#,\|..\|` | tziib xook | `#^\|..\|` | ka'anal xook |
+| `#d0d9#` | tsol xook tziib | `#09#` | ku kuchul ASCII |
+| `<\ ..\>` | ku bin kanal | `><` | CLI xook |
+| `\ var` | ku bisik tsool | `°x` / `x°` | ku kaajil tsool |
+| `>>\|` | TUI bey | `>>~` | ku bin xook |
+| `>>!` | ku bisik tziib | `>>?` | ku k'amik tsol tziib |
+| `<<\|` | ku kaajtik tsuul | `<<\|?` | ka'a bin tsuul |
+| `@~ N` | ku kaajtik N milliseconds | `$*` | ku tsoolte tziib N |
 
-## Taanil Versión
+---
 
-### v0.0.3 — Unicode Xook & LSP _(Abril 2026)_
+## Kaakabil Xook
 
-- **Ts'áab** Unicode bloc 69 token `#d0d9#`
-- **Ts'áab** Boolean literals — `#१` / `#०`, `#١` / `#٠`
-- **Ts'áab** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
-- **Ts'áab** VM opcode `SetNumeralMode` — tree-walker
-- **Ts'áab** REPL xook echo variable
-- **Bisik** `>>` boolean `#` (`#0` / `#1`)
+### v0.0.5 — TUI Bey, Ku Kaajil & Tziib Ku Tsoolte _(Ka'a Tsol 2026)_
 
-### v0.0.2_01 _(30 Mar 2026)_
+- **Ku bis** Match arm: `pattern : result` → `pattern => result`
+- **Ku bis** Import alias: `<# path <= alias` → `<# path => alias`
+- **Ku bis** Export rename: `#> { fn <= pub }` → `#> { fn => pub }`
+- **Ku kaab** TUI `>>| { }` — alternate screen + raw mode
+- **Ku kaab** `>>~ (row, col, BKS, fg, bg) > items`
+- **Ku kaab** `<<| var` (ku kaajtik) yéetel `<<|? var`
+- **Ku kaab** `>>!`, `>>?`, `@~ N`
+- **Ku kaab** `°x` / `x°`
+- **Ku kaab** Tziib ku tsoolte `str $* N`
+- **VM** Parity: 436/436
 
-- **Bisik** `c|..|` → `#,|..|` yéetel `e|..|` → `#^|..|`
-- **Ts'áab** Export alias
+### v0.0.4 — 1-Yaalil, First-Class Bey Xook & Tsoolil Bey _(Ka'a Tsol 2026)_
 
-### v0.0.2 _(24 Mar 2026)_
+- **Ku bis** Bejlae 1-yaalil — `arr[1]` cha'a; `arr[0]` k'as
+- **Ku kaab** Bey xook **first-class** — `akihtasona$> kaap`
+- **Ku kaab** Tsoolil **block syntax**: `# kaab { ... }`
+- **Ku kaab** Ka'a tsol: `arr[i>j>k]`, `arr[p ; q]`
+- **Ku kaab** Ku bis: `##.expr` (Float), `###expr` (Int), `##!expr` (Int)
+- **Ku kaab** Tziib tsoolte: `str$/ delim`
+- **Ku kaab** Tsoolte: `base$++ a b c`
+- **Ku kaab** Times loop: `@ N { }`
+- **Ku kaab** Tsol kaab hochpahal: `@:kaab { }`, `@:kaab!`, `@:kaab>`
+- **Ku kaab** `_kaab` bey; `\ var` ku bisik
+- **Ku kaab** Tseeltik: `< 0 :`, `> 5 :`, `== 42 :`
+- **VM** 393/393
 
-- **Ts'áab** `$` arrays yéetel strings (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Ts'áab** Destructuring arrays, tuples
-- **Ts'áab** Índice mina'an (`arr[-1]`)
-- **Ts'áab** Instalador — Linux, macOS, Windows
+### v0.0.3 — Unicode Tsol Xook & LSP _(Ka'a Tsol 2026)_
+
+- **Ku kaab** 69 Unicode `#d0d9#`
+- **Ku kaab** Tsol kaab ti' bejlae — `#1` / `#0`
+- **Ku kaab** Klingon pIqaD (CSUR PUA U+F8F0–U+F8F9)
+- **Ku kaab** `SetNumeralMode` VM opcode
+- **Ku bis** Bool `>>` ti' `#` prefix (`#0` / `#1`)
+
+### v0.0.2_01 — Bey Tsikbal Ku Bis _(30 Mar 2026)_
+
+- **Ku bis** `c|..|` → `#,|..|` yéetel `e|..|` → `#^|..|`
+- **Ku kaab** Export alias
+
+### v0.0.2 — Tsoolil API Ku Bis & Kanal _(24 Mar 2026)_
+
+- **Ku kaab** `$` bey (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Ku kaab** Bisaal tsoolil, ka'akaab, kaab ka'akaab
+- **Ku kaab** Tsol keban (`arr[-1]`)
+- **Ku kaab** installers — Linux, macOS, Windows
 
 ### v0.0.1-patch _(25 Mar 2026)_
 
-- **Ts'áab** `^=`
+- **Ku kaab** Compound assignment `^=`
+- **Ku bis** Parser edge cases
 
-### v0.0.1 _(22 Mar 2026)_
+### v0.0.1 — Ka'a Bin _(22 Mar 2026)_
 
-- Tree-walker + register VM (`--vm`, ~4×, ~95%)
-- `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Tree-walker + register VM (`--vm`, ~4× nohoch, ~95% parity)
+- Ka'a bin: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Unicode identifiers, tsoolil, lambdas, closures, k'as tsikbal
 - REPL, LSP, VS Code, formatter (`zymbol fmt`)
 
 ---
 
-*Zymbol-Lang — Síimbolo'. Tuláakal. Ma' Tikrakuq.*
-
-> **Tzikbal:** Le tzíibil lelo' ku beetik yéetel ku ts'áaik inteligencia artificial (IA).
-> Tuun beetik ti' bix páajtal, bix Jump'éel t'aan wáa techapyrã ku yaan sa'atale'.
-> Le referencia chiqap: [Zymbol-Lang](https://github.com/zymbol-lang/interpreter).
->
-> **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
-> While every effort has been made to ensure accuracy, some translations or examples may contain errors.
+_Zymbol-Lang — Bey Tziib. Ti' Bejlae. Ma' Ku Bis._

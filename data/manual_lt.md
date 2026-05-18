@@ -1,31 +1,33 @@
-> **Pranešimas:** Ši dokumentacija buvo sukurta naudojant dirbtinio intelekto (DI) pagalbą.
->
+> **Įspėjimas:** Ši dokumentacija buvo sukurta ir išversta dirbtinio intelekto (DI).
+> 
 > **Disclaimer:** This documentation was created and translated by artificial intelligence (AI).
->
-> Kanoninė nuoroda yra **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** interpretatoriaus saugykloje.
+> 
+> The canonical reference is **[GUIDE.md](https://github.com/zymbol-lang/interpreter)** in the interpreter repository.
 
 ---
 
 # Zymbol-Lang Vadovas
 
-**Zymbol-Lang** yra simbolinė programavimo kalba. Nėra raktažodžių — viskas yra simbolis. Veikia vienodai bet kuria žmogaus kalba.
+> **Peržiūrėta v0.0.5 versijai — 2026-05-12**
+
+**Zymbol-Lang** yra simbolinė programavimo kalba. Be raktinių žodžių — viskas yra simbolis. Veikia vienodai bet kuria žmogaus kalba.
 
 - Nėra `if`, `while`, `return` — tik `?`, `@`, `<~`
-- Pilnas Unicode — identifikatoriai bet kuria kalba arba emodžiais
-- Nepriklausoma nuo žmogaus kalbos — kodas yra tas pats visur
+- Pilnas Unicode — identifikatoriai bet kuria kalba ar emodžiu
+- Neutrali žmogaus kalbos atžvilgiu — kodas yra vienodas visur
 
-**Interpretatoriaus versija**: v0.0.4 | **Testų aprėptis**: 393/393 (TW ↔ VM atitiktis)
+**Interpretatoriaus versija**: v0.0.5 | **Testų aprėptis**: 436/436 (TW ↔ VM paritetą)
 
 ---
 
 ## Kintamieji ir konstantos
 
 ```zymbol
-x = 10              // kintamas kintamasis
-PI := 3.14159       // konstanta — priskirti iš naujo yra vykdymo klaida
-vardas = "Alisė"
-aktyvus = #1        // Būlio tiesa
-👋 := "Sveiki"
+x = 10              // kintamasis
+PI := 3.14159       // konstanta — pakartotinis priskyrimas yra vykdymo laiko klaida
+vardas = "Alice"
+aktyvus = #1        // Bulio tiesa
+👋 := "Sveikas"
 ```
 
 ```zymbol
@@ -36,29 +38,43 @@ x *= 2    // 24
 x /= 3    // 8
 x %= 3    // 2
 x ^= 2    // 4
-x++       // 5
-x--       // 4
+x++        // 5
+x--        // 4
 ```
+
+`°` (laipsnio ženklas, U+00B0) automatiškai inicializuoja kintamąjį į neutralią reikšmę pirmojo naudojimo metu:
+
+```zymbol
+skaiciai = [3, 1, 4, 1, 5]
+@ n:skaiciai {
+    °viso += n    // auto-inicializacija iki 0 virš ciklo; išlieka po @
+}
+>> viso ¶         // → 14
+```
+
+> `°x` (priešdėlis) inkaro virš ciklo — rezultatas pasiekiamas po `@`.
+> `x°` (priesaga) inkaro ciklo viduje — dingsta, kai ciklas baigiasi.
+> Tik medžio perėjimui.
 
 ---
 
 ## Duomenų tipai
 
 | Tipas | Literalas | `#?` žymė | Pastabos |
-|-------|-----------|-----------|----------|
-| Sveikasis | `42`, `-7` | `###` | 64 bitų su ženklu |
-| Slankusis kablelis | `3.14`, `1.5e10` | `##.` | Mokslinis žymėjimas leidžiamas |
-| Eilutė | `"tekstas"` | `##"` | Interpoliacija: `"Sveiki {vardas}"` |
+|-------|---------|----------|---------|
+| Sveikas skaičius | `42`, `-7` | `###` | 64 bitų su ženklu |
+| Realusis skaičius | `3.14`, `1.5e10` | `##.` | Mokslinė notacija OK |
+| Eilutė | `"tekstas"` | `##"` | Interpoliavimas: `"Sveikas {vardas}"` |
 | Simbolis | `'A'` | `##'` | Vienas Unicode simbolis |
-| Būlio | `#1`, `#0` | `##?` | NĖRA skaitinis — `#1 ≠ 1` |
-| Masyvas | `[1, 2, 3]` | `##]` | Homogeniški elementai |
+| Bulio | `#1`, `#0` | `##?` | NE skaitinis — `#1 ≠ 1` |
+| Masyvas | `[1, 2, 3]` | `##]` | Homogeniniai elementai |
 | Kortežas | `(a, b)` | `##)` | Pozicinis |
 | Pavadintas kortežas | `(x: 1, y: 2)` | `##)` | Pavadinti laukai |
-| Funkcija | pavadinta funkcijos nuoroda | `##()` | Pirmos klasės; rodo `<funct/N>` |
-| Lambda | `x -> x * 2` | `##->` | Pirmos klasės; rodo `<lambd/N>` |
+| Funkcija | pavadintos funkcijos nuoroda | `##()` | Pirmosios klasės; rodinys `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Pirmosios klasės; rodinys `<lambd/N>` |
 
 ```zymbol
-// Tipo introspekcija — grąžina (tipas, skaitmenys, reikšmė)
+// Tipo introspektija — grąžina (tipas, skaitmenys, reikšmė)
 meta = 42#?
 >> meta ¶         // → (###, 2, 42)
 t = meta[1]
@@ -67,48 +83,78 @@ t = meta[1]
 
 ---
 
----
-
 ## Išvestis ir įvestis
 
 ```zymbol
->> "Sveiki" ¶                       // ¶ arba \\ aiškiam eilutės lūžiui
->> "a=" a " b=" b ¶                 // gretinimas — kelios reikšmės
->> (arr$#) ¶                        // postfikso operatoriams reikia ( ) >> viduje
+>> "Sveikas" ¶                      // ¶ arba \\ aiški eilutės pabaiga
+>> "a=" a " b=" b ¶                // gretinimas — kelios reikšmės
+>> (masyvas$#) ¶                   // postfikso operatoriai reikalauja ( ) >>
 
-<< vardas                           // skaityti į kintamąjį (be klausimo)
-<< "Įveskite vardą: " vardas        // su klausimu
+<< vardas                          // skaityti į kintamąjį (be raginimo)
+<< "Įveskite vardą: " vardas       // su raginimu
 ```
 
-> `¶` (AltGr+R ispaniškoje klaviatūroje) ir `\\` yra lygiaverčiai eilutės lūžiui.
+> `¶` (AltGr+R ispanų klaviatūroje) ir `\\` yra lygiavertės eilutės pabaigos.
+
+---
+
+## TUI primityvai
+
+Terminalo vartotojo sąsajos operatoriai interaktyvioms programoms. Dauguma reikalauja `>>| { }` bloko (alternatyvus ekranas + žalias režimas).
+
+```zymbol
+>>| {
+    >>!                             // išvalyti alternatyvų ekraną
+    >>~ (1, 1, 0, 10) > "Vykdoma"  // 1 eilutė, 1 stulpelis, fg=10 (žalia)
+    @~ 1000                         // pauzė 1 sekundė (1000 ms)
+    >>~ (2, 1) > "Atlikta."
+}
+// terminalas automatiškai atkuriamas išeinant
+```
+
+```zymbol
+// Klavišo paspaudimas ir terminalo dydis
+>>| {
+    [eilutes, stulpeliai] = >>?              // užklausti terminalo matmenis
+    >>~ (1, 1) > "Terminalas: " eilutes " x " stulpeliai
+    <<| klavisas                             // blokuojantis klavišo skaitymas
+    >>~ (2, 1) > "Paspausti: " klavisas
+}
+```
+
+> `>>!` išvalo ekraną. `>>?` grąžina `[eilutes, stulpeliai]`. `@~ N` miega N milisekundžių.
+> `<<|` skaito vieną klavišo paspaudimą (blokuojantis); `<<|?` apklausia neblokuodamas (grąžina `'\0'` jei nėra).
+> Pozicionuotos išvesties kortežas: `(eilute, stulpelis, BKS, fg, bg)` — bet kurią vietą galima praleisti kableliu (`>>~ (,,, 196) > "raudona"`).
+> BKS bitmaska: `1`=Paryškintas, `2`=Kursyvas, `4`=Pabrauktas. ANSI 256 spalvų paletė (`0`=terminalo numatytasis).
+> Tik medžio perėjimui (išskyrus `>>!`, `>>?`, `@~`, `>>~` kurie taip pat veikia `--vm`).
 
 ---
 
 ## Operatoriai
 
 ```zymbol
-// Aritmetika — naudokite priskyrimus; kai kurie operatoriai turi ypatybių tiesiogiai >> viduje
+// Aritmetika
 a = 10
 b = 3
 r1 = a + b    // 13
 r2 = a - b    // 7
 r3 = a * b    // 30
-r4 = a / b    // 3  (sveikųjų skaičių dalyba)
+r4 = a / b    // 3  (sveikas skaičių dalyba)
 r5 = a % b    // 1
 r6 = a ^ b    // 1000  (kėlimas laipsniu)
 
-// Palyginimas
-a == b    // #0    
-a <> b    // #1    
-a < b     // #0
-a <= b    // #0   
-a > b     // #1    
-a >= b    // #1
+// Palyginimas — priskirti patikrinimui
+l1 = a == b    // #0
+l2 = a <> b    // #1
+l3 = a < b     // #0
+l4 = a <= b    // #0
+l5 = a > b     // #1
+l6 = a >= b    // #1
 
-// Loginiai
-#1 && #0    // #0
-#1 || #0    // #1
-!#1         // #0
+// Loginė
+g1 = #1 && #0    // #0
+g2 = #1 || #0    // #1
+g3 = !#1         // #0
 ```
 
 ---
@@ -117,28 +163,29 @@ a >= b    // #1
 
 ```zymbol
 // Dvi sujungimo formos
-vardas = "Alisė"
+vardas = "Alice"
 n = 42
 
->> "Sveiki " vardas " jūs turite " n ¶       // gretinimas — >> viduje
-aprašas = "Sveiki {vardas}, jūs turite {n}"  // interpoliacija — bet kur
+>> "Sveikas " vardas " tu turi " n ¶    // gretinimas — >>
+aprasymas = "Sveikas {vardas}, tu turi {n}"  // interpoliavimas — bet kur
 ```
 
 ```zymbol
 s = "Sveikas Pasauli"
-ilgis = s$#                  // 14
-dalis = s$[1..6]             // "Sveika"  (1-bazė, pabaiga įskaitant)
+ilgis = s$#                  // 15
+dalis = s$[1..7]             // "Sveikas"  (1-pagrįstas, pabaiga įskaičiuota)
 yra = s$? "Pasauli"          // #1
-dalys = "a,b,c,d"$/ ','      // [a, b, c, d]  (skaidyti pagal skirtuką)
-pakeista = s$~~["s":"z"]     // "Sveikaz Pazauzi"
-pakeista1 = s$~~["s":"z":1]  // "Sveikas Pazauzi"  (tik pirmi N)
+dalys = "a,b,c,d"$/ ','      // [a, b, c, d]  (padalyti pagal skyriklį)
+pakeis = s$~~["a":"A"]       // "SveikoS PASAuli"
+pakeis1 = s$~~["a":"A":1]    // "SveikoS Pasauli"  (tik pirmieji N)
+linija = "─" $* 20           // "────────────────────"  (kartoti N kartų)
 ```
 
-> `+` yra tik skaičiams. Eilutėms naudokite `,`, gretinimą arba interpoliaciją.
+> `+` tik skaičiams. Naudokite `,`, gretinimą arba interpoliavimą eilutėms.
 
 ---
 
-## Valdymo srautas
+## Srauto valdymas
 
 ```zymbol
 x = 7
@@ -156,46 +203,47 @@ x = 7
 }
 ```
 
-> `{ }` riestiniai skliaustai yra **privalomi** net ir vienam sakiniui.
+> `{ }` riestiniai skliaustai **privalomi** net vienai instrukcijai.
 
 ---
 
-## Atitikimas (Match)
+## Atitikties tikrinimas
 
 ```zymbol
-// Intervalai
-taškai = 85
-pažymys = ?? taškai {
-    90..100 : 'A'
-    80..89  : 'B'
-    70..79  : 'C'
-    _       : 'F'
+// Diapazonai
+rezultatas = 85
+pazymys = ?? rezultatas {
+    90..100 => 'A'
+    80..89  => 'B'
+    70..79  => 'C'
+    _       => 'F'
 }
->> pažymys ¶    // → B
+>> pazymys ¶    // → B
 
 // Eilutės
 spalva = "raudona"
 kodas = ?? spalva {
-    "raudona" : "#FF0000"
-    "žalia"   : "#00FF00"
-    _         : "#000000"
+    "raudona" => "#FF0000"
+    "zalia"   => "#00FF00"
+    _         => "#000000"
 }
 
 // Palyginimo šablonai
-temp = -5
-būsena = ?? temp {
-    < 0  : "ledas"
-    < 20 : "šalta"
-    < 35 : "šilta"
-    _    : "karšta"
+temperatura = -5
+busena = ?? temperatura {
+    < 0  => "ledas"
+    < 20 => "salta"
+    < 35 => "silta"
+    _    => "karsta"
 }
->> būsena ¶    // → ledas
+>> busena ¶    // → ledas
 
-// Sakinio forma (blokai)
+// Instrukcijos forma (bloko šakos)
+n = -3
 ?? n {
-    0        : { >> "nulis" ¶ }
-    _? n < 0 : { >> "neigiamas" ¶ }
-    _        : { >> "teigiamas" ¶ }
+    0    => { >> "nulis" ¶ }
+    < 0  => { >> "neigiamas" ¶ }
+    _    => { >> "teigiamas" ¶ }
 }
 ```
 
@@ -204,23 +252,23 @@ būsena = ?? temp {
 ## Ciklai
 
 ```zymbol
-@ i:0..4  { >> i " " }        // intervalas įskaitant:  0 1 2 3 4
-@ i:1..9:2 { >> i " " }       // su žingsniu:          1 3 5 7 9
-@ i:5..0:1 { >> i " " }       // atvirkštinis:         5 4 3 2 1 0
+@ i:0..4  { >> i " " }        // diapazonas įskaičiuojant:  0 1 2 3 4
+@ i:1..9:2 { >> i " " }       // su žingsniu:               1 3 5 7 9
+@ i:5..0:1 { >> i " " }       // atvirkštinis:              5 4 3 2 1 0
 
 n = 1
 @ n <= 64 { n *= 2 }
->> n ¶                        // → 128  (kol)
+>> n ¶                        // → 128  (while)
 
-vaisiai = ["obuolys", "kriaušė", "vynuogė"]
-@ v:vaisiai { >> v ¶ }        // kiekvienam masyvo elementui
+vaisiai = ["obuolys", "kriause", "vynuoge"]
+@ v:vaisiai { >> v ¶ }        // for-each masyvas
 
-@ r:"labas" { >> r "-" }
->> ¶                          // → l-a-b-a-s-  (kiekvienam eilutės simboliui)
+@ s:"sveikas" { >> s "-" }
+>> ¶                          // → s-v-e-i-k-a-s-  (for-each eilutė)
 
 @ i:1..10 {
     ? i % 2 == 0 { @> }       // @> tęsti
-    ? i > 7 { @! }            // @! nutraukti
+    ? i > 7 { @! }             // @! nutraukti
     >> i " "
 }
 >> ¶                          // → 1 3 5 7
@@ -234,13 +282,13 @@ i = 0
 }
 >> ¶                          // → 1 2 3 4
 
-// Pažymėtas ciklas (įdėtas nutraukimas)
+// Pavadintas ciklas (įdėtas nutraukimas)
 skaitiklis = 0
-@:išorinis {
+@:isore {
     skaitiklis++
-    ? skaitiklis >= 3 { @:išorinis! }
+    ? skaitiklis >= 3 { @:isore! }
 }
->> skaitiklis ¶               // → 3
+>> skaitiklis ¶                    // → 3
 ```
 
 ---
@@ -248,23 +296,23 @@ skaitiklis = 0
 ## Funkcijos
 
 ```zymbol
-suma(a, b) { <~ a + b }
->> suma(3, 4) ¶    // → 7
+sudeti(a, b) { <~ a + b }
+>> sudeti(3, 4) ¶    // → 7
 
-faktorinė(n) {
+faktorialas(n) {
     ? n <= 1 { <~ 1 }
-    <~ n * faktorinė(n - 1)
+    <~ n * faktorialas(n - 1)
 }
->> faktorinė(5) ¶    // → 120
+>> faktorialas(5) ¶    // → 120
 ```
 
-Funkcijos turi **izoliuotą apimtį** — jos negali skaityti išorinių kintamųjų. Naudokite išvesties parametrus `<~`, kad pakeistumėte kvietėjo kintamuosius:
+Funkcijos turi **izoliuotą apimtį** — jos negali skaityti išorinių kintamųjų. Naudokite išvesties parametrus `<~`, kad pakeistumėte kviečiančio kodo kintamuosius:
 
 ```zymbol
 sukeisti(a<~, b<~) {
-    tmp = a
+    laikinas = a
     a = b
-    b = tmp
+    b = laikinas
 }
 x = 10
 y = 20
@@ -272,17 +320,17 @@ sukeisti(x, y)
 >> "x=" x " y=" y ¶    // → x=20 y=10
 ```
 
-> Pavadintos funkcijos yra **pirmos klasės reikšmės** — perduokite tiesiogiai: `nums$> dvigubinti`. Taip pat galioja `x -> fn(x)`.
+> Pavadintos funkcijos yra **pirmosios klasės reikšmės** — perduokite tiesiogiai: `skaiciai$> dvigubinti`. Apvyniojimui: `x -> fn(x)` taip pat galioja.
 
 ---
 
-## Lambdos ir uždarumai
+## Lambdos ir uždarymai
 
 ```zymbol
 dvigubinti = x -> x * 2
 suma = (a, b) -> a + b
->> dvigubinti(5) ¶   // → 10
->> suma(3, 7) ¶      // → 10
+>> dvigubinti(5) ¶    // → 10
+>> suma(3, 7) ¶       // → 10
 
 // Bloko lambda
 klasifikuoti = x -> {
@@ -291,68 +339,68 @@ klasifikuoti = x -> {
     <~ "nulis"
 }
 
-// Uždarumas — sugeria išorinę apimtį
-daugiklis = 3
-trigubinti = x -> x * daugiklis
->> trigubinti(7) ¶   // → 21
+// Uždarymas — fiksuoja išorinę apimtį
+koeficientas = 3
+trigubus = x -> x * koeficientas
+>> trigubus(7) ¶    // → 21
 
 // Gamykla
-sukurti_sumuotoją(n) { <~ x -> x + n }
-pridėti10 = sukurti_sumuotoją(10)
->> pridėti10(5) ¶    // → 15
+sukurti_sudetoja(n) { <~ x -> x + n }
+prideti10 = sukurti_sudetoja(10)
+>> prideti10(5) ¶    // → 15
 
 // Masyvuose
-ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[3](5) ¶       // → 25
+veiksmai = [x -> x+1, x -> x*2, x -> x*x]
+>> veiksmai[3](5) ¶    // → 25
 ```
 
 ---
 
 ## Masyvai
 
-Masyvai yra **kintami** ir turi **to paties tipo** elementus.
+Masyvai yra **kintami** ir laiko **to paties tipo** elementus.
 
 ```zymbol
-arr = [1, 2, 3, 4, 5]
+masyvas = [1, 2, 3, 4, 5]
 
-arr[1]          // 1 — prieiga (1-bazė: pirmasis elementas)
-arr[-1]         // 5 — neigiamas indeksas (paskutinis elementas)
-arr$#           // 5 — ilgis (naudokite (arr$#) >> viduje)
+x = masyvas[1]      // 1 — prieiga (1-pagrįstas: pirmasis elementas)
+x = masyvas[-1]     // 5 — neigiamas indeksas (paskutinis elementas)
+x = masyvas$#       // 5 — ilgis (naudoti (masyvas$#) >>)
 
-arr = arr$+ 6            // pridėti → [1,2,3,4,5,6]
-arr2 = arr$+[2] 99       // įterpti į 2 poziciją (1-bazė)
-arr3 = arr$- 3           // pašalinti pirmą reikšmės pasikartojimą
-arr4 = arr$-- 3          // pašalinti visus pasikartojimus
-arr5 = arr$-[1]          // pašalinti indekse 1 (pirmasis elementas)
-arr6 = arr$-[2..3]       // pašalinti intervalą (1-bazė, pabaiga įskaitant)
+masyvas = masyvas$+ 6            // pridėti → [1,2,3,4,5,6]
+masyvas2 = masyvas$+[2] 99       // įterpti į 2 poziciją (1-pagrįstas)
+masyvas3 = masyvas$- 3           // pašalinti pirmą reikšmės pasikartojimą
+masyvas4 = masyvas$-- 3          // pašalinti visus pasikartojimus
+masyvas5 = masyvas$-[1]          // pašalinti indekse 1 (pirmasis elementas)
+masyvas6 = masyvas$-[2..3]       // pašalinti diapazoną (1-pagrįstas, pabaiga įskaičiuota)
 
-yra = arr$? 3            // #1 — turi
-pozicijos = arr$?? 3     // [3] — visi reikšmės indeksai (1-bazė)
-gabalas = arr$[1..3]     // [1,2,3] — atkarpa (1-bazė, pabaiga įskaitant)
-gabalas2 = arr$[1:3]     // [1,2,3] — tas pats, kiekio sintaksė
+yra = masyvas$? 3            // #1 — yra
+poz = masyvas$?? 3           // [3] — visi reikšmės indeksai (1-pagrįstas)
+dalis = masyvas$[1..3]       // [1,2,3] — dalis (1-pagrįstas, pabaiga įskaičiuota)
+dalis2 = masyvas$[1:3]       // [1,2,3] — tas pats, skaičiumi pagrįsta sintaksė
 
-didėjantis = arr$^+      // rikiuoti didėjančiai (tik primityvai)
-mažėjantis = arr$^-      // rikiuoti mažėjančiai (tik primityvai)
+did = masyvas$^+             // rikiuota didėjančiai  (tik primityvai)
+mazej = masyvas$^-           // rikiuota mažėjančiai (tik primityvai)
 
-// Pavadintų/pozicinių kortežų masyvai — naudokite $^ su palyginimo lambda
-db = [(vardas: "Karla", amžius: 28), (vardas: "Ana", amžius: 25), (vardas: "Bobas", amžius: 30)]
-pagal_amžių   = db$^ (a, b -> a.amžius < b.amžius)    // didėjantis pagal amžių (<)
-pagal_vardą   = db$^ (a, b -> a.vardas > b.vardas)   // mažėjantis pagal vardą (>)
->> pagal_amžių[1].vardas ¶    // → Ana
->> pagal_vardą[1].vardas ¶    // → Karla
+// Pavadintos/pozicijos kortežų masyvai — naudoti $^ su lygintuvo lambda
+db = [(vardas: "Carla", amzius: 28), (vardas: "Ana", amzius: 25), (vardas: "Bob", amzius: 30)]
+pagal_amziu  = db$^ (a, b -> a.amzius < b.amzius)    // didėjantis pagal amžių  (<)
+pagal_varda = db$^ (a, b -> a.vardas > b.vardas)     // mažėjantis pagal vardą (>)
+>> pagal_amziu[1].vardas ¶     // → Ana
+>> pagal_varda[1].vardas ¶    // → Carla
 
-// Tiesioginė elemento atnaujinimas (tik masyvai)
-arr[1] = 99              // priskirti
-arr[2] += 5              // sudėtinis: +=  -=  *=  /=  %=  ^=
+// Tiesioginis elemento atnaujinimas (tik masyvai)
+masyvas[1] = 99              // priskirti
+masyvas[2] += 5              // sudėtinis: +=  -=  *=  /=  %=  ^=
 
 // Funkcinis atnaujinimas — grąžina naują masyvą; originalas nepakitęs
-arr2 = arr[2]$~ 99
+masyvas2 = masyvas[2]$~ 99
 ```
 
-> Visi rinkinių operatoriai grąžina **naują masyvą**. Priskirkite atgal: `arr = arr$+ 4`.
-> `$+` gali būti grandininis: `arr = arr$+ 5$+ 6$+ 7`. Kiti operatoriai naudoja tarpinius priskyrimus.
-> **Indeksavimas yra 1-bazė**: `arr[1]` yra pirmasis elementas; `arr[0]` yra vykdymo klaida.
-> `$^+` / `$^-` rikiuoja **primityvius masyvus** (skaičius, eilutes). Kortežų masyvams naudokite `$^` su palyginimo lambda — kryptis yra užkoduota lambdoje (`<` = didėjanti, `>` = mažėjanti).
+> Visi kolekcijų operatoriai grąžina **naują masyvą**. Priskirti atgal: `masyvas = masyvas$+ 4`.
+> `$+` galima sujungti grandinėle: `masyvas = masyvas$+ 5$+ 6$+ 7`. Kiti operatoriai naudoja tarpinius priskyrimus.
+> **Indeksavimas yra 1-pagrįstas**: `masyvas[1]` yra pirmasis elementas; `masyvas[0]` yra vykdymo laiko klaida.
+> `$^+` / `$^-` rikiuoja **primityvius masyvus** (skaičiai, eilutės). Kortežų masyvams naudoti `$^` su lygintuvo lambda — kryptis koduojama lambdoje (`<` = didėjantis, `>` = mažėjantis).
 
 **Reikšmės semantika** — masyvo priskyrimas kitam kintamajam sukuria nepriklausomą kopiją:
 
@@ -361,66 +409,66 @@ a = [1, 2, 3]
 b = a
 a[1] = 99
 >> a ¶    // → [99, 2, 3]
->> b ¶    // → [1, 2, 3]   ← b nėra paveiktas
+>> b ¶    // → [1, 2, 3]   ← b nepaveiktas
 ```
 
 ```zymbol
-// Įdėti masyvai (1-bazė indeksavimas)
+// Įdėtieji masyvai (1-pagrįstas indeksavimas)
 matrica = [[1,2,3],[4,5,6],[7,8,9]]
 >> matrica[2][3] ¶    // → 6  (2 eilutė, 3 stulpelis)
 ```
 
 ---
 
-## Destruktūrizavimas
+## Destruktūrizacija
 
 ```zymbol
 // Masyvas
-arr = [10, 20, 30, 40, 50]
-[a, b, c] = arr              // a=10  b=20  c=30
-[pirmas, *likę] = arr        // pirmas=10  likę=[20,30,40,50]
-[x, _, z] = [1, 2, 3]        // _ atmeta
+masyvas = [10, 20, 30, 40, 50]
+[a, b, c] = masyvas              // a=10  b=20  c=30
+[pirmas, *likusieji] = masyvas   // pirmas=10  likusieji=[20,30,40,50]
+[x, _, z] = [1, 2, 3]            // _ išmeta
 
 // Pozicinis kortežas
-taškas = (100, 200)
-(px, py) = taškas            // px=100  py=200
+taskas = (100, 200)
+(tx, ty) = taskas                // tx=100  ty=200
 
 // Pavadintas kortežas
-asmuo = (vardas: "Ana", amžius: 25, miestas: "Madridas")
-(vardas: v, amžius: a) = asmuo   // v="Ana"  a=25
+asmuo = (vardas: "Ana", amzius: 25, miestas: "Madridas")
+(vardas: n, amzius: a) = asmuo   // n="Ana"  a=25
 ```
 
 ---
 
 ## Kortežai
 
-Kortežai yra **nekintami** sutvarkyti konteineriai, kurie gali turėti **skirtingų tipų** reikšmes.
-Skirtingai nei masyvai, elementai negali būti pakeisti po sukūrimo.
+Kortežai yra **nekintami** surikiuoti konteineriai, galintys laikyti **skirtingų tipų** reikšmes.
+Skirtingai nuo masyvų, elementų negalima keisti po sukūrimo.
 
 ```zymbol
 // Pozicinis — mišrūs tipai leidžiami
-taškas = (10, 20)
->> taškas[1] ¶    // → 10
+taskas = (10, 20)
+>> taskas[1] ¶    // → 10
 
-duomenys = (42, "sveiki", #1, 3.14)
->> duomenys[3] ¶  // → #1
+duomenys = (42, "sveikas", #1, 3.14)
+>> duomenys[3] ¶     // → #1
 
 // Pavadintas
-asmuo = (vardas: "Alisė", amžius: 25)
->> asmuo.vardas ¶    // → Alisė
->> asmuo[1] ¶        // → Alisė  (indeksas taip pat veikia, 1-bazė)
+asmuo = (vardas: "Alice", amzius: 25)
+>> asmuo.vardas ¶    // → Alice
+>> asmuo[1] ¶        // → Alice  (indeksas taip pat veikia, 1-pagrįstas)
 
 // Įdėtas
 poz = (x: 10, y: 20)
-p = (poz: poz, etiketė: "pradžia")
->> p.poz.x ¶         // → 10
+p = (poz: poz, etikete: "kilme")
+>> p.poz.x ¶        // → 10
 ```
 
-**Nekintamumas** — bet koks bandymas pakeisti kortežo elementą yra vykdymo klaida:
+**Nekintamumas** — bet koks bandymas pakeisti kortežo elementą yra vykdymo laiko klaida:
 
 ```zymbol
 t = (10, 20, 30)
-// t[1] = 99    // ❌ vykdymo klaida: kortežai yra nekintami
+// t[1] = 99    // ❌ vykdymo laiko klaida: kortežai yra nekintami
 // t[1] += 5    // ❌ ta pati klaida
 ```
 
@@ -432,11 +480,11 @@ t2 = t[2]$~ 999
 >> t ¶     // → (10, 20, 30)   ← originalas nepakitęs
 >> t2 ¶    // → (10, 999, 30)
 
-// Pavadintas kortežas — sukurkite iš naujo aiškiai
-asmuo = (vardas: "Alisė", amžius: 25)
-vyresnis = (vardas: asmuo.vardas, amžius: 26)
->> asmuo.amžius ¶    // → 25
->> vyresnis.amžius ¶ // → 26
+// Pavadintas kortežas — atstatyti aiškiai
+asmuo = (vardas: "Alice", amzius: 25)
+vyresnis  = (vardas: asmuo.vardas, amzius: 26)
+>> asmuo.amzius ¶    // → 25
+>> vyresnis.amzius ¶ // → 26
 ```
 
 ---
@@ -444,47 +492,47 @@ vyresnis = (vardas: asmuo.vardas, amžius: 26)
 ## Aukštesnės eilės funkcijos
 
 ```zymbol
-skaičiai = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+skaiciai = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-dvigubi    = skaičiai$> (x -> x * 2)               // žemėlapis → [2,4,6…20]
-lyginiai   = skaičiai$| (x -> x % 2 == 0)          // filtras → [2,4,6,8,10]
-viso       = skaičiai$< (0, (acc, x) -> acc + x)   // redukcija → 55
+dvigubinta  = skaiciai$> (x -> x * 2)                // map  → [2,4,6…20]
+lyginiai    = skaiciai$| (x -> x % 2 == 0)           // filter → [2,4,6,8,10]
+viso        = skaiciai$< (0, (akum, x) -> akum + x)  // reduce → 55
 
-// Grandinė naudojant tarpinius veiksmus
-žingsnis1 = skaičiai$| (x -> x > 3)
-žingsnis2 = žingsnis1$> (x -> x * x)
->> žingsnis2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
+// Grandinė per tarpinius kintamuosius
+zingsnis1 = skaiciai$| (x -> x > 3)
+zingsnis2 = zingsnis1$> (x -> x * x)
+>> zingsnis2 ¶    // → [16, 25, 36, 49, 64, 81, 100]
 
-// Pavadintos funkcijos gali būti perduodamos tiesiogiai AEF
+// Pavadintos funkcijos gali būti tiesiogiai perduotos AEF
 dvigubinti(x) { <~ x * 2 }
 yra_didelis(x) { <~ x > 5 }
-r = skaičiai$> dvigubinti       // ✅ tiesioginė nuoroda
-r = skaičiai$| yra_didelis      // ✅ tiesioginė nuoroda
+r = skaiciai$> dvigubinti       // ✅ tiesioginė nuoroda
+r = skaiciai$| yra_didelis      // ✅ tiesioginė nuoroda
 ```
 
 ---
 
-## Pipe operatorius
+## Vamzdžio operatorius
 
-Dešinėje pusėje visada reikia `_` kaip vietos rezervavimo perduodamai reikšmei:
+Dešinioji pusė visada reikalauja `_` kaip vietos rezervo kanalizuotai reikšmei:
 
 ```zymbol
 dvigubinti = x -> x * 2
-suma = (a, b) -> a + b
-inc = x -> x + 1
+prideti = (a, b) -> a + b
+padidinti = x -> x + 1
 
-5 |> dvigubinti(_)        // → 10
-10 |> suma(_, 5)          // → 15
-5 |> suma(2, _)           // → 7
+r1 = 5 |> dvigubinti(_)        // → 10
+r2 = 10 |> prideti(_, 5)       // → 15
+r3 = 5 |> prideti(2, _)        // → 7
 
-// Grandininė
-r = 5 |> dvigubinti(_) |> inc(_) |> dvigubinti(_)
+// Grandinėje
+r = 5 |> dvigubinti(_) |> padidinti(_) |> dvigubinti(_)
 >> r ¶    // → 22  (5→10→11→22)
 ```
 
 ---
 
-## Klaidų valdymas
+## Klaidų tvarkymas
 
 ```zymbol
 !? {
@@ -492,7 +540,7 @@ r = 5 |> dvigubinti(_) |> inc(_) |> dvigubinti(_)
 } :! ##Div {
     >> "dalyba iš nulio" ¶
 } :! {
-    >> "kita klaida: " _err ¶    // _err turi klaidos pranešimą
+    >> "kita: " _err ¶    // _err laiko klaidos pranešimą
 } :> {
     >> "visada vykdoma" ¶
 }
@@ -503,91 +551,91 @@ r = 5 |> dvigubinti(_) |> inc(_) |> dvigubinti(_)
 | `##Div` | Dalyba iš nulio |
 | `##IO` | Failas / sistema |
 | `##Index` | Indeksas už ribų |
-| `##Type` | Tipų nesuderinamumas |
+| `##Type` | Tipų neatitikimas |
 | `##Parse` | Duomenų analizė |
 | `##Network` | Tinklo klaidos |
-| `##_` | Bet kokia klaida (sugauna visas) |
+| `##_` | Bet kokia klaida (pagauna viską) |
 
 ---
 
 ## Moduliai
 
 ```zymbol
-// lib/calc.zy — modulio turinys yra riestiniuose skliaustuose
-# calc {
-    #> { suma, get_PI }
+// lib/skaiciavimas.zy — modulio turinys yra uždarytas riestiniuose skliaustuose
+# skaiciavimas {
+    #> { sudeti, gauti_PI }
 
     _PI := 3.14159
-    suma(a, b) { <~ a + b }
-    get_PI() { <~ _PI }
+    sudeti(a, b) { <~ a + b }
+    gauti_PI() { <~ _PI }
 }
 ```
 
 ```zymbol
-// main.zy
-<# ./lib/calc <= c    // pseudonimas privalomas
+// pagrindinis.zy
+<# ./lib/skaiciavimas => s    // slapyvardis privalomas
 
->> c::suma(5, 3) ¶    // → 8
-pi = c::get_PI()
+>> s::sudeti(5, 3) ¶     // → 8
+pi = s::gauti_PI()
 >> pi ¶               // → 3.14159
 ```
 
 ```zymbol
-// Eksportuoti su kitu viešu pavadinimu
+// Eksportuoti kitu vieša pavadinimu
 # mano_biblioteka {
-    #> { _vidinė_suma <= sum }
+    #> { _vidine_sudotis => suma }
 
-    _vidinė_suma(a, b) { <~ a + b }
+    _vidine_sudotis(a, b) { <~ a + b }
 }
 ```
 
 ```zymbol
-<# ./mano_biblioteka <= m
+<# ./mano_biblioteka => m
 
->> m::sum(3, 4) ¶    // → 7  (vidinis pavadinimas _vidinė_suma yra paslėptas)
+>> m::suma(3, 4) ¶    // → 7  (vidinis pavadinimas _vidine_sudotis paslėptas)
 ```
 
-> **Modulių taisyklės**: `# pavadinimas { }` viduje leidžiami tik `#>`, funkcijų apibrėžimai ir literalų kintamųjų/konstantų inicializatoriai. Vykdomieji sakiniai (`>>`, `<<`, ciklai ir kt.) sukelia klaidą E013.
+> **Modulio taisyklės**: `# pavadinimas { }` viduje leidžiami tik `#>`, funkcijų apibrėžimai ir literaliniai kintamųjų/konstantų inicializatoriai. Vykdomos instrukcijos (`>>`, `<<`, ciklai ir kt.) sukelia klaidą E013.
 
 ---
 
 ## Skaitmenų režimai
 
-Zymbol gali rodyti skaičius **69 Unicode skaitmenų blokuose** — Devanagari, Arabų-Indų, Tajų, Klingonų pIqaD, Matematinis paryškinimas, LCD segmentai ir kt. Aktyvus režimas veikia tik `>>` išvestį; vidinė aritmetika visada yra dvejetainė.
+Zymbol gali rodyti skaičius **69 Unicode skaitmenų scenarijų** — Devanagari, Arabų-Indų, Tailandų, Klingon pIqaD, matematiniu paryškintu, LCD segmentais ir daugiau. Aktyvus režimas veikia tik `>>` išvestį; vidinė aritmetika visada yra dvejetainė.
 
-### Režimo aktyvavimas
+### Scenarijaus aktyvavimas
 
-Įrašykite tikslo rašto `0` ir `9` skaitmenis tarp `#…#`:
+Įrašykite tikslinės scenarijaus `0` ir `9` skaitmenį, įdėtą į `#…#`:
 
 ```zymbol
-#०९#    // Devanagari    (U+0966–U+096F)
-#٠٩#    // Arabų-Indų    (U+0660–U+0669)
-#๐๙#    // Tajų          (U+0E50–U+0E59)
+#०९#    // Devanagari   (U+0966–U+096F)
+#٠٩#    // Arabų-Indų  (U+0660–U+0669)
+#๐๙#    // Tailandų    (U+0E50–U+0E59)
 #09#    // atstatyti į ASCII
 ```
 
-### Išvestis ir Būlio reikšmės
+### Išvestis ir Bulio reikšmės
 
 ```zymbol
 x = 42
->> x ¶          // → 42   (ASCII numatytoji)
+>> x ¶          // → 42   (ASCII numatytasis)
 
 #०९#
 >> x ¶          // → ४२
 >> 3.14 ¶       // → ३.१४   (dešimtainis taškas visada ASCII)
 >> 1 + 2 ¶      // → ३
 
-// Būlio reikšmės: # priešdėlis visada ASCII, skaitmuo prisitaiko
+// Bulio: # priešdėlis visada ASCII, skaitmuo prisitaiko
 >> #1 ¶         // → #१   (tiesa Devanagari)
->> #0 ¶         // → #०   (klaidinga — skiriasi nuo ० sveikojo skaičiaus nulio)
+>> #0 ¶         // → #०   (netiesa — skiriasi nuo ०  sveikojo skaičiaus nulio)
 
 x = 28 > 4
 >> x ¶          // → #१   (palyginimo rezultatas seka aktyvų režimą)
 ```
 
-### Natūralūs skaitmenų literalai šaltinio kode
+### Natyvūs skaitmenų literalai šaltinyje
 
-Bet kurio palaikomo rašto skaitmenys yra galiojantys literalai — intervaluose, modulyje, palyginimuose:
+Bet kurio palaikomo scenarijaus skaitmenys yra galiojantys literalai — diapazonuose, modulio, palyginimuose:
 
 ```zymbol
 #०९#
@@ -600,85 +648,83 @@ Bet kurio palaikomo rašto skaitmenys yra galiojantys literalai — intervaluose
 }
 ```
 
-### Būlio literalai bet kuriame rašte
+### Bulio literalai bet kuriame scenarijuje
 
-`#` + skaitmuo `0` arba `1` iš bet kurio bloko yra galiojantis Būlio literalas:
+`#` + skaitmuo `0` arba `1` iš bet kurio bloko yra galiojantis Bulio literalas:
 
 ```zymbol
 #٠٩#
 aktyvus = #١        // tas pats kaip #1
 >> aktyvus ¶        // → #١
->> (#١ && #٠) ¶     // → #٠
+>> (#١ && #٠) ¶ // → #٠
 ```
 
-> `#` **visada yra ASCII**. `#0` (klaidinga) visada yra vizualiai atskiriamas nuo `0` (sveikojo skaičiaus nulio) kiekviename rašte.
+> `#` yra **visada ASCII**. `#0` (netiesa) visada vizualiai skiriasi nuo `0` (sveikojo skaičiaus nulis) visais scenarijais.
 
 ---
 
 ## Duomenų operatoriai
 
 ```zymbol
-// Tipo konvertavimas
-##.42         // → 42.0  (į Slankųjį)
-###3.7        // → 4     (į Sveikąjį, apvalinti)
-##!3.7        // → 3     (į Sveikąjį, trunkuoti)
+// Tipo konversija
+f = ##.42         // → 42.0  (į Realųjį skaičių)
+i = ###3.7        // → 4     (į Sveiką skaičių, apvalinimas)
+t = ##!3.7        // → 3     (į Sveiką skaičių, karpymas)
 
-// Analizuoti eilutę į skaičių
-v1 = #|"42"|      // → 42  (Sveikasis)
-v2 = #|"3.14"|    // → 3.14  (Slankusis)
-v3 = #|"abc"|     // → "abc"  (saugus, be klaidos)
+// Analizuoti eilutę kaip skaičių
+v1 = #|"42"|      // → 42  (Sveikas skaičius)
+v2 = #|"3.14"|    // → 3.14  (Realusis skaičius)
+v3 = #|"abc"|     // → "abc"  (saugu, be klaidos)
 
-// Apvalinti / trunkuoti
+// Apvalinti / karpyti
 pi = 3.14159265
 r2 = #.2|pi|      // → 3.14  (apvalinti iki 2 dešimtainių)
 r4 = #.4|pi|      // → 3.1416
-t2 = #!2|pi|      // → 3.14  (trunkuoti)
+k2 = #!2|pi|      // → 3.14  (karpymas)
 
 // Skaičių formatavimas
-fmt = #,|1234567|   // → 1,234,567  (kableliais atskirtas)
-sci = #^|12345.678| // → 1.2345678e4  (mokslinis)
+fmt = #,|1234567|  // → 1,234,567  (su kableliu atskirtas)
+mok = #^|12345.678|    // → 1.2345678e4  (mokslinė notacija)
 
-// Pagrindų literalai
+// Bazės literalai
 a = 0x41         // → 'A'  (šešioliktainis)
 b = 0b01000001   // → 'A'  (dvejetainis)
-c = 0o101        // → 'A'  (aštuntainis)
+c = 0o101        // → 'A'  (aštuoniainis)
 
-// Pagrindo konvertavimo išvestis
-hex = 0x|255|    // → "0x00FF"
-bin = 0b|65|     // → "0b1000001"
-oct = 0o|8|      // → "0o10"
-dec = 0d|255|    // → "0d0255"
+// Bazės konversijos išvestis
+heks = 0x|255|    // → "0x00FF"
+dv = 0b|65|       // → "0b1000001"
+asmt = 0o|8|      // → "0o10"
+des = 0d|255|     // → "0d0255"
 ```
 
 ---
 
-## Integracija su apvalkalu
+## Apvalkalo integracija
 
 ```zymbol
-data = <\ date +%Y-%m-%d \>     // užfiksuoja stdout (įtraukia \n gale)
+data = <\ date +%Y-%m-%d \>     // fiksuoja stdout (su galiniu \n)
 >> "Šiandien: " data
 
 failas = "duomenys.txt"
-turinys = <\ cat {failas} \>    // interpoliacija komandose
+turinys = <\ cat {failas} \>      // interpoliavimas komandose
 
-išvestis = </"./subscript.zy"/>  // vykdyti kitą Zymbol scenarijų, užfiksuoti išvestį
->> išvestis
+isvestis = </"./poscenarijus.zy"/>   // vykdyti kitą Zymbol scenarijų, fiksuoti išvestį
+>> isvestis
 ```
 
-> `><` užfiksuoja CLI argumentus kaip eilučių masyvą (tik medžio vaikštytojui).
-
----
+> `><` fiksuoja CLI argumentus kaip eilučių masyvą (tik medžio perėjimui).
 
 ---
 
 ## Pilnas pavyzdys: FizzBuzz
 
 ```zymbol
-klasifikuoti(skaičius) {
-    ? skaičius % 15 == 0 { <~ "FizzBuzz" }
-    _? skaičius % 3  == 0 { <~ "Fizz" }
-    _? skaičius % 5  == 0 { <~ "Buzz" }
-    _ { <~ skaičius }
+klasifikuoti(skaicius) {
+    ? skaicius % 15 == 0 { <~ "FizzBuzz" }
+    _? skaicius % 3  == 0 { <~ "Fizz" }
+    _? skaicius % 5  == 0 { <~ "Buzz" }
+    _ { <~ skaicius }
 }
 
 @ i:1..20 { >> klasifikuoti(i) ¶ }
@@ -689,95 +735,112 @@ klasifikuoti(skaičius) {
 ## Simbolių nuoroda
 
 | Simbolis | Operacija | Simbolis | Operacija |
-|----------|-----------|----------|-----------|
+|---------|----------|---------|----------|
 | `=` | kintamasis | `$#` | ilgis |
-| `:=` | konstanta | `$+` | pridėti (grandininis) |
-| `>>` | išvestis | `$+[i]` | įterpti indekse (1-bazė) |
+| `:=` | konstanta | `$+` | pridėti (grandinėjamas) |
+| `>>` | išvestis | `$+[i]` | įterpti į indeksą (1-pagrįstas) |
 | `<<` | įvestis | `$-` | pašalinti pirmą pagal reikšmę |
-| `¶` / `\\` | eilutės lūžis | `$--` | pašalinti visus pagal reikšmę |
-| `?` | jei | `$-[i]` | pašalinti indekse (1-bazė) |
-| `_?` | kitaip jei | `$-[i..j]` | pašalinti intervalą (1-bazė) |
-| `_` | kitaip / pakaitos simbolis | `$?` | turi |
-| `??` | atitikimas | `$??` | rasti visus indeksus (1-bazė) |
-| `@` | ciklas | `$[s..e]` | atkarpa (1-bazė) |
-| `@ N { }` | N kartų ciklas | `$>` | žemėlapis |
-| `@!` | nutraukti | `$|` | filtras |
-| `@>` | tęsti | `$<` | redukcija |
-| `@:pavadinimas { }` | pažymėtas ciklas | `$/ skir` | eilutės skaidymas |
-| `@:pavadinimas!` | nutraukti pažymėtą | `$++ a b c` | konkatenacijos sudarymas |
-| `@:pavadinimas>` | tęsti pažymėtą | `arr[i>j>k]` | navigacijos indeksas |
-| `->` | lambda | `arr[i] = reikš` | atnaujinti elementą (tik masyvai) |
-| `arr[i] += reikš` | sudėtinis atnaujinimas | `arr[i]$~` | funkcinis atnaujinimas (nauja kopija) |
+| `¶` / `\\` | eilutės pabaiga | `$--` | pašalinti visus pagal reikšmę |
+| `?` | if | `$-[i]` | pašalinti pagal indeksą (1-pagrįstas) |
+| `_?` | else-if | `$-[i..j]` | pašalinti diapazoną (1-pagrįstas) |
+| `_` | else / pakaitalas | `$?` | yra |
+| `??` | atitikties tikrinimas | `$??` | rasti visus indeksus (1-pagrįstas) |
+| `@` | ciklas | `$[s..e]` | dalis (1-pagrįstas) |
+| `@ N { }` | ciklas N kartų | `$>` | map |
+| `@!` | nutraukti | `$\|` | filter |
+| `@>` | tęsti | `$<` | reduce |
+| `@:pav { }` | pavadintas ciklas | `$/ skyriklis` | eilutės padalijimas |
+| `@:pav!` | nutraukti žymę | `$++ a b c` | sujungimo kūrimas |
+| `@:pav>` | tęsti žymę | `masyvas[i>j>k]` | navigacinis indeksas |
+| `->` | lambda | `masyvas[i] = r` | atnaujinti elementą (tik masyvai) |
+| `masyvas[i] += r` | sudėtinis atnaujinimas | `masyvas[i]$~` | funkcinis atnaujinimas (nauja kopija) |
 | `$^+` | rikiuoti didėjančiai (primityvai) | `$^-` | rikiuoti mažėjančiai (primityvai) |
-| `$^` | rikiuoti su lyginimu (kortežai) | `<~` | grąžinti |
-| `|>` | pipe | `!?` | bandyti |
-| `:!` | sugauti | `:>` | pagaliau |
-| `#1` | tiesa | `#0` | klaidinga |
+| `$^` | rikiuoti su lygintuve (kortežai) | `<~` | grąžinti |
+| `\|>` | vamzdis | `!?` | bandyti |
+| `:!` | pagauti | `:>` | galų gale |
+| `#1` | tiesa | `#0` | netiesa |
 | `$!` | yra klaida | `$!!` | skleisti klaidą |
 | `<#` | importuoti | `#>` | eksportuoti |
-| `#` | deklaruoti modulį | `::` | iškviesti modulį |
-| `.` | prieiga prie lauko | `#?` | tipo metaduomenys |
-| `#|..|` | analizuoti skaičių | `##.` | konvertuoti į Slankųjį |
-| `###` | konvertuoti į Sveikąjį (apvalinti) | `##!` | konvertuoti į Sveikąjį (trunkuoti) |
-| `#.N|..|` | apvalinti | `#!N|..|` | trunkuoti |
-| `#,|..|` | kablelio formatas | `#^|..|` | mokslinis |
-| `#d0d9#` | skaitmenų režimo keitimas | `#09#` | atstatyti į ASCII |
+| `#` | deklaruoti modulį | `::` | modulio iškvietimas |
+| `.` | lauko prieiga | `#?` | tipo metaduomenys |
+| `#\|..\|` | analizuoti skaičių | `##.` | konvertuoti į Realųjį |
+| `###` | konvertuoti į Sveiką (apv.) | `##!` | konvertuoti į Sveiką (karp.) |
+| `#.N\|..\|` | apvalinti | `#!N\|..\|` | karpyti |
+| `#,\|..\|` | kablelio formatas | `#^\|..\|` | mokslinė notacija |
+| `#d0d9#` | skaitmenų režimo jungiklis | `#09#` | atstatyti į ASCII |
 | `<\ ..\>` | apvalkalo vykdymas | `>\<` | CLI argumentai |
-| `\ var` | sunaikinti kintamąjį aiškiai | | |
+| `\ kint` | aiškiai sunaikinti kintamąjį | `°x` / `x°` | karštas apibrėžimas (auto-inicializacija) |
+| `>>|` | TUI blokas (alt-ekranas) | `>>~` | pozicionuota išvestis |
+| `>>!` | valyti ekraną | `>>?` | užklausti terminalo dydį |
+| `<<\|` | blokuojantis klavišo paspaudimas | `<<\|?` | neblokuojantis klavišo paspaudimas |
+| `@~ N` | miegoti N milisekundžių | `$*` | kartoti eilutę N kartų |
 
 ---
 
-## Leidimų pakeitimų žurnalas
+## Pakeitimų žurnalas
 
-### v0.0.4 — 1-bazė indeksavimas, Pirmos klasės funkcijos ir Modulių blokai _(2026 m. balandis)_
+### v0.0.5 — TUI primityvai, karštas apibrėžimas ir eilutės kartojimas _(Gegužė 2026)_
 
-- **Laužantis** Visas indeksavimas pakeistas į **1-bazę** — `arr[1]` yra pirmasis elementas; `arr[0]` yra vykdymo klaida
-- **Pridėta** Pavadintos funkcijos yra **pirmos klasės reikšmės** — perduokite tiesiogiai AEF: `nums$> dvigubinti`
-- **Pridėta** Modulių **bloko sintaksė privaloma**: `# pavadinimas { ... }` — plokščia sintaksė pašalinta
-- **Pridėta** Daugiamatis indeksavimas: `arr[i>j>k]` (navigacija), `arr[p ; q]` (plokščias ištraukimas)
-- **Pridėta** Tipo konvertavimas: `##.išraiška` (Slankusis), `###išraiška` (Sveikasis apvalinti), `##!išraiška` (Sveikasis trunkuoti)
-- **Pridėta** Eilutės skaidymas: `str$/ skir` — grąžina `Array(Eilutė)`
-- **Pridėta** Konkatenacijos sudarymas: `bazė$++ a b c` — prideda kelis elementus
-- **Pridėta** N kartų ciklas: `@ N { }` — pakartoti tiksliai N kartų
-- **Pridėta** Pažymėtų ciklų sintaksė: `@:pavadinimas { }`, `@:pavadinimas!`, `@:pavadinimas>` — pakeičia `@ @pavadinimas` / `@! pavadinimas`
-- **Pridėtos** Kintamųjų apimties taisyklės: `_pavadinimas` kintamieji turi tikslią bloko apimtį; `\ var` sunaikina anksti
-- **Pridėti** Atitikimo palyginimo šablonai: `< 0 :`, `> 5 :`, `== 42 :` ir kt.
-- **Pridėta** Modulių E013 klaida: vykdomieji sakiniai modulio turinyje yra uždrausti
-- **Pataisyta** `take_variable` nebegadina modulio konstantų įrašant atgal
-- **Pataisyta** `alias.KONSTANTA` dabar sprendžiama teisingai; `#>` gali pasirodyti po funkcijų apibrėžimų
-- **VM** Pilna atitiktis: 393/393 testų išlaikyta
+- **Laužianti** Atitikties šakos skirtuvas: `šablonas : rezultatas` → `šablonas => rezultatas`
+- **Laužianti** Importo slapyvardis: `<# kelias <= slapyvardis` → `<# kelias => slapyvardis`
+- **Laužianti** Eksporto pervadinimas: `#> { fn <= vies }` → `#> { fn => vies }`
+- **Pridėta** TUI blokas `>>| { }` — alternatyvus ekranas + žalias režimas; valymas išeinant
+- **Pridėta** Pozicionuota išvestis `>>~ (eilute, stulpelis, BKS, fg, bg) > elementai` — reta vieta, 256 spalvų ANSI
+- **Pridėta** Klavišų įvestis `<<| kintamasis` (blokuojantis) ir `<<|? kintamasis` (neblokuojantis apklausa)
+- **Pridėta** `>>!` valyti ekraną, `>>?` užklausti terminalo dydį, `@~ N` miegoti N milisekundžių
+- **Pridėta** Karštas apibrėžimas `°x` / `x°` — auto-inicializuoja kintamąjį pirmojo naudojimo cikle metu
+- **Pridėta** Eilutės kartojimas `eilute $* N` — kartoti eilutę N kartų
+- **VM** Paritetas: 436/436 testų praeina
 
-### v0.0.3 — Unicode skaitmenų sistemos ir LSP patobulinimai _(2026 m. balandis)_
+### v0.0.4 — 1-pagrįstas indeksavimas, pirmosios klasės funkcijos ir modulių blokai _(Balandis 2026)_
 
-- **Pridėta** 69 Unicode skaitmenų blokai su režimo keitimo žymele `#d0d9#`
-- **Pridėti** Būlio literalai bet kuriame rašte — `#१` / `#०`, `#١` / `#٠`, kt.
-- **Pridėti** Klingonų pIqaD skaitmenys (CSUR PUA U+F8F0–U+F8F9)
-- **Pridėtas** `SetNumeralMode` VM opkodas — pilna atitiktis su medžio vaikštytoju
-- **Pridėta** REPL gerbia aktyvų skaitmenų režimą aidoje ir kintamųjų rodyme
-- **Pakeista** Būlio `>>` išvestis dabar įtraukia `#` priešdėlį (`#0` / `#1`) visais režimais
+- **Laužianti** Visas indeksavimas perjungtas į **1-pagrįstą** — `masyvas[1]` yra pirmasis elementas; `masyvas[0]` yra vykdymo laiko klaida
+- **Pridėta** Pavadintos funkcijos yra **pirmosios klasės reikšmės** — perduokite tiesiogiai AEF: `skaiciai$> dvigubinti`
+- **Pridėta** Modulio **bloko sintaksė** privaloma: `# pavadinimas { ... }` — plokščia sintaksė pašalinta
+- **Pridėta** Daugiamačius indeksavimas: `masyvas[i>j>k]` (navigacija), `masyvas[p ; q]` (plokščias ištraukimas)
+- **Pridėta** Tipo konversija: `##.išraiška` (Realusis), `###išraiška` (Sveikas apvalinimas), `##!išraiška` (Sveikas karpymas)
+- **Pridėta** Eilutės padalijimas: `eilute$/ skyriklis` — grąžina `Array(String)`
+- **Pridėta** Sujungimo kūrimas: `bazė$++ a b c` — prideda kelis elementus
+- **Pridėta** N kartų ciklas: `@ N { }` — kartoti tiksliai N kartų
+- **Pridėta** Pavadinto ciklo sintaksė: `@:pav { }`, `@:pav!`, `@:pav>` — pakeičia `@ @pav` / `@! pav`
+- **Pridėta** Kintamųjų apimties taisyklės: `_pav` kintamieji turi tikslią bloko apimtį; `\ kint` naikina anksčiau
+- **Pridėta** Atitikties palyginimo šablonai: `< 0 :`, `> 5 :`, `== 42 :` ir kt.
+- **Pridėta** Modulio E013 klaida: vykdomos instrukcijos modulio turinyje yra draudžiamos
+- **Ištaisyta** `take_variable` nebegadina modulio konstantų atgalinio rašymo metu
+- **Ištaisyta** `slapyvardis.KONSTANTA` dabar teisingai išsprendžiama; `#>` gali pasirodyti po funkcijų apibrėžimų
+- **VM** Pilnas paritetas: 393/393 testų praeina
 
-### v0.0.2_01 — Operatoriaus pervadinimas _(2026 m. kovo 30 d.)_
+### v0.0.3 — Unicode skaitmenų sistemos ir LSP patobulinimai _(Balandis 2026)_
 
-- **Pakeista** `c|..|` → `#,|..|` ir `e|..|` → `#^|..|` — nuoseklu su `#` formato priešdėlio šeima
-- **Pridėtas** Eksporto pseudonimas: re-eksportuoti modulio narius skirtingu pavadinimu
+- **Pridėta** 69 Unicode skaitmenų blokai su režimo perjungimo žetonu `#d0d9#`
+- **Pridėta** Bulio literalai bet kuriame scenarijuje — `#१` / `#०`, `#١` / `#٠` ir kt.
+- **Pridėta** Klingon pIqaD skaitmenys (CSUR PUA U+F8F0–U+F8F9)
+- **Pridėta** VM operacinis kodas `SetNumeralMode` — pilnas paritetas su medžio perėjimu
+- **Pridėta** REPL gerbia aktyvų skaitmenų režimą aido ir kintamųjų rodinys
+- **Pakeista** Bulio `>>` išvestis dabar apima `#` priešdėlį (`#0` / `#1`) visuose režimuose
 
-### v0.0.2 — Rinkinių API pertvarkymas ir diegimo programos _(2026 m. kovo 24 d.)_
+### v0.0.2_01 — Operatoriaus pervadinimas _(30 Kov 2026)_
 
-- **Pridėta** Vieninga `$` operatorių šeima masyvams ir eilutėms (`$#`, `$+`, `$?`, `$-`, `$[..]`)
-- **Pridėtas** Destruktūrizavimo priskyrimas masyvams, kortežams ir pavadintiems kortežams
-- **Pridėti** Neigiami indeksai (`arr[-1]` = paskutinis elementas)
-- **Pridėtos** Natyvios diegimo programos — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
+- **Pakeista** `c|..|` → `#,|..|` ir `e|..|` → `#^|..|` — nuoseklus su `#` formato priešdėlio šeima
+- **Pridėta** Eksporto slapyvardis: pakartotinai eksportuoti modulio narius kitu pavadinimu
 
-### v0.0.1-patch _(2026 m. kovo 25 d.)_
+### v0.0.2 — Kolekcijos API pertvarkymas ir diegimo programos _(24 Kov 2026)_
 
-- **Pridėtas** Sudėtinis priskyrimas `^=`
-- **Pataisyti** Analizatoriaus aritmetikos kraštiniai atvejai; dokumentacijos pataisymai
+- **Pridėta** Unifikuota `$` operatorių šeima masyvams ir eilutėms (`$#`, `$+`, `$?`, `$-`, `$[..]`)
+- **Pridėta** Destruktūrizacijos priskyrimas masyvams, kortežams ir pavadinti kortežams
+- **Pridėta** Neigiami indeksai (`masyvas[-1]` = paskutinis elementas)
+- **Pridėta** Natyvios diegimo programos — Linux (deb/rpm/pkg/musl), macOS (Intel + Apple Silicon), Windows (MSI, winget)
 
-### v0.0.1 — Pirmasis viešas leidimas _(2026 m. kovo 22 d.)_
+### v0.0.1-patch _(25 Kov 2026)_
 
-- Medžio vaikštytojo interpretatorius + registrų VM (`--vm`, ~4× greitesnis, ~95% atitiktis)
-- Visos pagrindinės struktūros: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
-- Pilnas Unicode identifikatoriai, modulių sistema, lambdos, uždarumai, klaidų valdymas
+- **Pridėta** Sudėtinis priskyrimas `^=`
+- **Ištaisyta** Analizatoriaus aritmetikos kraštutiniai atvejai; dokumentacijos pataisymai
+
+### v0.0.1 — Pirmasis viešas leidimas _(22 Kov 2026)_
+
+- Medžio perėjimo interpretatorius + registrų VM (`--vm`, ~4× greičiau, ~95% paritetas)
+- Visos pagrindinės konstrukcijos: `?` `@` `<~` `->` `>>` `<<` `¶` `??`
+- Pilni Unicode identifikatoriai, modulių sistema, lambdos, uždarymai, klaidų tvarkymas
 - REPL, LSP, VS Code plėtinys, formatuotojas (`zymbol fmt`)
 
 ---
