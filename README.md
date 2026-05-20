@@ -38,6 +38,12 @@ python3 -m http.server 8080
 
 Deployed via GitHub Pages at [zymbol-lang.org](https://zymbol-lang.org). Every push to `main` triggers automatic deployment.
 
+## Authorship & AI Collaboration
+
+This site and its interactive playground are designed by **[OscarE.EspinozaB](https://github.com/zymbol-lang/interpreter/commits?author=OscarEEspinozaB)**, the author of Zymbol-Lang. Content, structure, i18n scope, and playground behavior are defined and controlled by the author.
+
+The implementation was built using **[Claude Code](https://claude.ai/code)** (Anthropic) as the engineering team. AI use is transparent — it accelerated delivery under the author's direction; the design and quality control remain entirely the author's.
+
 ## License
 
 Website content and source © Zymbol-Lang contributors, licensed under  

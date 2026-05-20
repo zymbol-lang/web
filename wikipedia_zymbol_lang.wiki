@@ -1,10 +1,10 @@
 {{Infobox programming language
 | name                   = Zymbol
 | paradigm               = [[Multi-paradigm programming language|Multi-paradigm]]: [[imperative programming|imperative]], [[functional programming|functional]], [[procedural programming|procedural]]
-| designer               = Zymbol-Lang project
-| developer              = Zymbol-Lang contributors
+| designer               = OscarE.EspinozaB
+| developer              = OscarE.EspinozaB (design) · [[Claude Code]] (implementation)
 | first_appeared         = 2026
-| latest_release_version = 0.0.2
+| latest_release_version = 0.0.5
 | latest_release_date    = {{Start date and age|2026|df=yes}}
 | typing                 = [[Dynamic typing|Dynamic]]
 | platform               = [[Cross-platform]]
@@ -21,7 +21,11 @@
 
 The core design principle of Zymbol is that ''operators are universal, identifiers are yours'': the symbolic grammar is fixed and language-agnostic, while all naming is left to the programmer's language of choice.
 
-The reference implementation is written in [[Rust (programming language)|Rust]] and is currently in public alpha (version 0.0.2).<ref>{{cite web |title=zymbol-lang/interpreter |url=https://github.com/zymbol-lang/interpreter |website=GitHub |access-date=2026-04-02}}</ref>
+The design is intentional and rigorous, authored by [https://github.com/zymbol-lang/interpreter/commits?author=OscarEEspinozaB OscarE.EspinozaB], who defined the language specification, philosophy, and architecture. The implementation — compiler, register VM, LSP server, VS Code extension, and web playground — was carried out in 2026 using [[Claude Code]] as the engineering team: the AI executed the designer's detailed specifications rather than originating them. Delivering a complete toolchain of this scope as a solo project would have been economically and practically out of reach without AI assistance; Claude Code made that scale achievable for one person.
+
+Zymbol does not aim for mass adoption. Its purpose is a proof of concept: demonstrating that a high-level, general-purpose esolang can be genuinely functional in the real world while remaining syntactically independent of any human language. Working GitHub projects — modest in scope but entirely operational — show that the idea holds in practice. The language invites curiosity: this is not AI-generated slop, but a meticulous, carefully guided design that used AI as a capable and disciplined engineering partner. Without that partnership, none of it would exist.
+
+The reference implementation is written in [[Rust (programming language)|Rust]] and is currently in public alpha (version 0.0.5).<ref>{{cite web |title=zymbol-lang/interpreter |url=https://github.com/zymbol-lang/interpreter |website=GitHub |access-date=2026-04-02}}</ref>
 
 == Background ==
 

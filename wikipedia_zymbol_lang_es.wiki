@@ -7,9 +7,9 @@
 |extensiones_comunes       = <code>.zy</code>
 |paradigma                 = [[Lenguaje de programación multiparadigma|multiparadigma]], [[Programación imperativa|imperativo]], [[Programación por procedimientos|procedural]], [[Programación funcional|funcional]]
 |año                       = 2026
-|diseñador                 = Proyecto Zymbol-Lang
-|desarrollador             = Colaboradores de Zymbol-Lang
-|última_versión            = 0.0.2
+|diseñador                 = OscarE.EspinozaB
+|desarrollador             = OscarE.EspinozaB (diseño) · [[Claude Code]] (implementación)
+|última_versión            = 0.0.5
 |fecha_última_versión      = {{fecha de lanzamiento|2026}}
 |tipo_dato                 = [[Tipado dinámico|dinámico]]
 |implementaciones          =
@@ -25,7 +25,11 @@
 
 El principio de diseño central de Zymbol es que ''los operadores son universales, los identificadores son tuyos'': la gramática simbólica es fija e independiente del idioma, mientras que toda la nomenclatura queda en manos del programador, quien puede usar su lengua materna.
 
-La implementación de referencia está escrita en [[Rust (programming language)|Rust]] y se encuentra actualmente en alfa pública (versión 0.0.2).<ref>{{Cita web |título=zymbol-lang/interpreter |url=https://github.com/zymbol-lang/interpreter |sitioweb=GitHub |fechaacceso=2 de abril de 2026}}</ref>
+El diseño es intencional y riguroso, obra de [https://github.com/zymbol-lang/interpreter/commits?author=OscarEEspinozaB OscarE.EspinozaB], quien definió la especificación del lenguaje, su filosofía y su arquitectura. La implementación — compilador, máquina virtual de registros, servidor LSP, extensión para VS Code y playground web — fue llevada a cabo en [[:Categoría:2026|2026]] usando [[Claude Code]] como equipo de ingeniería: la inteligencia artificial ejecutó las especificaciones detalladas del diseñador en lugar de originarlas. Entregar una cadena de herramientas de este alcance como proyecto unipersonal habría sido económica y prácticamente inviable sin asistencia de IA; Claude Code hizo posible esa escala para una sola persona.
+
+Zymbol no aspira a la adopción masiva. Su propósito es una prueba de concepto: demostrar que un [[esolang]] de alto nivel y uso general puede ser genuinamente funcional en el mundo real mientras permanece sintácticamente independiente de cualquier lengua humana. Los proyectos existentes en GitHub — modestos en alcance pero completamente operativos — muestran que la idea se sostiene en la práctica. El lenguaje invita a la curiosidad: no es código generado por IA sin criterio, sino un diseño meticuloso y cuidadoso que utilizó la IA como socio de ingeniería capaz y disciplinado. Sin esa colaboración, nada de esto habría existido.
+
+La implementación de referencia está escrita en [[Rust (programming language)|Rust]] y se encuentra actualmente en alfa pública (versión 0.0.5).<ref>{{Cita web |título=zymbol-lang/interpreter |url=https://github.com/zymbol-lang/interpreter |sitioweb=GitHub |fechaacceso=2 de abril de 2026}}</ref>
 
 == Antecedentes ==
 
