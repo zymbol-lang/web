@@ -9,6 +9,13 @@
  * labeled loops (@:label { } / @:label! / @:label>), TUI canvas operators
  * (>>! >>? >>~ <<| <<|? >>|), caught error values (##_(...)), hotDef scope fix.
  *
+ * v0.0.6: FatArrow (=>) replaces : as match/import/export separator (already in v0.0.5 JS);
+ * $~ on named tuples — integer + field-name string index (G2);
+ * deep update arr[i>j]$~ val (G1, DeepUpdate node);
+ * stdlib modules std/math (22 fns + PI/E) and std/random (3 fns);
+ * bare import paths support slashes: <# std/math => alias;
+ * native function call path in callFunc (fn.native).
+ *
  * CLI args (><): supported — pass cliArgs array to runZymbol().
  * BashExec (<\ \>): returns high-resolution timestamp (entropy stub).
  * Not supported: shell inclusion (</ />).
@@ -539,6 +546,8 @@ export class Parser {
       path = this.adv().value;
     } else {
       path = this.eat('IDENT').value;
+      // Allow multi-segment bare paths: std/math, std/random, etc.
+      while (this.check('DIV')) { this.adv(); path += '/' + this.eat('IDENT').value; }
     }
     this.eat('FAT_ARROW'); // consume =>
     const alias = this.eat('IDENT').value;
@@ -632,7 +641,13 @@ export class Parser {
     if (this.check('STR')) {
       prompt = { type: 'Literal', kind: 'str', value: this.adv().value };
     }
+    // Handle typed input form: << #|varname| (numeric cast annotation)
+    let typed = false;
+    if (this.check('DATA_OP') && this.peek().value?.kind === 'eval') {
+      this.adv(); typed = true;
+    }
     const varTok = this.eat('IDENT');
+    if (typed) this.match('VBAR'); // consume closing |
     return { type: 'Input', prompt, varName: varTok.value, line };
   }
 
@@ -1043,6 +1058,7 @@ export class Parser {
   parseUnary(noCollectionChain) {
     if (this.match('MINUS')) return { type: 'UnaryOp', op: '-', operand: this.parseUnary() };
     if (this.match('NOT'))   return { type: 'UnaryOp', op: '!', operand: this.parseUnary() };
+    if (noCollectionChain && this.isLambdaStart()) return this.parseLambda();
     return noCollectionChain ? this.parsePostfixNoChain() : this.parsePostfix();
   }
 
@@ -1085,11 +1101,16 @@ export class Parser {
         this.adv();
         const spec = this.parseNavContent();
         this.eat('RBRACKET');
-        // FuncUpdate: arr[i]$~ val — only for simple subscript
-        if (spec.kind === 'simple' && this.check('DUPDATE')) {
+        if ((spec.kind === 'simple' || spec.kind === 'path') && this.check('DUPDATE')) {
           this.adv();
           const val = this.parseUnary();
-          left = { type: 'FuncUpdate', obj: left.obj ?? left, index: spec.index, value: val };
+          if (spec.kind === 'simple') {
+            // arr[i]$~ val — single-level functional update
+            left = { type: 'FuncUpdate', obj: left, index: spec.index, value: val };
+          } else {
+            // arr[i>j]$~ val — deep functional update (G1)
+            left = { type: 'DeepUpdate', obj: left, path: spec.path, value: val };
+          }
         } else {
           left = { type: 'NavIndex', obj: left, spec };
         }
@@ -2065,6 +2086,128 @@ const mkChar  = v => ({ type: 'char',  v: String(v) });
 const mkArr   = v => ({ type: 'arr',   v });
 const mkUnit  = () => ({ type: 'unit' });
 
+// ─── Deep update helper (G1) ──────────────────────────────────────────────────
+
+function deepUpdateValue(col, indices, newVal) {
+  if (indices.length === 0) return newVal;
+  const i   = indices[0];
+  const len = col.v?.length ?? 0;
+  if (i === 0) throw new ZyRuntimeError('Index 0 is invalid (indices start at 1)', '##Index');
+  const idx = i < 0 ? len + i : i - 1;
+  if (idx < 0 || idx >= len)
+    throw new ZyError(`index out of bounds: index ${i} for collection of length ${len}`);
+  const sub        = col.v[idx];
+  const updatedSub = deepUpdateValue(sub, indices.slice(1), newVal);
+  if (col.type === 'arr')   { const r = [...col.v]; r[idx] = updatedSub; return mkArr(r); }
+  if (col.type === 'tuple') { const r = [...col.v]; r[idx] = updatedSub; return { type:'tuple', v:r, keys:col.keys }; }
+  throw new ZyError(`deep update ($~) not supported on ${col.type}`);
+}
+
+// ─── Standard library modules (std/math, std/random) ─────────────────────────
+
+function buildStdlibModule(name) {
+  const asF64 = v => v?.type === 'float' ? v.v : v?.type === 'int' ? v.v : null;
+  const symMap = { int:'###', float:'##.', str:'##"', char:"##'", bool:'##?', arr:'##]', tuple:'##)' };
+  const typeCode = v => symMap[v?.type] ?? '##_';
+  const typeErr = (fn, ...badArgs) => {
+    const codes = (badArgs.length > 0 ? badArgs : [null])
+      .map(a => `"${typeCode(a).replace(/"/g, '\\"')}"`)
+      .join(', ');
+    throw new ZyError(`mat::${fn}: incompatible argument type(s) [${codes}]`);
+  };
+
+  if (name === 'std/math') {
+    const exports = new Map();
+    const unary = (fn, f) => ({ type: 'func', name: fn, native: true, call: args => {
+      const x = asF64(args[0]); if (x === null) typeErr(fn, args[0]); return mkFloat(f(x));
+    }});
+
+    exports.set('sqrt',    unary('sqrt',    x => Math.sqrt(x)));
+    exports.set('exp',     unary('exp',     x => Math.exp(x)));
+    exports.set('ln',      { type: 'func', name: 'ln', native: true, call: args => {
+      const x = asF64(args[0]); if (x === null) typeErr('ln', args[0]);
+      if (x <= 0) throw new ZyError('mat::ln: argument must be positive');
+      return mkFloat(Math.log(x));
+    }});
+    exports.set('sin',     unary('sin',     x => Math.sin(x)));
+    exports.set('cos',     unary('cos',     x => Math.cos(x)));
+    exports.set('tan',     unary('tan',     x => Math.tan(x)));
+    exports.set('asin',    { type: 'func', name: 'asin', native: true, call: args => {
+      const x = asF64(args[0]); if (x === null) typeErr('asin', args[0]);
+      if (x < -1 || x > 1) throw new ZyError('mat::asin: argument must be in [-1, 1]');
+      return mkFloat(Math.asin(x));
+    }});
+    exports.set('acos',    { type: 'func', name: 'acos', native: true, call: args => {
+      const x = asF64(args[0]); if (x === null) typeErr('acos', args[0]);
+      if (x < -1 || x > 1) throw new ZyError('mat::acos: argument must be in [-1, 1]');
+      return mkFloat(Math.acos(x));
+    }});
+    exports.set('atan',    unary('atan',    x => Math.atan(x)));
+    exports.set('tanh',    unary('tanh',    x => Math.tanh(x)));
+    exports.set('sinh',    unary('sinh',    x => Math.sinh(x)));
+    exports.set('cosh',    unary('cosh',    x => Math.cosh(x)));
+    exports.set('sigmoid', unary('sigmoid', x => 1 / (1 + Math.exp(-x))));
+    exports.set('floor',   unary('floor',   x => Math.floor(x)));
+    exports.set('ceil',    unary('ceil',    x => Math.ceil(x)));
+    exports.set('round',   unary('round',   x => Math.round(x)));
+    exports.set('abs',     { type: 'func', name: 'abs', native: true, call: args => {
+      if (args[0]?.type === 'int')   return mkInt(Math.abs(args[0].v));
+      const x = asF64(args[0]); if (x === null) typeErr('abs', args[0]);
+      return mkFloat(Math.abs(x));
+    }});
+    exports.set('atan2',   { type: 'func', name: 'atan2', native: true, call: args => {
+      const y = asF64(args[0]), x = asF64(args[1]);
+      if (y === null || x === null) typeErr('atan2', args[0], args[1]);
+      return mkFloat(Math.atan2(y, x));
+    }});
+    exports.set('log',     { type: 'func', name: 'log', native: true, call: args => {
+      const x = asF64(args[0]); if (x === null || x <= 0) throw new ZyError('mat::log: x and base must be positive; base ≠ 1');
+      if (args.length === 1) return mkFloat(Math.log(x));
+      const base = asF64(args[1]);
+      if (base === null || base <= 0 || base === 1) throw new ZyError('mat::log: x and base must be positive; base ≠ 1');
+      return mkFloat(Math.log(x) / Math.log(base));
+    }});
+    exports.set('pow',     { type: 'func', name: 'pow', native: true, call: args => {
+      const b = asF64(args[0]), e = asF64(args[1]);
+      if (b === null || e === null) typeErr('pow', args[0], args[1]);
+      return mkFloat(Math.pow(b, e));
+    }});
+    exports.set('max',     { type: 'func', name: 'max', native: true, call: args => {
+      if (args[0]?.type === 'int' && args[1]?.type === 'int') return mkInt(Math.max(args[0].v, args[1].v));
+      const a = asF64(args[0]), b = asF64(args[1]); if (a === null || b === null) typeErr('max', args[0], args[1]);
+      return mkFloat(Math.max(a, b));
+    }});
+    exports.set('min',     { type: 'func', name: 'min', native: true, call: args => {
+      if (args[0]?.type === 'int' && args[1]?.type === 'int') return mkInt(Math.min(args[0].v, args[1].v));
+      const a = asF64(args[0]), b = asF64(args[1]); if (a === null || b === null) typeErr('min', args[0], args[1]);
+      return mkFloat(Math.min(a, b));
+    }});
+    exports.set('PI', mkFloat(Math.PI));
+    exports.set('E',  mkFloat(Math.E));
+    return { type: 'module', exports };
+  }
+
+  if (name === 'std/random') {
+    const exports = new Map();
+    exports.set('entero', { type: 'func', name: 'entero', native: true, call: args => {
+      if (args[0]?.type !== 'int' || args[1]?.type !== 'int' || args[1].v < args[0].v)
+        throw new ZyError('random::entero: expected (###, ###) with max >= min');
+      return mkInt(args[0].v + Math.floor(Math.random() * (args[1].v - args[0].v + 1)));
+    }});
+    exports.set('rango', { type: 'func', name: 'rango', native: true, call: args => {
+      if (args[0]?.type !== 'int' || args[0].v <= 0)
+        throw new ZyError('random::rango: expected positive ###');
+      return mkInt(Math.floor(Math.random() * args[0].v));
+    }});
+    exports.set('peso_f64', { type: 'func', name: 'peso_f64', native: true, call: () =>
+      mkFloat((Math.floor(Math.random() * 201) - 100) / 1000)
+    });
+    return { type: 'module', exports };
+  }
+
+  return null;
+}
+
 // ─── Interpreter ──────────────────────────────────────────────────────────────
 
 export class Interpreter {
@@ -2086,6 +2229,15 @@ export class Interpreter {
   }
 
   async loadModule(path) {
+    // Intercept stdlib modules (std/math, std/random, …)
+    if (path.startsWith('std/')) {
+      if (this.moduleCache.has(path)) return this.moduleCache.get(path);
+      const modVal = buildStdlibModule(path);
+      if (!modVal) throw new ZyError(`standard library module '${path}' not found`);
+      this.moduleCache.set(path, modVal);
+      return modVal;
+    }
+
     if (!this.moduleResolver)
       throw new ZyError(`Cannot import '${path}': no module resolver available`);
 
@@ -2821,15 +2973,44 @@ export class Interpreter {
         return await this.evalCollectionOp(expr, env);
 
       case 'FuncUpdate': {
-        const arr = await this.eval(expr.obj, env);
-        const i   = (await this.eval(expr.index, env)).v;
+        const arr  = await this.eval(expr.obj, env);
+        const iVal = await this.eval(expr.index, env);
+        const val  = await this.eval(expr.value, env);
+
+        // String field name — named tuple only (G2)
+        if (iVal.type === 'str') {
+          if (arr.type !== 'tuple' || !arr.keys)
+            throw new ZyError(`$~ string index requires a named tuple`);
+          const fi = arr.keys.indexOf(iVal.v);
+          if (fi < 0) throw new ZyError(`named tuple has no field '${iVal.v}'. Available: ${arr.keys.filter(k=>k).join(', ')}`);
+          const r = [...arr.v]; r[fi] = val;
+          return { type: 'tuple', v: r, keys: arr.keys };
+        }
+
+        // Integer 1-based index
+        const i = iVal.v;
         if (i === 0) throw new ZyRuntimeError('Index 0 is invalid (indices start at 1)', '##Index');
-        const val = await this.eval(expr.value, env);
-        const idx = i < 0 ? arr.v.length + i : i - 1;
+        const len = arr.type === 'str' ? [...arr.v].length : (arr.v?.length ?? 0);
+        const idx = i < 0 ? len + i : i - 1;
+        if (idx < 0 || idx >= len)
+          throw new ZyError(`index out of bounds: index ${i} for collection of length ${len}`);
         if (arr.type === 'arr')   { const r = [...arr.v]; r[idx] = val; return mkArr(r); }
         if (arr.type === 'str')   { const r = [...arr.v]; r[idx] = this.display(val); return mkStr(r.join('')); }
         if (arr.type === 'tuple') { const r = [...arr.v]; r[idx] = val; return { type:'tuple', v:r, keys:arr.keys }; }
         throw new ZyError(`$~ not supported on ${arr.type}`);
+      }
+
+      case 'DeepUpdate': {
+        const root = await this.eval(expr.obj, env);
+        const indices = [];
+        for (const atom of expr.path) {
+          if (atom.kind === 'range') throw new ZyError('deep update ($~) does not support ranges in the path');
+          const iv = await this.eval(atom.expr, env);
+          if (iv.type !== 'int') throw new ZyError(`deep update index must be integer, got ${iv.type}`);
+          indices.push(iv.v);
+        }
+        const newVal = await this.eval(expr.value, env);
+        return deepUpdateValue(root, indices, newVal);
       }
 
       case 'TypeMetadata': {
@@ -3448,6 +3629,7 @@ export class Interpreter {
   }
 
   async callFunc(fn, args, outWriteback) {
+    if (fn.native) return fn.call(args);
     const isClosure = fn.closureEnv != null;
     const parent    = isClosure ? fn.closureEnv : this.globalEnv;
     const funcEnv   = new Env(parent, !isClosure);
@@ -3491,9 +3673,35 @@ export class Interpreter {
   }
 
   applyOp(op, l, r) {
-    if (op === '+' && (l.type === 'str' || r.type === 'str')) {
-      return mkStr(this.display(l) + this.display(r));
+    const isNum = v => v.type === 'int' || v.type === 'float';
+    const fmtArg = v => {
+      if (v.type === 'str')   return `String("${v.v}")`;
+      if (v.type === 'int')   return `Int(${v.v})`;
+      if (v.type === 'float') return `Float(${v.v})`;
+      if (v.type === 'bool')  return `Bool(${v.v})`;
+      return `${v.type}(${String(v.v)})`;
+    };
+
+    if (op === '+' || op === '-' || op === '*' || op === '/' || op === '%' || op === '^') {
+      if (!isNum(l) || !isNum(r)) {
+        if (op === '+')
+          throw new ZyError(`+ is arithmetic only — use juxtaposition to concatenate strings: "a" b "c"`);
+        const badType = !isNum(l) ? l : r;
+        const rustCap = { int:'Int', float:'Float', str:'String', bool:'Bool', arr:'Array', tuple:'Tuple' };
+        this.outputFn(`warning: arithmetic operation on non-numeric type: ${rustCap[badType.type] ?? badType.type}\n\n`);
+        throw new ZyError(`arithmetic requires numeric operands: ${fmtArg(l)}, ${fmtArg(r)}`);
+      }
     }
+
+    if (op === '<' || op === '>' || op === '<=' || op === '>=') {
+      if (!(isNum(l) && isNum(r)) && l.type !== r.type) {
+        const opName = { '<':'Lt', '>':'Gt', '<=':'Lte', '>=':'Gte' }[op];
+        const cmpName = v => ({ int:'integer', float:'float', str:'string', bool:'boolean', arr:'array', tuple:'tuple' })[v.type] ?? v.type;
+        const cmpVal  = v => v.type === 'str' ? `'${v.v}'` : String(v.v);
+        throw new ZyError(`cannot compare ${cmpName(l)} ${cmpVal(l)} with ${cmpName(r)} ${cmpVal(r)} using operator '${opName}'`);
+      }
+    }
+
     const isFloat = l.type === 'float' || r.type === 'float';
     const mk = isFloat ? mkFloat : mkInt;
     const lv = l.v, rv = r.v;

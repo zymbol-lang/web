@@ -269,11 +269,57 @@
 <!-- ═══ TIMELINE ═══ -->
 <div class="cl-timeline">
 
+  <!-- ── v0.0.6 ── -->
+  <div class="cl-entry">
+    <div class="cl-entry-head">
+      <span class="cl-version">v0.0.6</span>
+      <span class="cl-badge-latest">latest</span>
+      <span class="cl-date">June 7, 2026</span>
+    </div>
+    <div class="cl-title">FatArrow Operator, Bytecode Standalones, VM Input &amp; Stdlib</div>
+
+    <div class="cl-groups">
+
+      <div class="cl-group">
+        <span class="cl-group-label changed">Changed</span>
+        <ul class="cl-change-list">
+          <li><strong>Breaking: <code>=&gt;</code> (FatArrow) is now the universal "maps-to" separator</strong> — replaces <code>:</code> / <code>&lt;=</code> in match arms (<code>pattern =&gt; result</code>), import aliases (<code>&lt;# path =&gt; alias</code>), and export renames (<code>#&gt; { fn =&gt; pub }</code>). Reads unambiguously as "becomes" across every context</li>
+          <li><strong>Standalone binaries embed bytecode instead of source (~60% smaller)</strong> — <code>zymbol build</code> now compiles to bytecode at build time (<code>bincode</code>) and links only <code>zymbol-bytecode</code> + <code>zymbol-vm</code> (2 crates instead of 7), with zero lex/parse/compile at startup. <em>serpiente: 2.2 MB → 901 KB</em></li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label added">Added</span>
+        <ul class="cl-change-list">
+          <li><strong>Standard library modules</strong> — <code>std/math</code> (22 functions incl. <code>sqrt</code>, <code>sin</code>/<code>cos</code>/<code>tan</code>, <code>ln</code>, <code>exp</code>, <code>pow</code>, <code>log</code>, <code>sigmoid</code> + <code>PI</code>/<code>E</code> constants) and <code>std/random</code> (<code>entero</code>, <code>rango</code>, <code>peso_f64</code>, xoshiro256++). Importable via <code>&lt;# std/math =&gt; mat</code></li>
+          <li><strong>VM <code>&lt;&lt;</code> input parity</strong> — new <code>ReadLine</code> bytecode instruction brings interactive input to <code>--vm</code> mode, with numeric cast and TUI raw-mode suspend/restore</li>
+          <li><strong>Deep functional update</strong> — <code>arr[i&gt;j]$~ val</code> updates a nested element non-destructively; <code>$~</code> also accepts a string field name on named tuples (<code>p["y"]$~ val</code>)</li>
+          <li><strong>REPL upgrades</strong> — unicode-width cursor alignment (CJK / emoji / pIqaD), word navigation (<code>Ctrl+Left/Right</code>, <code>Ctrl+W</code>, <code>Alt+D</code>), persistent <code>~/.zymbol_history</code>, piped-stdin batch mode, and a <code>RESET</code> command</li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label fixed">Fixed</span>
+        <ul class="cl-change-list">
+          <li><strong>BUG-007</strong> — the semantic checker rejected recursive integer functions (<code>gcd</code>, <code>fibonacci</code>) after a <code>Numeric</code> parameter resolved to <code>Float</code>; added bidirectional <code>(Float, Int)</code> numeric compatibility</li>
+          <li><strong>GAP-Z009</strong> — named functions now retain their module aliases (e.g. <code>mat::sqrt</code>) when passed as higher-order-function values</li>
+          <li><strong>TUI-FIX-01</strong> — <code>&lt;&lt;</code> inside a <code>&gt;&gt;|</code> block no longer freezes the terminal (raw-mode suspend/restore around the read)</li>
+          <li><strong>TUI-FIX-02</strong> — <code>&gt;&gt;|</code> now starts the cursor at (1,1) via <code>MoveTo(0,0)</code> on entry</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="cl-actions">
+      <a href="https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.6" target="_blank" class="btn-ghost">↗ GitHub</a>
+      <a href="install.html" class="btn-ghost">↓ Download</a>
+    </div>
+  </div>
+
   <!-- ── v0.0.5 ── -->
   <div class="cl-entry">
     <div class="cl-entry-head">
       <span class="cl-version">v0.0.5</span>
-      <span class="cl-badge-latest">latest</span>
       <span class="cl-date">May 18, 2026</span>
     </div>
     <div class="cl-title">TUI Primitives, Hot Definitions &amp; Bug Fixes</div>
