@@ -16,6 +16,16 @@
  * bare import paths support slashes: <# std/math => alias;
  * native function call path in callFunc (fn.native).
  *
+ * v0.0.7: stdlib std/json (decode/encode via JSON.parse/stringify — ##Parse text is
+ * engine-specific), std/net (get/post/post_json/head via fetch; optional headers arg;
+ * CORS applies), std/io (per-run virtual filesystem: Map of files + Set of dirs);
+ * std/db NOT available (requires ODBC). Typed input << <typespec> "prompt" var with
+ * ##.(t,d) / ##. / ###(n) / ##"(n) / ##' — validates, re-prompts on invalid input.
+ * Input EOF contract: inputFn returning null/undefined = EOF → runtime error, like
+ * the CLI on closed stdin. Legacy << #|v| now converts numeric strings (Int/Float).
+ * Checker: static undefined-function detection (E_FUNC) for bare-identifier calls,
+ * mirroring zymbol-semantic type_check (the test1.zy cos() case).
+ *
  * CLI args (><): supported — pass cliArgs array to runZymbol().
  * BashExec (<\ \>): returns high-resolution timestamp (entropy stub).
  * Not supported: shell inclusion (</ />).
@@ -158,12 +168,15 @@ export class Lexer {
           continue;
         }
         if (c1 === '#') {
-          // ##. → CAST_FLOAT, ### → CAST_INT_ROUND, ##! → CAST_INT_TRUNC, else ##xxx IDENT
+          // ##. → CAST_FLOAT, ### → CAST_INT_ROUND, ##! → CAST_INT_TRUNC,
+          // ##" → CAST_TEXT, ##' → CAST_CHAR (input typespecs), else ##xxx IDENT
           const c2 = this.ch(2);
           this.consume(); this.consume(); // consume ##
           if (c2 === '.') { this.consume(); tok('CAST_FLOAT',     '##.'); continue; }
           if (c2 === '#') { this.consume(); tok('CAST_INT_ROUND', '###'); continue; }
           if (c2 === '!') { this.consume(); tok('CAST_INT_TRUNC', '##!'); continue; }
+          if (c2 === '"') { this.consume(); tok('CAST_TEXT',      '##"'); continue; }
+          if (c2 === "'") { this.consume(); tok('CAST_CHAR',      "##'"); continue; }
           let name = '##';
           while (/[A-Za-z0-9_]/.test(this.ch())) { name += this.ch(); this.consume(); }
           tok('IDENT', name); continue;
@@ -637,18 +650,66 @@ export class Parser {
   parseInput() {
     const line = this.peek().line;
     this.adv();
+    // Optional leading typespec cast: ##. / ##.(t,d) / ### / ###(n) / ##! / ##!(n) / ##"(n) / ##'
+    const cast = this.parseInputTypespec();
     let prompt = null;
     if (this.check('STR')) {
       prompt = { type: 'Literal', kind: 'str', value: this.adv().value };
     }
-    // Handle typed input form: << #|varname| (numeric cast annotation)
+    // Legacy `#|variable|` numeric cast — only when no typespec was given.
     let typed = false;
-    if (this.check('DATA_OP') && this.peek().value?.kind === 'eval') {
+    if (!cast && this.check('DATA_OP') && this.peek().value?.kind === 'eval') {
       this.adv(); typed = true;
     }
     const varTok = this.eat('IDENT');
     if (typed) this.match('VBAR'); // consume closing |
-    return { type: 'Input', prompt, varName: varTok.value, line };
+    const finalCast = cast ?? { kind: typed ? 'numeric' : 'string' };
+    return { type: 'Input', prompt, varName: varTok.value, cast: finalCast, line };
+  }
+
+  // Typed-input typespec after <<:
+  //   ##.(t,d) → decimal, ##. → float, ###(n)/##!(n) → int, ##"(n) → text, ##' → char
+  // Returns null when the next token is not a typespec.
+  parseInputTypespec() {
+    const t = this.peek().type;
+    if (t === 'CAST_FLOAT') {
+      this.adv();
+      if (this.check('LPAREN')) {
+        const [total, decimals] = this.parseTwoUintArgs();
+        return { kind: 'decimal', total, decimals };
+      }
+      return { kind: 'float' };
+    }
+    if (t === 'CAST_INT_ROUND' || t === 'CAST_INT_TRUNC') {
+      this.adv();
+      return { kind: 'int', maxDigits: this.parseOptOneUintArg() };
+    }
+    if (t === 'CAST_TEXT') {
+      this.adv();
+      return { kind: 'text', max: this.parseOptOneUintArg() };
+    }
+    if (t === 'CAST_CHAR') {
+      this.adv();
+      return { kind: 'char' };
+    }
+    return null;
+  }
+
+  parseOptOneUintArg() {
+    if (!this.check('LPAREN')) return null;
+    this.adv();
+    const n = this.eat('NUM').value;
+    this.eat('RPAREN');
+    return n;
+  }
+
+  parseTwoUintArgs() {
+    this.eat('LPAREN');
+    const a = this.eat('NUM').value;
+    this.eat('COMMA');
+    const b = this.eat('NUM').value;
+    this.eat('RPAREN');
+    return [a, b];
   }
 
   parseReturn() {
@@ -1939,9 +2000,12 @@ class Checker {
       }
 
       case 'Call': {
-        // callee is a string — mark as used (W_UNUSED suppression) but don't emit E_VAR
+        // Mirrors zymbol-semantic type_check: a bare-identifier call must name a
+        // hoisted function, a variable holding a callable, or a module alias —
+        // otherwise the function does not exist (e.g. `cos(x)` without `math::cos`).
         if (typeof expr.callee === 'string' && expr.callee) {
-          this.lookup(expr.callee, expr.line);
+          const info = this.lookup(expr.callee, expr.line);
+          if (!info) this.error('E_FUNC', `undefined function: '${expr.callee}'`, expr.line);
         } else if (expr.callee && typeof expr.callee === 'object') {
           this.checkExpr(expr.callee);
         }
@@ -2086,6 +2150,65 @@ const mkChar  = v => ({ type: 'char',  v: String(v) });
 const mkArr   = v => ({ type: 'arr',   v });
 const mkUnit  = () => ({ type: 'unit' });
 
+// ─── Typed input validation (mirrors execute_input in zymbol-interpreter/io.rs) ─
+
+// Human-readable description of what an input cast expects (re-prompt hints + EOF error).
+function describeInputCast(cast) {
+  switch (cast.kind) {
+    case 'numeric': case 'float': return 'a number';
+    case 'decimal': return `a number with up to ${cast.total} digits and ${cast.decimals} decimals`;
+    case 'int':     return cast.maxDigits != null ? `an integer of up to ${cast.maxDigits} digits` : 'an integer';
+    case 'text':    return cast.max != null ? `text of up to ${cast.max} characters` : 'text';
+    case 'char':    return 'a single character';
+    default:        return 'text';
+  }
+}
+
+// Legacy `#|v|` cast: best-effort numeric parse, falls back to String (never re-prompts).
+// Mirrors parse_numeric_string: int first, then float, with Unicode-digit normalization.
+function parseNumericInput(s) {
+  const ascii = [...s].map(ch => {
+    const dv = digitValue(ch);
+    return (dv >= 0 && !(ch >= '0' && ch <= '9')) ? String(dv) : ch;
+  }).join('');
+  if (/^[+-]?[0-9]+$/.test(ascii)) return mkInt(Number(ascii));
+  if (/^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/.test(ascii)) return mkFloat(Number(ascii));
+  return mkStr(s);
+}
+
+// Validate a trimmed input line against a cast; returns the typed value or null
+// (the caller re-prompts on null).
+function validateInput(s, cast) {
+  switch (cast.kind) {
+    case 'string':  return mkStr(s);
+    case 'numeric': return parseNumericInput(s);
+    case 'float':
+      return /^[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)([eE][+-]?[0-9]+)?$/.test(s) ? mkFloat(Number(s)) : null;
+    case 'decimal': {
+      const body = /^[+-]/.test(s) ? s.slice(1) : s;
+      if (!/^[0-9.]+$/.test(body) || (body.match(/\./g) ?? []).length > 1 || body === '.') return null;
+      const [intPart, fracPart = ''] = body.split('.');
+      if (fracPart.length > cast.decimals || intPart.length + fracPart.length > cast.total) return null;
+      return mkFloat(Number(s));
+    }
+    case 'int': {
+      if (!/^[+-]?[0-9]+$/.test(s)) return null;
+      const digits = (s.match(/[0-9]/g) ?? []).length;
+      if (cast.maxDigits != null && digits > cast.maxDigits) return null;
+      return mkInt(Number(s));
+    }
+    case 'text': {
+      if (cast.max != null && [...s].length > cast.max) return null;
+      return mkStr(s);
+    }
+    case 'char': {
+      const chars = [...s];
+      return chars.length === 1 ? mkChar(chars[0]) : null;
+    }
+    default: return mkStr(s);
+  }
+}
+
 // ─── Deep update helper (G1) ──────────────────────────────────────────────────
 
 function deepUpdateValue(col, indices, newVal) {
@@ -2103,9 +2226,9 @@ function deepUpdateValue(col, indices, newVal) {
   throw new ZyError(`deep update ($~) not supported on ${col.type}`);
 }
 
-// ─── Standard library modules (std/math, std/random) ─────────────────────────
+// ─── Standard library modules (std/math, std/random, std/json, std/net, std/io) ─
 
-function buildStdlibModule(name) {
+function buildStdlibModule(name, vfs = null) {
   const asF64 = v => v?.type === 'float' ? v.v : v?.type === 'int' ? v.v : null;
   const symMap = { int:'###', float:'##.', str:'##"', char:"##'", bool:'##?', arr:'##]', tuple:'##)' };
   const typeCode = v => symMap[v?.type] ?? '##_';
@@ -2205,13 +2328,176 @@ function buildStdlibModule(name) {
     return { type: 'module', exports };
   }
 
+  // std/json — mirrors stdlib/json.rs: decode/encode, soft ##Parse on malformed
+  // JSON, hard error on wrong argument type. Object↔NamedTuple, null↔Unit.
+  if (name === 'std/json') {
+    const exports = new Map();
+    const jsonToValue = j => {
+      if (j === null) return mkUnit();
+      if (typeof j === 'boolean') return mkBool(j);
+      if (typeof j === 'number') return Number.isInteger(j) ? mkInt(j) : mkFloat(j);
+      if (typeof j === 'string') return mkStr(j);
+      if (Array.isArray(j)) return mkArr(j.map(jsonToValue));
+      return { type: 'tuple', v: Object.values(j).map(jsonToValue), keys: Object.keys(j) };
+    };
+    const valueToJson = v => {
+      switch (v?.type) {
+        case 'bool':  return v.v;
+        case 'int': case 'float': return v.v;
+        case 'str': case 'char':  return String(v.v);
+        case 'arr':   return v.v.map(valueToJson);
+        case 'tuple':
+          return v.keys?.some(k => k !== null)
+            ? Object.fromEntries(v.v.map((item, i) => [v.keys[i], valueToJson(item)]))
+            : v.v.map(valueToJson);
+        default: return null; // unit, func, error
+      }
+    };
+    exports.set('decode', { type: 'func', name: 'decode', native: true, call: args => {
+      if (args[0]?.type !== 'str') throw new ZyError('json::decode: expected String');
+      try { return jsonToValue(JSON.parse(args[0].v)); }
+      catch (e) { return { type: 'error', errType: '##Parse', v: e.message }; }
+    }});
+    exports.set('encode', { type: 'func', name: 'encode', native: true, call: args => {
+      try { return mkStr(JSON.stringify(valueToJson(args[0] ?? mkUnit()))); }
+      catch (e) { return { type: 'error', errType: '##Parse', v: e.message }; }
+    }});
+    return { type: 'module', exports };
+  }
+
+  // std/net — mirrors stdlib/net.rs over fetch(). Soft ##Network on failure
+  // (incl. non-2xx, like ureq), hard error on wrong argument type. Browser
+  // caveat: cross-origin requests need CORS support on the server.
+  if (name === 'std/net') {
+    const exports = new Map();
+    const netErr = msg => ({ type: 'error', errType: '##Network', v: msg });
+    const strOf  = v => v?.type === 'str' ? v.v : null;
+    const parseHeaders = (arg, fname) => {
+      if (arg == null || arg.type === 'unit') return [];
+      const bad = () => new ZyError(`${fname}: headers must be an Array of (String, String) tuples`);
+      if (arg.type !== 'arr') throw bad();
+      return arg.v.map(item => {
+        if (item?.type !== 'tuple' || item.v.length !== 2) throw bad();
+        const k = strOf(item.v[0]), v = strOf(item.v[1]);
+        if (k === null || v === null) throw bad();
+        return [k, v];
+      });
+    };
+    const request = async (url, headerPairs, contentType, body) => {
+      const headers = new Headers();
+      if (contentType) headers.set('Content-Type', contentType);
+      for (const [k, v] of headerPairs) headers.set(k, v);
+      try {
+        const resp = await fetch(url, body == null
+          ? { headers }
+          : { method: 'POST', headers, body });
+        if (!resp.ok) return netErr(`${url}: status code ${resp.status}`);
+        return mkStr(await resp.text());
+      } catch (e) {
+        return netErr(e.message ?? String(e));
+      }
+    };
+    exports.set('get', { type: 'func', name: 'get', native: true, call: args => {
+      const url = strOf(args[0]);
+      if (url === null) throw new ZyError('net::get: expected String url');
+      return request(url, parseHeaders(args[1], 'net::get'), null, null);
+    }});
+    exports.set('post', { type: 'func', name: 'post', native: true, call: args => {
+      const url = strOf(args[0]), body = strOf(args[1]);
+      if (url === null || body === null) throw new ZyError('net::post: expected (String, String)');
+      return request(url, parseHeaders(args[2], 'net::post'), 'text/plain', body);
+    }});
+    exports.set('post_json', { type: 'func', name: 'post_json', native: true, call: args => {
+      const url = strOf(args[0]), body = strOf(args[1]);
+      if (url === null || body === null) throw new ZyError('net::post_json: expected (String, String)');
+      return request(url, parseHeaders(args[2], 'net::post_json'), 'application/json', body);
+    }});
+    exports.set('head', { type: 'func', name: 'head', native: true, call: async args => {
+      const url = strOf(args[0]);
+      if (url === null) throw new ZyError('net::head: expected String url');
+      try { return mkBool((await fetch(url, { method: 'HEAD' })).ok); }
+      catch { return mkBool(false); }
+    }});
+    return { type: 'module', exports };
+  }
+
+  // std/io — mirrors stdlib/io.rs over a per-run virtual filesystem (browser
+  // has no real FS). Soft ##IO on failure, hard error on wrong argument type.
+  if (name === 'std/io' && vfs) {
+    const exports = new Map();
+    const { files, dirs } = vfs;
+    const NOENT = 'No such file or directory (os error 2)';
+    const ioErr = msg => ({ type: 'error', errType: '##IO', v: msg });
+    const norm  = p => p.length > 1 ? p.replace(/\/+$/, '') : p;
+    const strArg = (a, msg) => {
+      if (a?.type !== 'str') throw new ZyError(msg);
+      return norm(a.v);
+    };
+    exports.set('read', { type: 'func', name: 'read', native: true, call: args => {
+      const p = strArg(args[0], 'io::read: expected String path');
+      return files.has(p) ? mkStr(files.get(p)) : ioErr(NOENT);
+    }});
+    exports.set('write', { type: 'func', name: 'write', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'str')
+        throw new ZyError('io::write: expected (String, String)');
+      files.set(norm(args[0].v), args[1].v);
+      return mkUnit();
+    }});
+    exports.set('append', { type: 'func', name: 'append', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'str')
+        throw new ZyError('io::append: expected (String, String)');
+      const p = norm(args[0].v);
+      files.set(p, (files.get(p) ?? '') + args[1].v);
+      return mkUnit();
+    }});
+    exports.set('exists', { type: 'func', name: 'exists', native: true, call: args => {
+      const p = strArg(args[0], 'io::exists: expected String path');
+      return mkBool(files.has(p) || dirs.has(p));
+    }});
+    exports.set('delete', { type: 'func', name: 'delete', native: true, call: args => {
+      const p = strArg(args[0], 'io::delete: expected String path');
+      if (dirs.has(p)) {
+        for (const d of [...dirs])       if (d === p || d.startsWith(p + '/')) dirs.delete(d);
+        for (const f of [...files.keys()]) if (f.startsWith(p + '/')) files.delete(f);
+        return mkUnit();
+      }
+      if (files.delete(p)) return mkUnit();
+      return ioErr(NOENT);
+    }});
+    exports.set('list', { type: 'func', name: 'list', native: true, call: args => {
+      const p = strArg(args[0], 'io::list: expected String path');
+      if (!dirs.has(p)) return ioErr(NOENT);
+      const names = new Set();
+      for (const f of files.keys())
+        if (f.startsWith(p + '/') && !f.slice(p.length + 1).includes('/'))
+          names.add(f.slice(p.length + 1));
+      for (const d of dirs)
+        if (d.startsWith(p + '/') && !d.slice(p.length + 1).includes('/'))
+          names.add(d.slice(p.length + 1));
+      return mkArr([...names].map(mkStr));
+    }});
+    exports.set('mkdir', { type: 'func', name: 'mkdir', native: true, call: args => {
+      const p = strArg(args[0], 'io::mkdir: expected String path');
+      const parts = p.split('/').filter(Boolean);
+      let acc = p.startsWith('/') ? '' : null;
+      for (const part of parts) {
+        acc = acc === null ? part : `${acc}/${part}`;
+        dirs.add(acc);
+      }
+      return mkUnit();
+    }});
+    return { type: 'module', exports };
+  }
+
   return null;
 }
 
 // ─── Interpreter ──────────────────────────────────────────────────────────────
 
 export class Interpreter {
-  constructor(outputFn, inputFn = async () => '', moduleResolver = null, tuiContext = null) {
+  // Default inputFn signals EOF (null): with no input source attached, << aborts
+  // like the CLI does on a closed stdin instead of looping on empty reads.
+  constructor(outputFn, inputFn = async () => null, moduleResolver = null, tuiContext = null) {
     this.outputFn        = outputFn;
     this.inputFn         = inputFn;
     this.steps           = 0;
@@ -2226,13 +2512,17 @@ export class Interpreter {
     this.tui             = tuiContext;
     this.cliArgs         = [];
     this.loadingModules  = new Set();
+    // Virtual filesystem backing std/io (browser has no real FS); lives for one run.
+    this.vfs             = { files: new Map(), dirs: new Set() };
   }
 
   async loadModule(path) {
     // Intercept stdlib modules (std/math, std/random, …)
     if (path.startsWith('std/')) {
       if (this.moduleCache.has(path)) return this.moduleCache.get(path);
-      const modVal = buildStdlibModule(path);
+      if (path === 'std/db')
+        throw new ZyError(`standard library module 'std/db' is not available in the web playground (requires ODBC)`);
+      const modVal = buildStdlibModule(path, this.vfs);
       if (!modVal) throw new ZyError(`standard library module '${path}' not found`);
       this.moduleCache.set(path, modVal);
       return modVal;
@@ -2265,6 +2555,7 @@ export class Interpreter {
     const modInterp = new Interpreter(this.outputFn, this.inputFn, childRes);
     modInterp.moduleCache    = this.moduleCache;
     modInterp.loadingModules = this.loadingModules;
+    modInterp.vfs            = this.vfs; // share one virtual filesystem per run
 
     const modEnv = new Env(null, false, true); // isModuleScope=true
     modInterp.globalEnv = modEnv;
@@ -2395,11 +2686,23 @@ export class Interpreter {
       }
 
       case 'Input': {
-        if (stmt.prompt) this.emit(this.display(await this.eval(stmt.prompt, env)));
-        const line = await this.inputFn();
-        const val = mkStr(line.trim());
-        if (!env.set(stmt.varName, val)) env.def(stmt.varName, val);
-        return;
+        // Build the prompt text once; it is re-printed on every (re-)prompt.
+        const promptText = stmt.prompt ? this.display(await this.eval(stmt.prompt, env)) : null;
+        const cast = stmt.cast ?? { kind: 'string' };
+        while (true) {
+          if (promptText !== null) this.emit(promptText);
+          const line = await this.inputFn();
+          // EOF contract: inputFn returns null/undefined when no more input is
+          // available — no constraint can be satisfied, abort instead of looping.
+          if (line == null) throw new ZyError(`end of input while waiting for ${describeInputCast(cast)}`);
+          const val = validateInput(String(line).trim(), cast);
+          if (val !== null) {
+            if (!env.set(stmt.varName, val)) env.def(stmt.varName, val);
+            return;
+          }
+          // Re-prompt: show what was expected, then loop and ask again.
+          this.emit(`  (${describeInputCast(cast)})\n`);
+        }
       }
 
       case 'VarAssign': {

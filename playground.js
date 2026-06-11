@@ -608,6 +608,14 @@ function inputFn() {
     inp.focus();
 
     inp.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        // Cancel = EOF: typed input (<< ###(n) …) re-prompts until valid, so the
+        // user needs a way out; the interpreter aborts like the CLI on closed stdin.
+        inp.remove();
+        line.remove();
+        resolve(null);
+        return;
+      }
       if (e.key !== 'Enter') return;
       const value = inp.value;
       inp.remove();

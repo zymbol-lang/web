@@ -2,7 +2,7 @@
 // Parity test runner: compares zymbol CLI vs web interpreter (zymbol.js)
 // Usage: node test_runner.mjs [--dir path] [--filter pattern] [--show-pass]
 
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
 import { execSync } from 'child_process';
 import { join, resolve } from 'path';
 import { fileURLToPath } from 'url';
@@ -35,6 +35,12 @@ function collectFiles(dir) {
 const allFiles = collectFiles(TEST_ROOT)
   .filter(f => !filterArg || f.includes(filterArg));
 
+// ─── Stdin feed: tests with a sibling .input file get it as input ─────────────
+function inputDataFor(file) {
+  const inputFile = file.replace(/\.zy$/, '.input');
+  return existsSync(inputFile) ? readFileSync(inputFile, 'utf8') : null;
+}
+
 // ─── Run one file with CLI ────────────────────────────────────────────────────
 function runCLI(file) {
   try {
@@ -42,6 +48,7 @@ function runCLI(file) {
       timeout: 8000,
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],
+      input: inputDataFor(file) ?? '',
     });
   } catch (e) {
     return (e.stdout ?? '') + (e.stderr ?? '');
@@ -63,9 +70,15 @@ function makeModuleResolver(baseDir) {
 
 async function runWeb(file, src) {
   let out = '';
+  // Feed .input lines one per call; null when exhausted = EOF (mirrors closed stdin).
+  const inputData = inputDataFor(file);
+  const lines = inputData === null ? [] : inputData.split('\n');
+  if (lines.length && lines[lines.length - 1] === '') lines.pop(); // trailing newline
+  let lineIdx = 0;
+  const inputFn = async () => lineIdx < lines.length ? lines[lineIdx++] : null;
   try {
     await runZymbol(
-      src, async () => '', text => { out += text; },
+      src, inputFn, text => { out += text; },
       makeModuleResolver(dirname(resolve(file))), file,
       null, [], { maxSteps: Infinity, maxBytes: Infinity, maxInfiniteIter: Infinity }
     );
@@ -100,6 +113,7 @@ function normalize(s) {
     .replace(/\r\n/g, '\n')           // CRLF → LF
     .replace(/\r/g, '\n')
     .replace(/\(\d+\.\d+s(?:\s+\w+)?\)/g, '(Xs)') // strip benchmark timing — web ≠ CLI timing
+    .replace(/##Parse\(.*\)$/gm, '##Parse(…)')    // JSON parse error text is engine-specific (serde vs V8)
     .trimEnd()                          // trailing newline differences
     .replace(/\t/g, '    ');            // tabs → spaces
 }
@@ -152,6 +166,11 @@ const SKIP_SET = new Set([
   // ── FEATURE_GAP: closure snapshot semantics (capture by value, write isolation) ──
   'analysis/p5d_fn_capture_asymmetry.zy',
   'lambdas/28_eval_order_and_capture.zy',
+  // ── STD_DB: std/db requires ODBC — no browser equivalent ─────────────────
+  'stdlib/stdlib_db_basic.zy',
+  'stdlib/stdlib_db_tx.zy',
+  'stdlib/stdlib_db_type_err.zy',
+  'stdlib/stdlib_i18n_db_es.zy',
 ]);
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -207,7 +226,7 @@ const total = passed + failed;
 const pct   = total ? Math.round(passed / total * 100) : 0;
 console.log('─'.repeat(60));
 console.log(`  Passed  : ${passed} / ${total}  (${pct}%)`);
-console.log(`  Skipped : ${skipped}  (BASH_EXEC + ANSI_FORMAT + TUI(key/raw) + STEP_LIMIT + HOT_DEF + FEATURE_GAP — irreducible)`);
+console.log(`  Skipped : ${skipped}  (BASH_EXEC + ANSI_FORMAT + TUI(key/raw) + STEP_LIMIT + HOT_DEF + FEATURE_GAP + STD_DB — irreducible)`);
 console.log(`  Failed  : ${failed}`);
 console.log('─'.repeat(60));
 
