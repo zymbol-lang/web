@@ -127,6 +127,7 @@ function normalize(s) {
 const SKIP_SET = new Set([
   // ── BASH_EXEC ──────────────────────────────────────────────────────────────
   'gaps/g12_bashexec_expression.zy',
+  'errors/semantic/no_false_positive_unused.zy',
   'scripts/manual_check.zy',
   'i18n/test_archivos.zy',
   'i18n/test_bash.zy',

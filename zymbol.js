@@ -25,6 +25,9 @@
  * the CLI on closed stdin. Legacy << #|v| now converts numeric strings (Int/Float).
  * Checker: static undefined-function detection (E_FUNC) for bare-identifier calls,
  * mirroring zymbol-semantic type_check (the test1.zy cos() case).
+ * 2026-06-12 parity sync: nested Unit in collections displays as `()` (was an
+ * empty hole — Rust engines unified the same day); Checker rejects destructuring
+ * into a `:=` constant (L14, E_CONST), mirroring type_check.rs.
  *
  * CLI args (><): supported — pass cliArgs array to runZymbol().
  * BashExec (<\ \>): returns high-resolution timestamp (entropy stub).
@@ -1924,18 +1927,20 @@ class Checker {
       }
 
       case 'TupleDestruct':
-      case 'ArrayDestruct': {
-        this.checkExpr(stmt.value);
-        for (const t of (stmt.targets ?? [])) {
-          if (t.name && t.name !== '_') this.define(t.name, stmt.line, false);
-        }
-        return;
-      }
-
+      case 'ArrayDestruct':
       case 'NamedDestruct': {
         this.checkExpr(stmt.value);
         for (const t of (stmt.targets ?? [])) {
-          if (t.name && t.name !== '_') this.define(t.name, stmt.line, false);
+          if (t.name && t.name !== '_') {
+            // L14 (mirrors type_check.rs): destructuring into a `:=` constant
+            // is an error, same as direct reassignment.
+            const info = this.lookup(t.name, stmt.line);
+            if (info?.isConst) {
+              this.error('E_CONST', `cannot reassign constant '${t.name}'`, stmt.line);
+              continue;
+            }
+            this.define(t.name, stmt.line, false);
+          }
         }
         return;
       }
@@ -4047,16 +4052,19 @@ export class Interpreter {
 
   display(val) {
     if (!val || val.type === 'unit') return '';
+    // Standalone Unit prints as nothing, but INSIDE a collection it renders
+    // as `()` — mirrors Rust `Value::to_display_string` (unified 2026-06-12).
+    const nested = (v) => (v && v.type === 'unit') ? '()' : this.display(v);
     if (val.type === 'int')   return String(val.v);
     if (val.type === 'float') return String(val.v);
     if (val.type === 'str')  return val.v;
     if (val.type === 'char') return val.v;
     if (val.type === 'bool') return val.v ? '#1' : '#0';
-    if (val.type === 'arr')  return '[' + val.v.map(v => this.display(v)).join(', ') + ']';
+    if (val.type === 'arr')  return '[' + val.v.map(nested).join(', ') + ']';
     if (val.type === 'tuple') {
       if (val.keys?.some(k => k !== null))
-        return '(' + val.v.map((item, i) => `${val.keys[i]}: ${this.display(item)}`).join(', ') + ')';
-      return '(' + val.v.map(v => this.display(v)).join(', ') + ')';
+        return '(' + val.v.map((item, i) => `${val.keys[i]}: ${nested(item)}`).join(', ') + ')';
+      return '(' + val.v.map(nested).join(', ') + ')';
     }
     if (val.type === 'func') {
       const arity = val.params?.length ?? 0;
