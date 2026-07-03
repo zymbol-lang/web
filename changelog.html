@@ -269,11 +269,59 @@
 <!-- ═══ TIMELINE ═══ -->
 <div class="cl-timeline">
 
+  <!-- ── v0.0.7 ── -->
+  <div class="cl-entry">
+    <div class="cl-entry-head">
+      <span class="cl-version">v0.0.7</span>
+      <span class="cl-badge-latest">latest</span>
+      <span class="cl-date">July 2, 2026</span>
+    </div>
+    <div class="cl-title">Native Stdlib, ODBC Databases, Typed Input &amp; Fail-Closed Formatter</div>
+
+    <div class="cl-groups">
+
+      <div class="cl-group">
+        <span class="cl-group-label added">Added</span>
+        <ul class="cl-change-list">
+          <li><strong>Native stdlib expansion</strong> — <code>std/json</code> (<code>decode</code> / <code>decode_map</code> / <code>encode</code>), <code>std/io</code> (<code>read</code>, <code>write</code>, <code>append</code>, <code>exists</code>, <code>delete</code>, <code>list</code>, <code>mkdir</code>) and <code>std/net</code> (<code>get</code> / <code>post</code> / <code>post_json</code> / <code>head</code> with an optional <code>headers</code> argument). Recoverable failures return soft <code>##Parse</code> / <code>##IO</code> / <code>##Network</code> error values; full VM parity and Spanish i18n adapters</li>
+          <li><strong><code>std/db</code> — vendor-neutral database access via ODBC</strong> — <code>connect</code>, <code>exec</code>, <code>query</code>, transactions, savepoints, <code>exec_script</code>, <code>table_exists</code>. Zymbol bundles no engine: the OS supplies the per-engine ODBC driver (validated live on SQLite and PostgreSQL with the same program). <em>Available in the Windows binaries and source builds; the prebuilt Linux/macOS binaries exclude it — ODBC needs <code>dlopen</code>, impossible in a fully static binary</em></li>
+          <li><strong><code>json::decode_map(text, map)</code> — data-level i18n</strong> — decodes JSON and recursively renames object keys per a named-tuple map, so API payload keys read in the consumer's language</li>
+          <li><strong>Typed/validated input</strong> — <code>&lt;&lt; ##.(5,2) "prompt" var</code> re-prompts until the input matches the typespec (both engines)</li>
+          <li><strong>Deep functional update in the VM</strong> — new <code>DeepSet</code> instruction: every <code>arr[i&gt;j&gt;…]$~ val</code> form now works under <code>--vm</code>, including positional tuples</li>
+          <li><strong>Static undefined-function detection</strong> — calling an unknown bare identifier is now a <code>check</code>-time semantic error</li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label changed">Changed</span>
+        <ul class="cl-change-list">
+          <li><strong>Formatter is now fail-closed and faithful</strong> — a safety gate (token equivalence, reparse, statement shape, comment count) refuses to emit non-equivalent output, and the parser preserves surface forms (user parentheses, <code>+=</code> / <code>++</code> / <code>--</code>, <code>¶</code> vs <code>\\</code>, typespecs). <code>zymbol fmt</code> can no longer corrupt a file</li>
+          <li><strong>Nested <code>Unit</code> displays as <code>()</code> in both engines</strong> — the last known display divergence between tree-walker and VM</li>
+          <li><strong>Rust edition 2024</strong> — workspace migrated (<code>rust-version 1.85</code>) with dependency upgrades and a security bump (<code>bytes</code> ≥ 1.11.1)</li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label fixed">Fixed</span>
+        <ul class="cl-change-list">
+          <li><strong>L16</strong> — <code>!?</code> corrupted the caller's scope when a called function failed; the tree-walker now restores call state on every error exit and the VM unwinds frames to the nearest active catch</li>
+          <li><strong>L14</strong> — destructuring into a <code>:=</code> constant is now a semantic error at <code>check</code> time</li>
+          <li><strong>Diagnostics</strong> — <code>zymbol check</code> no longer prints module errors twice, and LSP diagnostics in the editor now match <code>zymbol check</code> (module analysis + severities)</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="cl-actions">
+      <a href="https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.7" target="_blank" class="btn-ghost">↗ GitHub</a>
+      <a href="install.html" class="btn-ghost">↓ Download</a>
+    </div>
+  </div>
+
   <!-- ── v0.0.6 ── -->
   <div class="cl-entry">
     <div class="cl-entry-head">
       <span class="cl-version">v0.0.6</span>
-      <span class="cl-badge-latest">latest</span>
       <span class="cl-date">June 7, 2026</span>
     </div>
     <div class="cl-title">FatArrow Operator, Bytecode Standalones, VM Input &amp; Stdlib</div>
