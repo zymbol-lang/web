@@ -16,7 +16,7 @@
  * bare import paths support slashes: <# std/math => alias;
  * native function call path in callFunc (fn.native).
  *
- * v0.0.7: stdlib std/json (decode/encode via JSON.parse/stringify — ##Parse text is
+ * v0.0.7: stdlib std/json (decode/decode_map/encode via JSON.parse/stringify — ##Parse text is
  * engine-specific), std/net (get/post/post_json/head via fetch; optional headers arg;
  * CORS applies), std/io (per-run virtual filesystem: Map of files + Set of dirs);
  * std/db NOT available (requires ODBC). Typed input << <typespec> "prompt" var with
@@ -28,6 +28,8 @@
  * 2026-06-12 parity sync: nested Unit in collections displays as `()` (was an
  * empty hole — Rust engines unified the same day); Checker rejects destructuring
  * into a `:=` constant (L14, E_CONST), mirroring type_check.rs.
+ * 2026-07-02 parity sync: json::decode_map(text, map) — decode + recursive key
+ * rename per a NamedTuple map (data-level i18n), mirroring stdlib/json.rs.
  *
  * CLI args (><): supported — pass cliArgs array to runZymbol().
  * BashExec (<\ \>): returns high-resolution timestamp (entropy stub).
@@ -2361,6 +2363,38 @@ function buildStdlibModule(name, vfs = null) {
     exports.set('decode', { type: 'func', name: 'decode', native: true, call: args => {
       if (args[0]?.type !== 'str') throw new ZyError('json::decode: expected String');
       try { return jsonToValue(JSON.parse(args[0].v)); }
+      catch (e) { return { type: 'error', errType: '##Parse', v: e.message }; }
+    }});
+    // decode_map — mirrors json_decode_map in stdlib/json.rs: decode + recursive
+    // key rename per a NamedTuple map (data-level i18n). Unit map = plain decode.
+    const buildRenameMap = map => {
+      if (map == null || map.type === 'unit') return new Map();
+      if (map.type !== 'tuple' || !map.keys?.some(k => k !== null)) {
+        throw new ZyError('json::decode_map: expected a NamedTuple map as the second argument');
+      }
+      const table = new Map();
+      map.keys.forEach((k, i) => {
+        if (k === null) return;
+        const dst = map.v[i];
+        if (dst?.type !== 'str') {
+          throw new ZyError(`json::decode_map: map value for '${k}' must be a String (the new name)`);
+        }
+        table.set(k, String(dst.v));
+      });
+      return table;
+    };
+    const rekey = (value, table) => {
+      if (value?.type === 'tuple') {
+        const keys = value.keys?.map(k => (k !== null && table.has(k)) ? table.get(k) : k);
+        return { type: 'tuple', v: value.v.map(item => rekey(item, table)), keys };
+      }
+      if (value?.type === 'arr') return mkArr(value.v.map(item => rekey(item, table)));
+      return value;
+    };
+    exports.set('decode_map', { type: 'func', name: 'decode_map', native: true, call: args => {
+      if (args[0]?.type !== 'str') throw new ZyError('json::decode_map: expected String as the first argument');
+      const table = buildRenameMap(args[1]);
+      try { return rekey(jsonToValue(JSON.parse(args[0].v)), table); }
       catch (e) { return { type: 'error', errType: '##Parse', v: e.message }; }
     }});
     exports.set('encode', { type: 'func', name: 'encode', native: true, call: args => {
