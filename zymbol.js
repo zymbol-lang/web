@@ -31,6 +31,65 @@
  * 2026-07-02 parity sync: json::decode_map(text, map) — decode + recursive key
  * rename per a NamedTuple map (data-level i18n), mirroring stdlib/json.rs.
  *
+ * v0.0.8: match or-patterns — p1 || p2 || p3 in a match arm, tested left to right,
+ * first match wins. Alternatives combine any pattern kinds (literal, range,
+ * comparison, ident, list) and are top-level only, so list elements stay
+ * unambiguous. Mirrors Pattern::Or in zymbol-ast / zymbol-parser.
+ * 2026-07-27 v0.0.8 distribution-parity pass (playground now runs zy-GO,
+ * zy-Serpiente, zyKlingonGalaxy, Z-Tic-Tac-Toe): ##! on a Char casts to its
+ * code point (data_ops.rs CastKind::ToIntTrunc); delimited juxtaposition —
+ * implicit concat in call args, array/tuple elements and grouped expressions
+ * (HLZ-007), not just at statement level; std/term (width/pad_left/pad_right/
+ * center/truncate) added, unit-test-verified against stdlib/term.rs; open
+ * start/end collection slices arr$[i..] and arr$[..j] (only arr$[i..j] parsed
+ * before); comparison operators (<, >, ==, …) no longer wrongly rejected
+ * inside a match arm's { block } body — the no-bare-comparison rule is for
+ * the value form (pattern => expr) only, mirroring parse_match_arm_value;
+ * a `<~` return inside a match arm's block no longer gets silently swallowed
+ * when the match itself is a bare statement or a sub-expression (assignment
+ * RHS, argument, …) — eval()'s 'Match' case now throws the arm's ZyReturn
+ * signal so it unwinds to callFunc, the same mechanism $!! already used;
+ * identifier continuation no longer stops at a Private-Use-Area character
+ * that happens to double as a script's own digit block (e.g. Klingon pIqaD
+ * CSUR reuses U+F8F0–F8F9 for both letters and digits) — mirrors
+ * Lexer::is_ident_continue, which never special-cased digit blocks past the
+ * first character; the string-interpolation "is this a bare identifier"
+ * checker regex gained \p{So}\p{Co} (HLZ-KL-001 parity — was under-marking
+ * PUA-script names as used, producing a false W_UNUSED).
+ * 2026-07-28 escape sequences inside CHARACTER literals: readChar took the
+ * character after the backslash verbatim, so '\n' lexed as the letter "n" —
+ * a `'\n' => …` match arm never matched a real newline (and did match "n").
+ * String literals were always fine, which is why this survived: it only shows
+ * up where a program compares against a control character. Symptom was Enter
+ * doing nothing in TUI programs in the playground (arrow keys are literal
+ * glyphs, so they kept working). Escape table now mirrors Lexer::lex_char in
+ * zymbol-lexer/src/literals.rs. Regression test:
+ * interpreter/tests/bugs/bug_char_escape_lexing.zy (run by both engines).
+ * 2026-07-28 output parameters (`<~`) across a module boundary: only eval()'s
+ * 'Call' branch built the write-back list, but `alias::f(x)` parses as
+ * Ident → FieldAccess → CallExpr, so every cross-module call silently dropped
+ * its out-params — the callee mutated its local copy and the caller never saw
+ * it. Both branches now share buildOutWriteback(). This is what made GO
+ * unplayable in the browser: 盤::着手(局面<~, …, 取数<~, コウ点<~) placed stones
+ * and counted captures into parameters the caller never received, so the move
+ * counter advanced while the board stayed empty. Covered by
+ * interpreter/tests/modules_scope/{out_param_module,mod_state_return}.zy.
+ * 2026-07-28 codePointDisplayWidth is now exported, so the playground's canvas
+ * renderer measures characters with this table instead of its own local
+ * approximation. BrowserTUI._isWide used `cp >= 0x1F000 || FF01..FFE6`, which
+ * calls ⚫/⚪ (U+26AA/U+26AB) narrow while the table correctly calls them wide:
+ * the font drew each GO stone two cells wide and the renderer clipped it to
+ * one, slicing every stone in half on screen. Layout and rendering must agree
+ * on width or one of them is always wrong.
+ * 2026-07-28 module aliases now live in their own namespace (this.moduleAliases),
+ * mirroring the tree-walker's `import_aliases`, and the parser records whether a
+ * field access came from `::` or `.`. Both operators built the same FieldAccess
+ * node and resolved the object as an ordinary expression, so a plain variable
+ * sharing an alias's name made the module unreachable: zyKlingonGalaxy imports
+ * Duj and then uses that same name for the player's ship, so `duj = duj::bIj(duj,
+ * …)` — every left/right move — died with "'.<name>' requires a named tuple".
+ * Regression test: interpreter/tests/modules_scope/alias_shadowed_by_variable.zy.
+ *
  * CLI args (><): supported — pass cliArgs array to runZymbol().
  * BashExec (<\ \>): returns high-resolution timestamp (entropy stub).
  * Not supported: shell inclusion (</ />).
@@ -473,8 +532,23 @@ export class Lexer {
   readChar(toks) {
     this.consume();
     let ch = '';
-    if (this.ch() === '\\') { this.consume(); ch = this.consume(); }
-    else ch = this.consume();
+    if (this.ch() === '\\') {
+      this.consume();
+      const e = this.consume();
+      // Escape table mirrors Lexer::lex_char in zymbol-lexer/src/literals.rs. This used to
+      // take the character after the backslash verbatim, so '\n' lexed as the letter "n" —
+      // a pattern like `'\n' => …` then silently never matched a real newline (and did match
+      // the letter n). That is why Enter did nothing in TUI programs under the web
+      // interpreter while working under the CLI: every arrow key is a literal glyph ('↑')
+      // and was unaffected, but Enter is delivered as '\n' and fell through to the wildcard.
+      ch = e === 'n' ? '\n'
+         : e === 't' ? '\t'
+         : e === 'r' ? '\r'
+         : e === '0' ? '\0'
+         : e;                 // \' \\ and anything else: the character itself
+    } else {
+      ch = this.consume();
+    }
     if (this.ch() === "'") this.consume();
     toks.push({ type: 'CHAR', value: ch, line: this.line });
   }
@@ -485,7 +559,13 @@ export class Lexer {
       const c = this.ch();
       if (!c) break;
       if (c === '°') break; // hot-def suffix — consumed below, not part of name
-      if (digitValue(c) >= 0 && !(c >= '0' && c <= '9')) break;
+      // Mirrors Lexer::is_ident_continue: unlike the identifier-START check
+      // (readNumber is tried first, at the tokenize() dispatch site), a
+      // digit-block character does NOT end an identifier once it has begun —
+      // some Private Use Area scripts (e.g. Klingon pIqaD/CSUR) reuse the
+      // same PUA sub-range for both letters and that script's own digits, so
+      // breaking here would truncate real identifiers mid-word (HLZ-KL-001-
+      // adjacent parity gap, found via klingon_galaxy/HuD.zy).
       if (/[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(c)) { s += this.consume(); continue; }
       break;
     }
@@ -841,6 +921,34 @@ export class Parser {
   }
 
   parseMatchArm() {
+    let pattern = this.parseMatchPattern();
+    this.eat('FAT_ARROW');
+    // The no-bare-comparison restriction (inMatchBody) only applies to the
+    // value form (pattern => expr) — there it would swallow the next arm's
+    // comparison pattern (e.g. "ice" < 20). A { block } body is unambiguously
+    // delimited, so comparisons inside it must parse normally.
+    let body;
+    if (this.check('LBRACE')) {
+      body = { type: 'block', stmts: this.parseBlock() };
+    } else {
+      this.inMatchBody = true;
+      body = { type: 'expr', value: this.parseExpr() };
+      this.inMatchBody = false;
+    }
+    return { pattern, body };
+  }
+
+  // Pattern with `||` alternatives: p1 || p2 || p3 (first match wins).
+  // Alternatives are top-level only — list elements stay primary patterns.
+  parseMatchPattern() {
+    const first = this.parseMatchPatternPrimary();
+    if (!this.check('OR')) return first;
+    const alts = [first];
+    while (this.match('OR')) alts.push(this.parseMatchPatternPrimary());
+    return { type: 'or', alts };
+  }
+
+  parseMatchPatternPrimary() {
     let pattern;
     if (this.check('ELSE')) {
       this.adv();
@@ -879,13 +987,7 @@ export class Parser {
         pattern = { type: 'literal', value: left };
       }
     }
-    this.eat('FAT_ARROW');
-    this.inMatchBody = true;
-    const body = this.check('LBRACE')
-      ? { type: 'block', stmts: this.parseBlock() }
-      : { type: 'expr',  value: this.parseExpr()  };
-    this.inMatchBody = false;
-    return { pattern, body };
+    return pattern;
   }
 
   parseLoop() {
@@ -1009,6 +1111,23 @@ export class Parser {
 
     let left = { type: 'Ident', name, hot, line: tok0.line };
     return { type: 'ExprStmt', expr: this.parsePostfixRest(left) };
+  }
+
+  // Parse an expression in a delimited position — a call argument, an array
+  // element, a tuple element or a grouped expression — allowing implicit
+  // concatenation there too: f(" " label(k) value)  [a " " b]  (a " " b)
+  // Unlike parseRHS, a following '(' never continues the chain here: it is
+  // ambiguous with a lambda, a tuple and a grouped expression (HLZ-007).
+  parseExprJuxt() {
+    const firstLine = this.peek().line;
+    const first = this.parseExpr();
+    const juxtStart = new Set(['STR', 'IDENT', 'NUM', 'FLOAT', 'CHAR', 'BOOL']);
+    const items = [first];
+    while (this.peek().line === firstLine && juxtStart.has(this.peek().type)) {
+      items.push(this.parseExpr());
+    }
+    if (items.length === 1) return first;
+    return { type: 'ImplicitConcat', items };
   }
 
   parseRHS() {
@@ -1141,8 +1260,14 @@ export class Parser {
         this.adv(); const spec = this.parseNavContent(); this.eat('RBRACKET');
         left = { type: 'NavIndex', obj: left, spec };
       } else if (this.check('DOT') || this.check('SCOPE')) {
+        // Record which operator produced this node. `::` and `.` build the same shape but
+        // are not interchangeable: `alias::fn` and `alias.CONST` address the module
+        // namespace, while `tuple.field` addresses a value. Collapsing them lost that
+        // distinction, so a local variable sharing a module alias's name shadowed the
+        // module and any `alias::fn(...)` after it failed — see eval's FieldAccess case.
+        const scoped = this.check('SCOPE');
         this.adv(); const field = this.eat('IDENT').value;
-        left = { type: 'FieldAccess', obj: left, field };
+        left = { type: 'FieldAccess', obj: left, field, scoped };
       } else if (this.check('LPAREN') && sameLine() && left.type === 'Ident') {
         this.adv(); const args = this.parseArgList(); this.eat('RPAREN');
         left = { type: 'Call', callee: left.name, args };
@@ -1357,9 +1482,11 @@ export class Parser {
 
       case 'DSLICE':
         this.eat('LBRACKET');
-        { const from = this.parseExpr();
+        // $[start..end], $[..end] (open-start), $[start..] (open-end), $[start:count]
+        { const from = this.check('RANGE') ? null : this.parseExpr();
           if (this.match('RANGE')) {
-            const to = this.parseExpr(); this.eat('RBRACKET');
+            const to = this.check('RBRACKET') ? null : this.parseExpr();
+            this.eat('RBRACKET');
             return { type: 'CollectionOp', op: '$[i..j]', obj: left, range: { from, to } };
           }
           this.eat('COLON');
@@ -1446,7 +1573,7 @@ export class Parser {
   parseArgList() {
     const args = [];
     while (!this.check('RPAREN') && !this.check('EOF')) {
-      args.push(this.parseExpr());
+      args.push(this.parseExprJuxt());
       this.match('COMMA');
     }
     return args;
@@ -1477,7 +1604,7 @@ export class Parser {
       this.adv();
       const items = [];
       while (!this.check('RBRACKET') && !this.check('EOF')) {
-        items.push(this.parseExpr());
+        items.push(this.parseExprJuxt());
         this.match('COMMA');
       }
       this.eat('RBRACKET');
@@ -1493,7 +1620,7 @@ export class Parser {
         firstKey = this.adv().value;
         this.adv();
       }
-      const firstVal = this.parseExpr();
+      const firstVal = this.parseExprJuxt();
       if (this.check('COMMA') || firstKey !== null) {
         const items = [firstVal];
         const keys  = [firstKey];
@@ -1504,7 +1631,7 @@ export class Parser {
             key = this.adv().value;
             this.adv();
           }
-          items.push(this.parseExpr());
+          items.push(this.parseExprJuxt());
           keys.push(key);
         }
         this.eat('RPAREN');
@@ -2116,8 +2243,11 @@ class Checker {
           for (const part of expr.value) {
             if (part.t === 'expr' && typeof part.v === 'string') {
               const name = part.v.trim();
-              // Only look up simple identifiers (no operators/spaces)
-              if (/^[\p{L}_][\p{L}\p{M}0-9_]*$/u.test(name)) this.lookup(name, expr.line);
+              // Only look up simple identifiers (no operators/spaces). Character
+              // classes mirror readIdent's lexer rule (HLZ-KL-001 parity) — a
+              // narrower rule here would under-mark PUA-script (e.g. pIqaD)
+              // identifiers as used, producing a false W_UNUSED.
+              if (/^[\p{L}\p{M}\p{So}\p{Co}_][\p{L}\p{M}\p{So}\p{Co}0-9_]*$/u.test(name)) this.lookup(name, expr.line);
             }
           }
         }
@@ -2233,7 +2363,116 @@ function deepUpdateValue(col, indices, newVal) {
   throw new ZyError(`deep update ($~) not supported on ${col.type}`);
 }
 
-// ─── Standard library modules (std/math, std/random, std/json, std/net, std/io) ─
+// ─── Terminal display width (mirrors unicode-width crate, backs std/term) ────
+// Width answers a screen question, not a content question: CJK ideographs,
+// kana, hangul and most emoji take two columns; combining marks and control
+// characters take zero. This is a practical subset of the East Asian Width /
+// zero-width tables, not the full Unicode database.
+const TERM_WIDE_RANGES = [
+  [0x1100,0x115F],[0x231A,0x231B],[0x2329,0x232A],[0x23E9,0x23EC],[0x23F0,0x23F0],
+  [0x23F3,0x23F3],[0x25FD,0x25FE],[0x2614,0x2615],[0x2648,0x2653],[0x267F,0x267F],
+  [0x2693,0x2693],[0x26A1,0x26A1],[0x26AA,0x26AB],[0x26BD,0x26BE],[0x26C4,0x26C5],
+  [0x26CE,0x26CE],[0x26D4,0x26D4],[0x26EA,0x26EA],[0x26F2,0x26F3],[0x26F5,0x26F5],
+  [0x26FA,0x26FA],[0x26FD,0x26FD],[0x2705,0x2705],[0x270A,0x270B],[0x2728,0x2728],
+  [0x274C,0x274C],[0x274E,0x274E],[0x2753,0x2755],[0x2757,0x2757],[0x2795,0x2797],
+  [0x27B0,0x27B0],[0x27BF,0x27BF],[0x2B1B,0x2B1C],[0x2B50,0x2B50],[0x2B55,0x2B55],
+  [0x2E80,0x303E],[0x3041,0x33FF],[0x3400,0x4DBF],[0x4E00,0x9FFF],
+  [0xA000,0xA4CF],[0xA960,0xA97F],[0xAC00,0xD7A3],[0xF900,0xFAFF],
+  [0xFE30,0xFE4F],[0xFF00,0xFF60],[0xFFE0,0xFFE6],
+  [0x16FE0,0x16FE4],[0x16FF0,0x16FF1],[0x17000,0x18D08],[0x1AFF0,0x1B16F],
+  [0x1B170,0x1B2FB],[0x1F004,0x1F004],[0x1F0CF,0x1F0CF],[0x1F18E,0x1F18E],
+  [0x1F191,0x1F19A],[0x1F200,0x1F320],[0x1F32D,0x1F335],[0x1F337,0x1F37C],
+  [0x1F37E,0x1F393],[0x1F3A0,0x1F3CA],[0x1F3CF,0x1F3D3],[0x1F3E0,0x1F3F0],
+  [0x1F3F4,0x1F3F4],[0x1F3F8,0x1F43E],[0x1F440,0x1F440],[0x1F442,0x1F4FC],
+  [0x1F4FF,0x1F53D],[0x1F54B,0x1F54E],[0x1F550,0x1F567],[0x1F57A,0x1F57A],
+  [0x1F595,0x1F596],[0x1F5A4,0x1F5A4],[0x1F5FB,0x1F64F],[0x1F680,0x1F6C5],
+  [0x1F6CC,0x1F6CC],[0x1F6D0,0x1F6D2],[0x1F6D5,0x1F6D7],[0x1F6DD,0x1F6DF],
+  [0x1F6EB,0x1F6EC],[0x1F6F4,0x1F6FC],[0x1F7E0,0x1F7EB],[0x1F7F0,0x1F7F0],
+  [0x1F90C,0x1F93A],[0x1F93C,0x1F945],[0x1F947,0x1F9FF],[0x1FA70,0x1FAFF],
+  [0x20000,0x2FFFD],[0x30000,0x3FFFD],
+];
+const TERM_ZERO_WIDTH_RANGES = [
+  [0x0300,0x036F],[0x0483,0x0489],[0x0591,0x05BD],[0x05BF,0x05BF],[0x05C1,0x05C2],
+  [0x05C4,0x05C5],[0x05C7,0x05C7],[0x0610,0x061A],[0x064B,0x065F],[0x0670,0x0670],
+  [0x06D6,0x06DC],[0x06DF,0x06E4],[0x06E7,0x06E8],[0x06EA,0x06ED],[0x0711,0x0711],
+  [0x0730,0x074A],[0x07A6,0x07B0],[0x07EB,0x07F3],[0x0816,0x0819],[0x081B,0x0823],
+  [0x0825,0x0827],[0x0829,0x082D],[0x0859,0x085B],[0x08E3,0x0902],[0x093A,0x093A],
+  [0x093C,0x093C],[0x0941,0x0948],[0x094D,0x094D],[0x0951,0x0957],[0x0962,0x0963],
+  [0x0981,0x0981],[0x09BC,0x09BC],[0x09C1,0x09C4],[0x09CD,0x09CD],[0x09E2,0x09E3],
+  [0x200B,0x200F],[0x202A,0x202E],[0x2060,0x2064],[0x2066,0x206F],
+  [0xFE00,0xFE0F],[0xFE20,0xFE2F],[0x1AB0,0x1AFF],[0x1DC0,0x1DFF],[0x20D0,0x20FF],
+  [0xE0100,0xE01EF],
+];
+
+function _inTermRanges(cp, ranges) {
+  for (const [lo, hi] of ranges) if (cp >= lo && cp <= hi) return true;
+  return false;
+}
+
+// Exported so the playground's canvas renderer measures characters with exactly the table
+// the layout engine (std/term, and therefore every program's own column arithmetic) uses.
+// BrowserTUI used to carry its own one-line approximation — `cp >= 0x1F000 || FF01..FFE6` —
+// which called ⚫/⚪ (U+26AA/U+26AB) narrow while this table correctly calls them wide. The
+// font then drew each stone two cells wide and the renderer clipped it to one, so every
+// stone on a GO board came out sliced in half. One rule, one place.
+export function codePointDisplayWidth(cp) {
+  if (cp === 0) return 0;
+  if (cp < 0x20 || (cp >= 0x7F && cp < 0xA0)) return 0; // control characters
+  if (_inTermRanges(cp, TERM_ZERO_WIDTH_RANGES)) return 0;
+  if (_inTermRanges(cp, TERM_WIDE_RANGES)) return 2;
+  return 1;
+}
+
+// Grapheme clusters, used only where a cut must not split one (truncate).
+// Width itself sums per-code-point, mirroring UnicodeWidthStr::width(&str).
+function graphemeClusters(s) {
+  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+    try {
+      return [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(s)].map(x => x.segment);
+    } catch (_) { /* fall through to code-point split */ }
+  }
+  return [...s];
+}
+
+function displayWidth(s) {
+  let w = 0;
+  for (const ch of s) w += codePointDisplayWidth(ch.codePointAt(0));
+  return w;
+}
+
+function clusterDisplayWidth(g) {
+  let w = 0;
+  for (const ch of g) w += codePointDisplayWidth(ch.codePointAt(0));
+  return w;
+}
+
+function termPad(s, cols, onLeft) {
+  const deficit = cols - displayWidth(s);
+  if (deficit <= 0) return s;
+  const spaces = ' '.repeat(deficit);
+  return onLeft ? spaces + s : s + spaces;
+}
+
+function termCenter(s, cols) {
+  const deficit = cols - displayWidth(s);
+  if (deficit <= 0) return s;
+  const left = Math.floor(deficit / 2);
+  return ' '.repeat(left) + s + ' '.repeat(deficit - left);
+}
+
+function termTruncate(s, cols) {
+  if (displayWidth(s) <= cols) return s;
+  let used = 0, out = '';
+  for (const g of graphemeClusters(s)) {
+    const w = clusterDisplayWidth(g);
+    if (used + w > cols) break;
+    out += g;
+    used += w;
+  }
+  return out;
+}
+
+// ─── Standard library modules (std/math, std/random, std/json, std/net, std/io, std/term) ─
 
 function buildStdlibModule(name, vfs = null) {
   const asF64 = v => v?.type === 'float' ? v.v : v?.type === 'int' ? v.v : null;
@@ -2528,6 +2767,35 @@ function buildStdlibModule(name, vfs = null) {
     return { type: 'module', exports };
   }
 
+  // std/term — terminal display metrics (mirrors stdlib/term.rs). Answers a
+  // question about the screen, not about a string's content: split, slice,
+  // replace, repeat stay language symbols and never enter this module.
+  if (name === 'std/term') {
+    const exports = new Map();
+    exports.set('width', { type: 'func', name: 'width', native: true, call: args => {
+      const v = args[0];
+      if (v?.type === 'str' || v?.type === 'char') return mkInt(displayWidth(v.v));
+      throw new ZyError('term::width: expected a String or Char');
+    }});
+    exports.set('pad_left', { type: 'func', name: 'pad_left', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'int') throw new ZyError('term::pad_left: expected (String, ###)');
+      return mkStr(termPad(args[0].v, args[1].v, true));
+    }});
+    exports.set('pad_right', { type: 'func', name: 'pad_right', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'int') throw new ZyError('term::pad_right: expected (String, ###)');
+      return mkStr(termPad(args[0].v, args[1].v, false));
+    }});
+    exports.set('center', { type: 'func', name: 'center', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'int') throw new ZyError('term::center: expected (String, ###)');
+      return mkStr(termCenter(args[0].v, args[1].v));
+    }});
+    exports.set('truncate', { type: 'func', name: 'truncate', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'int') throw new ZyError('term::truncate: expected (String, ###)');
+      return mkStr(termTruncate(args[0].v, args[1].v));
+    }});
+    return { type: 'module', exports };
+  }
+
   return null;
 }
 
@@ -2548,6 +2816,11 @@ export class Interpreter {
     this.numeralMode     = 0x0030;
     this.moduleResolver  = moduleResolver;
     this.moduleCache     = new Map();
+    // Import aliases, kept out of the variable environment on purpose: `alias::fn(…)` must
+    // keep resolving even when a plain variable later takes the same name. Mirrors the
+    // tree-walker's `import_aliases`. Per interpreter, so a module's imports stay private
+    // to it (each module body runs in its own Interpreter — see loadModule).
+    this.moduleAliases   = new Map();
     this.tui             = tuiContext;
     this.cliArgs         = [];
     this.loadingModules  = new Set();
@@ -2710,6 +2983,12 @@ export class Interpreter {
       case 'Import': {
         const modVal = await this.loadModule(stmt.path);
         if (!env.set(stmt.alias, modVal)) env.def(stmt.alias, modVal);
+        // Also record the alias in a namespace variables cannot reach. The tree-walker
+        // keeps import aliases in their own table (`import_aliases`), so `alias::fn(…)`
+        // still resolves after an ordinary variable takes the same name — which real
+        // programs do: zyKlingonGalaxy imports `Duj` as `duj` and then uses `duj` for the
+        // player's ship, calling `duj = duj::bIj(duj, …)` on every left/right move.
+        this.moduleAliases.set(stmt.alias, modVal);
         return;
       }
 
@@ -2880,6 +3159,17 @@ export class Interpreter {
       case 'Loop': return await this.execLoop(stmt, env);
 
       case 'ExprStmt': {
+        // A bare match statement (?? x { arm => { <~ v } }, no assignment) must
+        // propagate its arm's control-flow signal (<~, @!, @>) the same way an
+        // `if` block already does — going through eval() here would discard it,
+        // since eval() only ever returns plain Values.
+        if (stmt.expr.type === 'Match') {
+          const arm = await this.selectMatchArm(stmt.expr, env);
+          if (!arm) return;
+          if (arm.body.type === 'block') return await this.execBlock(arm.body.stmts, new Env(env));
+          await this.eval(arm.body.value, env);
+          return;
+        }
         await this.eval(stmt.expr, env);
         return;
       }
@@ -3190,13 +3480,7 @@ export class Interpreter {
         if (!fn || fn.type !== 'func')
           throw new ZyError(`'${expr.callee}' is not a function`);
         const args = await Promise.all(expr.args.map(a => this.eval(a, env)));
-        // Build output param writeback list
-        const outWriteback = fn.params.some(p => p.isOut)
-          ? fn.params.map((p, i) => p.isOut && expr.args[i]?.type === 'Ident'
-              ? { paramName: p.name, callerName: expr.args[i].name, callerEnv: env }
-              : null).filter(Boolean)
-          : null;
-        return await this.callFunc(fn, args, outWriteback);
+        return await this.callFunc(fn, args, this.buildOutWriteback(fn, expr, env));
       }
 
       case 'CallExpr': {
@@ -3204,7 +3488,14 @@ export class Interpreter {
         if (!fn || fn.type !== 'func')
           throw new ZyError(`Expression is not a function`);
         const args = await Promise.all(expr.args.map(a => this.eval(a, env)));
-        return await this.callFunc(fn, args);
+        // Output parameters must be written back here too, not just in 'Call'. A module
+        // call `alias::f(x)` parses as Ident(alias) → FieldAccess → CallExpr (the callee
+        // is not a bare Ident), so every cross-module call landed in this branch and
+        // silently dropped its `<~` out-params: the callee mutated its local copy and the
+        // caller's variable never changed. That is what made GO unplayable in the browser —
+        // 盤::着手(局面<~, …, 取数<~, コウ点<~) placed a stone and counted captures into
+        // parameters the caller never saw, so the board stayed empty forever.
+        return await this.callFunc(fn, args, this.buildOutWriteback(fn, expr, env));
       }
 
       case 'NavIndex': {
@@ -3293,16 +3584,27 @@ export class Interpreter {
       }
 
       case 'FieldAccess': {
-        const obj = await this.eval(expr.obj, env);
+        // `alias::name` addresses the module namespace and nothing else, so resolve it
+        // from the alias table rather than by evaluating `alias` as an expression. Without
+        // this, an ordinary variable that happens to share an alias's name shadowed the
+        // module and the call failed with a "requires a named tuple" error pointing at the
+        // wrong thing entirely. `.` keeps evaluating its object normally (it must: most
+        // uses are `tuple.field`) and only consults the alias table as a fallback, which is
+        // what makes `alias.CONST` survive the same shadowing.
+        const aliasName = expr.obj?.type === 'Ident' ? expr.obj.name : null;
+        const aliasMod  = aliasName ? this.moduleAliases.get(aliasName) : undefined;
+
+        const obj = expr.scoped && aliasMod ? aliasMod : await this.eval(expr.obj, env);
         if (obj.type === 'module') {
           if (!obj.exports.has(expr.field)) {
-            const modAlias = expr.obj?.name ?? 'module';
+            const modAlias = aliasName ?? 'module';
             throw new ZyError(`module '${modAlias}' does not export function '${expr.field}'`);
           }
           return obj.exports.get(expr.field);
         }
+        if (aliasMod && aliasMod.exports.has(expr.field)) return aliasMod.exports.get(expr.field);
         if (obj.type !== 'tuple' || !obj.keys)
-          throw new ZyError(`'.${expr.field}' requires a named tuple`);
+          throw new ZyError(`'${expr.scoped ? '::' : '.'}${expr.field}' requires a named tuple`);
         const i = obj.keys.indexOf(expr.field);
         if (i < 0) throw new ZyRuntimeError(
           `Named tuple has no field '${expr.field}'. Available fields: ${obj.keys.filter(k => k).join(', ')}`,
@@ -3367,17 +3669,19 @@ export class Interpreter {
       }
 
       case 'Match': {
-        const val = await this.eval(expr.expr, env);
-        for (const arm of expr.arms) {
-          if (await this.matchPattern(arm.pattern, val, env)) {
-            if (arm.body.type === 'block') {
-              const sig = await this.execBlock(arm.body.stmts, new Env(env));
-              return sig instanceof ZyReturn ? sig.value : mkUnit();
-            }
-            return await this.eval(arm.body.value, env);
-          }
+        const arm = await this.selectMatchArm(expr, env);
+        if (!arm) return mkUnit();
+        if (arm.body.type === 'block') {
+          const sig = await this.execBlock(arm.body.stmts, new Env(env));
+          if (sig === undefined) return mkUnit();
+          // A control-flow signal (<~, @!, @>) inside a match arm's block must
+          // unwind past this expression context to its real target (the
+          // enclosing function or loop) — eval() itself can only return plain
+          // Values, so throw it, mirroring how $!! (ZyErrorPropagate) already
+          // unwinds through eval() to callFunc's boundary.
+          throw sig;
         }
-        return mkUnit();
+        return await this.eval(arm.body.value, env);
       }
 
       case 'DataOp': {
@@ -3454,10 +3758,14 @@ export class Interpreter {
 
       case 'CastOp': {
         const val = await this.eval(expr.operand, env);
+        // ##! also accepts a Char, casting it to its Unicode code point —
+        // the only direct Char→Int route (mirrors data_ops.rs CastKind::ToIntTrunc).
+        if (expr.op === '##!' && val.type === 'char') return mkInt(val.v.codePointAt(0));
         if (val.type !== 'int' && val.type !== 'float') {
           const _typeNames = { str:'String', int:'Integer', float:'Float', bool:'Bool', char:'Char', arr:'Array', tuple:'Tuple', unit:'Unit' };
           const typeName = _typeNames[val.type] ?? (val.type.charAt(0).toUpperCase() + val.type.slice(1));
-          throw new ZyRuntimeError(`${expr.op} requires a numeric value, got ${typeName}`, '##_');
+          const reqSuffix = expr.op === '##!' ? ' or Char' : '';
+          throw new ZyRuntimeError(`${expr.op} requires a numeric value${reqSuffix}, got ${typeName}`, '##_');
         }
         if (expr.op === '##.') return mkFloat(val.v);
         if (expr.op === '###') {
@@ -3771,10 +4079,9 @@ export class Interpreter {
       }
 
       case '$[i..j]': {
-        const fv=(await this.eval(expr.range.from,env)).v, tv=(await this.eval(expr.range.to,env)).v;
         const len = col.type === 'str' ? [...col.v].length : col.v.length;
-        const fi = this.resolve1Based(fv, len);
-        const ti = this.resolve1Based(tv, len) + 1; // inclusive end
+        const fi = expr.range.from == null ? 0 : this.resolve1Based((await this.eval(expr.range.from,env)).v, len);
+        const ti = expr.range.to   == null ? len : this.resolve1Based((await this.eval(expr.range.to,env)).v, len) + 1; // inclusive end
         if (col.type === 'arr')   return mkArr(col.v.slice(fi, ti));
         if (col.type === 'str')   return mkStr([...col.v].slice(fi,ti).join(''));
         if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(fi,ti), keys:col.keys?col.keys.slice(fi,ti):null };
@@ -3897,10 +4204,28 @@ export class Interpreter {
     throw new ZyError(`Expected a function for collection operator`);
   }
 
+  // Evaluate a Match's subject and find the first arm whose pattern matches,
+  // running any pattern-binding side effects (env.def for list-pattern binds)
+  // exactly once. Returns null if no arm matches.
+  async selectMatchArm(matchExpr, env) {
+    const val = await this.eval(matchExpr.expr, env);
+    for (const arm of matchExpr.arms) {
+      if (await this.matchPattern(arm.pattern, val, env)) return arm;
+    }
+    return null;
+  }
+
   async matchPattern(pattern, val, env) {
     switch (pattern.type) {
       case 'wildcard': return true;
       case 'guard':    return this.truthy(await this.eval(pattern.cond, env));
+      case 'or': {
+        // Alternatives are tested left to right; first match wins
+        for (const alt of pattern.alts) {
+          if (await this.matchPattern(alt, val, env)) return true;
+        }
+        return false;
+      }
       case 'range': {
         const from = (await this.eval(pattern.from, env)).v;
         const to   = (await this.eval(pattern.to,   env)).v;
@@ -3970,6 +4295,24 @@ export class Interpreter {
     return false;
   }
 
+  /**
+   * Pairs each `<~` output parameter with the caller variable that was passed to it, so
+   * `callFunc` can copy the final value back after the call returns. Only a bare identifier
+   * argument can receive a write-back — passing a literal or an expression to an out-param
+   * has nothing to assign to, and is simply skipped (matching the tree-walker).
+   *
+   * Shared by the `Call` and `CallExpr` branches: both need it, and having only one of them
+   * build the list is precisely the bug this helper exists to prevent recurring.
+   */
+  buildOutWriteback(fn, expr, env) {
+    if (!fn.params?.some(p => p.isOut)) return null;
+    return fn.params
+      .map((p, i) => p.isOut && expr.args[i]?.type === 'Ident'
+        ? { paramName: p.name, callerName: expr.args[i].name, callerEnv: env }
+        : null)
+      .filter(Boolean);
+  }
+
   async callFunc(fn, args, outWriteback) {
     if (fn.native) return fn.call(args);
     const isClosure = fn.closureEnv != null;
@@ -3983,6 +4326,10 @@ export class Interpreter {
     } catch (e) {
       // $!! (ZyErrorPropagate) exits the function and returns the error value to the caller
       if (e instanceof ZyErrorPropagate) return e.errVal;
+      // <~ inside a match arm, when the match is evaluated as a sub-expression
+      // (not a bare statement), unwinds here as a thrown ZyReturn — see eval()'s
+      // 'Match' case.
+      if (e instanceof ZyReturn) return e.value;
       throw e;
     }
     // Write back output params to caller env
