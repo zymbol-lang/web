@@ -1,8 +1,8 @@
 (async function() {
   // ─── Load data ───
   const [langData, i18nData] = await Promise.all([
-    fetch('data/languages.json').then(r => r.json()),
-    fetch('data/i18n.json').then(r => r.json()),
+    fetch('data/i18n/languages.json').then(r => r.json()),
+    fetch('data/i18n/i18n.json').then(r => r.json()),
   ]);
 
   const langList = langData.languages; // array
@@ -488,6 +488,7 @@
       document.getElementById('footer-showcase').textContent = i18nEntry.nav_showcase    || 'Showcase';
       document.getElementById('footer-operators').textContent= i18nEntry.nav_operators   || 'Operators';
       document.getElementById('footer-features').textContent = i18nEntry.nav_features    || 'Features';
+      document.getElementById('footer-manual').textContent   = i18nEntry.nav_manual      || 'Documentation';
       document.getElementById('footer-tagline').textContent  = i18nEntry.t1 + ' ' + i18nEntry.t2;
 
       // Alpha notice
@@ -679,9 +680,9 @@
   };
 
   function getManualFile(langId) {
-    if (MANUAL_MAP[langId]) return 'data/manual_' + MANUAL_MAP[langId] + '.md';
+    if (MANUAL_MAP[langId]) return 'data/manuals/manual_' + MANUAL_MAP[langId] + '.md';
     // Fallback: try Spanish for Spanish-family, else English
-    return 'data/manual_en.md';
+    return 'data/manuals/manual_en.md';
   }
 
   function loadManual(langId) {
@@ -693,8 +694,8 @@
       .then(r => {
         if (!r.ok) {
           // Fallback to Spanish then English
-          if (!url.endsWith('manual_es.md')) return fetch('data/manual_es.md').then(r2 => r2.ok ? r2 : fetch('data/manual_en.md')).then(r3 => { if (!r3.ok) throw new Error(r3.status); return r3; });
-          return fetch('data/manual_en.md').then(r2 => { if (!r2.ok) throw new Error(r2.status); return r2; });
+          if (!url.endsWith('manual_es.md')) return fetch('data/manuals/manual_es.md').then(r2 => r2.ok ? r2 : fetch('data/manuals/manual_en.md')).then(r3 => { if (!r3.ok) throw new Error(r3.status); return r3; });
+          return fetch('data/manuals/manual_en.md').then(r2 => { if (!r2.ok) throw new Error(r2.status); return r2; });
         }
         return r;
       })

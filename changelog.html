@@ -6,8 +6,8 @@
   <title>Releases — Zymbol-Lang</title>
   <meta name="description" content="Release history for Zymbol-Lang — a minimalist symbolic programming language.">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-  <link rel="apple-touch-icon" href="favicon.png">
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="assets/img/favicon.png">
   <script>
   (function(){
     var s = localStorage.getItem('zy-theme');
@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="src/css/site.css">
   <style>
     /* ── Changelog-specific styles ── */
     .cl-hero {
@@ -233,7 +233,7 @@
 <!-- ═══ HEADER ═══ -->
 <header>
   <a href="index.html" class="logo">
-    <img src="logo.png" alt="Zymbol-Lang">
+    <img src="assets/img/logo.png" alt="Zymbol-Lang">
     <span class="logo-code">
       <span class="logo-sym">@{</span>
       <span class="logo-op">&gt;&gt;</span><span class="logo-str">" Zymbol-Lang "</span>
@@ -247,7 +247,8 @@
       <a href="index.html#features">Features</a>
       <a href="index.html#manual">Docs</a>
       <a href="changelog.html" class="active">Releases</a>
-      <a href="https://github.com/zymbol-lang/interpreter" target="_blank">GitHub</a>
+      <a href="https://github.com/zymbol-lang/interpreter" target="_blank" rel="noopener" class="icon-link" title="GitHub" aria-label="GitHub"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+      <a href="https://x.com/ZymbolLang" target="_blank" rel="noopener" class="icon-link" title="X / Twitter" aria-label="X / Twitter"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.74-8.855L1.254 2.25H8.08l4.253 5.622L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg></a>
       <a href="playground.html" class="nav-cta">Try Online</a>
     </nav>
     <button id="theme-toggle" aria-label="Toggle theme" title="Toggle light/dark">
@@ -261,7 +262,7 @@
 
 <!-- ═══ HERO ═══ -->
 <div class="cl-hero">
-  <div class="section-tag">// release history</div>
+  <div class="section-tag">release history</div>
   <h1>Releases</h1>
   <p>Public releases of Zymbol-Lang. Each version is a concept milestone — APIs, syntax, and features may change during the alpha phase.</p>
 </div>
@@ -269,11 +270,63 @@
 <!-- ═══ TIMELINE ═══ -->
 <div class="cl-timeline">
 
+  <!-- ── v0.0.8 ── -->
+  <div class="cl-entry">
+    <div class="cl-entry-head">
+      <span class="cl-version">v0.0.8</span>
+      <span class="cl-badge-latest">latest</span>
+      <span class="cl-date">August 1, 2026</span>
+    </div>
+    <div class="cl-title">Zymbol Packages, Auto-Free Memory &amp; Terminal Metrics</div>
+
+    <div class="cl-groups">
+
+      <div class="cl-group">
+        <span class="cl-group-label added">Added</span>
+        <ul class="cl-change-list">
+          <li><strong>Zymbol Packages (<code>.zyp</code>) — one file for a multi-file program</strong> — <code>zymbol package DIR --script main.zy -o out.zyp</code> walks the transitive closure of module imports and <code>&lt;/ file.zy /&gt;</code> targets and zips it; <code>zymbol run out.zyp</code> extracts to an ephemeral temp dir and never <code>chdir</code>s, so the code is disposable but whatever the script writes still lands in your real working directory. A <code>.zyp</code> is an archive of <em>source</em>, not a compiled binary — unrelated to <code>zymbol build</code></li>
+          <li><strong>Automatic destruction at last use — both engines, always on</strong> — memory is released right after the statement that last uses a variable instead of at scope end. Invisible by design: it never changes a correct program's behavior, it only lowers peak memory (a script holding two sequential 30 MB strings peaks at ~64 MB instead of ~94 MB in the tree-walker)</li>
+          <li><strong><code>std/term</code> — terminal display metrics</strong> — <code>width</code>, <code>pad_left</code>, <code>pad_right</code>, <code>center</code>, <code>truncate</code>, measured in <em>terminal columns</em> rather than grapheme count: <code>"手番"$#</code> is <code>2</code> but <code>term::width("手番")</code> is <code>4</code>. Padding never splits a wide glyph</li>
+          <li><strong>Match or-patterns</strong> — an arm's pattern can be a <code>||</code>-separated chain tested left to right: <code>'p' || 'P' =&gt; { … }</code>. Alternatives mix any pattern kind — <code>1..10 || 20..30</code>, <code>&lt; 0 || &gt; 100</code>, <code>["run", _] || ["build", _]</code></li>
+          <li><strong><code>##!</code> on a <code>Char</code> yields its Unicode code point</strong> — <code>##!'A'</code> is <code>65</code>, <code>##!'あ'</code> is <code>12354</code>. The only direct Char→Int route, which makes characters classifiable by range</li>
+          <li><strong>Juxtaposition works inside delimiters</strong> — <code>f(a " " b)</code>, <code>[a " " b]</code> and <code>(a " " b)</code> now parse; implicit concatenation used to stop at statement level, so every composed string handed to a function needed an intermediate variable</li>
+          <li><strong>Playground loads <code>.zyp</code> packages</strong> — one tab per source file, named by full relative path, plus a script picker populated from the package manifest. The ZIP is read in the browser with no bundler and no CDN</li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label changed">Changed</span>
+        <ul class="cl-change-list">
+          <li><strong>One shared module-path resolution rule</strong> — the tree-walker, the semantic analyzer and the VM compiler now all resolve imports through <code>ModulePath::resolve_from</code>. An absolute import used to resolve to a different file under <code>--vm</code> than under the tree-walker</li>
+          <li><strong>VM module support reached parity with the tree-walker</strong> — the whole comparison suite passes on both engines (541/541), so the register VM is no longer the partial path for programs that use modules</li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label fixed">Fixed</span>
+        <ul class="cl-change-list">
+          <li><strong>Module state survived a returning function</strong> — in the tree-walker, a module function that wrote state and then returned a value silently lost the write. No error, no warning, and the VM was correct — so a program tested under <code>--vm</code> behaved while the default engine did not</li>
+          <li><strong>String interpolation accepts every identifier the lexer does</strong> — <code>"{DIR}"</code> and other global constants were printed verbatim instead of being substituted</li>
+          <li><strong>Scoping fixes in the tree-walker</strong> — root-scope constants no longer vanish at call depth ≥ 2; <code>x°</code>/<code>°x</code> inside a function called from a <code>@</code> loop no longer panics; <code>\ x</code> inside a function no longer poisons the caller's same-named variable; modules loaded at runtime are no longer skipped by semantic analysis</li>
+          <li><strong>VM divergences</strong> — each import alias got its own copy of the module state; output parameters of module functions were silently dropped; an interpolated constant came out as literal text; a <code>String</code> could not be sliced inside a module function; a leftover loop-iterator value differed from the tree-walker</li>
+          <li><strong>Numeric and index rules</strong> — every comparison now promotes <code>Int</code> and <code>Float</code> (only <code>==</code> did); a module constant can carry a sign; an index computed from parameters is no longer rejected as <code>Float</code></li>
+          <li><strong>A variable used only as a range bound</strong> is no longer reported as unused — <code>@ i:1..total { }</code> counts as a use of <code>total</code></li>
+          <li><strong>Clearer diagnostics</strong> — <code>./../x</code> explains what a module path may look like, and a legacy export separator (<code>&lt;=</code> or <code>:</code> inside <code>#&gt; {}</code>) now names itself and shows the <code>=&gt;</code> form instead of asking for an identifier you already wrote</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="cl-actions">
+      <a href="https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.8" target="_blank" class="btn-ghost">↗ GitHub</a>
+      <a href="install.html" class="btn-ghost">↓ Download</a>
+    </div>
+  </div>
+
   <!-- ── v0.0.7 ── -->
   <div class="cl-entry">
     <div class="cl-entry-head">
       <span class="cl-version">v0.0.7</span>
-      <span class="cl-badge-latest">latest</span>
       <span class="cl-date">July 2, 2026</span>
     </div>
     <div class="cl-title">Native Stdlib, ODBC Databases, Typed Input &amp; Fail-Closed Formatter</div>
@@ -654,7 +707,7 @@
 <footer>
   <div class="footer-inner">
     <div class="footer-logo">
-      <img src="logo.png" alt="Zymbol-Lang" style="height:1.6rem;width:auto;opacity:0.8;vertical-align:middle;">
+      <img src="assets/img/logo.png" alt="Zymbol-Lang" style="height:1.6rem;width:auto;opacity:0.8;vertical-align:middle;">
     </div>
     <div class="footer-links">
       <a href="index.html">Home</a>
@@ -662,10 +715,10 @@
       <a href="index.html#operators">Operators</a>
       <a href="install.html">Download</a>
       <a href="changelog.html">Releases</a>
-      <a href="https://github.com/zymbol-lang/interpreter" target="_blank">GitHub</a>
-      <a href="https://x.com/ZymbolLang" target="_blank" rel="noopener" title="X / Twitter">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.1em"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.74-8.855L1.254 2.25H8.08l4.253 5.622L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg>
-      </a>
+      <a href="index.html#features">Features</a>
+      <a href="index.html#manual">Docs</a>
+      <a href="https://github.com/zymbol-lang/interpreter" target="_blank" rel="noopener" class="icon-link" title="GitHub" aria-label="GitHub"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+      <a href="https://x.com/ZymbolLang" target="_blank" rel="noopener" class="icon-link" title="X / Twitter" aria-label="X / Twitter"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.74-8.855L1.254 2.25H8.08l4.253 5.622L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg></a>
     </div>
     <div class="footer-copy">No keywords. Just symbols.</div>
   </div>

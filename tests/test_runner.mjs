@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Parity test runner: compares zymbol CLI vs web interpreter (zymbol.js)
-// Usage: node test_runner.mjs [--dir path] [--filter pattern] [--show-pass]
+// Usage: node tests/test_runner.mjs [--dir path] [--filter pattern] [--show-pass]
 
 import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
 import { execSync } from 'child_process';
@@ -15,10 +15,10 @@ const args     = process.argv.slice(2);
 const dirArg   = args.find((_, i) => args[i-1] === '--dir');
 const filterArg= args.find((_, i) => args[i-1] === '--filter');
 const showPass = args.includes('--show-pass');
-const TEST_ROOT = resolve(dirArg ?? join(__dir, '../interpreter/tests'));
+const TEST_ROOT = resolve(dirArg ?? join(__dir, '../../interpreter/tests'));
 
 // ─── Import interpreter ───────────────────────────────────────────────────────
-const { runZymbol } = await import('./zymbol.js');
+const { runZymbol } = await import('../src/zymbol/zymbol.js');
 
 // ─── Collect .zy files ────────────────────────────────────────────────────────
 function collectFiles(dir) {

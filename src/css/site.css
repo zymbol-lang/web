@@ -1,7 +1,7 @@
     @font-face {
       font-family: 'pIqaD-qolqoS';
-      src: url('fonts/pIqaD-qolqoS.woff2') format('woff2'),
-           url('fonts/pIqaD-qolqoS.ttf') format('truetype');
+      src: url('../../assets/fonts/pIqaD-qolqoS.woff2') format('woff2'),
+           url('../../assets/fonts/pIqaD-qolqoS.ttf') format('truetype');
       font-weight: 100 900;
       font-style: normal;
       unicode-range: U+F8D0-U+F8FF;
@@ -172,6 +172,15 @@
       background: var(--green-mid) !important;
       border-color: var(--green) !important;
     }
+
+    /* GitHub / X marks — icon only, shared by the header nav and the footer.
+       No label: the handles repeated on every page were pure noise. */
+    .icon-link {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .icon-link svg { flex-shrink: 0; }
 
     #menu-toggle {
       display: none;

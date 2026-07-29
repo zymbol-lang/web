@@ -15,8 +15,8 @@
 // directories and never returning `resolvedPath`, so the interpreter's module cache
 // treated one file reached by two relative paths as two separate modules.
 
-import { readZyp } from './zyp.js';
-import { joinPath, makeResolver } from './module-resolver.js';
+import { readZyp } from '../src/zymbol/zyp.js';
+import { joinPath, makeResolver } from '../src/zymbol/module-resolver.js';
 
 // ─── Minimal STORED-only ZIP writer (no compression, so no deflate dependency) ───────
 const CRC_TABLE = (() => {

@@ -94,6 +94,15 @@
  * BashExec (<\ \>): returns high-resolution timestamp (entropy stub).
  * Not supported: shell inclusion (</ />).
  * TUI operators require a >>| { } block to activate the canvas overlay.
+ *
+ * Parity as of the v0.0.8 release: node web/tests/test_runner.mjs → 513/518, 39 skipped
+ * (irreducible in a browser). The 5 failures are known gaps, not regressions — five
+ * v0.0.8 fixes that landed in the Rust engines have no counterpart here yet:
+ * MM-4 (import-time semantic gate), MM-9 (root-scope constants at call depth >= 2),
+ * MM-11 (leftover loop-iterator value), the HLZ-005 './../' diagnostic, and
+ * interpolation of global constants. MM-4 and MM-11 are permissive where Rust is
+ * correct — the playground produces output the CLI would refuse. Detail and the
+ * per-test table: interpreter/IMPL_V008.md § E.3.
  */
 
 // ─── Unicode digit blocks (mirrors DIGIT_BLOCKS in zymbol-lexer) ─────────────

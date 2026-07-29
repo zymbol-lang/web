@@ -1,8 +1,8 @@
-import { runZymbol, codePointDisplayWidth } from './zymbol.js';
-import { EXAMPLES } from './playground-examples.js';
-import { esc, highlightCode } from './playground-highlight.js';
-import { readZyp } from './zyp.js';
-import { makeResolver } from './module-resolver.js';
+import { runZymbol, codePointDisplayWidth } from '../zymbol/zymbol.js';
+import { EXAMPLES } from './examples.js';
+import { esc, highlightCode } from './highlight.js';
+import { readZyp } from '../zymbol/zyp.js';
+import { makeResolver } from '../zymbol/module-resolver.js';
 
 // ─── Editor sync ──────────────────────────────────────────────────────────────
 const editor    = document.getElementById('editor');

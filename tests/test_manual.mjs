@@ -1,10 +1,14 @@
 // Manual smoke-test runner for web/zymbol.js
-// Usage: node test_manual.mjs
+// Usage: node tests/test_manual.mjs
 
-import { runZymbol } from './zymbol.js';
+import { runZymbol } from '../src/zymbol/zymbol.js';
 import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-const src = readFileSync('./data/manual_en.md', 'utf8');
+// Resolve from this file, not the cwd, so the runner works from any directory.
+const __dir = dirname(fileURLToPath(import.meta.url));
+const src = readFileSync(join(__dir, '../data/manuals/manual_en.md'), 'utf8');
 
 // Extract all ```zymbol blocks with their surrounding heading context
 const blocks = [];

@@ -1,7 +1,7 @@
     @font-face {
       font-family: 'pIqaD-qolqoS';
-      src: url('fonts/pIqaD-qolqoS.woff2') format('woff2'),
-           url('fonts/pIqaD-qolqoS.ttf') format('truetype');
+      src: url('../../assets/fonts/pIqaD-qolqoS.woff2') format('woff2'),
+           url('../../assets/fonts/pIqaD-qolqoS.ttf') format('truetype');
       font-weight: 100 900;
     }
 
@@ -141,6 +141,16 @@
       align-items: center;
       gap: 0.5rem;
     }
+
+    /* GitHub / X marks — icon only, no label */
+    .icon-link {
+      display: inline-flex;
+      align-items: center;
+      color: var(--dim);
+      transition: color 0.15s;
+    }
+    .icon-link svg { flex-shrink: 0; }
+    .icon-link:hover { color: var(--hi); }
 
     .back-link {
       font-size: 0.75rem;
@@ -591,26 +601,6 @@
       #output-panel.output-collapsed { flex: 0 0 auto !important; min-height: 0; }
       --examples-h: 200px;
     }
-
-    /* ─── Footer ─── */
-    footer.pg-footer {
-      height: 26px;
-      min-height: 26px;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      border-top: 1px solid var(--line);
-      background: var(--bg2);
-    }
-    footer.pg-footer a {
-      color: var(--dim);
-      display: flex;
-      align-items: center;
-      transition: color 0.12s;
-    }
-    footer.pg-footer a:hover { color: var(--hi); }
 
     /* ─── Playground notice modal ─── */
     #pg-notice-backdrop {
