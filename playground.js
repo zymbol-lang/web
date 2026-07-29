@@ -1,6 +1,8 @@
-import { runZymbol } from './zymbol.js';
+import { runZymbol, codePointDisplayWidth } from './zymbol.js';
 import { EXAMPLES } from './playground-examples.js';
 import { esc, highlightCode } from './playground-highlight.js';
+import { readZyp } from './zyp.js';
+import { makeResolver } from './module-resolver.js';
 
 // ─── Editor sync ──────────────────────────────────────────────────────────────
 const editor    = document.getElementById('editor');
@@ -24,6 +26,37 @@ const EMPTY_CODE = '>> "Hello, Zymbol-Lang!" ¶';
 
 let files    = [];   // [{id, name, code, dirty}]
 let activeId = null;
+
+// ─── Loaded .zyp package state ────────────────────────────────────────────────
+// Set by loadZypFile() below when a .zyp is uploaded. `manifest` is the parsed zyp.json;
+// its files already live in `files` above (one tab per source file, named by full relative
+// path — e.g. "核/盤.zy" — so the resolver looks them up by that same path).
+let loadedPackage = null; // { manifest }
+const scriptSelectEl = document.getElementById('zyp-script-select');
+
+// Sentinel option value meaning "ignore the package, just run whatever tab is focused".
+// Without an escape hatch, loading a package permanently hijacked the Run button: every
+// later run went through the selected script, and going back to a scratch file meant
+// reloading the page.
+const RUN_ACTIVE_TAB = '';
+
+function populateScriptSelect(manifest) {
+  scriptSelectEl.innerHTML = '';
+  for (const s of manifest.scripts ?? []) {
+    const opt = document.createElement('option');
+    opt.value = s.path;
+    opt.textContent = s.desc ? `${s.name} — ${s.desc}` : s.name;
+    scriptSelectEl.appendChild(opt);
+  }
+  const escape = document.createElement('option');
+  escape.value = RUN_ACTIVE_TAB;
+  escape.textContent = '— active tab —';
+  scriptSelectEl.appendChild(escape);
+
+  const def = (manifest.scripts ?? []).find(s => s.default) ?? manifest.scripts?.[0];
+  scriptSelectEl.value = def ? def.path : RUN_ACTIVE_TAB;
+  scriptSelectEl.style.display = '';
+}
 
 function genId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -319,6 +352,26 @@ function ansi256ToRgb(n) {
   return `rgb(${v},${v},${v})`;
 }
 
+// Font stack for canvas text, read from the page's own `--mono` custom property so the TUI
+// draws with exactly the fonts the rest of the playground uses. It used to be hardcoded
+// here — three separate copies of `"JetBrains Mono","Courier New",monospace` — and drifted
+// from the CSS once `pIqaD-qolqoS` was added to `--mono`: pIqaD is Private Use Area
+// (U+F8D0–U+F8FF), so with no font in the stack that maps those code points, every Klingon
+// glyph on the canvas fell back to tofu while the same text rendered fine in the editor.
+const CANVAS_FONT_SIZE = 13;
+function canvasFontStack() {
+  const fromCss = getComputedStyle(document.documentElement).getPropertyValue('--mono').trim();
+  return fromCss || "'pIqaD-qolqoS','JetBrains Mono','Courier New',monospace";
+}
+function canvasFont(style = '') {
+  return `${style}${CANVAS_FONT_SIZE}px ${canvasFontStack()}`;
+}
+
+// A canvas does not trigger webfont loading the way DOM text does: if nothing on the page
+// has painted with the font yet, the first draw silently uses a fallback and never repaints.
+// Ask for it explicitly, once, at startup.
+document.fonts?.load(canvasFont())?.catch(() => {});
+
 class BrowserTUI {
   constructor(canvas, outputDiv) {
     this.canvas       = canvas;
@@ -349,7 +402,7 @@ class BrowserTUI {
   _measureCells() {
     const tmp = document.createElement('canvas');
     const ctx = tmp.getContext('2d');
-    ctx.font = '13px "JetBrains Mono","Courier New",monospace';
+    ctx.font = canvasFont();
     this.cellW = Math.ceil(ctx.measureText('M').width) || 8;
     this.cellH = 16;
     // wrap is display:none in constructor — use output-panel (always visible)
@@ -378,7 +431,7 @@ class BrowserTUI {
     this.canvas.style.height = h + 'px';
     this.ctx.scale(dpr, dpr);
 
-    this.ctx.font = '13px "JetBrains Mono","Courier New",monospace';
+    this.ctx.font = canvasFont();
     this.cellW = Math.ceil(this.ctx.measureText('M').width) || 8;
     this.cellH = 16;
 
@@ -498,10 +551,18 @@ class BrowserTUI {
     this.printCol = 1;
   }
 
-  // Returns true for Unicode "wide" characters (emoji, CJK fullwidth) that occupy 2 columns
+  // Returns true for Unicode "wide" characters (emoji, CJK fullwidth) that occupy 2 columns.
+  //
+  // Delegates to the interpreter's own width table rather than approximating: a program
+  // lays its screen out using std/term's widths, so if the renderer disagrees about how
+  // many cells a character occupies, it clips or overdraws. That is exactly what happened
+  // with GO's default stones (⚫ U+26AB / ⚪ U+26AA): the old local test here was
+  // `cp >= 0x1F000 || (cp >= 0xFF01 && cp <= 0xFFE6)`, which misses them, so each stone was
+  // drawn two cells wide by the font and then clipped to one — every stone on the board came
+  // out as a half moon. (GO's 月 theme uses 🌑/🌕 above U+1F000 and was unaffected, which is
+  // why it looked theme-specific.)
   _isWide(ch) {
-    const cp = ch.codePointAt(0);
-    return cp >= 0x1F000 || (cp >= 0xFF01 && cp <= 0xFFE6);
+    return codePointDisplayWidth(ch.codePointAt(0)) === 2;
   }
 
   _drawChar(row, col, ch, bks, fg, bg) {
@@ -521,10 +582,10 @@ class BrowserTUI {
     this.ctx.fillStyle = (bg !== null && bg !== undefined) ? ansi256ToRgb(bg) : '#000';
     this.ctx.fillRect(x, y, clipW, ch2);
     if (!ch || ch === ' ') return;
-    let font = '13px "JetBrains Mono","Courier New",monospace';
-    if (bks & 1) font = 'bold '   + font;
-    if (bks & 2) font = 'italic ' + font;
-    this.ctx.font = font;
+    let style = '';
+    if (bks & 1) style += 'bold ';
+    if (bks & 2) style += 'italic ';
+    this.ctx.font = canvasFont(style);
     this.ctx.textBaseline = 'top';
     this.ctx.fillStyle = (fg !== null && fg !== undefined) ? ansi256ToRgb(fg) : '#ddd';
     // Clip to cell (or 2 cells for wide): prevents glyph bleed into further neighbors
@@ -630,15 +691,25 @@ function inputFn() {
   });
 }
 
-// ─── Module resolver: look up other loaded tabs by name ──────────────────────
-function buildModuleResolver() {
-  const resolver = async (importPath) => {
-    // Normalize: strip path prefix and .zy, keep just the filename
-    let name = importPath.replace(/^(\.\/|\.\.\/)*/, '').replace(/\.zy$/, '') + '.zy';
-    const found = files.find(f => f.name === name);
-    return found ? { src: found.code, resolver } : null;
-  };
-  return resolver;
+// ─── Module resolver: look up other loaded tabs by full relative path ────────
+//
+// The previous version of this resolver collapsed every import to its basename
+// (`./核/盤` and `../核/盤` both became `盤.zy`), which worked by accident for
+// flat single-directory examples but breaks in two real ways once tabs can hold
+// full relative paths (which loading a .zyp package does deliberately, one tab
+// per source file — see loadZypFile below):
+//
+//   1. Two same-named modules in different directories collide onto one tab.
+//   2. The resolver never returned `resolvedPath`, so zymbol.js's module cache
+//      (keyed by the *raw, un-normalized* import string when resolvedPath is
+//      absent) treats `./核/盤` and `../核/盤` — the same file, imported from
+//      two different files — as two distinct modules, loading and running it
+//      twice with two independent copies of its state.
+//
+// The actual path-normalizing logic lives in module-resolver.js (factored out so it can be
+// unit-tested without a DOM); this just binds it to the playground's `files` tab model.
+function buildModuleResolver(baseDir = '') {
+  return makeResolver(name => files.find(f => f.name === name)?.code, baseDir);
 }
 
 // ─── Parse CLI args (shell-like: spaces split, quotes group) ─────────────────
@@ -664,8 +735,48 @@ function parseCliArgs(str) {
 // ─── Run ──────────────────────────────────────────────────────────────────────
 async function runCode() {
   clearOutput();
-  const src = editor.value.trim();
-  if (!src) { appendOutput('(empty program)', 'out-meta'); return; }
+
+  // switchTo() only flushes editor.value into the file model when the user actually
+  // switches tabs. Running a package script that ISN'T the currently-focused tab (the
+  // common case — the script picker below can point anywhere) would otherwise silently
+  // execute the last-saved copy while the visible editor shows edits that were never
+  // captured. This flush makes "press Run" always see what's on screen, package or not.
+  const cur = activeFile();
+  if (cur) cur.code = editor.value;
+
+  // Directory a file's own relative imports resolve against — mirrors the CLI, where a
+  // module's imports are relative to the file containing them, not to the project root.
+  const dirOf = name => (name.includes('/') ? name.slice(0, name.lastIndexOf('/')) : '');
+
+  let src, resolver, displayPath, execOpts;
+  // An empty selector value is the "— active tab —" escape hatch (RUN_ACTIVE_TAB), so this
+  // falls through to the plain-file path below even while a package is loaded.
+  if (loadedPackage && scriptSelectEl.value) {
+    const entryName = scriptSelectEl.value;
+    const entryFile = files.find(f => f.name === entryName);
+    if (!entryFile) {
+      appendOutput(`(script '${entryName}' not found among loaded files)`, 'out-error');
+      return;
+    }
+    src = entryFile.code;
+    resolver = buildModuleResolver(dirOf(entryName));
+    displayPath = entryName;
+    // A package is typically a real multi-file program (e.g. drawing a board, running a
+    // small tournament), not the single-statement snippets the default limits were sized
+    // for. Raised only for package execution — the plain single-file editor keeps the
+    // defaults from zymbol.js.
+    execOpts = { maxSteps: 2_000_000, maxBytes: 2_000_000 };
+  } else {
+    src = editor.value.trim();
+    if (!src) { appendOutput('(empty program)', 'out-meta'); return; }
+    // Resolve against the active tab's own directory, not the root: with a package loaded,
+    // the focused tab can itself be a nested module (e.g. 表示/描画.zy), whose `../核/盤`
+    // imports only resolve correctly relative to 表示/.
+    const activeName = activeFile()?.name ?? '';
+    resolver = buildModuleResolver(dirOf(activeName));
+    displayPath = activeName || null;
+    execOpts = {};
+  }
 
   const cliArgs = parseCliArgs(document.getElementById('args-input').value);
   const tui = new BrowserTUI(
@@ -678,7 +789,7 @@ async function runCode() {
   // Route << input through canvas bar when TUI is active
   const activeInputFn = () => tui.active ? tui.readLine() : inputFn();
   try {
-    await runZymbol(src, activeInputFn, text => appendOutput(text), buildModuleResolver(), null, tui, cliArgs);
+    await runZymbol(src, activeInputFn, text => appendOutput(text), resolver, displayPath, tui, cliArgs, execOpts);
     if (!tui.aborted) appendOutput('\n— done —', 'out-meta');
   } catch (err) {
     tui.leave();
@@ -720,6 +831,13 @@ uploadInput.addEventListener('change', () => {
 
   let first = true;
   for (const file of picked) {
+    if (file.name.endsWith('.zyp')) {
+      // Binary archive — can't go through readAsText below. Handled on its own; doesn't
+      // participate in the "first picked file reuses the pristine tab" logic since a
+      // package always adds its own set of tabs regardless of what's currently open.
+      loadZypFile(file);
+      continue;
+    }
     const reader = new FileReader();
     reader.onload = e => {
       const name = file.name.endsWith('.zy') ? file.name : file.name + '.zy';
@@ -748,6 +866,68 @@ uploadInput.addEventListener('change', () => {
     reader.readAsText(file);
   }
 });
+
+// ─── Load a .zyp package: one tab per source file, named by full relative path ──
+async function loadZypFile(file) {
+  let zyp;
+  try {
+    const buf = await file.arrayBuffer();
+    zyp = await readZyp(buf);
+  } catch (err) {
+    appendOutput(`(failed to read ${file.name}: ${err.message ?? err})`, 'out-error');
+    return;
+  }
+
+  // addFile() deliberately refuses to clobber a tab with unsaved edits. That's right for
+  // loading an example, but silently wrong here: the package's own copy of a module would
+  // be dropped in favour of a stale edit, and the program would then run with a mix of
+  // package and leftover code with nothing on screen saying so. Ask once, up front.
+  const conflicts = [...zyp.files.keys()].filter(path => {
+    const tab = files.find(f => f.name === path);
+    return tab && tab.dirty && tab.code !== zyp.files.get(path);
+  });
+  let overwriteDirty = false;
+  if (conflicts.length) {
+    overwriteDirty = window.confirm(
+      `${conflicts.length} open file(s) have unsaved edits that the package would replace:\n\n` +
+      conflicts.slice(0, 10).join('\n') +
+      (conflicts.length > 10 ? `\n…and ${conflicts.length - 10} more` : '') +
+      `\n\nOK — use the package's versions (your edits are lost)\n` +
+      `Cancel — keep your edits (the package runs with them instead)`
+    );
+  }
+
+  for (const [path, code] of zyp.files) {
+    const existing = files.find(f => f.name === path);
+    if (existing && existing.dirty && overwriteDirty) {
+      existing.code = code;
+      existing.dirty = false;
+      if (existing.id === activeId) { editor.value = code; syncHighlight(); }
+    } else {
+      addFile(path, code);
+    }
+  }
+  if (conflicts.length && !overwriteDirty) {
+    appendOutput(
+      `(keeping your unsaved edits in ${conflicts.length} file(s) — the package will run with them, not its own copies)`,
+      'out-meta'
+    );
+  }
+  loadedPackage = { manifest: zyp.manifest };
+  populateScriptSelect(zyp.manifest);
+
+  const def = (zyp.manifest.scripts ?? []).find(s => s.default) ?? zyp.manifest.scripts?.[0];
+  if (def) {
+    const tab = files.find(f => f.name === def.path);
+    if (tab) switchTo(tab.id);
+  }
+
+  appendOutput(
+    `(loaded package '${zyp.manifest.package?.name ?? file.name}' — ` +
+    `${zyp.files.size} file(s), ${zyp.manifest.scripts?.length ?? 0} script(s))`,
+    'out-meta'
+  );
+}
 document.getElementById('clear-output-btn').addEventListener('click', clearOutput);
 
 // ─── Examples ─────────────────────────────────────────────────────────────────

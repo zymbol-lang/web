@@ -86,11 +86,12 @@
       <span>Editor</span>
       <div class="panel-actions">
         <button class="btn btn-run" id="run-btn" title="Run (Ctrl+Enter)">▶ Run</button>
+        <select id="zyp-script-select" title="Which [[script]] of the loaded .zyp package to run" style="display:none"></select>
         <input id="args-input" type="text" placeholder="args…" title="CLI arguments (space-separated, use quotes for spaces: &quot;hello world&quot;)" spellcheck="false" autocomplete="off">
         <button class="btn" id="clear-code-btn" title="Clear editor">Clear</button>
         <button class="btn" id="download-btn" title="Download active file">↓ Save</button>
-        <button class="btn" id="upload-btn"   title="Upload .zy files">↑ Open</button>
-        <input type="file" id="upload-input" accept=".zy,.txt" multiple style="display:none">
+        <button class="btn" id="upload-btn"   title="Upload .zy files or a .zyp package">↑ Open</button>
+        <input type="file" id="upload-input" accept=".zy,.txt,.zyp" multiple style="display:none">
       </div>
     </div>
 
