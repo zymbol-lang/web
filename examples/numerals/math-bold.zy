@@ -1,0 +1,17 @@
+// Numerals: Mathematical Bold (U+1D7CE–U+1D7D7)
+// Loop and output in bold digit style.
+
+>> "Mathematical Bold numerals:" ¶
+
+#𝟎𝟗#
+
+@ i:𝟏..𝟏𝟓 {
+    >> i " "
+}
+>> ¶
+
+// Boolean output in bold (comparisons need parentheses after `>>`):
+>> (𝟓 > 𝟑) ¶
+>> (𝟑 > 𝟓) ¶
+
+#09#  // reset to ASCII

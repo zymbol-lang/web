@@ -1,0 +1,10 @@
+// `_` marks where the piped value lands in the argument list.
+add = (a, b) -> a + b
+
+r1 = 10 |> add(_, 5)    // add(10, 5)
+r2 = 3  |> add(7, _)    // add(7, 3)
+>> r1 ¶
+>> r2 ¶
+
+// Inline in an output list, a pipe needs parentheses:
+>> (10 |> add(_, 5)) ¶

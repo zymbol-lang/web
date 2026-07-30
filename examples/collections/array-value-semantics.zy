@@ -1,0 +1,6 @@
+// Assigning an array creates an independent copy
+a = [1, 2, 3]
+b = a
+a[1] = 99
+>> a ¶    // [99, 2, 3]
+>> b ¶    // [1, 2, 3]  ← b unaffected

@@ -1,8 +1,10 @@
 import { runZymbol, codePointDisplayWidth } from '../zymbol/zymbol.js';
-import { EXAMPLES } from './examples.js';
-import { esc, highlightCode } from './highlight.js';
+import { highlightCode } from './highlight.js';
 import { readZyp } from '../zymbol/zyp.js';
 import { makeResolver } from '../zymbol/module-resolver.js';
+import { createStore, dirOf, baseOf, USER } from './filestore.js';
+import { createSidebar } from './sidebar.js';
+import { loadCatalog, mountEntry, collectPackage } from './catalog.js';
 
 // ─── Editor sync ──────────────────────────────────────────────────────────────
 const editor    = document.getElementById('editor');
@@ -20,217 +22,163 @@ function syncScroll() {
 
 editor.addEventListener('scroll', syncScroll);
 
-// ─── File store ───────────────────────────────────────────────────────────────
-const LS_FILES   = 'zy-files';
-const EMPTY_CODE = '>> "Hello, Zymbol-Lang!" ¶';
+// ─── File store + tabs ────────────────────────────────────────────────────────
+//
+// `store` keeps two lists: mounted files (visible to the module resolver and the sidebar)
+// and open tabs (a subset). See filestore.js — the split is why mounting a 22-file package
+// no longer opens 22 tabs.
+const store = createStore({ onChange: () => { renderFileTabs(); sidebar?.render(); } });
 
-let files    = [];   // [{id, name, code, dirty}]
-let activeId = null;
-
-// ─── Loaded .zyp package state ────────────────────────────────────────────────
-// Set by loadZypFile() below when a .zyp is uploaded. `manifest` is the parsed zyp.json;
-// its files already live in `files` above (one tab per source file, named by full relative
-// path — e.g. "核/盤.zy" — so the resolver looks them up by that same path).
-let loadedPackage = null; // { manifest }
+// The run target: which mounted file ▶ Run executes. `null` means "the focused tab", which
+// is also the escape hatch after a package has been mounted — without it, mounting a package
+// permanently hijacked the Run button.
+let runTarget = null;
 const scriptSelectEl = document.getElementById('zyp-script-select');
+const argsInputEl    = document.getElementById('args-input');
+let sidebar = null;
 
-// Sentinel option value meaning "ignore the package, just run whatever tab is focused".
-// Without an escape hatch, loading a package permanently hijacked the Run button: every
-// later run went through the selected script, and going back to a scratch file meant
-// reloading the page.
-const RUN_ACTIVE_TAB = '';
-
-function populateScriptSelect(manifest) {
+/** Rebuilds the [[script]] picker from the mounts that have scripts (packages). */
+function refreshScriptSelect() {
+  const withScripts = store.mountList().filter(m => m.scripts?.length);
+  if (!withScripts.length) {
+    scriptSelectEl.style.display = 'none';
+    scriptSelectEl.innerHTML = '';
+    if (runTarget && !store.byName(runTarget)) runTarget = null;
+    return;
+  }
   scriptSelectEl.innerHTML = '';
-  for (const s of manifest.scripts ?? []) {
-    const opt = document.createElement('option');
-    opt.value = s.path;
-    opt.textContent = s.desc ? `${s.name} — ${s.desc}` : s.name;
-    scriptSelectEl.appendChild(opt);
+  for (const m of withScripts) {
+    const group = document.createElement('optgroup');
+    group.label = m.title;
+    for (const s of m.scripts) {
+      const opt = document.createElement('option');
+      opt.value = s.path;
+      opt.textContent = s.desc ? `${s.name} — ${s.desc}` : s.name;
+      group.appendChild(opt);
+    }
+    scriptSelectEl.appendChild(group);
   }
   const escape = document.createElement('option');
-  escape.value = RUN_ACTIVE_TAB;
+  escape.value = '';
   escape.textContent = '— active tab —';
   scriptSelectEl.appendChild(escape);
-
-  const def = (manifest.scripts ?? []).find(s => s.default) ?? manifest.scripts?.[0];
-  scriptSelectEl.value = def ? def.path : RUN_ACTIVE_TAB;
+  scriptSelectEl.value = runTarget && store.byName(runTarget) ? runTarget : '';
   scriptSelectEl.style.display = '';
 }
 
-function genId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+scriptSelectEl.addEventListener('change', () => {
+  runTarget = scriptSelectEl.value || null;
+  sidebar?.render();
+});
+
+// ─── Mounting examples and packages ──────────────────────────────────────────
+//
+// One path for every source of files — a catalog entry, an uploaded `.zyp`, a dropped `.zy`.
+// The only decision that needs the user is what to do with unsaved edits the incoming copy
+// would replace: silently preferring the stale edit means the program runs as a mix of
+// package and leftover code with nothing on screen saying so.
+function askOverwrite(conflicts) {
+  return window.confirm(
+    `${conflicts.length} open file(s) have unsaved edits that this would replace:\n\n` +
+    conflicts.slice(0, 10).join('\n') +
+    (conflicts.length > 10 ? `\n…and ${conflicts.length - 10} more` : '') +
+    `\n\nOK — use the fresh copies (your edits are lost)\n` +
+    `Cancel — keep your edits (it runs with them instead)`
+  );
 }
 
-function loadStore() {
+/**
+ * Mounts a bundle and opens exactly one file from it.
+ * @param {{id,title,root,files:Map,entryName,scripts,args,needs}} bundle
+ */
+function mountAndOpen(bundle, { isBundle = false, kind = 'dir' } = {}) {
+  flushEditor();
+  const conflicts = store.conflictsWith(bundle);
+  let overwriteDirty = false;
+  if (conflicts.length) overwriteDirty = askOverwrite(conflicts);
+
+  store.mountBundle({ ...bundle, isBundle, kind }, { overwriteDirty });
+  if (bundle.args !== undefined) argsInputEl.value = bundle.args;
+
+  runTarget = bundle.scripts?.length ? bundle.entryName : null;
+  refreshScriptSelect();
+
+  const file = store.byName(bundle.entryName);
+  if (file) openFile(file.id);
+  else { renderFileTabs(); sidebar?.render(); }
+
+  if (conflicts.length && !overwriteDirty) {
+    appendOutput(
+      `(kept your unsaved edits in ${conflicts.length} file(s) — it will run with them, ` +
+      `not with the original copies)`,
+      'out-meta'
+    );
+  }
+  return file;
+}
+
+async function openCatalogEntry(entry) {
   try {
-    const raw = localStorage.getItem(LS_FILES);
-    if (raw) {
-      const data = JSON.parse(raw);
-      files    = (data.files ?? []).map(f => ({ ...f, dirty: f.dirty ?? false }));
-      activeId = data.activeId ?? null;
+    const bundle = await mountEntry(entry);
+    mountAndOpen(bundle, {
+      isBundle: !!(entry.dir || entry.zyp),
+      kind: entry.zyp ? 'zyp' : 'dir',
+    });
+    if (bundle.files.size > 1) {
+      appendOutput(
+        `(mounted '${entry.title}' — ${bundle.files.size} file(s)` +
+        `${bundle.scripts.length ? `, ${bundle.scripts.length} script(s)` : ''}; ` +
+        `only the entry file was opened)`,
+        'out-meta'
+      );
     }
-  } catch {}
-  if (!files.length) {
-    files = [{ id: genId(), name: 'prog1.zy', code: EMPTY_CODE, dirty: false }];
-  }
-  if (!files.find(f => f.id === activeId)) activeId = files[0].id;
-}
-
-function saveStore() {
-  try { localStorage.setItem(LS_FILES, JSON.stringify({ files, activeId })); } catch {}
-}
-
-function activeFile() {
-  return files.find(f => f.id === activeId) ?? files[0];
-}
-
-function switchTo(id) {
-  const cur = activeFile();
-  if (cur) cur.code = editor.value;
-  activeId = id;
-  const f = activeFile();
-  editor.value = f.code;
-  syncHighlight();
-  clearOutput();
-  saveStore();
-  renderFileTabs();
-}
-
-function newFile(name, code = EMPTY_CODE) {
-  const f = { id: genId(), name, code, dirty: false };
-  const cur = activeFile();
-  if (cur) cur.code = editor.value;
-  files.push(f);
-  activeId = f.id;
-  editor.value = f.code;
-  syncHighlight();
-  clearOutput();
-  saveStore();
-  renderFileTabs();
-  return f;
-}
-
-function closeFile(id) {
-  if (files.length <= 1) return;
-  const idx = files.findIndex(f => f.id === id);
-  if (idx < 0) return;
-  files.splice(idx, 1);
-  if (activeId === id) {
-    activeId = files[Math.min(idx, files.length - 1)].id;
-    editor.value = activeFile().code;
-    syncHighlight();
+    sidebar?.closeDrawer();
+  } catch (err) {
     clearOutput();
-  }
-  saveStore();
-  renderFileTabs();
-}
-
-function nextName(prefix) {
-  const used = new Set(files.map(f => f.name));
-  let n = 1;
-  while (used.has(`${prefix}${n}.zy`)) n++;
-  return `${prefix}${n}.zy`;
-}
-
-// Add a file without switching the active tab
-function addFile(name, code) {
-  const existing = files.find(f => f.name === name);
-  if (existing) {
-    if (!existing.dirty) existing.code = code;
-    return existing;
-  }
-  const cur = activeFile();
-  if (cur) cur.code = editor.value;
-  const f = { id: genId(), name, code, dirty: false };
-  files.push(f);
-  saveStore();
-  renderFileTabs();
-  return f;
-}
-
-// Derive a .zy filename from an example title
-function titleToFilename(title) {
-  let base = title;
-  // For "NonASCII — ASCII" titles, prefer the ASCII part as the filename
-  const parts = title.split(/\s*[—–]+\s*/);
-  const asciiPart = parts.find(p => /^[\x20-\x7E]+$/.test(p.trim()) && p.trim().length > 0);
-  if (asciiPart && asciiPart.trim() !== title.trim()) base = asciiPart.trim();
-  const slug = base
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, '_')
-    .replace(/^_+|_+$/g, '')
-    .replace(/_+/g, '_') || 'example';
-  return slug + '.zy';
-}
-
-// Load a single-file example: find-or-create a tab by derived filename
-function loadSingleFileExample(ex) {
-  const filename = titleToFilename(ex.title);
-  if (ex.args !== undefined)
-    document.getElementById('args-input').value = ex.args;
-  const existing = files.find(f => f.name === filename);
-  if (existing) {
-    if (existing.dirty) {
-      if (!window.confirm(`'${filename}' has been modified.\nOverwrite with the original example?`)) {
-        switchTo(existing.id);
-        return;
-      }
-    }
-    existing.code = ex.code;
-    existing.dirty = false;
-    if (existing.id === activeId) {
-      editor.value = ex.code;
-      syncHighlight();
-      clearOutput();
-      saveStore();
-      renderFileTabs();
-    } else {
-      switchTo(existing.id);
-    }
-  } else {
-    newFile(filename, ex.code);
+    appendOutput(`(could not load '${entry.title}': ${err.message ?? err})`, 'out-error');
   }
 }
 
-// Load a multi-file example: add support files, switch to last (main program)
-function loadMultiFileExample(exFiles) {
-  for (let i = 0; i < exFiles.length - 1; i++) {
-    addFile(exFiles[i].name, exFiles[i].code);
-  }
-  const last = exFiles[exFiles.length - 1];
-  const existing = files.find(f => f.name === last.name);
-  if (existing) {
-    if (existing.dirty) {
-      if (!window.confirm(`'${existing.name}' has been modified.\nOverwrite with the original example?`)) {
-        switchTo(existing.id);
-        return;
-      }
-      existing.code = last.code;
-      existing.dirty = false;
-      saveStore();
-      renderFileTabs();
-    } else {
-      existing.code = last.code;
-    }
-    switchTo(existing.id);
-  } else {
-    newFile(last.name, last.code);
-  }
-}
-
-// ─── File tabs UI ─────────────────────────────────────────────────────────────
+// ─── Tabs (open files only) ──────────────────────────────────────────────────
 const fileTabsEl = document.getElementById('file-tabs');
+
+function openFile(id) {
+  const wasActive = store.activeId === id;
+  flushEditor();
+  const f = store.open(id);
+  if (!f) return;
+  editor.value = f.code;
+  syncHighlight();
+  // Only when the file actually changes: clicking the already-focused file in the tree
+  // should not throw away the output you are looking at.
+  if (!wasActive) clearOutput();
+  renderFileTabs();
+  sidebar?.render();
+}
+
+/** Writes the editor buffer back into the model without touching the dirty flag. */
+function flushEditor() {
+  store.syncActiveCode(editor.value);
+}
+
+function showActiveInEditor() {
+  const f = store.active();
+  editor.value = f ? f.code : '';
+  syncHighlight();
+}
 
 function renderFileTabs() {
   fileTabsEl.innerHTML = '';
-  for (const f of files) {
+  for (const f of store.tabs()) {
     const tab = document.createElement('div');
-    tab.className = 'ftab' + (f.id === activeId ? ' active' : '');
+    tab.className = 'ftab' + (f.id === store.activeId ? ' active' : '');
+    tab.title = f.name;
 
     const nameSpan = document.createElement('span');
     nameSpan.className = 'ftab-name';
-    nameSpan.textContent = f.name;
+    // Label with the basename: mounted names are full relative paths
+    // (`packages/go/核/盤.zy`) and would blow the tab strip apart.
+    nameSpan.textContent = baseOf(f.name);
 
     const dot = document.createElement('span');
     dot.className = 'ftab-dot';
@@ -240,14 +188,18 @@ function renderFileTabs() {
     const closeBtn = document.createElement('button');
     closeBtn.className = 'ftab-close';
     closeBtn.textContent = '×';
-    closeBtn.title = 'Close';
-    closeBtn.addEventListener('click', e => { e.stopPropagation(); closeFile(f.id); });
+    closeBtn.title = 'Close tab (the file stays mounted)';
+    closeBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      flushEditor();
+      store.closeTab(f.id);
+      showActiveInEditor();
+    });
 
     tab.appendChild(nameSpan);
     tab.appendChild(dot);
     tab.appendChild(closeBtn);
-    tab.addEventListener('click', () => switchTo(f.id));
-
+    tab.addEventListener('click', () => openFile(f.id));
     tab.addEventListener('dblclick', e => { e.stopPropagation(); startRename(tab, nameSpan, f); });
 
     fileTabsEl.appendChild(tab);
@@ -257,12 +209,21 @@ function renderFileTabs() {
   addBtn.className = 'ftab-add';
   addBtn.textContent = '+';
   addBtn.title = 'New file';
-  addBtn.addEventListener('click', () => newFile(nextName('prog')));
+  addBtn.addEventListener('click', () => newUserFile());
   fileTabsEl.appendChild(addBtn);
 
-  // Scroll active tab into view
   const activeTab = fileTabsEl.querySelector('.ftab.active');
   if (activeTab) activeTab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+
+function newUserFile() {
+  flushEditor();
+  const f = store.newFile();
+  editor.value = f.code;
+  syncHighlight();
+  clearOutput();
+  renderFileTabs();
+  sidebar?.render();
 }
 
 function startRename(tabEl, nameSpan, file) {
@@ -279,30 +240,24 @@ function startRename(tabEl, nameSpan, file) {
   function commit() {
     if (committed) return;
     committed = true;
-    let v = inp.value.trim() || file.name;
-    if (!v.endsWith('.zy')) v += '.zy';
-    file.name = v;
-    saveStore();
+    store.rename(file.id, inp.value);
     renderFileTabs();
+    sidebar?.render();
   }
   inp.addEventListener('blur', commit);
   inp.addEventListener('keydown', e => {
     if (e.key === 'Enter')  { e.preventDefault(); commit(); }
-    if (e.key === 'Escape') { committed = true; inp.value = file.name; saveStore(); renderFileTabs(); }
+    if (e.key === 'Escape') { committed = true; renderFileTabs(); }
   });
 }
 
 // Track edits → mark file dirty
 editor.addEventListener('input', () => {
   syncHighlight();
-  const f = activeFile();
-  if (!f) return;
-  f.code = editor.value;
-  if (!f.dirty) {
-    f.dirty = true;
-    renderFileTabs();   // refresh dot indicator
+  if (store.setActiveCode(editor.value)) {
+    renderFileTabs();      // refresh the • marker the first time
+    sidebar?.render();
   }
-  saveStore();
 });
 
 // Tab → 4 spaces
@@ -313,6 +268,7 @@ editor.addEventListener('keydown', e => {
     editor.value = editor.value.slice(0, s) + '    ' + editor.value.slice(end);
     editor.selectionStart = editor.selectionEnd = s + 4;
     syncHighlight();
+    store.setActiveCode(editor.value);
   }
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
@@ -379,6 +335,10 @@ class BrowserTUI {
     this.stopBtn      = document.getElementById('tui-stop-btn');
     this.inputBar     = document.getElementById('tui-input-bar');
     this.inputField   = document.getElementById('tui-input-field');
+    this.keyBar       = document.getElementById('tui-key-bar');
+    this.keyField     = document.getElementById('tui-key-field');
+    this.keysBtn      = document.getElementById('tui-keys-btn');
+    this.keyCloseBtn  = document.getElementById('tui-key-close');
     this.outputDiv    = outputDiv;
     this.ctx          = null;
     this.rows         = 0;
@@ -394,7 +354,11 @@ class BrowserTUI {
     this._inputResolve    = null;
     this._inputKeyHandler = null;
     this._touchStart      = null;
+    this._touchMove       = null;
     this._touchEnd        = null;
+    this._touchCancel     = null;
+    this._keypadOpen      = false;
+    this._keypadHandlers  = null;
     // Pre-compute dimensions so >>? works even before >>| is entered
     this._measureCells();
   }
@@ -452,46 +416,191 @@ class BrowserTUI {
     this._inputResolve   = null;
     this._inputKeyHandler = null;
     this.keyListener = e => {
-      if (this.inputBar.classList.contains('active')) return;
+      // Either input surface takes over completely while it is open, or a physical keypress
+      // would be delivered twice: once by this document-level listener and once by the
+      // field's own handler.
+      if (this.inputBar.classList.contains('active') || this._keypadOpen) return;
       e.preventDefault();
       const ch = this._mapKey(e);
       if (this.keyWaiters.length > 0) this.keyWaiters.shift()(ch);
       else this.keyQueue.push(ch);
     };
     document.addEventListener('keydown', this.keyListener);
+    this._installKeypad();
 
-    // Swipe gestures → arrow keys (mobile)
-    let _tx = 0, _ty = 0;
+    // Swipe gestures → arrow keys (mobile).
+    //
+    // Three things have to be true or the browser eats the gesture before we see it, and the
+    // failure is directional, which is what makes it confusing: an upward finger swipe is the
+    // canonical "scroll down" gesture, so it is the first one Chrome claims.
+    //
+    //   1. The listeners must be NON-passive. A passive listener cannot preventDefault(), so
+    //      the browser stays free to treat the touch as a scroll, an overscroll/pull-to-
+    //      refresh, or an edge back-navigation.
+    //   2. `touchcancel` must be handled. Once the browser decides the gesture is a scroll it
+    //      stops sending touchmove/touchend and sends touchcancel instead — with only a
+    //      touchend handler the swipe is silently dropped.
+    //   3. The direction must be decided during touchmove, as soon as the threshold is
+    //      crossed, not on release. That fires the instant the player moves (it matters in a
+    //      game) and it survives a cancel that arrives afterwards.
+    //
+    // `touch-action: none` on the canvas (playground.css) is the other half: it tells the
+    // compositor not to consider pans on this element at all, so 1–2 rarely even trigger.
+    const SWIPE_PX = 24;
+    let _sx = 0, _sy = 0, _fired = false, _tracking = false;
+    const emit = ch => this._pushKey(ch);
+
     this._touchStart = e => {
       if (this.inputBar.classList.contains('active')) return;
-      _tx = e.touches[0].clientX;
-      _ty = e.touches[0].clientY;
+      if (e.touches.length > 1) { _tracking = false; return; }   // pinch/zoom: not ours
+      _sx = e.touches[0].clientX;
+      _sy = e.touches[0].clientY;
+      _fired = false;
+      _tracking = true;
+      e.preventDefault();     // no double-tap zoom, no synthetic click, no scroll hand-off
+    };
+    this._touchMove = e => {
+      if (!_tracking) return;
+      e.preventDefault();
+      if (_fired) return;
+      const dx = e.touches[0].clientX - _sx;
+      const dy = e.touches[0].clientY - _sy;
+      const ax = Math.abs(dx), ay = Math.abs(dy);
+      if (Math.max(ax, ay) < SWIPE_PX) return;
+      emit(ax > ay ? (dx > 0 ? '→' : '←') : (dy > 0 ? '↓' : '↑'));
+      _fired = true;
     };
     this._touchEnd = e => {
-      if (this.inputBar.classList.contains('active')) return;
-      const dx = e.changedTouches[0].clientX - _tx;
-      const dy = e.changedTouches[0].clientY - _ty;
-      const ax = Math.abs(dx), ay = Math.abs(dy);
-      const ch = Math.max(ax, ay) < 25
-        ? '\n'                                                        // tap → Enter
-        : ax > ay ? (dx > 0 ? '→' : '←') : (dy > 0 ? '↓' : '↑');  // swipe → arrow
-      if (this.keyWaiters.length > 0) this.keyWaiters.shift()(ch);
-      else this.keyQueue.push(ch);
+      if (!_tracking) return;
+      _tracking = false;
+      if (e.cancelable) e.preventDefault();
+      if (!_fired) emit('\n');                 // never moved far enough → tap → Enter
     };
-    this.canvas.addEventListener('touchstart', this._touchStart, { passive: true });
-    this.canvas.addEventListener('touchend',   this._touchEnd,   { passive: true });
+    // A cancelled gesture is not a tap: emit nothing if the direction never fired, rather
+    // than sending a spurious Enter (which, in a game, is usually "confirm").
+    this._touchCancel = () => { _tracking = false; };
+
+    this.canvas.addEventListener('touchstart',  this._touchStart,  { passive: false });
+    this.canvas.addEventListener('touchmove',   this._touchMove,   { passive: false });
+    this.canvas.addEventListener('touchend',    this._touchEnd,    { passive: false });
+    this.canvas.addEventListener('touchcancel', this._touchCancel, { passive: true });
 
     this.active = true;
   }
 
+  /** Queues one keypress, exactly as the document-level key listener does. */
+  _pushKey(ch) {
+    if (this.keyWaiters.length > 0) this.keyWaiters.shift()(ch);
+    else this.keyQueue.push(ch);
+  }
+
+  // ─── Keypad ────────────────────────────────────────────────────────────────
+  //
+  // A program reading `<<|` can ask for any character; on a touch device the only ones
+  // reachable were the four arrows (swipe) and Enter (tap). Every package in the pool needs
+  // more than that — `p` passes in GO, `q` quits, klingon_galaxy reads digits — so without
+  // this those games are unplayable on a phone, not merely awkward.
+  //
+  // The field is an overlay, never part of the flex flow: `>>?` reports the canvas size and
+  // programs lay their screen out from it, so reflowing the canvas after the program has
+  // measured would leave a board drawn to a height that no longer exists.
+  _installKeypad() {
+    const open  = () => this._openKeypad();
+    const close = () => this._closeKeypad();
+
+    // A soft keyboard is not a keyboard. On Android, GBoard commonly reports `keydown` with
+    // `key: 'Unidentified'` (keyCode 229) and delivers the real character only through the
+    // input events, so reading `e.key` here would work on a desktop and silently do nothing
+    // on the device this whole feature exists for. `beforeinput` carries the text, and
+    // preventing it keeps the field empty so no visible string accumulates.
+    const onBeforeInput = e => {
+      if (e.inputType !== 'insertText' || !e.data) return;
+      e.preventDefault();
+      for (const ch of e.data) this._pushKey(ch);
+    };
+    // Belt and braces: some IMEs (and composition-based input) bypass beforeinput. Anything
+    // that reaches the value is drained and the field reset.
+    const onInput = () => {
+      const v = this.keyField.value;
+      if (!v) return;
+      this.keyField.value = '';
+      for (const ch of v) this._pushKey(ch);
+    };
+    // Keys that produce no text: these DO arrive reliably as keydown, on soft keyboards too.
+    const onKeyDown = e => {
+      const map = { Enter: '\n', Escape: '\x1b', Backspace: '\x7f', Tab: '\t',
+                    ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' };
+      if (e.key in map) {
+        e.preventDefault();
+        // Escape closes the keypad rather than reaching the program: with the OS keyboard
+        // covering half the screen, getting out has to be possible from the keyboard itself.
+        if (e.key === 'Escape') { close(); return; }
+        this._pushKey(map[e.key]);
+      }
+    };
+
+    this._keypadHandlers = { open, close, onBeforeInput, onInput, onKeyDown };
+    this.keysBtn.addEventListener('click', open);
+    this.keyCloseBtn.addEventListener('click', close);
+    this.keyField.addEventListener('beforeinput', onBeforeInput);
+    this.keyField.addEventListener('input', onInput);
+    this.keyField.addEventListener('keydown', onKeyDown);
+    this.keysBtn.classList.add('visible');
+  }
+
+  _openKeypad() {
+    if (!this.active || this._keypadOpen) return;
+    this._keypadOpen = true;
+    this.keyBar.classList.add('active');
+    this.keysBtn.classList.remove('visible');
+    this.keyField.value = '';
+    // focus() is what raises the device keyboard, and it only works inside the user gesture
+    // that opened the keypad — hence the direct call rather than anything deferred.
+    this.keyField.focus();
+  }
+
+  _closeKeypad() {
+    if (!this._keypadOpen) return;
+    this._keypadOpen = false;
+    this.keyBar.classList.remove('active');
+    this.keyField.value = '';
+    this.keyField.blur();
+    if (this.active) {
+      this.keysBtn.classList.add('visible');
+      this.canvas.focus();
+    }
+  }
+
+  _removeKeypad() {
+    const h = this._keypadHandlers;
+    if (h) {
+      this.keysBtn.removeEventListener('click', h.open);
+      this.keyCloseBtn.removeEventListener('click', h.close);
+      this.keyField.removeEventListener('beforeinput', h.onBeforeInput);
+      this.keyField.removeEventListener('input', h.onInput);
+      this.keyField.removeEventListener('keydown', h.onKeyDown);
+      this._keypadHandlers = null;
+    }
+    this._keypadOpen = false;
+    this.keyBar.classList.remove('active');
+    this.keysBtn.classList.remove('visible');
+    this.keyField.value = '';
+    this.keyField.blur();
+  }
+
   leave() {
     if (!this.active) return;
+    this._removeKeypad();
     document.removeEventListener('keydown', this.keyListener);
     this.keyListener = null;
-    if (this._touchStart) this.canvas.removeEventListener('touchstart', this._touchStart);
-    if (this._touchEnd)   this.canvas.removeEventListener('touchend',   this._touchEnd);
-    this._touchStart = null;
-    this._touchEnd   = null;
+    if (this._touchStart)  this.canvas.removeEventListener('touchstart',  this._touchStart);
+    if (this._touchMove)   this.canvas.removeEventListener('touchmove',   this._touchMove);
+    if (this._touchEnd)    this.canvas.removeEventListener('touchend',    this._touchEnd);
+    if (this._touchCancel) this.canvas.removeEventListener('touchcancel', this._touchCancel);
+    this._touchStart  = null;
+    this._touchMove   = null;
+    this._touchEnd    = null;
+    this._touchCancel = null;
     while (this.keyWaiters.length > 0) this.keyWaiters.shift()('\x1b');
     this.inputBar.classList.remove('active');
     this.wrap.classList.remove('active');
@@ -512,6 +621,9 @@ class BrowserTUI {
 
   readLine() {
     return new Promise(resolve => {
+      // Two fields cannot share one device keyboard: whichever was focused last wins and the
+      // other keeps a caret that no longer receives anything.
+      this._closeKeypad();
       this.inputBar.classList.add('active');
       this.inputField.value = '';
       this.inputField.focus();
@@ -691,25 +803,25 @@ function inputFn() {
   });
 }
 
-// ─── Module resolver: look up other loaded tabs by full relative path ────────
+// ─── Module resolver: look up other MOUNTED files by full relative path ──────
 //
-// The previous version of this resolver collapsed every import to its basename
-// (`./核/盤` and `../核/盤` both became `盤.zy`), which worked by accident for
-// flat single-directory examples but breaks in two real ways once tabs can hold
-// full relative paths (which loading a .zyp package does deliberately, one tab
-// per source file — see loadZypFile below):
+// Mounted, not open: this is what lets a package run in full from a single tab. The
+// resolver sees every mounted file, so `<# ../核/盤` finds 盤.zy whether or not it has a tab.
 //
-//   1. Two same-named modules in different directories collide onto one tab.
-//   2. The resolver never returned `resolvedPath`, so zymbol.js's module cache
-//      (keyed by the *raw, un-normalized* import string when resolvedPath is
-//      absent) treats `./核/盤` and `../核/盤` — the same file, imported from
-//      two different files — as two distinct modules, loading and running it
-//      twice with two independent copies of its state.
+// An earlier version collapsed every import to its basename (`./核/盤` and `../核/盤` both
+// became `盤.zy`), which worked by accident for flat single-directory examples but breaks in
+// two real ways once mounted names are full relative paths (which they always are now):
 //
-// The actual path-normalizing logic lives in module-resolver.js (factored out so it can be
-// unit-tested without a DOM); this just binds it to the playground's `files` tab model.
+//   1. Two same-named modules in different directories collide onto one file.
+//   2. It never returned `resolvedPath`, so zymbol.js's module cache (keyed by the *raw,
+//      un-normalized* import string when resolvedPath is absent) treated `./核/盤` and
+//      `../核/盤` — the same file, imported from two different files — as two distinct
+//      modules, loading and running it twice with two independent copies of its state.
+//
+// The path-normalizing logic lives in module-resolver.js (factored out so it can be
+// unit-tested without a DOM); this just binds it to the store.
 function buildModuleResolver(baseDir = '') {
-  return makeResolver(name => files.find(f => f.name === name)?.code, baseDir);
+  return makeResolver(name => store.codeOf(name), baseDir);
 }
 
 // ─── Parse CLI args (shell-like: spaces split, quotes group) ─────────────────
@@ -736,49 +848,37 @@ function parseCliArgs(str) {
 async function runCode() {
   clearOutput();
 
-  // switchTo() only flushes editor.value into the file model when the user actually
-  // switches tabs. Running a package script that ISN'T the currently-focused tab (the
-  // common case — the script picker below can point anywhere) would otherwise silently
-  // execute the last-saved copy while the visible editor shows edits that were never
-  // captured. This flush makes "press Run" always see what's on screen, package or not.
-  const cur = activeFile();
-  if (cur) cur.code = editor.value;
-
-  // Directory a file's own relative imports resolve against — mirrors the CLI, where a
-  // module's imports are relative to the file containing them, not to the project root.
-  const dirOf = name => (name.includes('/') ? name.slice(0, name.lastIndexOf('/')) : '');
+  // The model is only written back on tab switches and on `input`. Running a script that
+  // ISN'T the focused tab (the common case — the script picker can point anywhere) would
+  // otherwise execute the last-saved copy while the editor shows edits that were never
+  // captured. This flush makes "press Run" always see what is on screen.
+  flushEditor();
 
   let src, resolver, displayPath, execOpts;
-  // An empty selector value is the "— active tab —" escape hatch (RUN_ACTIVE_TAB), so this
-  // falls through to the plain-file path below even while a package is loaded.
-  if (loadedPackage && scriptSelectEl.value) {
-    const entryName = scriptSelectEl.value;
-    const entryFile = files.find(f => f.name === entryName);
-    if (!entryFile) {
-      appendOutput(`(script '${entryName}' not found among loaded files)`, 'out-error');
-      return;
-    }
-    src = entryFile.code;
-    resolver = buildModuleResolver(dirOf(entryName));
-    displayPath = entryName;
-    // A package is typically a real multi-file program (e.g. drawing a board, running a
-    // small tournament), not the single-statement snippets the default limits were sized
-    // for. Raised only for package execution — the plain single-file editor keeps the
-    // defaults from zymbol.js.
+  const target = runTarget ? store.byName(runTarget) : null;
+  if (target) {
+    src = target.code;
+    // Imports resolve relative to the file containing them, not to the project root —
+    // same rule as the CLI (ModulePath::resolve_from).
+    resolver = buildModuleResolver(dirOf(target.name));
+    displayPath = target.name;
+    // A package is typically a real multi-file program (a board being drawn, a small
+    // tournament), not the single-statement snippets the default limits were sized for.
+    // Raised only for a package/project run; a plain file keeps zymbol.js's defaults.
     execOpts = { maxSteps: 2_000_000, maxBytes: 2_000_000 };
   } else {
-    src = editor.value.trim();
+    const active = store.active();
+    src = (active?.code ?? '').trim();
     if (!src) { appendOutput('(empty program)', 'out-meta'); return; }
-    // Resolve against the active tab's own directory, not the root: with a package loaded,
-    // the focused tab can itself be a nested module (e.g. 表示/描画.zy), whose `../核/盤`
-    // imports only resolve correctly relative to 表示/.
-    const activeName = activeFile()?.name ?? '';
-    resolver = buildModuleResolver(dirOf(activeName));
-    displayPath = activeName || null;
+    // Resolve against the active file's own directory, not the root: with a package
+    // mounted, the focused tab can itself be a nested module (e.g. 表示/描画.zy) whose
+    // `../核/盤` imports only resolve correctly relative to 表示/.
+    resolver = buildModuleResolver(dirOf(active?.name ?? ''));
+    displayPath = active?.name ?? null;
     execOpts = {};
   }
 
-  const cliArgs = parseCliArgs(document.getElementById('args-input').value);
+  const cliArgs = parseCliArgs(argsInputEl.value);
   const tui = new BrowserTUI(
     document.getElementById('tui-canvas'),
     outputEl
@@ -803,195 +903,129 @@ document.getElementById('run-btn').addEventListener('click', runCode);
 document.getElementById('clear-code-btn').addEventListener('click', () => {
   editor.value = '';
   syncHighlight();
-  const f = activeFile();
-  if (f) { f.code = ''; f.dirty = false; saveStore(); renderFileTabs(); }
+  store.clearActive();
 });
 
 // ─── Download active file ─────────────────────────────────────────────────────
 document.getElementById('download-btn').addEventListener('click', () => {
-  const f = activeFile();
+  flushEditor();
+  const f = store.active();
   if (!f) return;
-  f.code = editor.value;
   const blob = new Blob([f.code], { type: 'text/plain' });
   const url  = URL.createObjectURL(blob);
-  const a    = Object.assign(document.createElement('a'), { href: url, download: f.name });
+  const a    = Object.assign(document.createElement('a'), { href: url, download: baseOf(f.name) });
   a.click();
   URL.revokeObjectURL(url);
 });
 
-// ─── Upload .zy files ─────────────────────────────────────────────────────────
+// ─── Upload .zy files / .zyp packages ────────────────────────────────────────
 const uploadInput = document.getElementById('upload-input');
 
 document.getElementById('upload-btn').addEventListener('click', () => uploadInput.click());
 
-uploadInput.addEventListener('change', () => {
+uploadInput.addEventListener('change', async () => {
   const picked = [...uploadInput.files];
-  uploadInput.value = '';          // reset so same file can be re-uploaded
+  uploadInput.value = '';          // reset so the same file can be re-uploaded
   if (!picked.length) return;
 
-  let first = true;
+  const loose = [];
   for (const file of picked) {
-    if (file.name.endsWith('.zyp')) {
-      // Binary archive — can't go through readAsText below. Handled on its own; doesn't
-      // participate in the "first picked file reuses the pristine tab" logic since a
-      // package always adds its own set of tabs regardless of what's currently open.
-      loadZypFile(file);
-      continue;
-    }
-    const reader = new FileReader();
-    reader.onload = e => {
-      const name = file.name.endsWith('.zy') ? file.name : file.name + '.zy';
-      const code = e.target.result;
-      if (first) {
-        // First file: check if active tab is pristine; load in place or new tab
-        const cur = activeFile();
-        if (cur && !cur.dirty && cur.code.trim() === '') {
-          // Empty pristine tab → reuse it
-          cur.name  = name;
-          cur.code  = code;
-          cur.dirty = false;
-          editor.value = code;
-          syncHighlight();
-          clearOutput();
-          saveStore();
-          renderFileTabs();
-        } else {
-          newFile(name, code);
-        }
-        first = false;
-      } else {
-        newFile(name, code);
-      }
-    };
-    reader.readAsText(file);
+    if (file.name.endsWith('.zyp')) await uploadZyp(file);
+    else loose.push(file);
   }
+  if (!loose.length) return;
+
+  flushEditor();
+  let firstId = null;
+  for (const file of loose) {
+    const name = file.name.endsWith('.zy') ? file.name : file.name + '.zy';
+    const code = await file.text();
+    // Reuse an empty, untouched tab rather than leaving a stray prog1.zy behind.
+    const active = store.active();
+    let f;
+    if (!firstId && active && !active.dirty && active.code.trim() === '' && active.origin === USER) {
+      store.rename(active.id, name);
+      active.code = code;
+      f = active;
+    } else {
+      f = store.mount(name, code, { origin: USER });
+    }
+    firstId ??= f.id;
+    store.open(f.id, { activate: false });
+  }
+  if (firstId) openFile(firstId);
 });
 
-// ─── Load a .zyp package: one tab per source file, named by full relative path ──
-async function loadZypFile(file) {
-  let zyp;
+/**
+ * A `.zyp` picked from disk takes exactly the same path as a catalog package entry —
+ * mounted under the archive's own name, one tab opened, scripts in the picker.
+ */
+async function uploadZyp(file) {
+  const root = file.name.replace(/\.zyp$/, '');
   try {
-    const buf = await file.arrayBuffer();
-    zyp = await readZyp(buf);
-  } catch (err) {
-    appendOutput(`(failed to read ${file.name}: ${err.message ?? err})`, 'out-error');
-    return;
-  }
-
-  // addFile() deliberately refuses to clobber a tab with unsaved edits. That's right for
-  // loading an example, but silently wrong here: the package's own copy of a module would
-  // be dropped in favour of a stale edit, and the program would then run with a mix of
-  // package and leftover code with nothing on screen saying so. Ask once, up front.
-  const conflicts = [...zyp.files.keys()].filter(path => {
-    const tab = files.find(f => f.name === path);
-    return tab && tab.dirty && tab.code !== zyp.files.get(path);
-  });
-  let overwriteDirty = false;
-  if (conflicts.length) {
-    overwriteDirty = window.confirm(
-      `${conflicts.length} open file(s) have unsaved edits that the package would replace:\n\n` +
-      conflicts.slice(0, 10).join('\n') +
-      (conflicts.length > 10 ? `\n…and ${conflicts.length - 10} more` : '') +
-      `\n\nOK — use the package's versions (your edits are lost)\n` +
-      `Cancel — keep your edits (the package runs with them instead)`
-    );
-  }
-
-  for (const [path, code] of zyp.files) {
-    const existing = files.find(f => f.name === path);
-    if (existing && existing.dirty && overwriteDirty) {
-      existing.code = code;
-      existing.dirty = false;
-      if (existing.id === activeId) { editor.value = code; syncHighlight(); }
-    } else {
-      addFile(path, code);
-    }
-  }
-  if (conflicts.length && !overwriteDirty) {
+    const pkg = await readZyp(await file.arrayBuffer());
+    const { files, scripts, entryName } = collectPackage(pkg, root);
+    mountAndOpen({
+      id: 'upload:' + root, title: pkg.manifest.package?.name ?? root,
+      root, files, entryName, scripts,
+    }, { isBundle: true, kind: 'zyp' });
     appendOutput(
-      `(keeping your unsaved edits in ${conflicts.length} file(s) — the package will run with them, not its own copies)`,
+      `(mounted package '${pkg.manifest.package?.name ?? file.name}' — ` +
+      `${files.size} file(s), ${scripts.length} script(s))`,
       'out-meta'
     );
+  } catch (err) {
+    appendOutput(`(failed to read ${file.name}: ${err.message ?? err})`, 'out-error');
   }
-  loadedPackage = { manifest: zyp.manifest };
-  populateScriptSelect(zyp.manifest);
-
-  const def = (zyp.manifest.scripts ?? []).find(s => s.default) ?? zyp.manifest.scripts?.[0];
-  if (def) {
-    const tab = files.find(f => f.name === def.path);
-    if (tab) switchTo(tab.id);
-  }
-
-  appendOutput(
-    `(loaded package '${zyp.manifest.package?.name ?? file.name}' — ` +
-    `${zyp.files.size} file(s), ${zyp.manifest.scripts?.length ?? 0} script(s))`,
-    'out-meta'
-  );
 }
+
 document.getElementById('clear-output-btn').addEventListener('click', clearOutput);
 
-// ─── Examples ─────────────────────────────────────────────────────────────────
-const tabsEl  = document.getElementById('examples-tabs');
-const gridEl  = document.getElementById('examples-grid');
-const panelEl = document.getElementById('examples-panel');
-const toggleEl = document.getElementById('examples-toggle');
-
-let activeTab = Object.keys(EXAMPLES)[0];
-let examplesOpen = true;
-
-function setExamplesOpen(open) {
-  examplesOpen = open;
-  panelEl.classList.toggle('collapsed', !open);
-  toggleEl.textContent = open ? 'examples ▼' : 'examples ▲';
-}
-
-toggleEl.addEventListener('click', () => setExamplesOpen(!examplesOpen));
-
-function renderTabs() {
-  tabsEl.innerHTML = '';
-  for (const cat of Object.keys(EXAMPLES)) {
-    const btn = document.createElement('div');
-    btn.className = 'ex-tab' + (cat === activeTab ? ' active' : '');
-    btn.textContent = cat;
-    btn.addEventListener('click', () => {
-      activeTab = cat;
-      if (!examplesOpen) setExamplesOpen(true);
-      renderTabs();
-      renderGrid();
-    });
-    tabsEl.appendChild(btn);
-  }
-  tabsEl.appendChild(toggleEl);
-}
-
-function renderGrid() {
-  gridEl.innerHTML = '';
-  for (const ex of EXAMPLES[activeTab]) {
-    const card = document.createElement('div');
-    card.className = 'ex-card';
-    // Multi-file examples: show last file (main program) as preview
-    const previewCode = ex.files ? ex.files[ex.files.length - 1].code : ex.code;
-    // Badge for multi-file examples showing the file names
-    const badge = ex.files
-      ? `<div class="ex-card-badge">${ex.files.map(f => esc(f.name)).join(' + ')}</div>`
-      : '';
-    card.innerHTML = `
-      <div class="ex-card-title">${esc(ex.title)}${badge}</div>
-      <div class="ex-card-code">${highlightCode(previewCode)}</div>
-    `;
-    card.addEventListener('click', () => {
-      if (ex.files) {
-        loadMultiFileExample(ex.files);
-      } else {
-        loadSingleFileExample(ex);
-      }
-    });
-    gridEl.appendChild(card);
-  }
-}
-
-renderTabs();
-renderGrid();
+// ─── Sidebar: WORKSPACE + the example catalog ───────────────────────────────
+sidebar = createSidebar({
+  store,
+  hooks: {
+    openEntry: openCatalogEntry,
+    openFile,
+    newFile: newUserFile,
+    isRunTarget: path => runTarget === path,
+    renameFile(id) {
+      // The tab strip owns inline renaming; from the tree, focus the tab and start there.
+      openFile(id);
+      const tab = fileTabsEl.querySelector('.ftab.active');
+      const name = tab?.querySelector('.ftab-name');
+      const f = store.byId(id);
+      if (tab && name && f) startRename(tab, name, f);
+    },
+    runScript(mount, script) {
+      runTarget = script.path;
+      refreshScriptSelect();
+      const f = store.byName(script.path);
+      if (f) openFile(f.id);
+      sidebar.closeDrawer();
+      runCode();
+    },
+    unmountFile(id) {
+      const f = store.byId(id);
+      if (f?.dirty && !window.confirm(`'${f.name}' has unsaved edits. Unmount anyway?`)) return;
+      flushEditor();
+      store.unmount(id);
+      refreshScriptSelect();
+      showActiveInEditor();
+    },
+    unmountBundle(originId) {
+      const m = store.mountList().find(x => x.id === originId);
+      const dirty = store.all().filter(f => f.origin === originId && f.dirty);
+      if (dirty.length && !window.confirm(
+            `${dirty.length} file(s) of '${m?.title ?? originId}' have unsaved edits. ` +
+            `Unmount anyway?`)) return;
+      flushEditor();
+      store.unmountBundle(originId);
+      refreshScriptSelect();
+      showActiveInEditor();
+    },
+  },
+});
 
 // ─── Theme toggle ─────────────────────────────────────────────────────────────
 const themeBtn  = document.getElementById('theme-toggle');
@@ -1008,11 +1042,57 @@ themeBtn.addEventListener('click', () => {
 });
 applyTheme(document.documentElement.classList.contains('light'));
 
-// ─── Initialize file store ────────────────────────────────────────────────────
-loadStore();
-editor.value = activeFile().code;
-syncHighlight();
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+//
+// Two phases, because clean example files are not persisted (see filestore.js): the local
+// state comes back synchronously, then the catalog is fetched and the previously mounted
+// entries are re-mounted from `examples/`.
+const restore = store.load();
+showActiveInEditor();
 renderFileTabs();
+sidebar.render();
+
+(async function boot() {
+  let catalog;
+  try {
+    catalog = await loadCatalog();
+    sidebar.setCatalog(catalog);
+  } catch (err) {
+    sidebar.setError(String(err.message ?? err));
+    return;
+  }
+
+  // Re-mount what was mounted last session, without stealing focus or clobbering edits:
+  // a persisted dirty copy of an example file already sits in the store and wins.
+  for (const id of restore.mountIds) {
+    const entry = catalog.byId.get(id);
+    if (!entry) continue;                     // entry renamed or retired since
+    try {
+      const bundle = await mountEntry(entry);
+      store.mountBundle({ ...bundle, isBundle: !!(entry.dir || entry.zyp),
+                         kind: entry.zyp ? 'zyp' : 'dir' });
+    } catch { /* offline or moved — the tree just won't show it */ }
+  }
+  for (const name of restore.openNames) {
+    const f = store.byName(name);
+    if (f) store.open(f.id, { activate: false });
+  }
+  const active = restore.activeName ? store.byName(restore.activeName) : null;
+  if (active) store.open(active.id);
+  refreshScriptSelect();
+  showActiveInEditor();
+  renderFileTabs();
+  sidebar.render();
+
+  // Deep link: playground.html?example=<catalog id>, so docs, the course and the landing
+  // page can point at one example instead of "open the playground and scroll".
+  const wanted = new URLSearchParams(location.search).get('example');
+  if (wanted) {
+    const entry = catalog.byId.get(wanted);
+    if (entry) await openCatalogEntry(entry);
+    else appendOutput(`(unknown example '${wanted}')`, 'out-error');
+  }
+})();
 
 // ─── Playground notice ────────────────────────────────────────────────────────
 (function () {
@@ -1044,7 +1124,9 @@ renderFileTabs();
 
 // ─── Split panel + output toggle ─────────────────────────────────────────────
 (function () {
-  const playgroundEl     = document.getElementById('playground');
+  // #split, not #playground: the drag positions the divider as a percentage of the
+  // editor+output area, which no longer spans the whole row now that the sidebar is in it.
+  const playgroundEl     = document.getElementById('split');
   const editorPanel      = document.getElementById('editor-panel');
   const outputPanel      = document.getElementById('output-panel');
   const splitHandle      = document.getElementById('split-handle');

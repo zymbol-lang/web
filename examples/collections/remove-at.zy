@@ -1,0 +1,5 @@
+arr = [10, 20, 30, 40]
+arr = arr$-[1]      // remove the first element
+>> arr ¶
+arr = arr$-[1..2]   // remove a range
+>> arr ¶

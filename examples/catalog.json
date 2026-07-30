@@ -1,0 +1,1614 @@
+{
+  "schema": 1,
+  "groups": [
+    {
+      "id": "basics",
+      "title": "Basics",
+      "desc": "Output, input, variables, control flow",
+      "categories": [
+        {
+          "id": "tour",
+          "title": "Guided tours",
+          "desc": "One file per topic, heavily commented — start here",
+          "entries": [
+            {
+              "id": "tour-basics",
+              "title": "Tour — Basics",
+              "desc": "Variables, types, output, string building",
+              "path": "tour/basics.zy"
+            },
+            {
+              "id": "tour-collections",
+              "title": "Tour — Collections",
+              "desc": "Arrays, tuples and every $ operator in one file",
+              "path": "tour/collections.zy"
+            },
+            {
+              "id": "tour-control",
+              "title": "Tour — Control",
+              "desc": "if, match and every loop form",
+              "path": "tour/control.zy"
+            },
+            {
+              "id": "tour-functions",
+              "title": "Tour — Functions",
+              "desc": "Functions, lambdas, closures, higher-order use",
+              "path": "tour/functions.zy"
+            },
+            {
+              "id": "tour-errors",
+              "title": "Tour — Errors",
+              "desc": "!? blocks, typed catches, $! checks",
+              "path": "tour/errors.zy"
+            }
+          ]
+        },
+        {
+          "id": "output",
+          "title": "Output >>",
+          "desc": "Printing values, ¶ for a newline",
+          "entries": [
+            {
+              "id": "output-hello",
+              "title": "Hello, Zymbol-Lang!",
+              "path": "output/hello.zy"
+            },
+            {
+              "id": "output-hello-world",
+              "title": "Hello World",
+              "path": "output/hello-world.zy"
+            },
+            {
+              "id": "output-multi-value",
+              "title": "Multi-value",
+              "path": "output/multi-value.zy"
+            },
+            {
+              "id": "output-numbers",
+              "title": "Numbers",
+              "path": "output/numbers.zy"
+            },
+            {
+              "id": "output-blank-line",
+              "title": "Blank line",
+              "path": "output/blank-line.zy"
+            }
+          ]
+        },
+        {
+          "id": "input",
+          "title": "Input <<",
+          "desc": "Reading a line from the user",
+          "entries": [
+            {
+              "id": "input-read",
+              "title": "Read input",
+              "path": "input/read.zy",
+              "needs": [
+                "input"
+              ]
+            },
+            {
+              "id": "input-two-inputs",
+              "title": "Two inputs",
+              "path": "input/two-inputs.zy",
+              "needs": [
+                "input"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "variables",
+          "title": "Variables",
+          "desc": "Assignment, constants :=, interpolation",
+          "entries": [
+            {
+              "id": "variables-types",
+              "title": "Types",
+              "path": "variables/types.zy"
+            },
+            {
+              "id": "variables-constant",
+              "title": "Constant",
+              "path": "variables/constant.zy"
+            },
+            {
+              "id": "variables-interpolation",
+              "title": "Interpolation",
+              "path": "variables/interpolation.zy"
+            },
+            {
+              "id": "variables-compound-ops",
+              "title": "Compound ops",
+              "path": "variables/compound-ops.zy"
+            }
+          ]
+        },
+        {
+          "id": "control",
+          "title": "Control ?",
+          "desc": "if / _? / _",
+          "entries": [
+            {
+              "id": "control-if-else",
+              "title": "If / else",
+              "path": "control/if-else.zy"
+            },
+            {
+              "id": "control-else-if",
+              "title": "If / _? / _",
+              "path": "control/else-if.zy"
+            },
+            {
+              "id": "control-nested",
+              "title": "Nested",
+              "path": "control/nested.zy"
+            }
+          ]
+        },
+        {
+          "id": "match",
+          "title": "Match ??",
+          "desc": "Pure pattern matching with =>",
+          "entries": [
+            {
+              "id": "match-ranges",
+              "title": "Ranges",
+              "path": "match/ranges.zy"
+            },
+            {
+              "id": "match-strings",
+              "title": "Strings",
+              "path": "match/strings.zy"
+            },
+            {
+              "id": "match-comparisons",
+              "title": "Guard _?",
+              "path": "match/comparisons.zy"
+            }
+          ]
+        },
+        {
+          "id": "loops",
+          "title": "Loops @",
+          "desc": "Ranges, while, foreach, @! and @>",
+          "entries": [
+            {
+              "id": "loops-range",
+              "title": "Range 1..5",
+              "path": "loops/range.zy"
+            },
+            {
+              "id": "loops-range-step",
+              "title": "Range + step",
+              "path": "loops/range-step.zy"
+            },
+            {
+              "id": "loops-while",
+              "title": "While",
+              "path": "loops/while.zy"
+            },
+            {
+              "id": "loops-foreach-array",
+              "title": "Foreach array",
+              "path": "loops/foreach-array.zy"
+            },
+            {
+              "id": "loops-foreach-string",
+              "title": "Foreach string",
+              "path": "loops/foreach-string.zy"
+            },
+            {
+              "id": "loops-break",
+              "title": "Break @!",
+              "path": "loops/break.zy"
+            },
+            {
+              "id": "loops-infinite",
+              "title": "Infinite (safe)",
+              "path": "loops/infinite.zy"
+            },
+            {
+              "id": "loops-continue",
+              "title": "Continue @>",
+              "path": "loops/continue.zy"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "data",
+      "title": "Data",
+      "desc": "Arrays, tuples and the $ collection operators",
+      "categories": [
+        {
+          "id": "collections",
+          "title": "Collections $",
+          "desc": "Arrays, tuples, named tuples and their operators",
+          "entries": [
+            {
+              "id": "collections-array",
+              "title": "Array",
+              "path": "collections/array.zy"
+            },
+            {
+              "id": "collections-array-value-semantics",
+              "title": "Array: value semantics",
+              "path": "collections/array-value-semantics.zy"
+            },
+            {
+              "id": "collections-tuple",
+              "title": "Tuple",
+              "path": "collections/tuple.zy"
+            },
+            {
+              "id": "collections-named-tuple",
+              "title": "Named tuple",
+              "path": "collections/named-tuple.zy"
+            },
+            {
+              "id": "collections-field-access",
+              "title": "Field access .",
+              "path": "collections/field-access.zy"
+            },
+            {
+              "id": "collections-nested-field",
+              "title": "Nested .field",
+              "path": "collections/nested-field.zy"
+            },
+            {
+              "id": "collections-string-tuple",
+              "title": "String tuple",
+              "path": "collections/string-tuple.zy"
+            },
+            {
+              "id": "collections-length",
+              "title": "$# length",
+              "path": "collections/length.zy"
+            },
+            {
+              "id": "collections-append",
+              "title": "$+ append",
+              "path": "collections/append.zy"
+            },
+            {
+              "id": "collections-insert",
+              "title": "$+[i] insert",
+              "path": "collections/insert.zy"
+            },
+            {
+              "id": "collections-remove",
+              "title": "$- remove",
+              "path": "collections/remove.zy"
+            },
+            {
+              "id": "collections-remove-at",
+              "title": "$-[i] remove at",
+              "path": "collections/remove-at.zy"
+            },
+            {
+              "id": "collections-contains",
+              "title": "$? contains",
+              "path": "collections/contains.zy"
+            },
+            {
+              "id": "collections-find-all",
+              "title": "$?? find all",
+              "path": "collections/find-all.zy"
+            },
+            {
+              "id": "collections-update",
+              "title": "arr[i] update",
+              "path": "collections/update.zy"
+            },
+            {
+              "id": "collections-slice",
+              "title": "$[i..j] slice",
+              "path": "collections/slice.zy"
+            },
+            {
+              "id": "collections-sort",
+              "title": "$^+ sort",
+              "path": "collections/sort.zy"
+            },
+            {
+              "id": "collections-map",
+              "title": "$> map",
+              "path": "collections/map.zy"
+            },
+            {
+              "id": "collections-filter",
+              "title": "$| filter",
+              "path": "collections/filter.zy"
+            },
+            {
+              "id": "collections-reduce",
+              "title": "$< reduce",
+              "path": "collections/reduce.zy"
+            }
+          ]
+        },
+        {
+          "id": "destructuring",
+          "title": "Destructuring",
+          "desc": "Unpacking arrays and tuples, rest * and skip _",
+          "entries": [
+            {
+              "id": "destructuring-array",
+              "title": "Array basic",
+              "path": "destructuring/array.zy"
+            },
+            {
+              "id": "destructuring-rest",
+              "title": "Array rest *",
+              "path": "destructuring/rest.zy"
+            },
+            {
+              "id": "destructuring-skip",
+              "title": "Skip with _",
+              "path": "destructuring/skip.zy"
+            },
+            {
+              "id": "destructuring-tuple",
+              "title": "Tuple positional",
+              "path": "destructuring/tuple.zy"
+            },
+            {
+              "id": "destructuring-named-fields",
+              "title": "Named fields",
+              "path": "destructuring/named-fields.zy"
+            },
+            {
+              "id": "destructuring-swap",
+              "title": "Swap values",
+              "path": "destructuring/swap.zy"
+            },
+            {
+              "id": "destructuring-from-function",
+              "title": "From function",
+              "path": "destructuring/from-function.zy"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "functions",
+      "title": "Functions",
+      "desc": "Named functions, lambdas and pipelines",
+      "categories": [
+        {
+          "id": "functions",
+          "title": "Functions",
+          "desc": "Definition, recursion, scope isolation",
+          "entries": [
+            {
+              "id": "functions-basic",
+              "title": "Basic",
+              "path": "functions/basic.zy"
+            },
+            {
+              "id": "functions-factorial",
+              "title": "Factorial",
+              "path": "functions/factorial.zy"
+            },
+            {
+              "id": "functions-greet",
+              "title": "Greet",
+              "path": "functions/greet.zy"
+            },
+            {
+              "id": "functions-max",
+              "title": "Max",
+              "path": "functions/max.zy"
+            },
+            {
+              "id": "functions-fibonacci",
+              "title": "Fibonacci",
+              "path": "functions/fibonacci.zy"
+            },
+            {
+              "id": "functions-nested-calls",
+              "title": "Fn → Fn call",
+              "path": "functions/nested-calls.zy"
+            },
+            {
+              "id": "functions-scope-isolation",
+              "title": "Scope isolation",
+              "path": "functions/scope-isolation.zy"
+            },
+            {
+              "id": "functions-block-vs-function-scope",
+              "title": "Block vs fn scope",
+              "path": "functions/block-vs-function-scope.zy"
+            }
+          ]
+        },
+        {
+          "id": "lambdas",
+          "title": "Lambdas ->",
+          "desc": "Anonymous functions, closures and |> pipes",
+          "entries": [
+            {
+              "id": "lambdas-basic",
+              "title": "Basic lambda",
+              "path": "lambdas/basic.zy"
+            },
+            {
+              "id": "lambdas-multi-param",
+              "title": "Multi-param",
+              "path": "lambdas/multi-param.zy"
+            },
+            {
+              "id": "lambdas-block-body",
+              "title": "Block body",
+              "path": "lambdas/block-body.zy"
+            },
+            {
+              "id": "lambdas-map",
+              "title": "$> with lambda 1",
+              "path": "lambdas/map.zy"
+            },
+            {
+              "id": "lambdas-filter",
+              "title": "$| with lambda 2",
+              "path": "lambdas/filter.zy"
+            },
+            {
+              "id": "lambdas-reduce",
+              "title": "$< with lambda 3",
+              "path": "lambdas/reduce.zy"
+            },
+            {
+              "id": "lambdas-closure",
+              "title": "Closure",
+              "path": "lambdas/closure.zy"
+            },
+            {
+              "id": "lambdas-pipe",
+              "title": "Pipe |>",
+              "path": "lambdas/pipe.zy"
+            },
+            {
+              "id": "lambdas-pipe-args",
+              "title": "Pipe w/ args",
+              "path": "lambdas/pipe-args.zy"
+            },
+            {
+              "id": "lambdas-pipeline",
+              "title": "Chain pipeline",
+              "path": "lambdas/pipeline.zy"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "errors",
+      "title": "Error handling",
+      "desc": "The !? block, typed catches and $! checks",
+      "categories": [
+        {
+          "id": "errors",
+          "title": "Error handling !?",
+          "desc": "try / catch / finally and typed errors",
+          "entries": [
+            {
+              "id": "errors-basic",
+              "title": "Basic try",
+              "path": "errors/basic.zy"
+            },
+            {
+              "id": "errors-catch",
+              "title": "Catch error",
+              "path": "errors/catch.zy"
+            },
+            {
+              "id": "errors-division",
+              "title": "Division ##Div",
+              "path": "errors/division.zy"
+            },
+            {
+              "id": "errors-typed",
+              "title": "Typed catches",
+              "path": "errors/typed.zy"
+            },
+            {
+              "id": "errors-finally",
+              "title": "Finally always",
+              "path": "errors/finally.zy"
+            },
+            {
+              "id": "errors-error-check",
+              "title": "Error check $!",
+              "path": "errors/error-check.zy"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "multilingual",
+      "title": "Multilingual",
+      "desc": "Numeral scripts and the same program in 100+ languages",
+      "categories": [
+        {
+          "id": "numerals",
+          "title": "Numeral scripts",
+          "desc": "Write and print numbers in native digit sets",
+          "entries": [
+            {
+              "id": "numerals-mode-switch",
+              "title": "Mode switch intro",
+              "path": "numerals/mode-switch.zy"
+            },
+            {
+              "id": "numerals-booleans",
+              "title": "Booleans in scripts",
+              "path": "numerals/booleans.zy"
+            },
+            {
+              "id": "numerals-math-bold",
+              "title": "Math Bold 𝟎𝟏𝟐",
+              "path": "numerals/math-bold.zy"
+            },
+            {
+              "id": "numerals-lcd",
+              "title": "LCD 🯰🯱🯲",
+              "path": "numerals/lcd.zy"
+            }
+          ]
+        },
+        {
+          "id": "rosetta",
+          "title": "Rosetta Stone",
+          "desc": "The same FizzBuzz in 100+ human languages",
+          "entries": [
+            {
+              "id": "rosetta-emoji",
+              "title": "🌍 Universal Emoji",
+              "path": "rosetta-stone/emoji.zy",
+              "tags": [
+                "emoji"
+              ]
+            },
+            {
+              "id": "rosetta-afrikaans",
+              "title": "Afrikaans",
+              "path": "rosetta-stone/afrikaans.zy",
+              "tags": [
+                "afrikaans"
+              ]
+            },
+            {
+              "id": "rosetta-aymara",
+              "title": "Aymara",
+              "path": "rosetta-stone/aymara.zy",
+              "tags": [
+                "aymara"
+              ]
+            },
+            {
+              "id": "rosetta-azerbaijani",
+              "title": "Azərbaycan",
+              "path": "rosetta-stone/azerbaijani.zy",
+              "tags": [
+                "azerbaijani"
+              ]
+            },
+            {
+              "id": "rosetta-indonesian",
+              "title": "Bahasa Indonesia",
+              "path": "rosetta-stone/indonesian.zy",
+              "tags": [
+                "indonesian"
+              ]
+            },
+            {
+              "id": "rosetta-malay",
+              "title": "Bahasa Melayu",
+              "path": "rosetta-stone/malay.zy",
+              "tags": [
+                "malay"
+              ]
+            },
+            {
+              "id": "rosetta-bambara",
+              "title": "Bamanankan",
+              "path": "rosetta-stone/bambara.zy",
+              "tags": [
+                "bambara"
+              ]
+            },
+            {
+              "id": "rosetta-castellano",
+              "title": "Castellano",
+              "path": "rosetta-stone/castellano.zy",
+              "tags": [
+                "castellano"
+              ]
+            },
+            {
+              "id": "rosetta-catalan",
+              "title": "Català",
+              "path": "rosetta-stone/catalan.zy",
+              "tags": [
+                "catalan"
+              ]
+            },
+            {
+              "id": "rosetta-czech",
+              "title": "Čeština",
+              "path": "rosetta-stone/czech.zy",
+              "tags": [
+                "czech"
+              ]
+            },
+            {
+              "id": "rosetta-cherokee",
+              "title": "Cherokee",
+              "path": "rosetta-stone/cherokee.zy",
+              "tags": [
+                "cherokee"
+              ]
+            },
+            {
+              "id": "rosetta-shona",
+              "title": "chiShona",
+              "path": "rosetta-stone/shona.zy",
+              "tags": [
+                "shona"
+              ]
+            },
+            {
+              "id": "rosetta-cree",
+              "title": "Cree",
+              "path": "rosetta-stone/cree.zy",
+              "tags": [
+                "cree"
+              ]
+            },
+            {
+              "id": "rosetta-welsh",
+              "title": "Cymraeg",
+              "path": "rosetta-stone/welsh.zy",
+              "tags": [
+                "welsh"
+              ]
+            },
+            {
+              "id": "rosetta-danish",
+              "title": "Dansk",
+              "path": "rosetta-stone/danish.zy",
+              "tags": [
+                "danish"
+              ]
+            },
+            {
+              "id": "rosetta-german",
+              "title": "Deutsch",
+              "path": "rosetta-stone/german.zy",
+              "tags": [
+                "german"
+              ]
+            },
+            {
+              "id": "rosetta-dothraki",
+              "title": "Dothraki",
+              "path": "rosetta-stone/dothraki.zy",
+              "tags": [
+                "dothraki"
+              ]
+            },
+            {
+              "id": "rosetta-estonian",
+              "title": "Eesti",
+              "path": "rosetta-stone/estonian.zy",
+              "tags": [
+                "estonian"
+              ]
+            },
+            {
+              "id": "rosetta-embera",
+              "title": "Embera",
+              "path": "rosetta-stone/embera.zy",
+              "tags": [
+                "embera"
+              ]
+            },
+            {
+              "id": "rosetta-english",
+              "title": "English",
+              "path": "rosetta-stone/english.zy",
+              "tags": [
+                "english"
+              ]
+            },
+            {
+              "id": "rosetta-spanish",
+              "title": "Español",
+              "path": "rosetta-stone/spanish.zy",
+              "tags": [
+                "spanish"
+              ]
+            },
+            {
+              "id": "rosetta-esperanto",
+              "title": "Esperanto",
+              "path": "rosetta-stone/esperanto.zy",
+              "tags": [
+                "esperanto"
+              ]
+            },
+            {
+              "id": "rosetta-basque",
+              "title": "Euskera",
+              "path": "rosetta-stone/basque.zy",
+              "tags": [
+                "basque"
+              ]
+            },
+            {
+              "id": "rosetta-tagalog",
+              "title": "Filipino",
+              "path": "rosetta-stone/tagalog.zy",
+              "tags": [
+                "tagalog"
+              ]
+            },
+            {
+              "id": "rosetta-french",
+              "title": "Français",
+              "path": "rosetta-stone/french.zy",
+              "tags": [
+                "french"
+              ]
+            },
+            {
+              "id": "rosetta-fula",
+              "title": "Fulfulde",
+              "path": "rosetta-stone/fula.zy",
+              "tags": [
+                "fula"
+              ]
+            },
+            {
+              "id": "rosetta-galician",
+              "title": "Galego",
+              "path": "rosetta-stone/galician.zy",
+              "tags": [
+                "galician"
+              ]
+            },
+            {
+              "id": "rosetta-guarani",
+              "title": "Guaraní",
+              "path": "rosetta-stone/guarani.zy",
+              "tags": [
+                "guarani"
+              ]
+            },
+            {
+              "id": "rosetta-hausa",
+              "title": "Hausa",
+              "path": "rosetta-stone/hausa.zy",
+              "tags": [
+                "hausa"
+              ]
+            },
+            {
+              "id": "rosetta-high_valyrian",
+              "title": "High Valyrian",
+              "path": "rosetta-stone/high_valyrian.zy",
+              "tags": [
+                "high valyrian"
+              ]
+            },
+            {
+              "id": "rosetta-croatian",
+              "title": "Hrvatski",
+              "path": "rosetta-stone/croatian.zy",
+              "tags": [
+                "croatian"
+              ]
+            },
+            {
+              "id": "rosetta-ido",
+              "title": "Ido",
+              "path": "rosetta-stone/ido.zy",
+              "tags": [
+                "ido"
+              ]
+            },
+            {
+              "id": "rosetta-igbo",
+              "title": "Igbo",
+              "path": "rosetta-stone/igbo.zy",
+              "tags": [
+                "igbo"
+              ]
+            },
+            {
+              "id": "rosetta-interlingua",
+              "title": "Interlingua",
+              "path": "rosetta-stone/interlingua.zy",
+              "tags": [
+                "interlingua"
+              ]
+            },
+            {
+              "id": "rosetta-xhosa",
+              "title": "isiXhosa",
+              "path": "rosetta-stone/xhosa.zy",
+              "tags": [
+                "xhosa"
+              ]
+            },
+            {
+              "id": "rosetta-zulu",
+              "title": "isiZulu",
+              "path": "rosetta-stone/zulu.zy",
+              "tags": [
+                "zulu"
+              ]
+            },
+            {
+              "id": "rosetta-icelandic",
+              "title": "Íslenska",
+              "path": "rosetta-stone/icelandic.zy",
+              "tags": [
+                "icelandic"
+              ]
+            },
+            {
+              "id": "rosetta-italian",
+              "title": "Italiano",
+              "path": "rosetta-stone/italian.zy",
+              "tags": [
+                "italian"
+              ]
+            },
+            {
+              "id": "rosetta-swahili",
+              "title": "Kiswahili",
+              "path": "rosetta-stone/swahili.zy",
+              "tags": [
+                "swahili"
+              ]
+            },
+            {
+              "id": "rosetta-kurdish",
+              "title": "Kurdî (Kurmanji)",
+              "path": "rosetta-stone/kurdish.zy",
+              "tags": [
+                "kurdish"
+              ]
+            },
+            {
+              "id": "rosetta-lojban",
+              "title": "la .lojban.",
+              "path": "rosetta-stone/lojban.zy",
+              "tags": [
+                "lojban"
+              ]
+            },
+            {
+              "id": "rosetta-latvian",
+              "title": "Latviešu",
+              "path": "rosetta-stone/latvian.zy",
+              "tags": [
+                "latvian"
+              ]
+            },
+            {
+              "id": "rosetta-lithuanian",
+              "title": "Lietuvių",
+              "path": "rosetta-stone/lithuanian.zy",
+              "tags": [
+                "lithuanian"
+              ]
+            },
+            {
+              "id": "rosetta-lingala",
+              "title": "Lingála",
+              "path": "rosetta-stone/lingala.zy",
+              "tags": [
+                "lingala"
+              ]
+            },
+            {
+              "id": "rosetta-maya",
+              "title": "Màaya T'àan",
+              "path": "rosetta-stone/maya.zy",
+              "tags": [
+                "maya"
+              ]
+            },
+            {
+              "id": "rosetta-hungarian",
+              "title": "Magyar",
+              "path": "rosetta-stone/hungarian.zy",
+              "tags": [
+                "hungarian"
+              ]
+            },
+            {
+              "id": "rosetta-mandoa",
+              "title": "Mando'a",
+              "path": "rosetta-stone/mandoa.zy",
+              "tags": [
+                "mandoa"
+              ]
+            },
+            {
+              "id": "rosetta-mapuche",
+              "title": "Mapudungun",
+              "path": "rosetta-stone/mapuche.zy",
+              "tags": [
+                "mapuche"
+              ]
+            },
+            {
+              "id": "rosetta-navi",
+              "title": "Na'vi",
+              "path": "rosetta-stone/navi.zy",
+              "tags": [
+                "navi"
+              ]
+            },
+            {
+              "id": "rosetta-nahuatl",
+              "title": "Nāhuatl",
+              "path": "rosetta-stone/nahuatl.zy",
+              "tags": [
+                "nahuatl"
+              ]
+            },
+            {
+              "id": "rosetta-navajo",
+              "title": "Navajo",
+              "path": "rosetta-stone/navajo.zy",
+              "tags": [
+                "navajo"
+              ]
+            },
+            {
+              "id": "rosetta-dutch",
+              "title": "Nederlands",
+              "path": "rosetta-stone/dutch.zy",
+              "tags": [
+                "dutch"
+              ]
+            },
+            {
+              "id": "rosetta-norwegian",
+              "title": "Norsk",
+              "path": "rosetta-stone/norwegian.zy",
+              "tags": [
+                "norwegian"
+              ]
+            },
+            {
+              "id": "rosetta-oromo",
+              "title": "Oromo",
+              "path": "rosetta-stone/oromo.zy",
+              "tags": [
+                "oromo"
+              ]
+            },
+            {
+              "id": "rosetta-polish",
+              "title": "Polski",
+              "path": "rosetta-stone/polish.zy",
+              "tags": [
+                "polish"
+              ]
+            },
+            {
+              "id": "rosetta-portuguese",
+              "title": "Português",
+              "path": "rosetta-stone/portuguese.zy",
+              "tags": [
+                "portuguese"
+              ]
+            },
+            {
+              "id": "rosetta-portugues_eu",
+              "title": "Português (PT)",
+              "path": "rosetta-stone/portugues_eu.zy",
+              "tags": [
+                "portugues eu"
+              ]
+            },
+            {
+              "id": "rosetta-quenya",
+              "title": "Quenya",
+              "path": "rosetta-stone/quenya.zy",
+              "tags": [
+                "quenya"
+              ]
+            },
+            {
+              "id": "rosetta-romanian",
+              "title": "Română",
+              "path": "rosetta-stone/romanian.zy",
+              "tags": [
+                "romanian"
+              ]
+            },
+            {
+              "id": "rosetta-quechua",
+              "title": "Runasimi",
+              "path": "rosetta-stone/quechua.zy",
+              "tags": [
+                "quechua"
+              ]
+            },
+            {
+              "id": "rosetta-albanian",
+              "title": "Shqip",
+              "path": "rosetta-stone/albanian.zy",
+              "tags": [
+                "albanian"
+              ]
+            },
+            {
+              "id": "rosetta-sindarin",
+              "title": "Sindarin",
+              "path": "rosetta-stone/sindarin.zy",
+              "tags": [
+                "sindarin"
+              ]
+            },
+            {
+              "id": "rosetta-slovak",
+              "title": "Slovenčina",
+              "path": "rosetta-stone/slovak.zy",
+              "tags": [
+                "slovak"
+              ]
+            },
+            {
+              "id": "rosetta-slovenian",
+              "title": "Slovenščina",
+              "path": "rosetta-stone/slovenian.zy",
+              "tags": [
+                "slovenian"
+              ]
+            },
+            {
+              "id": "rosetta-somali",
+              "title": "Soomaali",
+              "path": "rosetta-stone/somali.zy",
+              "tags": [
+                "somali"
+              ]
+            },
+            {
+              "id": "rosetta-finnish",
+              "title": "Suomi",
+              "path": "rosetta-stone/finnish.zy",
+              "tags": [
+                "finnish"
+              ]
+            },
+            {
+              "id": "rosetta-swedish",
+              "title": "Svenska",
+              "path": "rosetta-stone/swedish.zy",
+              "tags": [
+                "swedish"
+              ]
+            },
+            {
+              "id": "rosetta-vietnamese",
+              "title": "Tiếng Việt",
+              "path": "rosetta-stone/vietnamese.zy",
+              "tags": [
+                "vietnamese"
+              ]
+            },
+            {
+              "id": "rosetta-klingon",
+              "title": "tlhIngan Hol",
+              "path": "rosetta-stone/klingon.zy",
+              "tags": [
+                "klingon"
+              ]
+            },
+            {
+              "id": "rosetta-toki_pona",
+              "title": "toki pona",
+              "path": "rosetta-stone/toki_pona.zy",
+              "tags": [
+                "toki pona"
+              ]
+            },
+            {
+              "id": "rosetta-turkish",
+              "title": "Türkçe",
+              "path": "rosetta-stone/turkish.zy",
+              "tags": [
+                "turkish"
+              ]
+            },
+            {
+              "id": "rosetta-wayuu",
+              "title": "Wayuu",
+              "path": "rosetta-stone/wayuu.zy",
+              "tags": [
+                "wayuu"
+              ]
+            },
+            {
+              "id": "rosetta-wolof",
+              "title": "Wolof",
+              "path": "rosetta-stone/wolof.zy",
+              "tags": [
+                "wolof"
+              ]
+            },
+            {
+              "id": "rosetta-yanomami",
+              "title": "Yanomami",
+              "path": "rosetta-stone/yanomami.zy",
+              "tags": [
+                "yanomami"
+              ]
+            },
+            {
+              "id": "rosetta-yoruba",
+              "title": "Yorùbá",
+              "path": "rosetta-stone/yoruba.zy",
+              "tags": [
+                "yoruba"
+              ]
+            },
+            {
+              "id": "rosetta-greek",
+              "title": "Ελληνικά",
+              "path": "rosetta-stone/greek.zy",
+              "tags": [
+                "greek"
+              ]
+            },
+            {
+              "id": "rosetta-belarusian",
+              "title": "Беларуская",
+              "path": "rosetta-stone/belarusian.zy",
+              "tags": [
+                "belarusian"
+              ]
+            },
+            {
+              "id": "rosetta-bulgarian",
+              "title": "Български",
+              "path": "rosetta-stone/bulgarian.zy",
+              "tags": [
+                "bulgarian"
+              ]
+            },
+            {
+              "id": "rosetta-macedonian",
+              "title": "Македонски",
+              "path": "rosetta-stone/macedonian.zy",
+              "tags": [
+                "macedonian"
+              ]
+            },
+            {
+              "id": "rosetta-russian",
+              "title": "Русский",
+              "path": "rosetta-stone/russian.zy",
+              "tags": [
+                "russian"
+              ]
+            },
+            {
+              "id": "rosetta-serbian",
+              "title": "Српски",
+              "path": "rosetta-stone/serbian.zy",
+              "tags": [
+                "serbian"
+              ]
+            },
+            {
+              "id": "rosetta-ukrainian",
+              "title": "Українська",
+              "path": "rosetta-stone/ukrainian.zy",
+              "tags": [
+                "ukrainian"
+              ]
+            },
+            {
+              "id": "rosetta-georgian",
+              "title": "ქართული",
+              "path": "rosetta-stone/georgian.zy",
+              "tags": [
+                "georgian"
+              ]
+            },
+            {
+              "id": "rosetta-armenian",
+              "title": "Հայերեն",
+              "path": "rosetta-stone/armenian.zy",
+              "tags": [
+                "armenian"
+              ]
+            },
+            {
+              "id": "rosetta-hebrew",
+              "title": "עברית",
+              "path": "rosetta-stone/hebrew.zy",
+              "tags": [
+                "hebrew"
+              ]
+            },
+            {
+              "id": "rosetta-urdu",
+              "title": "اردو",
+              "path": "rosetta-stone/urdu.zy",
+              "tags": [
+                "urdu"
+              ]
+            },
+            {
+              "id": "rosetta-arabic",
+              "title": "العربية",
+              "path": "rosetta-stone/arabic.zy",
+              "tags": [
+                "arabic"
+              ]
+            },
+            {
+              "id": "rosetta-persian",
+              "title": "فارسی",
+              "path": "rosetta-stone/persian.zy",
+              "tags": [
+                "persian"
+              ]
+            },
+            {
+              "id": "rosetta-tigrinya",
+              "title": "ትግርኛ",
+              "path": "rosetta-stone/tigrinya.zy",
+              "tags": [
+                "tigrinya"
+              ]
+            },
+            {
+              "id": "rosetta-amharic",
+              "title": "አማርኛ",
+              "path": "rosetta-stone/amharic.zy",
+              "tags": [
+                "amharic"
+              ]
+            },
+            {
+              "id": "rosetta-nepali",
+              "title": "नेपाली",
+              "path": "rosetta-stone/nepali.zy",
+              "tags": [
+                "nepali"
+              ]
+            },
+            {
+              "id": "rosetta-marathi",
+              "title": "मराठी",
+              "path": "rosetta-stone/marathi.zy",
+              "tags": [
+                "marathi"
+              ]
+            },
+            {
+              "id": "rosetta-hindi",
+              "title": "हिन्दी",
+              "path": "rosetta-stone/hindi.zy",
+              "tags": [
+                "hindi"
+              ]
+            },
+            {
+              "id": "rosetta-bengali",
+              "title": "বাংলা",
+              "path": "rosetta-stone/bengali.zy",
+              "tags": [
+                "bengali"
+              ]
+            },
+            {
+              "id": "rosetta-punjabi",
+              "title": "ਪੰਜਾਬੀ",
+              "path": "rosetta-stone/punjabi.zy",
+              "tags": [
+                "punjabi"
+              ]
+            },
+            {
+              "id": "rosetta-gujarati",
+              "title": "ગુજરાતી",
+              "path": "rosetta-stone/gujarati.zy",
+              "tags": [
+                "gujarati"
+              ]
+            },
+            {
+              "id": "rosetta-tamil",
+              "title": "தமிழ்",
+              "path": "rosetta-stone/tamil.zy",
+              "tags": [
+                "tamil"
+              ]
+            },
+            {
+              "id": "rosetta-telugu",
+              "title": "తెలుగు",
+              "path": "rosetta-stone/telugu.zy",
+              "tags": [
+                "telugu"
+              ]
+            },
+            {
+              "id": "rosetta-kannada",
+              "title": "ಕನ್ನಡ",
+              "path": "rosetta-stone/kannada.zy",
+              "tags": [
+                "kannada"
+              ]
+            },
+            {
+              "id": "rosetta-thai",
+              "title": "ภาษาไทย",
+              "path": "rosetta-stone/thai.zy",
+              "tags": [
+                "thai"
+              ]
+            },
+            {
+              "id": "rosetta-burmese",
+              "title": "မြန်မာ",
+              "path": "rosetta-stone/burmese.zy",
+              "tags": [
+                "burmese"
+              ]
+            },
+            {
+              "id": "rosetta-korean",
+              "title": "한국어",
+              "path": "rosetta-stone/korean.zy",
+              "tags": [
+                "korean"
+              ]
+            },
+            {
+              "id": "rosetta-mandarin",
+              "title": "中文（普通话）",
+              "path": "rosetta-stone/mandarin.zy",
+              "tags": [
+                "mandarin"
+              ]
+            },
+            {
+              "id": "rosetta-japanese",
+              "title": "日本語",
+              "path": "rosetta-stone/japanese.zy",
+              "tags": [
+                "japanese"
+              ]
+            },
+            {
+              "id": "rosetta-klingon-piqad",
+              "title": "  — Klingon (pIqaD)",
+              "path": "rosetta-stone/Klingon_pIqaD.zy",
+              "tags": [
+                "klingon",
+                "piqad",
+                "tlhIngan Hol"
+              ],
+              "desc": "Written in the pIqaD script (CSUR PUA U+F8D0–U+F8FF); needs the bundled pIqaD font to render"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "real",
+      "title": "Real programs",
+      "desc": "Packages, multi-file projects, TUI and CLI",
+      "categories": [
+        {
+          "id": "packages",
+          "title": "Packages .zyp",
+          "desc": "Complete programs shipped as a single archive",
+          "entries": [
+            {
+              "id": "pkg-go",
+              "zyp": "packages/go.zyp",
+              "title": "GO — 囲碁",
+              "desc": "Full board game: 22 files, Chinese scoring, heuristic AI, 4 language entry points",
+              "needs": [
+                "tui"
+              ]
+            },
+            {
+              "id": "pkg-serpiente",
+              "zyp": "packages/serpiente.zyp",
+              "title": "Serpiente / Snake",
+              "desc": "Arcade snake on the TUI canvas, playable in Spanish or English",
+              "needs": [
+                "tui"
+              ]
+            },
+            {
+              "id": "pkg-klingon-galaxy",
+              "zyp": "packages/klingon_galaxy.zyp",
+              "title": "Hov veS — Klingon Galaxy",
+              "desc": "Space strategy game written entirely in Klingon (pIqaD script)",
+              "needs": [
+                "tui"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "projects",
+          "title": "Multi-file projects",
+          "desc": "Modules, re-export layers and i18n code",
+          "entries": [
+            {
+              "id": "math-es",
+              "title": "Matemáticas",
+              "dir": "projects/math-es",
+              "files": [
+                "matematicas.zy",
+                "calculadora.zy"
+              ],
+              "entry": "calculadora.zy"
+            },
+            {
+              "id": "i18n-greek",
+              "title": "i18n — Ελληνικά",
+              "dir": "projects/i18n-greek",
+              "files": [
+                "module.zy",
+                "ελληνικά.zy",
+                "Ελληνική_εφαρμογή.zy"
+              ],
+              "entry": "Ελληνική_εφαρμογή.zy"
+            },
+            {
+              "id": "i18n-hebrew",
+              "title": "i18n — עִברִית",
+              "dir": "projects/i18n-hebrew",
+              "files": [
+                "module.zy",
+                "עִברִית.zy",
+                "אפליקציית_מתמטיקה.zy"
+              ],
+              "entry": "אפליקציית_מתמטיקה.zy"
+            },
+            {
+              "id": "i18n-chinese",
+              "title": "i18n — 中文",
+              "dir": "projects/i18n-chinese",
+              "files": [
+                "module.zy",
+                "中文.zy",
+                "中文_应用.zy"
+              ],
+              "entry": "中文_应用.zy"
+            },
+            {
+              "id": "i18n-korean",
+              "title": "i18n — 한국인",
+              "dir": "projects/i18n-korean",
+              "files": [
+                "module.zy",
+                "한국인.zy",
+                "한국_앱.zy"
+              ],
+              "entry": "한국_앱.zy"
+            }
+          ]
+        },
+        {
+          "id": "tui",
+          "title": "TUI >>|",
+          "desc": "Full-screen canvas mode",
+          "entries": [
+            {
+              "id": "tui-hello",
+              "title": "Hola TUI",
+              "path": "tui/hello.zy",
+              "needs": [
+                "tui"
+              ]
+            },
+            {
+              "id": "snake",
+              "title": "Serpiente",
+              "dir": "tui/snake",
+              "files": [
+                "logica.zy",
+                "dibujo.zy",
+                "serpiente.zy"
+              ],
+              "entry": "serpiente.zy",
+              "needs": [
+                "tui",
+                "shell"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cli",
+          "title": "CLI arguments ><",
+          "desc": "Reading argv — use the args… field",
+          "entries": [
+            {
+              "id": "cli-count",
+              "title": "Contador de args",
+              "path": "cli/count.zy",
+              "args": "hola mundo \"tercer argumento\"",
+              "needs": [
+                "args"
+              ]
+            },
+            {
+              "id": "cli-sum",
+              "title": "Suma de números",
+              "path": "cli/sum.zy",
+              "args": "10 25 7 3",
+              "needs": [
+                "args"
+              ]
+            },
+            {
+              "id": "cli-greeting",
+              "title": "Saludo personalizado",
+              "path": "cli/greeting.zy",
+              "args": "Rakzo",
+              "needs": [
+                "args"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "shell",
+          "title": "Shell <\\",
+          "desc": "In the browser this returns a timestamp only",
+          "entries": [
+            {
+              "id": "shell-datetime",
+              "title": "Fecha y hora",
+              "path": "shell/datetime.zy",
+              "needs": [
+                "shell"
+              ]
+            },
+            {
+              "id": "shell-random-seed",
+              "title": "Semilla aleatoria",
+              "path": "shell/random-seed.zy",
+              "needs": [
+                "shell"
+              ]
+            },
+            {
+              "id": "shell-timestamp-id",
+              "title": "Timestamp como ID",
+              "path": "shell/timestamp-id.zy",
+              "needs": [
+                "shell"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

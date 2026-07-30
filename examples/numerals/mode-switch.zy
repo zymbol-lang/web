@@ -1,0 +1,16 @@
+// Numeral mode switch — same value, four scripts
+
+x = 42
+>> "ASCII:      " x ¶
+
+#०९#
+>> "Devanagari: " x ¶
+
+#๐๙#
+>> "Thai:       " x ¶
+
+#𝟎𝟗#
+>> "Math Bold:  " x ¶
+
+#09#  // reset
+>> "ASCII again: " x ¶

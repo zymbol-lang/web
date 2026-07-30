@@ -32,8 +32,10 @@ web/
 │   │   ├── zyp.js             .zyp package reader (ZIP central directory + DecompressionStream)
 │   │   └── module-resolver.js Path-normalizing module resolver (mirrors ModulePath::resolve_from)
 │   ├── playground/            Playground UI — consumes the engine
-│   │   ├── playground.js      Editor, tabs, run loop, .zyp loading
-│   │   ├── examples.js        Bundled example programs, grouped by category
+│   │   ├── playground.js      Orchestrator: editor, tabs, run loop, TUI, upload
+│   │   ├── filestore.js       File model — mounted (resolvable) vs open (tabbed)
+│   │   ├── catalog.js         Reads examples/catalog.json; mounts entries and .zyp
+│   │   ├── sidebar.js         Explorer tree: WORKSPACE + EXAMPLES, filter, preview
 │   │   └── highlight.js       Syntax highlighter (esc, highlightCode)
 │   ├── site/
 │   │   └── main.js            Landing-page logic: language switcher, manual reader, transitions
@@ -50,14 +52,25 @@ web/
 │   ├── manuals/               manual_<lang>.md (110 translations) + translation_progress.md
 │   └── archive/               v004/, v005/ — superseded manual sets, kept for diffing
 │
-├── examples/
-│   ├── snippets/              Feature smoke-test programs (.zy)
-│   └── rosetta-stone/         The same program in 107 human languages (.zy)
+├── examples/                  THE EXAMPLE POOL — the playground's only source of examples
+│   ├── catalog.json           Hand-curated index: groups → categories → entries
+│   ├── tour/                  Guided tours, one heavily commented file per topic
+│   ├── output|input|variables|control|match|loops/   Basics, one file per example
+│   ├── collections|destructuring|functions|lambdas|errors/
+│   ├── numerals/              Native digit sets (Devanagari, Thai, Math Bold, LCD)
+│   ├── rosetta-stone/         The same program in 105 human languages (.zy)
+│   ├── projects/              Multi-file projects (module + i18n re-export layers)
+│   ├── tui|cli|shell/         Canvas TUI, >< args, <\ shell \>
+│   └── packages/              go.zyp, serpiente.zyp, klingon_galaxy.zyp
 │
 ├── tests/
 │   ├── test_runner.mjs        Parity: zymbol CLI vs the JS engine
+│   ├── test_catalog.mjs       catalog.json ↔ examples/ integrity (dead refs, orphans)
+│   ├── test_filestore.mjs     The mounted-vs-open file model and its persistence
 │   ├── test_zyp.mjs           .zyp reader + module resolver (builds its own fixtures)
 │   ├── test_manual.mjs        Smoke-runs every ```zymbol block in manual_en.md
+│   ├── serve.mjs              Dev server with Cache-Control: no-store (LAN device testing)
+│   ├── tui-gestures.html      Self-checking: swipe → arrow key on the TUI canvas
 │   └── piqad-font.html        Visual check that the pIqaD web font loads
 │
 ├── docs/
@@ -86,6 +99,39 @@ playground. `src/playground/` and `src/site/` depend on it, never the reverse.
 src/zymbol/  ←  src/playground/     (playground.html)
              ←  src/site/           (index.html)
 ```
+
+## The example pool (`examples/`)
+
+Every example the playground offers is a real `.zy` file or a real `.zyp` archive on disk,
+indexed by `examples/catalog.json`. That is a deliberate reversal: the examples used to live
+inline in `src/playground/examples.js` as ~1000 lines of JS string literals, where no tool
+could reach them. Four of them had been broken since v0.0.6 (`:` instead of `=>` in a `??`
+arm) and nothing noticed, because the parity runner walks files and a string baked into a JS
+module is not a file. As files, the same examples are audited by `zymbol check`,
+`test_runner.mjs --dir examples` and `test_catalog.mjs` — the migration itself turned up 19
+files that no longer compiled and three that used pre-v0.0.4 zero-based indexing.
+
+`catalog.json` is hand-curated, and that is the point: it decides grouping, ordering, titles
+and descriptions, so the sidebar reads as a menu rather than a directory dump. An entry has
+one of three shapes, and all three mount identically:
+
+| Shape | Meaning |
+| ----- | ------- |
+| `{ "path": "loops/range.zy" }` | one loose file |
+| `{ "dir": …, "files": […], "entry": … }` | a multi-file project; its own relative imports resolve inside `dir` |
+| `{ "zyp": "packages/go.zyp" }` | a packaged program, read by the same `zyp.js` as ↑ Upload |
+
+Optional keys: `desc`, `tags` (extra filter terms — this is how `Ελληνικά` is findable by
+typing `greek`), `args` (pre-fills the args… field) and `needs` (`tui`, `input`, `args`,
+`shell`, `net` — the capability badges in the tree).
+
+Adding an example is: drop the `.zy` in the right directory, add one entry to
+`catalog.json`, run `node tests/test_catalog.mjs --check`. The test fails on a dead reference
+**and** on an orphan — a `.zy` under `examples/` that no entry points at is dead weight
+shipped to every visitor, which is exactly how the old pool rotted.
+
+`playground.html?example=<id>` mounts and opens one entry directly, so docs, the course and
+the landing page can link to a specific example.
 
 ## No build step
 
@@ -126,8 +172,12 @@ its file header comment tracks which Rust version it mirrors.
 
 ### `.zyp` package support
 
-The playground loads a Zymbol Package directly: one editor tab per source file, named by full
-relative path (e.g. `核/盤.zy`), plus a script picker populated from the manifest.
+The playground loads a Zymbol Package directly — from `examples/packages/` through the sidebar
+or from disk through ↑ Upload. Its source tree is **mounted**, not opened: every file appears in
+the explorer and is visible to the module resolver, one tab opens (the default `[[script]]`),
+and the manifest's scripts populate the picker next to ▶ Run. Mounted names are namespaced by
+the archive (`packages/go/核/盤.zy`), so two packages that both ship a `texto.zy` can be
+mounted at the same time without overwriting each other.
 
 `zyp.js` reads the ZIP by hand — central directory walk, then
 `DecompressionStream('deflate-raw')` for deflated entries. It reads `zyp.json`, never
@@ -162,14 +212,37 @@ artifacts — see [docs/newlang.md](docs/newlang.md).
 Plain Node, no install step. Run from this directory:
 
 ```bash
-node tests/test_zyp.mjs      # .zyp reader + module resolver — builds its own fixtures
-node tests/test_runner.mjs   # parity: zymbol CLI vs the JS engine
-node tests/test_manual.mjs   # smoke-runs every code block in manual_en.md
+node tests/test_zyp.mjs               # .zyp reader + module resolver — builds its own fixtures
+node tests/test_filestore.mjs         # mounted-vs-open file model + persistence
+node tests/test_catalog.mjs [--check] # catalog.json ↔ examples/ (--check also compiles every .zy)
+node tests/test_runner.mjs            # parity: zymbol CLI vs the JS engine
+node tests/test_runner.mjs --dir examples   # …over the example pool
+node tests/test_manual.mjs            # smoke-runs every code block in manual_en.md
 ```
+
+Two tests need a browser and therefore live as pages, opened over `node tests/serve.mjs`:
+`tests/tui-gestures.html` (swipe → arrow key on the TUI canvas; self-checking, it prints its
+own pass/fail and sets the document title) and `tests/piqad-font.html` (visual).
+
+Use `node tests/serve.mjs [port]` rather than `python3 -m http.server` when testing from a
+phone or tablet. `http.server` sends `Last-Modified` and no `Cache-Control`, so a browser
+applies heuristic freshness and stops revalidating — which is invisible until a module is
+renamed or deleted, at which point a stale cached `playground.js` imports a file that 404s and
+the whole ES module graph fails silently. `serve.mjs` sends `no-store` on everything.
 
 `test_runner.mjs` runs the Rust test corpus (`../interpreter/tests/`) through both engines and
 diffs the output — it needs the `zymbol` CLI on `PATH`. Current: **513/518 passing**, 39
 skipped (irreducible in a browser: BashExec, ANSI/TUI, `std/db`, step limits).
+
+Pointed at the example pool (`--dir examples`) it audits every published example the same way:
+**206/208 passing**, 6 skipped. A file whose divergence is irreducible declares it in its own
+first lines with `// @skip-parity: <reason>` rather than being listed here — the pool is not
+this runner's corpus, and duplicating its paths into the skip table would rot.
+
+The 2 pool failures are parity gaps in `zymbol.js`, and the pool is what surfaced them:
+`projects/math-es/calculadora.zy` (the float literal `3.14159265` prints as
+`3.1415926499999998`) and `rosetta-stone/klingon.zy` (the JS lexer treats the `'` in the
+Klingon identifier `mI'` as a char literal, so the file does not parse).
 
 The 5 failures are **known parity gaps in the JS mirror**, not regressions — v0.0.8 fixes
 that have not been ported yet:

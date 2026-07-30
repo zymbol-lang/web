@@ -1,0 +1,9 @@
+arr = [10, 20, 30]
+arr[2] = 99       // direct update
+arr[1] += 5       // compound: += -= *= /= %= ^=
+>> arr ¶
+
+// Functional update — returns new array
+arr2 = arr[3]$~ 0
+>> arr ¶     // original unchanged
+>> arr2 ¶    // new array

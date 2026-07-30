@@ -35,7 +35,7 @@
       --id-color:  #aaa;
       --err:       #f97070;
       --header-h:  52px;
-      --examples-h: 240px;
+      --sidebar-w: 240px;
       --mono: 'pIqaD-qolqoS','JetBrains Mono','Courier New',monospace;
       --ui:   'pIqaD-qolqoS','Inter',system-ui,sans-serif;
       --radius: 6px;
@@ -72,6 +72,14 @@
     }
 
     html { font-size: 15px; }
+
+    html, body {
+      /* The playground never scrolls as a page (fixed height, overflow hidden), so the only
+         thing document-level overscroll can produce is interference: pull-to-refresh on a
+         downward swipe and edge back-navigation on a horizontal one, both of which steal
+         gestures meant for the TUI canvas. */
+      overscroll-behavior: none;
+    }
 
     body {
       background: var(--bg);
@@ -192,11 +200,22 @@
     }
     #pg-about-btn:hover { border-color: var(--green); color: var(--green); }
 
-    /* ─── Playground layout: editor | output ─── */
+    /* ─── Playground layout: sidebar | editor | output ─── */
     #playground {
       flex: 1;
       display: flex;
       flex-direction: row;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* The editor/output split lives in its own flex box so the drag maths stays a
+       percentage of the split area, not of the area plus the sidebar. */
+    #split {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      min-width: 0;
       min-height: 0;
       overflow: hidden;
     }
@@ -248,24 +267,39 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 0.5rem;
       padding: 0.45rem 0.75rem;
       background: var(--bg3);
       border-bottom: 1px solid var(--line);
       flex-shrink: 0;
+      min-width: 0;
+      /* Wrap rather than clip. The editor panel is now only as wide as whatever is left
+         after the sidebar and the output split, which can be ~400px, and six controls do
+         not fit in that. A taller header is fine; a Download button you cannot reach is not. */
+      flex-wrap: wrap;
+      row-gap: 0.35rem;
     }
 
-    .panel-header span {
+    .panel-header > span {
       font-size: 0.7rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.07em;
       color: var(--mid);
+      flex-shrink: 0;
     }
 
+    /* The editor toolbar is the widest fixed row on the page. The args field and the script
+       picker give up width first (see their own rules); past that the group wraps. */
     .panel-actions {
       display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
       gap: 0.4rem;
+      min-width: 0;
     }
+    .panel-actions .btn { flex-shrink: 0; }
 
     /* ─── Buttons ─── */
     .btn {
@@ -298,10 +332,32 @@
       font-size: 11px;
       padding: 3px 7px;
       width: 130px;
+      min-width: 48px;
+      flex: 0 1 130px;
       outline: none;
     }
     #args-input:focus { border-color: var(--green-mid); }
     #args-input::placeholder { color: #555; }
+
+    /* The [[script]] picker had no styling at all — a default-chrome <select> in a dark
+       toolbar. It also has to be shrinkable, since script names can be long (and are often
+       CJK: 囲碁, 바둑, 围棋). */
+    #zyp-script-select {
+      background: var(--bg4);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--ui);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.24rem 0.4rem;
+      max-width: 18ch;
+      flex: 0 1 auto;
+      min-width: 6ch;
+      outline: none;
+    }
+    #zyp-script-select:hover { border-color: var(--dim); color: var(--hi); }
+    #zyp-script-select:focus { border-color: var(--green-mid); }
 
     .btn-active {
       background: var(--green-dim);
@@ -382,6 +438,13 @@
       outline: none;
       cursor: default;
       image-rendering: pixelated;
+      /* The canvas owns every touch on it. Without this the compositor keeps treating a pan
+         as a candidate scroll, hands the gesture to the browser mid-swipe and fires
+         `touchcancel` — losing the swipe. It hits vertical swipes first (an upward finger
+         swipe is exactly "scroll down"), which is why up used to fail while down worked. */
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
     }
 
     #tui-stop-btn {
@@ -415,6 +478,70 @@
       z-index: 11;
     }
     #tui-input-bar.active { display: flex; }
+
+    /* ─── Keypad (single-key commands on a touch device) ─── */
+    /* Both this bar and the button are absolutely positioned overlays. The canvas must not
+       reflow when the keypad opens: `>>?` already told the program how many rows it has, and
+       a program that laid out a 19×19 board to that number would be drawing off-screen. */
+    #tui-keys-btn {
+      display: none;
+      position: absolute;
+      top: 6px;
+      right: 84px;
+      font-family: var(--ui);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.3rem 0.65rem;
+      border-radius: var(--radius);
+      border: 1px solid #2a4a2a;
+      background: rgba(8, 30, 12, 0.85);
+      color: var(--green);
+      cursor: pointer;
+      opacity: 0.75;
+      transition: opacity 0.15s, background 0.15s;
+      z-index: 10;
+    }
+    #tui-keys-btn.visible { display: block; }
+    #tui-keys-btn:hover { opacity: 1; background: rgba(10, 60, 24, 0.95); }
+
+    #tui-key-bar {
+      display: none;
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(8, 14, 8, 0.96);
+      border-top: 1px solid #2a4a2a;
+      align-items: center;
+      padding: 5px 10px;
+      gap: 6px;
+      z-index: 12;
+    }
+    #tui-key-bar.active { display: flex; }
+    #tui-key-prompt { color: var(--green); font-size: 15px; flex-shrink: 0; line-height: 1; }
+    #tui-key-field {
+      flex: 1;
+      min-width: 0;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid #2a4a2a;
+      color: #ddd;
+      font-family: var(--mono);
+      font-size: 13px;
+      outline: none;
+      padding: 2px 0;
+    }
+    #tui-key-field:focus { border-bottom-color: var(--green); }
+    #tui-key-field::placeholder { color: #4a5a4a; }
+    #tui-key-close {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      color: var(--dim);
+      font-size: 0.9rem;
+      line-height: 1;
+      padding: 0 0.25rem;
+      cursor: pointer;
+    }
+    #tui-key-close:hover { color: var(--err); }
     #tui-input-prompt { color: var(--green); font-family: var(--mono); font-size: 13px; flex-shrink: 0; }
     #tui-input-field {
       flex: 1;
@@ -452,131 +579,208 @@
     .out-input-field:focus { border-bottom-color: var(--green); }
     .out-input-value { color: var(--green2); }
 
-    /* ─── Examples panel ─── */
-    #examples-panel {
-      height: var(--examples-h);
-      min-height: var(--examples-h);
-      max-height: var(--examples-h);
+    /* ─── Sidebar explorer ─── */
+    #sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
       display: flex;
       flex-direction: column;
-      border-top: 1px solid var(--line);
-      flex-shrink: 0;
       background: var(--bg2);
-      transition: height 0.2s ease, min-height 0.2s ease;
-    }
-    #examples-panel.collapsed {
-      height: 32px !important;
-      min-height: 32px !important;
-    }
-    #examples-panel.collapsed #examples-grid {
-      display: none;
-    }
-
-    #examples-tabs {
-      display: flex;
-      gap: 0;
-      overflow-x: auto;
-      border-bottom: 1px solid var(--line);
-      flex-shrink: 0;
-    }
-
-    #examples-toggle {
-      margin-left: auto;
-      padding: 0 0.75rem;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      font-size: 0.65rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--green);
-      border-left: 1px solid var(--line);
-      cursor: pointer;
-      flex-shrink: 0;
-      user-select: none;
-      transition: background 0.12s;
-    }
-    #examples-toggle:hover { background: var(--bg3); }
-
-    .ex-tab {
-      font-size: 0.7rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      padding: 0.45rem 0.9rem;
-      color: var(--mid);
       border-right: 1px solid var(--line);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: color 0.12s, background 0.12s;
-      flex-shrink: 0;
-    }
-    .ex-tab:hover { color: var(--hi); background: var(--bg3); }
-    .ex-tab.active { color: var(--green); background: var(--bg3); border-bottom: 2px solid var(--green); }
-
-    #examples-grid {
-      flex: 1;
-      display: flex;
-      gap: 0.5rem;
-      padding: 0.5rem 0.75rem;
-      overflow-x: auto;
-      overflow-y: hidden;
-      align-items: stretch;
-    }
-
-    .ex-card {
-      flex-shrink: 0;
-      width: 220px;
-      background: var(--bg3);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      cursor: pointer;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      transition: border-color 0.15s;
     }
-    .ex-card:hover { border-color: var(--green-mid); }
 
-    .ex-card-title {
-      font-size: 0.65rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--green);
-      padding: 0.35rem 0.6rem 0.2rem;
+    #sb-head {
       flex-shrink: 0;
+      padding: 0.4rem 0.5rem;
+      border-bottom: 1px solid var(--line);
+    }
+    #sb-filter {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--muted);
+      border-radius: var(--radius);
+      color: var(--hi);
+      font-family: var(--ui);
+      font-size: 0.72rem;
+      padding: 0.3rem 0.5rem;
+      outline: none;
+    }
+    #sb-filter:focus { border-color: var(--green-mid); }
+    #sb-filter::placeholder { color: var(--dim); }
+
+    #sb-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-bottom: 1rem;
+    }
+
+    .sb-sec + .sb-sec { border-top: 1px solid var(--line); }
+
+    /* One row = one tree node. --depth drives the indent so nesting needs no wrappers. */
+    .sb-row {
       display: flex;
       align-items: center;
-      gap: 0.4rem;
-      flex-wrap: wrap;
+      gap: 0.25rem;
+      height: 22px;
+      padding-right: 0.35rem;
+      padding-left: calc(0.3rem + var(--depth, 0) * 0.7rem);
+      font-size: 0.73rem;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
     }
+    .sb-row:hover { background: var(--bg3); }
+    .sb-twisty {
+      width: 0.7rem;
+      flex-shrink: 0;
+      color: var(--dim);
+      font-size: 0.6rem;
+      text-align: center;
+    }
+    .sb-icon { flex-shrink: 0; font-size: 0.7rem; line-height: 1; }
+    .sb-label { overflow: hidden; text-overflow: ellipsis; }
 
-    .ex-card-badge {
+    .sb-sec-head {
+      height: 26px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      color: var(--green);
+      background: var(--bg2);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .sb-sec-head:hover { background: var(--bg3); }
+    .sb-sec-body { padding-bottom: 0.25rem; }
+
+    .sb-group { font-weight: 600; color: var(--hi); }
+    .sb-cat   { color: var(--text); }
+    .sb-dir   { color: var(--text); }
+    .sb-bundle { color: var(--hi); font-weight: 600; }
+
+    .sb-entry .sb-label { color: var(--text); }
+    .sb-entry:hover .sb-label { color: var(--hi); }
+
+    .sb-file .sb-label { color: var(--mid); font-family: var(--mono); font-size: 0.7rem; }
+    .sb-file.open .sb-label { color: var(--text); }
+    .sb-file.active { background: var(--bg4); }
+    .sb-file.active .sb-label { color: var(--green); }
+
+    .sb-script .sb-label { color: var(--text); font-family: var(--mono); font-size: 0.7rem; }
+    .sb-script .sb-icon  { color: var(--green); }
+    .sb-script.active .sb-label { color: var(--green); font-weight: 600; }
+
+    .sb-empty, .sb-error {
+      cursor: default;
+      color: var(--dim);
+      font-style: italic;
+      height: auto;
+      padding-top: 0.2rem;
+      padding-bottom: 0.2rem;
+      white-space: normal;
+    }
+    .sb-error { color: var(--err); font-style: normal; }
+    .sb-empty:hover, .sb-error:hover { background: none; }
+    .sb-error .sb-label, .sb-empty .sb-label { overflow: visible; white-space: normal; }
+
+    .sb-badge {
+      flex-shrink: 0;
       font-size: 0.58rem;
-      font-weight: 500;
-      letter-spacing: 0;
-      text-transform: none;
+      font-family: var(--mono);
       color: var(--mid);
+      line-height: 1;
+    }
+    .sb-count {
+      color: var(--dim);
       background: var(--bg4);
+      border-radius: 3px;
+      padding: 0.1rem 0.25rem;
+      margin-left: auto;
+    }
+    .sb-need {
+      color: var(--dim);
       border: 1px solid var(--muted);
       border-radius: 3px;
-      padding: 0.05rem 0.3rem;
-      font-family: var(--mono);
+      padding: 0 0.2rem;
     }
-    .ex-card:hover .ex-card-badge { color: var(--text); border-color: var(--green-mid); }
+    .sb-mounted { color: var(--green2); }
+    .sb-dirty   { color: var(--hot); font-size: 0.6rem; }
 
-    .ex-card-code {
-      flex: 1;
-      overflow: hidden;
-      padding: 0 0.6rem 0.4rem;
+    .sb-actions { margin-left: auto; display: flex; gap: 0.1rem; opacity: 0; }
+    .sb-row:hover .sb-actions { opacity: 1; }
+    .sb-act {
+      background: none;
+      border: none;
+      color: var(--dim);
+      font-family: var(--ui);
+      font-size: 0.8rem;
+      line-height: 1;
+      padding: 0 0.2rem;
+      cursor: pointer;
+    }
+    .sb-act:hover { color: var(--green); }
+    .sb-act-del:hover { color: var(--err); }
+    /* A section header's own actions must not vanish when the pointer leaves the row. */
+    .sb-sec-head .sb-actions { opacity: 1; }
+
+    /* Sidebar resize handle */
+    #sb-resize {
+      flex: 0 0 4px;
+      background: var(--line);
+      cursor: col-resize;
+    }
+    #sb-resize:hover { background: var(--green-dim); }
+
+    #sb-backdrop { display: none; }
+
+    /* Hover preview — fixed so it can overflow the sidebar */
+    #sb-preview {
+      position: fixed;
+      z-index: 60;
+      display: none;
+      max-width: min(46ch, 60vw);
+      background: var(--bg3);
+      border: 1px solid var(--muted);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+      padding: 0.5rem 0.6rem;
+      pointer-events: none;
+    }
+    #sb-preview.visible { display: block; }
+    .sb-pv-desc { font-size: 0.72rem; color: var(--text); margin-bottom: 0.3rem; }
+    .sb-pv-path {
       font-family: var(--mono);
-      font-size: 0.71rem;
+      font-size: 0.62rem;
+      color: var(--dim);
+      margin-bottom: 0.35rem;
+    }
+    .sb-pv-code {
+      font-family: var(--mono);
+      font-size: 0.7rem;
       line-height: 1.5;
       color: var(--text);
+      overflow: hidden;
+      white-space: pre;
     }
+
+    /* Explorer toggle — only meaningful once the sidebar becomes a drawer */
+    #sb-toggle {
+      display: none;
+      background: none;
+      border: 1px solid var(--muted);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.85rem;
+      line-height: 1;
+      padding: 0.3rem 0.45rem;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    #sb-toggle:hover { border-color: var(--green); color: var(--green); }
 
     /* ─── Syntax colors ─── */
     .t-kw  { color: var(--kw); }
@@ -592,14 +796,46 @@
 
     /* ─── Mobile ─── */
     @media (max-width: 700px) {
-      #playground { flex-direction: column; }
+      #split { flex-direction: column; }
       #editor-panel  { flex: 1 1 50%; min-width: unset; min-height: 0; }
       #output-panel  { flex: 1 1 50%; min-width: unset; min-height: 0; }
       #split-handle  { flex: 0 0 5px; cursor: row-resize; width: 100%; }
       #split-handle::after { width: 28px; height: 3px; }
       #split-handle.dragging { cursor: row-resize; }
       #output-panel.output-collapsed { flex: 0 0 auto !important; min-height: 0; }
-      --examples-h: 200px;
+
+      /* The explorer becomes a slide-over drawer: on a phone it cannot take a permanent
+         column without leaving the editor unusable. */
+      #sb-toggle { display: block; }
+      /* The ☰ button needs its width back: the logo's code decoration is the one header
+         item that carries no information, so it goes first. */
+      .logo-code { display: none; }
+      #sidebar {
+        position: fixed;
+        top: var(--header-h);
+        bottom: 0;
+        left: 0;
+        width: min(78vw, 320px);
+        min-width: 0;
+        z-index: 50;
+        transform: translateX(-100%);
+        transition: transform 0.18s ease;
+        box-shadow: 0 0 24px rgba(0,0,0,.5);
+      }
+      #sidebar.drawer-open { transform: translateX(0); }
+      #sb-resize { display: none; }
+      #sb-backdrop {
+        display: block;
+        position: fixed;
+        inset: var(--header-h) 0 0 0;
+        background: rgba(0,0,0,.45);
+        z-index: 49;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.18s ease;
+      }
+      #sb-backdrop.visible { opacity: 1; pointer-events: auto; }
+      #sb-preview { display: none !important; }
     }
 
     /* ─── Playground notice modal ─── */

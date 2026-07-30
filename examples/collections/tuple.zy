@@ -1,0 +1,10 @@
+// Tuples are immutable — elements cannot be changed
+t = (10, "hello", #1)
+>> t ¶
+>> t[1] ¶
+>> t[2] ¶
+
+// Use $~ for a functional update (returns new tuple)
+t2 = t[1]$~ 99
+>> t ¶     // original unchanged
+>> t2 ¶    // new tuple

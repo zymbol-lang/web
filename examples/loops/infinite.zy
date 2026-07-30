@@ -1,0 +1,6 @@
+// @ without a break → hits the 50k-step limit
+// The interpreter stops it automatically.
+// @skip-parity: runs away on purpose; the parity runner lifts the step limit
+@ {
+    >> "Zymbol-lang " ¶
+}

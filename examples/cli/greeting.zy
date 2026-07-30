@@ -1,0 +1,8 @@
+// Match on the args array itself: [] is the empty-list pattern.
+>< args
+
+nombre = ?? args {
+    [] => "mundo"
+    _  => args[1]
+}
+>> "¡Hola, " nombre "!" ¶

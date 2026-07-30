@@ -4,7 +4,7 @@
 
 import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
 import { execSync } from 'child_process';
-import { join, resolve } from 'path';
+import { join, resolve, relative } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
@@ -108,12 +108,24 @@ function stripDiagnosticDetails(s) {
     .join('\n');
 }
 
-function normalize(s) {
-  return stripDiagnosticDetails(stripAnsi(s))
+function normalize(s, file) {
+  let out = stripDiagnosticDetails(stripAnsi(s))
     .replace(/\r\n/g, '\n')           // CRLF → LF
     .replace(/\r/g, '\n')
     .replace(/\(\d+\.\d+s(?:\s+\w+)?\)/g, '(Xs)') // strip benchmark timing — web ≠ CLI timing
-    .replace(/##Parse\(.*\)$/gm, '##Parse(…)')    // JSON parse error text is engine-specific (serde vs V8)
+    .replace(/##Parse\(.*\)$/gm, '##Parse(…)');   // JSON parse error text is engine-specific (serde vs V8)
+  // The two engines are handed different spellings of the same path: runWeb passes the
+  // absolute path as displayPath, while the CLI shortens a path under the cwd to its
+  // relative form. Any message that names the file — "'x.zy' is a module file and cannot be
+  // run directly" — then differs by prefix alone. Collapse both spellings to one token.
+  if (file) {
+    const abs = resolve(file);
+    const rel = relative(process.cwd(), abs);
+    for (const p of new Set([abs, rel])) {
+      out = out.split(p).join('<file>');
+    }
+  }
+  return out
     .trimEnd()                          // trailing newline differences
     .replace(/\t/g, '    ');            // tabs → spaces
 }
@@ -184,14 +196,20 @@ for (const file of allFiles) {
   const src     = readFileSync(file, 'utf8');
   const relPath = file.replace(TEST_ROOT + '/', '');
 
-  if (SKIP_SET.has(relPath)) {
+  // In-file marker, for corpora this runner doesn't own (e.g. `--dir examples`, whose paths
+  // would otherwise have to be duplicated into SKIP_SET above). The web interpreter runs with
+  // every safety limit lifted (see runWeb), so a file that deliberately runs away — an `@`
+  // with no break, relying on the 50k-step limit to stop it — accumulates output until the
+  // process dies with `RangeError: Invalid string length`, taking the whole run with it.
+  const marker = src.match(/^\/\/\s*@skip-parity:\s*(.+)$/m);
+  if (SKIP_SET.has(relPath) || marker) {
     skipped++;
-    if (showPass) console.log(`  ⬜ SKIP ${relPath}`);
+    if (showPass) console.log(`  ⬜ SKIP ${relPath}${marker ? ` (${marker[1].trim()})` : ''}`);
     continue;
   }
 
-  const cliOut  = normalize(runCLI(file));
-  const webOut  = normalize(await runWeb(file, src));
+  const cliOut  = normalize(runCLI(file), file);
+  const webOut  = normalize(await runWeb(file, src), file);
 
   if (cliOut === webOut) {
     passed++;
