@@ -1,10 +1,12 @@
-// test_collections.zy — Arrays, tuplas, HOF
-// Ejecutar: zymbol run test_collections.zy
+// Guided tour — Arrays, tuplas y funciones de orden superior.
+// Ejecutar: zymbol run collections.zy
+// Los indices empiezan en 1; los negativos cuentan desde el final.
 
 // ─── Arrays ───
 arr = [10, 20, 30, 40, 50]
->> arr[0] ¶    // → 10
->> arr[2] ¶    // → 30
+>> arr[1] ¶     // → 10
+>> arr[3] ¶     // → 30
+>> arr[-1] ¶    // → 50
 
 // Longitud
 n = arr$#
@@ -16,38 +18,38 @@ arr = arr$+ 60
 >> (arr$#) ¶    // → 6
 
 // Remove por indice
-arr = arr$- 0
->> arr[0] ¶    // → 20
+arr = arr$-[1]
+>> arr[1] ¶    // → 20
 
 // Contains
 tiene = arr$? 30
 >> tiene ¶    // → #1
 
-// Slice [start..end) — end exclusivo
-trozo = arr$[0..2]
+// Slice [inicio..fin] — ambos extremos incluidos
+trozo = arr$[1..2]
 >> trozo ¶    // → [20, 30]
 
 // Update de elemento
-arr[1] = 99
+arr[2] = 99
 >> arr ¶    // → [20, 99, 40, 50, 60]
 
 // For-each
 @ x:arr { >> x " " }
 >> ¶
 
-// Matriz 2D
+// Matriz 2D — arr[i>j] es la forma actual de navegar dimensiones
 matrix = [[1,2,3], [4,5,6], [7,8,9]]
->> matrix[1] ¶       // → [4, 5, 6]
->> matrix[1][2] ¶    // → 6
+>> matrix[2] ¶       // → [4, 5, 6]
+>> matrix[2>3] ¶     // → 6
 
 // ─── Tuplas ───
 punto = (10, 20)
->> punto[0] ¶    // → 10
+>> punto[1] ¶    // → 10
 
 persona = (nombre: "Alice", edad: 25)
 >> persona.nombre ¶    // → Alice
 >> persona.edad ¶      // → 25
->> persona[0] ¶        // → Alice
+>> persona[1] ¶        // → Alice
 
 // ─── HOF: Map, Filter, Reduce ───
 nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -79,18 +81,18 @@ s = "Hola Mundo"
 largo = s$#
 >> largo ¶          // → 10
 >> (s$? 'M') ¶      // → #1
-sub = s$[0..4]
+sub = s$[1..4]
 >> sub ¶            // → Hola
 
-// Split
-partes = "a,b,c,d" / ','
+// Split — $/ divide cadenas; / es division numerica
+partes = "a,b,c,d" $/ ','
 >> partes ¶    // → [a, b, c, d]
 
-// ─── Bubble Sort (verifica arrays y output params) ───
+// ─── Bubble Sort (verifica arrays y parametros de salida) ───
 bsort(datos<~) {
     n = datos$#
-    @ i:0..(n-2) {
-        @ j:0..(n-i-2) {
+    @ i:1..(n-1) {
+        @ j:1..(n-i) {
             ? datos[j] > datos[j+1] {
                 tmp = datos[j]
                 datos[j] = datos[j+1]

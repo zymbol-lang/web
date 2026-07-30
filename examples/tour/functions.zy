@@ -63,9 +63,9 @@ add20 = make_adder(20)
 
 // ─── Lambdas como valores ───
 ops = [x -> x+1, x -> x*2, x -> x*x]
->> ops[0](5) ¶    // → 6
->> ops[1](5) ¶    // → 10
->> ops[2](5) ¶    // → 25
+>> ops[1](5) ¶    // → 6
+>> ops[2](5) ¶    // → 10
+>> ops[3](5) ¶    // → 25
 
 // Pasar lambda como argumento
 aplicar(f, x) { <~ f(x) }

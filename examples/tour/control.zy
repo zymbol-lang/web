@@ -1,5 +1,5 @@
-// test_control.zy — Control de flujo, match, bucles
-// Ejecutar: zymbol run test_control.zy
+// Guided tour — Control de flujo, match y bucles.
+// Ejecutar: zymbol run control.zy
 
 // ─── If / else-if / else ───
 x = 7
@@ -23,13 +23,15 @@ grade = ?? score {
 }
 >> "grade=" grade ¶    // → grade=B
 
-// ─── Match con guards ───
+// ─── Match con patrones de comparacion ───
+// ?? es coincidencia de patrones puro: no evalua condiciones booleanas,
+// el sujeto queda implicito y el brazo es solo operador + valor.
 temp = -5
 estado = ?? temp {
-    _? temp < 0  => "hielo"
-    _? temp < 20 => "frio"
-    _? temp < 35 => "calido"
-    _            => "caliente"
+    < 0  => "hielo"
+    < 20 => "frio"
+    < 35 => "calido"
+    _    => "caliente"
 }
 >> estado ¶    // → hielo
 

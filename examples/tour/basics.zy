@@ -1,5 +1,5 @@
-// test_basics.zy — Variables, tipos, salida, concatenacion de cadenas
-// Ejecutar: zymbol run test_basics.zy
+// Guided tour — Variables, tipos, salida y construccion de cadenas.
+// Ejecutar: zymbol run basics.zy
 
 // ─── Variables y constantes ───
 x = 10
@@ -43,8 +43,8 @@ arr = [10, 20, 30]
 // ─── Concatenacion de cadenas ───
 n = 25
 
-// Coma en asignaciones
-msg = "Hola ", nombre, "!"
+// $++ construye una cadena a partir de una base
+msg = "Hola " $++ nombre "!"
 >> msg ¶    // → Hola Ana!
 
 // Yuxtaposicion en salida
