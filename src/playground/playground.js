@@ -328,6 +328,13 @@ function canvasFont(style = '') {
 // Ask for it explicitly, once, at startup.
 document.fonts?.load(canvasFont())?.catch(() => {});
 
+// Canvas pixels can't reference CSS custom properties, so these mirror --bg/--hi from :root
+// and html.light in playground.css. Only the "no color given" default reacts to the site
+// theme — explicit ANSI colors (ansi256ToRgb) are left alone, since a program that asked for
+// a specific color should keep it regardless of theme.
+function tuiBg() { return document.documentElement.classList.contains('light') ? '#f8f8f8' : '#0c0c0c'; }
+function tuiFg() { return document.documentElement.classList.contains('light') ? '#111'    : '#ddd'; }
+
 class BrowserTUI {
   constructor(canvas, outputDiv) {
     this.canvas       = canvas;
@@ -404,7 +411,16 @@ class BrowserTUI {
 
     this.canvas.focus();
 
-    this.ctx.fillStyle = '#000';
+    // Locked in for the whole session rather than read live: toggling the site theme
+    // mid-game used to repaint only whatever got redrawn next (e.g. the cell under a moving
+    // cursor), leaving the rest of an already-drawn board in the old colors — a patchwork.
+    // There's no retained screen buffer to replay in full on a theme change, so the correct
+    // "change everything, never just a piece of it" is to not change mid-session at all; the
+    // new theme takes effect the next time a program enters TUI mode.
+    this._bg = tuiBg();
+    this._fg = tuiFg();
+
+    this.ctx.fillStyle = this._bg;
     this.ctx.fillRect(0, 0, w, h);
 
     this.printRow = 1;
@@ -657,7 +673,7 @@ class BrowserTUI {
 
   clear() {
     if (!this.ctx) return;
-    this.ctx.fillStyle = '#000';
+    this.ctx.fillStyle = this._bg;
     this.ctx.fillRect(0, 0, this.cols * this.cellW, this.rows * this.cellH);
     this.printRow = 1;
     this.printCol = 1;
@@ -691,7 +707,7 @@ class BrowserTUI {
     const clipW = wide ? cw * 2 : cw;
     // Erase cell(s) + 1px right: clears any bleed the previous char left in the neighbor
     this.ctx.clearRect(x, y, clipW + 1, ch2);
-    this.ctx.fillStyle = (bg !== null && bg !== undefined) ? ansi256ToRgb(bg) : '#000';
+    this.ctx.fillStyle = (bg !== null && bg !== undefined) ? ansi256ToRgb(bg) : this._bg;
     this.ctx.fillRect(x, y, clipW, ch2);
     if (!ch || ch === ' ') return;
     let style = '';
@@ -699,7 +715,7 @@ class BrowserTUI {
     if (bks & 2) style += 'italic ';
     this.ctx.font = canvasFont(style);
     this.ctx.textBaseline = 'top';
-    this.ctx.fillStyle = (fg !== null && fg !== undefined) ? ansi256ToRgb(fg) : '#ddd';
+    this.ctx.fillStyle = (fg !== null && fg !== undefined) ? ansi256ToRgb(fg) : this._fg;
     // Clip to cell (or 2 cells for wide): prevents glyph bleed into further neighbors
     this.ctx.save();
     this.ctx.beginPath();
@@ -708,7 +724,7 @@ class BrowserTUI {
     this.ctx.fillText(ch, x, y + 1);
     this.ctx.restore();
     if (bks & 4) {
-      this.ctx.fillStyle = (fg !== null && fg !== undefined) ? ansi256ToRgb(fg) : '#ddd';
+      this.ctx.fillStyle = (fg !== null && fg !== undefined) ? ansi256ToRgb(fg) : this._fg;
       this.ctx.fillRect(x, y + ch2 - 2, cw, 1);
     }
   }
@@ -845,7 +861,14 @@ function parseCliArgs(str) {
 }
 
 // ─── Run ──────────────────────────────────────────────────────────────────────
+// Set below by the "Split panel + output toggle" block once it wires up the Output panel.
+// A plain closure bridge rather than a custom event: runCode only ever fires from a click,
+// long after that block has already run at module load, so the assignment always lands
+// before this is ever called.
+let expandOutputPanel = () => {};
+
 async function runCode() {
+  expandOutputPanel();
   clearOutput();
 
   // The model is only written back on tab switches and on `input`. Running a script that
@@ -1131,42 +1154,96 @@ sidebar.render();
   const outputPanel      = document.getElementById('output-panel');
   const splitHandle      = document.getElementById('split-handle');
   const toggleOutputBtn  = document.getElementById('toggle-output-btn');
+  const layoutToggleBtn  = document.getElementById('layout-toggle-btn');
+
+  const LS_LAYOUT = 'zy-split-layout'; // desktop-only preference: 'row' (side) or 'column' (bottom)
 
   let dragging      = false;
   let outputHidden  = false;
   let savedEditorPct = 50;
+  let userLayout = localStorage.getItem(LS_LAYOUT) === 'column' ? 'column' : 'row';
 
-  function isVertical() { return window.innerWidth <= 700; }
+  function isMobile() { return window.innerWidth <= 700; }
+  // Mobile is always stacked (no room for side-by-side); on desktop it's the user's call.
+  function isStacked() { return isMobile() || userLayout === 'column'; }
 
+  function applyLayoutClass() {
+    playgroundEl.classList.toggle('stacked', isStacked());
+  }
+
+  // Icon depicts the destination layout (a square with the half where output would land
+  // filled in), not the current one — same "shows where it's going" convention as most
+  // IDE panel-move icons.
+  function updateLayoutBtnIcon() {
+    if (!layoutToggleBtn) return;
+    if (userLayout === 'column') {
+      layoutToggleBtn.textContent = '◨';
+      layoutToggleBtn.title = 'Move output to the side';
+    } else {
+      layoutToggleBtn.textContent = '⬓';
+      layoutToggleBtn.title = 'Move output to the bottom';
+    }
+  }
+
+  // Chevron points toward the edge the panel is collapsing to (output is the rightmost/
+  // bottommost panel), so it reads as "this button pushes the boundary that way".
   function updateToggleIcon() {
     if (outputHidden) {
-      toggleOutputBtn.textContent = isVertical() ? '▲' : '▶';
+      toggleOutputBtn.textContent = isStacked() ? '▲' : '◀';
       toggleOutputBtn.title = 'Show output';
     } else {
-      toggleOutputBtn.textContent = isVertical() ? '▼' : '◀';
+      toggleOutputBtn.textContent = isStacked() ? '▼' : '▶';
       toggleOutputBtn.title = 'Hide output';
     }
   }
 
+  function showOutput() {
+    if (!outputHidden) return;
+    outputPanel.classList.remove('output-collapsed');
+    splitHandle.classList.remove('output-collapsed');
+    editorPanel.style.flex = `0 0 ${savedEditorPct}%`;
+    outputPanel.style.flex = `0 0 ${100 - savedEditorPct}%`;
+    outputHidden = false;
+    updateToggleIcon();
+  }
+
   toggleOutputBtn.addEventListener('click', () => {
+    if (outputHidden) {
+      showOutput();
+      return;
+    }
+    const pgRect  = playgroundEl.getBoundingClientRect();
+    const edRect  = editorPanel.getBoundingClientRect();
+    savedEditorPct = isStacked()
+      ? (edRect.height / pgRect.height) * 100
+      : (edRect.width  / pgRect.width)  * 100;
+    editorPanel.style.flex = '1 1 auto';
+    outputPanel.style.flex = '';
+    outputPanel.classList.add('output-collapsed');
+    splitHandle.classList.add('output-collapsed');
+    outputHidden = true;
+    updateToggleIcon();
+  });
+
+  // Running a program while Output is collapsed should surface the result rather than
+  // silently write into a strip the user can't see.
+  expandOutputPanel = showOutput;
+
+  // Desktop-only: mobile hides this button entirely (see CSS) since there's no side-by-side
+  // option to switch to. Toggling clears any dragged split percentage and collapse state —
+  // a ratio dragged along one axis isn't a meaningful default for the other.
+  layoutToggleBtn?.addEventListener('click', () => {
+    userLayout = userLayout === 'column' ? 'row' : 'column';
+    localStorage.setItem(LS_LAYOUT, userLayout);
+    applyLayoutClass();
+    updateLayoutBtnIcon();
     if (outputHidden) {
       outputPanel.classList.remove('output-collapsed');
       splitHandle.classList.remove('output-collapsed');
-      editorPanel.style.flex = `0 0 ${savedEditorPct}%`;
-      outputPanel.style.flex = `0 0 ${100 - savedEditorPct}%`;
       outputHidden = false;
-    } else {
-      const pgRect  = playgroundEl.getBoundingClientRect();
-      const edRect  = editorPanel.getBoundingClientRect();
-      savedEditorPct = isVertical()
-        ? (edRect.height / pgRect.height) * 100
-        : (edRect.width  / pgRect.width)  * 100;
-      editorPanel.style.flex = '1 1 auto';
-      outputPanel.style.flex = '';
-      outputPanel.classList.add('output-collapsed');
-      splitHandle.classList.add('output-collapsed');
-      outputHidden = true;
     }
+    editorPanel.style.flex = '';
+    outputPanel.style.flex = '';
     updateToggleIcon();
   });
 
@@ -1175,6 +1252,7 @@ sidebar.render();
     if (outputHidden) return;
     dragging = true;
     splitHandle.classList.add('dragging');
+    playgroundEl.classList.add('dragging');
     document.body.style.userSelect = 'none';
     if (e.cancelable) e.preventDefault();
   }
@@ -1183,7 +1261,7 @@ sidebar.render();
   function onDragMove(clientX, clientY) {
     if (!dragging) return;
     const pgRect = playgroundEl.getBoundingClientRect();
-    let pct = isVertical()
+    let pct = isStacked()
       ? ((clientY - pgRect.top)  / pgRect.height) * 100
       : ((clientX - pgRect.left) / pgRect.width)  * 100;
     pct = Math.max(15, Math.min(85, pct));
@@ -1196,6 +1274,7 @@ sidebar.render();
     if (!dragging) return;
     dragging = false;
     splitHandle.classList.remove('dragging');
+    playgroundEl.classList.remove('dragging');
     document.body.style.userSelect = '';
   }
 
@@ -1206,8 +1285,13 @@ sidebar.render();
   document.addEventListener('mouseup',   onDragEnd);
   document.addEventListener('touchend',  onDragEnd);
 
-  // Keep icon in sync on resize
-  window.addEventListener('resize', updateToggleIcon);
+  // Keep everything in sync as the viewport crosses the mobile breakpoint.
+  window.addEventListener('resize', () => {
+    applyLayoutClass();
+    updateToggleIcon();
+  });
+  applyLayoutClass();
+  updateLayoutBtnIcon();
   updateToggleIcon();
 })();
 

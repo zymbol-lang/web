@@ -7,12 +7,12 @@
   <meta name="description" content="Interactive online editor for Zymbol. Write and run code in any human language — Spanish, Japanese, Arabic, Chinese and 100+ more. No keywords, just symbols.">
   <meta name="keywords" content="online code editor, programming playground, code in Spanish, code in Japanese, symbolic programming, try programming language, multilingual code">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://zymbol-lang.dev/playground.html">
+  <link rel="canonical" href="https://zymbol-lang.org/playground.html">
   <meta property="og:type"        content="website">
-  <meta property="og:url"         content="https://zymbol-lang.dev/playground.html">
+  <meta property="og:url"         content="https://zymbol-lang.org/playground.html">
   <meta property="og:title"       content="Zymbol Playground — Code in Any Human Language">
   <meta property="og:description" content="Try Zymbol in your browser. Write code using Spanish, Japanese, Arabic, Chinese identifiers. No keywords — pure symbols.">
-  <meta property="og:image"       content="https://zymbol-lang.dev/zymbol_logo.png">
+  <meta property="og:image"       content="https://zymbol-lang.org/zymbol_logo.png">
   <meta name="twitter:card"       content="summary_large_image">
   <meta name="twitter:title"      content="Zymbol Playground — Code in Any Human Language">
   <meta name="twitter:description" content="Try Zymbol online. Write code in Spanish, Japanese, Arabic and 100+ languages.">
@@ -88,6 +88,10 @@
 
   <!-- Explorer: mounted files (WORKSPACE) + the example pool (EXAMPLES) -->
   <aside id="sidebar">
+    <div id="sb-panel-head">
+      <span>Explorer</span>
+      <button id="sb-collapse-btn" title="Hide explorer" aria-label="Hide explorer">◀</button>
+    </div>
     <div id="sb-head">
       <input id="sb-filter" type="text" placeholder="Filter files and examples…"
              spellcheck="false" autocomplete="off" aria-label="Filter files and examples">
@@ -132,6 +136,7 @@
     <div class="panel-header">
       <span>Output</span>
       <div class="panel-actions">
+        <button class="btn" id="layout-toggle-btn" title="Move output to the bottom">⬓</button>
         <button class="btn" id="toggle-output-btn" title="Hide output">◀</button>
         <button class="btn" id="clear-output-btn">Clear</button>
       </div>

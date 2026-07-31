@@ -222,6 +222,10 @@
 
     #editor-panel  { flex: 1 1 50%; min-width: 0; }
     #output-panel  { flex: 1 1 50%; min-width: 0; }
+    /* The drag handler writes flex-basis directly on every pointermove; a transition would
+       fight that and lag behind the cursor, so it's only enabled while not dragging. */
+    #split:not(.dragging) #editor-panel,
+    #split:not(.dragging) #output-panel { transition: flex-basis 0.18s ease; }
 
     /* Split handle */
     #split-handle {
@@ -250,10 +254,59 @@
     #split-handle.dragging { background: var(--green-dim); cursor: col-resize; }
     #split-handle.output-collapsed { cursor: default; opacity: 0.35; pointer-events: none; }
 
-    /* Output collapsed: only header strip visible */
-    #output-panel.output-collapsed { flex: 0 0 auto !important; min-width: 0; }
+    /* Output collapsed: a slim strip instead of a full-width header, so collapsing it
+       actually gives the editor room back rather than just hiding the log text. */
+    #output-panel.output-collapsed {
+      flex: 0 0 44px !important;
+      min-width: 0;
+    }
     #output-panel.output-collapsed #output-content,
     #output-panel.output-collapsed #tui-wrap { display: none !important; }
+    #output-panel.output-collapsed .panel-header {
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100%;
+      padding: 0.65rem 0.3rem;
+      gap: 0.6rem;
+    }
+    #output-panel.output-collapsed .panel-header > span {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: 0.68rem;
+    }
+    #output-panel.output-collapsed .panel-actions { flex-direction: column; gap: 0.4rem; }
+    /* Clearing output you can't see is confusing, not useful — only the reopen toggle
+       stays reachable while collapsed. */
+    #output-panel.output-collapsed #clear-output-btn,
+    #output-panel.output-collapsed #layout-toggle-btn { display: none; }
+
+    /* Stacked layout (desktop opt-in via #layout-toggle-btn; forced on mobile, see the
+       700px media query below, which is the guaranteed CSS-only fallback if JS never runs).
+       Mirrors mobile's row⇄column swap, scoped so it only takes over at desktop widths when
+       the user actually asked for it. */
+    #split.stacked { flex-direction: column; }
+    #split.stacked #editor-panel,
+    #split.stacked #output-panel { min-width: unset; min-height: 0; }
+    #split.stacked #split-handle { cursor: row-resize; width: 100%; }
+    #split.stacked #split-handle::after { width: 28px; height: 3px; }
+    #split.stacked #split-handle.dragging { cursor: row-resize; }
+    #split.stacked #output-panel.output-collapsed {
+      flex: 0 0 auto !important;
+      min-height: 0;
+      min-width: 0;
+    }
+    #split.stacked #output-panel.output-collapsed .panel-header {
+      flex-direction: row;
+      justify-content: space-between;
+      height: auto;
+      padding: 0.45rem 0.75rem;
+    }
+    #split.stacked #output-panel.output-collapsed .panel-header > span {
+      writing-mode: horizontal-tb;
+      transform: none;
+    }
+    #split.stacked #output-panel.output-collapsed .panel-actions { flex-direction: row; gap: 0.4rem; }
 
     /* ─── Panel shared ─── */
     .panel {
@@ -324,10 +377,10 @@
     .btn-run:hover { background: var(--green-mid); }
 
     #args-input {
-      background: #1a1a1a;
-      border: 1px solid #444;
+      background: var(--bg);
+      border: 1px solid var(--muted);
       border-radius: 4px;
-      color: #ccc;
+      color: var(--hi);
       font-family: 'JetBrains Mono', 'Courier New', monospace;
       font-size: 11px;
       padding: 3px 7px;
@@ -337,7 +390,7 @@
       outline: none;
     }
     #args-input:focus { border-color: var(--green-mid); }
-    #args-input::placeholder { color: #555; }
+    #args-input::placeholder { color: var(--dim); }
 
     /* The [[script]] picker had no styling at all — a default-chrome <select> in a dark
        toolbar. It also has to be shrinkable, since script names can be long (and are often
@@ -434,7 +487,7 @@
 
     #tui-canvas {
       display: block;
-      background: #000;
+      background: var(--bg);
       outline: none;
       cursor: default;
       image-rendering: pixelated;
@@ -588,7 +641,70 @@
       background: var(--bg2);
       border-right: 1px solid var(--line);
       overflow: hidden;
+      transition: width 0.18s ease, min-width 0.18s ease;
     }
+    /* Dragging #sb-resize updates --sidebar-w every pointermove; a transition there would
+       lag behind the cursor, so it's suppressed while the drag is live. */
+    #sidebar.sb-resizing { transition: none; }
+
+    /* Own header bar, styled like a .panel-header — same shape as the Editor/Output
+       toolbars so the collapse control is symmetric: each panel owns its own toggle. */
+    #sb-panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.45rem 0.75rem;
+      background: var(--bg3);
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+    #sb-panel-head > span {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--mid);
+    }
+    #sb-collapse-btn {
+      font-family: var(--ui);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.28rem 0.5rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      cursor: pointer;
+      background: var(--bg4);
+      color: var(--text);
+      flex-shrink: 0;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+    }
+    #sb-collapse-btn:hover { background: var(--muted); border-color: var(--dim); color: var(--hi); }
+
+    /* Collapsed (desktop): a slim strip, not width 0 — same treatment as Output-collapsed,
+       so the panel stays visible as a place to click it back open instead of vanishing
+       into a disconnected header button. */
+    #sidebar.sb-collapsed {
+      width: 44px;
+      min-width: 44px;
+      border-right: 1px solid var(--line);
+    }
+    #sidebar.sb-collapsed #sb-head,
+    #sidebar.sb-collapsed #sb-body { display: none; }
+    #sidebar.sb-collapsed #sb-panel-head {
+      flex: 1;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0.65rem 0.3rem;
+      gap: 0.6rem;
+    }
+    #sidebar.sb-collapsed #sb-panel-head > span {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: 0.68rem;
+    }
+    #sidebar.sb-collapsed + #sb-resize { display: none; }
 
     #sb-head {
       flex-shrink: 0;
@@ -767,7 +883,9 @@
       white-space: pre;
     }
 
-    /* Explorer toggle — only meaningful once the sidebar becomes a drawer */
+    /* Explorer drawer opener — mobile only. On desktop the collapse control lives in the
+       sidebar's own header (#sb-panel-head), symmetric with how Output owns its toggle;
+       on mobile the collapsed sidebar is off-screen, so it needs a reachable opener here. */
     #sb-toggle {
       display: none;
       background: none;
@@ -803,10 +921,25 @@
       #split-handle::after { width: 28px; height: 3px; }
       #split-handle.dragging { cursor: row-resize; }
       #output-panel.output-collapsed { flex: 0 0 auto !important; min-height: 0; }
+      /* Undo the desktop vertical-strip treatment: on a narrow screen the split stacks
+         top/bottom, so collapsed output reads better as a short horizontal bar. */
+      #output-panel.output-collapsed .panel-header {
+        flex-direction: row;
+        justify-content: space-between;
+        height: auto;
+        padding: 0.45rem 0.75rem;
+      }
+      #output-panel.output-collapsed .panel-header > span {
+        writing-mode: horizontal-tb;
+        transform: none;
+      }
+      #output-panel.output-collapsed .panel-actions { flex-direction: row; }
+      /* Mobile is always stacked for space, not by choice — nothing to switch to. */
+      #layout-toggle-btn { display: none; }
 
       /* The explorer becomes a slide-over drawer: on a phone it cannot take a permanent
          column without leaving the editor unusable. */
-      #sb-toggle { display: block; }
+      #sb-toggle { display: flex; }
       /* The ☰ button needs its width back: the logo's code decoration is the one header
          item that carries no information, so it goes first. */
       .logo-code { display: none; }
@@ -821,6 +954,25 @@
         transform: translateX(-100%);
         transition: transform 0.18s ease;
         box-shadow: 0 0 24px rgba(0,0,0,.5);
+      }
+      /* The drawer's own transform drives visibility on mobile; a leftover sb-collapsed
+         (44px strip) from a desktop session, carried over by a live window resize, must
+         not also apply here — the drawer always opens at full width and full contents. */
+      #sidebar.sb-collapsed {
+        width: min(78vw, 320px);
+        min-width: 0;
+      }
+      #sidebar.sb-collapsed #sb-head,
+      #sidebar.sb-collapsed #sb-body { display: block; }
+      #sidebar.sb-collapsed #sb-panel-head {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.45rem 0.75rem;
+      }
+      #sidebar.sb-collapsed #sb-panel-head > span {
+        writing-mode: horizontal-tb;
+        transform: none;
       }
       #sidebar.drawer-open { transform: translateX(0); }
       #sb-resize { display: none; }

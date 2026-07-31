@@ -22,7 +22,9 @@ import { baseOf } from './filestore.js';
 
 const LS_COLLAPSED = 'zy-sb-collapsed';
 const LS_WIDTH     = 'zy-sb-width';
+const LS_OPEN      = 'zy-sb-open'; // desktop collapse state — separate from the mobile drawer
 const PREVIEW_MS   = 260;
+const MOBILE_MQ    = '(max-width: 700px)';
 
 const NEED_LABEL = {
   tui:   ['◱', 'draws on the TUI canvas'],
@@ -44,7 +46,8 @@ export function createSidebar({ store, hooks }) {
   const previewEl  = document.getElementById('sb-preview');
   const backdropEl = document.getElementById('sb-backdrop');
   const resizeEl   = document.getElementById('sb-resize');
-  const toggleEl   = document.getElementById('sb-toggle');
+  const drawerBtn  = document.getElementById('sb-toggle');       // header ☰, mobile drawer opener
+  const collapseBtn = document.getElementById('sb-collapse-btn'); // sidebar's own header, desktop toggle
 
   let catalog = null;
   let loadError = null;
@@ -356,13 +359,48 @@ export function createSidebar({ store, hooks }) {
   });
   bodyEl.addEventListener('scroll', hidePreview);
 
-  // Drawer (mobile)
+  // Drawer (mobile) — below 700px the sidebar becomes a slide-over panel instead of a
+  // permanent column, since there isn't width to spare for both it and the editor.
+  const isMobile = () => window.matchMedia(MOBILE_MQ).matches;
   function setDrawer(open) {
     el.classList.toggle('drawer-open', open);
     backdropEl.classList.toggle('visible', open);
+    updateCollapseIcon();
   }
-  toggleEl?.addEventListener('click', () => setDrawer(!el.classList.contains('drawer-open')));
   backdropEl?.addEventListener('click', () => setDrawer(false));
+  // Reachable only on mobile (see CSS): the drawer starts off-screen, so the one control
+  // that can reopen it has to live outside the sidebar itself, in the app header.
+  drawerBtn?.addEventListener('click', () => setDrawer(!el.classList.contains('drawer-open')));
+
+  // Collapse (desktop) — lives in the sidebar's own header, symmetric with how the Output
+  // panel owns its collapse toggle: width shrinks to a slim strip rather than vanishing,
+  // so the panel stays visible as a place to click it back open. Chevron points toward the
+  // edge it's collapsing to (the sidebar sits on the left), same convention as Output.
+  function updateCollapseIcon() {
+    if (!collapseBtn) return;
+    if (isMobile()) {
+      collapseBtn.textContent = '✕';
+      collapseBtn.title = 'Close explorer';
+    } else {
+      const collapsed = el.classList.contains('sb-collapsed');
+      collapseBtn.textContent = collapsed ? '▶' : '◀';
+      collapseBtn.title = collapsed ? 'Show explorer' : 'Hide explorer';
+    }
+    collapseBtn.setAttribute('aria-label', collapseBtn.title);
+  }
+  function setOpen(open) {
+    el.classList.toggle('sb-collapsed', !open);
+    try { localStorage.setItem(LS_OPEN, open ? '1' : '0'); } catch {}
+    updateCollapseIcon();
+  }
+  if (!isMobile() && localStorage.getItem(LS_OPEN) === '0') el.classList.add('sb-collapsed');
+  updateCollapseIcon();
+
+  collapseBtn?.addEventListener('click', () => {
+    if (isMobile()) setDrawer(false);
+    else setOpen(el.classList.contains('sb-collapsed'));
+  });
+  window.addEventListener('resize', updateCollapseIcon);
 
   // Width drag
   (function () {
@@ -371,7 +409,12 @@ export function createSidebar({ store, hooks }) {
     if (stored >= 160 && stored <= 560) {
       document.documentElement.style.setProperty('--sidebar-w', stored + 'px');
     }
-    const start = e => { dragging = true; document.body.style.userSelect = 'none'; if (e.cancelable) e.preventDefault(); };
+    const start = e => {
+      dragging = true;
+      el.classList.add('sb-resizing');
+      document.body.style.userSelect = 'none';
+      if (e.cancelable) e.preventDefault();
+    };
     const move = x => {
       if (!dragging) return;
       const w = Math.max(160, Math.min(560, x - el.getBoundingClientRect().left));
@@ -380,6 +423,7 @@ export function createSidebar({ store, hooks }) {
     const end = () => {
       if (!dragging) return;
       dragging = false;
+      el.classList.remove('sb-resizing');
       document.body.style.userSelect = '';
       const w = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-w'), 10);
       if (w) localStorage.setItem(LS_WIDTH, String(w));
