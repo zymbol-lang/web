@@ -558,6 +558,12 @@
               "id": "numerals-lcd",
               "title": "LCD 🯰🯱🯲",
               "path": "numerals/lcd.zy"
+            },
+            {
+              "id": "numerals-composed",
+              "title": "Composed text",
+              "desc": "A mode reaches interpolation, juxtaposition and $++, not only >>",
+              "path": "numerals/composed.zy"
             }
           ]
         },

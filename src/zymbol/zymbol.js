@@ -3456,11 +3456,12 @@ export class Interpreter {
         }
         const vals = [];
         for (const item of items) vals.push(await this.eval(item, env));
-        return mkStr(vals.map(v => this.display(v)).join(''));
+        // displayOutput: implicit concatenation is display text -> numeral mode applies.
+        return mkStr(vals.map(v => this.displayOutput(v)).join(''));
       }
       case 'CommaJoin': {
         const vals = await Promise.all(expr.items.map(i => this.eval(i, env)));
-        return mkStr(vals.map(v => this.display(v)).join(''));
+        return mkStr(vals.map(v => this.displayOutput(v)).join(''));
       }
 
       case 'BinOp': {
@@ -3567,8 +3568,11 @@ export class Interpreter {
       }
 
       case 'JuxtaConcat': {
+        // displayOutput, not display: an active numeral mode has to reach every
+        // path that turns a number into text, not just `>>`. A number folded
+        // into a composed string used to revert to ASCII under #d0d9#.
         const parts = [];
-        for (const it of expr.items) parts.push(this.display(await this.eval(it, env)));
+        for (const it of expr.items) parts.push(this.displayOutput(await this.eval(it, env)));
         return mkStr(parts.join(''));
       }
 
@@ -3963,7 +3967,7 @@ export class Interpreter {
       notSupported('collection op');
     };
     const fromStr = items => col.type === 'str'
-      ? mkStr(items.map(v => this.display(v)).join(''))
+      ? mkStr(items.map(v => this.displayOutput(v)).join(''))
       : col.type === 'tuple'
         ? { type:'tuple', v: items, keys: null }
         : mkArr(items);
@@ -3979,7 +3983,7 @@ export class Interpreter {
       case '$+': {
         const v = await arg();
         if (col.type === 'arr')   return mkArr([...col.v, v]);
-        if (col.type === 'str')   return mkStr(col.v + this.display(v));
+        if (col.type === 'str')   return mkStr(col.v + this.displayOutput(v));
         if (col.type === 'tuple') return { type:'tuple', v:[...col.v,v], keys: col.keys ? [...col.keys,null] : null };
         notSupported('$+');
       }
@@ -4193,8 +4197,9 @@ export class Interpreter {
       case '$++': {
         const evalItems = await Promise.all(expr.items.map(i => this.eval(i, env)));
         if (col.type === 'str') {
+          // displayOutput: $++ builds display text, so it follows the numeral mode.
           let result = col.v;
-          for (const item of evalItems) result += this.display(item);
+          for (const item of evalItems) result += this.displayOutput(item);
           return mkStr(result);
         }
         if (col.type === 'arr') {
@@ -4361,7 +4366,8 @@ export class Interpreter {
         try {
           const toks = new Lexer(part.v).tokenize();
           const expr = new Parser(toks).parseExpr();
-          s += this.display(await this.eval(expr, env));
+          // displayOutput: "{n}" renders in the active numeral script.
+          s += this.displayOutput(await this.eval(expr, env));
         } catch {
           s += `{${part.v}}`;
         }

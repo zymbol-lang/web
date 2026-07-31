@@ -1,0 +1,28 @@
+// Numerals: a mode reaches composed text, not only `>>`
+//
+// An active numeral mode applies wherever a number becomes displayed text:
+// bare output, interpolation, juxtaposition and $++. A number folded into a
+// string used to fall back to ASCII, so a translated label could show its
+// digits in the wrong script while the same value printed correctly on its own.
+
+n = 120
+
+>> "ASCII, no mode active:" ¶
+>> "  bare          " n ¶
+>> "  interpolation {n}" ¶
+>> "  juxtaposition " ("n=" n) ¶
+>> "  concat build  " ("n=" $++ n) ¶
+
+#०९#
+
+>> "" ¶
+>> "Devanagari mode active:" ¶
+>> "  bare          " n ¶
+>> "  interpolation {n}" ¶
+>> "  juxtaposition " ("n=" n) ¶
+>> "  concat build  " ("n=" $++ n) ¶
+
+#09#
+
+>> "" ¶
+>> "back to ASCII:  " n ¶
