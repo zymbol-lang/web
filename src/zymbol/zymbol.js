@@ -95,14 +95,32 @@
  * Not supported: shell inclusion (</ />).
  * TUI operators require a >>| { } block to activate the canvas overlay.
  *
- * Parity as of the v0.0.8 release: node web/tests/test_runner.mjs → 513/518, 39 skipped
- * (irreducible in a browser). The 5 failures are known gaps, not regressions — five
- * v0.0.8 fixes that landed in the Rust engines have no counterpart here yet:
- * MM-4 (import-time semantic gate), MM-9 (root-scope constants at call depth >= 2),
- * MM-11 (leftover loop-iterator value), the HLZ-005 './../' diagnostic, and
- * interpolation of global constants. MM-4 and MM-11 are permissive where Rust is
- * correct — the playground produces output the CLI would refuse. Detail and the
- * per-test table: interpreter/IMPL_V008.md § E.3.
+ * 2026-08-01 numeral mode and ordering, synced with the Rust engines. An active
+ * numeral mode (#d0d9#) now reaches interpolation, juxtaposition, $++ and collection
+ * elements, not just bare >>; and orderValues() replaces three disagreeing comparison
+ * paths with the single rule: numeric when both sides are numbers (a string counts if
+ * #|…| would convert it, in any of the 69 digit scripts), lexicographic when both are
+ * non-numeric text, an error when a number meets text that is not one. == still never
+ * coerces. Mirrors cmp_order (VM) and compare_values (tree-walker).
+ *
+ * Parity as of the v0.0.8 release, measured 2026-08-01:
+ *   node tests/test_runner.mjs              → 516/521, 39 skipped (irreducible)
+ *   node tests/test_runner.mjs --dir examples → 208/210
+ * The 7 failures are known gaps, not regressions:
+ *   - MM-4  import-time semantic gate            (JS PERMISSIVE — worse failure mode)
+ *   - MM-11 leftover loop-iterator value         (JS PERMISSIVE — worse failure mode)
+ *   - MM-9  root-scope constants at call depth >= 2
+ *   - HLZ-005 './../' diagnostic text and error count
+ *   - interpolation of a global constant prints {DIR} verbatim
+ *   - HLZ-KL-001 NOT ported: is_ident_continue here rejects "'" inside an identifier,
+ *     so f(mI') — ordinary tlhIngan Hol — fails to parse. The Rust rule is "any
+ *     non-whitespace, non-operator character"; this lexer is narrower.
+ *   - float literals are accumulated digit by digit (value + frac / div, see readNumber),
+ *     so 3.14159265 prints as 3.1415926499999998. Affects EVERY float literal, not just
+ *     the one example that catches it. Predates v0.0.8 — introduced with digit-script
+ *     support in v0.0.4, and unnoticed until the example pool became real files.
+ * The two PERMISSIVE rows produce output the CLI would have refused, and are the ones to
+ * fix first. Detail and the per-test table: interpreter/IMPL_V008.md § E.3.
  */
 
 // ─── Unicode digit blocks (mirrors DIGIT_BLOCKS in zymbol-lexer) ─────────────

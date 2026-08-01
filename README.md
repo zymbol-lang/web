@@ -1,10 +1,14 @@
 # Zymbol-Lang — Website & Playground
 
-> **Reviewed for v0.0.8 — 2026-07-29**
+> **Staged for v0.0.8 — 2026-08-01**
 >
-> The published download links (`index.html`, `install.html`, `changelog.html`) still point
-> at the **v0.0.7** GitHub release, which is correct: v0.0.8 is not cut yet. Bump them in
-> the same change that tags the release, not before — the links would 404.
+> `index.html`, `install.html` and `changelog.html` are already bumped to **v0.0.8**, with
+> `pending` in place of the SHA256 hashes. Those download URLs point at a GitHub release
+> that does not exist yet, so **they 404 until the `v0.0.8` tag is cut**.
+>
+> **Merge this branch to `main` only after the release assets are published**, and fill in
+> the hashes in the same change. `main` is what GitHub Pages serves; merging early puts
+> broken download links on the live site.
 
 Source for [zymbol-lang.org](https://zymbol-lang.org) — the official website of the Zymbol
 programming language, including the in-browser playground that runs Zymbol without a server.

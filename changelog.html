@@ -290,7 +290,8 @@
           <li><strong>Match or-patterns</strong> — an arm's pattern can be a <code>||</code>-separated chain tested left to right: <code>'p' || 'P' =&gt; { … }</code>. Alternatives mix any pattern kind — <code>1..10 || 20..30</code>, <code>&lt; 0 || &gt; 100</code>, <code>["run", _] || ["build", _]</code></li>
           <li><strong><code>##!</code> on a <code>Char</code> yields its Unicode code point</strong> — <code>##!'A'</code> is <code>65</code>, <code>##!'あ'</code> is <code>12354</code>. The only direct Char→Int route, which makes characters classifiable by range</li>
           <li><strong>Juxtaposition works inside delimiters</strong> — <code>f(a " " b)</code>, <code>[a " " b]</code> and <code>(a " " b)</code> now parse; implicit concatenation used to stop at statement level, so every composed string handed to a function needed an intermediate variable</li>
-          <li><strong>Playground loads <code>.zyp</code> packages</strong> — one tab per source file, named by full relative path, plus a script picker populated from the package manifest. The ZIP is read in the browser with no bundler and no CDN</li>
+          <li><strong>Rebuilt playground</strong> — a VS Code-style file explorer, symmetric panel collapse, a layout toggle and a theme-aware TUI. Loading a <code>.zyp</code> <em>mounts</em> its whole source tree (visible in the sidebar and to the module resolver) but opens a single tab — the package's default script — with the rest of the manifest's scripts in the picker next to ▶ Run. The ZIP is read in the browser with no bundler and no CDN</li>
+          <li><strong>Every example is now a real file</strong> — the ~1000 lines of programs baked into a JS module were replaced by an indexed pool of <code>.zy</code> files and <code>.zyp</code> archives. No tool could reach the old ones, so four had been broken since v0.0.6 and nothing noticed; migrating them exposed 19 more that no longer compiled. The pool is audited on every change by <code>zymbol check</code> and a CLI-vs-browser parity run</li>
         </ul>
       </div>
 
@@ -298,24 +299,37 @@
         <span class="cl-group-label changed">Changed</span>
         <ul class="cl-change-list">
           <li><strong>One shared module-path resolution rule</strong> — the tree-walker, the semantic analyzer and the VM compiler now all resolve imports through <code>ModulePath::resolve_from</code>. An absolute import used to resolve to a different file under <code>--vm</code> than under the tree-walker</li>
-          <li><strong>VM module support reached parity with the tree-walker</strong> — the whole comparison suite passes on both engines (541/541), so the register VM is no longer the partial path for programs that use modules</li>
+          <li><strong><code>zymbol check</code> checks the whole program</strong> — it followed no imports, so a module that failed to parse was invisible until run time and a clean <code>check</code> meant nothing for a project organised in modules. It is now transitive, reporting each module's errors at the module's own line with <code>note: reached from …</code>; the editor shows the same through a diagnostic on the import line</li>
+          <li><strong>VM module support reached parity with the tree-walker</strong> — the whole comparison suite passes on both engines (544/544), so the register VM is no longer the partial path for programs that use modules</li>
         </ul>
       </div>
 
       <div class="cl-group">
         <span class="cl-group-label fixed">Fixed</span>
         <ul class="cl-change-list">
+          <li><strong>Numeral mode reaches every path to the screen</strong> — <code>#०९#</code> only ever affected bare <code>&gt;&gt;</code>, so the same number printed through interpolation, juxtaposition, <code>$++</code> or <code>&gt;&gt;~</code> silently reverted to ASCII, and a number inside a list stopped following the active script by the mere fact of sitting in a list. All of those now honour the mode, recursively through arrays and tuples. The digits also come back: every numeric cast and typed input accepts digits from any of the 69 scripts, so a program can no longer render <code>१२०</code> and then refuse to read it</li>
+          <li><strong>One ordering rule, and no second-class digit script</strong> — <code>"5" &gt; 5</code> coerced while <code>"४२" &gt; 5</code> raised an error, and the three engines disagreed even in ASCII. Now identical everywhere: numeric when both sides are numbers (a string counts if <code>#|…|</code> would convert it, in any script), lexicographic when both are non-numeric text, an error when a number meets text that is not one. <code>==</code> still never coerces</li>
           <li><strong>Module state survived a returning function</strong> — in the tree-walker, a module function that wrote state and then returned a value silently lost the write. No error, no warning, and the VM was correct — so a program tested under <code>--vm</code> behaved while the default engine did not</li>
-          <li><strong>String interpolation accepts every identifier the lexer does</strong> — <code>"{DIR}"</code> and other global constants were printed verbatim instead of being substituted</li>
+          <li><strong>String interpolation accepts every identifier the lexer does</strong> — <code>"{DIR}"</code> and other global constants were printed verbatim instead of being substituted, and any identifier outside the Latin/CJK range — Klingon pIqaD among them — could not be interpolated at all</li>
           <li><strong>Scoping fixes in the tree-walker</strong> — root-scope constants no longer vanish at call depth ≥ 2; <code>x°</code>/<code>°x</code> inside a function called from a <code>@</code> loop no longer panics; <code>\ x</code> inside a function no longer poisons the caller's same-named variable; modules loaded at runtime are no longer skipped by semantic analysis</li>
           <li><strong>VM divergences</strong> — each import alias got its own copy of the module state; output parameters of module functions were silently dropped; an interpolated constant came out as literal text; a <code>String</code> could not be sliced inside a module function; a leftover loop-iterator value differed from the tree-walker</li>
           <li><strong>Numeric and index rules</strong> — every comparison now promotes <code>Int</code> and <code>Float</code> (only <code>==</code> did); a module constant can carry a sign; an index computed from parameters is no longer rejected as <code>Float</code></li>
+          <li><strong>Misusing a <code>std/</code> module reached run time unreported</strong> — a stdlib alias was a blind spot for the tooling, so an unknown function, a constant called as a function, or a typo in a re-export all passed <code>check</code> in silence. Editor and CLI now share one export table. In the same pass, re-exported names stopped being dropped by the indexer (33 false "export not found" warnings on correct code, now zero)</li>
+          <li><strong><code>zymbol fmt</code> on TUI key-handling code</strong> — an escape sequence in a match pattern (<code>'\n'</code>, <code>'\t'</code>, <code>'\\'</code>) was written back unescaped, which no longer lexed; the fail-closed gate caught it every time and refused to write, so <code>fmt</code> was simply unusable on those files. No file was ever corrupted</li>
           <li><strong>A variable used only as a range bound</strong> is no longer reported as unused — <code>@ i:1..total { }</code> counts as a use of <code>total</code></li>
           <li><strong>Clearer diagnostics</strong> — <code>./../x</code> explains what a module path may look like, and a legacy export separator (<code>&lt;=</code> or <code>:</code> inside <code>#&gt; {}</code>) now names itself and shows the <code>=&gt;</code> form instead of asking for an identifier you already wrote</li>
         </ul>
       </div>
 
     </div>
+
+    <p style="font-size:0.82rem;color:var(--dim);line-height:1.55;margin:0 0 1.1rem;">
+      Verified on release: 936 unit tests · 544/544 tree-walker/VM parity · 523/525 golden files
+      (two stale fixtures, documented) · formatter property suite 600/600.
+      The browser playground runs a hand-maintained JavaScript mirror of the interpreter and is
+      behind the CLI on seven known cases — see
+      <a href="https://github.com/zymbol-lang/interpreter/blob/main/IMPL_V008.md" target="_blank" rel="noopener" style="color:var(--green)">IMPL_V008.md § E.3</a>.
+    </p>
 
     <div class="cl-actions">
       <a href="https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.8" target="_blank" class="btn-ghost">↗ GitHub</a>
