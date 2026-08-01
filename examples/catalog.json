@@ -564,6 +564,12 @@
               "title": "Composed text",
               "desc": "A mode reaches interpolation, juxtaposition and $++, not only >>",
               "path": "numerals/composed.zy"
+            },
+            {
+              "id": "numerals-orden",
+              "title": "Comparing across scripts",
+              "desc": "One ordering rule: \"१०\" > \"९\" answers what \"10\" > \"9\" answers",
+              "path": "numerals/orden.zy"
             }
           ]
         },

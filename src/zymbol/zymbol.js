@@ -148,8 +148,11 @@ function digitBlockBase(ch) {
   return -1;
 }
 
+/** Block base of the ASCII digits — the default numeral mode. */
+const ASCII_BASE = 0x0030;
+
 function mapToScript(s, blockBase) {
-  if (blockBase === 0x0030) return s;
+  if (blockBase === ASCII_BASE) return s;
   return [...s].map(ch => {
     if (ch >= '0' && ch <= '9') return String.fromCodePoint(blockBase + (ch.charCodeAt(0) - 0x30));
     return ch;
@@ -2310,13 +2313,54 @@ function describeInputCast(cast) {
   }
 }
 
-// Legacy `#|v|` cast: best-effort numeric parse, falls back to String (never re-prompts).
-// Mirrors parse_numeric_string: int first, then float, with Unicode-digit normalization.
-function parseNumericInput(s) {
-  const ascii = [...s].map(ch => {
+// The ASCII form of a numeric string written in any of the 69 supported digit
+// scripts: "४२" → "42". Mirrors Rust `ascii_digits`. Every numeric cast goes
+// through this, so a number the program rendered under an active numeral mode
+// parses back exactly like its ASCII twin — an application that prints ४२ must
+// also accept ४२ back.
+function asciiDigits(s) {
+  return [...s].map(ch => {
     const dv = digitValue(ch);
     return (dv >= 0 && !(ch >= '0' && ch <= '9')) ? String(dv) : ch;
   }).join('');
+}
+
+// Ordering comparison (`<`, `<=`, `>`, `>=`) — the single rule all three engines
+// share (mirrors Rust `cmp_order` / `compare_values`).
+//
+// Numeric when *both* sides are numbers, where a string counts as a number if
+// `#|…|` would convert it: digits from any of the 69 supported scripts, so
+// `"४२" > "९"` compares 42 against 9 exactly as `"42" > "9"` does. Two
+// non-numeric strings compare lexicographically. A number against non-numeric
+// text returns null and the caller raises.
+//
+// Equality (`==`) deliberately does not come through here: `"5" == 5` is false.
+function orderValues(l, r) {
+  const cmp = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+  const strNum = v => {
+    if (v.type !== 'str') return null;
+    const a = asciiDigits(v.v.trim());
+    if (!/^[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)([eE][+-]?[0-9]+)?$/.test(a)) return null;
+    return Number(a);
+  };
+  const isNumV = v => v.type === 'int' || v.type === 'float';
+
+  if (isNumV(l) && isNumV(r)) return cmp(l.v, r.v);
+  if (l.type === 'str' && r.type === 'str') {
+    const a = strNum(l), b = strNum(r);
+    if (a !== null && b !== null) return cmp(a, b);
+    return cmp(l.v, r.v);
+  }
+  if (l.type === 'str' && isNumV(r)) { const a = strNum(l); return a === null ? null : cmp(a, r.v); }
+  if (isNumV(l) && r.type === 'str') { const b = strNum(r); return b === null ? null : cmp(l.v, b); }
+  if (l.type === r.type && (l.type === 'char' || l.type === 'bool')) return cmp(l.v, r.v);
+  return null;
+}
+
+// Legacy `#|v|` cast: best-effort numeric parse, falls back to String (never re-prompts).
+// Mirrors parse_numeric_string: int first, then float, with Unicode-digit normalization.
+function parseNumericInput(s) {
+  const ascii = asciiDigits(s);
   if (/^[+-]?[0-9]+$/.test(ascii)) return mkInt(Number(ascii));
   if (/^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/.test(ascii)) return mkFloat(Number(ascii));
   return mkStr(s);
@@ -2325,23 +2369,26 @@ function parseNumericInput(s) {
 // Validate a trimmed input line against a cast; returns the typed value or null
 // (the caller re-prompts on null).
 function validateInput(s, cast) {
+  // The numeric casts accept digits from any script (see asciiDigits); the text
+  // casts keep the line exactly as typed.
+  const num = asciiDigits(s);
   switch (cast.kind) {
     case 'string':  return mkStr(s);
     case 'numeric': return parseNumericInput(s);
     case 'float':
-      return /^[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)([eE][+-]?[0-9]+)?$/.test(s) ? mkFloat(Number(s)) : null;
+      return /^[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)([eE][+-]?[0-9]+)?$/.test(num) ? mkFloat(Number(num)) : null;
     case 'decimal': {
-      const body = /^[+-]/.test(s) ? s.slice(1) : s;
+      const body = /^[+-]/.test(num) ? num.slice(1) : num;
       if (!/^[0-9.]+$/.test(body) || (body.match(/\./g) ?? []).length > 1 || body === '.') return null;
       const [intPart, fracPart = ''] = body.split('.');
       if (fracPart.length > cast.decimals || intPart.length + fracPart.length > cast.total) return null;
-      return mkFloat(Number(s));
+      return mkFloat(Number(num));
     }
     case 'int': {
-      if (!/^[+-]?[0-9]+$/.test(s)) return null;
-      const digits = (s.match(/[0-9]/g) ?? []).length;
+      if (!/^[+-]?[0-9]+$/.test(num)) return null;
+      const digits = (num.match(/[0-9]/g) ?? []).length;
       if (cast.maxDigits != null && digits > cast.maxDigits) return null;
-      return mkInt(Number(s));
+      return mkInt(Number(num));
     }
     case 'text': {
       if (cast.max != null && [...s].length > cast.max) return null;
@@ -3699,9 +3746,16 @@ export class Interpreter {
 
       case 'DataOp': {
         const val = await this.eval(expr.arg, env);
-        const toNum = v => {
+        // `what` names the operation for the error message the CLI raises on a
+        // non-numeric string; digits in any script parse (see asciiDigits).
+        const toNum = (v, what = null) => {
           if (v.type === 'int' || v.type === 'float') return v.v;
-          if (v.type === 'str') { const n = parseFloat(v.v); return isNaN(n) ? 0 : n; }
+          if (v.type === 'str') {
+            const n = parseFloat(asciiDigits(v.v.trim()));
+            if (!isNaN(n)) return n;
+            if (what) throw new ZyError(`cannot convert string '${v.v}' to number for ${what}`, expr.line);
+            return 0;
+          }
           return 0;
         };
         const fmtSci = (num, prec, mode) => {
@@ -3724,10 +3778,7 @@ export class Interpreter {
             if (val.type === 'str') {
               const s = val.v.trim();
               // Normalize Unicode digits to ASCII before parsing
-              const ascii = [...s].map(ch => {
-                const dv = digitValue(ch);
-                return (dv >= 0 && !(ch >= '0' && ch <= '9')) ? String(dv) : ch;
-              }).join('');
+              const ascii = asciiDigits(s);
               const p = parseFloat(ascii);
               if (!isNaN(p) && /^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/.test(ascii)) {
                 if (Number.isInteger(p) && !ascii.includes('.') && !ascii.toLowerCase().includes('e')) return mkInt(p);
@@ -3736,9 +3787,9 @@ export class Interpreter {
             }
             return val;
           }
-          case 'round':       return mkFloat(parseFloat(toNum(val).toFixed(expr.prec)));
+          case 'round':       return mkFloat(parseFloat(toNum(val, 'rounding').toFixed(expr.prec)));
           case 'trunc': {
-            const n = toNum(val);
+            const n = toNum(val, 'truncation');
             const f = Math.pow(10, expr.prec);
             return mkFloat(Math.trunc(n * f) / f);
           }
@@ -4398,11 +4449,18 @@ export class Interpreter {
     }
 
     if (op === '<' || op === '>' || op === '<=' || op === '>=') {
-      if (!(isNum(l) && isNum(r)) && l.type !== r.type) {
-        const opName = { '<':'Lt', '>':'Gt', '<=':'Lte', '>=':'Gte' }[op];
+      const ord = orderValues(l, r);
+      if (ord === null) {
+        const opName = { '<':'Lt', '>':'Gt', '<=':'Le', '>=':'Ge' }[op];
         const cmpName = v => ({ int:'integer', float:'float', str:'string', bool:'boolean', arr:'array', tuple:'tuple' })[v.type] ?? v.type;
         const cmpVal  = v => v.type === 'str' ? `'${v.v}'` : String(v.v);
         throw new ZyError(`cannot compare ${cmpName(l)} ${cmpVal(l)} with ${cmpName(r)} ${cmpVal(r)} using operator '${opName}'`);
+      }
+      switch (op) {
+        case '<':  return mkBool(ord  < 0);
+        case '>':  return mkBool(ord  > 0);
+        case '<=': return mkBool(ord <= 0);
+        case '>=': return mkBool(ord >= 0);
       }
     }
 
@@ -4470,12 +4528,23 @@ export class Interpreter {
     return String(val.v ?? val);
   }
 
+  // Display form under the active numeral mode. The mode reaches inside
+  // collections too — a number does not stop being a number by sitting in a
+  // list — mirroring Rust `Value::to_display_string_in`.
   displayOutput(val) {
     const m = this.numeralMode;
     if (!val || val.type === 'unit') return '';
+    if (m === ASCII_BASE) return this.display(val);
+    const nested = (v) => (v && v.type === 'unit') ? '()' : this.displayOutput(v);
     if (val.type === 'int')   return numeralInt(val.v, m);
     if (val.type === 'float') return numeralFloat(val.v, m);
     if (val.type === 'bool')  return numeralBool(val.v, m);
+    if (val.type === 'arr')   return '[' + val.v.map(nested).join(', ') + ']';
+    if (val.type === 'tuple') {
+      if (val.keys?.some(k => k !== null))
+        return '(' + val.v.map((item, i) => `${val.keys[i]}: ${nested(item)}`).join(', ') + ')';
+      return '(' + val.v.map(nested).join(', ') + ')';
+    }
     return this.display(val);
   }
 }

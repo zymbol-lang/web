@@ -1,0 +1,32 @@
+// Numerals: comparing numbers written in any script
+//
+// Ordering (`<`, `<=`, `>`, `>=`) follows one rule, and it does not care which
+// script wrote the digits:
+//
+//   · numeric      when both sides are numbers — a string counts as a number
+//                  when `#|…|` would convert it, in any of the 69 scripts
+//   · lexicographic when both sides are non-numeric text
+//   · an error      when a number meets text that is not a number
+//
+// So `"१०" > "९"` answers the same question as `"10" > "9"`: 10 against 9, not
+// the order of their code points. Anything else would make every script but
+// ASCII second-class in its own language.
+
+>> "numeric, ASCII digits:" ¶
+>> "  \"10\" > \"9\"    " ("10" > "9") ¶
+>> "  \"5\"  > 5      " ("5" > 5) ¶
+
+>> "" ¶
+>> "numeric, Devanagari digits — same answers:" ¶
+>> "  \"१०\" > \"९\"    " ("१०" > "९") ¶
+>> "  \"४२\" > 5      " ("४२" > 5) ¶
+>> "  \"१.५\" > \"१.४\"  " ("१.५" > "१.४") ¶
+
+>> "" ¶
+>> "text stays lexicographic:" ¶
+>> "  \"abc\" > \"abd\" " ("abc" > "abd") ¶
+
+>> "" ¶
+>> "equality never coerces — a string is not a number:" ¶
+>> "  \"5\" == 5     " ("5" == 5) ¶
+>> "  \"५\" == 5     " ("५" == 5) ¶
