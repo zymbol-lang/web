@@ -1,4 +1,22 @@
-# Zymbol-Lang — Website & Playground
+<p align="center">
+  <img src="assets/img/logo.png" alt="Zymbol-Lang" width="180"/>
+</p>
+
+<h1 align="center">Zymbol-Lang — Website &amp; Playground</h1>
+
+<p align="center">
+  Source for <a href="https://zymbol-lang.org">zymbol-lang.org</a> — the official site of the<br/>
+  keyword-free symbolic language, and the playground that runs it in the browser.
+</p>
+
+<p align="center">
+  <img alt="version v0.0.8" src="https://img.shields.io/badge/version-v0.0.8-informational?style=flat-square"/>
+  <img alt="build: none by design" src="https://img.shields.io/badge/build-none%20by%20design-success?style=flat-square"/>
+  <img alt="license CC-BY-SA-4.0" src="https://img.shields.io/badge/license-CC--BY--SA--4.0-blue?style=flat-square"/>
+  <a href="https://zymbol-lang.org/playground.html"><img alt="Open the playground" src="https://img.shields.io/badge/▶-playground-7c3aed?style=flat-square"/></a>
+</p>
+
+---
 
 > **Staged for v0.0.8 — 2026-08-01**
 >
