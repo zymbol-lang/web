@@ -1008,6 +1008,11 @@
       width: calc(100% - 2rem);
       padding: 1.6rem 1.8rem 1.4rem;
       box-shadow: 0 16px 48px rgba(0,0,0,.5);
+      /* The notice lists what the browser runtime cannot do, so it is long enough
+         to outgrow a phone in landscape. Scroll inside the dialog rather than
+         letting it run off the viewport with the Got it button out of reach. */
+      max-height: 85vh;
+      overflow-y: auto;
     }
 
     #pg-notice h2 {
@@ -1029,6 +1034,15 @@
       border-radius: 4px;
       font-family: var(--mono);
       letter-spacing: .02em;
+    }
+
+    #pg-notice h3 {
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--hi);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin: 1.1rem 0 .1rem;
     }
 
     #pg-notice p {

@@ -38,24 +38,49 @@
   <div id="pg-notice">
     <h2 id="pg-notice-title">
       Browser Playground
-      <span class="badge">zymbol.js v0.0.5</span>
+      <span class="badge">zymbol.js v0.0.8</span>
     </h2>
     <p>
-      This playground runs a <strong>browser-only build</strong> of the Zymbol interpreter
-      (<code>zymbol.js</code>) compiled directly to JavaScript. It is a preview environment
-      intended to explore the language without installing anything.
+      This playground runs <code>zymbol.js</code>, a hand-written JavaScript mirror of the Zymbol
+      tree-walker — not the Rust engine compiled for the browser. It tracks the native interpreter
+      closely enough to run real programs, including multi-file <code>.zyp</code> packages, but for
+      the full language use the <a href="install.html" style="color:var(--green)">native interpreter</a>.
     </p>
-    <p>CLI argument capture <code>&gt;&lt; args</code> is supported — use the <strong>args…</strong> field next to the Run button.</p>
-    <p>Shell execution <code>&lt;\ cmd \&gt;</code> returns a high-resolution timestamp (entropy source for random seeds).
-       Script inclusion <code>&lt;/ file.zy /&gt;</code> is not available in the browser runtime.</p>
-    <p>TUI mode (<code>&gt;&gt;|</code>) works in the browser with a canvas renderer. On a touch device:
-       <strong>swipe</strong> for directional input (↑↓←→), <strong>tap</strong> for Enter, and
-       <strong>⌨ Keys</strong> to open your device keyboard for any other single-key command —
-       <code>p</code> to pass in GO, <code>q</code> to quit, digits. <strong>✕ Stop</strong> exits.</p>
-    <p>
-      Code runs without prior semantic checking — runtime errors are displayed in the output panel.
-      For the full language experience use the <a href="install.html" style="color:var(--green)">native interpreter</a>.
-    </p>
+
+    <h3>Not available here</h3>
+    <ul>
+      <li><code>std/db</code> — database access goes through an ODBC driver manager, which has no
+          browser equivalent. Importing it fails with a message saying so.</li>
+      <li><code>&lt;/ file.zy /&gt;</code> — script inclusion reads from a real filesystem.</li>
+      <li><code>&lt;\ cmd \&gt;</code> — there is no shell. <code>date</code> format specifiers
+          (<code>%Y %m %d %H %M %S %s</code>) and a plain <code>echo</code> are simulated; anything else
+          returns a high-resolution timestamp, which is what most programs use it for: a random seed.</li>
+    </ul>
+
+    <h3>Works, but not the way it does natively</h3>
+    <ul>
+      <li><code>std/io</code> — the whole API works against an <strong>in-memory filesystem built
+          fresh for each run</strong>. Nothing touches your disk, and nothing survives the next ▶ Run.</li>
+      <li><code>std/net</code> — <code>get</code>/<code>post</code>/<code>post_json</code>/<code>head</code>
+          run over <code>fetch()</code>, so the browser's CORS rules apply: a server that sends no CORS
+          headers is unreachable from here even though the same program works from the CLI.</li>
+      <li>A run stops after 50 000 statements or 32 KB of output, so a runaway loop cannot freeze the
+          tab. TUI blocks are exempt.</li>
+      <li>Float literals lose precision — <code>3.14159265</code> prints as
+          <code>3.1415926499999998</code>. Known gap, not present in the native engines.</li>
+    </ul>
+
+    <h3>Fully supported</h3>
+    <ul>
+      <li><code>std/math</code>, <code>std/random</code>, <code>std/json</code>, <code>std/term</code>.</li>
+      <li>Static checking before anything executes: a call to an undefined function, or an assignment
+          to a constant, stops the run with a diagnostic instead of failing halfway through. Style
+          warnings such as unused variables are <em>not</em> shown here — <code>zymbol check</code> reports them.</li>
+      <li>CLI arguments <code>&gt;&lt; args</code> — use the <strong>args…</strong> field next to ▶ Run.</li>
+      <li>TUI mode (<code>&gt;&gt;|</code>) on a canvas renderer. On a touch device: <strong>swipe</strong>
+          for the arrow keys, <strong>tap</strong> for Enter, <strong>⌨ Keys</strong> for any other single
+          key — <code>p</code> to pass in GO, <code>q</code> to quit, digits. <strong>✕ Stop</strong> exits.</li>
+    </ul>
     <div class="notice-footer">
       <button id="pg-notice-ok">Got it</button>
     </div>
