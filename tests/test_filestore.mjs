@@ -35,9 +35,9 @@ const bundle = (id, entries, { title = id, root = '', scripts = [] } = {}) => ({
 
 // ─── path helpers ─────────────────────────────────────────────────────────────
 section('path helpers');
-check('dirOf of a nested name', dirOf('packages/go/核/盤.zy') === 'packages/go/核');
+check('dirOf of a nested name', dirOf('games/classic/go/核/盤.zy') === 'games/classic/go/核');
 check('dirOf of a bare name is empty', dirOf('prog1.zy') === '');
-check('baseOf strips the directory', baseOf('packages/go/核/盤.zy') === '盤.zy');
+check('baseOf strips the directory', baseOf('games/classic/go/核/盤.zy') === '盤.zy');
 
 // ─── mounting does not open ───────────────────────────────────────────────────
 section('mounting is not opening');
@@ -49,23 +49,23 @@ section('mounting is not opening');
   check('a fresh store has exactly one tab', initialTabs === 1, String(initialTabs));
 
   store.mountBundle(bundle('pkg', [
-    ['packages/go/go.zy', 'ENTRY'],
-    ['packages/go/核/盤.zy', 'BOARD'],
-    ['packages/go/表示/描画.zy', 'DRAW'],
-  ], { root: 'packages/go', scripts: [{ name: 'go', path: 'packages/go/go.zy', default: true }] }));
+    ['games/classic/go/go.zy', 'ENTRY'],
+    ['games/classic/go/核/盤.zy', 'BOARD'],
+    ['games/classic/go/表示/描画.zy', 'DRAW'],
+  ], { root: 'games/classic/go', scripts: [{ name: 'go', path: 'games/classic/go/go.zy', default: true }] }));
 
   check('all 3 files are mounted', store.all().length === initialTabs + 3, String(store.all().length));
   check('mounting opened no tabs', store.tabs().length === initialTabs, String(store.tabs().length));
   check('an unopened mounted file is visible to the resolver',
-        store.codeOf('packages/go/核/盤.zy') === 'BOARD');
+        store.codeOf('games/classic/go/核/盤.zy') === 'BOARD');
 
   // The whole point: run the entry with one tab open, resolve the other 2 from the store.
-  const entry = store.byName('packages/go/go.zy');
+  const entry = store.byName('games/classic/go/go.zy');
   store.open(entry.id);
   check('opening one file gives one more tab', store.tabs().length === initialTabs + 1);
   check('the other files stay closed but mounted',
-        !store.isOpen(store.byName('packages/go/表示/描画.zy').id) &&
-        store.codeOf('packages/go/表示/描画.zy') === 'DRAW');
+        !store.isOpen(store.byName('games/classic/go/表示/描画.zy').id) &&
+        store.codeOf('games/classic/go/表示/描画.zy') === 'DRAW');
 }
 
 // ─── closing a tab ≠ unmounting ──────────────────────────────────────────────
@@ -128,12 +128,12 @@ section('persistence');
   let store = createStore();
   store.load();
   store.mountBundle(bundle('pkg-go', [
-    ['packages/go/go.zy', 'ENTRY'],
-    ['packages/go/核/盤.zy', 'BOARD'],
-  ], { title: 'GO', root: 'packages/go',
-       scripts: [{ name: 'go', path: 'packages/go/go.zy', default: true }] }));
+    ['games/classic/go/go.zy', 'ENTRY'],
+    ['games/classic/go/核/盤.zy', 'BOARD'],
+  ], { title: 'GO', root: 'games/classic/go',
+       scripts: [{ name: 'go', path: 'games/classic/go/go.zy', default: true }] }));
   const mine = store.newFile('mine.zy', 'MINE');
-  const entry = store.byName('packages/go/go.zy');
+  const entry = store.byName('games/classic/go/go.zy');
   store.open(entry.id);
   store.save();
 
@@ -141,30 +141,30 @@ section('persistence');
   const names = raw.files.map(f => f.name);
   check('user files are persisted verbatim', names.includes('mine.zy'));
   check('clean example files are NOT persisted (they are re-fetched)',
-        !names.includes('packages/go/核/盤.zy'), names.join(', '));
+        !names.includes('games/classic/go/核/盤.zy'), names.join(', '));
   check('the mount id is persisted so it can be restored',
         raw.mounts.some(m => m.id === 'pkg-go'), JSON.stringify(raw.mounts));
   check('open tabs belonging to a mount are remembered by name',
-        raw.openMountFiles.includes('packages/go/go.zy'), JSON.stringify(raw.openMountFiles));
+        raw.openMountFiles.includes('games/classic/go/go.zy'), JSON.stringify(raw.openMountFiles));
 
   // Now edit a mounted file: an edit cannot be re-fetched, so it must be stored.
-  store.open(store.byName('packages/go/核/盤.zy').id);
+  store.open(store.byName('games/classic/go/核/盤.zy').id);
   store.setActiveCode('BOARD EDITED');
   store.save();
   const raw2 = JSON.parse(stored.get('zy-files'));
   check('an edited example file IS persisted',
-        raw2.files.some(f => f.name === 'packages/go/核/盤.zy' && f.code === 'BOARD EDITED'));
+        raw2.files.some(f => f.name === 'games/classic/go/核/盤.zy' && f.code === 'BOARD EDITED'));
 
   // Reload
   store = createStore();
   const restore = store.load();
   check('reload restores the user file', store.codeOf('mine.zy') === 'MINE');
   check('reload restores the edited example file',
-        store.codeOf('packages/go/核/盤.zy') === 'BOARD EDITED');
+        store.codeOf('games/classic/go/核/盤.zy') === 'BOARD EDITED');
   check('reload reports which mounts to re-fetch', restore.mountIds.includes('pkg-go'),
         JSON.stringify(restore.mountIds));
   check('reload reports which mount files were open',
-        restore.openNames.includes('packages/go/go.zy'), JSON.stringify(restore.openNames));
+        restore.openNames.includes('games/classic/go/go.zy'), JSON.stringify(restore.openNames));
 }
 
 // ─── v1 store migration ──────────────────────────────────────────────────────

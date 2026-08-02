@@ -83,7 +83,7 @@ web/
 │   ├── rosetta-stone/         The same program in 105 human languages (.zy)
 │   ├── projects/              Multi-file projects (module + i18n re-export layers)
 │   ├── tui|cli|shell/         Canvas TUI, >< args, <\ shell \>
-│   └── packages/              go.zyp, serpiente.zyp, klingon_galaxy.zyp
+│   └── games/                 arcade/ (serpiente, klingon_galaxy), classic/ (go) — .zyp
 │
 ├── tests/
 │   ├── test_runner.mjs        Parity: zymbol CLI vs the JS engine
@@ -141,19 +141,50 @@ one of three shapes, and all three mount identically:
 | ----- | ------- |
 | `{ "path": "loops/range.zy" }` | one loose file |
 | `{ "dir": …, "files": […], "entry": … }` | a multi-file project; its own relative imports resolve inside `dir` |
-| `{ "zyp": "packages/go.zyp" }` | a packaged program, read by the same `zyp.js` as ↑ Upload |
+| `{ "zyp": "games/classic/go.zyp" }` | a packaged program, read by the same `zyp.js` as ↑ Upload |
 
 Optional keys: `desc`, `tags` (extra filter terms — this is how `Ελληνικά` is findable by
-typing `greek`), `args` (pre-fills the args… field) and `needs` (`tui`, `input`, `args`,
-`shell`, `net` — the capability badges in the tree).
+typing `greek`), `args` (pre-fills the args… field), `needs` (`tui`, `input`, `args`,
+`shell`, `net` — the capability badges in the tree) and `icon` (an emoji; an entry that
+carries one is rendered as a headline row rather than one more list item).
+
+Groups and categories take an `icon` too, and a category takes `"open": true` to start
+expanded instead of folded. That is the whole of the 🎮 GAMES treatment: it is the first
+group in the file, its two categories are `open`, and each game brings its own emoji.
+
+```text
+🎮 GAMES          🕹️ Arcade    → 🐍 Serpiente — Snake, 🚀 Hov veS — Klingon Galaxy
+                  ♟️ Classic   → ⚫ GO — 囲碁
+```
+
+Games are packages, and packages are how a program worth playing is shipped, so they live
+under `examples/games/<category>/` rather than in a flat `packages/` bucket — the directory
+is the same thing the tree shows and the same thing a shared link says.
 
 Adding an example is: drop the `.zy` in the right directory, add one entry to
 `catalog.json`, run `node tests/test_catalog.mjs --check`. The test fails on a dead reference
 **and** on an orphan — a `.zy` under `examples/` that no entry points at is dead weight
 shipped to every visitor, which is exactly how the old pool rotted.
 
-`playground.html?example=<id>` mounts and opens one entry directly, so docs, the course and
-the landing page can link to a specific example.
+### Deep links
+
+`playground.html?open=<path>` mounts one entry and opens one file — the path is the entry's
+own location under `examples/`, which is what makes a shared link readable:
+
+```text
+playground.html?open=games/classic/go.zyp             the packaged game
+playground.html?open=games/classic/go                 same thing; the extension is optional
+playground.html?open=games/classic/go/核/盤.zy         mounts GO, opens that one file
+playground.html?open=rosetta-stone/Klingon_pIqaD.zy   a loose example
+```
+
+The playground rewrites the address bar to the `?open=` form of whatever is showing
+(`history.replaceState`), so the link to share is always the URL already in the bar — there
+is no copy button to find and no id to look up.
+
+`playground.html?example=<id>` (a catalog id) still works and is what older links use; it
+resolves to the same place and the bar is rewritten to the `?open=` form. `?open=` accepts an
+id as a fallback too, so a mixed-up link still lands somewhere.
 
 ## No build step
 
@@ -194,11 +225,11 @@ its file header comment tracks which Rust version it mirrors.
 
 ### `.zyp` package support
 
-The playground loads a Zymbol Package directly — from `examples/packages/` through the sidebar
+The playground loads a Zymbol Package directly — from `examples/games/` through the sidebar
 or from disk through ↑ Upload. Its source tree is **mounted**, not opened: every file appears in
 the explorer and is visible to the module resolver, one tab opens (the default `[[script]]`),
 and the manifest's scripts populate the picker next to ▶ Run. Mounted names are namespaced by
-the archive (`packages/go/核/盤.zy`), so two packages that both ship a `texto.zy` can be
+the archive (`games/classic/go/核/盤.zy`), so two packages that both ship a `texto.zy` can be
 mounted at the same time without overwriting each other.
 
 `zyp.js` reads the ZIP by hand — central directory walk, then

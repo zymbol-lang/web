@@ -161,7 +161,7 @@ export function createStore({ onChange = () => {} } = {}) {
       names.push(name);
     }
     mounts.set(origin, {
-      id: origin, title: bundle.title ?? origin, root: bundle.root ?? '',
+      id: origin, title: bundle.title ?? origin, icon: bundle.icon, root: bundle.root ?? '',
       scripts: bundle.scripts ?? [], names,
       // `bundle` distinguishes a mount that owns its own directory (a .zyp or a multi-file
       // project, so the tree can hang a package node off it) from a single loose example,

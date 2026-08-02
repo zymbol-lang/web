@@ -4,7 +4,7 @@ import { readZyp } from '../zymbol/zyp.js';
 import { makeResolver } from '../zymbol/module-resolver.js';
 import { createStore, dirOf, baseOf, USER } from './filestore.js';
 import { createSidebar } from './sidebar.js';
-import { loadCatalog, mountEntry, collectPackage } from './catalog.js';
+import { loadCatalog, mountEntry, collectPackage, resolveDeepLink, deepLinkOf } from './catalog.js';
 
 // ─── Editor sync ──────────────────────────────────────────────────────────────
 const editor    = document.getElementById('editor');
@@ -90,8 +90,11 @@ function askOverwrite(conflicts) {
 /**
  * Mounts a bundle and opens exactly one file from it.
  * @param {{id,title,root,files:Map,entryName,scripts,args,needs}} bundle
+ * @param {{isBundle?:boolean, kind?:string, open?:string}} opts `open` is a mounted name to
+ *   show instead of the bundle's entry file (a deep link into a package). It changes the tab
+ *   only — ▶ Run stays on the default `[[script]]`, since a module is not a runnable entry.
  */
-function mountAndOpen(bundle, { isBundle = false, kind = 'dir' } = {}) {
+function mountAndOpen(bundle, { isBundle = false, kind = 'dir', open = null } = {}) {
   flushEditor();
   const conflicts = store.conflictsWith(bundle);
   let overwriteDirty = false;
@@ -103,7 +106,7 @@ function mountAndOpen(bundle, { isBundle = false, kind = 'dir' } = {}) {
   runTarget = bundle.scripts?.length ? bundle.entryName : null;
   refreshScriptSelect();
 
-  const file = store.byName(bundle.entryName);
+  const file = (open && store.byName(open)) || store.byName(bundle.entryName);
   if (file) openFile(file.id);
   else { renderFileTabs(); sidebar?.render(); }
 
@@ -117,18 +120,44 @@ function mountAndOpen(bundle, { isBundle = false, kind = 'dir' } = {}) {
   return file;
 }
 
-async function openCatalogEntry(entry) {
+/**
+ * Rewrites the address bar to the entry that is showing, so the URL in the bar is always the
+ * link to share — no copy button to find, no id to look up. Slashes stay literal
+ * (`?open=games/classic/go.zyp`); only the segments are escaped, so a link keeps reading as
+ * the path it is.
+ */
+function syncDeepLink(path) {
+  if (!path) return;
+  const pretty = path.split('/').map(encodeURIComponent).join('/');
+  history.replaceState(null, '', `${location.pathname}?open=${pretty}${location.hash}`);
+}
+
+/**
+ * @param {object} entry catalog entry
+ * @param {{file?: string}} opts `file` opens one file of the entry instead of its entry file
+ *   — that is what `?open=games/classic/go/核/盤.zy` resolves to.
+ */
+async function openCatalogEntry(entry, { file } = {}) {
   try {
     const bundle = await mountEntry(entry);
-    mountAndOpen(bundle, {
+    // A link into a package can name a file the package no longer ships: say so and fall
+    // back to the entry file rather than opening nothing.
+    const wanted = file && bundle.files.has(file) ? file : null;
+    const opened = mountAndOpen(bundle, {
       isBundle: !!(entry.dir || entry.zyp),
       kind: entry.zyp ? 'zyp' : 'dir',
+      open: wanted,
     });
+    if (file && !wanted) {
+      appendOutput(`('${file}' is not in ${entry.title} — opened its entry file instead)`,
+                   'out-meta');
+    }
+    syncDeepLink(wanted ?? deepLinkOf(entry));
     if (bundle.files.size > 1) {
       appendOutput(
         `(mounted '${entry.title}' — ${bundle.files.size} file(s)` +
         `${bundle.scripts.length ? `, ${bundle.scripts.length} script(s)` : ''}; ` +
-        `only the entry file was opened)`,
+        `opened ${opened ? baseOf(opened.name) : 'nothing'})`,
         'out-meta'
       );
     }
@@ -1107,13 +1136,24 @@ sidebar.render();
   renderFileTabs();
   sidebar.render();
 
-  // Deep link: playground.html?example=<catalog id>, so docs, the course and the landing
-  // page can point at one example instead of "open the playground and scroll".
-  const wanted = new URLSearchParams(location.search).get('example');
-  if (wanted) {
-    const entry = catalog.byId.get(wanted);
+  // Deep link, so docs, the course, the landing page — or anyone sharing a game — can point
+  // at one entry instead of "open the playground and scroll". Two forms:
+  //
+  //   ?open=games/classic/go.zyp        by path under examples/, the form the address bar
+  //   ?open=rosetta-stone/klingon.zy    shows and the one worth sharing
+  //   ?example=pkg-go                   by catalog id — the original form, still honoured
+  //
+  const params     = new URLSearchParams(location.search);
+  const wantedPath = params.get('open');
+  const wantedId   = params.get('example');
+  if (wantedPath) {
+    const hit = resolveDeepLink(catalog, wantedPath);
+    if (hit) await openCatalogEntry(hit.entry, { file: hit.file });
+    else appendOutput(`(no example at '${wantedPath}')`, 'out-error');
+  } else if (wantedId) {
+    const entry = catalog.byId.get(wantedId);
     if (entry) await openCatalogEntry(entry);
-    else appendOutput(`(unknown example '${wanted}')`, 'out-error');
+    else appendOutput(`(unknown example '${wantedId}')`, 'out-error');
   }
 })();
 

@@ -5,12 +5,16 @@
  *
  *   WORKSPACE  everything currently mounted, as a path tree. Because mounted names are
  *              namespaced by where the example came from (`collections/map.zy`,
- *              `packages/go/核/盤.zy`), a plain path tree produces the right nesting for
+ *              `games/classic/go/核/盤.zy`), a plain path tree produces the right nesting for
  *              free — no separate grouping model. A directory node that is exactly a
  *              bundle's root (a `.zyp` or a multi-file project) carries that bundle's
  *              badge, script list and "unmount all".
  *   EXAMPLES   the catalog: group → category → entry. Clicking an entry mounts it and
  *              opens one file, never one tab per file.
+ *
+ * Groups, categories and entries may carry an `icon` (an emoji in `catalog.json`), and a
+ * category may ask to start expanded with `"open": true` — that is how 🎮 GAMES shows its
+ * three playable packages without a click, while the 105-entry Rosetta Stone stays folded.
  *
  * This module owns no state beyond UI affordances (collapsed nodes, filter text, width).
  * Everything else it reads from the store and reports back through `hooks`.
@@ -171,8 +175,8 @@ export function createSidebar({ store, hooks }) {
         const r = row({
           depth, twisty: open ? '▾' : '▸',
           // Same icons the EXAMPLES tree uses, so a mounted node is recognisable as the
-          // entry it came from.
-          icon: bundle ? (bundle.kind === 'zyp' ? '📦' : '🗂') : '',
+          // entry it came from — including the entry's own icon when it has one.
+          icon: bundle ? (bundle.icon ?? (bundle.kind === 'zyp' ? '📦' : '🗂')) : '',
           label: bundle ? bundle.title : name,
           title: bundle ? `${bundle.title} — ${bundle.names.length} file(s)` : path,
           cls: 'sb-dir' + (bundle ? ' sb-bundle' : ''), actions,
@@ -243,7 +247,7 @@ export function createSidebar({ store, hooks }) {
       const gkey = 'ex:' + group.id;
       const gopen = filter ? true : !isCollapsed(gkey);
       const gr = row({
-        depth: 1, twisty: gopen ? '▾' : '▸', label: group.title,
+        depth: 1, twisty: gopen ? '▾' : '▸', icon: group.icon, label: group.title,
         title: group.desc, cls: 'sb-group',
       });
       gr.addEventListener('click', () => toggleCollapse(gkey, false));
@@ -252,13 +256,15 @@ export function createSidebar({ store, hooks }) {
 
       for (const { cat, entries } of cats) {
         const ckey = 'ex:' + group.id + '/' + cat.id;
-        // Folded by default: the tree is a menu, not a dump.
-        const copen = filter ? true : !isCollapsed(ckey, true);
+        // Folded by default: the tree is a menu, not a dump. `"open": true` in the catalog
+        // opts a short, headline category out of that (the games).
+        const foldDefault = !cat.open;
+        const copen = filter ? true : !isCollapsed(ckey, foldDefault);
         const cr = row({
-          depth: 2, twisty: copen ? '▾' : '▸', label: cat.title, title: cat.desc,
+          depth: 2, twisty: copen ? '▾' : '▸', icon: cat.icon, label: cat.title, title: cat.desc,
           cls: 'sb-cat', badges: [{ text: String(cat.entries.length), cls: 'sb-count' }],
         });
-        cr.addEventListener('click', () => toggleCollapse(ckey, true));
+        cr.addEventListener('click', () => toggleCollapse(ckey, foldDefault));
         container.appendChild(cr);
         if (!copen) continue;
 
@@ -270,13 +276,17 @@ export function createSidebar({ store, hooks }) {
           }
           const r = row({
             depth: 3,
-            icon: entry.zyp ? '📦' : entry.dir ? '🗂' : '',
+            icon: entry.icon ?? (entry.zyp ? '📦' : entry.dir ? '🗂' : ''),
             label: entry.title, title: entry.desc ?? entry.path ?? entry.zyp ?? entry.dir,
-            cls: 'sb-entry', badges,
+            // An entry that brought its own icon is a headline one (the games): give it the
+            // weight to match, so the tree has a focal point instead of 208 identical rows.
+            cls: 'sb-entry' + (entry.icon ? ' sb-featured' : ''), badges,
           });
-          r.addEventListener('click', () => hooks.openEntry(entry));
-          r.addEventListener('mouseenter', () => schedulePreview(entry, r));
-          r.addEventListener('mouseleave', hidePreview);
+          r.addEventListener('click', () => { hidePreview(); hooks.openEntry(entry); });
+          r.addEventListener('pointerenter', e => {
+            if (e.pointerType === 'mouse') schedulePreview(entry, r);
+          });
+          r.addEventListener('pointerleave', hidePreview);
           container.appendChild(r);
         }
       }
@@ -287,10 +297,30 @@ export function createSidebar({ store, hooks }) {
   }
 
   // ─── hover preview ──────────────────────────────────────────────────────────
+  //
+  // The popup has `pointer-events: none` and its anchor row is thrown away on every render,
+  // so nothing about it can dismiss itself: whatever shows it is responsible for taking it
+  // back. Two things used to leave it stuck on screen forever —
+  //
+  //   the async gap  `previewOf` fetches. Leaving the row (or re-rendering the tree) in that
+  //                  window cleared the timer, but the callback was already running and
+  //                  showed the popup afterwards, with no row left under the pointer to fire
+  //                  `mouseleave`. `previewSeq` invalidates a scheduled preview so a late
+  //                  resolution is dropped instead of displayed.
+  //   the re-render  clicking an entry mounts it → `render()` → the anchor row is replaced,
+  //                  so its `mouseleave` never arrives. `render()` and the click both hide.
+  //
+  // `pointerenter`, not `mouseenter`: on a touch screen a tap synthesises the mouse event but
+  // never its `mouseleave` counterpart.
+  let previewSeq = 0;
+
   function schedulePreview(entry, anchor) {
     clearTimeout(previewTimer);
+    const seq = ++previewSeq;
     previewTimer = setTimeout(async () => {
       const code = await previewOf(entry);
+      // Superseded, dismissed, or the row is gone / no longer under the pointer.
+      if (seq !== previewSeq || !anchor.isConnected || !anchor.matches(':hover')) return;
       const parts = [];
       if (entry.desc) parts.push(`<div class="sb-pv-desc">${esc(entry.desc)}</div>`);
       const where = entry.zyp ?? entry.dir ?? entry.path;
@@ -310,6 +340,7 @@ export function createSidebar({ store, hooks }) {
   }
   function hidePreview() {
     clearTimeout(previewTimer);
+    previewSeq++;
     previewEl.classList.remove('visible');
   }
 
@@ -332,6 +363,8 @@ export function createSidebar({ store, hooks }) {
   }
 
   function render() {
+    // Every row about to be dropped takes its `mouseleave` with it.
+    hidePreview();
     const scroll = bodyEl.scrollTop;
     bodyEl.innerHTML = '';
 
@@ -358,6 +391,13 @@ export function createSidebar({ store, hooks }) {
     if (e.key === 'Escape') { filterEl.value = ''; filter = ''; el.classList.remove('filtering'); render(); }
   });
   bodyEl.addEventListener('scroll', hidePreview);
+  // Belt and braces, because a popup nobody can point at cannot dismiss itself: leaving the
+  // sidebar (including straight out of the window), any click, Escape, or the tab losing
+  // focus all take it back.
+  el.addEventListener('pointerleave', hidePreview);
+  document.addEventListener('pointerdown', hidePreview, true);
+  window.addEventListener('blur', hidePreview);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') hidePreview(); });
 
   // Drawer (mobile) — below 700px the sidebar becomes a slide-over panel instead of a
   // permanent column, since there isn't width to spare for both it and the editor.

@@ -2,12 +2,94 @@
   "schema": 1,
   "groups": [
     {
+      "id": "games",
+      "icon": "🎮",
+      "title": "Games",
+      "desc": "Playable programs — mount one, press ▶ Run, then read its source",
+      "categories": [
+        {
+          "id": "arcade",
+          "icon": "🕹️",
+          "title": "Arcade",
+          "desc": "Real-time action on the TUI canvas",
+          "open": true,
+          "entries": [
+            {
+              "id": "pkg-serpiente",
+              "icon": "🐍",
+              "title": "Serpiente — Snake",
+              "desc": "Arcade snake on the TUI canvas: 12 files, playable in Spanish or English",
+              "zyp": "games/arcade/serpiente.zyp",
+              "tags": [
+                "snake",
+                "serpiente",
+                "arcade",
+                "game",
+                "juego"
+              ],
+              "needs": [
+                "tui"
+              ]
+            },
+            {
+              "id": "pkg-klingon-galaxy",
+              "icon": "🚀",
+              "title": "Hov veS — Klingon Galaxy",
+              "desc": "Space strategy: 13 files written entirely in Klingon (pIqaD script)",
+              "zyp": "games/arcade/klingon_galaxy.zyp",
+              "tags": [
+                "klingon",
+                "piqad",
+                "galaxy",
+                "space",
+                "game",
+                "juego"
+              ],
+              "needs": [
+                "tui"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "classic",
+          "icon": "♟️",
+          "title": "Classic",
+          "desc": "Board games",
+          "open": true,
+          "entries": [
+            {
+              "id": "pkg-go",
+              "icon": "⚫",
+              "title": "GO — 囲碁",
+              "desc": "Full board game: 22 files, Chinese scoring, heuristic AI, 4 language entry points",
+              "zyp": "games/classic/go.zyp",
+              "tags": [
+                "go",
+                "igo",
+                "baduk",
+                "weiqi",
+                "board",
+                "game",
+                "juego"
+              ],
+              "needs": [
+                "tui"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "basics",
+      "icon": "🌱",
       "title": "Basics",
       "desc": "Output, input, variables, control flow",
       "categories": [
         {
           "id": "tour",
+          "icon": "🧭",
           "title": "Guided tours",
           "desc": "One file per topic, heavily commented — start here",
           "entries": [
@@ -45,6 +127,7 @@
         },
         {
           "id": "output",
+          "icon": "📤",
           "title": "Output >>",
           "desc": "Printing values, ¶ for a newline",
           "entries": [
@@ -77,6 +160,7 @@
         },
         {
           "id": "input",
+          "icon": "📥",
           "title": "Input <<",
           "desc": "Reading a line from the user",
           "entries": [
@@ -100,6 +184,7 @@
         },
         {
           "id": "variables",
+          "icon": "🔤",
           "title": "Variables",
           "desc": "Assignment, constants :=, interpolation",
           "entries": [
@@ -127,6 +212,7 @@
         },
         {
           "id": "control",
+          "icon": "🔀",
           "title": "Control ?",
           "desc": "if / _? / _",
           "entries": [
@@ -149,6 +235,7 @@
         },
         {
           "id": "match",
+          "icon": "🎯",
           "title": "Match ??",
           "desc": "Pure pattern matching with =>",
           "entries": [
@@ -171,6 +258,7 @@
         },
         {
           "id": "loops",
+          "icon": "🔁",
           "title": "Loops @",
           "desc": "Ranges, while, foreach, @! and @>",
           "entries": [
@@ -220,11 +308,13 @@
     },
     {
       "id": "data",
+      "icon": "📚",
       "title": "Data",
       "desc": "Arrays, tuples and the $ collection operators",
       "categories": [
         {
           "id": "collections",
+          "icon": "🧺",
           "title": "Collections $",
           "desc": "Arrays, tuples, named tuples and their operators",
           "entries": [
@@ -332,6 +422,7 @@
         },
         {
           "id": "destructuring",
+          "icon": "🎁",
           "title": "Destructuring",
           "desc": "Unpacking arrays and tuples, rest * and skip _",
           "entries": [
@@ -376,11 +467,13 @@
     },
     {
       "id": "functions",
+      "icon": "🔧",
       "title": "Functions",
       "desc": "Named functions, lambdas and pipelines",
       "categories": [
         {
           "id": "functions",
+          "icon": "⚙️",
           "title": "Functions",
           "desc": "Definition, recursion, scope isolation",
           "entries": [
@@ -428,6 +521,7 @@
         },
         {
           "id": "lambdas",
+          "icon": "λ",
           "title": "Lambdas ->",
           "desc": "Anonymous functions, closures and |> pipes",
           "entries": [
@@ -487,11 +581,13 @@
     },
     {
       "id": "errors",
+      "icon": "⚠️",
       "title": "Error handling",
       "desc": "The !? block, typed catches and $! checks",
       "categories": [
         {
           "id": "errors",
+          "icon": "🧯",
           "title": "Error handling !?",
           "desc": "try / catch / finally and typed errors",
           "entries": [
@@ -531,11 +627,13 @@
     },
     {
       "id": "multilingual",
+      "icon": "🌍",
       "title": "Multilingual",
       "desc": "Numeral scripts and the same program in 100+ languages",
       "categories": [
         {
           "id": "numerals",
+          "icon": "🔢",
           "title": "Numeral scripts",
           "desc": "Write and print numbers in native digit sets",
           "entries": [
@@ -575,6 +673,7 @@
         },
         {
           "id": "rosetta",
+          "icon": "🗿",
           "title": "Rosetta Stone",
           "desc": "The same FizzBuzz in 100+ human languages",
           "entries": [
@@ -1426,46 +1525,14 @@
       ]
     },
     {
-      "id": "real",
-      "title": "Real programs",
-      "desc": "Packages, multi-file projects, TUI and CLI",
+      "id": "demos",
+      "icon": "🧪",
+      "title": "Demos",
+      "desc": "Feature demos: multi-file modules, TUI, CLI arguments and shell",
       "categories": [
         {
-          "id": "packages",
-          "title": "Packages .zyp",
-          "desc": "Complete programs shipped as a single archive",
-          "entries": [
-            {
-              "id": "pkg-go",
-              "zyp": "packages/go.zyp",
-              "title": "GO — 囲碁",
-              "desc": "Full board game: 22 files, Chinese scoring, heuristic AI, 4 language entry points",
-              "needs": [
-                "tui"
-              ]
-            },
-            {
-              "id": "pkg-serpiente",
-              "zyp": "packages/serpiente.zyp",
-              "title": "Serpiente / Snake",
-              "desc": "Arcade snake on the TUI canvas, playable in Spanish or English",
-              "needs": [
-                "tui"
-              ]
-            },
-            {
-              "id": "pkg-klingon-galaxy",
-              "zyp": "packages/klingon_galaxy.zyp",
-              "title": "Hov veS — Klingon Galaxy",
-              "desc": "Space strategy game written entirely in Klingon (pIqaD script)",
-              "needs": [
-                "tui"
-              ]
-            }
-          ]
-        },
-        {
           "id": "projects",
+          "icon": "🗂️",
           "title": "Multi-file projects",
           "desc": "Modules, re-export layers and i18n code",
           "entries": [
@@ -1527,6 +1594,7 @@
         },
         {
           "id": "tui",
+          "icon": "🖥️",
           "title": "TUI >>|",
           "desc": "Full-screen canvas mode",
           "entries": [
@@ -1540,7 +1608,7 @@
             },
             {
               "id": "snake",
-              "title": "Serpiente",
+              "title": "Serpiente — multi-file demo",
               "dir": "tui/snake",
               "files": [
                 "logica.zy",
@@ -1551,12 +1619,14 @@
               "needs": [
                 "tui",
                 "shell"
-              ]
+              ],
+              "desc": "The same game as three plain .zy modules, not a package"
             }
           ]
         },
         {
           "id": "cli",
+          "icon": "⌨️",
           "title": "CLI arguments ><",
           "desc": "Reading argv — use the args… field",
           "entries": [
@@ -1591,6 +1661,7 @@
         },
         {
           "id": "shell",
+          "icon": "🐚",
           "title": "Shell <\\",
           "desc": "In the browser this returns a timestamp only",
           "entries": [

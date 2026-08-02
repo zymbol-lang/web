@@ -15,10 +15,14 @@
  *   { zyp }                   a packaged program, read with the same reader as ↑ Upload
  *
  * Mounted names are namespaced by the entry's own location (`collections/map.zy`,
- * `packages/go/核/盤.zy`) so that two examples sharing a basename — or two packages both
+ * `games/classic/go/核/盤.zy`) so that two examples sharing a basename — or two packages both
  * shipping a `texto.zy` — can be mounted at once without silently overwriting each other.
  * Relative imports keep working because resolution is relative to the importing file's
  * own directory (see module-resolver.js).
+ *
+ * That namespacing is also the deep-link address space: `?open=games/classic/go.zyp` and
+ * `?open=rosetta-stone/Klingon_pIqaD.zy` are the entry's own location under `examples/`,
+ * which is what makes a shared link readable and stable — see `resolveDeepLink`.
  */
 
 import { readZyp } from '../zymbol/zyp.js';
@@ -120,9 +124,56 @@ export async function mountEntry(entry) {
 
   for (const [name, code] of files) sourceCache.set(name, code);
   return {
-    id: entry.id, title: entry.title, root, files, entryName, scripts,
+    id: entry.id, title: entry.title, icon: entry.icon, root, files, entryName, scripts,
     args: entry.args, needs: entry.needs ?? [],
   };
+}
+
+/** Where an entry answers to in a `?open=` link: its own path under `examples/`. */
+export function deepLinkOf(entry) {
+  if (entry.zyp) return entry.zyp;
+  if (entry.dir) return `${entry.dir}/${entry.entry}`;
+  return entry.path;
+}
+
+/**
+ * Resolves `?open=<path>` — a path relative to `examples/` — to the entry that owns it, and
+ * to one file inside that entry when the link points deeper than the entry itself.
+ *
+ * A link addresses what a person can see in the tree, so all four of these work:
+ *
+ *   games/classic/go.zyp              the archive
+ *   games/classic/go                  its mount root (the extension is optional)
+ *   games/classic/go/核/盤.zy          one file inside it — mounts the package, opens that file
+ *   rosetta-stone/Klingon_pIqaD.zy    a loose example
+ *
+ * A catalog id (`pkg-go`) is accepted too, so an `?example=` id pasted into `?open=` still
+ * lands somewhere instead of erroring.
+ *
+ * @returns {{entry: object, file?: string} | null}
+ */
+export function resolveDeepLink(catalog, raw) {
+  const path = String(raw ?? '').trim().replace(/^\.?\//, '').replace(/\/+$/, '');
+  if (!path) return null;
+
+  const entries = [];
+  for (const group of catalog.groups ?? []) {
+    for (const cat of group.categories ?? []) entries.push(...(cat.entries ?? []));
+  }
+
+  for (const entry of entries) {
+    if (entry.zyp === path || entry.path === path) return { entry };
+    if (entry.dir && `${entry.dir}/${entry.entry}` === path) return { entry };
+  }
+  // Inside a bundle: `<root>/<file>` opens that file, `<root>` alone opens the entry file.
+  for (const entry of entries) {
+    if (!entry.zyp && !entry.dir) continue;
+    const root = mountRoot(entry);
+    if (path === root) return { entry };
+    if (path.startsWith(root + '/')) return { entry, file: path };
+  }
+  const byId = catalog.byId?.get(path);
+  return byId ? { entry: byId } : null;
 }
 
 /**

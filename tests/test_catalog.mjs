@@ -20,6 +20,7 @@ import { join, dirname, relative } from 'path';
 import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
 import { readZyp } from '../src/zymbol/zyp.js';
+import { resolveDeepLink, deepLinkOf, mountRoot } from '../src/playground/catalog.js';
 
 const WEB_DIR      = dirname(dirname(fileURLToPath(import.meta.url)));
 const EXAMPLES_DIR = join(WEB_DIR, 'examples');
@@ -71,12 +72,18 @@ for (const group of catalog.groups) {
     check(`category '${ck}' has a title`, !!cat.title);
     check(`category '${ck}' has entries`,
           Array.isArray(cat.entries) && cat.entries.length > 0);
+    check(`category '${ck}' icon is a string`, cat.icon === undefined || typeof cat.icon === 'string');
+    // `open` opts a category out of the folded-by-default tree; a string there ("true") would
+    // silently do nothing.
+    check(`category '${ck}' open is a boolean`,
+          cat.open === undefined || typeof cat.open === 'boolean', `got ${typeof cat.open}`);
 
     for (const e of cat.entries ?? []) {
       entryCount++;
       check(`entry '${e.id}' has a unique id`, !entryIds.has(e.id));
       entryIds.add(e.id);
       check(`entry '${e.id}' has a title`, !!e.title);
+      check(`entry '${e.id}' icon is a string`, e.icon === undefined || typeof e.icon === 'string');
 
       const shapes = ['path', 'dir', 'zyp'].filter(k => e[k] !== undefined);
       check(`entry '${e.id}' has exactly one of path/dir/zyp`, shapes.length === 1,
@@ -136,6 +143,56 @@ for (const group of catalog.groups) {
       }
     }
   }
+}
+
+// ─── deep links: playground.html?open=<path under examples/> ─────────────────
+//
+// A shared link addresses an entry by its own path, so what has to hold is that every entry
+// is reachable by the path the playground itself puts in the address bar, and that no two
+// entries answer to the same one.
+section('deep links');
+{
+  const all = [];
+  for (const group of catalog.groups) {
+    for (const cat of group.categories ?? []) all.push(...(cat.entries ?? []));
+  }
+  // Same shape loadCatalog() hands the resolver, so the id fallback is exercised too.
+  const rt = { groups: catalog.groups, byId: new Map(all.map(e => [e.id, e])) };
+
+  for (const e of all) {
+    const link = deepLinkOf(e);
+    const hit = resolveDeepLink(rt, link);
+    check(`entry '${e.id}' is reachable at ?open=${link}`, hit?.entry === e,
+          hit ? `resolves to '${hit.entry.id}'` : 'resolves to nothing');
+    check(`entry '${e.id}' is reachable by id`, resolveDeepLink(rt, e.id)?.entry === e);
+  }
+
+  // Bundle roots become directories in the workspace tree; one nested inside another would
+  // make `?open=<root>/<file>` ambiguous and the tree misleading.
+  const roots = all.filter(e => e.dir || e.zyp).map(e => [e.id, mountRoot(e)]);
+  for (const [id, root] of roots) {
+    for (const [otherId, other] of roots) {
+      if (id === otherId) continue;
+      check(`bundle root '${root}' (${id}) does not contain '${other}' (${otherId})`,
+            other !== root && !other.startsWith(root + '/'));
+    }
+  }
+
+  // A file inside a bundle opens that file; a bare root opens the entry file.
+  const bundle = all.find(e => e.dir);
+  if (bundle) {
+    const inner = `${bundle.dir}/${bundle.files.find(f => f !== bundle.entry) ?? bundle.entry}`;
+    const hit = resolveDeepLink(rt, inner);
+    check('a file inside a bundle resolves to that file',
+          hit?.entry === bundle && hit.file === inner, JSON.stringify(hit?.file));
+    check('a bare bundle root resolves to the entry',
+          resolveDeepLink(rt, bundle.dir)?.entry === bundle);
+  }
+  check('a leading ./ is tolerated',
+        resolveDeepLink(rt, './' + deepLinkOf(all[0]))?.entry === all[0]);
+  check('an unknown path resolves to nothing',
+        resolveDeepLink(rt, 'nope/does-not-exist.zy') === null);
+  check('an empty path resolves to nothing', resolveDeepLink(rt, '') === null);
 }
 
 // ─── orphans and duplicates ───────────────────────────────────────────────────
