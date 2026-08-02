@@ -1,0 +1,19 @@
+// Comparison patterns: the scrutinee is implicit, so the arm is just an operator
+// and a value. `??` is pure pattern matching — it never evaluates a boolean
+// condition, so use these instead of `?`/`_?` guards.
+temp = -5
+state = ?? temp {
+    < 0  => "ice"
+    < 20 => "cold"
+    < 35 => "warm"
+    _    => "hot"
+}
+>> state ¶
+
+// Works with every comparison operator: < <= > >= == <>
+code = 200
+msg = ?? code {
+    <> 200 => "error"
+    _      => "ok"
+}
+>> msg ¶

@@ -1,0 +1,6 @@
+square(n) { <~ n * n }
+sum_of_squares(a, b) {
+    // functions can call other functions
+    <~ square(a) + square(b)
+}
+>> sum_of_squares(3, 4) ¶

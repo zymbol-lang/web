@@ -1,0 +1,14 @@
+total = 0
+
+@ i:1..5 {
+    // loop vars are local to block
+    partial = i * i
+    total = total + partial   // total visible: outer var
+}
+
+// partial is gone, total persists
+>> "total: " total ¶
+
+square(n) { <~ n * n }
+>> square(6) ¶
+// total is not visible inside square

@@ -1,0 +1,4 @@
+double = x -> x * 2
+inc    = x -> x + 1
+result = 5 |> double(_) |> inc(_)
+>> result ¶

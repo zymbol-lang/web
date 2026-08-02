@@ -1,0 +1,16 @@
+# matematicas {
+    #> { sumar, restar, multiplicar, dividir, potencia, factorial, PI }
+
+    PI := 3.14159265
+
+    sumar(a, b)       { <~ a + b }
+    restar(a, b)      { <~ a - b }
+    multiplicar(a, b) { <~ a * b }
+    dividir(a, b)     { <~ a / b }
+    potencia(b, e)    { <~ b ^ e }
+
+    factorial(n) {
+        ? n <= 1 { <~ 1 }
+        <~ n * factorial(n - 1)
+    }
+}

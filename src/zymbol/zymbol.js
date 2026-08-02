@@ -1,0 +1,4595 @@
+/**
+ * zymbol.js — Browser interpreter for the Zymbol playground
+ *
+ * v0.0.4: 1-based indexing, multi-dimensional navigation (arr[i>j>k]),
+ * type-cast operators (##. ### ##!), string split ($/), ConcatBuild ($++),
+ * explicit lifetime end (\ var).
+ *
+ * v0.0.5: string repeat ($*), hot definition (°), module alias (:), sleep (@~),
+ * labeled loops (@:label { } / @:label! / @:label>), TUI canvas operators
+ * (>>! >>? >>~ <<| <<|? >>|), caught error values (##_(...)), hotDef scope fix.
+ *
+ * v0.0.6: FatArrow (=>) replaces : as match/import/export separator (already in v0.0.5 JS);
+ * $~ on named tuples — integer + field-name string index (G2);
+ * deep update arr[i>j]$~ val (G1, DeepUpdate node);
+ * stdlib modules std/math (22 fns + PI/E) and std/random (3 fns);
+ * bare import paths support slashes: <# std/math => alias;
+ * native function call path in callFunc (fn.native).
+ *
+ * v0.0.7: stdlib std/json (decode/decode_map/encode via JSON.parse/stringify — ##Parse text is
+ * engine-specific), std/net (get/post/post_json/head via fetch; optional headers arg;
+ * CORS applies), std/io (per-run virtual filesystem: Map of files + Set of dirs);
+ * std/db NOT available (requires ODBC). Typed input << <typespec> "prompt" var with
+ * ##.(t,d) / ##. / ###(n) / ##"(n) / ##' — validates, re-prompts on invalid input.
+ * Input EOF contract: inputFn returning null/undefined = EOF → runtime error, like
+ * the CLI on closed stdin. Legacy << #|v| now converts numeric strings (Int/Float).
+ * Checker: static undefined-function detection (E_FUNC) for bare-identifier calls,
+ * mirroring zymbol-semantic type_check (the test1.zy cos() case).
+ * 2026-06-12 parity sync: nested Unit in collections displays as `()` (was an
+ * empty hole — Rust engines unified the same day); Checker rejects destructuring
+ * into a `:=` constant (L14, E_CONST), mirroring type_check.rs.
+ * 2026-07-02 parity sync: json::decode_map(text, map) — decode + recursive key
+ * rename per a NamedTuple map (data-level i18n), mirroring stdlib/json.rs.
+ *
+ * v0.0.8: match or-patterns — p1 || p2 || p3 in a match arm, tested left to right,
+ * first match wins. Alternatives combine any pattern kinds (literal, range,
+ * comparison, ident, list) and are top-level only, so list elements stay
+ * unambiguous. Mirrors Pattern::Or in zymbol-ast / zymbol-parser.
+ * 2026-07-27 v0.0.8 distribution-parity pass (playground now runs zy-GO,
+ * zy-Serpiente, zyKlingonGalaxy, Z-Tic-Tac-Toe): ##! on a Char casts to its
+ * code point (data_ops.rs CastKind::ToIntTrunc); delimited juxtaposition —
+ * implicit concat in call args, array/tuple elements and grouped expressions
+ * (HLZ-007), not just at statement level; std/term (width/pad_left/pad_right/
+ * center/truncate) added, unit-test-verified against stdlib/term.rs; open
+ * start/end collection slices arr$[i..] and arr$[..j] (only arr$[i..j] parsed
+ * before); comparison operators (<, >, ==, …) no longer wrongly rejected
+ * inside a match arm's { block } body — the no-bare-comparison rule is for
+ * the value form (pattern => expr) only, mirroring parse_match_arm_value;
+ * a `<~` return inside a match arm's block no longer gets silently swallowed
+ * when the match itself is a bare statement or a sub-expression (assignment
+ * RHS, argument, …) — eval()'s 'Match' case now throws the arm's ZyReturn
+ * signal so it unwinds to callFunc, the same mechanism $!! already used;
+ * identifier continuation no longer stops at a Private-Use-Area character
+ * that happens to double as a script's own digit block (e.g. Klingon pIqaD
+ * CSUR reuses U+F8F0–F8F9 for both letters and digits) — mirrors
+ * Lexer::is_ident_continue, which never special-cased digit blocks past the
+ * first character; the string-interpolation "is this a bare identifier"
+ * checker regex gained \p{So}\p{Co} (HLZ-KL-001 parity — was under-marking
+ * PUA-script names as used, producing a false W_UNUSED).
+ * 2026-07-28 escape sequences inside CHARACTER literals: readChar took the
+ * character after the backslash verbatim, so '\n' lexed as the letter "n" —
+ * a `'\n' => …` match arm never matched a real newline (and did match "n").
+ * String literals were always fine, which is why this survived: it only shows
+ * up where a program compares against a control character. Symptom was Enter
+ * doing nothing in TUI programs in the playground (arrow keys are literal
+ * glyphs, so they kept working). Escape table now mirrors Lexer::lex_char in
+ * zymbol-lexer/src/literals.rs. Regression test:
+ * interpreter/tests/bugs/bug_char_escape_lexing.zy (run by both engines).
+ * 2026-07-28 output parameters (`<~`) across a module boundary: only eval()'s
+ * 'Call' branch built the write-back list, but `alias::f(x)` parses as
+ * Ident → FieldAccess → CallExpr, so every cross-module call silently dropped
+ * its out-params — the callee mutated its local copy and the caller never saw
+ * it. Both branches now share buildOutWriteback(). This is what made GO
+ * unplayable in the browser: 盤::着手(局面<~, …, 取数<~, コウ点<~) placed stones
+ * and counted captures into parameters the caller never received, so the move
+ * counter advanced while the board stayed empty. Covered by
+ * interpreter/tests/modules_scope/{out_param_module,mod_state_return}.zy.
+ * 2026-07-28 codePointDisplayWidth is now exported, so the playground's canvas
+ * renderer measures characters with this table instead of its own local
+ * approximation. BrowserTUI._isWide used `cp >= 0x1F000 || FF01..FFE6`, which
+ * calls ⚫/⚪ (U+26AA/U+26AB) narrow while the table correctly calls them wide:
+ * the font drew each GO stone two cells wide and the renderer clipped it to
+ * one, slicing every stone in half on screen. Layout and rendering must agree
+ * on width or one of them is always wrong.
+ * 2026-07-28 module aliases now live in their own namespace (this.moduleAliases),
+ * mirroring the tree-walker's `import_aliases`, and the parser records whether a
+ * field access came from `::` or `.`. Both operators built the same FieldAccess
+ * node and resolved the object as an ordinary expression, so a plain variable
+ * sharing an alias's name made the module unreachable: zyKlingonGalaxy imports
+ * Duj and then uses that same name for the player's ship, so `duj = duj::bIj(duj,
+ * …)` — every left/right move — died with "'.<name>' requires a named tuple".
+ * Regression test: interpreter/tests/modules_scope/alias_shadowed_by_variable.zy.
+ *
+ * CLI args (><): supported — pass cliArgs array to runZymbol().
+ * BashExec (<\ \>): returns high-resolution timestamp (entropy stub).
+ * Not supported: shell inclusion (</ />).
+ * TUI operators require a >>| { } block to activate the canvas overlay.
+ *
+ * 2026-08-01 numeral mode and ordering, synced with the Rust engines. An active
+ * numeral mode (#d0d9#) now reaches interpolation, juxtaposition, $++ and collection
+ * elements, not just bare >>; and orderValues() replaces three disagreeing comparison
+ * paths with the single rule: numeric when both sides are numbers (a string counts if
+ * #|…| would convert it, in any of the 69 digit scripts), lexicographic when both are
+ * non-numeric text, an error when a number meets text that is not one. == still never
+ * coerces. Mirrors cmp_order (VM) and compare_values (tree-walker).
+ *
+ * Parity as of the v0.0.8 release, measured 2026-08-01:
+ *   node tests/test_runner.mjs              → 516/521, 39 skipped (irreducible)
+ *   node tests/test_runner.mjs --dir examples → 208/210
+ * The 7 failures are known gaps, not regressions:
+ *   - MM-4  import-time semantic gate            (JS PERMISSIVE — worse failure mode)
+ *   - MM-11 leftover loop-iterator value         (JS PERMISSIVE — worse failure mode)
+ *   - MM-9  root-scope constants at call depth >= 2
+ *   - HLZ-005 './../' diagnostic text and error count
+ *   - interpolation of a global constant prints {DIR} verbatim
+ *   - HLZ-KL-001 NOT ported: is_ident_continue here rejects "'" inside an identifier,
+ *     so f(mI') — ordinary tlhIngan Hol — fails to parse. The Rust rule is "any
+ *     non-whitespace, non-operator character"; this lexer is narrower.
+ *   - float literals are accumulated digit by digit (value + frac / div, see readNumber),
+ *     so 3.14159265 prints as 3.1415926499999998. Affects EVERY float literal, not just
+ *     the one example that catches it. Predates v0.0.8 — introduced with digit-script
+ *     support in v0.0.4, and unnoticed until the example pool became real files.
+ * The two PERMISSIVE rows produce output the CLI would have refused, and are the ones to
+ * fix first. Detail and the per-test table: interpreter/IMPL_V008.md § E.3.
+ */
+
+// ─── Unicode digit blocks (mirrors DIGIT_BLOCKS in zymbol-lexer) ─────────────
+const DIGIT_BLOCKS = [
+  [0x0030,'ASCII'],[0x0660,'Arabic-Indic'],[0x06F0,'Ext. Arabic-Indic'],
+  [0x07C0,'NKo'],[0x0966,'Devanagari'],[0x09E6,'Bengali'],[0x0A66,'Gurmukhi'],
+  [0x0AE6,'Gujarati'],[0x0B66,'Oriya'],[0x0BE6,'Tamil'],[0x0C66,'Telugu'],
+  [0x0CE6,'Kannada'],[0x0D66,'Malayalam'],[0x0DE6,'Sinhala Archaic'],
+  [0x0E50,'Thai'],[0x0ED0,'Lao'],[0x0F20,'Tibetan'],[0x1040,'Myanmar'],
+  [0x1090,'Myanmar Shan'],[0x17E0,'Khmer'],[0x1810,'Mongolian'],
+  [0x1946,'Limbu'],[0x19D0,'New Tai Lue'],[0x1A80,'Tai Tham Hora'],
+  [0x1A90,'Tai Tham Tham'],[0x1B50,'Balinese'],[0x1BB0,'Sundanese'],
+  [0x1C40,'Lepcha'],[0x1C50,'Ol Chiki'],[0xA620,'Vai'],[0xA8D0,'Saurashtra'],
+  [0xA900,'Kayah Li'],[0xA9D0,'Javanese'],[0xA9F0,'Myanmar Tai Laing'],
+  [0xAA50,'Cham'],[0xABF0,'Meetei Mayek'],[0xF8F0,'Klingon pIqaD'],
+  [0xFF10,'Fullwidth'],[0x104A0,'Osmanya'],[0x10D30,'Hanifi Rohingya'],
+  [0x11066,'Brahmi'],[0x110F0,'Sora Sompeng'],[0x11136,'Chakma'],
+  [0x111D0,'Sharada'],[0x112F0,'Khudawadi'],[0x11450,'Newa'],
+  [0x114D0,'Tirhuta'],[0x11650,'Modi'],[0x116C0,'Takri'],[0x11730,'Ahom'],
+  [0x118E0,'Warang Citi'],[0x11950,'Dives Akuru'],[0x11C50,'Bhaiksuki'],
+  [0x11D50,'Masaram Gondi'],[0x11DA0,'Gunjala Gondi'],[0x11F50,'Kawi'],
+  [0x16A60,'Mro'],[0x16AC0,'Tangsa'],[0x16B50,'Pahawh Hmong'],
+  [0x1D7CE,'Mathematical Bold'],[0x1D7D8,'Mathematical Double-struck'],
+  [0x1D7E2,'Mathematical Sans-serif'],[0x1D7EC,'Math Sans-serif Bold'],
+  [0x1D7F6,'Mathematical Monospace'],[0x1E140,'Nyiakeng Puachue Hmong'],
+  [0x1E2F0,'Wancho'],[0x1E4F0,'Nag Mundari'],[0x1E950,'Adlam'],
+  [0x1FBF0,'Segmented/LCD'],
+];
+
+function digitValue(ch) {
+  const cp = ch.codePointAt(0);
+  for (const [base] of DIGIT_BLOCKS) {
+    if (cp >= base && cp <= base + 9) return cp - base;
+  }
+  return -1;
+}
+
+function digitBlockBase(ch) {
+  const cp = ch.codePointAt(0);
+  for (const [base] of DIGIT_BLOCKS) {
+    if (cp >= base && cp <= base + 9) return base;
+  }
+  return -1;
+}
+
+/** Block base of the ASCII digits — the default numeral mode. */
+const ASCII_BASE = 0x0030;
+
+function mapToScript(s, blockBase) {
+  if (blockBase === ASCII_BASE) return s;
+  return [...s].map(ch => {
+    if (ch >= '0' && ch <= '9') return String.fromCodePoint(blockBase + (ch.charCodeAt(0) - 0x30));
+    return ch;
+  }).join('');
+}
+
+function numeralInt(n, base)   { return mapToScript(String(Math.trunc(n)), base); }
+function numeralFloat(f, base) { return mapToScript(String(f), base); }
+function numeralBool(b, base)  { return '#' + numeralInt(b ? 1 : 0, base); }
+
+// ─── Signal types ─────────────────────────────────────────────────────────────
+
+class ZyReturn  { constructor(value) { this.value = value; } }
+class ZyBreak    { constructor(label = null) { this.label = label; } }
+class ZyContinue { constructor(label = null) { this.label = label; } }
+class ZyErrorPropagate { constructor(errVal) { this.errVal = errVal; } }
+class ZyError extends Error {
+  constructor(msg, line) {
+    super(line ? `Line ${line}: ${msg}` : msg);
+    this.zyLine = line;
+  }
+}
+class ZyRuntimeError extends ZyError {
+  constructor(msg, errType = '##_', line) {
+    super(msg, line);
+    this.errType = errType;
+  }
+}
+class ZyStaticError extends Error {
+  constructor(msg) { super(msg); }
+}
+
+// ─── Lexer ────────────────────────────────────────────────────────────────────
+
+export class Lexer {
+  constructor(src) {
+    this.src = [...src];
+    this.pos = 0;
+    this.line = 1;
+  }
+
+  ch(offset = 0) { return this.src[this.pos + offset] ?? ''; }
+
+  consume() {
+    const c = this.src[this.pos++];
+    if (c === '\n') this.line++;
+    return c;
+  }
+
+  tokenize() {
+    const toks = [];
+    const tok = (type, value) => toks.push({ type, value, line: this.line });
+
+    while (this.pos < this.src.length) {
+      if (/[ \t\r\n]/.test(this.ch())) { this.consume(); continue; }
+
+      // comment
+      if (this.ch() === '/' && this.ch(1) === '/') {
+        while (this.pos < this.src.length && this.ch() !== '\n') this.consume();
+        continue;
+      }
+      // block comment /* ... */
+      if (this.ch() === '/' && this.ch(1) === '*') {
+        this.consume(); this.consume();
+        while (this.pos < this.src.length) {
+          if (this.ch() === '*' && this.ch(1) === '/') { this.consume(); this.consume(); break; }
+          this.consume();
+        }
+        continue;
+      }
+
+      // # — mode-switch, booleans, cast ops, data ops, error types
+      if (this.ch() === '#') {
+        const c1 = this.ch(1);
+        const dv1 = digitValue(c1);
+        if (dv1 >= 0) {
+          if (dv1 === 0) {
+            const c2 = this.ch(2);
+            const dv2 = digitValue(c2);
+            if (dv2 === 9 && digitBlockBase(c1) === digitBlockBase(c2) && this.ch(3) === '#') {
+              const base = digitBlockBase(c1);
+              this.consume(); this.consume(); this.consume(); this.consume();
+              tok('SET_NUMERAL_MODE', base); continue;
+            }
+          }
+          this.consume(); this.consume();
+          if (dv1 === 0) { tok('BOOL', false); continue; }
+          if (dv1 === 1) { tok('BOOL', true);  continue; }
+          continue;
+        }
+        if (c1 === '#') {
+          // ##. → CAST_FLOAT, ### → CAST_INT_ROUND, ##! → CAST_INT_TRUNC,
+          // ##" → CAST_TEXT, ##' → CAST_CHAR (input typespecs), else ##xxx IDENT
+          const c2 = this.ch(2);
+          this.consume(); this.consume(); // consume ##
+          if (c2 === '.') { this.consume(); tok('CAST_FLOAT',     '##.'); continue; }
+          if (c2 === '#') { this.consume(); tok('CAST_INT_ROUND', '###'); continue; }
+          if (c2 === '!') { this.consume(); tok('CAST_INT_TRUNC', '##!'); continue; }
+          if (c2 === '"') { this.consume(); tok('CAST_TEXT',      '##"'); continue; }
+          if (c2 === "'") { this.consume(); tok('CAST_CHAR',      "##'"); continue; }
+          let name = '##';
+          while (/[A-Za-z0-9_]/.test(this.ch())) { name += this.ch(); this.consume(); }
+          tok('IDENT', name); continue;
+        }
+        if (c1 === '?') {
+          this.consume(); this.consume();
+          tok('TYPE_QUERY', '#?'); continue;
+        }
+        {
+          let kind = null, prec = null, advance = 0;
+          const readDigits = start => {
+            let d = '', i = start;
+            while (/[0-9]/.test(this.ch(i))) { d += this.ch(i); i++; }
+            return { d, i };
+          };
+          if (c1 === '|') {
+            kind = 'eval'; advance = 2;
+          } else if (c1 === '.') {
+            const { d, i } = readDigits(2);
+            if (d.length > 0 && this.ch(i) === '|') { kind = 'round'; prec = parseInt(d); advance = i + 1; }
+          } else if (c1 === '!') {
+            const { d, i } = readDigits(2);
+            if (d.length > 0 && this.ch(i) === '|') { kind = 'trunc'; prec = parseInt(d); advance = i + 1; }
+          } else if (c1 === ',') {
+            const c2 = this.ch(2);
+            if (c2 === '|') { kind = 'comma'; advance = 3; }
+            else if (c2 === '.') { const { d, i } = readDigits(3); if (d.length > 0 && this.ch(i) === '|') { kind = 'comma_round'; prec = parseInt(d); advance = i + 1; } }
+            else if (c2 === '!') { const { d, i } = readDigits(3); if (d.length > 0 && this.ch(i) === '|') { kind = 'comma_trunc'; prec = parseInt(d); advance = i + 1; } }
+          } else if (c1 === '^') {
+            const c2 = this.ch(2);
+            if (c2 === '|') { kind = 'sci'; advance = 3; }
+            else if (c2 === '.') { const { d, i } = readDigits(3); if (d.length > 0 && this.ch(i) === '|') { kind = 'sci_round'; prec = parseInt(d); advance = i + 1; } }
+            else if (c2 === '!') { const { d, i } = readDigits(3); if (d.length > 0 && this.ch(i) === '|') { kind = 'sci_trunc'; prec = parseInt(d); advance = i + 1; } }
+          }
+          if (kind !== null) {
+            for (let i = 0; i < advance; i++) this.consume();
+            tok('DATA_OP', { kind, prec }); continue;
+          }
+        }
+        // # followed by space/letter/dot: module block `# name {` or old-style comment
+        if (c1 === ' ' || c1 === '.' || /[\p{L}_]/u.test(c1)) {
+          // Lookahead: check for # [.] name { (new module block syntax)
+          let _j = this.pos + 1;
+          while (_j < this.src.length && (this.src[_j] === ' ' || this.src[_j] === '\t')) _j++;
+          if (_j < this.src.length && this.src[_j] === '.') _j++; // optional leading dot
+          const _idStart = _j;
+          while (_j < this.src.length && /[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(this.src[_j])) _j++;
+          if (_j > _idStart) {
+            let _k = _j;
+            while (_k < this.src.length && (this.src[_k] === ' ' || this.src[_k] === '\t')) _k++;
+            if (_k < this.src.length && this.src[_k] === '{') {
+              this.consume(); // consume #
+              tok('HASH', '#'); continue;
+            }
+          }
+          // Old-style header: skip to EOL
+          while (this.pos < this.src.length && this.src[this.pos] !== '\n') this.consume();
+          continue;
+        }
+        // #> = export block declarator
+        if (c1 === '>') { this.consume(); this.consume(); tok('EXPORT_DECL', '#>'); continue; }
+        this.consume(); continue;
+      }
+
+      // BashExec <\ cmd \> — browser-only: captures command text, simulates common date/echo
+      if (this.ch() === '<' && this.ch(1) === '\\') {
+        this.consume(); this.consume(); // consume <\
+        let _cmd = '';
+        while (this.pos < this.src.length) {
+          if (this.ch() === '\\' && this.ch(1) === '>') { this.consume(); this.consume(); break; }
+          _cmd += this.consume();
+        }
+        tok('BASHEXEC', _cmd.trim()); continue;
+      }
+
+      // TUI operators (3-4 chars) — must come before twoMap so >> and << aren't consumed first
+      if (this.ch() === '>' && this.ch(1) === '>') {
+        const c2 = this.ch(2);
+        if (c2 === '!') { this.consume(); this.consume(); this.consume(); tok('OUTPUT_CLEAR', '>>!'); continue; }
+        if (c2 === '?') { this.consume(); this.consume(); this.consume(); tok('OUTPUT_QUERY', '>>?'); continue; }
+        if (c2 === '~') { this.consume(); this.consume(); this.consume(); tok('OUTPUT_POS',   '>>~'); continue; }
+        if (c2 === '|') { this.consume(); this.consume(); this.consume(); tok('OUTPUT_GATE',  '>>|'); continue; }
+      }
+      if (this.ch() === '<' && this.ch(1) === '<' && this.ch(2) === '|') {
+        if (this.ch(3) === '?') {
+          this.consume(); this.consume(); this.consume(); this.consume();
+          tok('KEY_NONBLOCK', '<<|?'); continue;
+        }
+        this.consume(); this.consume(); this.consume();
+        tok('KEY_BLOCK', '<<|'); continue;
+      }
+
+      // two-char operators
+      const two = this.ch(0) + this.ch(1);
+      const twoMap = {
+        '>>': 'OUTPUT', '<<': 'INPUT',  '<~': 'RETURN',
+        '<#': 'IMPORT',
+        '@!': 'BREAK',  '@>': 'CONTINUE', '@~': 'ATSLEEP',
+        '??': 'MATCH',  '_?': 'ELSEIF', ':=': 'CONST_ASSIGN',
+        '..': 'RANGE',  '==': 'EQ',     '<>': 'NEQ',
+        '<=': 'LTE',    '>=': 'GTE',    '&&': 'AND',
+        '||': 'OR',     '++': 'INC',    '--': 'DEC',
+        '+=': 'PLUS_EQ',  '-=': 'MINUS_EQ', '*=': 'TIMES_EQ',
+        '/=': 'DIV_EQ',   '%=': 'MOD_EQ',   '^=': 'POW_EQ',
+        '->': 'ARROW',  '=>': 'FAT_ARROW',  '|>': 'PIPE',
+        '!?': 'TRY',    ':!': 'CATCH',  ':>': 'FINALLY',
+        '::': 'SCOPE',
+        '\\\\': 'NEWLINE_ESC',
+        '><': 'CLI_ARGS',
+      };
+      if (twoMap[two]) {
+        this.consume(); this.consume();
+        tok(twoMap[two], two);
+        continue;
+      }
+
+      const c = this.ch();
+
+      if (c === '_') {
+        if (/[\p{L}\p{Co}0-9_]/u.test(this.ch(1))) { this.readIdent(toks); }
+        else { this.consume(); tok('ELSE', '_'); }
+        continue;
+      }
+
+      if (c === '?') { this.consume(); tok('IF',     '?'); continue; }
+      if (c === '@') {
+        this.consume();
+        if (this.ch() === ':') {
+          // @:label — labeled loop, break, or continue
+          this.consume();
+          let label = '';
+          while (/[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(this.ch())) label += this.consume();
+          if (this.ch() === '!') { this.consume(); tok('AT_BREAK', label); }
+          else if (this.ch() === '>') { this.consume(); tok('AT_CONT',  label); }
+          else tok('AT_LABEL', label);
+        } else if (/[\p{L}\p{M}\p{So}\p{Co}_]/u.test(this.ch())) {
+          // @label (legacy: label without colon)
+          let label = '';
+          while (/[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(this.ch())) label += this.consume();
+          tok('AT_LABEL', label);
+        } else {
+          tok('AT', '@');
+        }
+        continue;
+      }
+      if (c === '¶') { this.consume(); tok('PILCROW','¶'); continue; }
+
+      // $ collection operators
+      if (c === '$') {
+        const a = this.ch(1), b = this.ch(2);
+        if (a === '+' && b === '+')         { this.consume(); this.consume(); this.consume(); tok('DCONCATBUILD','$++'); continue; }
+        if (a === '#')                      { this.consume(); this.consume();               tok('DLEN',        '$#');  continue; }
+        if (a === '?' && b === '?')         { this.consume(); this.consume(); this.consume(); tok('DFINDALL',  '$??'); continue; }
+        if (a === '?')                      { this.consume(); this.consume();               tok('DCONTAINS',  '$?');  continue; }
+        if (a === '-' && b === '-')         { this.consume(); this.consume(); this.consume(); tok('DREMOVEALL','$--'); continue; }
+        if (a === '-')                      { this.consume(); this.consume();               tok('DREMOVE',    '$-');  continue; }
+        if (a === '+')                      { this.consume(); this.consume();               tok('DAPPEND',    '$+');  continue; }
+        if (a === '*')                      { this.consume(); this.consume();               tok('DREPEAT',    '$*');  continue; }
+        if (a === '/' )                     { this.consume(); this.consume();               tok('DSPLIT',     '$/');  continue; }
+        if (a === '^' && b === '+')         { this.consume(); this.consume(); this.consume(); tok('DSORTASC', '$^+'); continue; }
+        if (a === '^' && b === '-')         { this.consume(); this.consume(); this.consume(); tok('DSORTDESC','$^-'); continue; }
+        if (a === '^')                      { this.consume(); this.consume();               tok('DSORT',      '$^');  continue; }
+        if (a === '>')                      { this.consume(); this.consume();               tok('DMAP',       '$>');  continue; }
+        if (a === '|')                      { this.consume(); this.consume();               tok('DFILTER',    '$|');  continue; }
+        if (a === '<')                      { this.consume(); this.consume();               tok('DREDUCE',    '$<');  continue; }
+        if (a === '~' && b === '~')         { this.consume(); this.consume(); this.consume(); tok('DREPLACE', '$~~'); continue; }
+        if (a === '~')                      { this.consume(); this.consume();               tok('DUPDATE',    '$~');  continue; }
+        if (a === '[')                      { this.consume();                               tok('DSLICE',     '$[');  continue; }
+        if (a === '!' && b === '!')         { this.consume(); this.consume(); this.consume(); tok('DERRORPROP','$!!'); continue; }
+        if (a === '!')                      { this.consume(); this.consume();               tok('DERROR',     '$!');  continue; }
+        this.consume(); continue;
+      }
+
+      if (/[0-9]/.test(c) || digitValue(c) >= 0) { this.readNumber(toks); continue; }
+      if (c === '"') { this.readString(toks); continue; }
+      if (c === "'") { this.readChar(toks); continue; }
+      if (/[\p{L}\p{M}\p{So}\p{Co}]/u.test(c)) { this.readIdent(toks); continue; }
+
+      const single = {
+        '=':'ASSIGN', '<':'LT', '>':'GT',
+        '+':'PLUS',   '-':'MINUS', '*':'TIMES', '/':'DIV', '%':'MOD', '^':'POW',
+        '!':'NOT',    '|':'VBAR',
+        '(':'LPAREN', ')':'RPAREN', '[':'LBRACKET', ']':'RBRACKET',
+        '{':'LBRACE', '}':'RBRACE',
+        ',':'COMMA',  ':':'COLON', '.':'DOT', ';':'SEMI', '\\':'BACKSLASH',
+      };
+      if (single[c]) { this.consume(); tok(single[c], c); continue; }
+
+      this.consume();
+    }
+
+    tok('EOF', null);
+    return toks;
+  }
+
+  readNumber(toks) {
+    // Handle base literals: 0x (hex), 0b (binary), 0o (octal), 0d (decimal explicit)
+    if (this.ch() === '0') {
+      const next = this.ch(1);
+      if (next === 'x' || next === 'X') {
+        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 16 }, line: this.line }); return; }
+        this.consume(); this.consume();
+        let hex = '';
+        while (/[0-9a-fA-F]/.test(this.ch())) hex += this.consume();
+        toks.push({ type: 'CHAR', value: String.fromCodePoint(parseInt(hex, 16)), line: this.line }); return;
+      }
+      if (next === 'b' || next === 'B') {
+        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 2 }, line: this.line }); return; }
+        this.consume(); this.consume();
+        let bin = '';
+        while (this.ch() === '0' || this.ch() === '1') bin += this.consume();
+        toks.push({ type: 'CHAR', value: String.fromCodePoint(parseInt(bin, 2)), line: this.line }); return;
+      }
+      if (next === 'o' || next === 'O') {
+        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 8 }, line: this.line }); return; }
+        this.consume(); this.consume();
+        let oct = '';
+        while (/[0-7]/.test(this.ch())) oct += this.consume();
+        toks.push({ type: 'CHAR', value: String.fromCodePoint(parseInt(oct, 8)), line: this.line }); return;
+      }
+      if (next === 'd' || next === 'D') {
+        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 10 }, line: this.line }); return; }
+        this.consume(); this.consume();
+        let dec = '';
+        while (/[0-9]/.test(this.ch())) dec += this.consume();
+        toks.push({ type: 'CHAR', value: String.fromCodePoint(parseInt(dec, 10)), line: this.line }); return;
+      }
+    }
+    let value = 0;
+    while (this.pos < this.src.length) {
+      const dv = digitValue(this.ch());
+      if (dv < 0) break;
+      value = value * 10 + dv;
+      this.consume();
+    }
+    if (this.ch() === '.' && this.ch(1) !== '.') {
+      this.consume();
+      let frac = 0, div = 1;
+      while (this.pos < this.src.length) {
+        const dv = digitValue(this.ch());
+        if (dv < 0) break;
+        frac = frac * 10 + dv;
+        div *= 10;
+        this.consume();
+      }
+      const f = value + frac / div;
+      let sci = '';
+      if (this.ch() === 'e' || this.ch() === 'E') {
+        sci += this.consume();
+        if (this.ch() === '+' || this.ch() === '-') sci += this.consume();
+        while (/[0-9]/.test(this.ch())) sci += this.consume();
+      }
+      toks.push({ type: 'FLOAT', value: sci ? parseFloat(f + sci) : f, line: this.line });
+    } else {
+      toks.push({ type: 'NUM', value, line: this.line });
+    }
+  }
+
+  readString(toks) {
+    this.consume(); // opening "
+    const parts = [];
+    let cur = '';
+    while (this.pos < this.src.length && this.ch() !== '"') {
+      if (this.ch() === '\\') {
+        this.consume();
+        const e = this.consume();
+        // \{ and \} produce literal braces (not interpolation delimiters)
+        cur += e === 'n' ? '\n' : e === 't' ? '\t' : e;
+      } else if (this.ch() === '{') {
+        if (cur) { parts.push({ t: 'lit', v: cur }); cur = ''; }
+        this.consume();
+        let depth = 1, inner = '';
+        while (this.pos < this.src.length && depth > 0) {
+          const ch = this.consume();
+          if      (ch === '{') { depth++; inner += ch; }
+          else if (ch === '}') { depth--; if (depth > 0) inner += ch; }
+          else inner += ch;
+        }
+        parts.push({ t: 'expr', v: inner });
+      } else {
+        cur += this.consume();
+      }
+    }
+    if (this.pos < this.src.length) this.consume(); // closing "
+    if (cur) parts.push({ t: 'lit', v: cur });
+    toks.push({ type: 'STR', value: parts, line: this.line });
+  }
+
+  readChar(toks) {
+    this.consume();
+    let ch = '';
+    if (this.ch() === '\\') {
+      this.consume();
+      const e = this.consume();
+      // Escape table mirrors Lexer::lex_char in zymbol-lexer/src/literals.rs. This used to
+      // take the character after the backslash verbatim, so '\n' lexed as the letter "n" —
+      // a pattern like `'\n' => …` then silently never matched a real newline (and did match
+      // the letter n). That is why Enter did nothing in TUI programs under the web
+      // interpreter while working under the CLI: every arrow key is a literal glyph ('↑')
+      // and was unaffected, but Enter is delivered as '\n' and fell through to the wildcard.
+      ch = e === 'n' ? '\n'
+         : e === 't' ? '\t'
+         : e === 'r' ? '\r'
+         : e === '0' ? '\0'
+         : e;                 // \' \\ and anything else: the character itself
+    } else {
+      ch = this.consume();
+    }
+    if (this.ch() === "'") this.consume();
+    toks.push({ type: 'CHAR', value: ch, line: this.line });
+  }
+
+  readIdent(toks) {
+    let s = '';
+    while (true) {
+      const c = this.ch();
+      if (!c) break;
+      if (c === '°') break; // hot-def suffix — consumed below, not part of name
+      // Mirrors Lexer::is_ident_continue: unlike the identifier-START check
+      // (readNumber is tried first, at the tokenize() dispatch site), a
+      // digit-block character does NOT end an identifier once it has begun —
+      // some Private Use Area scripts (e.g. Klingon pIqaD/CSUR) reuse the
+      // same PUA sub-range for both letters and that script's own digits, so
+      // breaking here would truncate real identifiers mid-word (HLZ-KL-001-
+      // adjacent parity gap, found via klingon_galaxy/HuD.zy).
+      if (/[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(c)) { s += this.consume(); continue; }
+      break;
+    }
+    const hot = this.ch() === '°';
+    if (hot) this.consume();
+    toks.push({ type: 'IDENT', value: s, hot, line: this.line });
+  }
+}
+
+// ─── Parser ───────────────────────────────────────────────────────────────────
+
+export class Parser {
+  constructor(tokens) {
+    this.toks = tokens;
+    this.pos  = 0;
+  }
+
+  peek(n = 0) { return this.toks[Math.min(this.pos + n, this.toks.length - 1)]; }
+  adv() {
+    const t = this.toks[this.pos];
+    if (this.pos < this.toks.length - 1) this.pos++;
+    return t;
+  }
+  check(type) { return this.peek().type === type; }
+  match(...types) { return types.includes(this.peek().type) ? this.adv() : null; }
+  eat(type, msg) {
+    if (!this.check(type))
+      throw new ZyError(msg ?? `Expected ${type}, got '${this.peek().value ?? this.peek().type}'`, this.peek().line);
+    return this.adv();
+  }
+
+  parse() { return { type: 'Program', body: this.parseStmtList() }; }
+
+  parseStmtList() {
+    const stmts = [];
+    while (!this.check('EOF') && !this.check('RBRACE')) {
+      const s = this.parseStmt();
+      if (s) stmts.push(s);
+    }
+    return stmts;
+  }
+
+  parseBlock() {
+    this.eat('LBRACE');
+    const stmts = this.parseStmtList();
+    this.eat('RBRACE');
+    return stmts;
+  }
+
+  parseModuleBlock() {
+    this.adv(); // consume HASH
+    let name = '';
+    if (this.check('DOT')) { this.adv(); name += '.'; }
+    name += this.eat('IDENT').value;
+    this.eat('LBRACE');
+    const body = this.parseStmtList();
+    this.eat('RBRACE');
+    return { type: 'ModuleBlock', name, body };
+  }
+
+  parseImport() {
+    this.adv(); // consume <#
+    // Parse path: ./name, ../name, ./dir/name, or string literal
+    let path = '';
+    if (this.check('DOT')) {
+      this.adv(); this.eat('DIV'); // consume . and /
+      path = './' + this.eat('IDENT').value;
+      while (this.check('DIV')) { this.adv(); path += '/' + this.eat('IDENT').value; }
+    } else if (this.check('RANGE')) {
+      this.adv(); this.eat('DIV'); // consume .. and /
+      let ups = 1;
+      while (this.check('RANGE')) { this.adv(); this.eat('DIV'); ups++; }
+      path = '../'.repeat(ups) + this.eat('IDENT').value;
+      while (this.check('DIV')) { this.adv(); path += '/' + this.eat('IDENT').value; }
+    } else if (this.check('STR')) {
+      path = this.adv().value;
+    } else {
+      path = this.eat('IDENT').value;
+      // Allow multi-segment bare paths: std/math, std/random, etc.
+      while (this.check('DIV')) { this.adv(); path += '/' + this.eat('IDENT').value; }
+    }
+    this.eat('FAT_ARROW'); // consume =>
+    const alias = this.eat('IDENT').value;
+    return { type: 'Import', path, alias };
+  }
+
+  parseStmt() {
+    const t = this.peek();
+
+    if (t.type === 'SET_NUMERAL_MODE') { this.adv(); return { type: 'SetNumeralMode', base: t.value }; }
+    if (t.type === 'IMPORT') return this.parseImport();
+    if (t.type === 'EXPORT_DECL') {
+      this.adv();
+      const names = []; // { kind:'own'|'reexport', internal, alias?, member?, exported }
+      if (this.check('LBRACE')) {
+        this.adv();
+        while (!this.check('RBRACE') && !this.check('EOF')) {
+          if (this.check('IDENT')) {
+            const first = this.adv().value;
+            if (this.check('SCOPE') || this.check('DOT')) {
+              // Re-export: alias::member or alias.member
+              this.adv();
+              const member = this.check('IDENT') ? this.adv().value : first;
+              const exported = this.check('FAT_ARROW') ? (this.adv(), this.check('IDENT') ? this.adv().value : member) : member;
+              names.push({ kind: 'reexport', alias: first, member, exported });
+            } else {
+              const exported = this.check('FAT_ARROW') ? (this.adv(), this.check('IDENT') ? this.adv().value : first) : first;
+              names.push({ kind: 'own', internal: first, exported });
+            }
+          } else {
+            this.adv();
+          }
+        }
+        this.match('RBRACE');
+      }
+      return { type: 'ExportDecl', names };
+    }
+    if (t.type === 'OUTPUT')   return this.parseOutput();
+    if (t.type === 'INPUT')    return this.parseInput();
+    if (t.type === 'RETURN')   return this.parseReturn();
+    if (t.type === 'BREAK')    { this.adv(); const bl = this.check('IDENT') ? this.adv().value : null; return { type: 'Break',    label: bl }; }
+    if (t.type === 'CONTINUE') { this.adv(); const cl = this.check('IDENT') ? this.adv().value : null; return { type: 'Continue', label: cl }; }
+    if (t.type === 'AT_BREAK') { const lbl = this.adv().value; return { type: 'Break',    label: lbl }; }
+    if (t.type === 'AT_CONT')  { const lbl = this.adv().value; return { type: 'Continue', label: lbl }; }
+    if (t.type === 'ATSLEEP')    { this.adv(); return { type: 'Sleep', duration: this.parseExpr() }; }
+    if (t.type === 'CLI_ARGS')    { this.adv(); return { type: 'CliArgs', variable: this.eat('IDENT').value }; }
+    if (t.type === 'OUTPUT_CLEAR') { this.adv(); return { type: 'ClearScreen' }; }
+    if (t.type === 'OUTPUT_GATE')  return this.parseTuiBlock();
+    if (t.type === 'OUTPUT_POS')   return this.parseOutputPos();
+    if (t.type === 'KEY_BLOCK')    return this.parseKeyInput(true);
+    if (t.type === 'KEY_NONBLOCK') return this.parseKeyInput(false);
+    if (t.type === 'IF')       return this.parseIf();
+    if (t.type === 'MATCH')    return { type: 'ExprStmt', expr: this.parseMatchExpr() };
+    if (t.type === 'AT')       { this.adv(); return this.parseLoop(); }
+    if (t.type === 'AT_LABEL') { return this.parseLabeledLoop(); }
+    if (t.type === 'TRY')      return this.parseTryCatch();
+    if (t.type === 'BACKSLASH') {
+      this.adv();
+      if (this.check('IDENT')) {
+        const name = this.adv().value;
+        return { type: 'LifetimeEnd', name };
+      }
+      return null;
+    }
+    if (t.type === 'LBRACKET' && this.isDestructuring()) return this.parseArrayDestruct();
+    if (t.type === 'LPAREN'   && this.isDestructuring()) return this.parseTupleDestruct();
+    if (t.type === 'IDENT')    return this.parseIdentStmt();
+    if (t.type === 'SEMI')     { this.adv(); return null; }
+    if (t.type === 'PILCROW')  { this.adv(); return { type: 'Output', items: [], newline: true }; }
+    if (t.type === 'HASH')     return this.parseModuleBlock();
+
+    return { type: 'ExprStmt', expr: this.parseExpr() };
+  }
+
+  parseOutput() {
+    const opLine = this.adv().line;
+    const items = [];
+    while (!this.check('PILCROW') && !this.check('NEWLINE_ESC') &&
+           !this.check('RBRACE') && !this.check('EOF')) {
+      if (this.peek().line > opLine) break;
+      items.push(this.parseExpr());
+    }
+    const nl = this.match('PILCROW', 'NEWLINE_ESC');
+    return { type: 'Output', items, newline: !!nl, line: this.peek().line };
+  }
+
+  parseInput() {
+    const line = this.peek().line;
+    this.adv();
+    // Optional leading typespec cast: ##. / ##.(t,d) / ### / ###(n) / ##! / ##!(n) / ##"(n) / ##'
+    const cast = this.parseInputTypespec();
+    let prompt = null;
+    if (this.check('STR')) {
+      prompt = { type: 'Literal', kind: 'str', value: this.adv().value };
+    }
+    // Legacy `#|variable|` numeric cast — only when no typespec was given.
+    let typed = false;
+    if (!cast && this.check('DATA_OP') && this.peek().value?.kind === 'eval') {
+      this.adv(); typed = true;
+    }
+    const varTok = this.eat('IDENT');
+    if (typed) this.match('VBAR'); // consume closing |
+    const finalCast = cast ?? { kind: typed ? 'numeric' : 'string' };
+    return { type: 'Input', prompt, varName: varTok.value, cast: finalCast, line };
+  }
+
+  // Typed-input typespec after <<:
+  //   ##.(t,d) → decimal, ##. → float, ###(n)/##!(n) → int, ##"(n) → text, ##' → char
+  // Returns null when the next token is not a typespec.
+  parseInputTypespec() {
+    const t = this.peek().type;
+    if (t === 'CAST_FLOAT') {
+      this.adv();
+      if (this.check('LPAREN')) {
+        const [total, decimals] = this.parseTwoUintArgs();
+        return { kind: 'decimal', total, decimals };
+      }
+      return { kind: 'float' };
+    }
+    if (t === 'CAST_INT_ROUND' || t === 'CAST_INT_TRUNC') {
+      this.adv();
+      return { kind: 'int', maxDigits: this.parseOptOneUintArg() };
+    }
+    if (t === 'CAST_TEXT') {
+      this.adv();
+      return { kind: 'text', max: this.parseOptOneUintArg() };
+    }
+    if (t === 'CAST_CHAR') {
+      this.adv();
+      return { kind: 'char' };
+    }
+    return null;
+  }
+
+  parseOptOneUintArg() {
+    if (!this.check('LPAREN')) return null;
+    this.adv();
+    const n = this.eat('NUM').value;
+    this.eat('RPAREN');
+    return n;
+  }
+
+  parseTwoUintArgs() {
+    this.eat('LPAREN');
+    const a = this.eat('NUM').value;
+    this.eat('COMMA');
+    const b = this.eat('NUM').value;
+    this.eat('RPAREN');
+    return [a, b];
+  }
+
+  parseReturn() {
+    const opLine = this.adv().line;
+    if (this.check('RBRACE') || this.check('EOF') || this.peek().line > opLine)
+      return { type: 'Return', value: null };
+    const items = [];
+    while (!this.check('RBRACE') && !this.check('EOF') && this.peek().line === opLine) {
+      items.push(this.parseExpr());
+    }
+    const value = items.length === 1 ? items[0] : { type: 'JuxtaConcat', items };
+    return { type: 'Return', value };
+  }
+
+  parseTryCatch() {
+    this.adv();
+    const tryBody = this.parseBlock();
+    const catches = [];
+    while (this.check('CATCH')) {
+      this.adv();
+      const errType = (this.check('IDENT') && this.peek().value.startsWith('##'))
+        ? this.adv().value : null;
+      catches.push({ errType, body: this.parseBlock() });
+    }
+    let finallyBody = null;
+    if (this.check('FINALLY')) {
+      this.adv();
+      finallyBody = this.parseBlock();
+    }
+    return { type: 'TryCatch', tryBody, catches, finallyBody };
+  }
+
+  isDestructuring() {
+    let i = 0, depth = 0;
+    const start = this.peek(0).type;
+    const close = start === 'LBRACKET' ? 'RBRACKET' : 'RPAREN';
+    while (this.pos + i < this.toks.length) {
+      const t = this.toks[this.pos + i++];
+      if (t.type === start) depth++;
+      else if (t.type === close) { depth--; if (depth === 0) break; }
+    }
+    return this.peek(i).type === 'ASSIGN';
+  }
+
+  parseArrayDestruct() {
+    this.adv();
+    const targets = [];
+    while (!this.check('RBRACKET') && !this.check('EOF')) {
+      if (this.check('TIMES')) {
+        this.adv();
+        targets.push({ name: this.eat('IDENT').value, rest: true });
+      } else if (this.check('ELSE')) {
+        this.adv();
+        targets.push({ name: '_', rest: false });
+      } else {
+        targets.push({ name: this.eat('IDENT').value, rest: false });
+      }
+      this.match('COMMA');
+    }
+    this.eat('RBRACKET');
+    this.eat('ASSIGN');
+    return { type: 'ArrayDestruct', targets, value: this.parseExpr() };
+  }
+
+  parseTupleDestruct() {
+    const isNamed = this.peek(1).type === 'IDENT' && this.peek(2).type === 'COLON';
+    this.adv();
+    if (isNamed) {
+      const targets = [];
+      while (!this.check('RPAREN') && !this.check('EOF')) {
+        const field = this.eat('IDENT').value;
+        this.eat('COLON');
+        const name  = this.eat('IDENT').value;
+        targets.push({ field, name });
+        this.match('COMMA');
+      }
+      this.eat('RPAREN');
+      this.eat('ASSIGN');
+      return { type: 'NamedDestruct', targets, value: this.parseExpr() };
+    } else {
+      const targets = [];
+      while (!this.check('RPAREN') && !this.check('EOF')) {
+        if (this.check('TIMES')) {
+          this.adv();
+          targets.push({ name: this.eat('IDENT').value, rest: true });
+        } else {
+          targets.push({ name: this.eat('IDENT').value, rest: false });
+        }
+        this.match('COMMA');
+      }
+      this.eat('RPAREN');
+      this.eat('ASSIGN');
+      return { type: 'TupleDestruct', targets, value: this.parseExpr() };
+    }
+  }
+
+  parseIf() {
+    this.adv();
+    const cond = this.parseExpr();
+    const then = this.parseBlock();
+    const elseifs = [];
+    let elseBranch = null;
+    while (this.check('ELSEIF')) {
+      this.adv();
+      elseifs.push({ cond: this.parseExpr(), body: this.parseBlock() });
+    }
+    if (this.check('ELSE')) {
+      this.adv();
+      elseBranch = this.parseBlock();
+    }
+    return { type: 'If', cond, then, elseifs, else: elseBranch };
+  }
+
+  parseMatchExpr() {
+    this.adv();
+    const expr = this.parseExpr();
+    this.eat('LBRACE');
+    const arms = [];
+    while (!this.check('RBRACE') && !this.check('EOF')) {
+      arms.push(this.parseMatchArm());
+    }
+    this.eat('RBRACE');
+    return { type: 'Match', expr, arms };
+  }
+
+  parseMatchArm() {
+    let pattern = this.parseMatchPattern();
+    this.eat('FAT_ARROW');
+    // The no-bare-comparison restriction (inMatchBody) only applies to the
+    // value form (pattern => expr) — there it would swallow the next arm's
+    // comparison pattern (e.g. "ice" < 20). A { block } body is unambiguously
+    // delimited, so comparisons inside it must parse normally.
+    let body;
+    if (this.check('LBRACE')) {
+      body = { type: 'block', stmts: this.parseBlock() };
+    } else {
+      this.inMatchBody = true;
+      body = { type: 'expr', value: this.parseExpr() };
+      this.inMatchBody = false;
+    }
+    return { pattern, body };
+  }
+
+  // Pattern with `||` alternatives: p1 || p2 || p3 (first match wins).
+  // Alternatives are top-level only — list elements stay primary patterns.
+  parseMatchPattern() {
+    const first = this.parseMatchPatternPrimary();
+    if (!this.check('OR')) return first;
+    const alts = [first];
+    while (this.match('OR')) alts.push(this.parseMatchPatternPrimary());
+    return { type: 'or', alts };
+  }
+
+  parseMatchPatternPrimary() {
+    let pattern;
+    if (this.check('ELSE')) {
+      this.adv();
+      pattern = { type: 'wildcard' };
+    } else if (this.check('ELSEIF')) {
+      this.adv();
+      pattern = { type: 'guard', cond: this.parseExpr() };
+    } else if (this.check('LBRACKET')) {
+      // List pattern: [a, b, *rest] or [1, "x", _]
+      this.adv();
+      const elems = [];
+      while (!this.check('RBRACKET') && !this.check('EOF')) {
+        if (this.check('TIMES')) {
+          this.adv();
+          elems.push({ kind: 'rest', name: this.eat('IDENT').value });
+        } else if (this.check('ELSE')) {
+          this.adv();
+          elems.push({ kind: 'wildcard' });
+        } else if (this.check('IDENT') && (this.peek(1).type === 'COMMA' || this.peek(1).type === 'RBRACKET')) {
+          elems.push({ kind: 'bind', name: this.adv().value });
+        } else {
+          elems.push({ kind: 'literal', expr: this.parseAdditive() });
+        }
+        this.match('COMMA');
+      }
+      this.eat('RBRACKET');
+      pattern = { type: 'list', elems };
+    } else if (['LT','GT','LTE','GTE','EQ','NEQ'].includes(this.peek().type)) {
+      const op = this.adv().value;
+      pattern = { type: 'comparison', op, value: this.parseAdditive() };
+    } else {
+      const left = this.parseAdditive();
+      if (this.match('RANGE')) {
+        pattern = { type: 'range', from: left, to: this.parseAdditive() };
+      } else {
+        pattern = { type: 'literal', value: left };
+      }
+    }
+    return pattern;
+  }
+
+  parseLoop() {
+    if (this.check('LBRACE')) {
+      return { type: 'Loop', kind: 'infinite', label: null, body: this.parseBlock() };
+    }
+    // @ IDENT COLON  → unlabeled range/foreach (@ var:start..end)
+    if (this.check('IDENT') && this.peek(1).type === 'COLON') {
+      const varName = this.adv().value;
+      this.adv();
+      const startExpr = this.parseAdditive();
+      if (this.match('RANGE')) {
+        const endExpr = this.parseAdditive();
+        let stepExpr = null;
+        if (this.match('COLON')) stepExpr = this.parseAdditive();
+        return { type: 'Loop', kind: 'range', label: null, var: varName,
+                 from: startExpr, to: endExpr, step: stepExpr, body: this.parseBlock() };
+      }
+      return { type: 'Loop', kind: 'foreach', label: null, var: varName,
+               iterable: startExpr, body: this.parseBlock() };
+    }
+    const cond = this.parseExpr();
+    return { type: 'Loop', kind: 'while', label: null, cond, body: this.parseBlock() };
+  }
+
+  parseLabeledLoop() {
+    const label = this.adv().value; // consume AT_LABEL token
+    if (this.check('LBRACE')) {
+      return { type: 'Loop', kind: 'infinite', label, body: this.parseBlock() };
+    }
+    // @label var:start..end
+    if (this.check('IDENT') && this.peek(1).type === 'COLON') {
+      const varName = this.adv().value;
+      this.adv(); // consume ':'
+      const startExpr = this.parseAdditive();
+      if (this.match('RANGE')) {
+        const endExpr = this.parseAdditive();
+        let stepExpr = null;
+        if (this.match('COLON')) stepExpr = this.parseAdditive();
+        return { type: 'Loop', kind: 'range', label, var: varName,
+                 from: startExpr, to: endExpr, step: stepExpr, body: this.parseBlock() };
+      }
+      return { type: 'Loop', kind: 'foreach', label, var: varName,
+               iterable: startExpr, body: this.parseBlock() };
+    }
+    // @label cond { }
+    const cond = this.parseExpr();
+    return { type: 'Loop', kind: 'while', label, cond, body: this.parseBlock() };
+  }
+
+  isFuncDecl() {
+    if (this.peek(0).type !== 'IDENT' || this.peek(1).type !== 'LPAREN') return false;
+    let i = 2, depth = 1;
+    while (this.pos + i < this.toks.length && depth > 0) {
+      const t = this.toks[this.pos + i++];
+      if (t.type === 'LPAREN') depth++;
+      else if (t.type === 'RPAREN') depth--;
+    }
+    return this.peek(i).type === 'LBRACE';
+  }
+
+  parseFuncDecl() {
+    const nameTok = this.adv();
+    const name = nameTok.value;
+    const line = nameTok.line;
+    this.eat('LPAREN');
+    const params = [];
+    while (!this.check('RPAREN') && !this.check('EOF')) {
+      const pname = this.eat('IDENT').value;
+      let isOut = false;
+      if (this.match('RETURN')) isOut = true;
+      params.push({ name: pname, isOut });
+      this.match('COMMA');
+    }
+    this.eat('RPAREN');
+    return { type: 'FuncDecl', name, params, body: this.parseBlock(), line };
+  }
+
+  parseIdentStmt() {
+    if (this.isFuncDecl()) return this.parseFuncDecl();
+
+    const tok0 = this.adv();
+    const name = tok0.value;
+    const hot  = tok0.hot ?? false;
+    const line = this.peek().line;
+
+    if (this.match('CONST_ASSIGN')) {
+      return { type: 'ConstAssign', name, value: this.parseRHS(), line };
+    }
+
+    const compound = { PLUS_EQ:'+', MINUS_EQ:'-', TIMES_EQ:'*', DIV_EQ:'/', MOD_EQ:'%', POW_EQ:'^' };
+    const cop = compound[this.peek().type];
+    if (cop) { this.adv(); return { type: 'CompoundAssign', name, hot, op: cop, value: this.parseExpr(), line }; }
+
+    if (this.match('INC')) return { type: 'Increment', name, hot, op: '++', line };
+    if (this.match('DEC')) return { type: 'Increment', name, hot, op: '--', line };
+
+    if (this.match('ASSIGN')) {
+      return { type: 'VarAssign', name, hot, value: this.parseRHS(), line };
+    }
+
+    // subscript assign: name[idx] = val
+    if (this.check('LBRACKET') && this.peek().line === this.toks[this.pos - 1].line) {
+      this.adv();
+      const idx = this.parseExpr();
+      this.eat('RBRACKET');
+      if (this.match('ASSIGN')) {
+        return { type: 'IndexAssign', obj: name, index: idx, value: this.parseExpr(), line };
+      }
+      const idxCompound = compound[this.peek().type];
+      if (idxCompound) {
+        this.adv();
+        const rhs = this.parseExpr();
+        const currentElem = { type: 'NavIndex', obj: { type: 'Ident', name, line: tok0.line }, spec: { kind: 'simple', index: idx } };
+        const value = { type: 'BinOp', op: idxCompound, left: currentElem, right: rhs };
+        return { type: 'IndexAssign', obj: name, index: idx, value, line };
+      }
+      let left = { type: 'NavIndex', obj: { type: 'Ident', name, line: tok0.line }, spec: { kind: 'simple', index: idx } };
+      return { type: 'ExprStmt', expr: this.parsePostfixRest(left) };
+    }
+
+    let left = { type: 'Ident', name, hot, line: tok0.line };
+    return { type: 'ExprStmt', expr: this.parsePostfixRest(left) };
+  }
+
+  // Parse an expression in a delimited position — a call argument, an array
+  // element, a tuple element or a grouped expression — allowing implicit
+  // concatenation there too: f(" " label(k) value)  [a " " b]  (a " " b)
+  // Unlike parseRHS, a following '(' never continues the chain here: it is
+  // ambiguous with a lambda, a tuple and a grouped expression (HLZ-007).
+  parseExprJuxt() {
+    const firstLine = this.peek().line;
+    const first = this.parseExpr();
+    const juxtStart = new Set(['STR', 'IDENT', 'NUM', 'FLOAT', 'CHAR', 'BOOL']);
+    const items = [first];
+    while (this.peek().line === firstLine && juxtStart.has(this.peek().type)) {
+      items.push(this.parseExpr());
+    }
+    if (items.length === 1) return first;
+    return { type: 'ImplicitConcat', items };
+  }
+
+  parseRHS() {
+    const firstLine = this.peek().line;
+    const first = this.parseExpr();
+    if (this.check('COMMA')) {
+      const items = [first];
+      while (this.match('COMMA')) items.push(this.parseExpr());
+      return { type: 'CommaJoin', items };
+    }
+    // Implicit string concatenation: collect multiple expressions on the same line
+    const implicitExprStart = new Set(['STR','IDENT','NUM','FLOAT','CHAR','BOOL','LPAREN','LBRACKET','MINUS','NOT','CAST_FLOAT','CAST_INT_ROUND','CAST_INT_TRUNC','DATA_OP','MATCH','ELSE']);
+    const items = [first];
+    while (this.peek().line === firstLine && implicitExprStart.has(this.peek().type)) {
+      items.push(this.parseExpr());
+    }
+    if (items.length === 1) return first;
+    return { type: 'ImplicitConcat', items };
+  }
+
+  // ─── Expression grammar ──────────────────────────────────────────────────
+
+  parseExpr() {
+    if (this.isLambdaStart()) return this.parseLambda();
+    return this.parsePipe();
+  }
+
+  isLambdaStart() {
+    if (this.peek(0).type === 'IDENT' && this.peek(1).type === 'ARROW') return true;
+    if (this.peek(0).type !== 'LPAREN') return false;
+    let i = 1, depth = 1;
+    while (depth > 0 && this.pos + i < this.toks.length) {
+      const t = this.toks[this.pos + i++];
+      if (t.type === 'LPAREN') depth++;
+      else if (t.type === 'RPAREN') depth--;
+    }
+    if (this.peek(i).type === 'ARROW') return true;
+    i = 1;
+    while (this.pos + i < this.toks.length) {
+      const t = this.toks[this.pos + i];
+      if (t.type === 'ARROW') return true;
+      if (t.type === 'RPAREN' || t.type === 'EOF') return false;
+      if (t.type !== 'IDENT' && t.type !== 'COMMA') return false;
+      i++;
+    }
+    return false;
+  }
+
+  parseLambda() {
+    const params = [];
+    let parensWrapped = false;
+    if (this.check('LPAREN')) {
+      this.adv();
+      while (!this.check('RPAREN') && !this.check('ARROW') && !this.check('EOF')) {
+        params.push(this.eat('IDENT').value);
+        this.match('COMMA');
+      }
+      if (this.check('RPAREN')) {
+        // (params) -> body form: consume ')' before '->'
+        this.adv();
+      } else {
+        // (params -> body) form: closing ')' comes after body
+        parensWrapped = true;
+      }
+    } else {
+      params.push(this.adv().value);
+    }
+    this.eat('ARROW');
+    const body = this.check('LBRACE')
+      ? { type: 'block', stmts: this.parseBlock() }
+      : { type: 'expr',  value: this.parseExpr() };
+    if (parensWrapped) this.match('RPAREN');
+    return { type: 'Lambda', params, body };
+  }
+
+  parsePipe() {
+    let left = this.parseOr();
+    while (this.match('PIPE')) {
+      const rhs = this.parseOr();
+      left = { type: 'Pipe', value: left, rhs };
+    }
+    return left;
+  }
+
+  parseOr()             { return this.parseBinLeft(['OR'],  () => this.parseAnd()); }
+  parseAnd()            { return this.parseBinLeft(['AND'], () => this.parseComparison()); }
+  parseComparison() {
+    let left = this.parseAdditive();
+    if (this.inMatchBody) return left;
+    const cmp = { EQ:'==', NEQ:'<>', LT:'<', GT:'>', LTE:'<=', GTE:'>=' };
+    const op  = cmp[this.peek().type];
+    if (op) { this.adv(); left = { type:'BinOp', op, left, right: this.parseAdditive() }; }
+    return left;
+  }
+  parseAdditive()       { return this.parseBinLeft(['PLUS','MINUS'], () => this.parseMultiplicative()); }
+  parseMultiplicative() { return this.parseBinLeft(['TIMES','DIV','MOD'], () => this.parseExponent()); }
+  parseExponent() {
+    let left = this.parseUnary();
+    if (this.match('POW')) left = { type:'BinOp', op:'^', left, right: this.parseUnary() };
+    return left;
+  }
+
+  parseBinLeft(tokenTypes, sub) {
+    const opMap = { OR:'||', AND:'&&', PLUS:'+', MINUS:'-', TIMES:'*', DIV:'/', MOD:'%' };
+    let left = sub();
+    while (tokenTypes.includes(this.peek().type)) {
+      const op = opMap[this.adv().type] ?? this.toks[this.pos - 1].value;
+      left = { type: 'BinOp', op, left, right: sub() };
+    }
+    return left;
+  }
+
+  parseUnary(noCollectionChain) {
+    if (this.match('MINUS')) return { type: 'UnaryOp', op: '-', operand: this.parseUnary() };
+    if (this.match('NOT'))   return { type: 'UnaryOp', op: '!', operand: this.parseUnary() };
+    if (noCollectionChain && this.isLambdaStart()) return this.parseLambda();
+    return noCollectionChain ? this.parsePostfixNoChain() : this.parsePostfix();
+  }
+
+  parsePostfix() {
+    return this.parsePostfixRest(this.parsePrimary());
+  }
+
+  parsePostfixNoChain() {
+    const primary = this.parsePrimary();
+    const sameLine = () => this.peek().line === (this.toks[this.pos - 1]?.line ?? this.peek().line);
+    let left = primary;
+    while (true) {
+      if (this.check('LBRACKET') && sameLine()) {
+        this.adv(); const spec = this.parseNavContent(); this.eat('RBRACKET');
+        left = { type: 'NavIndex', obj: left, spec };
+      } else if (this.check('DOT') || this.check('SCOPE')) {
+        // Record which operator produced this node. `::` and `.` build the same shape but
+        // are not interchangeable: `alias::fn` and `alias.CONST` address the module
+        // namespace, while `tuple.field` addresses a value. Collapsing them lost that
+        // distinction, so a local variable sharing a module alias's name shadowed the
+        // module and any `alias::fn(...)` after it failed — see eval's FieldAccess case.
+        const scoped = this.check('SCOPE');
+        this.adv(); const field = this.eat('IDENT').value;
+        left = { type: 'FieldAccess', obj: left, field, scoped };
+      } else if (this.check('LPAREN') && sameLine() && left.type === 'Ident') {
+        this.adv(); const args = this.parseArgList(); this.eat('RPAREN');
+        left = { type: 'Call', callee: left.name, args };
+      } else if (this.check('LPAREN') && sameLine() && left.type !== 'Ident') {
+        this.adv(); const args = this.parseArgList(); this.eat('RPAREN');
+        left = { type: 'CallExpr', callee: left, args };
+      } else break;
+    }
+    return left;
+  }
+
+  parsePostfixRest(left) {
+    const COL_TOKENS = new Set(['DLEN','DAPPEND','DREMOVEALL','DREMOVE',
+      'DFINDALL','DCONTAINS','DSORTASC','DSORTDESC','DSORT',
+      'DMAP','DFILTER','DREDUCE','DSLICE','DERROR','DERRORPROP','DREPLACE',
+      'DSPLIT','DCONCATBUILD','DREPEAT']);
+
+    while (true) {
+      const sameLine = () => this.peek().line === (this.toks[this.pos - 1]?.line ?? this.peek().line);
+
+      if (this.check('LBRACKET') && sameLine()) {
+        this.adv();
+        const spec = this.parseNavContent();
+        this.eat('RBRACKET');
+        if ((spec.kind === 'simple' || spec.kind === 'path') && this.check('DUPDATE')) {
+          this.adv();
+          const val = this.parseUnary();
+          if (spec.kind === 'simple') {
+            // arr[i]$~ val — single-level functional update
+            left = { type: 'FuncUpdate', obj: left, index: spec.index, value: val };
+          } else {
+            // arr[i>j]$~ val — deep functional update (G1)
+            left = { type: 'DeepUpdate', obj: left, path: spec.path, value: val };
+          }
+        } else {
+          left = { type: 'NavIndex', obj: left, spec };
+        }
+
+      } else if (this.check('DOT') || this.check('SCOPE')) {
+        this.adv();
+        const field = this.eat('IDENT').value;
+        left = { type: 'FieldAccess', obj: left, field };
+
+      } else if (this.check('LPAREN') && sameLine() && left.type === 'Ident') {
+        this.adv();
+        const args = this.parseArgList();
+        this.eat('RPAREN');
+        left = { type: 'Call', callee: left.name, args };
+
+      } else if (this.check('LPAREN') && sameLine() && left.type !== 'Ident' && left.type !== 'Literal') {
+        this.adv();
+        const args = this.parseArgList();
+        this.eat('RPAREN');
+        left = { type: 'CallExpr', callee: left, args };
+
+      } else if (COL_TOKENS.has(this.peek().type)) {
+        left = this.parseCollectionOp(left);
+
+      } else if (this.check('TYPE_QUERY')) {
+        this.adv();
+        left = { type: 'TypeMetadata', obj: left };
+
+      } else {
+        break;
+      }
+    }
+    return left;
+  }
+
+  // ─── Navigation index parsing ─────────────────────────────────────────────
+
+  // Called after consuming '['. Returns a spec object for NavIndex.
+  parseNavContent() {
+    // Structured nav: [[g1] ; [g2]] — starts with '['
+    if (this.check('LBRACKET')) {
+      return this.parseNavStructured();
+    }
+
+    // Parse first nav atom (uses additive, not full comparison, so '>' is nav separator)
+    const firstAtom = this.parseNavAtom();
+
+    // nav path or flat extraction?
+    if (this.check('GT') || this.check('SEMI')) {
+      return this.parseNavContinue(firstAtom);
+    }
+
+    // Simple subscript: single index, no nav ops
+    if (firstAtom.kind === 'index') {
+      return { kind: 'simple', index: firstAtom.expr };
+    }
+    // Single range at top level (unusual) → flat
+    return { kind: 'flat', paths: [[firstAtom]] };
+  }
+
+  // Parse a nav atom: additive expr, optionally followed by '..' range
+  parseNavAtom() {
+    const expr = this.parseAdditive();
+    if (this.match('RANGE')) {
+      const to = this.parseAdditive();
+      return { kind: 'range', from: expr, to };
+    }
+    return { kind: 'index', expr };
+  }
+
+  // Continue parsing after the first atom — GT means nav path, SEMI means flat
+  parseNavContinue(firstAtom) {
+    // Build first path (starting with firstAtom)
+    const firstPath = [firstAtom];
+    while (this.match('GT')) firstPath.push(this.parseNavAtom());
+
+    if (!this.check('SEMI')) {
+      // Single nav path
+      return { kind: 'path', path: firstPath };
+    }
+
+    // Multiple paths separated by ';' — flat extraction
+    const paths = [firstPath];
+    while (this.match('SEMI')) {
+      const path = [this.parseNavAtom()];
+      while (this.match('GT')) path.push(this.parseNavAtom());
+      paths.push(path);
+    }
+    return { kind: 'flat', paths };
+  }
+
+  // Parse structured nav: [[g1,g2] ; [g3,g4]] — already past outer '['
+  parseNavStructured() {
+    const groups = [];
+    do {
+      this.eat('LBRACKET');
+      const paths = [];
+      do {
+        const path = [this.parseNavAtom()];
+        while (this.match('GT')) path.push(this.parseNavAtom());
+        paths.push(path);
+      } while (this.match('COMMA'));
+      this.eat('RBRACKET');
+      groups.push({ paths });
+    } while (this.match('SEMI'));
+    return { kind: 'structured', groups };
+  }
+
+  // ─── Collection ops ───────────────────────────────────────────────────────
+
+  parseCollectionOp(left) {
+    const op = this.adv().type;
+
+    switch (op) {
+      case 'DLEN':
+        return { type: 'CollectionOp', op: '$#', obj: left };
+
+      case 'DAPPEND':
+        if (this.check('LBRACKET')) {
+          this.adv();
+          const idx = this.parseExpr(); this.eat('RBRACKET');
+          return { type: 'CollectionOp', op: '$+[i]', obj: left, index: idx, arg: this.parseUnary(true) };
+        }
+        // Use parseUnary(true) to prevent right-nesting: arr$+4$+5 → (arr$+4)$+5 not arr$+(4$+5)
+        return { type: 'CollectionOp', op: '$+', obj: left, arg: this.parseUnary(true) };
+
+      case 'DREMOVEALL':
+        return { type: 'CollectionOp', op: '$--', obj: left, arg: this.parseUnary() };
+
+      case 'DREMOVE':
+        if (this.check('LBRACKET')) {
+          this.adv();
+          // Open-start: $-[..N]
+          if (this.match('RANGE')) {
+            const to = this.parseExpr(); this.eat('RBRACKET');
+            return { type: 'CollectionOp', op: '$-[i..j]', obj: left, range: { from: null, to } };
+          }
+          const from = this.parseExpr();
+          if (this.match('RANGE')) {
+            // Open-end: $-[N..]  or  $-[N..M]
+            const toNode = (!this.check('RBRACKET')) ? this.parseExpr() : null;
+            this.eat('RBRACKET');
+            return { type: 'CollectionOp', op: '$-[i..j]', obj: left, range: { from, to: toNode } };
+          }
+          if (this.match('COLON')) {
+            // Count-based: $-[start:count]
+            const count = this.parseExpr(); this.eat('RBRACKET');
+            return { type: 'CollectionOp', op: '$-[i:n]', obj: left, start: from, count };
+          }
+          this.eat('RBRACKET');
+          return { type: 'CollectionOp', op: '$-[i]', obj: left, index: from };
+        }
+        return { type: 'CollectionOp', op: '$-', obj: left, arg: this.parseUnary() };
+
+      case 'DFINDALL':
+        return { type: 'CollectionOp', op: '$??', obj: left, arg: this.parseUnary() };
+
+      case 'DCONTAINS':
+        return { type: 'CollectionOp', op: '$?', obj: left, arg: this.parseUnary() };
+
+      case 'DUPDATE':
+        this.eat('LBRACKET');
+        { const idx = this.parseExpr(); this.eat('RBRACKET');
+          return { type: 'CollectionOp', op: '$~', obj: left, index: idx, arg: this.parseUnary() }; }
+
+      case 'DSORTASC':   return { type: 'CollectionOp', op: '$^+', obj: left };
+      case 'DSORTDESC':  return { type: 'CollectionOp', op: '$^-', obj: left };
+      case 'DSORT':      return { type: 'CollectionOp', op: '$^',  obj: left, arg: this.parseUnary() };
+
+      case 'DMAP':       return { type: 'CollectionOp', op: '$>',  obj: left, arg: this.parseUnary(true) };
+      case 'DFILTER':    return { type: 'CollectionOp', op: '$|',  obj: left, arg: this.parseUnary(true) };
+
+      case 'DREDUCE':
+        this.eat('LPAREN');
+        { const init = this.parseExpr(); this.eat('COMMA');
+          const fn   = this.parseExpr(); this.eat('RPAREN');
+          return { type: 'CollectionOp', op: '$<', obj: left, init, arg: fn }; }
+
+      case 'DSLICE':
+        this.eat('LBRACKET');
+        // $[start..end], $[..end] (open-start), $[start..] (open-end), $[start:count]
+        { const from = this.check('RANGE') ? null : this.parseExpr();
+          if (this.match('RANGE')) {
+            const to = this.check('RBRACKET') ? null : this.parseExpr();
+            this.eat('RBRACKET');
+            return { type: 'CollectionOp', op: '$[i..j]', obj: left, range: { from, to } };
+          }
+          this.eat('COLON');
+          const count = this.parseExpr(); this.eat('RBRACKET');
+          return { type: 'CollectionOp', op: '$[i:n]', obj: left, range: { from, count } }; }
+
+      case 'DERROR':
+        return { type: 'CollectionOp', op: '$!', obj: left };
+
+      case 'DERRORPROP':
+        return { type: 'CollectionOp', op: '$!!', obj: left };
+
+      case 'DREPLACE':
+        this.eat('LBRACKET');
+        { const from = this.parseExpr(); this.eat('COLON');
+          const to   = this.parseExpr();
+          const count = this.match('COLON') ? this.parseExpr() : null;
+          this.eat('RBRACKET');
+          return { type: 'CollectionOp', op: '$~~', obj: left, from, to, count }; }
+
+      case 'DSPLIT':
+        return { type: 'CollectionOp', op: '$/', obj: left, arg: this.parseUnary() };
+
+      case 'DREPEAT':
+        return { type: 'CollectionOp', op: '$*', obj: left, arg: this.parseUnary() };
+
+      case 'DCONCATBUILD': {
+        const opLine = this.toks[this.pos - 1].line;
+        const items = [];
+        const canStart = () => {
+          const t = this.peek().type;
+          return ['NUM','FLOAT','BOOL','CHAR','STR','IDENT','LPAREN','LBRACKET','ELSE',
+                  'CAST_FLOAT','CAST_INT_ROUND','CAST_INT_TRUNC'].includes(t);
+        };
+        while (this.peek().line === opLine && !this.check('PILCROW') &&
+               !this.check('RBRACE') && !this.check('EOF') && canStart()) {
+          items.push(this.parsePostfix());
+        }
+        return { type: 'CollectionOp', op: '$++', obj: left, items };
+      }
+
+      default:
+        return left;
+    }
+  }
+
+  parseKeyInput(blocking) {
+    this.adv(); // consume <<| or <<|?
+    const v = this.eat('IDENT');
+    return { type: 'KeyInput', variable: v.value, blocking };
+  }
+
+  parseTuiBlock() {
+    this.adv(); // consume >>|
+    const body = this.parseBlock();
+    return { type: 'TuiBlock', body };
+  }
+
+  parseOutputPos() {
+    const opLine = this.adv().line; // consume >>~
+    let slots;
+    if (this.check('LPAREN')) {
+      this.adv(); // consume (
+      slots = [];
+      while (!this.check('RPAREN') && !this.check('EOF')) {
+        if (this.check('COMMA')) { slots.push(null); this.adv(); }
+        else { slots.push(this.parseExpr()); if (this.check('COMMA')) this.adv(); }
+        if (slots.length > 5) throw new Error('>>~ position has at most 5 slots');
+      }
+      this.eat('RPAREN');
+    } else {
+      const name = this.eat('IDENT').value;
+      slots = [{ type: 'Ident', name, hot: false }]; // sentinel: variable mode
+    }
+    this.eat('GT'); // consume >
+    const items = [];
+    while (!this.check('PILCROW') && !this.check('RBRACE') &&
+           !this.check('EOF') && this.peek().line === opLine) {
+      items.push(this.parseExpr());
+    }
+    return { type: 'OutputPos', slots, items };
+  }
+
+  parseArgList() {
+    const args = [];
+    while (!this.check('RPAREN') && !this.check('EOF')) {
+      args.push(this.parseExprJuxt());
+      this.match('COMMA');
+    }
+    return args;
+  }
+
+  parsePrimary() {
+    if (this.peek().type === 'LPAREN' && this.isLambdaStart()) return this.parseLambda();
+
+    const t = this.peek();
+
+    if (t.type === 'NUM')   { this.adv(); return { type: 'Literal', kind: 'int',   value: t.value }; }
+    if (t.type === 'FLOAT') { this.adv(); return { type: 'Literal', kind: 'float', value: t.value }; }
+    if (t.type === 'BOOL')  { this.adv(); return { type: 'Literal', kind: 'bool',  value: t.value }; }
+    if (t.type === 'CHAR')  { this.adv(); return { type: 'Literal', kind: 'char',  value: t.value }; }
+    if (t.type === 'STR')   { this.adv(); return { type: 'Literal', kind: 'str',   value: t.value }; }
+    if (t.type === 'IDENT')        { this.adv(); return { type: 'Ident',       name: t.value, hot: t.hot ?? false, line: t.line }; }
+    if (t.type === 'ELSE')         { this.adv(); return { type: 'Ident',       name: '_'      }; }
+    if (t.type === 'OUTPUT_QUERY') { this.adv(); return { type: 'TerminalSize' }; }
+    if (t.type === 'BASHEXEC')    { const tok = this.adv(); return { type: 'BashExec', cmd: tok.value }; }
+    if (t.type === 'MATCH') { return this.parseMatchExpr(); }
+
+    // Cast operators: ##. ### ##!
+    if (t.type === 'CAST_FLOAT')     { this.adv(); return { type: 'CastOp', op: '##.', operand: this.parseUnary() }; }
+    if (t.type === 'CAST_INT_ROUND') { this.adv(); return { type: 'CastOp', op: '###', operand: this.parseUnary() }; }
+    if (t.type === 'CAST_INT_TRUNC') { this.adv(); return { type: 'CastOp', op: '##!', operand: this.parseUnary() }; }
+
+    if (t.type === 'LBRACKET') {
+      this.adv();
+      const items = [];
+      while (!this.check('RBRACKET') && !this.check('EOF')) {
+        items.push(this.parseExprJuxt());
+        this.match('COMMA');
+      }
+      this.eat('RBRACKET');
+      return { type: 'Array', items };
+    }
+
+    if (t.type === 'LPAREN') {
+      this.adv();
+      if (this.check('RPAREN')) { this.adv(); return { type: 'Literal', kind: 'unit' }; }
+
+      let firstKey = null;
+      if (this.check('IDENT') && this.peek(1).type === 'COLON') {
+        firstKey = this.adv().value;
+        this.adv();
+      }
+      const firstVal = this.parseExprJuxt();
+      if (this.check('COMMA') || firstKey !== null) {
+        const items = [firstVal];
+        const keys  = [firstKey];
+        while (this.match('COMMA')) {
+          if (this.check('RPAREN')) break;
+          let key = null;
+          if (this.check('IDENT') && this.peek(1).type === 'COLON') {
+            key = this.adv().value;
+            this.adv();
+          }
+          items.push(this.parseExprJuxt());
+          keys.push(key);
+        }
+        this.eat('RPAREN');
+        const named = keys.some(k => k !== null);
+        return { type: 'Tuple', items, keys: named ? keys : null };
+      }
+      this.eat('RPAREN');
+      return firstVal;
+    }
+
+    if (t.type === 'DATA_OP') {
+      this.adv();
+      const arg = this.parseExpr();
+      this.eat('VBAR');
+      return { type: 'DataOp', kind: t.value.kind, prec: t.value.prec, arg };
+    }
+
+    this.adv();
+    return { type: 'Literal', kind: 'unit' };
+  }
+}
+
+// ─── Environment ──────────────────────────────────────────────────────────────
+
+class Env {
+  constructor(parent = null, funcBoundary = false, isModuleScope = false) {
+    this.vars          = new Map();
+    this.consts        = new Set();
+    this.parent        = parent;
+    this.funcBoundary  = funcBoundary;
+    this.isModuleScope = isModuleScope;
+  }
+
+  get(name) {
+    if (this.vars.has(name)) return this.vars.get(name);
+    if (!this.parent) throw new ZyError(`'${name}' is undefined — did you mean '${name}°' (hot definition)?`);
+    if (this.funcBoundary) {
+      const v = this.parent._getFuncOnly(name);
+      if (v !== undefined) return v;
+      throw new ZyError(`'${name}' is undefined — did you mean '${name}°' (hot definition)?`);
+    }
+    if (name.startsWith('_')) {
+      // _ vars can't escape block scopes — but _ names defined at module scope
+      // (past any funcBoundary) are module-private and accessible from within the module.
+      const v = this._findPastBoundary(name);
+      if (v !== undefined) return v;
+      throw new ZyRuntimeError(`cannot access underscore variable '${name}' from inner scope`, '##Scope');
+    }
+    return this.parent.get(name);
+  }
+
+  _findPastBoundary(name) {
+    // Module scope: _ names here are module-private, accessible from within the module
+    if (this.isModuleScope && this.vars.has(name)) return this.vars.get(name);
+    if (this.funcBoundary) return this.parent ? this.parent._findUnrestricted(name) : undefined;
+    return this.parent ? this.parent._findPastBoundary(name) : undefined;
+  }
+
+  _findUnrestricted(name) {
+    if (this.vars.has(name)) return this.vars.get(name);
+    return this.parent ? this.parent._findUnrestricted(name) : undefined;
+  }
+
+  _getFuncOnly(name) {
+    if (this.vars.has(name)) {
+      const v = this.vars.get(name);
+      return (v.type === 'func' || v.type === 'module') ? v : undefined;
+    }
+    if (this.parent) return this.parent._getFuncOnly(name);
+    return undefined;
+  }
+
+  set(name, value) {
+    if (this.vars.has(name)) {
+      if (this.consts.has(name)) throw new ZyError(`Cannot reassign constant '${name}'`);
+      this.vars.set(name, value);
+      return true;
+    }
+    if (name.startsWith('_')) return false;
+    if (this.funcBoundary) return false;
+    if (this.parent && this.parent.set(name, value)) return true;
+    return false;
+  }
+
+  def(name, value, isConst = false) {
+    this.vars.set(name, value);
+    if (isConst) this.consts.add(name);
+  }
+
+  hotDef(name, value) {
+    // Walk to nearest function boundary or root so hot-def vars survive loop iterations
+    let scope = this;
+    while (scope.parent && !scope.funcBoundary) scope = scope.parent;
+    scope.vars.set(name, value);
+  }
+
+  has(name) {
+    return this.vars.has(name) || (this.parent ? this.parent.has(name) : false);
+  }
+
+  destroy(name) {
+    if (this.vars.has(name)) {
+      this.vars.delete(name);
+      this.consts.delete(name);
+      return true;
+    }
+    if (this.parent) return this.parent.destroy(name);
+    return false;
+  }
+}
+
+// ─── Checker ──────────────────────────────────────────────────────────────────
+
+function formatDiagnostic(d) {
+  return `${d.severity}: ${d.message}`;
+}
+
+class Checker {
+  constructor(ast) {
+    this.ast         = ast;
+    this.diagnostics = [];
+    this.stack       = [];
+    this.pendingHot  = false; // prefix hot-def sentinel (°name)
+  }
+
+  push(funcBoundary = false) {
+    this.stack.push({ vars: new Map(), funcBoundary });
+  }
+
+  pop() {
+    const frame = this.stack.pop();
+    for (const [name, info] of frame.vars) {
+      if (!info.used && !name.startsWith('_') && !info.isConst) {
+        this.warn('W_UNUSED', `unused variable '${name}'`, info.line);
+      }
+    }
+  }
+
+  define(name, line, isConst = false) {
+    if (this.stack.length === 0 || !name) return;
+    this.stack[this.stack.length - 1].vars.set(name, { line, isConst, used: false });
+  }
+
+  // Mirror Env.hotDef: walk to nearest funcBoundary or root, define there
+  hotDefine(name, line) {
+    if (this.stack.length === 0 || !name) return;
+    let i = this.stack.length - 1;
+    while (i > 0 && !this.stack[i].funcBoundary) i--;
+    this.stack[i].vars.set(name, { line, isConst: false, used: false });
+  }
+
+  lookup(name, usageLine) {
+    if (!name) return null;
+    for (let i = this.stack.length - 1; i >= 0; i--) {
+      const frame = this.stack[i];
+      if (frame.vars.has(name)) {
+        // Found — check underscore scope violation: _name cannot be read from inner scope
+        // that crosses at least one non-funcBoundary scope to reach the definition
+        if (name.startsWith('_') && i < this.stack.length - 1) {
+          const crossedNonBoundary = this.stack.slice(i + 1).some(f => !f.funcBoundary);
+          if (crossedNonBoundary) {
+            this.error('E_SCOPE', `cannot access underscore variable '${name}' from inner scope`, usageLine);
+            return { used: true, isConst: false, isScope: true }; // sentinel: suppress follow-up E_VAR
+          }
+        }
+        frame.vars.get(name).used = true;
+        return frame.vars.get(name);
+      }
+      if (frame.funcBoundary && !name.startsWith('_')) break;
+    }
+    return null;
+  }
+
+  error(code, msg, line = null) {
+    this.diagnostics.push({ severity: 'error', code, message: msg, line });
+  }
+
+  warn(code, msg, line = null) {
+    this.diagnostics.push({ severity: 'warning', code, message: msg, line });
+  }
+
+  _leftmostIdent(expr) {
+    if (!expr) return null;
+    if (expr.type === 'Ident') return expr.name || null;
+    if (expr.type === 'BinOp')       return this._leftmostIdent(expr.left);
+    if (expr.type === 'CollectionOp') return this._leftmostIdent(expr.obj);
+    if (expr.type === 'NavIndex')     return this._leftmostIdent(expr.obj);
+    if (expr.type === 'UnaryOp')      return this._leftmostIdent(expr.operand ?? expr.value);
+    return null;
+  }
+
+  check() {
+    this.push(false);
+    for (const stmt of this.ast.body) {
+      if (stmt.type === 'FuncDecl') this.define(stmt.name, stmt.line);
+    }
+    for (const stmt of this.ast.body) this.checkStmt(stmt);
+    this.pop();
+    return this.diagnostics;
+  }
+
+  checkBlock(stmts) {
+    if (!Array.isArray(stmts)) return;
+    for (const s of stmts) {
+      if (s?.type === 'FuncDecl') this.define(s.name, s.line, false);
+    }
+    for (const s of stmts) this.checkStmt(s);
+  }
+
+  checkStmt(stmt) {
+    if (!stmt) return;
+    const wasHot = this.pendingHot;
+    this.pendingHot = false;
+
+    switch (stmt.type) {
+
+      case 'VarAssign': {
+        // Prefix hot-def (°name = expr): define target before checking RHS so self-references are valid
+        if (wasHot && stmt.name) {
+          const info = this.lookup(stmt.name, stmt.line);
+          if (!info) this.hotDefine(stmt.name, stmt.line);
+        }
+        this.checkExpr(stmt.value);
+        // Check for reassignment of a constant
+        if (stmt.name) {
+          const existing = this.lookup(stmt.name, stmt.line);
+          if (existing?.isConst) {
+            this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line);
+            return;
+          }
+        }
+        if (!wasHot) this.define(stmt.name, stmt.line, false);
+        return;
+      }
+
+      case 'ConstAssign': {
+        this.checkExpr(stmt.value);
+        this.define(stmt.name, stmt.line, true);
+        return;
+      }
+
+      case 'CompoundAssign': {
+        // postfix hot: name° +=  → stmt.hot = true
+        // prefix hot:  °name +=  → wasHot = true (from ExprStmt sentinel)
+        const isHot = stmt.hot || wasHot;
+        if (!isHot) {
+          const info = this.lookup(stmt.name, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line);
+          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line);
+        } else {
+          const info = this.lookup(stmt.name, stmt.line);
+          if (!info) this.hotDefine(stmt.name, stmt.line);
+        }
+        this.checkExpr(stmt.value);
+        return;
+      }
+
+      case 'Increment': {
+        const isHot = stmt.hot || wasHot;
+        if (!isHot) {
+          const info = this.lookup(stmt.name, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line);
+          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line);
+        } else {
+          const info = this.lookup(stmt.name, stmt.line);
+          if (!info) this.hotDefine(stmt.name, stmt.line);
+        }
+        return;
+      }
+
+      case 'IndexAssign': {
+        // obj is a string (the variable name being indexed)
+        const obj = stmt.obj ?? stmt.name;
+        if (obj) {
+          const info = this.lookup(obj, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${obj}'`, stmt.line);
+        }
+        this.checkExpr(stmt.index);
+        this.checkExpr(stmt.value);
+        return;
+      }
+
+      case 'IndexedAssign': {
+        const name = stmt.name ?? stmt.obj;
+        if (name) {
+          const info = this.lookup(name, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${name}'`, stmt.line);
+        }
+        for (const idx of (stmt.indices ?? [])) this.checkExpr(idx);
+        this.checkExpr(stmt.value);
+        return;
+      }
+
+      case 'LifetimeEnd': {
+        if (stmt.name) {
+          const info = this.lookup(stmt.name, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line);
+          else {
+            for (let i = this.stack.length - 1; i >= 0; i--) {
+              if (this.stack[i].vars.has(stmt.name)) {
+                this.stack[i].vars.delete(stmt.name); break;
+              }
+            }
+          }
+        }
+        return;
+      }
+
+      case 'Import': {
+        if (stmt.alias) this.define(stmt.alias, stmt.line, false);
+        return;
+      }
+
+      case 'Output':
+      case 'OutputPos': {
+        for (const item of (stmt.items ?? [])) this.checkExpr(item);
+        return;
+      }
+
+      case 'Input': {
+        if (stmt.prompt) this.checkExpr(stmt.prompt);
+        const varName = stmt.varName ?? stmt.name;
+        if (varName) this.define(varName, stmt.line, false);
+        return;
+      }
+
+      case 'If': {
+        this.checkExpr(stmt.cond);
+        this.push(); this.checkBlock(stmt.then); this.pop();
+        for (const elif of (stmt.elseifs ?? [])) {
+          this.checkExpr(elif.cond);
+          this.push(); this.checkBlock(elif.body ?? elif.then); this.pop();
+        }
+        if (stmt.else) { this.push(); this.checkBlock(stmt.else); this.pop(); }
+        return;
+      }
+
+      case 'Loop': {
+        this.push();
+        if (stmt.kind === 'foreach' || stmt.iterable || stmt.iter) {
+          this.checkExpr(stmt.iterable ?? stmt.iter);
+          if (stmt.var) this.define(stmt.var, stmt.line, false);
+        } else if (stmt.kind === 'range' || stmt.from !== undefined) {
+          this.checkExpr(stmt.from);
+          this.checkExpr(stmt.to);
+          if (stmt.step) this.checkExpr(stmt.step);
+          if (stmt.var) this.define(stmt.var, stmt.line, false);
+        } else if (stmt.cond) {
+          this.checkExpr(stmt.cond);
+        }
+        this.checkBlock(stmt.body);
+        this.pop();
+        return;
+      }
+
+      case 'CliArgs': {
+        // >< name: captures CLI args into a variable
+        if (stmt.variable) this.define(stmt.variable, stmt.line, false);
+        return;
+      }
+
+      case 'KeyInput': {
+        if (stmt.varName ?? stmt.variable) this.define(stmt.varName ?? stmt.variable, stmt.line, false);
+        return;
+      }
+
+      case 'Break':
+      case 'Continue':
+      case 'SetNumeralMode':
+      case 'Noop':
+      case 'ExportDecl':
+      case 'Sleep':
+      case 'ClearScreen':
+        return;
+
+      case 'ModuleBlock': {
+        const allowedInModule = new Set(['ExportDecl', 'FuncDecl', 'VarAssign', 'ConstAssign', 'Import', 'Noop']);
+        for (const s of (stmt.body ?? [])) {
+          if (s && !allowedInModule.has(s.type))
+            this.error('E013', `E013: executable statement not allowed in module body`, s.line ?? stmt.line);
+        }
+        return;
+      }
+
+      case 'Match': {
+        this.checkExpr(stmt.subject ?? stmt.expr);
+        for (const arm of (stmt.arms ?? [])) {
+          if (arm.pattern?.type === 'Ident') this.lookup(arm.pattern.name, arm.pattern.line);
+          if (Array.isArray(arm.body)) { this.push(); this.checkBlock(arm.body); this.pop(); }
+          else this.checkExpr(arm.body);
+        }
+        return;
+      }
+
+      case 'FuncDecl': {
+        this.push(false); // named fns can access outer scope (module aliases, globals)
+        for (const p of (stmt.params ?? [])) {
+          const pname = typeof p === 'string' ? p : p.name;
+          if (pname) this.define(pname, stmt.line, false);
+        }
+        this.checkBlock(stmt.body);
+        this.pop();
+        return;
+      }
+
+      case 'Return': {
+        if (stmt.value) this.checkExpr(stmt.value);
+        return;
+      }
+
+      case 'TryCatch': {
+        this.push(); this.checkBlock(stmt.tryBody ?? stmt.try); this.pop();
+        for (const catch_ of (stmt.catches ?? [])) {
+          this.push();
+          this.define('_err', stmt.line, false);
+          this.checkBlock(catch_.body);
+          this.pop();
+        }
+        const fin = stmt.finallyBody ?? stmt.finally;
+        if (fin) { this.push(); this.checkBlock(fin); this.pop(); }
+        return;
+      }
+
+      case 'TupleDestruct':
+      case 'ArrayDestruct':
+      case 'NamedDestruct': {
+        this.checkExpr(stmt.value);
+        for (const t of (stmt.targets ?? [])) {
+          if (t.name && t.name !== '_') {
+            // L14 (mirrors type_check.rs): destructuring into a `:=` constant
+            // is an error, same as direct reassignment.
+            const info = this.lookup(t.name, stmt.line);
+            if (info?.isConst) {
+              this.error('E_CONST', `cannot reassign constant '${t.name}'`, stmt.line);
+              continue;
+            }
+            this.define(t.name, stmt.line, false);
+          }
+        }
+        return;
+      }
+
+      case 'DestructureAssign': {
+        this.checkExpr(stmt.value);
+        for (const item of (stmt.pattern ?? [])) {
+          if (item.type === 'Bind' || item.type === 'Rest') this.define(item.name, stmt.line, false);
+        }
+        return;
+      }
+
+      case 'ExprStmt': {
+        const expr = stmt.expr ?? stmt.value;
+        // Prefix hot-def sentinel: ExprStmt with empty hot Ident (°name produces this)
+        if (expr?.type === 'Ident' && expr.hot === true && expr.name === '') {
+          this.pendingHot = true;
+          return;
+        }
+        this.checkExpr(expr);
+        return;
+      }
+
+      default:
+        if (stmt.value) this.checkExpr(stmt.value);
+        if (stmt.body)  this.checkBlock(stmt.body);
+    }
+  }
+
+  checkExpr(expr) {
+    if (!expr) return;
+    switch (expr.type) {
+
+      case 'Ident': {
+        if (!expr.name) return; // empty sentinel
+        if (expr.name === '_') return; // wildcard placeholder — never an error
+        // hot Ident (name°): auto-initializes at function/root boundary
+        if (expr.hot) {
+          const info = this.lookup(expr.name, expr.line);
+          if (!info) this.hotDefine(expr.name, expr.line);
+          return;
+        }
+        const info = this.lookup(expr.name, expr.line);
+        if (!info) this.error('E_VAR', `undefined variable '${expr.name}'`, expr.line);
+        return;
+      }
+
+      case 'BinOp': {
+        this.checkExpr(expr.left);
+        this.checkExpr(expr.right);
+        return;
+      }
+
+      case 'UnaryOp': {
+        this.checkExpr(expr.operand ?? expr.value);
+        return;
+      }
+
+      case 'CastOp': {
+        this.checkExpr(expr.operand ?? expr.value ?? expr.obj);
+        return;
+      }
+
+      case 'Call': {
+        // Mirrors zymbol-semantic type_check: a bare-identifier call must name a
+        // hoisted function, a variable holding a callable, or a module alias —
+        // otherwise the function does not exist (e.g. `cos(x)` without `math::cos`).
+        if (typeof expr.callee === 'string' && expr.callee) {
+          const info = this.lookup(expr.callee, expr.line);
+          if (!info) this.error('E_FUNC', `undefined function: '${expr.callee}'`, expr.line);
+        } else if (expr.callee && typeof expr.callee === 'object') {
+          this.checkExpr(expr.callee);
+        }
+        for (const a of (expr.args ?? [])) this.checkExpr(a.value ?? a);
+        return;
+      }
+
+      case 'CallExpr': {
+        this.checkExpr(expr.callee ?? expr.fn);
+        for (const a of (expr.args ?? [])) this.checkExpr(a.value ?? a);
+        return;
+      }
+
+      case 'Lambda': {
+        // Lambdas are closures — use funcBoundary=false so outer vars remain accessible
+        this.push(false);
+        for (const p of (expr.params ?? [])) {
+          const pname = typeof p === 'string' ? p : p.name;
+          if (pname) this.define(pname, expr.line, false);
+        }
+        const body = expr.body;
+        if (Array.isArray(body))         this.checkBlock(body);
+        else if (body?.type === 'expr')  this.checkExpr(body.value);
+        else if (body?.type === 'block') this.checkBlock(body.stmts ?? body.body ?? []);
+        else                             this.checkExpr(body);
+        this.pop();
+        return;
+      }
+
+      case 'Array': {
+        for (const el of (expr.items ?? expr.elements ?? [])) this.checkExpr(el);
+        return;
+      }
+
+      case 'Tuple': {
+        for (const f of (expr.items ?? expr.fields ?? [])) this.checkExpr(f.value ?? f);
+        return;
+      }
+
+      case 'NavIndex': {
+        this.checkExpr(expr.obj);
+        const spec = expr.spec;
+        if (spec?.index) this.checkExpr(spec.index);
+        if (spec?.from)  this.checkExpr(spec.from);
+        if (spec?.to)    this.checkExpr(spec.to);
+        return;
+      }
+
+      case 'FieldAccess': {
+        this.checkExpr(expr.obj);
+        return;
+      }
+
+      case 'CollectionOp': {
+        this.checkExpr(expr.obj);
+        if (expr.arg)  this.checkExpr(expr.arg);
+        if (expr.arg2) this.checkExpr(expr.arg2);
+        return;
+      }
+
+      case 'Pipe': {
+        this.checkExpr(expr.value);
+        this.checkExpr(expr.rhs ?? expr.fn);
+        return;
+      }
+
+      case 'ImplicitConcat':
+      case 'JuxtaConcat':
+      case 'CommaJoin': {
+        const items = expr.items ?? [];
+        // Prefix hot-def in expression context: °name op expr
+        // Parsed as ImplicitConcat[{Ident name:'' hot:true}, <expr starting with name>]
+        if (items.length >= 2 &&
+            items[0]?.type === 'Ident' && items[0]?.hot === true && !items[0]?.name) {
+          const hotName = this._leftmostIdent(items[1]);
+          if (hotName) this.hotDefine(hotName, items[1]?.line ?? expr.line);
+        }
+        for (const item of items) this.checkExpr(item);
+        return;
+      }
+
+      case 'TypeMetadata': {
+        // #? is safe access — target may be undefined, don't emit E_VAR
+        return;
+      }
+
+      case 'DataOp': {
+        this.checkExpr(expr.obj ?? expr.value);
+        if (expr.arg) this.checkExpr(expr.arg);
+        return;
+      }
+
+      case 'Match': {
+        this.checkStmt(expr);
+        return;
+      }
+
+      case 'Literal': {
+        // String literals may embed interpolated identifier names: {varname}
+        if (expr.kind === 'str' && Array.isArray(expr.value)) {
+          for (const part of expr.value) {
+            if (part.t === 'expr' && typeof part.v === 'string') {
+              const name = part.v.trim();
+              // Only look up simple identifiers (no operators/spaces). Character
+              // classes mirror readIdent's lexer rule (HLZ-KL-001 parity) — a
+              // narrower rule here would under-mark PUA-script (e.g. pIqaD)
+              // identifiers as used, producing a false W_UNUSED.
+              if (/^[\p{L}\p{M}\p{So}\p{Co}_][\p{L}\p{M}\p{So}\p{Co}0-9_]*$/u.test(name)) this.lookup(name, expr.line);
+            }
+          }
+        }
+        return;
+      }
+
+      // Terminals — nothing to check
+      case 'BoolLiteral':
+      case 'IntLiteral':
+      case 'FloatLiteral':
+      case 'StringLiteral':
+      case 'CharLiteral':
+      case 'Numeral':
+      case 'BashExec':
+      case 'CliArgs':
+      case 'TerminalSize':
+      case 'KeyInput':
+        return;
+
+      default:
+        if (expr.left)    this.checkExpr(expr.left);
+        if (expr.right)   this.checkExpr(expr.right);
+        if (expr.value)   this.checkExpr(expr.value);
+        if (expr.obj)     this.checkExpr(expr.obj);
+        if (expr.operand) this.checkExpr(expr.operand);
+    }
+  }
+}
+
+// ─── Value constructors ───────────────────────────────────────────────────────
+
+const mkInt   = v => ({ type: 'int',   v: Math.trunc(v) });
+const mkFloat = v => ({ type: 'float', v });
+const mkBool  = v => ({ type: 'bool',  v: !!v });
+const mkStr   = v => ({ type: 'str',   v: String(v) });
+const mkChar  = v => ({ type: 'char',  v: String(v) });
+const mkArr   = v => ({ type: 'arr',   v });
+const mkUnit  = () => ({ type: 'unit' });
+
+// ─── Typed input validation (mirrors execute_input in zymbol-interpreter/io.rs) ─
+
+// Human-readable description of what an input cast expects (re-prompt hints + EOF error).
+function describeInputCast(cast) {
+  switch (cast.kind) {
+    case 'numeric': case 'float': return 'a number';
+    case 'decimal': return `a number with up to ${cast.total} digits and ${cast.decimals} decimals`;
+    case 'int':     return cast.maxDigits != null ? `an integer of up to ${cast.maxDigits} digits` : 'an integer';
+    case 'text':    return cast.max != null ? `text of up to ${cast.max} characters` : 'text';
+    case 'char':    return 'a single character';
+    default:        return 'text';
+  }
+}
+
+// The ASCII form of a numeric string written in any of the 69 supported digit
+// scripts: "४२" → "42". Mirrors Rust `ascii_digits`. Every numeric cast goes
+// through this, so a number the program rendered under an active numeral mode
+// parses back exactly like its ASCII twin — an application that prints ४२ must
+// also accept ४२ back.
+function asciiDigits(s) {
+  return [...s].map(ch => {
+    const dv = digitValue(ch);
+    return (dv >= 0 && !(ch >= '0' && ch <= '9')) ? String(dv) : ch;
+  }).join('');
+}
+
+// Ordering comparison (`<`, `<=`, `>`, `>=`) — the single rule all three engines
+// share (mirrors Rust `cmp_order` / `compare_values`).
+//
+// Numeric when *both* sides are numbers, where a string counts as a number if
+// `#|…|` would convert it: digits from any of the 69 supported scripts, so
+// `"४२" > "९"` compares 42 against 9 exactly as `"42" > "9"` does. Two
+// non-numeric strings compare lexicographically. A number against non-numeric
+// text returns null and the caller raises.
+//
+// Equality (`==`) deliberately does not come through here: `"5" == 5` is false.
+function orderValues(l, r) {
+  const cmp = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+  const strNum = v => {
+    if (v.type !== 'str') return null;
+    const a = asciiDigits(v.v.trim());
+    if (!/^[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)([eE][+-]?[0-9]+)?$/.test(a)) return null;
+    return Number(a);
+  };
+  const isNumV = v => v.type === 'int' || v.type === 'float';
+
+  if (isNumV(l) && isNumV(r)) return cmp(l.v, r.v);
+  if (l.type === 'str' && r.type === 'str') {
+    const a = strNum(l), b = strNum(r);
+    if (a !== null && b !== null) return cmp(a, b);
+    return cmp(l.v, r.v);
+  }
+  if (l.type === 'str' && isNumV(r)) { const a = strNum(l); return a === null ? null : cmp(a, r.v); }
+  if (isNumV(l) && r.type === 'str') { const b = strNum(r); return b === null ? null : cmp(l.v, b); }
+  if (l.type === r.type && (l.type === 'char' || l.type === 'bool')) return cmp(l.v, r.v);
+  return null;
+}
+
+// Legacy `#|v|` cast: best-effort numeric parse, falls back to String (never re-prompts).
+// Mirrors parse_numeric_string: int first, then float, with Unicode-digit normalization.
+function parseNumericInput(s) {
+  const ascii = asciiDigits(s);
+  if (/^[+-]?[0-9]+$/.test(ascii)) return mkInt(Number(ascii));
+  if (/^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/.test(ascii)) return mkFloat(Number(ascii));
+  return mkStr(s);
+}
+
+// Validate a trimmed input line against a cast; returns the typed value or null
+// (the caller re-prompts on null).
+function validateInput(s, cast) {
+  // The numeric casts accept digits from any script (see asciiDigits); the text
+  // casts keep the line exactly as typed.
+  const num = asciiDigits(s);
+  switch (cast.kind) {
+    case 'string':  return mkStr(s);
+    case 'numeric': return parseNumericInput(s);
+    case 'float':
+      return /^[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)([eE][+-]?[0-9]+)?$/.test(num) ? mkFloat(Number(num)) : null;
+    case 'decimal': {
+      const body = /^[+-]/.test(num) ? num.slice(1) : num;
+      if (!/^[0-9.]+$/.test(body) || (body.match(/\./g) ?? []).length > 1 || body === '.') return null;
+      const [intPart, fracPart = ''] = body.split('.');
+      if (fracPart.length > cast.decimals || intPart.length + fracPart.length > cast.total) return null;
+      return mkFloat(Number(num));
+    }
+    case 'int': {
+      if (!/^[+-]?[0-9]+$/.test(num)) return null;
+      const digits = (num.match(/[0-9]/g) ?? []).length;
+      if (cast.maxDigits != null && digits > cast.maxDigits) return null;
+      return mkInt(Number(num));
+    }
+    case 'text': {
+      if (cast.max != null && [...s].length > cast.max) return null;
+      return mkStr(s);
+    }
+    case 'char': {
+      const chars = [...s];
+      return chars.length === 1 ? mkChar(chars[0]) : null;
+    }
+    default: return mkStr(s);
+  }
+}
+
+// ─── Deep update helper (G1) ──────────────────────────────────────────────────
+
+function deepUpdateValue(col, indices, newVal) {
+  if (indices.length === 0) return newVal;
+  const i   = indices[0];
+  const len = col.v?.length ?? 0;
+  if (i === 0) throw new ZyRuntimeError('Index 0 is invalid (indices start at 1)', '##Index');
+  const idx = i < 0 ? len + i : i - 1;
+  if (idx < 0 || idx >= len)
+    throw new ZyError(`index out of bounds: index ${i} for collection of length ${len}`);
+  const sub        = col.v[idx];
+  const updatedSub = deepUpdateValue(sub, indices.slice(1), newVal);
+  if (col.type === 'arr')   { const r = [...col.v]; r[idx] = updatedSub; return mkArr(r); }
+  if (col.type === 'tuple') { const r = [...col.v]; r[idx] = updatedSub; return { type:'tuple', v:r, keys:col.keys }; }
+  throw new ZyError(`deep update ($~) not supported on ${col.type}`);
+}
+
+// ─── Terminal display width (mirrors unicode-width crate, backs std/term) ────
+// Width answers a screen question, not a content question: CJK ideographs,
+// kana, hangul and most emoji take two columns; combining marks and control
+// characters take zero. This is a practical subset of the East Asian Width /
+// zero-width tables, not the full Unicode database.
+const TERM_WIDE_RANGES = [
+  [0x1100,0x115F],[0x231A,0x231B],[0x2329,0x232A],[0x23E9,0x23EC],[0x23F0,0x23F0],
+  [0x23F3,0x23F3],[0x25FD,0x25FE],[0x2614,0x2615],[0x2648,0x2653],[0x267F,0x267F],
+  [0x2693,0x2693],[0x26A1,0x26A1],[0x26AA,0x26AB],[0x26BD,0x26BE],[0x26C4,0x26C5],
+  [0x26CE,0x26CE],[0x26D4,0x26D4],[0x26EA,0x26EA],[0x26F2,0x26F3],[0x26F5,0x26F5],
+  [0x26FA,0x26FA],[0x26FD,0x26FD],[0x2705,0x2705],[0x270A,0x270B],[0x2728,0x2728],
+  [0x274C,0x274C],[0x274E,0x274E],[0x2753,0x2755],[0x2757,0x2757],[0x2795,0x2797],
+  [0x27B0,0x27B0],[0x27BF,0x27BF],[0x2B1B,0x2B1C],[0x2B50,0x2B50],[0x2B55,0x2B55],
+  [0x2E80,0x303E],[0x3041,0x33FF],[0x3400,0x4DBF],[0x4E00,0x9FFF],
+  [0xA000,0xA4CF],[0xA960,0xA97F],[0xAC00,0xD7A3],[0xF900,0xFAFF],
+  [0xFE30,0xFE4F],[0xFF00,0xFF60],[0xFFE0,0xFFE6],
+  [0x16FE0,0x16FE4],[0x16FF0,0x16FF1],[0x17000,0x18D08],[0x1AFF0,0x1B16F],
+  [0x1B170,0x1B2FB],[0x1F004,0x1F004],[0x1F0CF,0x1F0CF],[0x1F18E,0x1F18E],
+  [0x1F191,0x1F19A],[0x1F200,0x1F320],[0x1F32D,0x1F335],[0x1F337,0x1F37C],
+  [0x1F37E,0x1F393],[0x1F3A0,0x1F3CA],[0x1F3CF,0x1F3D3],[0x1F3E0,0x1F3F0],
+  [0x1F3F4,0x1F3F4],[0x1F3F8,0x1F43E],[0x1F440,0x1F440],[0x1F442,0x1F4FC],
+  [0x1F4FF,0x1F53D],[0x1F54B,0x1F54E],[0x1F550,0x1F567],[0x1F57A,0x1F57A],
+  [0x1F595,0x1F596],[0x1F5A4,0x1F5A4],[0x1F5FB,0x1F64F],[0x1F680,0x1F6C5],
+  [0x1F6CC,0x1F6CC],[0x1F6D0,0x1F6D2],[0x1F6D5,0x1F6D7],[0x1F6DD,0x1F6DF],
+  [0x1F6EB,0x1F6EC],[0x1F6F4,0x1F6FC],[0x1F7E0,0x1F7EB],[0x1F7F0,0x1F7F0],
+  [0x1F90C,0x1F93A],[0x1F93C,0x1F945],[0x1F947,0x1F9FF],[0x1FA70,0x1FAFF],
+  [0x20000,0x2FFFD],[0x30000,0x3FFFD],
+];
+const TERM_ZERO_WIDTH_RANGES = [
+  [0x0300,0x036F],[0x0483,0x0489],[0x0591,0x05BD],[0x05BF,0x05BF],[0x05C1,0x05C2],
+  [0x05C4,0x05C5],[0x05C7,0x05C7],[0x0610,0x061A],[0x064B,0x065F],[0x0670,0x0670],
+  [0x06D6,0x06DC],[0x06DF,0x06E4],[0x06E7,0x06E8],[0x06EA,0x06ED],[0x0711,0x0711],
+  [0x0730,0x074A],[0x07A6,0x07B0],[0x07EB,0x07F3],[0x0816,0x0819],[0x081B,0x0823],
+  [0x0825,0x0827],[0x0829,0x082D],[0x0859,0x085B],[0x08E3,0x0902],[0x093A,0x093A],
+  [0x093C,0x093C],[0x0941,0x0948],[0x094D,0x094D],[0x0951,0x0957],[0x0962,0x0963],
+  [0x0981,0x0981],[0x09BC,0x09BC],[0x09C1,0x09C4],[0x09CD,0x09CD],[0x09E2,0x09E3],
+  [0x200B,0x200F],[0x202A,0x202E],[0x2060,0x2064],[0x2066,0x206F],
+  [0xFE00,0xFE0F],[0xFE20,0xFE2F],[0x1AB0,0x1AFF],[0x1DC0,0x1DFF],[0x20D0,0x20FF],
+  [0xE0100,0xE01EF],
+];
+
+function _inTermRanges(cp, ranges) {
+  for (const [lo, hi] of ranges) if (cp >= lo && cp <= hi) return true;
+  return false;
+}
+
+// Exported so the playground's canvas renderer measures characters with exactly the table
+// the layout engine (std/term, and therefore every program's own column arithmetic) uses.
+// BrowserTUI used to carry its own one-line approximation — `cp >= 0x1F000 || FF01..FFE6` —
+// which called ⚫/⚪ (U+26AA/U+26AB) narrow while this table correctly calls them wide. The
+// font then drew each stone two cells wide and the renderer clipped it to one, so every
+// stone on a GO board came out sliced in half. One rule, one place.
+export function codePointDisplayWidth(cp) {
+  if (cp === 0) return 0;
+  if (cp < 0x20 || (cp >= 0x7F && cp < 0xA0)) return 0; // control characters
+  if (_inTermRanges(cp, TERM_ZERO_WIDTH_RANGES)) return 0;
+  if (_inTermRanges(cp, TERM_WIDE_RANGES)) return 2;
+  return 1;
+}
+
+// Grapheme clusters, used only where a cut must not split one (truncate).
+// Width itself sums per-code-point, mirroring UnicodeWidthStr::width(&str).
+function graphemeClusters(s) {
+  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+    try {
+      return [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(s)].map(x => x.segment);
+    } catch (_) { /* fall through to code-point split */ }
+  }
+  return [...s];
+}
+
+function displayWidth(s) {
+  let w = 0;
+  for (const ch of s) w += codePointDisplayWidth(ch.codePointAt(0));
+  return w;
+}
+
+function clusterDisplayWidth(g) {
+  let w = 0;
+  for (const ch of g) w += codePointDisplayWidth(ch.codePointAt(0));
+  return w;
+}
+
+function termPad(s, cols, onLeft) {
+  const deficit = cols - displayWidth(s);
+  if (deficit <= 0) return s;
+  const spaces = ' '.repeat(deficit);
+  return onLeft ? spaces + s : s + spaces;
+}
+
+function termCenter(s, cols) {
+  const deficit = cols - displayWidth(s);
+  if (deficit <= 0) return s;
+  const left = Math.floor(deficit / 2);
+  return ' '.repeat(left) + s + ' '.repeat(deficit - left);
+}
+
+function termTruncate(s, cols) {
+  if (displayWidth(s) <= cols) return s;
+  let used = 0, out = '';
+  for (const g of graphemeClusters(s)) {
+    const w = clusterDisplayWidth(g);
+    if (used + w > cols) break;
+    out += g;
+    used += w;
+  }
+  return out;
+}
+
+// ─── Standard library modules (std/math, std/random, std/json, std/net, std/io, std/term) ─
+
+function buildStdlibModule(name, vfs = null) {
+  const asF64 = v => v?.type === 'float' ? v.v : v?.type === 'int' ? v.v : null;
+  const symMap = { int:'###', float:'##.', str:'##"', char:"##'", bool:'##?', arr:'##]', tuple:'##)' };
+  const typeCode = v => symMap[v?.type] ?? '##_';
+  const typeErr = (fn, ...badArgs) => {
+    const codes = (badArgs.length > 0 ? badArgs : [null])
+      .map(a => `"${typeCode(a).replace(/"/g, '\\"')}"`)
+      .join(', ');
+    throw new ZyError(`mat::${fn}: incompatible argument type(s) [${codes}]`);
+  };
+
+  if (name === 'std/math') {
+    const exports = new Map();
+    const unary = (fn, f) => ({ type: 'func', name: fn, native: true, call: args => {
+      const x = asF64(args[0]); if (x === null) typeErr(fn, args[0]); return mkFloat(f(x));
+    }});
+
+    exports.set('sqrt',    unary('sqrt',    x => Math.sqrt(x)));
+    exports.set('exp',     unary('exp',     x => Math.exp(x)));
+    exports.set('ln',      { type: 'func', name: 'ln', native: true, call: args => {
+      const x = asF64(args[0]); if (x === null) typeErr('ln', args[0]);
+      if (x <= 0) throw new ZyError('mat::ln: argument must be positive');
+      return mkFloat(Math.log(x));
+    }});
+    exports.set('sin',     unary('sin',     x => Math.sin(x)));
+    exports.set('cos',     unary('cos',     x => Math.cos(x)));
+    exports.set('tan',     unary('tan',     x => Math.tan(x)));
+    exports.set('asin',    { type: 'func', name: 'asin', native: true, call: args => {
+      const x = asF64(args[0]); if (x === null) typeErr('asin', args[0]);
+      if (x < -1 || x > 1) throw new ZyError('mat::asin: argument must be in [-1, 1]');
+      return mkFloat(Math.asin(x));
+    }});
+    exports.set('acos',    { type: 'func', name: 'acos', native: true, call: args => {
+      const x = asF64(args[0]); if (x === null) typeErr('acos', args[0]);
+      if (x < -1 || x > 1) throw new ZyError('mat::acos: argument must be in [-1, 1]');
+      return mkFloat(Math.acos(x));
+    }});
+    exports.set('atan',    unary('atan',    x => Math.atan(x)));
+    exports.set('tanh',    unary('tanh',    x => Math.tanh(x)));
+    exports.set('sinh',    unary('sinh',    x => Math.sinh(x)));
+    exports.set('cosh',    unary('cosh',    x => Math.cosh(x)));
+    exports.set('sigmoid', unary('sigmoid', x => 1 / (1 + Math.exp(-x))));
+    exports.set('floor',   unary('floor',   x => Math.floor(x)));
+    exports.set('ceil',    unary('ceil',    x => Math.ceil(x)));
+    exports.set('round',   unary('round',   x => Math.round(x)));
+    exports.set('abs',     { type: 'func', name: 'abs', native: true, call: args => {
+      if (args[0]?.type === 'int')   return mkInt(Math.abs(args[0].v));
+      const x = asF64(args[0]); if (x === null) typeErr('abs', args[0]);
+      return mkFloat(Math.abs(x));
+    }});
+    exports.set('atan2',   { type: 'func', name: 'atan2', native: true, call: args => {
+      const y = asF64(args[0]), x = asF64(args[1]);
+      if (y === null || x === null) typeErr('atan2', args[0], args[1]);
+      return mkFloat(Math.atan2(y, x));
+    }});
+    exports.set('log',     { type: 'func', name: 'log', native: true, call: args => {
+      const x = asF64(args[0]); if (x === null || x <= 0) throw new ZyError('mat::log: x and base must be positive; base ≠ 1');
+      if (args.length === 1) return mkFloat(Math.log(x));
+      const base = asF64(args[1]);
+      if (base === null || base <= 0 || base === 1) throw new ZyError('mat::log: x and base must be positive; base ≠ 1');
+      return mkFloat(Math.log(x) / Math.log(base));
+    }});
+    exports.set('pow',     { type: 'func', name: 'pow', native: true, call: args => {
+      const b = asF64(args[0]), e = asF64(args[1]);
+      if (b === null || e === null) typeErr('pow', args[0], args[1]);
+      return mkFloat(Math.pow(b, e));
+    }});
+    exports.set('max',     { type: 'func', name: 'max', native: true, call: args => {
+      if (args[0]?.type === 'int' && args[1]?.type === 'int') return mkInt(Math.max(args[0].v, args[1].v));
+      const a = asF64(args[0]), b = asF64(args[1]); if (a === null || b === null) typeErr('max', args[0], args[1]);
+      return mkFloat(Math.max(a, b));
+    }});
+    exports.set('min',     { type: 'func', name: 'min', native: true, call: args => {
+      if (args[0]?.type === 'int' && args[1]?.type === 'int') return mkInt(Math.min(args[0].v, args[1].v));
+      const a = asF64(args[0]), b = asF64(args[1]); if (a === null || b === null) typeErr('min', args[0], args[1]);
+      return mkFloat(Math.min(a, b));
+    }});
+    exports.set('PI', mkFloat(Math.PI));
+    exports.set('E',  mkFloat(Math.E));
+    return { type: 'module', exports };
+  }
+
+  if (name === 'std/random') {
+    const exports = new Map();
+    exports.set('entero', { type: 'func', name: 'entero', native: true, call: args => {
+      if (args[0]?.type !== 'int' || args[1]?.type !== 'int' || args[1].v < args[0].v)
+        throw new ZyError('random::entero: expected (###, ###) with max >= min');
+      return mkInt(args[0].v + Math.floor(Math.random() * (args[1].v - args[0].v + 1)));
+    }});
+    exports.set('rango', { type: 'func', name: 'rango', native: true, call: args => {
+      if (args[0]?.type !== 'int' || args[0].v <= 0)
+        throw new ZyError('random::rango: expected positive ###');
+      return mkInt(Math.floor(Math.random() * args[0].v));
+    }});
+    exports.set('peso_f64', { type: 'func', name: 'peso_f64', native: true, call: () =>
+      mkFloat((Math.floor(Math.random() * 201) - 100) / 1000)
+    });
+    return { type: 'module', exports };
+  }
+
+  // std/json — mirrors stdlib/json.rs: decode/encode, soft ##Parse on malformed
+  // JSON, hard error on wrong argument type. Object↔NamedTuple, null↔Unit.
+  if (name === 'std/json') {
+    const exports = new Map();
+    const jsonToValue = j => {
+      if (j === null) return mkUnit();
+      if (typeof j === 'boolean') return mkBool(j);
+      if (typeof j === 'number') return Number.isInteger(j) ? mkInt(j) : mkFloat(j);
+      if (typeof j === 'string') return mkStr(j);
+      if (Array.isArray(j)) return mkArr(j.map(jsonToValue));
+      return { type: 'tuple', v: Object.values(j).map(jsonToValue), keys: Object.keys(j) };
+    };
+    const valueToJson = v => {
+      switch (v?.type) {
+        case 'bool':  return v.v;
+        case 'int': case 'float': return v.v;
+        case 'str': case 'char':  return String(v.v);
+        case 'arr':   return v.v.map(valueToJson);
+        case 'tuple':
+          return v.keys?.some(k => k !== null)
+            ? Object.fromEntries(v.v.map((item, i) => [v.keys[i], valueToJson(item)]))
+            : v.v.map(valueToJson);
+        default: return null; // unit, func, error
+      }
+    };
+    exports.set('decode', { type: 'func', name: 'decode', native: true, call: args => {
+      if (args[0]?.type !== 'str') throw new ZyError('json::decode: expected String');
+      try { return jsonToValue(JSON.parse(args[0].v)); }
+      catch (e) { return { type: 'error', errType: '##Parse', v: e.message }; }
+    }});
+    // decode_map — mirrors json_decode_map in stdlib/json.rs: decode + recursive
+    // key rename per a NamedTuple map (data-level i18n). Unit map = plain decode.
+    const buildRenameMap = map => {
+      if (map == null || map.type === 'unit') return new Map();
+      if (map.type !== 'tuple' || !map.keys?.some(k => k !== null)) {
+        throw new ZyError('json::decode_map: expected a NamedTuple map as the second argument');
+      }
+      const table = new Map();
+      map.keys.forEach((k, i) => {
+        if (k === null) return;
+        const dst = map.v[i];
+        if (dst?.type !== 'str') {
+          throw new ZyError(`json::decode_map: map value for '${k}' must be a String (the new name)`);
+        }
+        table.set(k, String(dst.v));
+      });
+      return table;
+    };
+    const rekey = (value, table) => {
+      if (value?.type === 'tuple') {
+        const keys = value.keys?.map(k => (k !== null && table.has(k)) ? table.get(k) : k);
+        return { type: 'tuple', v: value.v.map(item => rekey(item, table)), keys };
+      }
+      if (value?.type === 'arr') return mkArr(value.v.map(item => rekey(item, table)));
+      return value;
+    };
+    exports.set('decode_map', { type: 'func', name: 'decode_map', native: true, call: args => {
+      if (args[0]?.type !== 'str') throw new ZyError('json::decode_map: expected String as the first argument');
+      const table = buildRenameMap(args[1]);
+      try { return rekey(jsonToValue(JSON.parse(args[0].v)), table); }
+      catch (e) { return { type: 'error', errType: '##Parse', v: e.message }; }
+    }});
+    exports.set('encode', { type: 'func', name: 'encode', native: true, call: args => {
+      try { return mkStr(JSON.stringify(valueToJson(args[0] ?? mkUnit()))); }
+      catch (e) { return { type: 'error', errType: '##Parse', v: e.message }; }
+    }});
+    return { type: 'module', exports };
+  }
+
+  // std/net — mirrors stdlib/net.rs over fetch(). Soft ##Network on failure
+  // (incl. non-2xx, like ureq), hard error on wrong argument type. Browser
+  // caveat: cross-origin requests need CORS support on the server.
+  if (name === 'std/net') {
+    const exports = new Map();
+    const netErr = msg => ({ type: 'error', errType: '##Network', v: msg });
+    const strOf  = v => v?.type === 'str' ? v.v : null;
+    const parseHeaders = (arg, fname) => {
+      if (arg == null || arg.type === 'unit') return [];
+      const bad = () => new ZyError(`${fname}: headers must be an Array of (String, String) tuples`);
+      if (arg.type !== 'arr') throw bad();
+      return arg.v.map(item => {
+        if (item?.type !== 'tuple' || item.v.length !== 2) throw bad();
+        const k = strOf(item.v[0]), v = strOf(item.v[1]);
+        if (k === null || v === null) throw bad();
+        return [k, v];
+      });
+    };
+    const request = async (url, headerPairs, contentType, body) => {
+      const headers = new Headers();
+      if (contentType) headers.set('Content-Type', contentType);
+      for (const [k, v] of headerPairs) headers.set(k, v);
+      try {
+        const resp = await fetch(url, body == null
+          ? { headers }
+          : { method: 'POST', headers, body });
+        if (!resp.ok) return netErr(`${url}: status code ${resp.status}`);
+        return mkStr(await resp.text());
+      } catch (e) {
+        return netErr(e.message ?? String(e));
+      }
+    };
+    exports.set('get', { type: 'func', name: 'get', native: true, call: args => {
+      const url = strOf(args[0]);
+      if (url === null) throw new ZyError('net::get: expected String url');
+      return request(url, parseHeaders(args[1], 'net::get'), null, null);
+    }});
+    exports.set('post', { type: 'func', name: 'post', native: true, call: args => {
+      const url = strOf(args[0]), body = strOf(args[1]);
+      if (url === null || body === null) throw new ZyError('net::post: expected (String, String)');
+      return request(url, parseHeaders(args[2], 'net::post'), 'text/plain', body);
+    }});
+    exports.set('post_json', { type: 'func', name: 'post_json', native: true, call: args => {
+      const url = strOf(args[0]), body = strOf(args[1]);
+      if (url === null || body === null) throw new ZyError('net::post_json: expected (String, String)');
+      return request(url, parseHeaders(args[2], 'net::post_json'), 'application/json', body);
+    }});
+    exports.set('head', { type: 'func', name: 'head', native: true, call: async args => {
+      const url = strOf(args[0]);
+      if (url === null) throw new ZyError('net::head: expected String url');
+      try { return mkBool((await fetch(url, { method: 'HEAD' })).ok); }
+      catch { return mkBool(false); }
+    }});
+    return { type: 'module', exports };
+  }
+
+  // std/io — mirrors stdlib/io.rs over a per-run virtual filesystem (browser
+  // has no real FS). Soft ##IO on failure, hard error on wrong argument type.
+  if (name === 'std/io' && vfs) {
+    const exports = new Map();
+    const { files, dirs } = vfs;
+    const NOENT = 'No such file or directory (os error 2)';
+    const ioErr = msg => ({ type: 'error', errType: '##IO', v: msg });
+    const norm  = p => p.length > 1 ? p.replace(/\/+$/, '') : p;
+    const strArg = (a, msg) => {
+      if (a?.type !== 'str') throw new ZyError(msg);
+      return norm(a.v);
+    };
+    exports.set('read', { type: 'func', name: 'read', native: true, call: args => {
+      const p = strArg(args[0], 'io::read: expected String path');
+      return files.has(p) ? mkStr(files.get(p)) : ioErr(NOENT);
+    }});
+    exports.set('write', { type: 'func', name: 'write', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'str')
+        throw new ZyError('io::write: expected (String, String)');
+      files.set(norm(args[0].v), args[1].v);
+      return mkUnit();
+    }});
+    exports.set('append', { type: 'func', name: 'append', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'str')
+        throw new ZyError('io::append: expected (String, String)');
+      const p = norm(args[0].v);
+      files.set(p, (files.get(p) ?? '') + args[1].v);
+      return mkUnit();
+    }});
+    exports.set('exists', { type: 'func', name: 'exists', native: true, call: args => {
+      const p = strArg(args[0], 'io::exists: expected String path');
+      return mkBool(files.has(p) || dirs.has(p));
+    }});
+    exports.set('delete', { type: 'func', name: 'delete', native: true, call: args => {
+      const p = strArg(args[0], 'io::delete: expected String path');
+      if (dirs.has(p)) {
+        for (const d of [...dirs])       if (d === p || d.startsWith(p + '/')) dirs.delete(d);
+        for (const f of [...files.keys()]) if (f.startsWith(p + '/')) files.delete(f);
+        return mkUnit();
+      }
+      if (files.delete(p)) return mkUnit();
+      return ioErr(NOENT);
+    }});
+    exports.set('list', { type: 'func', name: 'list', native: true, call: args => {
+      const p = strArg(args[0], 'io::list: expected String path');
+      if (!dirs.has(p)) return ioErr(NOENT);
+      const names = new Set();
+      for (const f of files.keys())
+        if (f.startsWith(p + '/') && !f.slice(p.length + 1).includes('/'))
+          names.add(f.slice(p.length + 1));
+      for (const d of dirs)
+        if (d.startsWith(p + '/') && !d.slice(p.length + 1).includes('/'))
+          names.add(d.slice(p.length + 1));
+      return mkArr([...names].map(mkStr));
+    }});
+    exports.set('mkdir', { type: 'func', name: 'mkdir', native: true, call: args => {
+      const p = strArg(args[0], 'io::mkdir: expected String path');
+      const parts = p.split('/').filter(Boolean);
+      let acc = p.startsWith('/') ? '' : null;
+      for (const part of parts) {
+        acc = acc === null ? part : `${acc}/${part}`;
+        dirs.add(acc);
+      }
+      return mkUnit();
+    }});
+    return { type: 'module', exports };
+  }
+
+  // std/term — terminal display metrics (mirrors stdlib/term.rs). Answers a
+  // question about the screen, not about a string's content: split, slice,
+  // replace, repeat stay language symbols and never enter this module.
+  if (name === 'std/term') {
+    const exports = new Map();
+    exports.set('width', { type: 'func', name: 'width', native: true, call: args => {
+      const v = args[0];
+      if (v?.type === 'str' || v?.type === 'char') return mkInt(displayWidth(v.v));
+      throw new ZyError('term::width: expected a String or Char');
+    }});
+    exports.set('pad_left', { type: 'func', name: 'pad_left', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'int') throw new ZyError('term::pad_left: expected (String, ###)');
+      return mkStr(termPad(args[0].v, args[1].v, true));
+    }});
+    exports.set('pad_right', { type: 'func', name: 'pad_right', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'int') throw new ZyError('term::pad_right: expected (String, ###)');
+      return mkStr(termPad(args[0].v, args[1].v, false));
+    }});
+    exports.set('center', { type: 'func', name: 'center', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'int') throw new ZyError('term::center: expected (String, ###)');
+      return mkStr(termCenter(args[0].v, args[1].v));
+    }});
+    exports.set('truncate', { type: 'func', name: 'truncate', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'int') throw new ZyError('term::truncate: expected (String, ###)');
+      return mkStr(termTruncate(args[0].v, args[1].v));
+    }});
+    return { type: 'module', exports };
+  }
+
+  return null;
+}
+
+// ─── Interpreter ──────────────────────────────────────────────────────────────
+
+export class Interpreter {
+  // Default inputFn signals EOF (null): with no input source attached, << aborts
+  // like the CLI does on a closed stdin instead of looping on empty reads.
+  constructor(outputFn, inputFn = async () => null, moduleResolver = null, tuiContext = null) {
+    this.outputFn        = outputFn;
+    this.inputFn         = inputFn;
+    this.steps           = 0;
+    this.maxSteps        = 50_000;
+    this.maxInfiniteIter = 100_000;
+    this.outputBytes     = 0;
+    this.maxBytes        = 32_000;
+    this.lastYield       = performance.now();
+    this.numeralMode     = 0x0030;
+    this.moduleResolver  = moduleResolver;
+    this.moduleCache     = new Map();
+    // Import aliases, kept out of the variable environment on purpose: `alias::fn(…)` must
+    // keep resolving even when a plain variable later takes the same name. Mirrors the
+    // tree-walker's `import_aliases`. Per interpreter, so a module's imports stay private
+    // to it (each module body runs in its own Interpreter — see loadModule).
+    this.moduleAliases   = new Map();
+    this.tui             = tuiContext;
+    this.cliArgs         = [];
+    this.loadingModules  = new Set();
+    // Virtual filesystem backing std/io (browser has no real FS); lives for one run.
+    this.vfs             = { files: new Map(), dirs: new Set() };
+  }
+
+  async loadModule(path) {
+    // Intercept stdlib modules (std/math, std/random, …)
+    if (path.startsWith('std/')) {
+      if (this.moduleCache.has(path)) return this.moduleCache.get(path);
+      if (path === 'std/db')
+        throw new ZyError(`standard library module 'std/db' is not available in the web playground (requires ODBC)`);
+      const modVal = buildStdlibModule(path, this.vfs);
+      if (!modVal) throw new ZyError(`standard library module '${path}' not found`);
+      this.moduleCache.set(path, modVal);
+      return modVal;
+    }
+
+    if (!this.moduleResolver)
+      throw new ZyError(`Cannot import '${path}': no module resolver available`);
+
+    const result = await this.moduleResolver(path);
+    if (result == null || result.notFound) {
+      const displayPath = result?.path ?? path;
+      throw new ZyError(`module not found: ${displayPath}`);
+    }
+    // Use resolved absolute path as canonical key so circular-import detection
+    // works even when the same file is imported via different relative paths.
+    const cacheKey = (typeof result === 'object' && result.resolvedPath) ? result.resolvedPath : path;
+
+    if (this.moduleCache.has(cacheKey)) return this.moduleCache.get(cacheKey);
+    if (this.loadingModules.has(cacheKey)) {
+      const modName = cacheKey.replace(/^.*\//, '').replace(/\.zy$/, '');
+      throw new ZyStaticError(`E004: Circular import detected: module '${modName}' is already being loaded`);
+    }
+    this.loadingModules.add(cacheKey);
+    const src      = typeof result === 'string' ? result : result.src;
+    const childRes = typeof result === 'string' ? this.moduleResolver : result.resolver;
+
+    const tokens = new Lexer(src).tokenize();
+    const ast    = new Parser(tokens).parse();
+
+    const modInterp = new Interpreter(this.outputFn, this.inputFn, childRes);
+    modInterp.moduleCache    = this.moduleCache;
+    modInterp.loadingModules = this.loadingModules;
+    modInterp.vfs            = this.vfs; // share one virtual filesystem per run
+
+    const modEnv = new Env(null, false, true); // isModuleScope=true
+    modInterp.globalEnv = modEnv;
+
+    // Support both old-style (bare top-level statements) and new block syntax # name { ... }
+    const modBody = (ast.body.length === 1 && ast.body[0].type === 'ModuleBlock')
+      ? ast.body[0].body
+      : ast.body;
+
+    // Collect exported names from ExportDecl nodes before execution
+    const exportPairs = [];
+    for (const s of modBody) {
+      if (s.type === 'ExportDecl') for (const p of s.names) exportPairs.push(p);
+    }
+
+    await modInterp.execBlock(modBody, modEnv);
+
+    // Bind all module-level functions to modEnv so intra-module calls work
+    for (const val of modEnv.vars.values()) {
+      if (val.type === 'func' && !val.closureEnv) val.closureEnv = modEnv;
+    }
+
+    // Build module value with only exported names
+    const exports = new Map();
+    for (const p of exportPairs) {
+      if (p.kind === 'reexport') {
+        // alias::member or alias.member re-export
+        const aliasVal = modEnv.vars.get(p.alias);
+        if (aliasVal && aliasVal.type === 'module' && aliasVal.exports.has(p.member)) {
+          exports.set(p.exported, aliasVal.exports.get(p.member));
+        }
+      } else {
+        // own export (with optional rename)
+        if (modEnv.vars.has(p.internal)) exports.set(p.exported, modEnv.vars.get(p.internal));
+      }
+    }
+
+    this.loadingModules.delete(cacheKey);
+    const modVal = { type: 'module', exports };
+    this.moduleCache.set(cacheKey, modVal);
+    return modVal;
+  }
+
+  tick() {
+    if (this.tui?.aborted) throw new ZyError('Program stopped.');
+    if (++this.steps > this.maxSteps)
+      throw new ZyError('Execution limit reached (50 000 steps) — infinite loop?');
+  }
+
+  maybeYield() {
+    const now = performance.now();
+    if (now - this.lastYield > 16) {
+      this.lastYield = now;
+      return new Promise(r => setTimeout(r, 0));
+    }
+  }
+
+  emit(text) {
+    this.outputBytes += text.length;
+    if (this.outputBytes > this.maxBytes)
+      throw new ZyError('Output limit reached (32 KB) — infinite loop?');
+    if (this.tui && this.tui.active) this.tui.print(text);
+    else this.outputFn(text);
+  }
+
+  async run(program, filePath = null) {
+    const env = new Env();
+    this.globalEnv = env;
+    if (program.body.length >= 1 && program.body[0].type === 'ModuleBlock') {
+      const mb = program.body[0];
+      const modName = mb.name; // preserve as declared (e.g. '.module' or 'matematicas')
+      const pathStr = filePath ? `'${filePath}'` : `'${modName}.zy'`;
+      // Use filename stem for import hint (matches CLI for mismatched names)
+      const importHint = filePath
+        ? filePath.replace(/^.*[/\\]/, '').replace(/\.zy$/, '')
+        : modName.replace(/^\./, '');
+      this.emit(`warning: ${pathStr} is a module file and cannot be run directly\n  = help: module '${modName}' is meant to be imported with <# ./${importHint} => alias`);
+      return;
+    }
+    await this.execBlock(program.body, env);
+  }
+
+  async execBlock(stmts, env) {
+    for (let i = 0; i < stmts.length; i++) {
+      const stmt = stmts[i];
+      // Prefix hot-def sentinel: ExprStmt{Ident{hot:true, name:''}} followed by the actual op.
+      // Pre-initialize the target variable in the enclosing function/root scope.
+      if (stmt.type === 'ExprStmt' &&
+          stmt.expr?.type === 'Ident' && stmt.expr.hot && stmt.expr.name === '') {
+        const next = stmts[i + 1];
+        const targetName = this._hotTargetName(next);
+        if (targetName) {
+          let exists = false;
+          try { env.get(targetName); exists = true; } catch (_) {}
+          if (!exists) env.hotDef(targetName, this._hotNeutralForStmt(next));
+        }
+        continue;
+      }
+      const sig = await this.exec(stmt, env);
+      if (sig instanceof ZyReturn || sig instanceof ZyBreak || sig instanceof ZyContinue)
+        return sig;
+    }
+  }
+
+  async exec(stmt, env) {
+    this.tick();
+
+    switch (stmt.type) {
+      case 'Noop': return;
+      case 'ExportDecl': return;
+      case 'ModuleBlock': return;
+
+      case 'Import': {
+        const modVal = await this.loadModule(stmt.path);
+        if (!env.set(stmt.alias, modVal)) env.def(stmt.alias, modVal);
+        // Also record the alias in a namespace variables cannot reach. The tree-walker
+        // keeps import aliases in their own table (`import_aliases`), so `alias::fn(…)`
+        // still resolves after an ordinary variable takes the same name — which real
+        // programs do: zyKlingonGalaxy imports `Duj` as `duj` and then uses `duj` for the
+        // player's ship, calling `duj = duj::bIj(duj, …)` on every left/right move.
+        this.moduleAliases.set(stmt.alias, modVal);
+        return;
+      }
+
+      case 'SetNumeralMode': {
+        this.numeralMode = stmt.base;
+        return;
+      }
+
+      case 'Output': {
+        for (const item of stmt.items) this.emit(this.displayOutput(await this.eval(item, env)));
+        if (stmt.newline) this.emit('\n');
+        return;
+      }
+
+      case 'Input': {
+        // Build the prompt text once; it is re-printed on every (re-)prompt.
+        const promptText = stmt.prompt ? this.display(await this.eval(stmt.prompt, env)) : null;
+        const cast = stmt.cast ?? { kind: 'string' };
+        while (true) {
+          if (promptText !== null) this.emit(promptText);
+          const line = await this.inputFn();
+          // EOF contract: inputFn returns null/undefined when no more input is
+          // available — no constraint can be satisfied, abort instead of looping.
+          if (line == null) throw new ZyError(`end of input while waiting for ${describeInputCast(cast)}`);
+          const val = validateInput(String(line).trim(), cast);
+          if (val !== null) {
+            if (!env.set(stmt.varName, val)) env.def(stmt.varName, val);
+            return;
+          }
+          // Re-prompt: show what was expected, then loop and ask again.
+          this.emit(`  (${describeInputCast(cast)})\n`);
+        }
+      }
+
+      case 'VarAssign': {
+        const val = await this.eval(stmt.value, env);
+        if (!env.set(stmt.name, val)) {
+          if (stmt.hot) env.hotDef(stmt.name, val);
+          else env.def(stmt.name, val);
+        }
+        return;
+      }
+
+      case 'ConstAssign': {
+        const val = await this.eval(stmt.value, env);
+        env.def(stmt.name, val, true);
+        return;
+      }
+
+      case 'CompoundAssign': {
+        let cur;
+        try { cur = env.get(stmt.name); }
+        catch (e) {
+          if (!stmt.hot) throw e;
+          cur = (stmt.op === '*' || stmt.op === '/') ? mkInt(1) : mkInt(0);
+          env.hotDef(stmt.name, cur);
+        }
+        const rhs = await this.eval(stmt.value, env);
+        env.set(stmt.name, this.applyOp(stmt.op, cur, rhs));
+        return;
+      }
+
+      case 'Increment': {
+        let cur;
+        try { cur = env.get(stmt.name); }
+        catch (e) {
+          if (!stmt.hot) throw e;
+          cur = mkInt(0);
+          env.hotDef(stmt.name, cur);
+        }
+        const one = cur.type === 'float' ? mkFloat(1) : mkInt(1);
+        env.set(stmt.name, this.applyOp(stmt.op === '++' ? '+' : '-', cur, one));
+        return;
+      }
+
+      case 'FuncDecl': {
+        env.def(stmt.name, { type: 'func', name: stmt.name, params: stmt.params, body: stmt.body });
+        return;
+      }
+
+      case 'Return': {
+        const val = stmt.value ? await this.eval(stmt.value, env) : mkUnit();
+        return new ZyReturn(val);
+      }
+
+      case 'Break':    return new ZyBreak(stmt.label ?? null);
+      case 'Continue': return new ZyContinue(stmt.label ?? null);
+
+      case 'CliArgs':
+        env.def(stmt.variable, { type: 'arr', v: this.cliArgs.map(s => mkStr(s)) });
+        return;
+
+      case 'Sleep': {
+        const ms = (await this.eval(stmt.duration, env)).v;
+        await new Promise(r => {
+          const id = setTimeout(r, Math.max(0, Math.trunc(ms)));
+          if (this.tui) this.tui._sleepCancel = () => { clearTimeout(id); r(); };
+        });
+        if (this.tui) this.tui._sleepCancel = null;
+        return;
+      }
+
+      case 'ClearScreen':
+        if (this.tui) this.tui.clear();
+        return;
+
+      case 'KeyInput': {
+        const ch = stmt.blocking
+          ? await (this.tui ? this.tui.readKey() : Promise.resolve('\0'))
+          : (this.tui ? this.tui.pollKey() : '\0');
+        const cur = { type: 'char', v: ch };
+        if (!env.set(stmt.variable, cur)) env.def(stmt.variable, cur);
+        return;
+      }
+
+      case 'OutputPos': {
+        const { slots, items } = stmt;
+        let row = null, col = null, bks = 0, fg = null, bg = null;
+        if (slots.length === 1 && slots[0]?.type === 'Ident') {
+          const tv = await this.eval(slots[0], env);
+          const get = i => tv.v?.[i]?.v ?? null;
+          row = get(0); col = get(1); bks = get(2) ?? 0; fg = get(3); bg = get(4);
+        } else {
+          const vals = [];
+          for (const s of slots) vals.push(s ? await this.eval(s, env) : null);
+          if (vals[0] != null) row = vals[0].v;
+          if (vals[1] != null) col = vals[1].v;
+          if (vals[2] != null) bks = vals[2].v;
+          if (vals[3] != null) fg = vals[3].v;
+          if (vals[4] != null) bg = vals[4].v;
+        }
+        const parts = [];
+        for (const i of items) parts.push(await this.eval(i, env));
+        const text = parts.map(v => this.displayOutput(v)).join('');
+        if (this.tui) this.tui.printAt(row, col, text, bks, fg, bg);
+        else this.emit(text);
+        return;
+      }
+
+      case 'TuiBlock': {
+        if (!this.tui) return await this.execBlock(stmt.body, new Env(env));
+        const savedMax  = this.maxSteps;
+        const savedByte = this.maxBytes;
+        const savedIter = this.maxInfiniteIter;
+        this.maxSteps        = Infinity;
+        this.maxBytes        = Infinity;
+        this.maxInfiniteIter = Infinity;
+        this.tui.enter();
+        try {
+          await this.execBlock(stmt.body, new Env(env));
+        } finally {
+          this.tui.leave();
+          this.maxSteps        = savedMax;
+          this.maxBytes        = savedByte;
+          this.maxInfiniteIter = savedIter;
+        }
+        return;
+      }
+
+      case 'If': {
+        if (this.truthy(await this.eval(stmt.cond, env))) return await this.execBlock(stmt.then, new Env(env));
+        for (const ei of stmt.elseifs)
+          if (this.truthy(await this.eval(ei.cond, env))) return await this.execBlock(ei.body, new Env(env));
+        if (stmt.else) return await this.execBlock(stmt.else, new Env(env));
+        return;
+      }
+
+      case 'Loop': return await this.execLoop(stmt, env);
+
+      case 'ExprStmt': {
+        // A bare match statement (?? x { arm => { <~ v } }, no assignment) must
+        // propagate its arm's control-flow signal (<~, @!, @>) the same way an
+        // `if` block already does — going through eval() here would discard it,
+        // since eval() only ever returns plain Values.
+        if (stmt.expr.type === 'Match') {
+          const arm = await this.selectMatchArm(stmt.expr, env);
+          if (!arm) return;
+          if (arm.body.type === 'block') return await this.execBlock(arm.body.stmts, new Env(env));
+          await this.eval(arm.body.value, env);
+          return;
+        }
+        await this.eval(stmt.expr, env);
+        return;
+      }
+
+      case 'IndexAssign': {
+        const col = env.get(stmt.obj);
+        const i   = (await this.eval(stmt.index, env)).v;
+        if (i === 0) throw new ZyRuntimeError('Index 0 is invalid (indices start at 1)', '##Index');
+        const val = await this.eval(stmt.value, env);
+        const idx = i < 0 ? col.v.length + i : i - 1;
+        let updated;
+        if (col.type === 'arr') {
+          const r = [...col.v]; r[idx] = val; updated = mkArr(r);
+        } else if (col.type === 'tuple') {
+          throw new ZyError(
+            `cannot modify tuple '${stmt.obj}': tuples are immutable\n` +
+            `hint: use 'new_var = ${stmt.obj}[${i}]$~ value' for a functional update`
+          );
+        } else {
+          throw new ZyError(`'${stmt.obj}' is not an array`);
+        }
+        if (!env.set(stmt.obj, updated)) env.def(stmt.obj, updated);
+        return;
+      }
+
+      case 'ArrayDestruct': {
+        const arr = await this.eval(stmt.value, env);
+        if (arr.type !== 'arr' && arr.type !== 'tuple') throw new ZyError('Array destructuring requires an array');
+        if (arr.type === 'tuple') arr.v = arr.v; // tuples are compatible
+        let i = 0;
+        for (const t of stmt.targets) {
+          if (t.rest) {
+            const val = mkArr(arr.v.slice(i));
+            try { if (!env.set(t.name, val)) env.def(t.name, val); }
+            catch { env.destroy(t.name); env.def(t.name, val); }
+          } else if (t.name === '_') {
+            i++;
+          } else {
+            const val = arr.v[i] ?? mkUnit();
+            try { if (!env.set(t.name, val)) env.def(t.name, val); }
+            catch { env.destroy(t.name); env.def(t.name, val); }
+            i++;
+          }
+        }
+        return;
+      }
+
+      case 'TupleDestruct': {
+        const tup = await this.eval(stmt.value, env);
+        if (tup.type !== 'tuple' && tup.type !== 'arr')
+          throw new ZyError('Tuple destructuring requires a tuple or array');
+        const items = tup.v;
+        let i = 0;
+        for (const t of stmt.targets) {
+          if (t.rest) {
+            const val = mkArr(items.slice(i));
+            try { if (!env.set(t.name, val)) env.def(t.name, val); }
+            catch { env.destroy(t.name); env.def(t.name, val); }
+          } else {
+            const val = items[i] ?? mkUnit();
+            try { if (!env.set(t.name, val)) env.def(t.name, val); }
+            catch { env.destroy(t.name); env.def(t.name, val); }
+            i++;
+          }
+        }
+        return;
+      }
+
+      case 'NamedDestruct': {
+        const tup = await this.eval(stmt.value, env);
+        if (tup.type !== 'tuple' || !tup.keys)
+          throw new ZyError('Named destructuring requires a named tuple');
+        for (const { field, name } of stmt.targets) {
+          const i = tup.keys.indexOf(field);
+          if (i < 0) throw new ZyError(`Unknown field '${field}'`);
+          const val = tup.v[i];
+          if (!env.set(name, val)) env.def(name, val);
+        }
+        return;
+      }
+
+      case 'TryCatch': {
+        let result;
+        try {
+          result = await this.execBlock(stmt.tryBody, new Env(env));
+        } catch (err) {
+          if (err instanceof ZyErrorPropagate) throw err; // $!! propagates through try/catch
+          const errType = err.errType ?? '##_';
+          const matched = stmt.catches.find(
+            c => !c.errType || c.errType === errType || c.errType === '##_'
+          );
+          if (matched) {
+            const catchEnv = new Env(env);
+            const errMsg = err.message ?? String(err);
+            catchEnv.def('_err', { type: 'error', errType, v: errMsg });
+            result = await this.execBlock(matched.body, catchEnv);
+          } else {
+            throw err;
+          }
+        } finally {
+          if (stmt.finallyBody) await this.execBlock(stmt.finallyBody, new Env(env));
+        }
+        return result;
+      }
+
+      case 'LifetimeEnd': {
+        env.destroy(stmt.name);
+        return;
+      }
+    }
+  }
+
+  async execLoop(loop, env) {
+    const outer = new Env(env);
+    const brk = sig => sig instanceof ZyBreak    && (sig.label === null || sig.label === loop.label);
+    const cnt = sig => sig instanceof ZyContinue && (sig.label === null || sig.label === loop.label);
+
+    if (loop.kind === 'infinite') {
+      let iter = 0;
+      while (true) {
+        if (++iter > this.maxInfiniteIter)
+          throw new ZyError(`Infinite loop limit reached (${this.maxInfiniteIter} iterations) — add @! to break`);
+        this.tick();
+        const sig = await this.execBlock(loop.body, new Env(outer));
+        if (brk(sig)) break;
+        if (cnt(sig)) continue;
+        if (sig instanceof ZyReturn) return sig;
+        if (sig instanceof ZyBreak) return sig;
+        if (sig instanceof ZyContinue) return sig;
+        await this.maybeYield();
+      }
+      return;
+    }
+
+    if (loop.kind === 'while') {
+      const firstVal = await this.eval(loop.cond, env);
+      if (firstVal.type === 'int') {
+        // Times loop: repeat N times
+        const n = firstVal.v;
+        for (let i = 0; i < n; i++) {
+          this.tick();
+          const sig = await this.execBlock(loop.body, new Env(outer));
+          if (brk(sig)) break;
+          if (sig instanceof ZyReturn) return sig;
+          if (sig instanceof ZyBreak || sig instanceof ZyContinue) return sig;
+          await this.maybeYield();
+        }
+      } else {
+        // While loop: re-evaluate condition each iteration
+        let cond = firstVal;
+        while (this.truthy(cond)) {
+          this.tick();
+          const sig = await this.execBlock(loop.body, new Env(outer));
+          if (brk(sig)) break;
+          if (cnt(sig)) { cond = await this.eval(loop.cond, env); continue; }
+          if (sig instanceof ZyReturn) return sig;
+          if (sig instanceof ZyBreak) return sig;
+          if (sig instanceof ZyContinue) return sig;
+          await this.maybeYield();
+          cond = await this.eval(loop.cond, env);
+        }
+      }
+      return;
+    }
+
+    if (loop.kind === 'range') {
+      const from = (await this.eval(loop.from, env)).v;
+      const to   = (await this.eval(loop.to,   env)).v;
+      let step = loop.step ? (await this.eval(loop.step, env)).v : (from <= to ? 1 : -1);
+      if (loop.step && from > to && step > 0) step = -step;
+      if (loop.step && from < to && step < 0) step = -step;
+      if (step === 0) throw new ZyError('Loop step cannot be zero');
+      for (let i = from; step > 0 ? i <= to : i >= to; i += step) {
+        this.tick();
+        const iter = new Env(outer);
+        iter.def(loop.var, mkInt(i));
+        const sig = await this.execBlock(loop.body, iter);
+        if (brk(sig)) break;
+        if (cnt(sig)) continue;
+        if (sig instanceof ZyReturn) return sig;
+        if (sig instanceof ZyBreak || sig instanceof ZyContinue) return sig;
+        await this.maybeYield();
+      }
+      return;
+    }
+
+    if (loop.kind === 'foreach') {
+      const it = await this.eval(loop.iterable, env);
+      let items;
+      if      (it.type === 'arr')   items = it.v;
+      else if (it.type === 'str')   items = [...it.v].map(mkChar);
+      else if (it.type === 'tuple') items = it.v;
+      else throw new ZyError(`Cannot iterate over ${it.type}`);
+
+      for (const item of items) {
+        this.tick();
+        const iter = new Env(outer);
+        iter.def(loop.var, item);
+        const sig = await this.execBlock(loop.body, iter);
+        if (brk(sig)) break;
+        if (cnt(sig)) continue;
+        if (sig instanceof ZyReturn) return sig;
+        if (sig instanceof ZyBreak || sig instanceof ZyContinue) return sig;
+        await this.maybeYield();
+      }
+      return;
+    }
+  }
+
+  async eval(expr, env) {
+    this.tick();
+
+    switch (expr.type) {
+      case 'Literal':
+        switch (expr.kind) {
+          case 'int':   return mkInt(expr.value);
+          case 'float': return mkFloat(expr.value);
+          case 'bool':  return mkBool(expr.value);
+          case 'char':  return mkChar(expr.value);
+          case 'str':   return await this.evalStr(expr.value, env);
+          case 'unit':  return mkUnit();
+        }
+        break;
+
+      case 'Ident':
+        if (expr.hot) {
+          try { return env.get(expr.name); }
+          catch (_) { const n = mkInt(0); env.hotDef(expr.name, n); return n; }
+        }
+        return env.get(expr.name);
+
+      case 'TerminalSize': {
+        if (!this.tui) return { type: 'tuple', v: [mkInt(24), mkInt(80)], keys: null };
+        const [rows, cols] = this.tui.getSize();
+        return { type: 'tuple', v: [mkInt(rows), mkInt(cols)], keys: null };
+      }
+
+      case 'BashExec': {
+        const _cmd = (expr.cmd ?? '').replace(/['"]/g, ' ').trim();
+        const _now = new Date();
+        const _pad = n => String(n).padStart(2, '0');
+        if (_cmd.includes('%Y')) return mkStr(String(_now.getFullYear()));
+        if (_cmd.includes('%m')) return mkStr(_pad(_now.getMonth() + 1));
+        if (_cmd.includes('%d')) return mkStr(_pad(_now.getDate()));
+        if (_cmd.includes('%H')) return mkStr(_pad(_now.getHours()));
+        if (_cmd.includes('%M')) return mkStr(_pad(_now.getMinutes()));
+        if (_cmd.includes('%S')) return mkStr(_pad(_now.getSeconds()));
+        if (_cmd.includes('%s')) return mkStr(String(Math.floor(Date.now() / 1000)));
+        if (_cmd.startsWith('echo ') && !_cmd.includes('$')) return mkStr(_cmd.slice(5).trim().replace(/^['"]|['"]$/g, ''));
+        // Default: nanosecond-ish timestamp for random seeds
+        return mkStr(String(Date.now() * 1000000 + Math.trunc(Math.random() * 999999)));
+      }
+
+      case 'Array':
+        return mkArr(await Promise.all(expr.items.map(i => this.eval(i, env))));
+
+      case 'Tuple': {
+        const items = await Promise.all(expr.items.map(i => this.eval(i, env)));
+        return { type: 'tuple', v: items, keys: expr.keys ?? null };
+      }
+
+      case 'ImplicitConcat': {
+        const items = expr.items ?? [];
+        // Prefix hot-def sentinel in RHS: [Ident{hot:true, name:''}, <inner_expr>]
+        if (items.length >= 2 &&
+            items[0]?.type === 'Ident' && items[0]?.hot && items[0]?.name === '') {
+          const inner = items[1];
+          const hotName = this._leftmostIdentName(inner);
+          if (hotName) {
+            let exists = false;
+            try { env.get(hotName); exists = true; } catch (_) {}
+            if (!exists) env.hotDef(hotName, this._hotNeutralForExpr(inner));
+          }
+          return await this.eval(inner, env);
+        }
+        const vals = [];
+        for (const item of items) vals.push(await this.eval(item, env));
+        // displayOutput: implicit concatenation is display text -> numeral mode applies.
+        return mkStr(vals.map(v => this.displayOutput(v)).join(''));
+      }
+      case 'CommaJoin': {
+        const vals = await Promise.all(expr.items.map(i => this.eval(i, env)));
+        return mkStr(vals.map(v => this.displayOutput(v)).join(''));
+      }
+
+      case 'BinOp': {
+        if (expr.op === '&&') {
+          return mkBool(this.truthy(await this.eval(expr.left, env)) &&
+                        this.truthy(await this.eval(expr.right, env)));
+        }
+        if (expr.op === '||') {
+          return mkBool(this.truthy(await this.eval(expr.left, env)) ||
+                        this.truthy(await this.eval(expr.right, env)));
+        }
+        return this.applyOp(expr.op, await this.eval(expr.left, env), await this.eval(expr.right, env));
+      }
+
+      case 'UnaryOp': {
+        const val = await this.eval(expr.operand, env);
+        if (expr.op === '-')
+          return val.type === 'float' ? mkFloat(-val.v) : mkInt(-val.v);
+        if (expr.op === '!')
+          return mkBool(!this.truthy(val));
+        break;
+      }
+
+      case 'Call': {
+        const fn = env.get(expr.callee);
+        if (!fn || fn.type !== 'func')
+          throw new ZyError(`'${expr.callee}' is not a function`);
+        const args = await Promise.all(expr.args.map(a => this.eval(a, env)));
+        return await this.callFunc(fn, args, this.buildOutWriteback(fn, expr, env));
+      }
+
+      case 'CallExpr': {
+        const fn = await this.eval(expr.callee, env);
+        if (!fn || fn.type !== 'func')
+          throw new ZyError(`Expression is not a function`);
+        const args = await Promise.all(expr.args.map(a => this.eval(a, env)));
+        // Output parameters must be written back here too, not just in 'Call'. A module
+        // call `alias::f(x)` parses as Ident(alias) → FieldAccess → CallExpr (the callee
+        // is not a bare Ident), so every cross-module call landed in this branch and
+        // silently dropped its `<~` out-params: the callee mutated its local copy and the
+        // caller's variable never changed. That is what made GO unplayable in the browser —
+        // 盤::着手(局面<~, …, 取数<~, コウ点<~) placed a stone and counted captures into
+        // parameters the caller never saw, so the board stayed empty forever.
+        return await this.callFunc(fn, args, this.buildOutWriteback(fn, expr, env));
+      }
+
+      case 'NavIndex': {
+        const obj  = await this.eval(expr.obj, env);
+        const spec = expr.spec;
+
+        if (spec.kind === 'simple') {
+          // Simple 1-based subscript
+          const idx = (await this.eval(spec.index, env)).v;
+          return this.navGetAt(obj, idx);
+        }
+
+        if (spec.kind === 'path') {
+          // Single nav path — may return scalar or flat array if path has ranges
+          const resolvedSteps = await this.resolveNavSteps(spec.path, env);
+          return await this.evalNavPath(obj, resolvedSteps);
+        }
+
+        if (spec.kind === 'flat') {
+          // Multiple nav paths — flat array result
+          const results = [];
+          for (const path of spec.paths) {
+            const resolvedSteps = await this.resolveNavSteps(path, env);
+            const val = await this.evalNavPath(obj, resolvedSteps);
+            if (val.type === 'arr') results.push(...val.v);
+            else results.push(val);
+          }
+          return mkArr(results);
+        }
+
+        if (spec.kind === 'structured') {
+          if (spec.groups.length === 1) {
+            // Single structured group → flat array of that group's values
+            const group = spec.groups[0];
+            const results = [];
+            for (const path of group.paths) {
+              const resolvedSteps = await this.resolveNavSteps(path, env);
+              const val = await this.evalNavPath(obj, resolvedSteps);
+              if (val.type === 'arr') results.push(...val.v);
+              else results.push(val);
+            }
+            return mkArr(results);
+          }
+          // Multiple groups → array of arrays
+          const groups = [];
+          for (const group of spec.groups) {
+            const results = [];
+            for (const path of group.paths) {
+              const resolvedSteps = await this.resolveNavSteps(path, env);
+              const val = await this.evalNavPath(obj, resolvedSteps);
+              if (val.type === 'arr') results.push(...val.v);
+              else results.push(val);
+            }
+            groups.push(mkArr(results));
+          }
+          return mkArr(groups);
+        }
+
+        throw new ZyError(`Unknown nav spec kind: ${spec.kind}`);
+      }
+
+      case 'JuxtaConcat': {
+        // displayOutput, not display: an active numeral mode has to reach every
+        // path that turns a number into text, not just `>>`. A number folded
+        // into a composed string used to revert to ASCII under #d0d9#.
+        const parts = [];
+        for (const it of expr.items) parts.push(this.displayOutput(await this.eval(it, env)));
+        return mkStr(parts.join(''));
+      }
+
+      case 'Lambda': {
+        return {
+          type: 'func', name: '<lambda>',
+          params: expr.params.map(p => ({ name: p })),
+          body: expr.body.type === 'block'
+            ? expr.body.stmts
+            : [{ type: 'Return', value: expr.body.value }],
+          closureEnv: env,
+        };
+      }
+
+      case 'Pipe': {
+        const val = await this.eval(expr.value, env);
+        const pipeEnv = new Env(env);
+        pipeEnv.def('_', val);
+        const result = await this.eval(expr.rhs, pipeEnv);
+        if (result && result.type === 'func') return await this.callFunc(result, [val]);
+        return result;
+      }
+
+      case 'FieldAccess': {
+        // `alias::name` addresses the module namespace and nothing else, so resolve it
+        // from the alias table rather than by evaluating `alias` as an expression. Without
+        // this, an ordinary variable that happens to share an alias's name shadowed the
+        // module and the call failed with a "requires a named tuple" error pointing at the
+        // wrong thing entirely. `.` keeps evaluating its object normally (it must: most
+        // uses are `tuple.field`) and only consults the alias table as a fallback, which is
+        // what makes `alias.CONST` survive the same shadowing.
+        const aliasName = expr.obj?.type === 'Ident' ? expr.obj.name : null;
+        const aliasMod  = aliasName ? this.moduleAliases.get(aliasName) : undefined;
+
+        const obj = expr.scoped && aliasMod ? aliasMod : await this.eval(expr.obj, env);
+        if (obj.type === 'module') {
+          if (!obj.exports.has(expr.field)) {
+            const modAlias = aliasName ?? 'module';
+            throw new ZyError(`module '${modAlias}' does not export function '${expr.field}'`);
+          }
+          return obj.exports.get(expr.field);
+        }
+        if (aliasMod && aliasMod.exports.has(expr.field)) return aliasMod.exports.get(expr.field);
+        if (obj.type !== 'tuple' || !obj.keys)
+          throw new ZyError(`'${expr.scoped ? '::' : '.'}${expr.field}' requires a named tuple`);
+        const i = obj.keys.indexOf(expr.field);
+        if (i < 0) throw new ZyRuntimeError(
+          `Named tuple has no field '${expr.field}'. Available fields: ${obj.keys.filter(k => k).join(', ')}`,
+          '##_'
+        );
+        return obj.v[i];
+      }
+
+      case 'CollectionOp':
+        return await this.evalCollectionOp(expr, env);
+
+      case 'FuncUpdate': {
+        const arr  = await this.eval(expr.obj, env);
+        const iVal = await this.eval(expr.index, env);
+        const val  = await this.eval(expr.value, env);
+
+        // String field name — named tuple only (G2)
+        if (iVal.type === 'str') {
+          if (arr.type !== 'tuple' || !arr.keys)
+            throw new ZyError(`$~ string index requires a named tuple`);
+          const fi = arr.keys.indexOf(iVal.v);
+          if (fi < 0) throw new ZyError(`named tuple has no field '${iVal.v}'. Available: ${arr.keys.filter(k=>k).join(', ')}`);
+          const r = [...arr.v]; r[fi] = val;
+          return { type: 'tuple', v: r, keys: arr.keys };
+        }
+
+        // Integer 1-based index
+        const i = iVal.v;
+        if (i === 0) throw new ZyRuntimeError('Index 0 is invalid (indices start at 1)', '##Index');
+        const len = arr.type === 'str' ? [...arr.v].length : (arr.v?.length ?? 0);
+        const idx = i < 0 ? len + i : i - 1;
+        if (idx < 0 || idx >= len)
+          throw new ZyError(`index out of bounds: index ${i} for collection of length ${len}`);
+        if (arr.type === 'arr')   { const r = [...arr.v]; r[idx] = val; return mkArr(r); }
+        if (arr.type === 'str')   { const r = [...arr.v]; r[idx] = this.display(val); return mkStr(r.join('')); }
+        if (arr.type === 'tuple') { const r = [...arr.v]; r[idx] = val; return { type:'tuple', v:r, keys:arr.keys }; }
+        throw new ZyError(`$~ not supported on ${arr.type}`);
+      }
+
+      case 'DeepUpdate': {
+        const root = await this.eval(expr.obj, env);
+        const indices = [];
+        for (const atom of expr.path) {
+          if (atom.kind === 'range') throw new ZyError('deep update ($~) does not support ranges in the path');
+          const iv = await this.eval(atom.expr, env);
+          if (iv.type !== 'int') throw new ZyError(`deep update index must be integer, got ${iv.type}`);
+          indices.push(iv.v);
+        }
+        const newVal = await this.eval(expr.value, env);
+        return deepUpdateValue(root, indices, newVal);
+      }
+
+      case 'TypeMetadata': {
+        let val;
+        if (expr.obj.type === 'Ident') {
+          try { val = env.get(expr.obj.name); }
+          catch { return { type: 'tuple', v: [mkStr('##_'), mkInt(0), mkUnit()], keys: null }; }
+        } else {
+          val = await this.eval(expr.obj, env);
+        }
+        return this.typeMetadata(val);
+      }
+
+      case 'Match': {
+        const arm = await this.selectMatchArm(expr, env);
+        if (!arm) return mkUnit();
+        if (arm.body.type === 'block') {
+          const sig = await this.execBlock(arm.body.stmts, new Env(env));
+          if (sig === undefined) return mkUnit();
+          // A control-flow signal (<~, @!, @>) inside a match arm's block must
+          // unwind past this expression context to its real target (the
+          // enclosing function or loop) — eval() itself can only return plain
+          // Values, so throw it, mirroring how $!! (ZyErrorPropagate) already
+          // unwinds through eval() to callFunc's boundary.
+          throw sig;
+        }
+        return await this.eval(arm.body.value, env);
+      }
+
+      case 'DataOp': {
+        const val = await this.eval(expr.arg, env);
+        // `what` names the operation for the error message the CLI raises on a
+        // non-numeric string; digits in any script parse (see asciiDigits).
+        const toNum = (v, what = null) => {
+          if (v.type === 'int' || v.type === 'float') return v.v;
+          if (v.type === 'str') {
+            const n = parseFloat(asciiDigits(v.v.trim()));
+            if (!isNaN(n)) return n;
+            if (what) throw new ZyError(`cannot convert string '${v.v}' to number for ${what}`, expr.line);
+            return 0;
+          }
+          return 0;
+        };
+        const fmtSci = (num, prec, mode) => {
+          if (num === 0) return '0e0';
+          const neg = num < 0;
+          const abs = Math.abs(num);
+          let exp = Math.floor(Math.log10(abs));
+          let mant = abs / Math.pow(10, exp);
+          if (prec !== null) {
+            if (mode === 'round') mant = parseFloat(mant.toFixed(prec));
+            else { const f = Math.pow(10, prec); mant = Math.trunc(mant * f) / f; }
+            if (mant >= 10) { mant /= 10; exp += 1; }
+          }
+          let mantStr = parseFloat(mant.toPrecision(15)).toString().replace(/\.?0+$/, '');
+          if (prec !== null && !mantStr.includes('.')) mantStr += '.0';
+          return (neg ? '-' : '') + mantStr + 'e' + exp;
+        };
+        switch (expr.kind) {
+          case 'eval': {
+            if (val.type === 'str') {
+              const s = val.v.trim();
+              // Normalize Unicode digits to ASCII before parsing
+              const ascii = asciiDigits(s);
+              const p = parseFloat(ascii);
+              if (!isNaN(p) && /^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/.test(ascii)) {
+                if (Number.isInteger(p) && !ascii.includes('.') && !ascii.toLowerCase().includes('e')) return mkInt(p);
+                return mkFloat(p);
+              }
+            }
+            return val;
+          }
+          case 'round':       return mkFloat(parseFloat(toNum(val, 'rounding').toFixed(expr.prec)));
+          case 'trunc': {
+            const n = toNum(val, 'truncation');
+            const f = Math.pow(10, expr.prec);
+            return mkFloat(Math.trunc(n * f) / f);
+          }
+          case 'comma':       return mkStr(toNum(val).toLocaleString('en-US'));
+          case 'comma_round': {
+            const n = parseFloat(toNum(val).toFixed(expr.prec));
+            return mkStr(n.toLocaleString('en-US', { minimumFractionDigits: expr.prec, maximumFractionDigits: expr.prec }));
+          }
+          case 'comma_trunc': {
+            const raw = toNum(val);
+            const f = Math.pow(10, expr.prec);
+            const n = Math.trunc(raw * f) / f;
+            return mkStr(n.toLocaleString('en-US', { minimumFractionDigits: expr.prec, maximumFractionDigits: expr.prec }));
+          }
+          case 'sci':       return mkStr(fmtSci(toNum(val), null, null));
+          case 'sci_round': return mkStr(fmtSci(toNum(val), expr.prec, 'round'));
+          case 'sci_trunc': return mkStr(fmtSci(toNum(val), expr.prec, 'trunc'));
+          case 'base_conv': {
+            const n = val.type === 'char' ? val.v.codePointAt(0) : Math.trunc(toNum(val));
+            const base = expr.prec;
+            if (base === 16) return mkStr('0x' + n.toString(16).toUpperCase().padStart(4, '0'));
+            if (base === 2)  return mkStr('0b' + n.toString(2));
+            if (base === 8)  return mkStr('0o' + n.toString(8));
+            if (base === 10) return mkStr('0d' + n.toString(10).padStart(4, '0'));
+            return val;
+          }
+        }
+        return val;
+      }
+
+      case 'CastOp': {
+        const val = await this.eval(expr.operand, env);
+        // ##! also accepts a Char, casting it to its Unicode code point —
+        // the only direct Char→Int route (mirrors data_ops.rs CastKind::ToIntTrunc).
+        if (expr.op === '##!' && val.type === 'char') return mkInt(val.v.codePointAt(0));
+        if (val.type !== 'int' && val.type !== 'float') {
+          const _typeNames = { str:'String', int:'Integer', float:'Float', bool:'Bool', char:'Char', arr:'Array', tuple:'Tuple', unit:'Unit' };
+          const typeName = _typeNames[val.type] ?? (val.type.charAt(0).toUpperCase() + val.type.slice(1));
+          const reqSuffix = expr.op === '##!' ? ' or Char' : '';
+          throw new ZyRuntimeError(`${expr.op} requires a numeric value${reqSuffix}, got ${typeName}`, '##_');
+        }
+        if (expr.op === '##.') return mkFloat(val.v);
+        if (expr.op === '###') {
+          // Round half away from zero
+          const n = val.v;
+          return mkInt(n >= 0 ? Math.floor(n + 0.5) : Math.ceil(n - 0.5));
+        }
+        if (expr.op === '##!') return mkInt(Math.trunc(val.v));
+        return val;
+      }
+    }
+
+    return mkUnit();
+  }
+
+  // ─── Navigation helpers ───────────────────────────────────────────────────
+
+  // Resolve an AST nav step array to concrete { kind, val } or { kind, from, to } steps
+  async resolveNavSteps(steps, env) {
+    const resolved = [];
+    for (const step of steps) {
+      if (step.kind === 'index') {
+        const v = (await this.eval(step.expr, env)).v;
+        resolved.push({ kind: 'index', val: v });
+      } else {
+        const from = (await this.eval(step.from, env)).v;
+        const to   = (await this.eval(step.to,   env)).v;
+        resolved.push({ kind: 'range', from, to });
+      }
+    }
+    return resolved;
+  }
+
+  // Evaluate a nav path against an object; returns scalar or flat array
+  async evalNavPath(obj, resolvedSteps) {
+    if (resolvedSteps.length === 0) return obj;
+    const [step, ...rest] = resolvedSteps;
+
+    if (step.kind === 'index') {
+      const elem = this.navGetAt(obj, step.val);
+      return await this.evalNavPath(elem, rest);
+    }
+
+    // Range step — fan out
+    const { from, to } = step;
+    const results = [];
+    for (let i = from; i <= to; i++) {
+      const elem = this.navGetAt(obj, i);
+      const sub = await this.evalNavPath(elem, rest);
+      // Flatten one level when nested ranges produce arrays
+      if (rest.length > 0 && sub.type === 'arr') results.push(...sub.v);
+      else results.push(sub);
+    }
+    return mkArr(results);
+  }
+
+  // 1-based get with error on index 0 and out-of-bounds
+  navGetAt(obj, idx) {
+    if (typeof idx === 'boolean') throw new ZyRuntimeError('Cannot use Bool as array index', '##Index');
+    if (idx === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
+    if (obj.type === 'arr') {
+      const i = idx < 0 ? obj.v.length + idx : idx - 1;
+      if (i < 0 || i >= obj.v.length) throw new ZyRuntimeError(`array index out of bounds: index ${idx} for array of length ${obj.v.length}`, '##Index');
+      return obj.v[i];
+    }
+    if (obj.type === 'tuple') {
+      const i = idx < 0 ? obj.v.length + idx : idx - 1;
+      if (i < 0 || i >= obj.v.length) throw new ZyRuntimeError(`array index out of bounds: index ${idx} for array of length ${obj.v.length}`, '##Index');
+      return obj.v[i] ?? mkUnit();
+    }
+    if (obj.type === 'str') {
+      const chars = [...obj.v];
+      const i = idx < 0 ? chars.length + idx : idx - 1;
+      if (i < 0 || i >= chars.length) throw new ZyRuntimeError(`array index out of bounds: index ${idx} for array of length ${chars.length}`, '##Index');
+      return mkChar(chars[i]);
+    }
+    throw new ZyError(`Cannot subscript ${obj.type}`);
+  }
+
+  // Resolve a 1-based index to JS 0-based; 0 is clamped to 0 (for slices)
+  resolve1Based(n, len) {
+    if (n === 0) return 0;
+    return n > 0 ? n - 1 : len + n;
+  }
+
+  typeMetadata(val) {
+    const symMap = { int:'###', float:'##.', str:'##"', char:"##'", bool:'##?', arr:'##]', tuple:'##)', unit:'##_' };
+    let sym;
+    if (val.type === 'func') {
+      sym = (val.name === '<lambda>') ? '##->' : '##()';
+    } else if (val.type === 'error') {
+      sym = val.errType ?? '##_'; // error type symbol = specific error code
+    } else {
+      sym = symMap[val.type] ?? '##_';
+    }
+    let count;
+    switch (val.type) {
+      case 'int':   count = String(Math.abs(val.v)).length; break;
+      case 'float': count = String(val.v).replace(/^-/, '').length; break;
+      case 'str':   count = [...val.v].length; break;
+      case 'char':  count = 1; break;
+      case 'bool':  count = 1; break;
+      case 'arr':   count = val.v.length; break;
+      case 'tuple': count = val.v.length; break;
+      case 'func':  count = val.params?.length ?? 0; break;
+      default:      count = 0;
+    }
+    return { type: 'tuple', v: [mkStr(sym), mkInt(count), val], keys: null };
+  }
+
+  // ─── Hot-def helpers ─────────────────────────────────────────────────────────
+
+  // Return the name of the variable targeted by a statement (for sentinel pre-init)
+  _hotTargetName(stmt) {
+    if (!stmt) return null;
+    if (stmt.type === 'CompoundAssign' || stmt.type === 'VarAssign' || stmt.type === 'Increment')
+      return stmt.name;
+    if (stmt.type === 'ExprStmt' && stmt.expr?.type === 'CollectionOp')
+      return stmt.expr.obj?.name ?? null;
+    return null;
+  }
+
+  // Return the neutral value for the first use of a hot-def variable (2-stmt prefix form)
+  _hotNeutralForStmt(stmt) {
+    if (!stmt) return mkInt(0);
+    if (stmt.type === 'CompoundAssign' && (stmt.op === '*' || stmt.op === '/')) return mkInt(1);
+    if (stmt.type === 'ExprStmt' && stmt.expr?.type === 'CollectionOp' && stmt.expr.op === '$+')
+      return mkArr([]);
+    if (stmt.type === 'VarAssign' && this._exprContainsOp(stmt.value, '$+')) return mkArr([]);
+    if (stmt.type === 'VarAssign') return mkStr('');
+    return mkInt(0);
+  }
+
+  // Return the neutral value for the first use of a hot-def variable (RHS ImplicitConcat form)
+  _hotNeutralForExpr(expr) {
+    if (!expr) return mkInt(0);
+    if (expr.type === 'CollectionOp' && expr.op === '$+') return mkArr([]);
+    return mkInt(0);
+  }
+
+  // Walk an expression and return the leftmost Ident name
+  _leftmostIdentName(expr) {
+    if (!expr) return null;
+    if (expr.type === 'Ident') return expr.name || null;
+    if (expr.type === 'CollectionOp') return this._leftmostIdentName(expr.obj);
+    if (expr.type === 'BinOp') return this._leftmostIdentName(expr.left);
+    return null;
+  }
+
+  // Check if an expression tree contains a CollectionOp with the given op
+  _exprContainsOp(expr, op) {
+    if (!expr) return false;
+    if (expr.type === 'CollectionOp' && expr.op === op) return true;
+    if (expr.type === 'ImplicitConcat') return (expr.items ?? []).some(i => this._exprContainsOp(i, op));
+    return false;
+  }
+
+  async evalCollectionOp(expr, env) {
+    // Hot array-accumulator: arr°$+ i initializes arr to [] instead of 0
+    let col;
+    if (expr.op === '$+' && expr.obj?.type === 'Ident' && expr.obj?.hot) {
+      let existing = null;
+      try { existing = env.get(expr.obj.name); } catch (_) {}
+      if (existing === null) { col = mkArr([]); env.hotDef(expr.obj.name, col); }
+      else col = existing;
+    } else {
+      col = await this.eval(expr.obj, env);
+    }
+    const arg = () => this.eval(expr.arg, env);
+
+    // 1-based index resolution for collection ops
+    const resolveIdx = (n, len) => {
+      if (n === 0) throw new ZyRuntimeError('Index 0 is invalid (indices start at 1)', '##Index');
+      return n < 0 ? len + n : n - 1;
+    };
+    const idx = async () => {
+      const n = (await this.eval(expr.index, env)).v;
+      return resolveIdx(n, col.v.length);
+    };
+
+    const notSupported = op => { throw new ZyError(`${op} not supported on ${col.type}`); };
+    const colItems = () => {
+      if (col.type === 'arr')   return col.v;
+      if (col.type === 'tuple') return col.v;
+      if (col.type === 'str')   return [...col.v].map(mkChar);
+      notSupported('collection op');
+    };
+    const fromStr = items => col.type === 'str'
+      ? mkStr(items.map(v => this.displayOutput(v)).join(''))
+      : col.type === 'tuple'
+        ? { type:'tuple', v: items, keys: null }
+        : mkArr(items);
+
+    switch (expr.op) {
+      case '$#': {
+        if (col.type === 'arr')   return mkInt(col.v.length);
+        if (col.type === 'str')   return mkInt([...col.v].length);
+        if (col.type === 'tuple') return mkInt(col.v.length);
+        notSupported('$#');
+      }
+
+      case '$+': {
+        const v = await arg();
+        if (col.type === 'arr')   return mkArr([...col.v, v]);
+        if (col.type === 'str')   return mkStr(col.v + this.displayOutput(v));
+        if (col.type === 'tuple') return { type:'tuple', v:[...col.v,v], keys: col.keys ? [...col.keys,null] : null };
+        notSupported('$+');
+      }
+      case '$+[i]': {
+        const i = await idx(), v = await arg();
+        if (col.type === 'arr') { const r=[...col.v]; r.splice(i,0,v); return mkArr(r); }
+        if (col.type === 'str') { const r=[...col.v]; r.splice(i,0,this.display(v)); return mkStr(r.join('')); }
+        if (col.type === 'tuple') {
+          const nv=[...col.v]; nv.splice(i,0,v);
+          const nk=col.keys?[...col.keys]:null; if(nk)nk.splice(i,0,null);
+          return { type:'tuple', v:nv, keys:nk };
+        }
+        notSupported('$+[i]');
+      }
+
+      case '$-': {
+        const v = await arg();
+        if (col.type === 'arr') {
+          const i = col.v.findIndex(el => this.equals(el, v));
+          if (i < 0) return col;
+          const r = [...col.v]; r.splice(i,1); return mkArr(r);
+        }
+        if (col.type === 'str') {
+          const c = this.display(v), i = col.v.indexOf(c);
+          return i < 0 ? col : mkStr(col.v.slice(0,i) + col.v.slice(i+c.length));
+        }
+        if (col.type === 'tuple') {
+          const i = col.v.findIndex(el => this.equals(el, v)); if (i<0) return col;
+          const nv=[...col.v], nk=col.keys?[...col.keys]:null; nv.splice(i,1); if(nk)nk.splice(i,1);
+          return { type:'tuple', v:nv, keys:nk };
+        }
+        notSupported('$-');
+      }
+      case '$--': {
+        const v = await arg();
+        if (col.type === 'arr')   return mkArr(col.v.filter(el => !this.equals(el,v)));
+        if (col.type === 'str') {
+          const c = this.display(v); return mkStr(col.v.split(c).join(''));
+        }
+        if (col.type === 'tuple') {
+          const kept = col.v.map((el,i)=>({el,k:col.keys?.[i]})).filter(({el})=>!this.equals(el,v));
+          return { type:'tuple', v:kept.map(x=>x.el), keys:col.keys?kept.map(x=>x.k):null };
+        }
+        notSupported('$--');
+      }
+      case '$-[i]': {
+        const i = await idx();
+        if (col.type === 'arr')   { const r=[...col.v]; r.splice(i,1); return mkArr(r); }
+        if (col.type === 'str')   { const r=[...col.v]; r.splice(i,1); return mkStr(r.join('')); }
+        if (col.type === 'tuple') {
+          const nv=[...col.v],nk=col.keys?[...col.keys]:null; nv.splice(i,1); if(nk)nk.splice(i,1);
+          return { type:'tuple', v:nv, keys:nk };
+        }
+        notSupported('$-[i]');
+      }
+      case '$-[i:n]': {
+        const sv = (await this.eval(expr.start, env)).v;
+        const nv = (await this.eval(expr.count, env)).v;
+        const len = col.type === 'str' ? [...col.v].length : col.v.length;
+        const si = resolveIdx(sv, len);
+        if (col.type === 'arr')   { const r=[...col.v]; r.splice(si, nv); return mkArr(r); }
+        if (col.type === 'str')   { const r=[...col.v]; r.splice(si, nv); return mkStr(r.join('')); }
+        if (col.type === 'tuple') { const r=[...col.v]; r.splice(si, nv); return { type:'tuple', v:r, keys:col.keys?[...col.keys].filter((_,i)=>i<si||i>=si+nv):null }; }
+        notSupported('$-[i:n]');
+      }
+      case '$-[i..j]': {
+        const len = col.type === 'str' ? [...col.v].length : col.v.length;
+        const fv = expr.range.from ? (await this.eval(expr.range.from, env)).v : 1;
+        const tv = expr.range.to   ? (await this.eval(expr.range.to,   env)).v : len;
+        const fi = resolveIdx(fv, len);
+        const ti = resolveIdx(tv, len);
+        const count = ti - fi + 1;
+        if (col.type === 'arr')   { const r=[...col.v]; r.splice(fi,count); return mkArr(r); }
+        if (col.type === 'str')   { const r=[...col.v]; r.splice(fi,count); return mkStr(r.join('')); }
+        if (col.type === 'tuple') { const r=[...col.v]; r.splice(fi,count); const ks=col.keys?[...col.keys]:null; if(ks)ks.splice(fi,count); return {type:'tuple',v:r,keys:ks}; }
+        notSupported('$-[i..j]');
+      }
+
+      case '$?': {
+        const v = await arg();
+        if (col.type === 'arr')   return mkBool(col.v.some(el=>this.equals(el,v)));
+        if (col.type === 'str')   return mkBool(col.v.includes(this.display(v)));
+        if (col.type === 'tuple') return mkBool(col.v.some(el=>this.equals(el,v)));
+        notSupported('$?');
+      }
+      case '$??': {
+        const v = await arg(), target = this.display(v);
+        const result = [];
+        if (col.type === 'arr' || col.type === 'tuple') {
+          col.v.forEach((el,i) => { if (this.equals(el,v)) result.push(mkInt(i+1)); }); // 1-based
+        } else if (col.type === 'str') {
+          const chars = [...col.v];
+          for (let i=0; i<=chars.length-target.length; i++) {
+            if (chars.slice(i,i+target.length).join('')===target) result.push(mkInt(i+1)); // 1-based
+          }
+        } else notSupported('$??');
+        return mkArr(result);
+      }
+
+      case '$~': {
+        const i=await idx(), v=await arg();
+        if (col.type === 'arr')   { const r=[...col.v]; r[i]=v; return mkArr(r); }
+        if (col.type === 'str')   { const r=[...col.v]; r[i]=this.display(v); return mkStr(r.join('')); }
+        if (col.type === 'tuple') { const nv=[...col.v]; nv[i]=v; return {type:'tuple',v:nv,keys:col.keys}; }
+        notSupported('$~');
+      }
+
+      case '$[i..j]': {
+        const len = col.type === 'str' ? [...col.v].length : col.v.length;
+        const fi = expr.range.from == null ? 0 : this.resolve1Based((await this.eval(expr.range.from,env)).v, len);
+        const ti = expr.range.to   == null ? len : this.resolve1Based((await this.eval(expr.range.to,env)).v, len) + 1; // inclusive end
+        if (col.type === 'arr')   return mkArr(col.v.slice(fi, ti));
+        if (col.type === 'str')   return mkStr([...col.v].slice(fi,ti).join(''));
+        if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(fi,ti), keys:col.keys?col.keys.slice(fi,ti):null };
+        notSupported('$[i..j]');
+      }
+
+      case '$[i:n]': {
+        const fv=(await this.eval(expr.range.from,env)).v, n=(await this.eval(expr.range.count,env)).v;
+        const len = col.type === 'str' ? [...col.v].length : col.v.length;
+        const fi = this.resolve1Based(fv, len);
+        if (col.type === 'arr')   return mkArr(col.v.slice(fi, fi+n));
+        if (col.type === 'str')   return mkStr([...col.v].slice(fi,fi+n).join(''));
+        if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(fi,fi+n), keys:col.keys?col.keys.slice(fi,fi+n):null };
+        notSupported('$[i:n]');
+      }
+
+      case '$^+': {
+        if (col.type !== 'arr') notSupported('$^+');
+        return mkArr([...col.v].sort((a,b)=> a.type==='str' ? a.v.localeCompare(b.v) : a.v-b.v));
+      }
+      case '$^-': {
+        if (col.type !== 'arr') notSupported('$^-');
+        return mkArr([...col.v].sort((a,b)=> a.type==='str' ? b.v.localeCompare(a.v) : b.v-a.v));
+      }
+      case '$^': {
+        if (col.type !== 'arr') notSupported('$^');
+        const cmpFn = await this.evalCallable(expr.arg, env);
+        const items = [...col.v];
+        for (let i = 1; i < items.length; i++) {
+          for (let j = i; j > 0; j--) {
+            const less = await this.callFunc(cmpFn, [items[j-1], items[j]]);
+            if (!this.truthy(less)) { const tmp = items[j-1]; items[j-1] = items[j]; items[j] = tmp; }
+            else break;
+          }
+        }
+        return mkArr(items);
+      }
+
+      case '$>': {
+        const fn = await this.evalCallable(expr.arg, env);
+        const items = colItems();
+        const mapped = await Promise.all(items.map(el => this.callFunc(fn,[el])));
+        return fromStr(mapped);
+      }
+      case '$|': {
+        const fn = await this.evalCallable(expr.arg, env);
+        const items = colItems();
+        const kept = [];
+        for (const el of items) {
+          if (this.truthy(await this.callFunc(fn,[el]))) kept.push(el);
+        }
+        return fromStr(kept);
+      }
+      case '$<': {
+        const fn = await this.evalCallable(expr.arg, env);
+        let acc = await this.eval(expr.init, env);
+        for (const el of colItems()) acc = await this.callFunc(fn,[acc,el]);
+        return acc;
+      }
+
+      case '$!':
+        return mkBool(col.type === 'error');
+
+      case '$!!': {
+        if (col.type === 'error') throw new ZyErrorPropagate(col);
+        return col;
+      }
+
+      case '$~~': {
+        if (col.type !== 'str') notSupported('$~~');
+        const from = this.display(await this.eval(expr.from, env));
+        const to   = this.display(await this.eval(expr.to,   env));
+        const maxN = expr.count ? (await this.eval(expr.count, env)).v : Infinity;
+        let result = col.v, idx2 = 0, n = 0;
+        while (n < maxN) {
+          const p = result.indexOf(from, idx2);
+          if (p === -1) break;
+          result = result.slice(0, p) + to + result.slice(p + from.length);
+          idx2 = p + to.length;
+          n++;
+        }
+        return mkStr(result);
+      }
+
+      case '$/': {
+        if (col.type !== 'str') notSupported('$/');
+        const delimVal = await arg();
+        const delim = this.display(delimVal);
+        const parts = col.v.split(delim);
+        return mkArr(parts.map(p => mkStr(p)));
+      }
+
+      case '$*': {
+        const n = (await arg()).v;
+        if (col.type !== 'str') notSupported('$*');
+        if (n <= 0) return mkStr('');
+        return mkStr(col.v.repeat(Math.trunc(n)));
+      }
+
+      case '$++': {
+        const evalItems = await Promise.all(expr.items.map(i => this.eval(i, env)));
+        if (col.type === 'str') {
+          // displayOutput: $++ builds display text, so it follows the numeral mode.
+          let result = col.v;
+          for (const item of evalItems) result += this.displayOutput(item);
+          return mkStr(result);
+        }
+        if (col.type === 'arr') {
+          return mkArr([...col.v, ...evalItems]);
+        }
+        notSupported('$++');
+      }
+    }
+
+    throw new ZyError(`Unknown collection operator: ${expr.op}`);
+  }
+
+  async evalCallable(argExpr, env) {
+    const v = await this.eval(argExpr, env);
+    if (v && v.type === 'func') return v;
+    throw new ZyError(`Expected a function for collection operator`);
+  }
+
+  // Evaluate a Match's subject and find the first arm whose pattern matches,
+  // running any pattern-binding side effects (env.def for list-pattern binds)
+  // exactly once. Returns null if no arm matches.
+  async selectMatchArm(matchExpr, env) {
+    const val = await this.eval(matchExpr.expr, env);
+    for (const arm of matchExpr.arms) {
+      if (await this.matchPattern(arm.pattern, val, env)) return arm;
+    }
+    return null;
+  }
+
+  async matchPattern(pattern, val, env) {
+    switch (pattern.type) {
+      case 'wildcard': return true;
+      case 'guard':    return this.truthy(await this.eval(pattern.cond, env));
+      case 'or': {
+        // Alternatives are tested left to right; first match wins
+        for (const alt of pattern.alts) {
+          if (await this.matchPattern(alt, val, env)) return true;
+        }
+        return false;
+      }
+      case 'range': {
+        const from = (await this.eval(pattern.from, env)).v;
+        const to   = (await this.eval(pattern.to,   env)).v;
+        return val.v >= from && val.v <= to;
+      }
+      case 'comparison': {
+        const pv = (await this.eval(pattern.value, env)).v;
+        const sv = val.v;
+        switch (pattern.op) {
+          case '<':  return sv < pv;
+          case '>':  return sv > pv;
+          case '<=': return sv <= pv;
+          case '>=': return sv >= pv;
+          case '==': return this.equals(val, await this.eval(pattern.value, env));
+          case '<>': return !this.equals(val, await this.eval(pattern.value, env));
+        }
+        return false;
+      }
+      case 'literal': {
+        const pv = await this.eval(pattern.value, env);
+        if (pv.type === 'arr') return pv.v.some(el => this.equals(val, el));
+        return this.equals(val, pv);
+      }
+      case 'list': {
+        // Scalar scrutinee: list pattern means "value is one of these" (membership)
+        if (val.type !== 'arr') {
+          for (const elem of pattern.elems) {
+            if (elem.kind === 'wildcard') return true;
+            if (elem.kind === 'literal' && this.equals(val, await this.eval(elem.expr, env))) return true;
+          }
+          return false;
+        }
+        const elems = pattern.elems;
+        const restIdx = elems.findIndex(e => e.kind === 'rest');
+        const matchElem = async (elem, arrVal) => {
+          if (elem.kind === 'wildcard') return true;
+          if (elem.kind === 'literal') return this.equals(arrVal, await this.eval(elem.expr, env));
+          if (elem.kind === 'bind') { env.def(elem.name, arrVal); return true; }
+          // Legacy format (name, rest)
+          if (elem.rest) return true;
+          if (elem.name === '_') return true;
+          env.def(elem.name, arrVal); return true;
+        };
+        if (restIdx < 0) {
+          if (val.v.length !== elems.length) return false;
+          for (let i = 0; i < elems.length; i++) {
+            if (!await matchElem(elems[i], val.v[i])) return false;
+          }
+          return true;
+        }
+        const minLen = elems.length - 1;
+        if (val.v.length < minLen) return false;
+        for (let i = 0; i < restIdx; i++) {
+          if (!await matchElem(elems[i], val.v[i])) return false;
+        }
+        const afterRest = elems.length - restIdx - 1;
+        const restElem = elems[restIdx];
+        if (restElem.name && restElem.name !== '_')
+          env.def(restElem.name, mkArr(val.v.slice(restIdx, val.v.length - afterRest)));
+        for (let i = 0; i < afterRest; i++) {
+          const elem = elems[restIdx + 1 + i];
+          if (!await matchElem(elem, val.v[val.v.length - afterRest + i])) return false;
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Pairs each `<~` output parameter with the caller variable that was passed to it, so
+   * `callFunc` can copy the final value back after the call returns. Only a bare identifier
+   * argument can receive a write-back — passing a literal or an expression to an out-param
+   * has nothing to assign to, and is simply skipped (matching the tree-walker).
+   *
+   * Shared by the `Call` and `CallExpr` branches: both need it, and having only one of them
+   * build the list is precisely the bug this helper exists to prevent recurring.
+   */
+  buildOutWriteback(fn, expr, env) {
+    if (!fn.params?.some(p => p.isOut)) return null;
+    return fn.params
+      .map((p, i) => p.isOut && expr.args[i]?.type === 'Ident'
+        ? { paramName: p.name, callerName: expr.args[i].name, callerEnv: env }
+        : null)
+      .filter(Boolean);
+  }
+
+  async callFunc(fn, args, outWriteback) {
+    if (fn.native) return fn.call(args);
+    const isClosure = fn.closureEnv != null;
+    const parent    = isClosure ? fn.closureEnv : this.globalEnv;
+    const funcEnv   = new Env(parent, !isClosure);
+    for (let i = 0; i < fn.params.length; i++)
+      funcEnv.def(fn.params[i].name, args[i] ?? mkUnit());
+    let sig;
+    try {
+      sig = await this.execBlock(fn.body, funcEnv);
+    } catch (e) {
+      // $!! (ZyErrorPropagate) exits the function and returns the error value to the caller
+      if (e instanceof ZyErrorPropagate) return e.errVal;
+      // <~ inside a match arm, when the match is evaluated as a sub-expression
+      // (not a bare statement), unwinds here as a thrown ZyReturn — see eval()'s
+      // 'Match' case.
+      if (e instanceof ZyReturn) return e.value;
+      throw e;
+    }
+    // Write back output params to caller env
+    if (outWriteback) {
+      for (const { paramName, callerName, callerEnv } of outWriteback) {
+        const val = funcEnv.vars.get(paramName);
+        if (val !== undefined) callerEnv.set(callerName, val);
+      }
+    }
+    if (sig instanceof ZyReturn) return sig.value;
+    return mkUnit();
+  }
+
+  async evalStr(parts, env) {
+    let s = '';
+    for (const part of parts) {
+      if (part.t === 'lit') {
+        s += part.v;
+      } else {
+        try {
+          const toks = new Lexer(part.v).tokenize();
+          const expr = new Parser(toks).parseExpr();
+          // displayOutput: "{n}" renders in the active numeral script.
+          s += this.displayOutput(await this.eval(expr, env));
+        } catch {
+          s += `{${part.v}}`;
+        }
+      }
+    }
+    return mkStr(s);
+  }
+
+  applyOp(op, l, r) {
+    const isNum = v => v.type === 'int' || v.type === 'float';
+    const fmtArg = v => {
+      if (v.type === 'str')   return `String("${v.v}")`;
+      if (v.type === 'int')   return `Int(${v.v})`;
+      if (v.type === 'float') return `Float(${v.v})`;
+      if (v.type === 'bool')  return `Bool(${v.v})`;
+      return `${v.type}(${String(v.v)})`;
+    };
+
+    if (op === '+' || op === '-' || op === '*' || op === '/' || op === '%' || op === '^') {
+      if (!isNum(l) || !isNum(r)) {
+        if (op === '+')
+          throw new ZyError(`+ is arithmetic only — use juxtaposition to concatenate strings: "a" b "c"`);
+        const badType = !isNum(l) ? l : r;
+        const rustCap = { int:'Int', float:'Float', str:'String', bool:'Bool', arr:'Array', tuple:'Tuple' };
+        this.outputFn(`warning: arithmetic operation on non-numeric type: ${rustCap[badType.type] ?? badType.type}\n\n`);
+        throw new ZyError(`arithmetic requires numeric operands: ${fmtArg(l)}, ${fmtArg(r)}`);
+      }
+    }
+
+    if (op === '<' || op === '>' || op === '<=' || op === '>=') {
+      const ord = orderValues(l, r);
+      if (ord === null) {
+        const opName = { '<':'Lt', '>':'Gt', '<=':'Le', '>=':'Ge' }[op];
+        const cmpName = v => ({ int:'integer', float:'float', str:'string', bool:'boolean', arr:'array', tuple:'tuple' })[v.type] ?? v.type;
+        const cmpVal  = v => v.type === 'str' ? `'${v.v}'` : String(v.v);
+        throw new ZyError(`cannot compare ${cmpName(l)} ${cmpVal(l)} with ${cmpName(r)} ${cmpVal(r)} using operator '${opName}'`);
+      }
+      switch (op) {
+        case '<':  return mkBool(ord  < 0);
+        case '>':  return mkBool(ord  > 0);
+        case '<=': return mkBool(ord <= 0);
+        case '>=': return mkBool(ord >= 0);
+      }
+    }
+
+    const isFloat = l.type === 'float' || r.type === 'float';
+    const mk = isFloat ? mkFloat : mkInt;
+    const lv = l.v, rv = r.v;
+    switch (op) {
+      case '+':  return mk(lv + rv);
+      case '-':  return mk(lv - rv);
+      case '*':  return mk(lv * rv);
+      case '/':  if (rv === 0) throw new ZyRuntimeError('division by zero', '##Div');
+                 return isFloat ? mkFloat(lv / rv) : mkInt(Math.trunc(lv / rv));
+      case '%':  if (rv === 0) throw new ZyRuntimeError('Modulo by zero', '##Div');
+                 return mk(lv % rv);
+      case '^':  return mk(Math.pow(lv, rv));
+      case '==': return mkBool(this.equals(l, r));
+      case '<>': return mkBool(!this.equals(l, r));
+      case '<':  return mkBool(lv < rv);
+      case '>':  return mkBool(lv > rv);
+      case '<=': return mkBool(lv <= rv);
+      case '>=': return mkBool(lv >= rv);
+    }
+    throw new ZyError(`Unknown operator: ${op}`);
+  }
+
+  equals(a, b) {
+    if (a.type !== b.type) {
+      if ((a.type === 'int' || a.type === 'float') &&
+          (b.type === 'int' || b.type === 'float')) return a.v === b.v;
+      return false;
+    }
+    if (a.type === 'arr' || a.type === 'tuple') return JSON.stringify(a.v) === JSON.stringify(b.v);
+    return a.v === b.v;
+  }
+
+  truthy(val) {
+    if (!val || val.type === 'unit') return false;
+    if (val.type === 'bool')  return val.v;
+    if (val.type === 'int' || val.type === 'float') return val.v !== 0;
+    if (val.type === 'str')   return val.v.length > 0;
+    return true;
+  }
+
+  display(val) {
+    if (!val || val.type === 'unit') return '';
+    // Standalone Unit prints as nothing, but INSIDE a collection it renders
+    // as `()` — mirrors Rust `Value::to_display_string` (unified 2026-06-12).
+    const nested = (v) => (v && v.type === 'unit') ? '()' : this.display(v);
+    if (val.type === 'int')   return String(val.v);
+    if (val.type === 'float') return String(val.v);
+    if (val.type === 'str')  return val.v;
+    if (val.type === 'char') return val.v;
+    if (val.type === 'bool') return val.v ? '#1' : '#0';
+    if (val.type === 'arr')  return '[' + val.v.map(nested).join(', ') + ']';
+    if (val.type === 'tuple') {
+      if (val.keys?.some(k => k !== null))
+        return '(' + val.v.map((item, i) => `${val.keys[i]}: ${nested(item)}`).join(', ') + ')';
+      return '(' + val.v.map(nested).join(', ') + ')';
+    }
+    if (val.type === 'func') {
+      const arity = val.params?.length ?? 0;
+      return val.name === '<lambda>' ? `<lambd/${arity}>` : `<funct/${arity}>`;
+    }
+    if (val.type === 'error') return `${val.errType ?? '##_'}(${val.v ?? ''})`;
+    return String(val.v ?? val);
+  }
+
+  // Display form under the active numeral mode. The mode reaches inside
+  // collections too — a number does not stop being a number by sitting in a
+  // list — mirroring Rust `Value::to_display_string_in`.
+  displayOutput(val) {
+    const m = this.numeralMode;
+    if (!val || val.type === 'unit') return '';
+    if (m === ASCII_BASE) return this.display(val);
+    const nested = (v) => (v && v.type === 'unit') ? '()' : this.displayOutput(v);
+    if (val.type === 'int')   return numeralInt(val.v, m);
+    if (val.type === 'float') return numeralFloat(val.v, m);
+    if (val.type === 'bool')  return numeralBool(val.v, m);
+    if (val.type === 'arr')   return '[' + val.v.map(nested).join(', ') + ']';
+    if (val.type === 'tuple') {
+      if (val.keys?.some(k => k !== null))
+        return '(' + val.v.map((item, i) => `${val.keys[i]}: ${nested(item)}`).join(', ') + ')';
+      return '(' + val.v.map(nested).join(', ') + ')';
+    }
+    return this.display(val);
+  }
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
+
+export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, filePath = null, tuiContext = null, cliArgs = [], opts = {}) {
+  const tokens = new Lexer(src).tokenize();
+  const ast    = new Parser(tokens).parse();
+
+  const checker = new Checker(ast);
+  const diags   = checker.check();
+
+  for (const d of diags) if (d.severity === 'error') onOutput(formatDiagnostic(d) + '\n\n');
+  if (diags.some(d => d.severity === 'error')) return;
+
+  try {
+    const interp = new Interpreter(onOutput, inputFn, moduleResolver, tuiContext);
+    interp.cliArgs = cliArgs;
+    if (opts.maxSteps        != null) interp.maxSteps        = opts.maxSteps;
+    if (opts.maxBytes        != null) interp.maxBytes        = opts.maxBytes;
+    if (opts.maxInfiniteIter != null) interp.maxInfiniteIter = opts.maxInfiniteIter;
+    await interp.run(ast, filePath);
+  } catch (e) {
+    if (e instanceof ZyStaticError)
+      onOutput(`Runtime error: ${e.message}`);
+    else
+      onOutput(`Runtime error: ${e.message ?? e}`);
+  }
+}

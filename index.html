@@ -8,14 +8,14 @@
   <meta name="keywords" content="programming language, no keywords, symbolic language, code in Spanish, code in Japanese, code in Arabic, code in Chinese, multilingual programming, unicode programming, international programming language, lenguaje de programación, 日本語プログラミング, البرمجة بالعربية">
   <meta name="robots" content="index, follow">
   <meta name="author" content="Zymbol-Lang">
-  <link rel="canonical" href="https://zymbol-lang.dev/">
+  <link rel="canonical" href="https://zymbol-lang.org/">
 
   <!-- Open Graph -->
   <meta property="og:type"        content="website">
-  <meta property="og:url"         content="https://zymbol-lang.dev/">
+  <meta property="og:url"         content="https://zymbol-lang.org/">
   <meta property="og:title"       content="Zymbol — Programming Language in Any Human Language">
   <meta property="og:description" content="No keywords. Just symbols. Write code in Spanish, Japanese, Arabic, Chinese or any of 100+ human languages. Every identifier is yours.">
-  <meta property="og:image"       content="https://zymbol-lang.dev/zymbol_logo.png">
+  <meta property="og:image"       content="https://zymbol-lang.org/zymbol_logo.png">
   <meta property="og:locale"      content="en_US">
   <meta property="og:site_name"   content="Zymbol-Lang">
 
@@ -23,7 +23,7 @@
   <meta name="twitter:card"        content="summary_large_image">
   <meta name="twitter:title"       content="Zymbol — Programming Language in Any Human Language">
   <meta name="twitter:description" content="No keywords. Just symbols. Code in Spanish, Japanese, Arabic, Chinese and 100+ languages.">
-  <meta name="twitter:image"       content="https://zymbol-lang.dev/zymbol_logo.png">
+  <meta name="twitter:image"       content="https://zymbol-lang.org/zymbol_logo.png">
 
   <!-- JSON-LD structured data -->
   <script type="application/ld+json">
@@ -34,7 +34,7 @@
     "alternateName": "Zymbol-Lang",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Linux, macOS, Windows, Web",
-    "url": "https://zymbol-lang.dev/",
+    "url": "https://zymbol-lang.org/",
     "description": "A minimalist symbolic programming language with no keywords. Write identifiers in any human language — Spanish, Japanese, Arabic, Chinese, and 100+ more. Every construct uses pure symbols.",
     "keywords": "programming language, no keywords, symbolic, multilingual, unicode, international",
     "inLanguage": ["en","es","ja","ar","zh","fr","de","pt","ru","ko","hi"],
@@ -45,8 +45,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
-  <link rel="apple-touch-icon" href="favicon.png">
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="assets/img/favicon.png">
   <script>
   // Apply theme before first paint to avoid flash
   (function(){
@@ -107,11 +107,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="src/css/site.css">
   <style>
     @font-face {
       font-family: 'pIqaD qolqoS';
-      src: local('pIqaD qolqoS'), url('fonts/pIqaD-qolqoS.ttf') format('truetype');
+      src: local('pIqaD qolqoS'), url('assets/fonts/pIqaD-qolqoS.ttf') format('truetype');
       font-display: swap;
     }
   </style>
@@ -121,7 +121,7 @@
 <!-- ═══ HEADER ═══ -->
 <header>
   <a href="#hero" class="logo">
-    <img src="logo.png" alt="Zymbol-Lang">
+    <img src="assets/img/logo.png" alt="Zymbol-Lang">
     <span class="logo-code">
       <span class="logo-sym">@{</span>
       <span class="logo-op">&gt;&gt;</span><span class="logo-str">" Zymbol-Lang "</span>
@@ -135,7 +135,8 @@
       <a href="#features"><span id="nav-features" class="fade-target">Features</span></a>
       <a href="#manual"><span id="nav-manual" class="fade-target">Documentación</span></a>
       <a href="changelog.html">Releases</a>
-      <a href="https://github.com/zymbol-lang/interpreter" target="_blank">GitHub</a>
+      <a href="https://github.com/zymbol-lang/interpreter" target="_blank" rel="noopener" class="icon-link" title="GitHub" aria-label="GitHub"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+      <a href="https://x.com/ZymbolLang" target="_blank" rel="noopener" class="icon-link" title="X / Twitter" aria-label="X / Twitter"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.74-8.855L1.254 2.25H8.08l4.253 5.622L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg></a>
       <a href="playground.html" class="nav-cta"><span id="nav-try-online" class="fade-target">Try Online</span></a>
     </nav>
     <button id="theme-toggle" aria-label="Toggle theme" title="Toggle light/dark">
@@ -169,7 +170,7 @@
 
 <!-- ═══ ALPHA NOTICE ═══ -->
 <div class="alpha-notice">
-  <a href="changelog.html" style="text-decoration:none"><span class="alpha-badge">Public Alpha · v0.0.7</span></a>
+  <a href="changelog.html" style="text-decoration:none"><span class="alpha-badge">Public Alpha · v0.0.8</span></a>
   <span id="alpha-msg">Zymbol is in active development — this release is a concept validation of the language design. APIs, syntax, and features may change.</span>
   <a id="alpha-link" href="https://github.com/zymbol-lang/interpreter" target="_blank">Follow progress on GitHub →</a>
 </div>
@@ -178,9 +179,9 @@
 <section id="hero">
   <div class="hero-right">
     <div class="mascot-wrap">
-      <img class="mascot-img" src="logo.png" alt="Zymbol-Lang mascot">
+      <img class="mascot-img" src="assets/img/logo.png" alt="Zymbol-Lang mascot">
       <div class="mascot-download-card">
-        <div class="dl-version">v0.0.7 · Public Alpha</div>
+        <div class="dl-version">v0.0.8 · Public Alpha</div>
         <div class="dl-title">Get Zymbol</div>
         <a href="install.html" class="btn-primary dl-btn">
           <span>↓</span>&nbsp;Download &amp; Install
@@ -352,23 +353,23 @@
 <footer>
   <div class="footer-inner">
     <div class="footer-logo">
-      <img src="logo.png" alt="Zymbol-Lang" style="height:1.6rem;width:auto;opacity:0.8;vertical-align:middle;">
+      <img src="assets/img/logo.png" alt="Zymbol-Lang" style="height:1.6rem;width:auto;opacity:0.8;vertical-align:middle;">
     </div>
     <div class="footer-links">
       <a href="#hero"><span id="footer-home" class="fade-target">Home</span></a>
       <a href="#showcase"><span id="footer-showcase" class="fade-target">Showcase</span></a>
       <a href="#operators"><span id="footer-operators" class="fade-target">Operators</span></a>
       <a href="#features"><span id="footer-features" class="fade-target">Features</span></a>
-      <a href="https://github.com/zymbol-lang/interpreter" target="_blank">GitHub</a>
-      <a href="https://x.com/ZymbolLang" target="_blank" rel="noopener" title="X / Twitter">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.1em"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.74-8.855L1.254 2.25H8.08l4.253 5.622L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg>
-      </a>
+      <a href="#manual"><span id="footer-manual" class="fade-target">Documentation</span></a>
+      <a href="changelog.html">Releases</a>
+      <a href="https://github.com/zymbol-lang/interpreter" target="_blank" rel="noopener" class="icon-link" title="GitHub" aria-label="GitHub"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+      <a href="https://x.com/ZymbolLang" target="_blank" rel="noopener" class="icon-link" title="X / Twitter" aria-label="X / Twitter"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.74-8.855L1.254 2.25H8.08l4.253 5.622L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg></a>
     </div>
     <div class="footer-copy fade-target" id="footer-tagline">No keywords. Just symbols.</div>
   </div>
 </footer>
 
-<script src="main.js"></script>
+<script src="src/site/main.js"></script>
 
 <!-- APRIL FOOLS BANNER SCRIPT (disabled — reusable for future campaigns)
 <script>

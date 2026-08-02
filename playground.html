@@ -7,18 +7,18 @@
   <meta name="description" content="Interactive online editor for Zymbol. Write and run code in any human language — Spanish, Japanese, Arabic, Chinese and 100+ more. No keywords, just symbols.">
   <meta name="keywords" content="online code editor, programming playground, code in Spanish, code in Japanese, symbolic programming, try programming language, multilingual code">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://zymbol-lang.dev/playground.html">
+  <link rel="canonical" href="https://zymbol-lang.org/playground.html">
   <meta property="og:type"        content="website">
-  <meta property="og:url"         content="https://zymbol-lang.dev/playground.html">
+  <meta property="og:url"         content="https://zymbol-lang.org/playground.html">
   <meta property="og:title"       content="Zymbol Playground — Code in Any Human Language">
   <meta property="og:description" content="Try Zymbol in your browser. Write code using Spanish, Japanese, Arabic, Chinese identifiers. No keywords — pure symbols.">
-  <meta property="og:image"       content="https://zymbol-lang.dev/zymbol_logo.png">
+  <meta property="og:image"       content="https://zymbol-lang.org/zymbol_logo.png">
   <meta name="twitter:card"       content="summary_large_image">
   <meta name="twitter:title"      content="Zymbol Playground — Code in Any Human Language">
   <meta name="twitter:description" content="Try Zymbol online. Write code in Spanish, Japanese, Arabic and 100+ languages.">
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="apple-touch-icon" href="favicon.png">
+  <link rel="apple-touch-icon" href="assets/img/favicon.png">
   <script>
     (function(){
       var s = localStorage.getItem('zy-theme');
@@ -29,7 +29,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="playground.css">
+  <link rel="stylesheet" href="src/css/playground.css">
 </head>
 <body>
 
@@ -38,21 +38,49 @@
   <div id="pg-notice">
     <h2 id="pg-notice-title">
       Browser Playground
-      <span class="badge">zymbol.js v0.0.5</span>
+      <span class="badge">zymbol.js v0.0.8</span>
     </h2>
     <p>
-      This playground runs a <strong>browser-only build</strong> of the Zymbol interpreter
-      (<code>zymbol.js</code>) compiled directly to JavaScript. It is a preview environment
-      intended to explore the language without installing anything.
+      This playground runs <code>zymbol.js</code>, a hand-written JavaScript mirror of the Zymbol
+      tree-walker — not the Rust engine compiled for the browser. It tracks the native interpreter
+      closely enough to run real programs, including multi-file <code>.zyp</code> packages, but for
+      the full language use the <a href="install.html" style="color:var(--green)">native interpreter</a>.
     </p>
-    <p>CLI argument capture <code>&gt;&lt; args</code> is supported — use the <strong>args…</strong> field next to the Run button.</p>
-    <p>Shell execution <code>&lt;\ cmd \&gt;</code> returns a high-resolution timestamp (entropy source for random seeds).
-       Script inclusion <code>&lt;/ file.zy /&gt;</code> is not available in the browser runtime.</p>
-    <p>TUI mode (<code>&gt;&gt;|</code>) works in the browser with a canvas renderer. On mobile: <strong>swipe</strong> for directional input (↑↓←→), <strong>tap</strong> for Enter, and the <strong>✕ Stop</strong> button to exit. A physical keyboard is recommended for the best experience.</p>
-    <p>
-      Code runs without prior semantic checking — runtime errors are displayed in the output panel.
-      For the full language experience use the <a href="install.html" style="color:var(--green)">native interpreter</a>.
-    </p>
+
+    <h3>Not available here</h3>
+    <ul>
+      <li><code>std/db</code> — database access goes through an ODBC driver manager, which has no
+          browser equivalent. Importing it fails with a message saying so.</li>
+      <li><code>&lt;/ file.zy /&gt;</code> — script inclusion reads from a real filesystem.</li>
+      <li><code>&lt;\ cmd \&gt;</code> — there is no shell. <code>date</code> format specifiers
+          (<code>%Y %m %d %H %M %S %s</code>) and a plain <code>echo</code> are simulated; anything else
+          returns a high-resolution timestamp, which is what most programs use it for: a random seed.</li>
+    </ul>
+
+    <h3>Works, but not the way it does natively</h3>
+    <ul>
+      <li><code>std/io</code> — the whole API works against an <strong>in-memory filesystem built
+          fresh for each run</strong>. Nothing touches your disk, and nothing survives the next ▶ Run.</li>
+      <li><code>std/net</code> — <code>get</code>/<code>post</code>/<code>post_json</code>/<code>head</code>
+          run over <code>fetch()</code>, so the browser's CORS rules apply: a server that sends no CORS
+          headers is unreachable from here even though the same program works from the CLI.</li>
+      <li>A run stops after 50 000 statements or 32 KB of output, so a runaway loop cannot freeze the
+          tab. TUI blocks are exempt.</li>
+      <li>Float literals lose precision — <code>3.14159265</code> prints as
+          <code>3.1415926499999998</code>. Known gap, not present in the native engines.</li>
+    </ul>
+
+    <h3>Fully supported</h3>
+    <ul>
+      <li><code>std/math</code>, <code>std/random</code>, <code>std/json</code>, <code>std/term</code>.</li>
+      <li>Static checking before anything executes: a call to an undefined function, or an assignment
+          to a constant, stops the run with a diagnostic instead of failing halfway through. Style
+          warnings such as unused variables are <em>not</em> shown here — <code>zymbol check</code> reports them.</li>
+      <li>CLI arguments <code>&gt;&lt; args</code> — use the <strong>args…</strong> field next to ▶ Run.</li>
+      <li>TUI mode (<code>&gt;&gt;|</code>) on a canvas renderer. On a touch device: <strong>swipe</strong>
+          for the arrow keys, <strong>tap</strong> for Enter, <strong>⌨ Keys</strong> for any other single
+          key — <code>p</code> to pass in GO, <code>q</code> to quit, digits. <strong>✕ Stop</strong> exits.</li>
+    </ul>
     <div class="notice-footer">
       <button id="pg-notice-ok">Got it</button>
     </div>
@@ -61,8 +89,9 @@
 
 <!-- ═══ HEADER ═══ -->
 <header>
+  <button id="sb-toggle" title="Show explorer" aria-label="Show explorer">☰</button>
   <a href="index.html" class="logo">
-    <img src="logo.png" alt="Zymbol">
+    <img src="assets/img/logo.png" alt="Zymbol">
     <span class="logo-code">
       <span class="logo-sym">@{</span>
       <span class="logo-op">&gt;&gt;</span><span class="logo-str">" Zymbol-lang "</span>
@@ -71,6 +100,8 @@
   </a>
   <span class="header-title">Playground</span>
   <div class="header-right">
+    <a href="https://github.com/zymbol-lang/interpreter" target="_blank" rel="noopener" class="icon-link" title="GitHub" aria-label="GitHub"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+    <a href="https://x.com/ZymbolLang" target="_blank" rel="noopener" class="icon-link" title="X / Twitter" aria-label="X / Twitter"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.74-8.855L1.254 2.25H8.08l4.253 5.622L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg></a>
     <a href="index.html" class="back-link">← Home</a>
     <button id="pg-about-btn" title="About this playground">?</button>
     <button id="theme-toggle" title="Toggle theme">🌙</button>
@@ -80,17 +111,36 @@
 <!-- ═══ PLAYGROUND ═══ -->
 <div id="playground">
 
+  <!-- Explorer: mounted files (WORKSPACE) + the example pool (EXAMPLES) -->
+  <aside id="sidebar">
+    <div id="sb-panel-head">
+      <span>Explorer</span>
+      <button id="sb-collapse-btn" title="Hide explorer" aria-label="Hide explorer">◀</button>
+    </div>
+    <div id="sb-head">
+      <input id="sb-filter" type="text" placeholder="Filter files and examples…"
+             spellcheck="false" autocomplete="off" aria-label="Filter files and examples">
+    </div>
+    <div id="sb-body"></div>
+  </aside>
+  <div id="sb-resize" title="Drag to resize"></div>
+  <div id="sb-backdrop"></div>
+  <div id="sb-preview" aria-hidden="true"></div>
+
+  <div id="split">
+
   <!-- Editor -->
   <div class="panel" id="editor-panel">
     <div class="panel-header">
       <span>Editor</span>
       <div class="panel-actions">
         <button class="btn btn-run" id="run-btn" title="Run (Ctrl+Enter)">▶ Run</button>
+        <select id="zyp-script-select" title="Which [[script]] of the loaded .zyp package to run" style="display:none"></select>
         <input id="args-input" type="text" placeholder="args…" title="CLI arguments (space-separated, use quotes for spaces: &quot;hello world&quot;)" spellcheck="false" autocomplete="off">
         <button class="btn" id="clear-code-btn" title="Clear editor">Clear</button>
-        <button class="btn" id="download-btn" title="Download active file">↓ Save</button>
-        <button class="btn" id="upload-btn"   title="Upload .zy files">↑ Open</button>
-        <input type="file" id="upload-input" accept=".zy,.txt" multiple style="display:none">
+        <button class="btn" id="download-btn" title="Download active file">↓ Download</button>
+        <button class="btn" id="upload-btn"   title="Upload .zy files or a .zyp package">↑ Upload</button>
+        <input type="file" id="upload-input" accept=".zy,.txt,.zyp" multiple style="display:none">
       </div>
     </div>
 
@@ -111,6 +161,7 @@
     <div class="panel-header">
       <span>Output</span>
       <div class="panel-actions">
+        <button class="btn" id="layout-toggle-btn" title="Move output to the bottom">⬓</button>
         <button class="btn" id="toggle-output-btn" title="Hide output">◀</button>
         <button class="btn" id="clear-output-btn">Clear</button>
       </div>
@@ -122,32 +173,28 @@
         <span id="tui-input-prompt">❮❮ </span>
         <input id="tui-input-field" type="text" autocomplete="off" spellcheck="false" placeholder="Enter…">
       </div>
+      <!-- Keypad: raises the device keyboard so single-key commands a program reads with
+           `<<|` — p to pass in GO, q to quit, digits — are reachable without a physical
+           keyboard. Swipes only ever produce the four arrows and a tap only Enter.
+           autocapitalize MUST stay off: a soft keyboard would send 'P' where a program
+           tests for 'p'. -->
+      <div id="tui-key-bar">
+        <span id="tui-key-prompt">⌨</span>
+        <input id="tui-key-field" type="text" inputmode="text"
+               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+               aria-label="Send a single keypress to the running program"
+               placeholder="type a key — p, q, 1…">
+        <button id="tui-key-close" title="Close the keypad">✕</button>
+      </div>
+      <button id="tui-keys-btn" title="Keypad — type single-key commands (p, q, digits…)">⌨ Keys</button>
       <button id="tui-stop-btn" title="Stop program (Escape)">✕ Stop</button>
     </div>
   </div>
 
+  </div><!-- #split -->
 </div>
-
-<!-- ═══ EXAMPLES ═══ -->
-<div id="examples-panel">
-  <div id="examples-tabs">
-    <div id="examples-toggle">examples ▼</div>
-    <!-- arrow updated by JS: ▼ open · ▲ collapsed -->
-  </div>
-  <div id="examples-grid"></div>
-</div>
-
-<!-- ═══ FOOTER ═══ -->
-<footer class="pg-footer">
-  <a href="https://x.com/ZymbolLang" target="_blank" rel="noopener" title="X / Twitter">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.74-8.855L1.254 2.25H8.08l4.253 5.622L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg>
-  </a>
-  <a href="https://www.reddit.com/r/ZymbolLang/" target="_blank" rel="noopener" title="Reddit">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
-  </a>
-</footer>
 
 <!-- ═══ INTERPRETER ═══ -->
-<script type="module" src="playground.js"></script>
+<script type="module" src="src/playground/playground.js"></script>
 </body>
 </html>

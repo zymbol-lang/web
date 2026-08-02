@@ -1,0 +1,9 @@
+// @skip-parity: <\ cmd \> entropy differs between engines by design
+// Usar <\ \'> como fuente de entropía para IDs únicos
+
+_t = <\ "date +%N" \>
+
+id_sesion = #|_t| % 999999 + 100000
+
+>> "ID de sesión: " id_sesion ¶
+>> "Generado a las: " _t ¶

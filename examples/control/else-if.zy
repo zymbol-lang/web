@@ -1,0 +1,8 @@
+x = 0
+? x > 0 {
+    >> "positive" ¶
+} _? x == 0 {
+    >> "zero" ¶
+} _ {
+    >> "negative" ¶
+}

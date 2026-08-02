@@ -1,0 +1,11 @@
+arr = [1]
+!? {
+    x = arr[50]
+} :! ##IO {
+    >> "io error" ¶
+} :! ##Network {
+    >> "network error" ¶
+} :! {
+    >> "other error: " _err ¶
+}
+>> "done" ¶

@@ -1,0 +1,8 @@
+n = 123
+f = 123.45
+active = #1
+off = #0
+>> n ¶
+>> f ¶
+>> active ¶
+>> off ¶

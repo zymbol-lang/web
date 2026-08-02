@@ -1,0 +1,239 @@
+// Serpiente — renderizado: tablero, serpiente, comida, marcador, pantallas
+# dibujo {
+    #> { menu_velocidad, dibujar_inicio, dibujar, fin_juego, pausa }
+
+    BORDE  := 8
+    VERDE  := 10
+    CABEZA := 2
+    COMIDA := 11
+    ROJO   := 9
+    TEXTO  := 15
+
+    _linea_h(n) { <~ "─" $* n }
+
+    _dir_hacia(origen, destino) {
+        [or, oc] = origen
+        [dr, dc] = destino
+        ? dc > oc { <~ 'R' }
+        ? dc < oc { <~ 'L' }
+        ? dr < or { <~ 'U' }
+        <~ 'D'
+    }
+
+    _char_cabeza(cab, cuerpo) {
+        d = _dir_hacia(cuerpo, cab)
+        ? d == 'R' { <~ "▶" }
+        ? d == 'L' { <~ "◀" }
+        ? d == 'U' { <~ "▲" }
+        <~ "▼"
+    }
+
+    _char_cuerpo(ant, pos, sig) {
+        da = _dir_hacia(pos, ant)
+        ds = _dir_hacia(pos, sig)
+        ? (da == 'R' && ds == 'L') || (da == 'L' && ds == 'R') { <~ "─" }
+        ? (da == 'U' && ds == 'D') || (da == 'D' && ds == 'U') { <~ "│" }
+        ? (da == 'R' && ds == 'D') || (da == 'D' && ds == 'R') { <~ "╭" }
+        ? (da == 'L' && ds == 'D') || (da == 'D' && ds == 'L') { <~ "╮" }
+        ? (da == 'R' && ds == 'U') || (da == 'U' && ds == 'R') { <~ "╰" }
+        <~ "╯"
+    }
+
+    _char_cola(penultimo, cola) {
+        d = _dir_hacia(penultimo, cola)
+        ? d == 'R' || d == 'L' { <~ "─" }
+        <~ "│"
+    }
+
+    _marcador(puntos, AN) {
+        col_m = AN / 2 - 7
+        >>~ (1, col_m, 0,      8) > "┤"
+        >>~ (1, col_m + 1, 0, 14) > " ✦ PUNTOS "
+        >>~ (1, col_m + 10, 0, 11) > puntos
+        >>~ (1, col_m + 12, 0, 14) > " ✦ "
+        >>~ (1, col_m + 15, 0,  8) > "├"
+    }
+
+    menu_velocidad(AN, AL) {
+        >>!
+        fila_c = AL / 2 - 5
+        col_c  = AN / 2 - 15
+        sel = 1
+
+        @:sel {
+            >>~ (fila_c,    col_c, 0, TEXTO) > "╭──────────────────────────────╮"
+            >>~ (fila_c+1,  col_c, 0, TEXTO) > "│        Z Y M B O L           │"
+            >>~ (fila_c+2,  col_c, 0, TEXTO) > "│      S E R P I E N T E       │"
+            >>~ (fila_c+3,  col_c, 0, TEXTO) > "├──────────────────────────────┤"
+            >>~ (fila_c+4,  col_c, 0, TEXTO) > "│   Elige tu velocidad:        │"
+            >>~ (fila_c+5,  col_c, 0, TEXTO) > "│                              │"
+            >>~ (fila_c+6,  col_c, 0, 15)  > "│   [1]  Lento      160 ms     │"
+            >>~ (fila_c+7,  col_c, 0, 15)  > "│   [2]  Normal     130 ms     │"
+            >>~ (fila_c+8,  col_c, 0, 15)  > "│   [3]  Rápido     100 ms     │"
+            >>~ (fila_c+9,  col_c, 0,  9)  > "│   [4]  Infernal    70 ms     │"
+            >>~ (fila_c+10, col_c, 0, 201) > "│   [5]  Demencial   40 ms     │ "
+            >>~ (fila_c+11, col_c, 0, TEXTO) > "╰──────────────────────────────╯"
+            ? sel == 1 { >>~ (fila_c+6,  col_c, 0, 10) > "│ ► [1]  Lento      160 ms     │" }
+            ? sel == 2 { >>~ (fila_c+7,  col_c, 0, 10) > "│ ► [2]  Normal     130 ms     │" }
+            ? sel == 3 { >>~ (fila_c+8,  col_c, 0, 10) > "│ ► [3]  Rápido     100 ms     │" }
+            ? sel == 4 { >>~ (fila_c+9,  col_c, 0, 10) > "│ ► [4]  Infernal    70 ms     │" }
+            ? sel == 5 { >>~ (fila_c+10, col_c, 0, 10) > "│ ► [5]  Demencial   40 ms     │" }
+            <<| tecla
+            ? tecla == '1' { <~ 160 }
+            ? tecla == '2' { <~ 130 }
+            ? tecla == '3' { <~ 100 }
+            ? tecla == '4' { <~ 70  }
+            ? tecla == '5' { <~ 40  }
+            ? tecla == '
+' {
+                ? sel == 1 { <~ 160 }
+                ? sel == 2 { <~ 130 }
+                ? sel == 3 { <~ 100 }
+                ? sel == 4 { <~ 70  }
+                ? sel == 5 { <~ 40  }
+            }
+            sel = _mover_sel(tecla, sel, 5)
+        }
+    }
+
+    _ayuda(AN, AL) {
+        >>!
+        fila_c = AL / 2 - 7
+        col_c  = AN / 2 - 15
+        >>~ (fila_c,    col_c, 0, 2)  > "╭──────────────────────────────╮"
+        >>~ (fila_c+1,  col_c, 0, 2)  > "│         A Y U D A            │"
+        >>~ (fila_c+2,  col_c, 0, 2)  > "├──────────────────────────────┤"
+        >>~ (fila_c+3,  col_c, 0, 11) > "│  Movimiento:                 │"
+        >>~ (fila_c+4,  col_c, 0, 15) > "│    W / ↑   — arriba          │"
+        >>~ (fila_c+5,  col_c, 0, 15) > "│    S / ↓   — abajo           │"
+        >>~ (fila_c+6,  col_c, 0, 15) > "│    A / ←   — izquierda       │"
+        >>~ (fila_c+7,  col_c, 0, 15) > "│    D / →   — derecha         │"
+        >>~ (fila_c+8,  col_c, 0, 11) > "│  En partida:                 │"
+        >>~ (fila_c+9,  col_c, 0, 15) > "│    Q       — salir           │"
+        >>~ (fila_c+10, col_c, 0, 15) > "│    P       — pausar          │"
+        >>~ (fila_c+11, col_c, 0, 11) > "│  Al comer: la serpiente crece│"
+        >>~ (fila_c+12, col_c, 0, 15) > "│  por la cola en el siguiente │"
+        >>~ (fila_c+13, col_c, 0, 15) > "│  tick de reloj.              │"
+        >>~ (fila_c+14, col_c, 0, 2)  > "╰──────────────────────────────╯"
+        >>~ (fila_c+16, col_c, 0, 0)  > "Presiona cualquier tecla..."
+        <<| _tecla_cualquiera
+    }
+
+    pausa(AN, AL) {
+        fila_c = AL / 2 - 2
+        col_c  = AN / 2 - 10
+        >>~ (fila_c,   col_c, 0, TEXTO) > "╭───────────────────╮"
+        >>~ (fila_c+1, col_c, 0, TEXTO) > "│                   │"
+        >>~ (fila_c+2, col_c, 0, TEXTO) > "│    P A U S A      │"
+        >>~ (fila_c+3, col_c, 0, TEXTO) > "│                   │"
+        >>~ (fila_c+4, col_c, 0, TEXTO) > "│  [P]  continuar   │"
+        >>~ (fila_c+5, col_c, 0, TEXTO) > "╰───────────────────╯"
+        @:espera {
+            <<| tecla
+            ? tecla == 'p' || tecla == 'P' { @:espera! }
+        }
+    }
+
+    dibujar_inicio(serpiente, comida, fruta, puntos, AN, AL) {
+        >>!
+        >>~ (1, 1, 0, BORDE) > "╭" _linea_h(AN) "╮"
+        >>~ (AL + 2, 1, 0, BORDE) > "╰" _linea_h(AN) "╯"
+        fila = 2
+        @ fila <= AL + 1 {
+            >>~ (fila, 1, 0, BORDE) > "│"
+            >>~ (fila, AN + 2, 0, BORDE) > "│"
+            fila++
+        }
+        _marcador(puntos, AN)
+        [fy, fx] = comida
+        >>~ (fy, fx, 0, COMIDA) > fruta
+        [hy, hx] = serpiente[1]
+        >>~ (hy, hx, 0, CABEZA) > _char_cabeza(serpiente[1], serpiente[2])
+        lon = serpiente$#
+        i = 2
+        @ i < lon {
+            [sy, sx] = serpiente[i]
+            >>~ (sy, sx, 0, VERDE) > _char_cuerpo(serpiente[i-1], serpiente[i], serpiente[i+1])
+            i++
+        }
+        [ty, tx] = serpiente[lon]
+        >>~ (ty, tx, 0, VERDE) > _char_cola(serpiente[lon-1], serpiente[lon])
+    }
+
+    dibujar(serpiente, cola_vieja, crecer, comio, comida_vieja, comida, fruta, puntos, AN, AL, pos_arroba) {
+        [fy_cab, fx_cab] = serpiente[1]
+
+        ? comio {
+            [fvy, fvx] = comida_vieja
+            >>~ (fvy, fvx, 0, 0) > "  "
+            ? serpiente$# >= 3 {
+                [py2, px2] = serpiente[2]
+                >>~ (py2, px2, 0, 10) > _char_cuerpo(serpiente[1], serpiente[2], serpiente[3])
+            }
+            [ty, tx] = cola_vieja
+            >>~ (ty, tx, 0, 0) > " "
+            lon = serpiente$#
+            [nty, ntx] = serpiente[lon]
+            >>~ (nty, ntx, 0, 10) > _char_cola(serpiente[lon-1], serpiente[lon])
+            [fy, fx] = comida
+            >>~ (fy, fx, 0, 11) > fruta
+        }
+
+        ? crecer {
+            [ay, ax] = pos_arroba
+            >>~ (ay, ax, 0, 11) > "@"
+        }
+
+        ? !comio && !crecer {
+            ? serpiente$# >= 3 {
+                [py2, px2] = serpiente[2]
+                >>~ (py2, px2, 0, 10) > _char_cuerpo(serpiente[1], serpiente[2], serpiente[3])
+            }
+            [ty, tx] = cola_vieja
+            >>~ (ty, tx, 0, 0) > " "
+            lon = serpiente$#
+            [nty, ntx] = serpiente[lon]
+            >>~ (nty, ntx, 0, 10) > _char_cola(serpiente[lon-1], serpiente[lon])
+        }
+
+        >>~ (fy_cab, fx_cab, 0, 2) > _char_cabeza(serpiente[1], serpiente[2])
+        _marcador(puntos, AN)
+    }
+
+    _mover_sel(tecla, sel, max) {
+        ? tecla == '↑' { ? sel > 1 { <~ sel - 1 } <~ max }
+        ? tecla == '↓' { ? sel < max { <~ sel + 1 } <~ 1 }
+        <~ sel
+    }
+
+    fin_juego(puntos, AN, AL) {
+        fila_c = AL / 2 - 4
+        col_c  = AN / 2 - 10
+        sel = 1
+        @:menu {
+            >>!
+            >>~ (fila_c,   col_c, 0, ROJO)  > "╭───────────────────╮"
+            >>~ (fila_c+1, col_c, 0, ROJO)  > "│     J U E G O     │"
+            >>~ (fila_c+2, col_c, 0, ROJO)  > "│   T E R M I N Ó   │"
+            >>~ (fila_c+3, col_c, 0, ROJO)  > "╰───────────────────╯"
+            >>~ (fila_c+5, col_c, 0, TEXTO) > "Puntaje final: " puntos "  "
+            >>~ (fila_c+7, col_c, 0, 15) > "  Nuevo juego   "
+            >>~ (fila_c+8, col_c, 0, 15) > "  Salir         "
+            >>~ (fila_c+9, col_c, 0, 15) > "  Ayuda         "
+            ? sel == 1 { >>~ (fila_c+7, col_c, 0, 10) > "► Nuevo juego   " }
+            ? sel == 2 { >>~ (fila_c+8, col_c, 0, 10) > "► Salir         " }
+            ? sel == 3 { >>~ (fila_c+9, col_c, 0, 10) > "► Ayuda         " }
+            <<| tecla
+            ? tecla == 'n' || tecla == 'N' { <~ 'n' }
+            ? tecla == 's' || tecla == 'S' { <~ 's' }
+            ? tecla == 'a' || tecla == 'A' { _ayuda(AN, AL) }
+            ? tecla == '
+' {
+                ? sel == 1 { <~ 'n' }
+                ? sel == 2 { <~ 's' }
+                ? sel == 3 { _ayuda(AN, AL) }
+            }
+            sel = _mover_sel(tecla, sel, 3)
+        }
+    }
+}

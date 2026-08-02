@@ -1,0 +1,11 @@
+>< args
+
+>> "Argumentos recibidos: " args$# ¶
+
+@ i:1..args$#:1 {
+    >> "  [" i "] " args[i] ¶
+}
+
+? args$# == 0 {
+    >> "— sin argumentos —" ¶
+}

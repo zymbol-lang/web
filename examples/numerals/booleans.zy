@@ -1,0 +1,20 @@
+// Booleans print as # + the active numeral script's digit.
+// Note the parentheses: `>>` takes a list of expressions, so a bare
+// `a > b` would be read as another output target — wrap comparisons.
+
+a = 42
+b = 10
+
+// ASCII (default)
+>> (a > b) ¶      // → #1
+>> (b > a) ¶      // → #0
+
+#०९#  // Devanagari
+>> (a > b) ¶      // → #१
+>> (b > a) ¶      // → #०
+
+#๐๙#  // Thai
+>> (a > b) ¶      // → #๑
+>> (b > a) ¶      // → #๐
+
+#09#            // reset

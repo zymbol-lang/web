@@ -1,0 +1,13 @@
+// @skip-parity: <\ cmd \> returns a timestamp in the browser, real dates in the CLI
+// En CLI: ejecuta los comandos reales del sistema
+// En el playground: devuelve un timestamp (nanosegundos desde epoch)
+
+anio  = <\ "date +%Y" \>
+mes   = <\ "date +%m" \>
+dia   = <\ "date +%d" \>
+hora  = <\ "date +%H" \>
+min   = <\ "date +%M" \>
+seg   = <\ "date +%S" \>
+
+>> "Fecha : " anio "-" mes "-" dia ¶
+>> "Hora  : " hora ":" min ":" seg ¶

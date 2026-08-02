@@ -1,0 +1,26 @@
+<# ./matematicas => mat
+
+>> "=== Módulos en Zymbol ===" ¶
+¶
+
+>> "Aritmética básica:" ¶
+>> "  15 + 8  = " mat::sumar(15, 8) ¶
+>> "  15 − 8  = " mat::restar(15, 8) ¶
+>> "  6 × 7   = " mat::multiplicar(6, 7) ¶
+>> "  22 / 7  = " mat::dividir(22, 7) ¶
+¶
+
+>> "  PI = " mat.PI ¶
+¶
+
+>> "Factoriales 1..8:" ¶
+@ n:1..8 {
+    >> "  " n "! = " mat::factorial(n) ¶
+}
+¶
+
+>> "Potencias de 2:" ¶
+@ i:0..5 {
+    exp = i + 1
+    >> "  2^" exp " = " mat::potencia(2, exp) ¶
+}

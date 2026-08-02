@@ -1,0 +1,6 @@
+!? {
+    result = 10 / 0
+    >> result ¶
+} :! ##Div {
+    >> "division by zero!" ¶
+}

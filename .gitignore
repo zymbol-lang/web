@@ -1,9 +1,10 @@
-# Development scripts
+# Maintenance scripts — one-off data migrations, not part of the site
+scripts/
 *.py
 __pycache__/
 
 # Old/replaced assets
-zymbol_logo.png
+assets/img/zymbol_logo.png
 
 # OS
 .DS_Store

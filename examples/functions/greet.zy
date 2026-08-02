@@ -1,0 +1,5 @@
+greet(name) {
+    >> "Hello, " name "!" ¶
+}
+greet("World")
+greet("Zymbol")

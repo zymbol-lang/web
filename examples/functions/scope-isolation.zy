@@ -1,0 +1,11 @@
+// Functions are fully isolated:
+// globals are NOT visible inside functions.
+x = 100
+
+no_global_access(val) {
+    // x is not visible here — pass everything as params
+    <~ val * 2
+}
+
+>> no_global_access(5) ¶
+>> x ¶  // x unchanged: 100

@@ -1,0 +1,17 @@
+// Numerals: Segmented/LCD (U+1FBF0–U+1FBF9)
+// Classic 7-segment display style.
+
+>> "LCD display mode:" ¶
+
+#🯰🯹#
+
+@ i:🯱..🯹 {
+    >> i " "
+}
+>> ¶
+
+// Arithmetic:
+>> 🯳 + 🯴 ¶
+>> 🯹 * 🯹 ¶
+
+#09#  // reset to ASCII

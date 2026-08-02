@@ -1,0 +1,7 @@
+make_adder(n) {
+    <~ x -> x + n
+}
+add5  = make_adder(5)
+add10 = make_adder(10)
+>> add5(3) ¶
+>> add10(3) ¶

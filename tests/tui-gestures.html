@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TUI swipe gestures — self-checking test</title>
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; background:#111; color:#ccc; margin:0; padding:1rem;
+         display:flex; gap:1rem; align-items:flex-start; }
+  iframe { width:420px; height:760px; border:1px solid #333; flex:0 0 auto; }
+  #log { flex:1; white-space:pre-wrap; font-family:ui-monospace,monospace; font-size:13px; }
+  .ok   { color:#00e87a; }
+  .fail { color:#f97070; font-weight:700; }
+  h1 { font-size:15px; margin:0 0 .5rem; }
+</style>
+</head>
+<body>
+<iframe id="frame" src="../playground.html"></iframe>
+<div>
+  <h1>TUI swipe gestures</h1>
+  <div id="log">running…</div>
+</div>
+
+<!--
+  Verifies that a swipe on the TUI canvas reaches the running program as an arrow key.
+
+  Serve web/ and open tests/tui-gestures.html. It needs a browser (synthetic TouchEvents),
+  so it is not part of the Node suite; `--dump-dom` on a headless run reads the result too.
+
+  This exists because the gesture handling broke in a direction-dependent way that was easy
+  to misread as "swipe is flaky": the listeners were registered `{passive:true}`, so they
+  could not preventDefault(), and there was no `touchcancel` handler. The moment Chrome
+  decided a pan was a scroll it stopped sending touchend and sent touchcancel instead — and
+  an upward finger swipe is exactly the "scroll down" gesture, so up failed while down
+  worked. The test drives all four directions plus a tap through the real page.
+-->
+<script>
+const logEl = document.getElementById('log');
+let failures = 0;
+function line(text, cls = '') { logEl.innerHTML += `<span class="${cls}">${text}</span>\n`; }
+function check(label, ok, detail = '') {
+  if (!ok) failures++;
+  line(`${ok ? '  ok  ' : '  FAIL'} ${label}${ok ? '' : ' :: ' + detail}`, ok ? 'ok' : 'fail');
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// A program that collects four keys inside >>| and prints them after leaving TUI mode, so
+// the result is readable from the DOM instead of from canvas pixels.
+const PROGRAM = [
+  's = ""',
+  '>>| {',
+  '    @ i:1..4 {',
+  '        <<| k',                      // statement form: `<<|` binds, it is not an expression
+  '        s = s $++ k',
+  '        >>~ (1, 1) > "got: " s',
+  '    }',
+  '}',
+  '>> "keys=" s ¶',
+].join('\n');
+
+function swipe(win, canvas, dx, dy, steps = 3) {
+  const r = canvas.getBoundingClientRect();
+  const x0 = r.left + r.width / 2, y0 = r.top + r.height / 2;
+  const touch = (x, y) => new win.Touch({ identifier: 1, target: canvas, clientX: x, clientY: y });
+  const ev = (type, x, y) => new win.TouchEvent(type, {
+    touches: type === 'touchend' ? [] : [touch(x, y)],
+    changedTouches: [touch(x, y)],
+    targetTouches: type === 'touchend' ? [] : [touch(x, y)],
+    bubbles: true, cancelable: true,
+  });
+  canvas.dispatchEvent(ev('touchstart', x0, y0));
+  for (let i = 1; i <= steps; i++) {
+    canvas.dispatchEvent(ev('touchmove', x0 + (dx * i) / steps, y0 + (dy * i) / steps));
+  }
+  canvas.dispatchEvent(ev('touchend', x0 + dx, y0 + dy));
+}
+
+/** Same gesture, but the browser claims it for scrolling: cancel instead of end. */
+function swipeCancelled(win, canvas, dx, dy, steps = 3) {
+  const r = canvas.getBoundingClientRect();
+  const x0 = r.left + r.width / 2, y0 = r.top + r.height / 2;
+  const touch = (x, y) => new win.Touch({ identifier: 1, target: canvas, clientX: x, clientY: y });
+  const ev = (type, x, y) => new win.TouchEvent(type, {
+    touches: type === 'touchcancel' ? [] : [touch(x, y)],
+    changedTouches: [touch(x, y)],
+    targetTouches: type === 'touchcancel' ? [] : [touch(x, y)],
+    bubbles: true, cancelable: type !== 'touchcancel',
+  });
+  canvas.dispatchEvent(ev('touchstart', x0, y0));
+  for (let i = 1; i <= steps; i++) {
+    canvas.dispatchEvent(ev('touchmove', x0 + (dx * i) / steps, y0 + (dy * i) / steps));
+  }
+  canvas.dispatchEvent(ev('touchcancel', x0 + dx, y0 + dy));
+}
+
+(async function run() {
+  const frame = document.getElementById('frame');
+  await new Promise(r => frame.addEventListener('load', r, { once: true }));
+  const win = frame.contentWindow, doc = frame.contentDocument;
+  await sleep(400);                       // let the module graph boot
+
+  doc.getElementById('pg-notice-ok')?.click();
+
+  const editor = doc.getElementById('editor');
+  editor.value = PROGRAM;
+  editor.dispatchEvent(new win.Event('input', { bubbles: true }));
+  // Run the focused tab, whatever a restored session left selected.
+  const picker = doc.getElementById('zyp-script-select');
+  if (picker && picker.style.display !== 'none') {
+    picker.value = '';
+    picker.dispatchEvent(new win.Event('change', { bubbles: true }));
+  }
+  doc.getElementById('run-btn').click();
+  await sleep(700);
+
+  const canvas = doc.getElementById('tui-canvas');
+  const wrap = doc.getElementById('tui-wrap');
+  check('the program entered TUI mode', wrap.classList.contains('active'),
+        'the canvas never became active — the program may not have parsed');
+  if (!wrap.classList.contains('active')) { line('\naborting', 'fail'); return; }
+
+  const style = win.getComputedStyle(canvas);
+  check('the canvas declares touch-action: none', style.touchAction === 'none', style.touchAction);
+
+  // The four directions, in the order the program will print them.
+  for (const [label, dx, dy] of [['up', 0, -80], ['down', 0, 80], ['left', -80, 0], ['right', 80, 0]]) {
+    swipe(win, canvas, dx, dy);
+    await sleep(180);
+    line(`  swiped ${label}`);
+  }
+  await sleep(500);
+
+  const out = doc.getElementById('output-content').textContent;
+  check('all four swipes reached the program', out.includes('keys=↑↓←→'),
+        `output was: ${JSON.stringify(out.trim().slice(0, 120))}`);
+  check('the up-swipe specifically registered', out.includes('↑'), 'no ↑ in the output');
+
+  // A touch that never crosses the threshold is a tap → Enter. Asserted by code point
+  // (`##!` on a Char): 10 is Enter, 8593 would be ↑. Comparing the Char against a string
+  // literal is always false and quietly turns this into a test that cannot fail.
+  editor.value = [
+    'code = 0',
+    '>>| {',
+    '    <<| k',
+    '    code = ##!k',
+    '}',
+    '>> "code=" code ¶',
+  ].join('\n');
+  editor.dispatchEvent(new win.Event('input', { bubbles: true }));
+  doc.getElementById('run-btn').click();
+  await sleep(700);
+  swipe(win, canvas, 4, 4);              // under the 24px threshold
+  await sleep(600);
+  const out2 = doc.getElementById('output-content').textContent;
+  check('a short touch is still a tap → Enter (U+000A)', out2.includes('code=10'),
+        `output was: ${JSON.stringify(out2.trim().slice(0, 120))}`);
+
+  // The case that actually broke on a phone, and the only one here that reproduces it.
+  // Synthetic events never make the page scroll, so a full touchstart→move→end sequence
+  // passes even with passive listeners; what the browser really did was stop the sequence
+  // mid-gesture and send `touchcancel` instead of `touchend`. Ending on cancel is therefore
+  // the regression test: the direction must already have been emitted during touchmove.
+  editor.value = [
+    'code = 0',
+    '>>| {',
+    '    <<| k',
+    '    code = ##!k',
+    '}',
+    '>> "code=" code ¶',
+  ].join('\n');
+  editor.dispatchEvent(new win.Event('input', { bubbles: true }));
+  doc.getElementById('run-btn').click();
+  await sleep(700);
+  swipeCancelled(win, canvas, 0, -80);
+  await sleep(600);
+  const out3 = doc.getElementById('output-content').textContent;
+  // 8593 = U+2191 ↑
+  check('an up-swipe the browser cancels mid-gesture still registers', out3.includes('code=8593'),
+        `output was: ${JSON.stringify(out3.trim().slice(0, 120))} (0 = nothing arrived, ` +
+        `10 = arrived as a tap)`);
+
+  // ─── Keypad: the only way to reach a letter without a physical keyboard ────────
+  // 'p' (U+0070 = 112) is the one that matters: it passes in GO and pauses in serpiente.
+  editor.value = [
+    'code = 0',
+    '>>| {',
+    '    <<| k',
+    '    code = ##!k',
+    '}',
+    '>> "code=" code ¶',
+  ].join('\n');
+  editor.dispatchEvent(new win.Event('input', { bubbles: true }));
+  doc.getElementById('run-btn').click();
+  await sleep(700);
+
+  const keysBtn = doc.getElementById('tui-keys-btn');
+  const keyBar  = doc.getElementById('tui-key-bar');
+  const keyField = doc.getElementById('tui-key-field');
+  check('the keypad button is offered in TUI mode', keysBtn.classList.contains('visible'));
+  keysBtn.click();
+  check('tapping it opens the keypad', keyBar.classList.contains('active'));
+  check('the field takes focus (this is what raises the device keyboard)',
+        doc.activeElement === keyField, `focus was on #${doc.activeElement?.id || '?'}`);
+  check('autocapitalize is off (a soft keyboard would send P for p)',
+        keyField.getAttribute('autocapitalize') === 'off');
+
+  // A soft keyboard delivers the character through beforeinput, not through keydown with a
+  // usable `e.key` — that is what this dispatch reproduces.
+  keyField.dispatchEvent(new win.InputEvent('beforeinput', {
+    inputType: 'insertText', data: 'p', bubbles: true, cancelable: true,
+  }));
+  await sleep(600);
+  const out4 = doc.getElementById('output-content').textContent;
+  check("typing 'p' reaches the program as U+0070", out4.includes('code=112'),
+        `output was: ${JSON.stringify(out4.trim().slice(0, 120))}`);
+  check('the field stays empty (no visible string accumulates)', keyField.value === '',
+        JSON.stringify(keyField.value));
+
+  line(failures === 0 ? '\nAll gesture tests passed' : `\n${failures} failure(s)`,
+       failures === 0 ? 'ok' : 'fail');
+  document.title = failures === 0 ? 'GESTURES OK' : `GESTURES ${failures} FAILURE(S)`;
+})();
+</script>
+</body>
+</html>

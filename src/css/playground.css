@@ -1,0 +1,1178 @@
+    @font-face {
+      font-family: 'pIqaD-qolqoS';
+      src: url('../../assets/fonts/pIqaD-qolqoS.woff2') format('woff2'),
+           url('../../assets/fonts/pIqaD-qolqoS.ttf') format('truetype');
+      font-weight: 100 900;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0c0c0c;
+      --bg2:       #111111;
+      --bg3:       #161616;
+      --bg4:       #1a1a1a;
+      --line:      #1e1e1e;
+      --muted:     #2a2a2a;
+      --dim:       #444;
+      --mid:       #666;
+      --text:      #aaa;
+      --hi:        #ddd;
+      --white:     #f0f0f0;
+      --green:     #00e87a;
+      --green2:    #00c468;
+      --green-dim: #00e87a22;
+      --green-mid: #00e87a44;
+      --str:       #c89a6e;
+      --num:       #6aadce;
+      --cmt:       #3a3a3a;
+      --op:        #9ecbff;
+      --kw:        #00e87a;
+      --br:        #e8b04a;
+      --punct:     #555555;
+      --hot:       #ff9940;
+      --fn-color:  #c792ea;
+      --id-color:  #aaa;
+      --err:       #f97070;
+      --header-h:  52px;
+      --sidebar-w: 240px;
+      --mono: 'pIqaD-qolqoS','JetBrains Mono','Courier New',monospace;
+      --ui:   'pIqaD-qolqoS','Inter',system-ui,sans-serif;
+      --radius: 6px;
+    }
+
+    html.light {
+      --bg:        #f8f8f8;
+      --bg2:       #f0f0f0;
+      --bg3:       #e8e8e8;
+      --bg4:       #e0e0e0;
+      --line:      #d0d0d0;
+      --muted:     #c8c8c8;
+      --dim:       #888;
+      --mid:       #555;
+      --text:      #333;
+      --hi:        #111;
+      --white:     #111;
+      --green:     #008a48;
+      --green2:    #006a38;
+      --green-dim: #008a4815;
+      --green-mid: #008a4830;
+      --str:       #a0522d;
+      --num:       #1a6a99;
+      --cmt:       #aaa;
+      --op:        #3a6fa8;
+      --kw:        #008a48;
+      --br:        #b45309;
+      --punct:     #888888;
+      --hot:       #c05800;
+      --fn-color:  #7c3aed;
+      --id-color:  #333;
+      --err:       #cc2222;
+      --header-bg: rgba(248,248,248,0.95);
+    }
+
+    html { font-size: 15px; }
+
+    html, body {
+      /* The playground never scrolls as a page (fixed height, overflow hidden), so the only
+         thing document-level overscroll can produce is interference: pull-to-refresh on a
+         downward swipe and edge back-navigation on a horizontal one, both of which steal
+         gestures meant for the TUI canvas. */
+      overscroll-behavior: none;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--ui);
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 3px; }
+
+    /* ─── Header ─── */
+    header {
+      height: var(--header-h);
+      min-height: var(--header-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--line);
+      gap: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--hi);
+    }
+    .logo img { height: 1.8rem; }
+    .logo-code {
+      font-family: var(--mono);
+      font-size: 0.92rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .logo-sym { color: var(--green); }
+    .logo-op  { color: var(--green); margin: 0 0.1em; }
+    .logo-str { color: var(--str); }
+
+    .header-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--mid);
+      padding: 0.2rem 0.6rem;
+      background: var(--green-dim);
+      border: 1px solid var(--green-mid);
+      border-radius: var(--radius);
+      color: var(--green);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* GitHub / X marks — icon only, no label */
+    .icon-link {
+      display: inline-flex;
+      align-items: center;
+      color: var(--dim);
+      transition: color 0.15s;
+    }
+    .icon-link svg { flex-shrink: 0; }
+    .icon-link:hover { color: var(--hi); }
+
+    .back-link {
+      font-size: 0.75rem;
+      color: var(--mid);
+      padding: 0.3rem 0.65rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .back-link:hover { color: var(--hi); border-color: var(--dim); }
+
+    #theme-toggle {
+      background: none;
+      border: 1px solid var(--line);
+      color: var(--mid);
+      cursor: pointer;
+      border-radius: var(--radius);
+      padding: 0.28rem 0.5rem;
+      font-size: 0.9rem;
+      line-height: 1;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    #theme-toggle:hover { border-color: var(--dim); color: var(--hi); }
+
+    #pg-about-btn {
+      background: none;
+      border: 1px solid var(--line);
+      color: var(--mid);
+      cursor: pointer;
+      border-radius: 50%;
+      width: 1.7rem;
+      height: 1.7rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      line-height: 1;
+      font-family: var(--ui);
+      transition: border-color 0.15s, color 0.15s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #pg-about-btn:hover { border-color: var(--green); color: var(--green); }
+
+    /* ─── Playground layout: sidebar | editor | output ─── */
+    #playground {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* The editor/output split lives in its own flex box so the drag maths stays a
+       percentage of the split area, not of the area plus the sidebar. */
+    #split {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    #editor-panel  { flex: 1 1 50%; min-width: 0; }
+    #output-panel  { flex: 1 1 50%; min-width: 0; }
+    /* The drag handler writes flex-basis directly on every pointermove; a transition would
+       fight that and lag behind the cursor, so it's only enabled while not dragging. */
+    #split:not(.dragging) #editor-panel,
+    #split:not(.dragging) #output-panel { transition: flex-basis 0.18s ease; }
+
+    /* Split handle */
+    #split-handle {
+      flex: 0 0 5px;
+      background: var(--line);
+      cursor: col-resize;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      z-index: 2;
+    }
+    #split-handle::after {
+      content: '';
+      display: block;
+      width: 3px;
+      height: 28px;
+      border-radius: 2px;
+      background: var(--dim);
+      opacity: 0.4;
+      transition: opacity 0.15s, background 0.15s;
+    }
+    #split-handle:hover { background: var(--green-dim); }
+    #split-handle:hover::after,
+    #split-handle.dragging::after { opacity: 1; background: var(--green); }
+    #split-handle.dragging { background: var(--green-dim); cursor: col-resize; }
+    #split-handle.output-collapsed { cursor: default; opacity: 0.35; pointer-events: none; }
+
+    /* Output collapsed: a slim strip instead of a full-width header, so collapsing it
+       actually gives the editor room back rather than just hiding the log text. */
+    #output-panel.output-collapsed {
+      flex: 0 0 44px !important;
+      min-width: 0;
+    }
+    #output-panel.output-collapsed #output-content,
+    #output-panel.output-collapsed #tui-wrap { display: none !important; }
+    #output-panel.output-collapsed .panel-header {
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100%;
+      padding: 0.65rem 0.3rem;
+      gap: 0.6rem;
+    }
+    #output-panel.output-collapsed .panel-header > span {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: 0.68rem;
+    }
+    #output-panel.output-collapsed .panel-actions { flex-direction: column; gap: 0.4rem; }
+    /* Clearing output you can't see is confusing, not useful — only the reopen toggle
+       stays reachable while collapsed. */
+    #output-panel.output-collapsed #clear-output-btn,
+    #output-panel.output-collapsed #layout-toggle-btn { display: none; }
+
+    /* Stacked layout (desktop opt-in via #layout-toggle-btn; forced on mobile, see the
+       700px media query below, which is the guaranteed CSS-only fallback if JS never runs).
+       Mirrors mobile's row⇄column swap, scoped so it only takes over at desktop widths when
+       the user actually asked for it. */
+    #split.stacked { flex-direction: column; }
+    #split.stacked #editor-panel,
+    #split.stacked #output-panel { min-width: unset; min-height: 0; }
+    #split.stacked #split-handle { cursor: row-resize; width: 100%; }
+    #split.stacked #split-handle::after { width: 28px; height: 3px; }
+    #split.stacked #split-handle.dragging { cursor: row-resize; }
+    #split.stacked #output-panel.output-collapsed {
+      flex: 0 0 auto !important;
+      min-height: 0;
+      min-width: 0;
+    }
+    #split.stacked #output-panel.output-collapsed .panel-header {
+      flex-direction: row;
+      justify-content: space-between;
+      height: auto;
+      padding: 0.45rem 0.75rem;
+    }
+    #split.stacked #output-panel.output-collapsed .panel-header > span {
+      writing-mode: horizontal-tb;
+      transform: none;
+    }
+    #split.stacked #output-panel.output-collapsed .panel-actions { flex-direction: row; gap: 0.4rem; }
+
+    /* ─── Panel shared ─── */
+    .panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.45rem 0.75rem;
+      background: var(--bg3);
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+      min-width: 0;
+      /* Wrap rather than clip. The editor panel is now only as wide as whatever is left
+         after the sidebar and the output split, which can be ~400px, and six controls do
+         not fit in that. A taller header is fine; a Download button you cannot reach is not. */
+      flex-wrap: wrap;
+      row-gap: 0.35rem;
+    }
+
+    .panel-header > span {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--mid);
+      flex-shrink: 0;
+    }
+
+    /* The editor toolbar is the widest fixed row on the page. The args field and the script
+       picker give up width first (see their own rules); past that the group wraps. */
+    .panel-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.4rem;
+      min-width: 0;
+    }
+    .panel-actions .btn { flex-shrink: 0; }
+
+    /* ─── Buttons ─── */
+    .btn {
+      font-family: var(--ui);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.28rem 0.7rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      cursor: pointer;
+      background: var(--bg4);
+      color: var(--text);
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+    }
+    .btn:hover { background: var(--muted); border-color: var(--dim); color: var(--hi); }
+
+    .btn-run {
+      background: var(--green-dim);
+      border-color: var(--green-mid);
+      color: var(--green);
+    }
+    .btn-run:hover { background: var(--green-mid); }
+
+    #args-input {
+      background: var(--bg);
+      border: 1px solid var(--muted);
+      border-radius: 4px;
+      color: var(--hi);
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-size: 11px;
+      padding: 3px 7px;
+      width: 130px;
+      min-width: 48px;
+      flex: 0 1 130px;
+      outline: none;
+    }
+    #args-input:focus { border-color: var(--green-mid); }
+    #args-input::placeholder { color: var(--dim); }
+
+    /* The [[script]] picker had no styling at all — a default-chrome <select> in a dark
+       toolbar. It also has to be shrinkable, since script names can be long (and are often
+       CJK: 囲碁, 바둑, 围棋). */
+    #zyp-script-select {
+      background: var(--bg4);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--ui);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.24rem 0.4rem;
+      max-width: 18ch;
+      flex: 0 1 auto;
+      min-width: 6ch;
+      outline: none;
+    }
+    #zyp-script-select:hover { border-color: var(--dim); color: var(--hi); }
+    #zyp-script-select:focus { border-color: var(--green-mid); }
+
+    .btn-active {
+      background: var(--green-dim);
+      border-color: var(--green-mid);
+      color: var(--green);
+    }
+
+    /* ─── Editor panel ─── */
+
+    #editor-wrapper {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #editor-highlight {
+      position: absolute;
+      inset: 0;
+      overflow: auto;
+      padding: 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      color: var(--text);
+      white-space: pre;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    #editor {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      resize: none;
+      background: transparent;
+      color: transparent;
+      caret-color: var(--green);
+      border: none;
+      outline: none;
+      padding: 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      z-index: 2;
+      overflow: auto;
+      white-space: pre;
+      tab-size: 4;
+    }
+
+    /* ─── Output panel ─── */
+    #output-content {
+      flex: 1;
+      overflow: auto;
+      padding: 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .out-text  { color: var(--hi); }
+    .out-error { color: var(--err); }
+    .out-meta  { color: var(--mid); font-style: italic; font-size: 0.75rem; }
+
+    #tui-wrap {
+      display: none;
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    #tui-wrap.active { display: flex; flex-direction: column; }
+
+    #tui-canvas {
+      display: block;
+      background: var(--bg);
+      outline: none;
+      cursor: default;
+      image-rendering: pixelated;
+      /* The canvas owns every touch on it. Without this the compositor keeps treating a pan
+         as a candidate scroll, hands the gesture to the browser mid-swipe and fires
+         `touchcancel` — losing the swipe. It hits vertical swipes first (an upward finger
+         swipe is exactly "scroll down"), which is why up used to fail while down worked. */
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #tui-stop-btn {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      font-family: var(--ui);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.3rem 0.65rem;
+      border-radius: var(--radius);
+      border: 1px solid #a33;
+      background: rgba(80, 10, 10, 0.85);
+      color: #f88;
+      cursor: pointer;
+      opacity: 0.75;
+      transition: opacity 0.15s, background 0.15s;
+      z-index: 10;
+    }
+    #tui-stop-btn:hover { opacity: 1; background: rgba(160, 20, 20, 0.95); color: #fff; }
+
+    #tui-input-bar {
+      display: none;
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(8, 14, 8, 0.93);
+      border-top: 1px solid #2a4a2a;
+      align-items: center;
+      padding: 5px 10px;
+      gap: 6px;
+      z-index: 11;
+    }
+    #tui-input-bar.active { display: flex; }
+
+    /* ─── Keypad (single-key commands on a touch device) ─── */
+    /* Both this bar and the button are absolutely positioned overlays. The canvas must not
+       reflow when the keypad opens: `>>?` already told the program how many rows it has, and
+       a program that laid out a 19×19 board to that number would be drawing off-screen. */
+    #tui-keys-btn {
+      display: none;
+      position: absolute;
+      top: 6px;
+      right: 84px;
+      font-family: var(--ui);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.3rem 0.65rem;
+      border-radius: var(--radius);
+      border: 1px solid #2a4a2a;
+      background: rgba(8, 30, 12, 0.85);
+      color: var(--green);
+      cursor: pointer;
+      opacity: 0.75;
+      transition: opacity 0.15s, background 0.15s;
+      z-index: 10;
+    }
+    #tui-keys-btn.visible { display: block; }
+    #tui-keys-btn:hover { opacity: 1; background: rgba(10, 60, 24, 0.95); }
+
+    #tui-key-bar {
+      display: none;
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(8, 14, 8, 0.96);
+      border-top: 1px solid #2a4a2a;
+      align-items: center;
+      padding: 5px 10px;
+      gap: 6px;
+      z-index: 12;
+    }
+    #tui-key-bar.active { display: flex; }
+    #tui-key-prompt { color: var(--green); font-size: 15px; flex-shrink: 0; line-height: 1; }
+    #tui-key-field {
+      flex: 1;
+      min-width: 0;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid #2a4a2a;
+      color: #ddd;
+      font-family: var(--mono);
+      font-size: 13px;
+      outline: none;
+      padding: 2px 0;
+    }
+    #tui-key-field:focus { border-bottom-color: var(--green); }
+    #tui-key-field::placeholder { color: #4a5a4a; }
+    #tui-key-close {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      color: var(--dim);
+      font-size: 0.9rem;
+      line-height: 1;
+      padding: 0 0.25rem;
+      cursor: pointer;
+    }
+    #tui-key-close:hover { color: var(--err); }
+    #tui-input-prompt { color: var(--green); font-family: var(--mono); font-size: 13px; flex-shrink: 0; }
+    #tui-input-field {
+      flex: 1;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid #2a4a2a;
+      color: #ddd;
+      font-family: var(--mono);
+      font-size: 13px;
+      outline: none;
+      padding: 2px 0;
+    }
+    #tui-input-field:focus { border-bottom-color: var(--green); }
+
+    /* ─── Interactive input line ─── */
+    .out-input-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .out-input-prompt { color: var(--green); }
+    .out-input-field {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--green-mid);
+      color: var(--hi);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      outline: none;
+      min-width: 12ch;
+      width: 22ch;
+      padding: 0;
+    }
+    .out-input-field:focus { border-bottom-color: var(--green); }
+    .out-input-value { color: var(--green2); }
+
+    /* ─── Sidebar explorer ─── */
+    #sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      display: flex;
+      flex-direction: column;
+      background: var(--bg2);
+      border-right: 1px solid var(--line);
+      overflow: hidden;
+      transition: width 0.18s ease, min-width 0.18s ease;
+    }
+    /* Dragging #sb-resize updates --sidebar-w every pointermove; a transition there would
+       lag behind the cursor, so it's suppressed while the drag is live. */
+    #sidebar.sb-resizing { transition: none; }
+
+    /* Own header bar, styled like a .panel-header — same shape as the Editor/Output
+       toolbars so the collapse control is symmetric: each panel owns its own toggle. */
+    #sb-panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.45rem 0.75rem;
+      background: var(--bg3);
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+    #sb-panel-head > span {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--mid);
+    }
+    #sb-collapse-btn {
+      font-family: var(--ui);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.28rem 0.5rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      cursor: pointer;
+      background: var(--bg4);
+      color: var(--text);
+      flex-shrink: 0;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+    }
+    #sb-collapse-btn:hover { background: var(--muted); border-color: var(--dim); color: var(--hi); }
+
+    /* Collapsed (desktop): a slim strip, not width 0 — same treatment as Output-collapsed,
+       so the panel stays visible as a place to click it back open instead of vanishing
+       into a disconnected header button. */
+    #sidebar.sb-collapsed {
+      width: 44px;
+      min-width: 44px;
+      border-right: 1px solid var(--line);
+    }
+    #sidebar.sb-collapsed #sb-head,
+    #sidebar.sb-collapsed #sb-body { display: none; }
+    #sidebar.sb-collapsed #sb-panel-head {
+      flex: 1;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0.65rem 0.3rem;
+      gap: 0.6rem;
+    }
+    #sidebar.sb-collapsed #sb-panel-head > span {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: 0.68rem;
+    }
+    #sidebar.sb-collapsed + #sb-resize { display: none; }
+
+    #sb-head {
+      flex-shrink: 0;
+      padding: 0.4rem 0.5rem;
+      border-bottom: 1px solid var(--line);
+    }
+    #sb-filter {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--muted);
+      border-radius: var(--radius);
+      color: var(--hi);
+      font-family: var(--ui);
+      font-size: 0.72rem;
+      padding: 0.3rem 0.5rem;
+      outline: none;
+    }
+    #sb-filter:focus { border-color: var(--green-mid); }
+    #sb-filter::placeholder { color: var(--dim); }
+
+    #sb-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-bottom: 1rem;
+    }
+
+    .sb-sec + .sb-sec { border-top: 1px solid var(--line); }
+
+    /* One row = one tree node. --depth drives the indent so nesting needs no wrappers. */
+    .sb-row {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      height: 22px;
+      padding-right: 0.35rem;
+      padding-left: calc(0.3rem + var(--depth, 0) * 0.7rem);
+      font-size: 0.73rem;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .sb-row:hover { background: var(--bg3); }
+    .sb-twisty {
+      width: 0.7rem;
+      flex-shrink: 0;
+      color: var(--dim);
+      font-size: 0.6rem;
+      text-align: center;
+    }
+    .sb-icon { flex-shrink: 0; font-size: 0.7rem; line-height: 1; }
+    .sb-label { overflow: hidden; text-overflow: ellipsis; }
+
+    .sb-sec-head {
+      height: 26px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      color: var(--green);
+      background: var(--bg2);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .sb-sec-head:hover { background: var(--bg3); }
+    .sb-sec-body { padding-bottom: 0.25rem; }
+
+    .sb-group { font-weight: 600; color: var(--hi); }
+    .sb-cat   { color: var(--text); }
+    .sb-dir   { color: var(--text); }
+    .sb-bundle { color: var(--hi); font-weight: 600; }
+
+    .sb-entry .sb-label { color: var(--text); }
+    .sb-entry:hover .sb-label { color: var(--hi); }
+
+    .sb-file .sb-label { color: var(--mid); font-family: var(--mono); font-size: 0.7rem; }
+    .sb-file.open .sb-label { color: var(--text); }
+    .sb-file.active { background: var(--bg4); }
+    .sb-file.active .sb-label { color: var(--green); }
+
+    .sb-script .sb-label { color: var(--text); font-family: var(--mono); font-size: 0.7rem; }
+    .sb-script .sb-icon  { color: var(--green); }
+    .sb-script.active .sb-label { color: var(--green); font-weight: 600; }
+
+    .sb-empty, .sb-error {
+      cursor: default;
+      color: var(--dim);
+      font-style: italic;
+      height: auto;
+      padding-top: 0.2rem;
+      padding-bottom: 0.2rem;
+      white-space: normal;
+    }
+    .sb-error { color: var(--err); font-style: normal; }
+    .sb-empty:hover, .sb-error:hover { background: none; }
+    .sb-error .sb-label, .sb-empty .sb-label { overflow: visible; white-space: normal; }
+
+    .sb-badge {
+      flex-shrink: 0;
+      font-size: 0.58rem;
+      font-family: var(--mono);
+      color: var(--mid);
+      line-height: 1;
+    }
+    .sb-count {
+      color: var(--dim);
+      background: var(--bg4);
+      border-radius: 3px;
+      padding: 0.1rem 0.25rem;
+      margin-left: auto;
+    }
+    .sb-need {
+      color: var(--dim);
+      border: 1px solid var(--muted);
+      border-radius: 3px;
+      padding: 0 0.2rem;
+    }
+    .sb-mounted { color: var(--green2); }
+    .sb-dirty   { color: var(--hot); font-size: 0.6rem; }
+
+    .sb-actions { margin-left: auto; display: flex; gap: 0.1rem; opacity: 0; }
+    .sb-row:hover .sb-actions { opacity: 1; }
+    .sb-act {
+      background: none;
+      border: none;
+      color: var(--dim);
+      font-family: var(--ui);
+      font-size: 0.8rem;
+      line-height: 1;
+      padding: 0 0.2rem;
+      cursor: pointer;
+    }
+    .sb-act:hover { color: var(--green); }
+    .sb-act-del:hover { color: var(--err); }
+    /* A section header's own actions must not vanish when the pointer leaves the row. */
+    .sb-sec-head .sb-actions { opacity: 1; }
+
+    /* Sidebar resize handle */
+    #sb-resize {
+      flex: 0 0 4px;
+      background: var(--line);
+      cursor: col-resize;
+    }
+    #sb-resize:hover { background: var(--green-dim); }
+
+    #sb-backdrop { display: none; }
+
+    /* Hover preview — fixed so it can overflow the sidebar */
+    #sb-preview {
+      position: fixed;
+      z-index: 60;
+      display: none;
+      max-width: min(46ch, 60vw);
+      background: var(--bg3);
+      border: 1px solid var(--muted);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+      padding: 0.5rem 0.6rem;
+      pointer-events: none;
+    }
+    #sb-preview.visible { display: block; }
+    .sb-pv-desc { font-size: 0.72rem; color: var(--text); margin-bottom: 0.3rem; }
+    .sb-pv-path {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--dim);
+      margin-bottom: 0.35rem;
+    }
+    .sb-pv-code {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      line-height: 1.5;
+      color: var(--text);
+      overflow: hidden;
+      white-space: pre;
+    }
+
+    /* Explorer drawer opener — mobile only. On desktop the collapse control lives in the
+       sidebar's own header (#sb-panel-head), symmetric with how Output owns its toggle;
+       on mobile the collapsed sidebar is off-screen, so it needs a reachable opener here. */
+    #sb-toggle {
+      display: none;
+      background: none;
+      border: 1px solid var(--muted);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.85rem;
+      line-height: 1;
+      padding: 0.3rem 0.45rem;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    #sb-toggle:hover { border-color: var(--green); color: var(--green); }
+
+    /* ─── Syntax colors ─── */
+    .t-kw  { color: var(--kw); }
+    .t-op  { color: var(--op); }
+    .t-str { color: var(--str); }
+    .t-num { color: var(--num); }
+    .t-cmt { color: var(--cmt); }
+    .t-fn  { color: var(--fn-color); }
+    .t-id  { color: var(--id-color); }
+    .t-br    { color: var(--br); }
+    .t-punct { color: var(--punct); }
+    .t-hot   { color: var(--hot); font-weight: bold; }
+
+    /* ─── Mobile ─── */
+    @media (max-width: 700px) {
+      #split { flex-direction: column; }
+      #editor-panel  { flex: 1 1 50%; min-width: unset; min-height: 0; }
+      #output-panel  { flex: 1 1 50%; min-width: unset; min-height: 0; }
+      #split-handle  { flex: 0 0 5px; cursor: row-resize; width: 100%; }
+      #split-handle::after { width: 28px; height: 3px; }
+      #split-handle.dragging { cursor: row-resize; }
+      #output-panel.output-collapsed { flex: 0 0 auto !important; min-height: 0; }
+      /* Undo the desktop vertical-strip treatment: on a narrow screen the split stacks
+         top/bottom, so collapsed output reads better as a short horizontal bar. */
+      #output-panel.output-collapsed .panel-header {
+        flex-direction: row;
+        justify-content: space-between;
+        height: auto;
+        padding: 0.45rem 0.75rem;
+      }
+      #output-panel.output-collapsed .panel-header > span {
+        writing-mode: horizontal-tb;
+        transform: none;
+      }
+      #output-panel.output-collapsed .panel-actions { flex-direction: row; }
+      /* Mobile is always stacked for space, not by choice — nothing to switch to. */
+      #layout-toggle-btn { display: none; }
+
+      /* The explorer becomes a slide-over drawer: on a phone it cannot take a permanent
+         column without leaving the editor unusable. */
+      #sb-toggle { display: flex; }
+      /* The ☰ button needs its width back: the logo's code decoration is the one header
+         item that carries no information, so it goes first. */
+      .logo-code { display: none; }
+      #sidebar {
+        position: fixed;
+        top: var(--header-h);
+        bottom: 0;
+        left: 0;
+        width: min(78vw, 320px);
+        min-width: 0;
+        z-index: 50;
+        transform: translateX(-100%);
+        transition: transform 0.18s ease;
+        box-shadow: 0 0 24px rgba(0,0,0,.5);
+      }
+      /* The drawer's own transform drives visibility on mobile; a leftover sb-collapsed
+         (44px strip) from a desktop session, carried over by a live window resize, must
+         not also apply here — the drawer always opens at full width and full contents. */
+      #sidebar.sb-collapsed {
+        width: min(78vw, 320px);
+        min-width: 0;
+      }
+      #sidebar.sb-collapsed #sb-head,
+      #sidebar.sb-collapsed #sb-body { display: block; }
+      #sidebar.sb-collapsed #sb-panel-head {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.45rem 0.75rem;
+      }
+      #sidebar.sb-collapsed #sb-panel-head > span {
+        writing-mode: horizontal-tb;
+        transform: none;
+      }
+      #sidebar.drawer-open { transform: translateX(0); }
+      #sb-resize { display: none; }
+      #sb-backdrop {
+        display: block;
+        position: fixed;
+        inset: var(--header-h) 0 0 0;
+        background: rgba(0,0,0,.45);
+        z-index: 49;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.18s ease;
+      }
+      #sb-backdrop.visible { opacity: 1; pointer-events: auto; }
+      #sb-preview { display: none !important; }
+    }
+
+    /* ─── Playground notice modal ─── */
+    #pg-notice-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.6);
+      backdrop-filter: blur(3px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    #pg-notice-backdrop.hidden { display: none; }
+
+    #pg-notice {
+      background: var(--bg2);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      max-width: 520px;
+      width: calc(100% - 2rem);
+      padding: 1.6rem 1.8rem 1.4rem;
+      box-shadow: 0 16px 48px rgba(0,0,0,.5);
+      /* The notice lists what the browser runtime cannot do, so it is long enough
+         to outgrow a phone in landscape. Scroll inside the dialog rather than
+         letting it run off the viewport with the Got it button out of reach. */
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    #pg-notice h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--hi);
+      margin-bottom: .8rem;
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+    }
+    #pg-notice h2 .badge {
+      font-size: .7rem;
+      font-weight: 600;
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid var(--green-mid);
+      padding: .1rem .45rem;
+      border-radius: 4px;
+      font-family: var(--mono);
+      letter-spacing: .02em;
+    }
+
+    #pg-notice h3 {
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--hi);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin: 1.1rem 0 .1rem;
+    }
+
+    #pg-notice p {
+      font-size: .85rem;
+      color: var(--text);
+      line-height: 1.6;
+      margin-bottom: .75rem;
+    }
+    #pg-notice p:last-of-type { margin-bottom: 1.1rem; }
+
+    #pg-notice ul {
+      list-style: none;
+      margin: .5rem 0 1rem 0;
+      display: flex;
+      flex-direction: column;
+      gap: .3rem;
+    }
+    #pg-notice ul li {
+      font-size: .82rem;
+      color: var(--text);
+      display: flex;
+      align-items: baseline;
+      gap: .5rem;
+    }
+    #pg-notice ul li::before {
+      content: '·';
+      color: var(--green);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    #pg-notice .notice-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    #pg-notice-ok {
+      background: var(--green);
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      padding: .42rem 1.2rem;
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--ui);
+      transition: background .15s;
+    }
+    #pg-notice-ok:hover { background: var(--green2); }
+
+    /* ─── File tabs ─── */
+    #file-tabs {
+      display: flex;
+      align-items: stretch;
+      background: var(--bg3);
+      border-bottom: 1px solid var(--line);
+      overflow-x: auto;
+      flex-shrink: 0;
+      scrollbar-width: none;
+    }
+    #file-tabs::-webkit-scrollbar { display: none; }
+
+    .ftab {
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.3rem 0.5rem 0.3rem 0.75rem;
+      font-size: 0.72rem;
+      font-family: var(--mono);
+      color: var(--mid);
+      border-right: 1px solid var(--line);
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      user-select: none;
+      transition: color 0.12s, background 0.12s;
+    }
+    .ftab:hover { color: var(--hi); background: var(--bg4); }
+    .ftab.active { color: var(--hi); background: var(--bg); border-bottom: 2px solid var(--green); }
+    .ftab.active .ftab-name { color: var(--green); }
+
+    .ftab-name { pointer-events: none; max-width: 18ch; overflow: hidden; text-overflow: ellipsis; }
+
+    .ftab-dot {
+      font-size: 0.55rem;
+      color: var(--str);
+      pointer-events: none;
+      line-height: 1;
+      margin-top: 0.1rem;
+    }
+
+    .ftab-close {
+      background: none;
+      border: none;
+      color: transparent;
+      cursor: pointer;
+      font-size: 0.85rem;
+      line-height: 1;
+      padding: 0 0.15rem;
+      border-radius: 3px;
+      transition: color 0.1s, background 0.1s;
+    }
+    .ftab:hover .ftab-close, .ftab.active .ftab-close { color: var(--dim); }
+    .ftab-close:hover { color: var(--err) !important; background: rgba(249,112,112,.12); }
+
+    .ftab-add {
+      background: none;
+      border: none;
+      border-right: 1px solid var(--line);
+      color: var(--dim);
+      cursor: pointer;
+      font-size: 1.1rem;
+      line-height: 1;
+      padding: 0 0.65rem;
+      flex-shrink: 0;
+      transition: color 0.12s, background 0.12s;
+    }
+    .ftab-add:hover { color: var(--green); background: var(--green-dim); }
+
+    .ftab-rename-input {
+      background: var(--bg4);
+      border: 1px solid var(--green);
+      color: var(--hi);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      outline: none;
+      padding: 0.05rem 0.3rem;
+      border-radius: 3px;
+      width: 10ch;
+      min-width: 5ch;
+      max-width: 22ch;
+    }

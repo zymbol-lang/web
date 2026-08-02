@@ -1,0 +1,13 @@
+// Sum every argument. `#|x|` parses a string into Int/Float.
+// Type "10 25 7 3" in the args… field next to ▶ Run.
+>< args
+
+? args$# == 0 {
+    >> "Uso: suma n1 n2 n3 ..." ¶
+} _ {
+    total = 0
+    @ i:1..args$# {
+        total += #|args[i]|
+    }
+    >> "Suma de " args$# " números: " total ¶
+}

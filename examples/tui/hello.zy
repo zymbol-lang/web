@@ -1,0 +1,13 @@
+// @skip-parity: TUI needs a real TTY under the CLI; the browser draws on a canvas
+>>| {
+    [filas, cols] = >>?
+    >>~ (1, 1) > "Canvas TUI activo"
+    >>~ (2, 1) > "Tamaño: " filas " filas × " cols " cols"
+    >>~ (4, 1, 1, 10, 0) > "NEGRITA VERDE"
+    >>~ (5, 1, 2, 11, 0) > "CURSIVA CIAN"
+    >>~ (6, 1, 4, 12, 0) > "SUBRAYADO ROJO"
+    >>~ (8, 1) > "Presiona una tecla para salir..."
+    <<| k
+    >>~ (9, 1) > "Tecla: " k
+    @~ 1000
+}

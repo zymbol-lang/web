@@ -1,0 +1,6 @@
+x = 42
+? x$! {
+    >> "x is error" ¶
+} _ {
+    >> "x is not error" ¶
+}

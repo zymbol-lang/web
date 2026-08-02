@@ -1,0 +1,10 @@
+// Indices start at 1. Negative indices count from the end.
+arr = [10, 20, 30]
+>> arr ¶
+>> arr[1] ¶     // first
+>> arr[-1] ¶    // last
+
+// Arrays are mutable
+arr[2] = 99
+arr[1] += 5
+>> arr ¶
