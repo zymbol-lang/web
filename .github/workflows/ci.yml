@@ -50,3 +50,6 @@ jobs:
 
       - name: Licences (AGPL on sources, CC BY-SA on manuals)
         run: node tests/test_licenses.mjs
+
+      - name: Agent surfaces (skill digest, SKILL.md blocks, WebMCP tools)
+        run: node tests/test_agents.mjs

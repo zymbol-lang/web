@@ -27,6 +27,10 @@ interpreter repository is authoritative where the two disagree.
 - [Manual (English)](https://zymbol-lang.org/data/manuals/manual_en.md): variables, control flow, collections, functions, modules, errors.
 - [Manual (Spanish)](https://zymbol-lang.org/data/manuals/manual_es.md): the same manual in Spanish.
 
+## Skill
+
+- [write-zymbol](https://zymbol-lang.org/.well-known/agent-skills/write-zymbol/SKILL.md): the skill to load before writing Zymbol — syntax, and the mistakes that parse but behave wrong. Indexed at [/.well-known/agent-skills/index.json](https://zymbol-lang.org/.well-known/agent-skills/index.json) with a SHA-256 digest.
+
 ## Source
 
 - [Interpreter](https://github.com/zymbol-lang/interpreter): Rust workspace, 19 crates. `GUIDE.md` is the authoritative language reference, `REFERENCE.md` the complete symbol table and limitations, `ARCHITECTURE.md` the crate catalog.

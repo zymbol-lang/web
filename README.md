@@ -52,6 +52,7 @@ web/
 ├── llms.txt                   Map of the site for agents (llms.txt convention)
 ├── robots.txt                 Crawl policy — agents allowed (see the Cloudflare caveat)
 ├── auth.md                    There is nothing to authenticate — no accounts, no API
+├── .well-known/agent-skills/  index.json + write-zymbol/SKILL.md — the published skill
 ├── LICENSE                    Which license covers what (code AGPL, prose CC BY-SA)
 ├── LICENSE-AGPL-3.0  LICENSE-CC-BY-SA-4.0
 │                              The two license texts
@@ -73,7 +74,8 @@ web/
 │   │   ├── filestore.js       File model — mounted (resolvable) vs open (tabbed)
 │   │   ├── catalog.js         Reads examples/catalog.json; mounts entries and .zyp
 │   │   ├── sidebar.js         Explorer tree: WORKSPACE + EXAMPLES, filter, preview
-│   │   └── highlight.js       Syntax highlighter (esc, highlightCode)
+│   │   ├── highlight.js       Syntax highlighter (esc, highlightCode)
+│   │   └── webmcp.js          navigator.modelContext tools — feature-detected no-op
 │   ├── site/
 │   │   └── main.js            Landing-page logic: language switcher, manual reader, transitions
 │   └── css/
@@ -108,6 +110,7 @@ web/
 │   ├── test_manual.mjs        Smoke-runs every ```zymbol block in manual_en.md
 │   ├── test_markdown.mjs      Page twins, llms.txt, robots.txt and the negotiation Worker
 │   ├── test_licenses.mjs      The AGPL/CC BY-SA split, per file
+│   ├── test_agents.mjs        Skill digest + every SKILL.md block runs + WebMCP tools
 │   ├── serve.mjs              Dev server with Cache-Control: no-store (LAN device testing)
 │   ├── tui-gestures.html      Self-checking: swipe → arrow key on the TUI canvas
 │   └── piqad-font.html        Visual check that the pIqaD web font loads
@@ -290,6 +293,7 @@ node tests/test_runner.mjs --dir examples   # …over the example pool
 node tests/test_manual.mjs            # smoke-runs every code block in manual_en.md
 node tests/test_markdown.mjs          # page twins, llms.txt, robots.txt, negotiation Worker
 node tests/test_licenses.mjs          # SPDX headers on every source, CC BY-SA on every manual
+node tests/test_agents.mjs            # skill digest, SKILL.md blocks execute, WebMCP tools
 ```
 
 Every one of those runs in CI on each push to `main` and on every pull request
@@ -377,6 +381,31 @@ documentation site: no endpoint, no OpenAPI description, no service. `examples/c
 and `data/i18n/*.json` are data files the pages read, not APIs, and declaring them as APIs
 would pass an agent-readiness scanner while misleading every agent that believed it. The test
 asserts the absence.
+
+### Acting, not just reading: the skill and the browser tools
+
+Two surfaces let an agent *do* something rather than only read about it.
+
+**`/.well-known/agent-skills/index.json`** publishes one skill, `write-zymbol`, whose artifact
+is [`SKILL.md`](.well-known/agent-skills/write-zymbol/SKILL.md): the syntax an agent needs, and
+first of all the eight mistakes that *parse* and then behave wrong (1-based indices, `>>` not
+adding a newline, `??` being pattern matching rather than a condition chain, `==` never
+coercing while `>` does). Every `zymbol` block in it is executed by `tests/test_agents.mjs`,
+and the index carries the artifact's SHA-256 — edit the skill without regenerating the digest
+and CI fails, which is the only thing that keeps a published hash meaningful.
+
+**`src/playground/webmcp.js`** registers five `navigator.modelContext` tools — run source,
+read the editor, replace the editor, list examples, open an example — so an agent driving a
+browser can use the playground. Feature-detected end to end: where the API is absent (nearly
+everywhere, it is a Chrome origin trial) it registers nothing and changes nothing. `zymbol_run`
+never touches the editor, and every tool writes to the output panel, so a person watching the
+tab sees what the agent did.
+
+What is **not** published, and will not be: OAuth discovery and protected-resource metadata
+(no authorization server, nothing protected), Web Bot Auth (this site sends no bot requests),
+an A2A agent card (there is no agent), DNS-AID records (nothing to point them at). Those are
+four agent-readiness checks that stay red on purpose. Passing them would mean publishing
+authentication endpoints that do not exist.
 
 Two Cloudflare dashboard settings silently outrank everything in this repository — a managed
 `robots.txt` that disallows the AI crawlers, and edge blocking of AI bots. `worker/README.md`

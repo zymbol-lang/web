@@ -1,0 +1,6 @@
+Disables Jekyll processing on GitHub Pages.
+
+Without this file Pages runs the site through Jekyll, which skips every path
+beginning with a dot or an underscore — so `/.well-known/agent-skills/index.json`
+and the SKILL.md beside it would be published in the repository and 404 on the
+site. `tests/test_agents.mjs` asserts this file exists for exactly that reason.

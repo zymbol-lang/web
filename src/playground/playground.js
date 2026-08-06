@@ -6,6 +6,7 @@ import { makeResolver } from '../zymbol/module-resolver.js';
 import { createStore, dirOf, baseOf, USER } from './filestore.js';
 import { createSidebar } from './sidebar.js';
 import { loadCatalog, mountEntry, collectPackage, resolveDeepLink, deepLinkOf } from './catalog.js';
+import { registerWebMcpTools } from './webmcp.js';
 
 // ─── Editor sync ──────────────────────────────────────────────────────────────
 const editor    = document.getElementById('editor');
@@ -1136,6 +1137,56 @@ sidebar.render();
   showActiveInEditor();
   renderFileTabs();
   sidebar.render();
+
+  // WebMCP — let an agent driving this browser use the playground instead of only reading
+  // it. Registered here because the tools need the catalog, and no-ops entirely where
+  // navigator.modelContext does not exist, which today is nearly everywhere.
+  registerWebMcpTools({
+    // Headless: the agent's program runs in the same engine as ▶ Run, against the same
+    // mounted files, but never overwrites what the person has open.
+    runSource: async (source) => {
+      let out = '';
+      try {
+        await runZymbol(source, inputFn, text => { out += text; }, buildModuleResolver(''), 'agent.zy');
+      } catch (err) {
+        out += `\n${err.message ?? String(err)}`;
+      }
+      appendOutput(out, 'out-text');
+      return out;
+    },
+    getEditor: () => {
+      flushEditor();
+      const active = store.active();
+      return { name: active?.name ?? null, code: active?.code ?? '' };
+    },
+    setEditor: (source) => {
+      editor.value = source;
+      syncHighlight();
+      store.setActiveCode(source);
+    },
+    listExamples: (query) => {
+      const q = query?.toLowerCase();
+      const out = [];
+      for (const group of catalog.groups ?? []) {
+        for (const cat of group.categories ?? []) {
+          for (const entry of cat.entries ?? []) {
+            const path = deepLinkOf(entry);
+            const hay = `${path} ${entry.title ?? ''} ${entry.desc ?? ''}`.toLowerCase();
+            if (!q || hay.includes(q)) out.push({ path, title: entry.title ?? path, desc: entry.desc });
+          }
+        }
+      }
+      return out;
+    },
+    openExample: async (path) => {
+      const hit = resolveDeepLink(catalog, path);
+      if (!hit) return `No example at '${path}'. Call zymbol_list_examples for valid paths.`;
+      await openCatalogEntry(hit.entry, { file: hit.file });
+      const active = store.active();
+      return `Opened ${active?.name ?? path}.`;
+    },
+    note: (text) => appendOutput(text, 'out-meta'),
+  });
 
   // Deep link, so docs, the course, the landing page — or anyone sharing a game — can point
   // at one entry instead of "open the playground and scroll". Two forms:

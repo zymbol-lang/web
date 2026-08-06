@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "write-zymbol",
+      "type": "skill-md",
+      "description": "Write, read and run Zymbol: a keyword-free language where every construct is a symbol (? if, @ loop, <~ return, #1 true) and identifiers may be in any human language. Covers syntax, the traps that parse but behave wrong, modules, errors and the CLI.",
+      "url": "https://zymbol-lang.org/.well-known/agent-skills/write-zymbol/SKILL.md",
+      "digest": "sha256:b4b217a984d4779a72dd579f85aac58f1309d9a0095c44c073168200cf05a499",
+      "license": "CC-BY-SA-4.0",
+      "version": "0.0.8"
+    }
+  ]
+}

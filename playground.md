@@ -76,6 +76,19 @@ groups, in sidebar order:
 | Multilingual | numerals, rosetta (the same program in 105 human languages) |
 | 🧪 Demos | projects, tui, cli, shell |
 
+## Agent tools (WebMCP)
+
+Where the browser supports `navigator.modelContext` (a Chrome origin trial), the
+playground registers five tools so an agent can operate it rather than only read
+about it: `zymbol_run` (execute source, return the real output and the real
+error), `zymbol_get_editor`, `zymbol_set_editor`, `zymbol_list_examples` and
+`zymbol_open_example`. `zymbol_run` never modifies the editor, and every call
+writes to the output panel, so a person watching the tab sees what happened.
+Where the API is absent nothing is registered and nothing changes.
+
+To write Zymbol correctly first, load the published skill:
+<https://zymbol-lang.org/.well-known/agent-skills/write-zymbol/SKILL.md>
+
 ## Source and license
 
 `zymbol.js` is free software under **AGPL-3.0-only**, like the Rust interpreter it
