@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 import { runZymbol, codePointDisplayWidth } from '../zymbol/zymbol.js';
 import { highlightCode } from './highlight.js';
 import { readZyp } from '../zymbol/zyp.js';

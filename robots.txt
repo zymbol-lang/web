@@ -1,0 +1,21 @@
+# zymbol-lang.org
+#
+# Agents are welcome here. Every page is also available as Markdown, two ways:
+#   1. content negotiation — send  Accept: text/markdown
+#   2. static twins — swap the extension:  /install.html → /install.md
+# The map of the site for agents is /llms.txt.
+#
+# Nothing here is behind a login and nothing is a secret: this is the site of an
+# open-source (AGPL-3.0) programming language, and being read, indexed, cited and
+# learned from is the point.
+#
+# NOTE: Cloudflare can inject its own managed robots.txt in front of this file. If
+# what you fetch says "BEGIN Cloudflare Managed content", the managed rules are
+# live and this file is not — turn the managed block off in the Cloudflare
+# dashboard (AI Crawl Control) so the origin's policy is the one that answers.
+
+User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=yes, use=full
+Allow: /
+
+Sitemap: https://zymbol-lang.org/sitemap.xml

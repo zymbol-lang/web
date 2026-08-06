@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 /**
  * sidebar.js — the VSCode-style explorer that replaced the bottom card grid.
  *

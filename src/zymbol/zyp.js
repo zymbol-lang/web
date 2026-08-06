@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 /**
  * zyp.js — reads a Zymbol Package (.zyp) in the browser.
  *

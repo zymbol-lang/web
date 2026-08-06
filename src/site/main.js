@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 (async function() {
   // ─── Load data ───
   const [langData, i18nData] = await Promise.all([

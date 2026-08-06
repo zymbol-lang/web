@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-only
 // Parity test runner: compares zymbol CLI vs web interpreter (zymbol.js)
 // Usage: node tests/test_runner.mjs [--dir path] [--filter pattern] [--show-pass]
 

@@ -1,0 +1,41 @@
+# Zymbol
+
+> Zymbol is a keyword-free symbolic programming language. Every construct is a
+> symbol — `?` is if, `@` is loop, `<~` is return, `#1` is true — so identifiers can
+> be written in any human language and the program reads the same everywhere. It
+> ships as a Rust interpreter (tree-walker plus a register VM), an LSP server and a
+> VS Code extension. Current release: v0.0.8, public alpha.
+> Code is AGPL-3.0-only; manuals, examples and documentation are CC BY-SA 4.0.
+
+Every page of this site is also served as Markdown: send `Accept: text/markdown`,
+or swap the extension — `/install.html` → `/install.md`.
+
+## Site
+
+- [Home](https://zymbol-lang.org/index.md): what the language is, the operator table, FizzBuzz in any human language.
+- [Install](https://zymbol-lang.org/install.md): binaries for Linux/Windows/macOS with SHA256, VS Code extension, build from source.
+- [Playground](https://zymbol-lang.org/playground.md): the browser engine's exact capabilities and limits, deep-link format, example groups.
+- [Releases](https://zymbol-lang.org/changelog.md): full changelog, v0.0.1 through v0.0.8.
+- [pIqaD reference](https://zymbol-lang.org/piqad-reference.md): Klingon script, CSUR block U+F8D0–U+F8FF.
+
+## Language manual
+
+The compact manual is published as Markdown in 110 languages at
+`/data/manuals/manual_<code>.md`. It was last revised for v0.0.5, so the
+interpreter repository is authoritative where the two disagree.
+
+- [Manual (English)](https://zymbol-lang.org/data/manuals/manual_en.md): variables, control flow, collections, functions, modules, errors.
+- [Manual (Spanish)](https://zymbol-lang.org/data/manuals/manual_es.md): the same manual in Spanish.
+
+## Source
+
+- [Interpreter](https://github.com/zymbol-lang/interpreter): Rust workspace, 19 crates. `GUIDE.md` is the authoritative language reference, `REFERENCE.md` the complete symbol table and limitations, `ARCHITECTURE.md` the crate catalog.
+- [VS Code extension](https://github.com/zymbol-lang/vscode): TypeScript LSP client.
+- [This site](https://github.com/zymbol-lang/web): static HTML/CSS/JS, no build step; `src/zymbol/zymbol.js` is a hand-maintained JavaScript mirror of the tree-walker.
+
+## Optional
+
+- [auth.md](https://zymbol-lang.org/auth.md): there is nothing to authenticate — no accounts, no keys, no API. Read this instead of probing for a sign-up flow.
+- [Sitemap](https://zymbol-lang.org/sitemap.xml): the HTML pages.
+- [Sharing guide](https://zymbol-lang.org/docs/SHARING.md): how playground links are built.
+- [News](https://x.com/ZymbolLang): release announcements.

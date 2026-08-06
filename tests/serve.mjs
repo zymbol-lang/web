@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-only
 // Static dev server for this directory, with caching turned off.
 //
 //   node tests/serve.mjs [port]        # default 8080, binds 0.0.0.0 for phone/tablet testing

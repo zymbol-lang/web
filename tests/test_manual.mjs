@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 // Manual smoke-test runner for web/zymbol.js
 // Usage: node tests/test_manual.mjs
 

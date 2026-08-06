@@ -1,0 +1,14 @@
+# Cloudflare Worker that serves the Markdown twin of a page when the client asks
+# for one. Deploy from this directory: `npx wrangler deploy`. See README.md here.
+
+name = "zymbol-markdown-negotiation"
+main = "markdown-negotiation.js"
+compatibility_date = "2026-08-06"
+workers_dev = false
+
+# The zone is proxied through Cloudflare (orange cloud) with GitHub Pages as the
+# origin, so a route on the zone is all this needs — no DNS or Pages change.
+routes = [
+  { pattern = "zymbol-lang.org/*",     zone_name = "zymbol-lang.org" },
+  { pattern = "www.zymbol-lang.org/*", zone_name = "zymbol-lang.org" },
+]

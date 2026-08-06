@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-only
 // Regression tests for the browser-side .zyp path: the ZIP reader (zyp.js) and the
 // path-normalizing module resolver (module-resolver.js).
 //

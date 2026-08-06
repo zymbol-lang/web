@@ -12,7 +12,8 @@
 <p align="center">
   <img alt="version v0.0.8" src="https://img.shields.io/badge/version-v0.0.8-informational?style=flat-square"/>
   <img alt="build: none by design" src="https://img.shields.io/badge/build-none%20by%20design-success?style=flat-square"/>
-  <img alt="license CC-BY-SA-4.0" src="https://img.shields.io/badge/license-CC--BY--SA--4.0-blue?style=flat-square"/>
+  <img alt="code: AGPL-3.0-only" src="https://img.shields.io/badge/code-AGPL--3.0--only-blue?style=flat-square"/>
+  <img alt="docs: CC-BY-SA-4.0" src="https://img.shields.io/badge/docs-CC--BY--SA--4.0-blue?style=flat-square"/>
   <a href="https://zymbol-lang.org/playground.html"><img alt="Open the playground" src="https://img.shields.io/badge/▶-playground-7c3aed?style=flat-square"/></a>
 </p>
 
@@ -46,7 +47,20 @@ web/
 ├── install.html               Download / install instructions per platform
 ├── changelog.html             Release history
 ├── piqad-reference.html       Klingon pIqaD script reference
+├── index|playground|install|changelog|piqad-reference.md
+│                              Markdown twin of each page — what agents get
+├── llms.txt                   Map of the site for agents (llms.txt convention)
+├── robots.txt                 Crawl policy — agents allowed (see the Cloudflare caveat)
+├── auth.md                    There is nothing to authenticate — no accounts, no API
+├── LICENSE                    Which license covers what (code AGPL, prose CC BY-SA)
+├── LICENSE-AGPL-3.0  LICENSE-CC-BY-SA-4.0
+│                              The two license texts
 ├── CNAME  favicon.ico         GitHub Pages domain + root favicon
+│
+├── worker/                    Cloudflare Worker — Accept: text/markdown → the .md twin
+│   ├── markdown-negotiation.js  Deployed to the edge, not served as part of the site
+│   ├── wrangler.toml          Routes: zymbol-lang.org/* and www.
+│   └── README.md              Deploy steps + the two dashboard settings that override this repo
 │
 ├── src/
 │   ├── zymbol/                THE ENGINE — no DOM, no site dependencies
@@ -91,6 +105,8 @@ web/
 │   ├── test_filestore.mjs     The mounted-vs-open file model and its persistence
 │   ├── test_zyp.mjs           .zyp reader + module resolver (builds its own fixtures)
 │   ├── test_manual.mjs        Smoke-runs every ```zymbol block in manual_en.md
+│   ├── test_markdown.mjs      Page twins, llms.txt, robots.txt and the negotiation Worker
+│   ├── test_licenses.mjs      The AGPL/CC BY-SA split, per file
 │   ├── serve.mjs              Dev server with Cache-Control: no-store (LAN device testing)
 │   ├── tui-gestures.html      Self-checking: swipe → arrow key on the TUI canvas
 │   └── piqad-font.html        Visual check that the pIqaD web font loads
@@ -271,6 +287,8 @@ node tests/test_catalog.mjs [--check] # catalog.json ↔ examples/ (--check also
 node tests/test_runner.mjs            # parity: zymbol CLI vs the JS engine
 node tests/test_runner.mjs --dir examples   # …over the example pool
 node tests/test_manual.mjs            # smoke-runs every code block in manual_en.md
+node tests/test_markdown.mjs          # page twins, llms.txt, robots.txt, negotiation Worker
+node tests/test_licenses.mjs          # SPDX headers on every source, CC BY-SA on every manual
 ```
 
 Two tests need a browser and therefore live as pages, opened over `node tests/serve.mjs`:
@@ -310,11 +328,64 @@ that have not been ported yet:
 
 See [docs/GAPS.md](docs/GAPS.md) for the full parity report.
 
+## Markdown for agents
+
+Every page is published twice: as HTML for people, and as a Markdown twin for agents.
+`/install.html` and `/install.md` are the same page; `/llms.txt` is the map an agent starts
+from.
+
+Two ways to get the Markdown, and the second one needs no infrastructure at all:
+
+```bash
+curl -s https://zymbol-lang.org/install.html -H 'Accept: text/markdown'   # negotiated
+curl -s https://zymbol-lang.org/install.md                               # the file itself
+```
+
+Negotiation is a Cloudflare Worker (`worker/`), because GitHub Pages serves one body per path
+and cannot vary on a request header. It is a thin router: it maps `/x.html` → `/x.md`, serves
+the twin when — and only when — the client asked for Markdown ahead of HTML, and otherwise
+returns the HTML untouched with `Vary: Accept` and a `Link: …rel="alternate"` header. A page
+with no twin is served as HTML; nothing 404s that would otherwise have worked.
+
+The twins are **written, not generated**. A runtime HTML→Markdown conversion would produce a
+scrape of the playground's DOM, which describes an application in the least useful way
+possible, and nobody would notice the day it broke — the same failure mode as the old inline
+example pool. What keeps written twins honest is `tests/test_markdown.mjs`: an HTML page with
+no twin fails, and so does a twin that has fallen behind its page on any version string,
+release URL or SHA256 digest. **Editing a page means editing its twin in the same commit.**
+
+### Discovery: `Link` headers, and the two files that are deliberately absent
+
+The Worker also attaches RFC 8288 `Link` headers to every page — `alternate` (the twin),
+`describedby` (`/llms.txt`), `license` (both texts) — so one `HEAD` request tells an agent
+where everything machine-readable is. Registered relation types only, targets asserted to
+exist by `tests/test_markdown.mjs`, and ASCII only: header values are ByteStrings, so an em
+dash in a `title=` throws.
+
+`/auth.md` states, in the standard place, that there is nothing to authenticate: no accounts,
+no keys, no registration, everything anonymous. That is worth publishing precisely because it
+is a negative — an agent learns it in one request instead of probing for a sign-up flow.
+
+There is **no `/.well-known/api-catalog`** and no `rel="api-catalog"`. This is a static
+documentation site: no endpoint, no OpenAPI description, no service. `examples/catalog.json`
+and `data/i18n/*.json` are data files the pages read, not APIs, and declaring them as APIs
+would pass an agent-readiness scanner while misleading every agent that believed it. The test
+asserts the absence.
+
+Two Cloudflare dashboard settings silently outrank everything in this repository — a managed
+`robots.txt` that disallows the AI crawlers, and edge blocking of AI bots. `worker/README.md`
+documents both, and how to tell from a `curl` which `robots.txt` is actually live.
+
 ## Deployment
 
 GitHub Pages, served from the repo root of `main` at [zymbol-lang.org](https://zymbol-lang.org).
 Every push to `main` deploys automatically — there is no build job, the files are published
 exactly as committed.
+
+The Worker is the one thing that does not deploy with a push: it lives at the Cloudflare edge
+and ships with `npx wrangler deploy` from `worker/`. The site is fully functional without it —
+the `.md` files and `llms.txt` are ordinary static files — so a Worker that is down costs
+negotiation, not content.
 
 ## Authorship & AI Collaboration
 
@@ -329,5 +400,20 @@ the design and quality control remain entirely the author's.
 
 ## License
 
-Website content and source © Zymbol-Lang contributors, licensed under
-[Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](LICENSE).
+© 2024-2026 Zymbol-Lang contributors. Two licenses, split the way the interpreter repository
+splits them — see [LICENSE](LICENSE) for the full breakdown:
+
+| What | License |
+| ---- | ------- |
+| Source code — `src/`, `worker/`, `tests/`, the pages' inline scripts | [AGPL-3.0-only](LICENSE-AGPL-3.0) |
+| Manuals, examples, documentation, page prose | [CC BY-SA 4.0](LICENSE-CC-BY-SA-4.0) |
+
+`src/zymbol/zymbol.js` is a hand-written port of the Rust tree-walker, which is AGPL-3.0-only:
+it is a derivative work and carries the same license — CC BY-SA was never ours to grant over
+it. Every `.js`/`.mjs` file states its own license in an SPDX line, and every
+`data/manuals/manual_*.md` carries a CC BY-SA footer, so a file that travels alone still says
+what it is.
+
+The playground is AGPL section 13 territory — code executed by users over a network. Its `?`
+panel links to the complete corresponding source at
+[github.com/zymbol-lang/web](https://github.com/zymbol-lang/web).

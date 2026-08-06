@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-only
 // Integrity tests for the example pool: examples/catalog.json against examples/ on disk.
 //
 //   node tests/test_catalog.mjs [--check]      # --check also runs `zymbol check` on every .zy

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-only
 // Regression tests for the playground's file model (src/playground/filestore.js).
 //
 //   node tests/test_filestore.mjs

@@ -845,3 +845,9 @@ tlhopha(nomoro) {
 ---
 
 _Zymbol-Lang — E ya Matshwao. Ya Lefatshe Lotlhe. E sa Fetogang._
+
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
+---
+
+**License:** this manual is licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — © 2024-2026 Zymbol-Lang Team. Full text: `LICENSE-CC-BY-SA-4.0` in <https://github.com/zymbol-lang/web>. The interpreter and the browser engine (`zymbol.js`) are separate works, licensed AGPL-3.0-only.

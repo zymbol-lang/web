@@ -1,3 +1,26 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+/*
+ * Copyright (C) 2024-2026 Zymbol-Lang Team
+ *
+ * This file is a hand-written JavaScript port of the Rust tree-walker in
+ * <https://github.com/zymbol-lang/interpreter>, and a derivative work of it.
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Affero General Public License, version 3, as published by
+ * the Free Software Foundation.
+ *
+ * It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ * PURPOSE. See the GNU Affero General Public License for more details:
+ * <https://www.gnu.org/licenses/agpl-3.0.html>, or LICENSE-AGPL-3.0 in this
+ * repository.
+ *
+ * This engine runs in the browser at zymbol-lang.org/playground.html. Section 13
+ * applies: the complete corresponding source of what runs there is
+ * <https://github.com/zymbol-lang/web>, and the playground says so in its own ?
+ * panel.
+ */
+
 /**
  * zymbol.js — Browser interpreter for the Zymbol playground
  *

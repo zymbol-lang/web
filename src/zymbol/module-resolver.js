@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
 /**
  * Path-normalizing module resolver, factored out of playground.js so it can be exercised
  * without a DOM (playground.js touches `document` at import time). See
