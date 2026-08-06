@@ -56,6 +56,7 @@ web/
 ├── LICENSE-AGPL-3.0  LICENSE-CC-BY-SA-4.0
 │                              The two license texts
 ├── CNAME  favicon.ico         GitHub Pages domain + root favicon
+├── .github/workflows/ci.yml   Runs the test suite on every push and PR
 │
 ├── worker/                    Cloudflare Worker — Accept: text/markdown → the .md twin
 │   ├── markdown-negotiation.js  Deployed to the edge, not served as part of the site
@@ -290,6 +291,11 @@ node tests/test_manual.mjs            # smoke-runs every code block in manual_en
 node tests/test_markdown.mjs          # page twins, llms.txt, robots.txt, negotiation Worker
 node tests/test_licenses.mjs          # SPDX headers on every source, CC BY-SA on every manual
 ```
+
+Every one of those runs in CI on each push to `main` and on every pull request
+(`.github/workflows/ci.yml`) — `main` is what GitHub Pages serves, so an invariant that
+only ever ran on a laptop was an invariant that published its own breakage.
+`test_runner.mjs` stays out: it needs the `zymbol` CLI, so it is a local pre-release check.
 
 Two tests need a browser and therefore live as pages, opened over `node tests/serve.mjs`:
 `tests/tui-gestures.html` (swipe → arrow key on the TUI canvas; self-checking, it prints its

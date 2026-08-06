@@ -1,0 +1,52 @@
+# The site has no build step, so nothing here compiles anything. What it does is
+# run the invariants that are invisible in a browser and therefore rot silently:
+# a page whose Markdown twin fell behind it, a source file with no licence, a
+# catalog entry pointing at a file someone renamed.
+#
+# `main` is what GitHub Pages serves. Without this, a push publishes whatever it
+# contains, correct or not.
+#
+# `tests/test_runner.mjs` is not here: it diffs the JS engine against the `zymbol`
+# CLI, which would mean installing the Rust interpreter on every run. It stays a
+# local, pre-release check.
+#
+# Plain Node, no npm install — web/ has no package.json (see README, "No build step").
+
+name: CI
+
+on:
+  push:
+    branches: [main, 'v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: .zyp reader and module resolver
+        run: node tests/test_zyp.mjs
+
+      - name: Playground file model (mounted vs open)
+        run: node tests/test_filestore.mjs
+
+      - name: Example pool integrity (catalog.json ↔ examples/)
+        run: node tests/test_catalog.mjs
+
+      - name: Manual code blocks
+        run: node tests/test_manual.mjs
+
+      - name: Markdown for agents (twins, llms.txt, robots.txt, Worker)
+        run: node tests/test_markdown.mjs
+
+      - name: Licences (AGPL on sources, CC BY-SA on manuals)
+        run: node tests/test_licenses.mjs
