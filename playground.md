@@ -60,6 +60,10 @@ Loading a `.zyp` mounts the archive's whole source tree — visible in the sideb
 and to the module resolver — but opens a single tab, the package's default
 `[[script]]`; the manifest's other scripts appear in the picker next to ▶ Run.
 
+▶ Run always executes the tab you are looking at. The picker is a shortcut that
+opens a script's tab, so switching tabs switches what runs — a package can never
+keep the Run button pointed at a file you closed or moved away from.
+
 ## Examples
 
 Every example is a real file under `examples/`, indexed by `examples/catalog.json`

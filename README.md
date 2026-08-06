@@ -248,7 +248,10 @@ its file header comment tracks which Rust version it mirrors.
 The playground loads a Zymbol Package directly — from `examples/games/` through the sidebar
 or from disk through ↑ Upload. Its source tree is **mounted**, not opened: every file appears in
 the explorer and is visible to the module resolver, one tab opens (the default `[[script]]`),
-and the manifest's scripts populate the picker next to ▶ Run. Mounted names are namespaced by
+and the manifest's scripts populate the picker next to ▶ Run. The picker *opens* a script's
+tab — ▶ Run always executes the focused tab, so what the picker shows and what runs cannot
+disagree; it used to hold a separate run target that survived tab switches, and a package
+mounted early in a session kept hijacking Run. Mounted names are namespaced by
 the archive (`games/classic/go/核/盤.zy`), so two packages that both ship a `texto.zy` can be
 mounted at the same time without overwriting each other.
 

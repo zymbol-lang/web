@@ -29,26 +29,42 @@ editor.addEventListener('scroll', syncScroll);
 // `store` keeps two lists: mounted files (visible to the module resolver and the sidebar)
 // and open tabs (a subset). See filestore.js — the split is why mounting a 22-file package
 // no longer opens 22 tabs.
-const store = createStore({ onChange: () => { renderFileTabs(); sidebar?.render(); } });
+const store = createStore({
+  onChange: () => { renderFileTabs(); refreshRunUI(); sidebar?.render(); },
+});
 
-// The run target: which mounted file ▶ Run executes. `null` means "the focused tab", which
-// is also the escape hatch after a package has been mounted — without it, mounting a package
-// permanently hijacked the Run button.
-let runTarget = null;
+// ▶ Run always executes the focused tab — there is no second, hidden notion of "what runs".
+//
+// It used to execute a separate `runTarget`, the [[script]] the picker pointed at, which
+// survived every tab switch: after loading GO.zyp, opening another file and pressing ▶ Run
+// still launched GO, and the only way out was an "— active tab —" option in the picker that
+// nobody found because nothing on screen said the picker outranked the editor. The picker is
+// now a shortcut *to a script's tab*, so what it names and what runs can never disagree.
 const scriptSelectEl = document.getElementById('zyp-script-select');
 const argsInputEl    = document.getElementById('args-input');
+const runBtnEl       = document.getElementById('run-btn');
 let sidebar = null;
 
-/** Rebuilds the [[script]] picker from the mounts that have scripts (packages). */
+/** Rebuilds the [[script]] picker and points it at the tab ▶ Run will execute. */
 function refreshScriptSelect() {
   const withScripts = store.mountList().filter(m => m.scripts?.length);
   if (!withScripts.length) {
     scriptSelectEl.style.display = 'none';
     scriptSelectEl.innerHTML = '';
-    if (runTarget && !store.byName(runTarget)) runTarget = null;
     return;
   }
+  const activeName = store.active()?.name ?? null;
+  const isScript   = withScripts.some(m => m.scripts.some(s => s.path === activeName));
   scriptSelectEl.innerHTML = '';
+  if (!isScript) {
+    // The focused tab is not a [[script]] — a module of the package, a loose example, a file
+    // of the user's own. It still is what runs, so it heads the list: the picker must never
+    // name a program other than the one ▶ Run is about to execute.
+    const cur = document.createElement('option');
+    cur.value = '';
+    cur.textContent = activeName ? baseOf(activeName) : '(no file)';
+    scriptSelectEl.appendChild(cur);
+  }
   for (const m of withScripts) {
     const group = document.createElement('optgroup');
     group.label = m.title;
@@ -60,17 +76,29 @@ function refreshScriptSelect() {
     }
     scriptSelectEl.appendChild(group);
   }
-  const escape = document.createElement('option');
-  escape.value = '';
-  escape.textContent = '— active tab —';
-  scriptSelectEl.appendChild(escape);
-  scriptSelectEl.value = runTarget && store.byName(runTarget) ? runTarget : '';
+  scriptSelectEl.value = isScript ? activeName : '';
   scriptSelectEl.style.display = '';
 }
 
+/** Names the file on the Run button, so "what will this run?" is answered before the click. */
+function refreshRunButton() {
+  const name = store.active()?.name;
+  runBtnEl.title = name
+    ? `Run ${baseOf(name)} — the focused tab (Ctrl+Enter)`
+    : 'Run (Ctrl+Enter)';
+}
+
+function refreshRunUI() {
+  refreshScriptSelect();
+  refreshRunButton();
+}
+
+// Picking a script focuses its tab; ▶ Run then does what it always does. `refreshRunUI` runs
+// via the store's onChange, so the picker re-syncs itself from the new active file.
 scriptSelectEl.addEventListener('change', () => {
-  runTarget = scriptSelectEl.value || null;
-  sidebar?.render();
+  const f = scriptSelectEl.value ? store.byName(scriptSelectEl.value) : null;
+  if (f) openFile(f.id);
+  else refreshRunUI();
 });
 
 // ─── Mounting examples and packages ──────────────────────────────────────────
@@ -93,8 +121,9 @@ function askOverwrite(conflicts) {
  * Mounts a bundle and opens exactly one file from it.
  * @param {{id,title,root,files:Map,entryName,scripts,args,needs}} bundle
  * @param {{isBundle?:boolean, kind?:string, open?:string}} opts `open` is a mounted name to
- *   show instead of the bundle's entry file (a deep link into a package). It changes the tab
- *   only — ▶ Run stays on the default `[[script]]`, since a module is not a runnable entry.
+ *   show instead of the bundle's entry file (a deep link into a package) — and since ▶ Run
+ *   follows the tab, that file is then what runs; the package's `[[script]]`s stay one click
+ *   away in the picker.
  */
 function mountAndOpen(bundle, { isBundle = false, kind = 'dir', open = null } = {}) {
   flushEditor();
@@ -105,12 +134,9 @@ function mountAndOpen(bundle, { isBundle = false, kind = 'dir', open = null } = 
   store.mountBundle({ ...bundle, isBundle, kind }, { overwriteDirty });
   if (bundle.args !== undefined) argsInputEl.value = bundle.args;
 
-  runTarget = bundle.scripts?.length ? bundle.entryName : null;
-  refreshScriptSelect();
-
   const file = (open && store.byName(open)) || store.byName(bundle.entryName);
   if (file) openFile(file.id);
-  else { renderFileTabs(); sidebar?.render(); }
+  else { renderFileTabs(); refreshRunUI(); sidebar?.render(); }
 
   if (conflicts.length && !overwriteDirty) {
     appendOutput(
@@ -902,35 +928,25 @@ async function runCode() {
   expandOutputPanel();
   clearOutput();
 
-  // The model is only written back on tab switches and on `input`. Running a script that
-  // ISN'T the focused tab (the common case — the script picker can point anywhere) would
-  // otherwise execute the last-saved copy while the editor shows edits that were never
-  // captured. This flush makes "press Run" always see what is on screen.
+  // The model is only written back on tab switches and on `input`, so flush first: pressing
+  // Run must always execute what is on screen, not the last copy the model happened to see.
   flushEditor();
 
-  let src, resolver, displayPath, execOpts;
-  const target = runTarget ? store.byName(runTarget) : null;
-  if (target) {
-    src = target.code;
-    // Imports resolve relative to the file containing them, not to the project root —
-    // same rule as the CLI (ModulePath::resolve_from).
-    resolver = buildModuleResolver(dirOf(target.name));
-    displayPath = target.name;
-    // A package is typically a real multi-file program (a board being drawn, a small
-    // tournament), not the single-statement snippets the default limits were sized for.
-    // Raised only for a package/project run; a plain file keeps zymbol.js's defaults.
-    execOpts = { maxSteps: 2_000_000, maxBytes: 2_000_000 };
-  } else {
-    const active = store.active();
-    src = (active?.code ?? '').trim();
-    if (!src) { appendOutput('(empty program)', 'out-meta'); return; }
-    // Resolve against the active file's own directory, not the root: with a package
-    // mounted, the focused tab can itself be a nested module (e.g. 表示/描画.zy) whose
-    // `../核/盤` imports only resolve correctly relative to 表示/.
-    resolver = buildModuleResolver(dirOf(active?.name ?? ''));
-    displayPath = active?.name ?? null;
-    execOpts = {};
-  }
+  // What runs is the focused tab, always. See the picker's comment above.
+  const active = store.active();
+  const src = (active?.code ?? '').trim();
+  if (!src) { appendOutput('(empty program)', 'out-meta'); return; }
+  // Resolve against the active file's own directory, not the root: imports resolve relative
+  // to the file containing them (the CLI's rule, ModulePath::resolve_from), and with a
+  // package mounted the focused tab can itself be a nested module (e.g. 表示/描画.zy) whose
+  // `../核/盤` only resolves correctly relative to 表示/.
+  const resolver    = buildModuleResolver(dirOf(active?.name ?? ''));
+  const displayPath = active?.name ?? null;
+  // A package or multi-file project is typically a real program (a board being drawn, a small
+  // tournament), not the single-statement snippets the default limits were sized for. A loose
+  // file keeps zymbol.js's defaults.
+  const activeMount = active ? store.mountOf(active) : null;
+  const execOpts    = activeMount?.bundle ? { maxSteps: 2_000_000, maxBytes: 2_000_000 } : {};
 
   const cliArgs = parseCliArgs(argsInputEl.value);
   const tui = new BrowserTUI(
@@ -1042,7 +1058,7 @@ sidebar = createSidebar({
     openEntry: openCatalogEntry,
     openFile,
     newFile: newUserFile,
-    isRunTarget: path => runTarget === path,
+    isRunTarget: path => store.active()?.name === path,
     renameFile(id) {
       // The tab strip owns inline renaming; from the tree, focus the tab and start there.
       openFile(id);
@@ -1052,8 +1068,7 @@ sidebar = createSidebar({
       if (tab && name && f) startRename(tab, name, f);
     },
     runScript(mount, script) {
-      runTarget = script.path;
-      refreshScriptSelect();
+      // Focus the script's tab first: ▶ Run and this button must launch the same file.
       const f = store.byName(script.path);
       if (f) openFile(f.id);
       sidebar.closeDrawer();
@@ -1064,7 +1079,6 @@ sidebar = createSidebar({
       if (f?.dirty && !window.confirm(`'${f.name}' has unsaved edits. Unmount anyway?`)) return;
       flushEditor();
       store.unmount(id);
-      refreshScriptSelect();
       showActiveInEditor();
     },
     unmountBundle(originId) {
@@ -1075,7 +1089,6 @@ sidebar = createSidebar({
             `Unmount anyway?`)) return;
       flushEditor();
       store.unmountBundle(originId);
-      refreshScriptSelect();
       showActiveInEditor();
     },
   },
@@ -1104,6 +1117,7 @@ applyTheme(document.documentElement.classList.contains('light'));
 const restore = store.load();
 showActiveInEditor();
 renderFileTabs();
+refreshRunUI();
 sidebar.render();
 
 (async function boot() {
@@ -1133,7 +1147,7 @@ sidebar.render();
   }
   const active = restore.activeName ? store.byName(restore.activeName) : null;
   if (active) store.open(active.id);
-  refreshScriptSelect();
+  refreshRunUI();
   showActiveInEditor();
   renderFileTabs();
   sidebar.render();
