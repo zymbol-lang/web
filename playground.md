@@ -35,10 +35,39 @@ interpreter](install.md).
 ## Fully supported
 
 - `std/math`, `std/random`, `std/json`, `std/term`.
-- Static checking before anything executes: a call to an undefined function, or an
-  assignment to a constant, stops the run with a diagnostic instead of failing
-  halfway through. Style warnings such as unused variables are not shown here —
-  `zymbol check` reports them.
+- Static checking, on its own button and while you type. **✓ Check** lists problems
+  in a strip under the editor and tints the lines they point at, without running
+  anything; the same check runs about 600 ms after you stop typing. The strip
+  survives ▶ Run, which clears the output panel.
+  - Errors always show. Warnings — unused variables, ambiguous lifetimes — are
+    behind a **Show warnings** switch that starts off and is remembered. That is a
+    measurement, not a preference: `zymbol check` raises an ambiguous-lifetime
+    warning for the iterator of any top-level counted loop (deliberately, see the
+    interpreter's CHANGELOG, GAP-003), and that one rule fires on 122 of the 216
+    programs in `examples/`.
+  - This is the browser checker, not the Rust one. On that same corpus the two
+    agree exactly — same severity, same line — on **211 of 216 files**. The five
+    that differ are unused-variable false positives this checker raises and the
+    real tool does not. `tests/test_check.mjs` holds that number against
+    regression.
+- Hover help over the editor. Resting on a symbol gives its concept, a one-line
+  summary and a worked example that is verified to compile; resting on a name gives
+  what the program on screen defined it as — `PI := 3.14159` reads as
+  *constant · Float · 3.14159*.
+  - A type and a value are only shown when the definition's right-hand side is a
+    literal. A name bound to a call is reported as a constant or a variable and
+    nothing more, rather than guessing.
+  - Names are resolved without column information — the browser lexer records lines
+    only — so the card shows the nearest definition at or above the hovered line.
+    Under deliberate shadowing that can be the wrong one.
+  - Type names (`Int`, `Float`, `Text`) are the engine's own in every language, so
+    that a card agrees with what `#?` prints.
+- An interface language picker in the header, sharing its choice with the home page
+  (both read `zy-lang`). Two languages — English and Spanish — are fully
+  translated. In any other, the interface stays English and every symbol card
+  carries that language's own word for the concept, drawn from the same 16 terms
+  the home page translates into 111 languages: `?` is labelled もし in Japanese,
+  *si* in Spanish, *hoặc* in Vietnamese.
 - CLI arguments `>< args` — use the `args…` field next to ▶ Run.
 - TUI mode (`>>|`) on a canvas renderer. On a touch device: swipe for the arrow
   keys, tap for Enter, ⌨ Keys for any other single key — `p` to pass in GO, `q` to
@@ -104,6 +133,7 @@ executed over a network. The manuals and examples are CC BY-SA 4.0.
 ## Keyboard
 
 - **Ctrl+Enter** or ▶ Run — execute the open file.
+- **Ctrl+Shift+Enter** or ✓ Check — look for problems without running.
 - ✕ Stop — interrupt a TUI program.
 
 Related: [/index.md](index.md) · [/install.md](install.md) · [/llms.txt](llms.txt)

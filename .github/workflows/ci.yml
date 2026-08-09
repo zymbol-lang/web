@@ -6,9 +6,10 @@
 # `main` is what GitHub Pages serves. Without this, a push publishes whatever it
 # contains, correct or not.
 #
-# `tests/test_runner.mjs` is not here: it diffs the JS engine against the `zymbol`
-# CLI, which would mean installing the Rust interpreter on every run. It stays a
-# local, pre-release check.
+# `tests/test_runner.mjs` and `tests/test_check.mjs` are not here: both diff the JS
+# engine against the `zymbol` CLI, which would mean installing the Rust interpreter
+# on every run. They stay local, pre-release checks. (`test_check.mjs` skips itself
+# when the binary is absent, so adding it would only ever report a skip.)
 #
 # Plain Node, no npm install — web/ has no package.json (see README, "No build step").
 
@@ -53,3 +54,15 @@ jobs:
 
       - name: Agent surfaces (skill digest, SKILL.md blocks, WebMCP tools)
         run: node tests/test_agents.mjs
+
+      - name: Symbol dictionary (cards ↔ highlighter ↔ REFERENCE §21)
+        run: node tests/test_symbols.mjs
+
+      - name: Translations (completeness gate, derived langs.json, pre-paint tables)
+        run: node tests/test_i18n_playground.mjs
+
+      # Needs a browser, because the hover maps pointer positions to source lines by
+      # arithmetic over the laid-out line height. GitHub's ubuntu runners ship Chrome;
+      # the test says so and passes if one is ever missing.
+      - name: Reading help in a real browser (hover cards, problems strip)
+        run: node tests/test_playground_dom.mjs

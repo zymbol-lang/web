@@ -680,6 +680,7 @@ export class Parser {
   }
 
   parseImport() {
+    const line = this.peek().line;
     this.adv(); // consume <#
     // Parse path: ./name, ../name, ./dir/name, or string literal
     let path = '';
@@ -702,7 +703,7 @@ export class Parser {
     }
     this.eat('FAT_ARROW'); // consume =>
     const alias = this.eat('IDENT').value;
-    return { type: 'Import', path, alias };
+    return { type: 'Import', path, alias, line };
   }
 
   parseStmt() {
@@ -1044,8 +1045,9 @@ export class Parser {
   }
 
   parseLoop() {
+    const line = this.peek().line;
     if (this.check('LBRACE')) {
-      return { type: 'Loop', kind: 'infinite', label: null, body: this.parseBlock() };
+      return { type: 'Loop', kind: 'infinite', label: null, line, body: this.parseBlock() };
     }
     // @ IDENT COLON  → unlabeled range/foreach (@ var:start..end)
     if (this.check('IDENT') && this.peek(1).type === 'COLON') {
@@ -1056,20 +1058,21 @@ export class Parser {
         const endExpr = this.parseAdditive();
         let stepExpr = null;
         if (this.match('COLON')) stepExpr = this.parseAdditive();
-        return { type: 'Loop', kind: 'range', label: null, var: varName,
+        return { type: 'Loop', kind: 'range', label: null, var: varName, line,
                  from: startExpr, to: endExpr, step: stepExpr, body: this.parseBlock() };
       }
-      return { type: 'Loop', kind: 'foreach', label: null, var: varName,
+      return { type: 'Loop', kind: 'foreach', label: null, var: varName, line,
                iterable: startExpr, body: this.parseBlock() };
     }
     const cond = this.parseExpr();
-    return { type: 'Loop', kind: 'while', label: null, cond, body: this.parseBlock() };
+    return { type: 'Loop', kind: 'while', label: null, cond, line, body: this.parseBlock() };
   }
 
   parseLabeledLoop() {
+    const line = this.peek().line;
     const label = this.adv().value; // consume AT_LABEL token
     if (this.check('LBRACE')) {
-      return { type: 'Loop', kind: 'infinite', label, body: this.parseBlock() };
+      return { type: 'Loop', kind: 'infinite', label, line, body: this.parseBlock() };
     }
     // @label var:start..end
     if (this.check('IDENT') && this.peek(1).type === 'COLON') {
@@ -1080,15 +1083,15 @@ export class Parser {
         const endExpr = this.parseAdditive();
         let stepExpr = null;
         if (this.match('COLON')) stepExpr = this.parseAdditive();
-        return { type: 'Loop', kind: 'range', label, var: varName,
+        return { type: 'Loop', kind: 'range', label, var: varName, line,
                  from: startExpr, to: endExpr, step: stepExpr, body: this.parseBlock() };
       }
-      return { type: 'Loop', kind: 'foreach', label, var: varName,
+      return { type: 'Loop', kind: 'foreach', label, var: varName, line,
                iterable: startExpr, body: this.parseBlock() };
     }
     // @label cond { }
     const cond = this.parseExpr();
-    return { type: 'Loop', kind: 'while', label, cond, body: this.parseBlock() };
+    return { type: 'Loop', kind: 'while', label, cond, line, body: this.parseBlock() };
   }
 
   isFuncDecl() {
@@ -1808,6 +1811,8 @@ class Checker {
     this.diagnostics = [];
     this.stack       = [];
     this.pendingHot  = false; // prefix hot-def sentinel (°name)
+    this.funcDepth   = 0;     // >0 inside a function or lambda body — see lifetimeWarnForIterator
+    this.lifetimeWarned = new Set();
   }
 
   push(funcBoundary = false) {
@@ -1818,7 +1823,7 @@ class Checker {
     const frame = this.stack.pop();
     for (const [name, info] of frame.vars) {
       if (!info.used && !name.startsWith('_') && !info.isConst) {
-        this.warn('W_UNUSED', `unused variable '${name}'`, info.line);
+        this.warn('W_UNUSED', `unused variable '${name}'`, info.line, { name });
       }
     }
   }
@@ -1836,6 +1841,55 @@ class Checker {
     this.stack[i].vars.set(name, { line, isConst: false, used: false });
   }
 
+  /** Is this name in scope? Unlike lookup(), it does not mark it used. */
+  has(name) {
+    if (!name) return false;
+    for (let i = this.stack.length - 1; i >= 0; i--) {
+      if (this.stack[i].vars.has(name)) return true;
+      if (this.stack[i].funcBoundary && !name.startsWith('_')) break;
+    }
+    return false;
+  }
+
+  /**
+   * `zymbol check`'s "ambiguous lifetime" warning, as the CLI actually emits it.
+   *
+   * The message says "variable is modified inside a loop", but the binary's behaviour is
+   * narrower, and this mirrors the behaviour rather than the sentence — measured against
+   * zymbol 0.0.8, and matching what CHANGELOG GAP-003 describes as deliberate:
+   *
+   *   `@ i:1..3 { … }`               warns about `i`
+   *   `@ v:arr { … }`                warns about `v`
+   *   `x = 5  @ i:1..3 { x = x+i }`  warns about `i` only — not about `x`
+   *   `@ x < 10 { x = x + 1 }`       says nothing: a while loop has no iterator
+   *   `@ _i:1..3 { … }`              says nothing: the `_` prefix means "on purpose"
+   *   `x = 0  @ x:arr { … }`         says nothing: reusing a defined name is deliberate
+   *   the same range loop inside a function — says nothing
+   *
+   * That last one is why `funcDepth` is consulted: the CLI's def-use analysis runs over
+   * the top-level control-flow graph, and a loop inside a function body is not in it.
+   *
+   * This is the single noisiest thing `zymbol check` says — it fires on 122 of the 216
+   * programs in examples/ — which is why the playground keeps warnings behind a toggle
+   * that starts off. Leaving the rule out entirely would have been quieter and wrong: the
+   * playground would then disagree with the CLI on the most common diagnostic in the
+   * language, and a visitor comparing the two would trust neither.
+   */
+  lifetimeWarnForIterator(stmt, preexisting) {
+    const name = stmt.var;
+    if (!name) return;                       // while / infinite loop: no iterator
+    if (this.funcDepth > 0) return;
+    if (name.startsWith('_')) return;
+    if (preexisting) return;
+    // Once per name, not once per loop. The CLI's analysis is a def-use chain *per
+    // variable*, so a program that walks `i` through four separate loops is told about
+    // `i` once, at the first one — measured on examples/tour/control.zy, where warning
+    // per loop instead produced six warnings against the binary's three.
+    if (this.lifetimeWarned.has(name)) return;
+    this.lifetimeWarned.add(name);
+    this.warn('W_LIFETIME', `ambiguous lifetime for '${name}'`, stmt.line, { name });
+  }
+
   lookup(name, usageLine) {
     if (!name) return null;
     for (let i = this.stack.length - 1; i >= 0; i--) {
@@ -1846,7 +1900,7 @@ class Checker {
         if (name.startsWith('_') && i < this.stack.length - 1) {
           const crossedNonBoundary = this.stack.slice(i + 1).some(f => !f.funcBoundary);
           if (crossedNonBoundary) {
-            this.error('E_SCOPE', `cannot access underscore variable '${name}' from inner scope`, usageLine);
+            this.error('E_SCOPE', `cannot access underscore variable '${name}' from inner scope`, usageLine, { name });
             return { used: true, isConst: false, isScope: true }; // sentinel: suppress follow-up E_VAR
           }
         }
@@ -1858,12 +1912,15 @@ class Checker {
     return null;
   }
 
-  error(code, msg, line = null) {
-    this.diagnostics.push({ severity: 'error', code, message: msg, line });
+  // `params` is what makes a diagnostic translatable: the playground renders it from its
+  // own catalogue keyed by `code`, and `message` stays as the English fallback for callers
+  // that have no catalogue (runZymbol's own output, and any embedder).
+  error(code, msg, line = null, params = null) {
+    this.diagnostics.push({ severity: 'error', code, message: msg, line, params });
   }
 
-  warn(code, msg, line = null) {
-    this.diagnostics.push({ severity: 'warning', code, message: msg, line });
+  warn(code, msg, line = null, params = null) {
+    this.diagnostics.push({ severity: 'warning', code, message: msg, line, params });
   }
 
   _leftmostIdent(expr) {
@@ -1912,7 +1969,7 @@ class Checker {
         if (stmt.name) {
           const existing = this.lookup(stmt.name, stmt.line);
           if (existing?.isConst) {
-            this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line);
+            this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line, { name: stmt.name });
             return;
           }
         }
@@ -1932,8 +1989,8 @@ class Checker {
         const isHot = stmt.hot || wasHot;
         if (!isHot) {
           const info = this.lookup(stmt.name, stmt.line);
-          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line);
-          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line, { name: stmt.name });
+          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line, { name: stmt.name });
         } else {
           const info = this.lookup(stmt.name, stmt.line);
           if (!info) this.hotDefine(stmt.name, stmt.line);
@@ -1946,8 +2003,8 @@ class Checker {
         const isHot = stmt.hot || wasHot;
         if (!isHot) {
           const info = this.lookup(stmt.name, stmt.line);
-          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line);
-          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line, { name: stmt.name });
+          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line, { name: stmt.name });
         } else {
           const info = this.lookup(stmt.name, stmt.line);
           if (!info) this.hotDefine(stmt.name, stmt.line);
@@ -1960,7 +2017,7 @@ class Checker {
         const obj = stmt.obj ?? stmt.name;
         if (obj) {
           const info = this.lookup(obj, stmt.line);
-          if (!info) this.error('E_VAR', `undefined variable '${obj}'`, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${obj}'`, stmt.line, { name: obj });
         }
         this.checkExpr(stmt.index);
         this.checkExpr(stmt.value);
@@ -1971,7 +2028,7 @@ class Checker {
         const name = stmt.name ?? stmt.obj;
         if (name) {
           const info = this.lookup(name, stmt.line);
-          if (!info) this.error('E_VAR', `undefined variable '${name}'`, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${name}'`, stmt.line, { name });
         }
         for (const idx of (stmt.indices ?? [])) this.checkExpr(idx);
         this.checkExpr(stmt.value);
@@ -1981,7 +2038,7 @@ class Checker {
       case 'LifetimeEnd': {
         if (stmt.name) {
           const info = this.lookup(stmt.name, stmt.line);
-          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line, { name: stmt.name });
           else {
             for (let i = this.stack.length - 1; i >= 0; i--) {
               if (this.stack[i].vars.has(stmt.name)) {
@@ -2023,6 +2080,11 @@ class Checker {
       }
 
       case 'Loop': {
+        // An iterator that already existed before the loop is a deliberate reuse, so the
+        // lifetime warning below must not fire for it. Asked before push(), because after
+        // it the name is defined either way. `lookup` would mark the outer name used, and
+        // a variable that only appears as a loop's iterator is not "used" — hence has().
+        const preexisting = stmt.var ? this.has(stmt.var) : false;
         this.push();
         if (stmt.kind === 'foreach' || stmt.iterable || stmt.iter) {
           this.checkExpr(stmt.iterable ?? stmt.iter);
@@ -2035,6 +2097,7 @@ class Checker {
         } else if (stmt.cond) {
           this.checkExpr(stmt.cond);
         }
+        this.lifetimeWarnForIterator(stmt, preexisting);
         this.checkBlock(stmt.body);
         this.pop();
         return;
@@ -2064,7 +2127,7 @@ class Checker {
         const allowedInModule = new Set(['ExportDecl', 'FuncDecl', 'VarAssign', 'ConstAssign', 'Import', 'Noop']);
         for (const s of (stmt.body ?? [])) {
           if (s && !allowedInModule.has(s.type))
-            this.error('E013', `E013: executable statement not allowed in module body`, s.line ?? stmt.line);
+            this.error('E013', `E013: executable statement not allowed in module body`, s.line ?? stmt.line, {});
         }
         return;
       }
@@ -2081,11 +2144,13 @@ class Checker {
 
       case 'FuncDecl': {
         this.push(false); // named fns can access outer scope (module aliases, globals)
+        this.funcDepth++;
         for (const p of (stmt.params ?? [])) {
           const pname = typeof p === 'string' ? p : p.name;
           if (pname) this.define(pname, stmt.line, false);
         }
         this.checkBlock(stmt.body);
+        this.funcDepth--;
         this.pop();
         return;
       }
@@ -2118,7 +2183,7 @@ class Checker {
             // is an error, same as direct reassignment.
             const info = this.lookup(t.name, stmt.line);
             if (info?.isConst) {
-              this.error('E_CONST', `cannot reassign constant '${t.name}'`, stmt.line);
+              this.error('E_CONST', `cannot reassign constant '${t.name}'`, stmt.line, { name: t.name });
               continue;
             }
             this.define(t.name, stmt.line, false);
@@ -2166,7 +2231,7 @@ class Checker {
           return;
         }
         const info = this.lookup(expr.name, expr.line);
-        if (!info) this.error('E_VAR', `undefined variable '${expr.name}'`, expr.line);
+        if (!info) this.error('E_VAR', `undefined variable '${expr.name}'`, expr.line, { name: expr.name });
         return;
       }
 
@@ -2192,7 +2257,7 @@ class Checker {
         // otherwise the function does not exist (e.g. `cos(x)` without `math::cos`).
         if (typeof expr.callee === 'string' && expr.callee) {
           const info = this.lookup(expr.callee, expr.line);
-          if (!info) this.error('E_FUNC', `undefined function: '${expr.callee}'`, expr.line);
+          if (!info) this.error('E_FUNC', `undefined function: '${expr.callee}'`, expr.line, { name: expr.callee });
         } else if (expr.callee && typeof expr.callee === 'object') {
           this.checkExpr(expr.callee);
         }
@@ -2209,6 +2274,7 @@ class Checker {
       case 'Lambda': {
         // Lambdas are closures — use funcBoundary=false so outer vars remain accessible
         this.push(false);
+        this.funcDepth++;
         for (const p of (expr.params ?? [])) {
           const pname = typeof p === 'string' ? p : p.name;
           if (pname) this.define(pname, expr.line, false);
@@ -2218,6 +2284,7 @@ class Checker {
         else if (body?.type === 'expr')  this.checkExpr(body.value);
         else if (body?.type === 'block') this.checkBlock(body.stmts ?? body.body ?? []);
         else                             this.checkExpr(body);
+        this.funcDepth--;
         this.pop();
         return;
       }
@@ -4591,6 +4658,193 @@ export class Interpreter {
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
+
+/**
+ * Everything `zymbol check` would say about a program, without running a line of it.
+ *
+ * Returns `{ diagnostics, ast }`. A diagnostic is `{severity, code, message, line, params}`:
+ * `code` and `params` are what a caller with a translation catalogue renders from, and
+ * `message` is the English fallback for one without. A parse failure comes back as a
+ * diagnostic like any other (code `E_PARSE`) rather than as a thrown error, because "the
+ * program does not parse" is the single most useful thing to tell someone who is learning
+ * the syntax, and throwing it would make it the caller's problem to catch and phrase.
+ *
+ * Warnings are included. Whether to *show* them is the caller's decision — the playground
+ * keeps them behind a toggle, because `W_LIFETIME` alone fires on more than half of the
+ * programs in examples/ (see Checker.lifetimeWarnForIterator).
+ *
+ * @param {string} src
+ * @returns {{diagnostics: Array, ast: object|null}}
+ */
+export function checkSource(src) {
+  let ast = null;
+  try {
+    ast = new Parser(new Lexer(src).tokenize()).parse();
+  } catch (e) {
+    // ZyError keeps the source line in `zyLine` and prefixes the message with it; older
+    // throw sites pass neither, so the prefix is the only thing left to read it from.
+    const raw  = e?.message ?? String(e);
+    const line = e?.zyLine ?? (/^Line (\d+): /.exec(raw)?.[1] ?? null);
+    const message = raw.replace(/^Line \d+: /, '');
+    return {
+      ast: null,
+      diagnostics: [{
+        severity: 'error',
+        code: 'E_PARSE',
+        message,
+        line: line === null ? null : Number(line),
+        params: { message },
+      }],
+    };
+  }
+
+  let diagnostics;
+  try {
+    diagnostics = new Checker(ast).check();
+  } catch (e) {
+    // The checker walking a shape it did not expect must not look like a broken program.
+    // Report nothing rather than something wrong; running the program still reports for real.
+    console.warn('checkSource: analysis failed —', e?.message ?? e);
+    diagnostics = [];
+  }
+  return { ast, diagnostics };
+}
+
+/**
+ * What each name in a program is, for the editor's identifier hover.
+ *
+ * Maps a name to every place it is introduced: `{kind, line, type, value}`, where `type`
+ * and `value` are filled in only when the definition's right-hand side is a literal. A
+ * name bound to a call gets `kind` and nothing else — the alternative would be guessing a
+ * type, and a hover card that guesses is worse than one that stays quiet.
+ *
+ * Definitions are collected per name, in source order, because the lexer records a line
+ * but no column: a caller resolves a hover by taking the last definition at or above the
+ * hovered line. That is exact for ordinary code and wrong only under aggressive shadowing,
+ * which is a limit the playground states rather than papers over.
+ *
+ * @param {string} src
+ * @returns {Map<string, Array<{kind:string, line:number, type?:string, value?:string}>>}
+ */
+export function buildSymbolIndex(src) {
+  const index = new Map();
+  const add = (name, kind, line, extra = null) => {
+    if (!name || typeof name !== 'string') return;
+    if (!index.has(name)) index.set(name, []);
+    index.get(name).push({ kind, line: line ?? 0, ...(extra ?? {}) });
+  };
+
+  let ast;
+  try {
+    ast = new Parser(new Lexer(src).tokenize()).parse();
+  } catch {
+    return index;   // half-typed program: no index, and the operator hover still works
+  }
+
+  /**
+   * A literal right-hand side, and only a literal one, yields a type and a value to show.
+   *
+   * Type names are the engine's own — `Int`, `Float`, `Text` — even when the card around
+   * them is in another language, so that what the hover says matches what `#?` prints.
+   */
+  const describe = (expr) => {
+    if (!expr || typeof expr !== 'object') return null;
+    switch (expr.type) {
+      case 'Literal': {
+        switch (expr.kind) {
+          case 'int':   return { type: 'Int',   value: String(expr.value) };
+          case 'float': return { type: 'Float', value: String(expr.value) };
+          case 'bool':  return { type: 'Bool',  value: expr.value ? '#1' : '#0' };
+          case 'char':  return { type: 'Char',  value: `'${expr.value}'` };
+          case 'str': {
+            // A string literal is a list of parts; it only has a showable value when none
+            // of them is an interpolation, whose value depends on the run.
+            const parts = expr.value;
+            if (!Array.isArray(parts)) return { type: 'Text', value: JSON.stringify(String(parts)) };
+            if (!parts.every(p => p?.t === 'lit')) return { type: 'Text' };
+            return { type: 'Text', value: JSON.stringify(parts.map(p => p.v).join('')) };
+          }
+          default: return null;
+        }
+      }
+      case 'Array': return { type: 'Array', value: `${(expr.items ?? []).length} items` };
+      case 'Tuple': return { type: 'Tuple', value: `${(expr.items ?? []).length} fields` };
+      case 'Lambda': {
+        const n = (expr.params ?? []).length;
+        return { type: 'Lambda', value: `${n} parameter${n === 1 ? '' : 's'}` };
+      }
+      case 'UnaryOp': {
+        // `-3` parses as a negation around a literal, and reads as one to a human.
+        const inner = describe(expr.operand ?? expr.value);
+        if (inner && (expr.op === '-' || expr.op === 'neg')) {
+          return { type: inner.type, value: `${expr.op === '-' ? '-' : ''}${inner.value}` };
+        }
+        return null;
+      }
+      default: return null;
+    }
+  };
+
+  const walkBlock = (stmts) => { for (const s of stmts ?? []) walkStmt(s); };
+
+  const walkStmt = (stmt) => {
+    if (!stmt || typeof stmt !== 'object') return;
+    switch (stmt.type) {
+      case 'ConstAssign':
+        add(stmt.name, 'const', stmt.line, describe(stmt.value));
+        return;
+      case 'VarAssign':
+        add(stmt.name, 'var', stmt.line, describe(stmt.value));
+        return;
+      case 'FuncDecl': {
+        const n = (stmt.params ?? []).length;
+        add(stmt.name, 'func', stmt.line,
+            { value: `${n} parameter${n === 1 ? '' : 's'}` });
+        for (const p of (stmt.params ?? [])) {
+          add(typeof p === 'string' ? p : p.name, 'param', stmt.line);
+        }
+        walkBlock(stmt.body);
+        return;
+      }
+      case 'Import':
+        add(stmt.alias, 'import', stmt.line, { value: stmt.path });
+        return;
+      case 'Loop':
+        if (stmt.var) add(stmt.var, 'iterator', stmt.line);
+        walkBlock(stmt.body);
+        return;
+      case 'CliArgs':
+        add(stmt.variable, 'var', stmt.line);
+        return;
+      case 'KeyInput':
+        add(stmt.varName ?? stmt.variable, 'var', stmt.line);
+        return;
+      case 'Input':
+        add(stmt.name ?? stmt.variable, 'var', stmt.line);
+        return;
+      case 'ModuleDecl':
+        add(stmt.name, 'module', stmt.line);
+        walkBlock(stmt.body);
+        return;
+      default: {
+        // Everything else only matters for the blocks it may contain.
+        for (const key of ['body', 'tryBody', 'try', 'elseBody', 'else', 'thenBody', 'then']) {
+          if (Array.isArray(stmt[key])) walkBlock(stmt[key]);
+        }
+        for (const key of ['branches', 'catches', 'arms', 'elifs']) {
+          for (const b of (stmt[key] ?? [])) {
+            if (Array.isArray(b?.body)) walkBlock(b.body);
+          }
+        }
+        const fin = stmt.finallyBody ?? stmt.finally;
+        if (Array.isArray(fin)) walkBlock(fin);
+      }
+    }
+  };
+
+  walkBlock(ast.body);
+  return index;
+}
 
 export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, filePath = null, tuiContext = null, cliArgs = [], opts = {}) {
   const tokens = new Lexer(src).tokenize();

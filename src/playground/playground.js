@@ -7,14 +7,24 @@ import { createStore, dirOf, baseOf, USER } from './filestore.js';
 import { createSidebar } from './sidebar.js';
 import { loadCatalog, mountEntry, collectPackage, resolveDeepLink, deepLinkOf } from './catalog.js';
 import { registerWebMcpTools } from './webmcp.js';
+import { createHover } from './hover.js';
+import { createProblems } from './problems.js';
+import { initI18n, t, locale, setLocale, languageList, onLocaleChange } from '../i18n/i18n.js';
 
 // ─── Editor sync ──────────────────────────────────────────────────────────────
 const editor    = document.getElementById('editor');
 const highlight = document.getElementById('editor-highlight');
 
+// Declared here, built at boot: syncHighlight runs before the wiring block and reaches for
+// it with `?.`, which would still throw on a `let` that has not been evaluated yet.
+let problems = null;
+let hover    = null;
+
 function syncHighlight() {
   const code = editor.value;
   highlight.innerHTML = highlightCode(code) + '\n';
+  // Rebuilding the layer threw away the diagnostic tints with it.
+  problems?.remark();
   syncScroll();
 }
 function syncScroll() {
@@ -311,6 +321,7 @@ function startRename(tabEl, nameSpan, file) {
 // Track edits → mark file dirty
 editor.addEventListener('input', () => {
   syncHighlight();
+  problems?.schedule();
   if (store.setActiveCode(editor.value)) {
     renderFileTabs();      // refresh the • marker the first time
     sidebar?.render();
@@ -927,6 +938,8 @@ let expandOutputPanel = () => {};
 async function runCode() {
   expandOutputPanel();
   clearOutput();
+  // A card left hanging over the editor while the program runs is stale by definition.
+  hover?.hide();
 
   // The model is only written back on tab switches and on `input`, so flush first: pressing
   // Run must always execute what is on screen, not the last copy the model happened to see.
@@ -1109,6 +1122,104 @@ themeBtn.addEventListener('click', () => {
 });
 applyTheme(document.documentElement.classList.contains('light'));
 
+// ─── Reading help: hover cards and the problems strip ─────────────────────────
+
+/** Puts the caret on a line and scrolls it into view — what a diagnostic click does. */
+function gotoLine(line) {
+  const lines = editor.value.split('\n');
+  let offset = 0;
+  for (let i = 0; i < Math.min(line - 1, lines.length); i++) offset += lines[i].length + 1;
+  editor.focus();
+  editor.setSelectionRange(offset, offset + (lines[line - 1]?.length ?? 0));
+
+  const lineHeight = parseFloat(getComputedStyle(editor).lineHeight) || 20;
+  const target = (line - 1) * lineHeight;
+  // Only scroll when the line is not already on screen: yanking the view for a line the
+  // reader is looking at is worse than not scrolling.
+  if (target < editor.scrollTop || target > editor.scrollTop + editor.clientHeight - lineHeight) {
+    editor.scrollTop = Math.max(0, target - editor.clientHeight / 3);
+  }
+  syncScroll();
+}
+
+problems = createProblems({
+  panel:        document.getElementById('problems'),
+  list:         document.getElementById('problems-list'),
+  countEl:      document.getElementById('problems-count'),
+  titleEl:      document.getElementById('problems-title'),
+  toggleBtn:    document.getElementById('problems-toggle'),
+  warningsBox:  document.getElementById('problems-warnings'),
+  warningsText: document.getElementById('problems-warnings-text'),
+  highlight,
+  getSource: () => editor.value,
+  gotoLine,
+});
+
+hover = createHover({
+  editor,
+  highlight,
+  wrapper: document.getElementById('editor-wrapper'),
+  card:    document.getElementById('hover-card'),
+  getSource: () => editor.value,
+});
+
+const checkBtn = document.getElementById('check-btn');
+checkBtn.addEventListener('click', () => problems.run());
+editor.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.shiftKey && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    problems.run();
+  }
+});
+
+// ─── Language ─────────────────────────────────────────────────────────────────
+//
+// The picker offers every language the site has, in two tiers: the ones with a full
+// playground catalogue, and the rest — which keep an English interface but get their own
+// word for the 16 concepts the landing page already translates everywhere. Saying so in
+// the picker is the honest version of a 111-entry list where most entries change little.
+const langSelect = document.getElementById('lang-select');
+
+function buildLanguagePicker(current) {
+  const langs = languageList();
+  if (!langs.length) { langSelect.style.display = 'none'; return; }
+
+  langSelect.innerHTML = '';
+  const full = document.createElement('optgroup');
+  full.label = t('ui.languageFull');
+  const partial = document.createElement('optgroup');
+  partial.label = t('ui.languageLabels');
+
+  for (const l of langs) {
+    const opt = document.createElement('option');
+    opt.value = l.id;
+    opt.textContent = l.native;
+    (l.full ? full : partial).appendChild(opt);
+  }
+  if (full.children.length) langSelect.appendChild(full);
+  if (partial.children.length) langSelect.appendChild(partial);
+  langSelect.value = current;
+  langSelect.title = t('ui.languageTitle');
+}
+
+langSelect.addEventListener('change', () => setLocale(langSelect.value));
+
+/**
+ * Re-labels the parts of the chrome that are translated. Cards and lists redraw themselves.
+ *
+ * Direction is set on the elements that hold translated prose — the hover card and the
+ * problems strip — and deliberately not on the document: an Arabic reader on the
+ * symbol-labels tier still has an English interface, and mirroring the whole editor around
+ * it would move the panels, the split handle and the drag arithmetic for the sake of two
+ * cards. A full RTL catalogue can revisit that with the layout in hand.
+ */
+function applyLocaleToChrome() {
+  checkBtn.textContent = `✓ ${t('ui.check')}`;
+  checkBtn.title = t('ui.checkTitle');
+  buildLanguagePicker(locale());
+}
+onLocaleChange(applyLocaleToChrome);
+
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 //
 // Two phases, because clean example files are not persisted (see filestore.js): the local
@@ -1121,6 +1232,12 @@ refreshRunUI();
 sidebar.render();
 
 (async function boot() {
+  // Before anything renders a word: the picker, the check button and every card built
+  // below all read from the catalogue, and relabelling them afterwards would show the
+  // reader an English flash of an interface they asked for in their own language.
+  await initI18n();
+  applyLocaleToChrome();
+
   let catalog;
   try {
     catalog = await loadCatalog();

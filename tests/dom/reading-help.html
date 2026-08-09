@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>reading-help fixture</title>
+<!--
+  Fixture for tests/test_playground_dom.mjs. Not a page of the site — it is the smallest
+  DOM the hover cards and the problems strip need, so their real behaviour can be exercised
+  in a real browser. Everything here is geometry-dependent and cannot be tested in Node:
+  the hover works by arithmetic over line height and by hit-testing laid-out rectangles.
+  If the two editor layers ever stop lining up, this is what notices.
+-->
+<link rel="stylesheet" href="../../src/css/playground.css">
+<style>
+  #editor-wrapper { position: relative; width: 700px; height: 300px; overflow: hidden; }
+</style>
+</head>
+<body>
+<div id="editor-panel" class="panel">
+  <div id="editor-wrapper">
+    <pre id="editor-highlight" aria-hidden="true"></pre>
+    <textarea id="editor" spellcheck="false"></textarea>
+    <div id="hover-card" role="tooltip" aria-hidden="true"></div>
+  </div>
+  <div id="problems" class="hidden">
+    <div id="problems-head">
+      <button id="problems-toggle" aria-expanded="true">
+        <span id="problems-chevron">▾</span><span id="problems-title"></span><span id="problems-count"></span>
+      </button>
+      <label id="problems-warnings-label">
+        <input type="checkbox" id="problems-warnings"> <span id="problems-warnings-text"></span>
+      </label>
+    </div>
+    <div id="problems-list"></div>
+  </div>
+</div>
+<pre id="results"></pre>
+
+<script type="module">
+import { highlightCode } from '../../src/playground/highlight.js';
+import { createHover } from '../../src/playground/hover.js';
+import { createProblems } from '../../src/playground/problems.js';
+import { initI18n, setLocale } from '../../src/i18n/i18n.js';
+
+const out = [];
+const ok = (label, cond, detail = '') =>
+  out.push(`${cond ? 'PASS' : 'FAIL'} ${label}${detail ? ' :: ' + detail : ''}`);
+
+const editor    = document.getElementById('editor');
+const highlight = document.getElementById('editor-highlight');
+const card      = document.getElementById('hover-card');
+
+const SRC = [
+  'PI := 3.14159',
+  'contador = 0',
+  '@ i:1..3 {',
+  '    >> i ¶',
+  '}',
+  'PI = 4',
+].join('\n');
+
+// The fixture pins the language rather than taking the machine's, so the expected strings
+// below are stable wherever this runs.
+localStorage.setItem('zy-lang', 'spanish');
+await initI18n();
+await setLocale('spanish');
+
+editor.value = SRC;
+highlight.innerHTML = highlightCode(SRC) + '\n';
+
+const problems = createProblems({
+  panel: document.getElementById('problems'),
+  list: document.getElementById('problems-list'),
+  countEl: document.getElementById('problems-count'),
+  titleEl: document.getElementById('problems-title'),
+  toggleBtn: document.getElementById('problems-toggle'),
+  warningsBox: document.getElementById('problems-warnings'),
+  warningsText: document.getElementById('problems-warnings-text'),
+  highlight,
+  getSource: () => editor.value,
+  gotoLine: () => {},
+});
+createHover({ editor, highlight, wrapper: document.getElementById('editor-wrapper'), card,
+              getSource: () => editor.value });
+
+// ── the two layers line up, character for character ──────────────────────────
+// The hover maps a pointer position to a source line by dividing by the line height. That
+// is only exact while the textarea and the colouring layer agree on metrics.
+const csA = getComputedStyle(editor), csB = getComputedStyle(highlight);
+ok('same line-height', csA.lineHeight === csB.lineHeight, `${csA.lineHeight} vs ${csB.lineHeight}`);
+ok('same font-size',   csA.fontSize === csB.fontSize, `${csA.fontSize} vs ${csB.fontSize}`);
+ok('same font',        csA.fontFamily === csB.fontFamily);
+ok('same padding',     csA.paddingTop === csB.paddingTop && csA.paddingLeft === csB.paddingLeft);
+ok('neither layer wraps', csA.whiteSpace === 'pre' && csB.whiteSpace === 'pre',
+   `${csA.whiteSpace} / ${csB.whiteSpace}`);
+
+// ── resting on a token produces its card ─────────────────────────────────────
+function hoverOver(sel, label, expectSub) {
+  const el = highlight.querySelector(sel);
+  if (!el) { ok(label, false, `no element for ${sel}`); return Promise.resolve(); }
+  const r = el.getBoundingClientRect();
+  editor.dispatchEvent(new MouseEvent('mousemove', {
+    clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, bubbles: true,
+  }));
+  return new Promise(res => setTimeout(() => {
+    const visible = card.classList.contains('visible');
+    const text = card.textContent.replace(/\s+/g, ' ').trim();
+    ok(label, visible && text.includes(expectSub), visible ? text.slice(0, 90) : 'card not shown');
+    res();
+  }, 420));
+}
+
+await hoverOver('.hl-line[data-l="1"] [data-h=":="]', 'hovering := shows the constant card', 'Constante');
+await hoverOver('.hl-line[data-l="1"] [data-id="PI"]', 'hovering PI reads it off the program', '3.14159');
+await hoverOver('.hl-line[data-l="1"] [data-id="PI"]', 'hovering PI names its type', 'Float');
+await hoverOver('.hl-line[data-l="3"] [data-h="@"]',  'hovering @ shows the loop card', 'Bucle');
+await hoverOver('.hl-line[data-l="2"] [data-id="contador"]', 'hovering a variable says so', 'variable');
+
+// ── the checker reaches the strip, and the line is marked ────────────────────
+problems.run();
+const panel = document.getElementById('problems');
+const items = [...document.querySelectorAll('.pb-item')];
+ok('the problems strip appears', !panel.classList.contains('hidden'));
+ok('exactly the error is listed', items.length === 1,
+   `${items.length}: ${items.map(i => i.textContent.trim()).join(' | ')}`);
+ok('it is the constant reassignment', Boolean(items[0]?.textContent.includes('PI')),
+   items[0]?.textContent.trim());
+ok('its line is tinted', Boolean(highlight.querySelector('.hl-line[data-l="6"].has-error')));
+ok('warnings stay out of the way until asked',
+   !items.some(i => i.textContent.includes('vida')));
+
+// ── warnings appear when asked ───────────────────────────────────────────────
+document.getElementById('problems-warnings').click();
+const withWarnings = [...document.querySelectorAll('.pb-item')];
+ok('asking for warnings shows both of them', withWarnings.length === 3,
+   withWarnings.map(i => i.textContent.trim()).join(' | '));
+ok('the loop iterator lifetime is one', withWarnings.some(i => i.textContent.includes("'i'")));
+ok('the unused variable is the other', withWarnings.some(i => i.textContent.includes('contador')));
+ok('a warning line is tinted differently',
+   Boolean(highlight.querySelector('.hl-line[data-l="3"].has-warning')));
+
+// ── switching language redraws what is already on screen ─────────────────────
+await setLocale('english');
+const en = [...document.querySelectorAll('.pb-item')].map(i => i.textContent).join(' ');
+ok('switching language re-renders the diagnostics in place',
+   en.includes('cannot reassign constant'), en.slice(0, 80));
+
+document.getElementById('results').textContent = out.join('\n');
+document.title = out.some(l => l.startsWith('FAIL')) ? 'PROBE-FAIL' : 'PROBE-OK';
+</script>
+</body>
+</html>

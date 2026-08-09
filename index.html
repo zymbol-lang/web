@@ -56,7 +56,13 @@
     var light = s ? s === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
     if (light) document.documentElement.classList.add('light');
   })();
-  // Set <html lang> before first paint so Chrome detects the correct language
+  // Set <html lang> before first paint so Chrome detects the correct language.
+  //
+  // This is the one copy of the language tables that cannot import src/i18n/detect.js:
+  // a module script is deferred by definition, and this has to run before the first
+  // paint. It is kept honest by tests/test_i18n_playground.mjs, which fails if these
+  // two objects stop matching the module — that check exists because the copies had
+  // already drifted apart once (see the header of src/i18n/detect.js).
   (function(){
     var BCP47 = {
       english:'en', spanish:'es', castellano:'es-ES', portuguese:'pt-BR',
@@ -76,10 +82,11 @@
     };
     var LOCALE_MAP = {
       en:'english', es:'spanish', 'es-es':'castellano', fr:'french', de:'german',
+      'pt-pt':'portugues_eu', 'pt-br':'portuguese', pt:'portuguese',
       it:'italian', nl:'dutch', pl:'polish', ru:'russian', uk:'ukrainian',
       bg:'bulgarian', hr:'croatian', cs:'czech', sk:'slovak', ro:'romanian',
       hu:'hungarian', fi:'finnish', et:'estonian', lv:'latvian', lt:'lithuanian',
-      no:'norwegian', nb:'norwegian', da:'danish', sv:'swedish', is:'icelandic',
+      no:'norwegian', nb:'norwegian', nn:'norwegian', da:'danish', sv:'swedish', is:'icelandic',
       el:'greek', sr:'serbian', ar:'arabic', he:'hebrew', fa:'persian', ur:'urdu',
       hi:'hindi', bn:'bengali', mr:'marathi', pa:'punjabi', gu:'gujarati',
       ta:'tamil', te:'telugu', kn:'kannada', zh:'mandarin', 'zh-cn':'mandarin',
@@ -371,7 +378,7 @@
   </div>
 </footer>
 
-<script src="src/site/main.js"></script>
+<script type="module" src="src/site/main.js"></script>
 
 <!-- APRIL FOOLS BANNER SCRIPT (disabled — reusable for future campaigns)
 <script>

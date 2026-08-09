@@ -54,7 +54,7 @@ check('LICENSE names both', ['LICENSE-AGPL-3.0', 'LICENSE-CC-BY-SA-4.0']
 // ─── every source file carries AGPL ──────────────────────────────────────────
 section('source: AGPL-3.0-only');
 
-const sources = [...walk('src'), ...walk('worker'), ...walk('tests')]
+const sources = [...walk('src'), ...walk('worker'), ...walk('tests'), ...walk('tools')]
   .filter(f => /\.(js|mjs)$/.test(f));
 
 for (const f of sources) {

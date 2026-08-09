@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { LANG_STORAGE_KEY, bcp47Of, resolveInitialLang } from '../i18n/detect.js';
+
 (async function() {
   // ─── Load data ───
   const [langData, i18nData] = await Promise.all([
@@ -19,79 +21,10 @@
   let currentRegion = null;
 
   // ─── Browser language detection ───
-  const BROWSER_LANG_MAP = {
-    'en':'english', 'es-es':'castellano', 'es':'spanish',
-    'pt-pt':'portugues_eu', 'pt-br':'portuguese', 'pt':'portuguese',
-    'fr':'french', 'de':'german', 'it':'italian', 'nl':'dutch',
-    'pl':'polish', 'ru':'russian', 'uk':'ukrainian', 'bg':'bulgarian',
-    'hr':'croatian', 'cs':'czech', 'sk':'slovak', 'ro':'romanian',
-    'hu':'hungarian', 'fi':'finnish', 'et':'estonian', 'lv':'latvian',
-    'lt':'lithuanian', 'no':'norwegian', 'nb':'norwegian', 'nn':'norwegian',
-    'da':'danish', 'sv':'swedish', 'is':'icelandic', 'el':'greek',
-    'sr':'serbian', 'ar':'arabic', 'he':'hebrew', 'fa':'persian',
-    'ur':'urdu', 'hi':'hindi', 'bn':'bengali', 'mr':'marathi',
-    'pa':'punjabi', 'zh':'mandarin', 'zh-cn':'mandarin', 'zh-tw':'mandarin',
-    'cn':'mandarin', 'ja':'japanese', 'ko':'korean', 'id':'indonesian',
-    'vi':'vietnamese', 'th':'thai', 'tl':'tagalog', 'sw':'swahili',
-    'ha':'hausa', 'yo':'yoruba', 'am':'amharic', 'tr':'turkish',
-    'eu':'basque', 'cy':'welsh', 'ga':'irish', 'ca':'catalan',
-    'gl':'galician', 'af':'afrikaans', 'zu':'zulu', 'xh':'xhosa',
-    'eo':'esperanto', 'tlh_hol':'klingon', 'tlh_piqad':'klingon_piqad',
-  };
-  const LANG_STORAGE_KEY = 'zy-lang';
-
-  // BCP47 codes for <html lang=""> — lets Chrome/browser translator detect the language
-  const LANG_BCP47 = {
-    english:'en', spanish:'es', castellano:'es-ES', portuguese:'pt-BR',
-    portugues_eu:'pt-PT', french:'fr', german:'de', italian:'it',
-    dutch:'nl', polish:'pl', russian:'ru', ukrainian:'uk', bulgarian:'bg',
-    croatian:'hr', czech:'cs', slovak:'sk', romanian:'ro', hungarian:'hu',
-    finnish:'fi', estonian:'et', latvian:'lv', lithuanian:'lt',
-    norwegian:'no', danish:'da', swedish:'sv', icelandic:'is', greek:'el',
-    serbian:'sr', arabic:'ar', hebrew:'he', persian:'fa', urdu:'ur',
-    hindi:'hi', bengali:'bn', marathi:'mr', punjabi:'pa', gujarati:'gu',
-    tamil:'ta', telugu:'te', kannada:'kn', mandarin:'zh', japanese:'ja',
-    korean:'ko', indonesian:'id', vietnamese:'vi', thai:'th', tagalog:'tl',
-    swahili:'sw', hausa:'ha', yoruba:'yo', amharic:'am', turkish:'tr',
-    basque:'eu', welsh:'cy', irish:'ga', catalan:'ca', galician:'gl',
-    afrikaans:'af', zulu:'zu', xhosa:'xh', esperanto:'eo',
-    klingon:'tlh_hol', klingon_piqad:'tlh_piqad',
-  };
-
-  function detectBrowserLang() {
-    // Walk the full preferred-languages list for the best match
-    const langs = navigator.languages && navigator.languages.length
-      ? navigator.languages
-      : [navigator.language || 'en'];
-    for (const l of langs) {
-      const lc = l.toLowerCase();
-      const match = BROWSER_LANG_MAP[lc] || BROWSER_LANG_MAP[lc.split('-')[0]];
-      if (match) return match;
-    }
-    return 'english';
-  }
-
-  function resolveUrlLang() {
-    const raw = new URLSearchParams(window.location.search).get('lang');
-    if (!raw) return null;
-    // Strip surrounding quotes that some tools add: ?land="cn"
-    const code = raw.replace(/^["']|["']$/g, '').toLowerCase().trim();
-    if (!code) return null;
-    // Direct match against i18n keys (e.g. ?land=mandarin)
-    if (i18n[code]) return code;
-    // Locale-code match via BROWSER_LANG_MAP (e.g. ?land=cn, ?land=zh-cn)
-    return BROWSER_LANG_MAP[code] || BROWSER_LANG_MAP[code.split('-')[0]] || null;
-  }
-
-  function resolveInitialLang() {
-    // URL param takes highest priority (allows deep-linking and sharing)
-    const fromUrl = resolveUrlLang();
-    if (fromUrl) return fromUrl;
-    const saved = localStorage.getItem(LANG_STORAGE_KEY);
-    // Only trust saved value if it exists in i18n data
-    if (saved && i18n[saved]) return saved;
-    return detectBrowserLang();
-  }
+  // The tables and the URL/storage/browser precedence live in ../i18n/detect.js, shared
+  // with the playground so both pages resolve the reader's language the same way.
+  // `isKnownLang` is this page's answer to "do I have data for that id?".
+  const isKnownLang = id => Boolean(i18n[id]);
 
   // ─── Syntax highlight a zymbol code string ───
   function highlight(code) {
@@ -399,7 +332,7 @@
     currentLang = langId;
     if (persist) localStorage.setItem(LANG_STORAGE_KEY, langId);
     // Keep URL in sync so the inline <head> script sets the right lang on reload
-    const bcp47 = LANG_BCP47[langId] || langId;
+    const bcp47 = bcp47Of(langId);
     document.documentElement.lang = bcp47;
     const url = new URL(window.location.href);
     url.searchParams.set('lang', bcp47);
@@ -742,6 +675,6 @@
   });
 
   // ─── Init ───
-  selectLang(resolveInitialLang(), false);
+  selectLang(resolveInitialLang(isKnownLang), false);
 
 })();
