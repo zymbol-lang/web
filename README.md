@@ -290,6 +290,7 @@ Plain Node, no install step. Run from this directory:
 ```bash
 node tests/test_zyp.mjs               # .zyp reader + module resolver — builds its own fixtures
 node tests/test_filestore.mjs         # mounted-vs-open file model + persistence
+node tests/test_limits.mjs            # step/output caps: the TUI exemption and the guard it must not disarm
 node tests/test_catalog.mjs [--check] # catalog.json ↔ examples/ (--check also compiles every .zy)
 node tests/test_runner.mjs            # parity: zymbol CLI vs the JS engine
 node tests/test_runner.mjs --dir examples   # …over the example pool
@@ -315,13 +316,20 @@ renamed or deleted, at which point a stale cached `playground.js` imports a file
 the whole ES module graph fails silently. `serve.mjs` sends `no-store` on everything.
 
 `test_runner.mjs` runs the Rust test corpus (`../interpreter/tests/`) through both engines and
-diffs the output — it needs the `zymbol` CLI on `PATH`. Current: **513/518 passing**, 39
-skipped (irreducible in a browser: BashExec, ANSI/TUI, `std/db`, step limits).
+diffs the output — it needs the `zymbol` CLI on `PATH`. Measured on the v0.0.9 branch:
+**518/528 passing, 10 failing**, 39 skipped (irreducible in a browser: BashExec, ANSI/TUI,
+`std/db`, step limits).
+
+The corpus grows with the Rust engines, so this figure moves when they gain a check the web
+Checker has not been given yet — which is what half of those 10 are. Five of them are the
+`arity/` tests added on this branch: `zymbol-semantic` now rejects a call whose argument count
+is wrong (`call_arity.rs`) and the web Checker has no counterpart, so the playground runs a
+program the CLI refuses. Quote this number from a fresh run, not from this line.
 
 Pointed at the example pool (`--dir examples`) it audits every published example the same way:
-**206/208 passing**, 6 skipped. A file whose divergence is irreducible declares it in its own
-first lines with `// @skip-parity: <reason>` rather than being listed here — the pool is not
-this runner's corpus, and duplicating its paths into the skip table would rot.
+**208/210 passing, 2 failing**, 6 skipped. A file whose divergence is irreducible declares it
+in its own first lines with `// @skip-parity: <reason>` rather than being listed here — the
+pool is not this runner's corpus, and duplicating its paths into the skip table would rot.
 
 The 2 pool failures are parity gaps in `zymbol.js`, and the pool is what surfaced them:
 `projects/math-es/calculadora.zy` (the float literal `3.14159265` prints as
