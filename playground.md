@@ -28,7 +28,12 @@ interpreter](install.md).
   browser's CORS rules apply: a server that sends no CORS headers is unreachable
   from here even though the same program works from the CLI.
 - A run stops after 50 000 statements or 32 KB of output, so a runaway loop cannot
-  freeze the tab. TUI blocks are exempt.
+  freeze the tab. A loaded `.zyp` package runs at 2 000 000 of each instead: it is a
+  real multi-file program, not the single-statement snippet those defaults were sized
+  for. Statements inside a `>>|` block count against neither — a TUI program is
+  interactive and legitimately long-running — and on leaving the block the count
+  returns to what it was on entry, so the budget outside is neither consumed by the
+  block nor reset by it.
 - Float literals lose precision — `3.14159265` prints as `3.1415926499999998`.
   Known gap, not present in the native engines.
 

@@ -40,6 +40,9 @@ jobs:
       - name: Playground file model (mounted vs open)
         run: node tests/test_filestore.mjs
 
+      - name: Execution limits (TUI block exemption vs the runaway-loop guard)
+        run: node tests/test_limits.mjs
+
       - name: Example pool integrity (catalog.json ↔ examples/)
         run: node tests/test_catalog.mjs
 

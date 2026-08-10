@@ -126,10 +126,17 @@
  * non-numeric text, an error when a number meets text that is not one. == still never
  * coerces. Mirrors cmp_order (VM) and compare_values (tree-walker).
  *
- * Parity as of the v0.0.8 release, measured 2026-08-01:
- *   node tests/test_runner.mjs              → 516/521, 39 skipped (irreducible)
+ * Parity re-measured 2026-08-09 against the v0.0.9 branch:
+ *   node tests/test_runner.mjs              → 518/528, 39 skipped (irreducible)
  *   node tests/test_runner.mjs --dir examples → 208/210
- * The 7 failures are known gaps, not regressions:
+ * The 10 failures are known gaps, not regressions:
+ *   - arity  argument counts are not checked at all (JS PERMISSIVE — 5 tests)
+ *     `for (let i = 0; i < fn.params.length; i++) def(params[i], args[i] ?? mkUnit())`
+ *     fills a missing argument with Unit and drops a surplus one. That is what the
+ *     register VM did until v0.0.9, when a mismatch became a semantic error fatal
+ *     before execution in both Rust engines (REFERENCE.md L28) — so this engine is
+ *     now the only one that runs `m::f(a, b)` against a one-parameter `f`.
+ *     The whole of interpreter/tests/arity/ fails here for that one reason.
  *   - MM-4  import-time semantic gate            (JS PERMISSIVE — worse failure mode)
  *   - MM-11 leftover loop-iterator value         (JS PERMISSIVE — worse failure mode)
  *   - MM-9  root-scope constants at call depth >= 2
@@ -142,8 +149,9 @@
  *     so 3.14159265 prints as 3.1415926499999998. Affects EVERY float literal, not just
  *     the one example that catches it. Predates v0.0.8 — introduced with digit-script
  *     support in v0.0.4, and unnoticed until the example pool became real files.
- * The two PERMISSIVE rows produce output the CLI would have refused, and are the ones to
- * fix first. Detail and the per-test table: interpreter/IMPL_V008.md § E.3.
+ * The three PERMISSIVE rows produce output the CLI would have refused, and are the ones
+ * to fix first — arity most of all, since it is the only gap where the other three
+ * engines now agree with each other and not with this one. Detail and the per-test table: interpreter/IMPL_V008.md § E.3.
  */
 
 // ─── Unicode digit blocks (mirrors DIGIT_BLOCKS in zymbol-lexer) ─────────────
@@ -225,6 +233,12 @@ class ZyRuntimeError extends ZyError {
 class ZyStaticError extends Error {
   constructor(msg) { super(msg); }
 }
+
+// Thin-space grouping for the execution-limit messages, so they quote the limit that was
+// actually configured. They used to hardcode "50 000 steps" and "32 KB", which is what the
+// defaults happen to be — a playground running a `.zyp` at 2 000 000 reported 50 000 and
+// sent whoever was debugging it looking in the wrong place.
+const grouped = n => (Number.isFinite(n) ? n.toLocaleString('en-US').replace(/,/g, ' ') : String(n));
 
 // ─── Lexer ────────────────────────────────────────────────────────────────────
 
@@ -3078,7 +3092,7 @@ export class Interpreter {
   tick() {
     if (this.tui?.aborted) throw new ZyError('Program stopped.');
     if (++this.steps > this.maxSteps)
-      throw new ZyError('Execution limit reached (50 000 steps) — infinite loop?');
+      throw new ZyError(`Execution limit reached (${grouped(this.maxSteps)} steps) — infinite loop?`);
   }
 
   maybeYield() {
@@ -3092,7 +3106,7 @@ export class Interpreter {
   emit(text) {
     this.outputBytes += text.length;
     if (this.outputBytes > this.maxBytes)
-      throw new ZyError('Output limit reached (32 KB) — infinite loop?');
+      throw new ZyError(`Output limit reached (${grouped(Math.round(this.maxBytes / 1000))} KB) — infinite loop?`);
     if (this.tui && this.tui.active) this.tui.print(text);
     else this.outputFn(text);
   }
@@ -3294,9 +3308,19 @@ export class Interpreter {
 
       case 'TuiBlock': {
         if (!this.tui) return await this.execBlock(stmt.body, new Env(env));
-        const savedMax  = this.maxSteps;
-        const savedByte = this.maxBytes;
-        const savedIter = this.maxInfiniteIter;
+        // A TUI program is interactive and legitimately long-running, so the block is
+        // exempt from the execution limits. Raising the ceilings is not enough: `steps`
+        // and `outputBytes` are monotonic counters for the whole program, so work done
+        // under the exemption used to stay on the tab and blow the restored limit on the
+        // very next statement outside the block, however trivial. Snapshot the counters
+        // too and put them back, so the exemption means what it says — the block's work
+        // does not count against the budget outside it. Restoring rather than zeroing
+        // keeps whatever was spent *before* the block on the tab, and nests correctly.
+        const savedMax   = this.maxSteps;
+        const savedByte  = this.maxBytes;
+        const savedIter  = this.maxInfiniteIter;
+        const savedSteps = this.steps;
+        const savedOut   = this.outputBytes;
         this.maxSteps        = Infinity;
         this.maxBytes        = Infinity;
         this.maxInfiniteIter = Infinity;
@@ -3308,6 +3332,8 @@ export class Interpreter {
           this.maxSteps        = savedMax;
           this.maxBytes        = savedByte;
           this.maxInfiniteIter = savedIter;
+          this.steps           = savedSteps;
+          this.outputBytes     = savedOut;
         }
         return;
       }
