@@ -1827,6 +1827,117 @@ class Checker {
     this.pendingHot  = false; // prefix hot-def sentinel (°name)
     this.funcDepth   = 0;     // >0 inside a function or lambda body — see lifetimeWarnForIterator
     this.lifetimeWarned = new Set();
+    // One entry per enclosing @ loop, innermost last; null for an unlabelled
+    // loop. Emptied at a function or lambda boundary, because a callee does not
+    // see the caller's loops. See checkLoopControl.
+    this.loopLabels  = [];
+    // Argument-count tables, filled by collectArities() before any statement is
+    // checked, so a call may precede the declaration it names.
+    //   funcArity : local function name  → parameter count
+    //   aliasPath : import alias         → module path ('std/math', './lib')
+    //   reassigned: names later bound to something else, so `f(…)` is no longer
+    //               known to be that function and is left unchecked
+    this.funcArity  = new Map();
+    this.aliasPath  = new Map();
+    this.reassigned = new Set();
+    // alias → (function → arity) for user modules. Empty unless a caller
+    // supplies it; a qualified call is left unchecked rather than guessed at,
+    // exactly as TypeChecker::set_module_arities does in Rust.
+    this.moduleArities = new Map();
+  }
+
+  /**
+   * Argument counts, checked the way `zymbol check` has checked them since
+   * v0.0.9 (crates/zymbol-semantic/src/type_check.rs).
+   *
+   * The browser engine had no such check, so `math::sqrt(4.0, 9.0)` printed `2`
+   * in the playground and was refused outright by the CLI — the same program,
+   * two answers, on the tool people reach for first.
+   *
+   * A variadic function (arity -1, e.g. `math::log`) accepts any count.
+   */
+  checkArity(name, expected, actual, line) {
+    if (expected < 0 || expected === actual) return;
+    this.error('E016',
+      `function '${name}' expects ${expected} argument(s), but ${actual} were provided`,
+      line, { name, expected, actual });
+  }
+
+  /** Arity of `alias::field`, or null when nothing reliable is known. */
+  qualifiedArity(alias, field) {
+    const path = this.aliasPath.get(alias);
+    if (path === undefined) return null;
+    const std = STDLIB_ARITIES.get(path);
+    if (std) return std.has(field) ? std.get(field) : null;
+    const user = this.moduleArities.get(alias);
+    return user && user.has(field) ? user.get(field) : null;
+  }
+
+  /**
+   * Walk the whole program once for declarations, before checking anything.
+   *
+   * Two passes' worth of information in one: what each function's arity is, and
+   * which of those names are later rebound to something else. A rebound name is
+   * dropped rather than checked — `f = (x) -> x` after `f(a, b) { }` means a
+   * call to `f` is no longer known to reach the declaration.
+   */
+  collectArities(stmts) {
+    if (!Array.isArray(stmts)) return;
+    for (const s of stmts) {
+      if (!s) continue;
+      switch (s.type) {
+        case 'FuncDecl':
+          this.funcArity.set(s.name, (s.params ?? []).length);
+          this.collectArities(s.body);
+          break;
+        case 'Import':
+          if (s.alias && s.path) this.aliasPath.set(s.alias, s.path);
+          break;
+        case 'VarAssign':
+        case 'ConstAssign':
+          if (s.name) this.reassigned.add(s.name);
+          break;
+        case 'Loop':      this.collectArities(s.body); break;
+        case 'TuiBlock':  this.collectArities(s.body); break;
+        case 'ModuleBlock': this.collectArities(s.body); break;
+        case 'If':
+          this.collectArities(s.then);
+          for (const b of (s.elifs ?? [])) this.collectArities(b.body ?? b.then);
+          this.collectArities(s.else ?? s.elseBody);
+          break;
+        case 'TryCatch':
+          this.collectArities(s.tryBody ?? s.try);
+          for (const c of (s.catches ?? [])) this.collectArities(c.body);
+          this.collectArities(s.finallyBody ?? s.finally);
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  /**
+   * `@!` / `@>` and their labelled forms, checked the way `zymbol check` checks
+   * them since v0.0.9 (crates/zymbol-semantic/src/loop_context.rs).
+   *
+   * This used to be unchecked here, and the four engines gave four different
+   * answers to `@:nope!`: the Rust tree-walker unwound every enclosing loop and
+   * carried on, the register VM refused to compile, zyml raised at run time,
+   * and this engine unwound every loop and then terminated the program — all of
+   * them silently except the VM. It is decidable statically, so it is decided
+   * statically, and the branch that never runs is checked too.
+   */
+  checkLoopControl(stmt, sym, verb) {
+    const label = stmt.label ?? null;
+    if (label === null || label === '') {
+      if (this.loopLabels.length === 0) {
+        this.error('E014', `'${sym}' outside a loop`, stmt.line, { sym, verb });
+      }
+      return;
+    }
+    if (!this.loopLabels.includes(label)) {
+      this.error('E015', `no enclosing loop is labelled '${label}'`, stmt.line, { label, sym });
+    }
   }
 
   push(funcBoundary = false) {
@@ -1948,6 +2059,7 @@ class Checker {
   }
 
   check() {
+    this.collectArities(this.ast.body);
     this.push(false);
     for (const stmt of this.ast.body) {
       if (stmt.type === 'FuncDecl') this.define(stmt.name, stmt.line);
@@ -2112,7 +2224,9 @@ class Checker {
           this.checkExpr(stmt.cond);
         }
         this.lifetimeWarnForIterator(stmt, preexisting);
+        this.loopLabels.push(stmt.label ?? null);
         this.checkBlock(stmt.body);
+        this.loopLabels.pop();
         this.pop();
         return;
       }
@@ -2129,7 +2243,16 @@ class Checker {
       }
 
       case 'Break':
+        this.checkLoopControl(stmt, '@!', 'break');
+        return;
+
       case 'Continue':
+        this.checkLoopControl(stmt, '@>', 'continue');
+        return;
+
+      // `Sleep` (@~) is deliberately absent from the two cases above: it pauses
+      // execution without acting on the loop's control flow, so it carries no
+      // loop requirement. Every engine has always accepted it at top level.
       case 'SetNumeralMode':
       case 'Noop':
       case 'ExportDecl':
@@ -2159,11 +2282,17 @@ class Checker {
       case 'FuncDecl': {
         this.push(false); // named fns can access outer scope (module aliases, globals)
         this.funcDepth++;
+        // A function body is a loop-context boundary: the caller's loops are
+        // not in scope, so `f() { @! }` is an error even when every call site
+        // sits inside a loop.
+        const outerLoops = this.loopLabels;
+        this.loopLabels = [];
         for (const p of (stmt.params ?? [])) {
           const pname = typeof p === 'string' ? p : p.name;
           if (pname) this.define(pname, stmt.line, false);
         }
         this.checkBlock(stmt.body);
+        this.loopLabels = outerLoops;
         this.funcDepth--;
         this.pop();
         return;
@@ -2272,6 +2401,10 @@ class Checker {
         if (typeof expr.callee === 'string' && expr.callee) {
           const info = this.lookup(expr.callee, expr.line);
           if (!info) this.error('E_FUNC', `undefined function: '${expr.callee}'`, expr.line, { name: expr.callee });
+          else if (this.funcArity.has(expr.callee) && !this.reassigned.has(expr.callee)) {
+            this.checkArity(expr.callee, this.funcArity.get(expr.callee),
+                            (expr.args ?? []).length, expr.line);
+          }
         } else if (expr.callee && typeof expr.callee === 'object') {
           this.checkExpr(expr.callee);
         }
@@ -2280,7 +2413,17 @@ class Checker {
       }
 
       case 'CallExpr': {
-        this.checkExpr(expr.callee ?? expr.fn);
+        // `alias::func(…)` arrives as a FieldAccess callee. Checked against the
+        // std/ table, or against a user-module table if one was supplied.
+        const callee = expr.callee ?? expr.fn;
+        if (callee?.type === 'FieldAccess' && callee.obj?.type === 'Ident' && callee.field) {
+          const expected = this.qualifiedArity(callee.obj.name, callee.field);
+          if (expected !== null) {
+            this.checkArity(`${callee.obj.name}::${callee.field}`, expected,
+                            (expr.args ?? []).length, expr.line);
+          }
+        }
+        this.checkExpr(callee);
         for (const a of (expr.args ?? [])) this.checkExpr(a.value ?? a);
         return;
       }
@@ -2289,6 +2432,11 @@ class Checker {
         // Lambdas are closures — use funcBoundary=false so outer vars remain accessible
         this.push(false);
         this.funcDepth++;
+        // Loop context does not close over, though: a `@!` in a lambda body
+        // cannot break the loop the lambda was written inside, so the stack is
+        // emptied here exactly as it is for a named function.
+        const outerLoops = this.loopLabels;
+        this.loopLabels = [];
         for (const p of (expr.params ?? [])) {
           const pname = typeof p === 'string' ? p : p.name;
           if (pname) this.define(pname, expr.line, false);
@@ -2298,6 +2446,7 @@ class Checker {
         else if (body?.type === 'expr')  this.checkExpr(body.value);
         else if (body?.type === 'block') this.checkBlock(body.stmts ?? body.body ?? []);
         else                             this.checkExpr(body);
+        this.loopLabels = outerLoops;
         this.funcDepth--;
         this.pop();
         return;
@@ -2649,6 +2798,37 @@ function termTruncate(s, cols) {
   }
   return out;
 }
+
+// ─── What std/ exports, and with how many arguments ──────────────────────────
+//
+// Mirrors `crates/zymbol-common/src/stdlib.rs`, which is the canonical list —
+// the Rust engines, `zymbol check` and the LSP all read it, and it is what makes
+// `math::sqrt(4.0, 9.0)` a semantic error since v0.0.9. Without a copy here the
+// browser engine ran that call and printed `2`, so the playground disagreed with
+// the CLI on a program the CLI refuses outright.
+//
+// `-1` is variadic: `math::log(8.0)` and `math::log(8.0, 2.0)` are both correct.
+//
+// The functions themselves are built below by `buildStdlibModule`; this table is
+// only about how many arguments each takes, so adding a function means touching
+// both. `web/tests/test_check.mjs` compares this table against the Rust one.
+export const STDLIB_ARITIES = new Map([
+  ['std/math', new Map([
+    ['sqrt',1],['exp',1],['ln',1],['log',-1],['pow',2],['sin',1],['cos',1],['tan',1],
+    ['asin',1],['acos',1],['atan',1],['atan2',2],['tanh',1],['sinh',1],['cosh',1],
+    ['sigmoid',1],['abs',1],['max',2],['min',2],['floor',1],['ceil',1],['round',1],
+  ])],
+  ['std/random', new Map([['entero',2],['rango',1],['peso_f64',0]])],
+  ['std/json',   new Map([['decode',1],['decode_map',2],['encode',1]])],
+  ['std/io',     new Map([['read',1],['write',2],['append',2],['exists',1],['delete',1],['list',1],['mkdir',1]])],
+  ['std/net',    new Map([['get',-1],['post',-1],['post_json',-1],['head',1]])],
+  ['std/term',   new Map([['width',1],['pad_left',2],['pad_right',2],['center',2],['truncate',2]])],
+  ['std/db',     new Map([
+    ['connect',2],['disconnect',1],['exec',-1],['query',-1],['query_one',-1],['query_value',-1],
+    ['tx',2],['begin',1],['commit',1],['rollback',1],['savepoint',2],['release',2],
+    ['rollback_to',2],['exec_script',2],['table_exists',2],
+  ])],
+]);
 
 // ─── Standard library modules (std/math, std/random, std/json, std/net, std/io, std/term) ─
 
@@ -4702,7 +4882,84 @@ export class Interpreter {
  * @param {string} src
  * @returns {{diagnostics: Array, ast: object|null}}
  */
-export function checkSource(src) {
+/**
+ * Extract `function → parameter count` from a module's source.
+ *
+ * The browser counterpart of `zymbol_semantic::arities_of_module_file`. Callers
+ * that can resolve imports build one of these per alias and pass the lot to
+ * `checkSource`, which is how a qualified call gets checked at all — the checker
+ * itself has no filesystem and no resolver, so without a table it says nothing
+ * rather than guessing.
+ *
+ * Every function declared in the file is listed, exported or not: a call to a
+ * private one is already reported elsewhere, and leaving it out would silently
+ * skip the arity check on a name that does resolve.
+ *
+ * Returns an empty Map for a source that does not parse — a broken module is
+ * reported when it is imported, not by inventing arities for it here.
+ */
+export function moduleAritiesFrom(src) {
+  const out = new Map();
+  let ast;
+  try {
+    ast = new Parser(new Lexer(src).tokenize()).parse();
+  } catch {
+    return out;
+  }
+  const walk = stmts => {
+    for (const s of (stmts ?? [])) {
+      if (!s) continue;
+      if (s.type === 'FuncDecl') out.set(s.name, (s.params ?? []).length);
+      else if (s.type === 'ModuleBlock') walk(s.body);
+    }
+  };
+  walk(ast.body);
+  return out;
+}
+
+/**
+ * Build the alias → arity-table map for every module `ast` imports directly.
+ *
+ * Only the caller's resolver can reach a module's source, so this is where the
+ * two meet: `moduleAritiesFrom` knows how to read a module, the resolver knows
+ * where it is. Direct imports only — a wrong argument count written in *this*
+ * file can only name a module this file imports.
+ *
+ * A module that fails to resolve is skipped in silence: that is reported when
+ * the import runs, with a better message than this pass could produce.
+ *
+ * @param {object} ast          parsed program (needs `.body`)
+ * @param {Function|null} resolver  `(path, fromPath) => string | {src} | null`
+ * @param {string|null} filePath
+ * @returns {Promise<Map<string, Map<string, number>>>}
+ */
+export async function moduleAritiesFor(ast, resolver, filePath = null) {
+  const out = new Map();
+  if (!resolver || !ast?.body) return out;
+  for (const imp of ast.body) {
+    if (imp?.type !== 'Import' || !imp.alias || !imp.path) continue;
+    if (imp.path.startsWith('std/')) continue;   // shipped with the engine
+    try {
+      const result = await resolver(imp.path, filePath);
+      if (result == null || result.notFound) continue;
+      const modSrc = typeof result === 'string' ? result : result.src;
+      if (typeof modSrc === 'string') out.set(imp.alias, moduleAritiesFrom(modSrc));
+    } catch {
+      // Reported at import time; nothing useful to add here.
+    }
+  }
+  return out;
+}
+
+/**
+ * @param {string} src
+ * @param {{moduleArities?: Map<string, Map<string, number>>}} [opts]
+ *   `moduleArities` maps an import alias to that module's `moduleAritiesFrom`
+ *   table — build it with `moduleAritiesFor` when a resolver is available.
+ *   Omitted, qualified calls to user modules go unchecked; `std/` calls are
+ *   checked either way, since that table ships with the engine.
+ */
+export function checkSource(src, opts = {}) {
   let ast = null;
   try {
     ast = new Parser(new Lexer(src).tokenize()).parse();
@@ -4726,7 +4983,9 @@ export function checkSource(src) {
 
   let diagnostics;
   try {
-    diagnostics = new Checker(ast).check();
+    const checker = new Checker(ast);
+    if (opts.moduleArities instanceof Map) checker.moduleArities = opts.moduleArities;
+    diagnostics = checker.check();
   } catch (e) {
     // The checker walking a shape it did not expect must not look like a broken program.
     // Report nothing rather than something wrong; running the program still reports for real.
@@ -4876,7 +5135,12 @@ export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, f
   const tokens = new Lexer(src).tokenize();
   const ast    = new Parser(tokens).parse();
 
+  // Argument counts for `alias::func(…)` need the imported module's source, so
+  // the table is built here, where the resolver is, and handed to the checker.
+  // Same split as Rust: `zymbol_semantic::module_arities` reads the files and
+  // `TypeChecker::set_module_arities` receives the result.
   const checker = new Checker(ast);
+  checker.moduleArities = await moduleAritiesFor(ast, moduleResolver, filePath);
   const diags   = checker.check();
 
   for (const d of diags) if (d.severity === 'error') onOutput(formatDiagnostic(d) + '\n\n');

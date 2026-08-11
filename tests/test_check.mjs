@@ -27,7 +27,7 @@ import { spawnSync, execFileSync } from 'child_process';
 import { join, dirname, relative } from 'path';
 import { fileURLToPath } from 'url';
 
-import { checkSource } from '../src/zymbol/zymbol.js';
+import { checkSource, STDLIB_ARITIES } from '../src/zymbol/zymbol.js';
 
 const WEB_DIR      = dirname(dirname(fileURLToPath(import.meta.url)));
 const EXAMPLES     = join(WEB_DIR, 'examples');
@@ -82,6 +82,58 @@ function compare(cli, web) {
   for (const [k, n] of c) onlyCli += Math.max(0, n - (w.get(k) ?? 0));
   for (const [k, n] of w) onlyWeb += Math.max(0, n - (c.get(k) ?? 0));
   return { onlyCli, onlyWeb };
+}
+
+// ─── std/ arity table vs the Rust one ─────────────────────────────────────────
+// `STDLIB_ARITIES` in zymbol.js is a copy of `crates/zymbol-common/src/stdlib.rs`,
+// which is the canonical list every Rust tool reads. A copy drifts unless
+// something compares it, and a drifted copy is worse than no copy: it makes the
+// playground reject a correct call, or accept one the CLI refuses.
+//
+// Read straight out of the Rust source — no build required, and it fails loudly
+// if the table's shape there changes rather than passing on a silent no-match.
+function stdlibAritiesFromRust() {
+  const rs = join(WEB_DIR, '..', 'interpreter', 'crates', 'zymbol-common', 'src', 'stdlib.rs');
+  if (!existsSync(rs)) return null;   // interpreter repo not checked out alongside
+  const src = readFileSync(rs, 'utf8');
+  const out = new Map();
+  for (const block of src.matchAll(/StdModule\s*\{([\s\S]*?)\n {4}\},/g)) {
+    const body = block[1];
+    const path = /path:\s*"([^"]+)"/.exec(body)?.[1];
+    if (!path) continue;
+    const fns = new Map();
+    for (const f of body.matchAll(/\bf\("([^"]+)",\s*(-?\d+)\)/g)) fns.set(f[1], Number(f[2]));
+    out.set(path, fns);
+  }
+  return out.size > 0 ? out : null;
+}
+
+let stdlibFailures = 0;
+{
+  const rust = stdlibAritiesFromRust();
+  if (rust === null) {
+    console.log('std/ arity table: skipped (interpreter sources not available)');
+  } else {
+    const note = m => { stdlibFailures++; console.log(`  ✗ std/ arity: ${m}`); };
+    for (const [path, fns] of rust) {
+      const js = STDLIB_ARITIES.get(path);
+      if (!js) { note(`zymbol.js has no table for '${path}'`); continue; }
+      for (const [name, arity] of fns) {
+        if (!js.has(name)) note(`'${path}::${name}' is in Rust, missing from zymbol.js`);
+        else if (js.get(name) !== arity)
+          note(`'${path}::${name}' arity ${js.get(name)} in zymbol.js, ${arity} in Rust`);
+      }
+      for (const name of js.keys())
+        if (!fns.has(name)) note(`'${path}::${name}' is in zymbol.js, missing from Rust`);
+    }
+    for (const path of STDLIB_ARITIES.keys())
+      if (!rust.has(path)) note(`zymbol.js has a table for '${path}', which Rust does not list`);
+
+    const total = [...rust.values()].reduce((n, m) => n + m.size, 0);
+    console.log(stdlibFailures === 0
+      ? `std/ arity table: ${total} functions across ${rust.size} modules, matches Rust`
+      : `std/ arity table: ${stdlibFailures} mismatch(es) vs Rust`);
+  }
 }
 
 const files = walk(EXAMPLES).sort();
@@ -145,6 +197,6 @@ console.log(`in full agreement : ${agree} (${(agree / rows.length * 100).toFixed
 if (improvements) console.log(`improved   : ${improvements}  — re-run with --baseline to lock it in`);
 if (gone.length)  console.log(`gone       : ${gone.length} baseline entries no longer exist`);
 
-const failed = regressions + novel;
+const failed = regressions + novel + stdlibFailures;
 console.log(failed === 0 ? '\n✓ no parity regressions' : `\n✗ ${failed} regression(s)`);
 process.exit(failed === 0 ? 0 : 1);
