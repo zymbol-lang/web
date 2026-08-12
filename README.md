@@ -315,10 +315,45 @@ applies heuristic freshness and stops revalidating — which is invisible until 
 renamed or deleted, at which point a stale cached `playground.js` imports a file that 404s and
 the whole ES module graph fails silently. `serve.mjs` sends `no-store` on everything.
 
-`test_runner.mjs` runs the Rust test corpus (`../interpreter/tests/`) through both engines and
-diffs the output — it needs the `zymbol` CLI on `PATH`. Measured on the v0.0.9 branch:
-**518/528 passing, 10 failing**, 39 skipped (irreducible in a browser: BashExec, ANSI/TUI,
-`std/db`, step limits).
+`test_runner.mjs` is a wrapper over
+[ZyQuality](https://github.com/zymbol-lang/zyquality), the project's point of record for
+testing: the corpus lives there, and the browser engine is graded on the same files as the
+other three. It exits **2** if that checkout is absent — a gate must not read "nothing ran"
+as "nothing failed".
+
+```bash
+git clone https://github.com/zymbol-lang/zyquality.git ../zyquality
+make -C ../zyquality
+node tests/test_runner.mjs                  # → zyq consensus --engines zytw,zyjs
+node tests/test_runner.mjs --dir examples   # the example pool, which this repo owns
+```
+
+The 40-entry `SKIP_SET` that used to sit inside this file is gone. It was a list of paths in
+JavaScript describing files in another repository, which no other runner could read — so a
+file skipped here because it shells out was still counted as a divergence by zyml. Those
+exclusions are now `[[rule]]` entries in `zyquality/corpus.toml`, tagged (BASH_EXEC,
+ANSI_FORMAT, TUI, HOT_DEF, FEATURE_GAP, STD_DB) with the reason each gives, and every
+engine's suite reads the same file. A file in *this* repository's example pool declares its
+own with a `// @zyq-skip:` marker in its first lines, so the rule travels with the file.
+
+`tests/run_one.mjs` is the driver: it runs one `.zy` and prints what the engine produced,
+which is what lets a runner outside this repo treat the browser engine as one more
+command-line engine. ZyQuality had a copy of it that skipped the `checkSource` pass, so a
+rejected program printed its diagnostic on **stdout** and exited **0**; the copy is deleted
+and `engines.toml` points here. That alone accounted for 14 of the divergences.
+
+Measured 2026-08-12 over the shared corpus of 585 files: **90 files where the browser engine
+is the sole outlier**, and that number needs qualifying before anyone acts on it — a good
+share are diagnostics the CLI colours and the browser cannot, which is a channel difference,
+not a semantic one. Characterising the rest is the next piece of work, and until it is done
+the honest statement is "90 differences, most of them probably not bugs", not "90 bugs".
+
+That count used to include ten more. This runner was the *only* suite in the project that
+executed `interpreter/tests/scripts/*.zy` — seven benchmarks, a stress test, a timing module
+the CLI refuses to run at all, and an orphan nobody referenced. Every one of them printed
+elapsed wall time or failed outright, so every one of them was scored as a divergence of the
+JavaScript engine. They are `zyquality/bench/` now, outside the corpus, and the ten failures
+went with them.
 
 The corpus grows with the Rust engines, so this figure moves when they gain a check the web
 Checker has not been given yet — which is what half of those 10 are. Five of them are the

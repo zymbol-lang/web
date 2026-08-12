@@ -40,9 +40,20 @@ const { runZymbol, checkSource, moduleAritiesFor, Lexer, Parser } =
 // ─── stdin feed ───────────────────────────────────────────────────────────────
 // Mirrors test_runner.mjs: a program that reads more lines than it was given
 // gets '' rather than hanging, which is what a closed stdin does to the CLI.
+//
+// Two ways in, because two callers need different ones. `--input FILE` is what
+// this repo's own tests pass. Actual stdin is what a generic engine runner
+// gives you — zyquality feeds every engine the same file descriptor, and an
+// engine that ignored it would silently read nothing and diverge on all 14 of
+// the corpus's input tests. Read up front: the engine's input callback is
+// synchronous and cannot await a chunk that has not arrived.
 let lines = [];
 if (inputArg && args.includes('--input')) {
   try { lines = readFileSync(inputArg, 'utf8').split('\n'); } catch { lines = []; }
+} else if (!process.stdin.isTTY) {
+  let buf = '';
+  for await (const chunk of process.stdin) buf += chunk;
+  lines = buf.split('\n');
 }
 let cursor = 0;
 const inputFn = () => (cursor < lines.length ? lines[cursor++] : '');
