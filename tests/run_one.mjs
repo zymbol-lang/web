@@ -99,7 +99,15 @@ const onOutput = s => { out += s; };
 let failed = false;
 let message = '';
 try {
-  await runZymbol(source, inputFn, onOutput, resolver, abs);
+  // runZymbol catches the engine's own errors so the playground can render
+  // them; the result object is how it reports the failure to a caller that
+  // needs an exit code. Without reading it, a refused program looked like a
+  // successful one from the shell.
+  const result = await runZymbol(source, inputFn, onOutput, resolver, abs);
+  if (result && result.failed) {
+    failed = true;
+    message = result.message ?? 'engine reported failure';
+  }
 } catch (e) {
   failed = true;
   message = e && e.message ? e.message : String(e);
@@ -107,6 +115,8 @@ try {
 
 process.stdout.write(out);
 if (failed) {
-  process.stderr.write(`Runtime error: ${message}\n`);
+  // Only when the engine did not already report it through onOutput — writing
+  // it twice would change stdout for every program that fails.
+  if (!out.includes(message)) process.stderr.write(`Runtime error: ${message}\n`);
   process.exit(1);
 }

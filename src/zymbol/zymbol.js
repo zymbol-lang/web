@@ -2602,6 +2602,20 @@ function asciiDigits(s) {
 // Numeric when *both* sides are numbers, where a string counts as a number if
 // `#|…|` would convert it: digits from any of the 69 supported scripts, so
 // `"४२" > "९"` compares 42 against 9 exactly as `"42" > "9"` does. Two
+// The `@ <expr>` specifier is either a count (Int, handled by the caller) or a
+// condition (Bool). Anything else raises with the same message and the same
+// type names the Rust and OCaml engines use, so the form fails identically
+// everywhere instead of each engine inventing its own truthiness.
+const LOOP_TYPE_WORDS = {
+  int: 'integer', float: 'float', bool: 'bool', str: 'string', char: 'char',
+  arr: 'array', tuple: 'tuple', func: 'function', error: 'error', unit: 'unit',
+};
+function loopCond(val) {
+  if (val.type === 'bool') return val.v;
+  const got = LOOP_TYPE_WORDS[val.type] ?? val.type;
+  throw new ZyRuntimeError(`loop expects a count or a condition, got ${got}`, '##Type');
+}
+
 // non-numeric strings compare lexicographically. A number against non-numeric
 // text returns null and the caller raises.
 //
@@ -3688,18 +3702,21 @@ export class Interpreter {
           await this.maybeYield();
         }
       } else {
-        // While loop: re-evaluate condition each iteration
-        let cond = firstVal;
-        while (this.truthy(cond)) {
+        // While loop: re-evaluate condition each iteration. A specifier that is
+        // neither a count nor a condition is refused rather than read through
+        // truthiness — every engine used to invent a different answer for an
+        // array or a float here.
+        let cond = loopCond(firstVal);
+        while (cond) {
           this.tick();
           const sig = await this.execBlock(loop.body, new Env(outer));
           if (brk(sig)) break;
-          if (cnt(sig)) { cond = await this.eval(loop.cond, env); continue; }
+          if (cnt(sig)) { cond = loopCond(await this.eval(loop.cond, env)); continue; }
           if (sig instanceof ZyReturn) return sig;
           if (sig instanceof ZyBreak) return sig;
           if (sig instanceof ZyContinue) return sig;
           await this.maybeYield();
-          cond = await this.eval(loop.cond, env);
+          cond = loopCond(await this.eval(loop.cond, env));
         }
       }
       return;
@@ -5144,7 +5161,8 @@ export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, f
   const diags   = checker.check();
 
   for (const d of diags) if (d.severity === 'error') onOutput(formatDiagnostic(d) + '\n\n');
-  if (diags.some(d => d.severity === 'error')) return;
+  if (diags.some(d => d.severity === 'error'))
+    return { failed: true, message: diags.find(d => d.severity === 'error').message };
 
   try {
     const interp = new Interpreter(onOutput, inputFn, moduleResolver, tuiContext);
@@ -5154,9 +5172,15 @@ export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, f
     if (opts.maxInfiniteIter != null) interp.maxInfiniteIter = opts.maxInfiniteIter;
     await interp.run(ast, filePath);
   } catch (e) {
-    if (e instanceof ZyStaticError)
-      onOutput(`Runtime error: ${e.message}`);
-    else
-      onOutput(`Runtime error: ${e.message ?? e}`);
+    // The error is written through onOutput rather than rethrown because the
+    // playground shows it in the output panel — an exception escaping here
+    // would take the page down with it. The return value is how a caller that
+    // *is* a process (tests/run_one.mjs) learns to exit non-zero: without it
+    // the CLI reported success for a program the engine had refused, and
+    // `zyq reject` read that as the form being accepted.
+    const message = e instanceof ZyStaticError ? e.message : (e.message ?? String(e));
+    onOutput(`Runtime error: ${message}`);
+    return { failed: true, message };
   }
+  return { failed: false };
 }
