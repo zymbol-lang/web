@@ -76,6 +76,26 @@
               "needs": [
                 "tui"
               ]
+            },
+            {
+              "id": "pkg-chaturanga",
+              "icon": "🐘",
+              "title": "Chaturanga — चतुरङ्गम्",
+              "desc": "The ancestor of chess, written in Sanskrit: historical rules, alpha-beta opponent, 5 languages and 3 numeral scripts",
+              "zyp": "games/classic/chaturanga.zyp",
+              "tags": [
+                "chaturanga",
+                "chess",
+                "shatranj",
+                "ajedrez",
+                "sanskrit",
+                "board",
+                "game",
+                "juego"
+              ],
+              "needs": [
+                "tui"
+              ]
             }
           ]
         }
