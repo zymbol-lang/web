@@ -209,7 +209,50 @@ function mapToScript(s, blockBase) {
 }
 
 function numeralInt(n, base)   { return mapToScript(String(Math.trunc(n)), base); }
-function numeralFloat(f, base) { return mapToScript(String(f), base); }
+// A float as Zymbol spells it, which is not how JavaScript spells it.
+//
+// Three separate disagreements with the other engines lived in `String(f)`:
+//
+//   · the infinities print `Infinity` / `-Infinity`, not `inf` / `-inf`;
+//   · `-0` prints `0`, losing the sign the other three keep;
+//   · magnitudes at or past 1e21, and below 1e-6, switch to exponent notation
+//     (`1e+21`, `1e-7`) where the others always print the digits out flat.
+//
+// The last one is the language's call, not this engine's: `#^` is the operator
+// that *asks* for scientific notation, and it already agrees in all four. So a
+// plain `>>` prints digits, and anyone who wants an exponent writes `#^`.
+// (`NaN` already agreed everywhere.)
+function floatText(f) {
+  if (Number.isNaN(f)) return 'NaN';
+  if (f === Infinity) return 'inf';
+  if (f === -Infinity) return '-inf';
+  if (Object.is(f, -0)) return '-0';
+  return expandExponent(String(f));
+}
+
+// `1e+21` → `1000000000000000000000`, `1.5e-10` → `0.00000000015`.
+// Mirrors `expand_exponent` in zyml/src/value.ml; the Rust engines get the same
+// shape for free, since Rust's `{}` for f64 never emits an exponent.
+function expandExponent(str) {
+  const ei = str.indexOf('e');
+  if (ei < 0) return str;
+  let mant = str.slice(0, ei);
+  const ex = Number(str.slice(ei + 1));
+  const neg = mant.startsWith('-');
+  if (neg) mant = mant.slice(1);
+  const di = mant.indexOf('.');
+  const ip = di < 0 ? mant : mant.slice(0, di);
+  const fp = di < 0 ? ''   : mant.slice(di + 1);
+  const digits = ip + fp;
+  const point = ip.length + ex;          // where the decimal point lands
+  let body;
+  if (point <= 0)                  body = '0.' + '0'.repeat(-point) + digits;
+  else if (point >= digits.length) body = digits + '0'.repeat(point - digits.length);
+  else                             body = digits.slice(0, point) + '.' + digits.slice(point);
+  if (body.includes('.')) body = body.replace(/0+$/, '').replace(/\.$/, '');
+  return neg ? '-' + body : body;
+}
+function numeralFloat(f, base) { return mapToScript(floatText(f), base); }
 function numeralBool(b, base)  { return '#' + numeralInt(b ? 1 : 0, base); }
 
 // ─── Signal types ─────────────────────────────────────────────────────────────
@@ -562,6 +605,8 @@ export class Lexer {
       }
       toks.push({ type: 'FLOAT', value: sci ? parseFloat(f + sci) : f, line: this.line });
     } else {
+      if (!inIntRange(value))
+        throw new ZyStaticError(`integer literal out of range: '${value}' (integers range from ${ZY_INT_MIN} to ${ZY_INT_MAX})`);
       toks.push({ type: 'NUM', value, line: this.line });
     }
   }
@@ -2562,6 +2607,28 @@ class Checker {
 
 // ─── Value constructors ───────────────────────────────────────────────────────
 
+// ─── The integer range (mirrors zymbol-common/src/num.rs) ────────────────────
+//
+// A Zymbol integer is a *safe* integer: +-(2^53 - 1), the widest range all four
+// engines hold exactly. It is the range this engine could always represent and
+// the other three could not stay inside of -- `10 ^ 20` printed a correct-looking
+// 100000000000000000000 here (exact only because 10^20 = 2^20 * 5^20), wrapped
+// to two different values in the Rust and OCaml engines, and raised in a fourth.
+// Now every engine raises, and this one has to check what it used to assume:
+// past 2^53 a Number silently rounds, so `9007199254740993` printed ...992.
+const ZY_INT_MAX = 9007199254740991;
+const ZY_INT_MIN = -9007199254740991;
+const inIntRange = v => Number.isSafeInteger(v);
+
+// An integer result, or the overflow every engine words identically.
+// Number arithmetic never wraps -- it rounds -- so a true result past 2^53 is
+// always a Number past 2^53, and this check cannot be fooled by a partial
+// product landing back in range the way a fixed-width accumulator can.
+const intResult = (v, a, op, b) => {
+  if (!inIntRange(v)) throw new ZyRuntimeError(`integer overflow: ${a} ${op} ${b}`, '##Range');
+  return mkInt(v);
+};
+
 const mkInt   = v => ({ type: 'int',   v: Math.trunc(v) });
 const mkFloat = v => ({ type: 'float', v });
 const mkBool  = v => ({ type: 'bool',  v: !!v });
@@ -2620,8 +2687,23 @@ function loopCond(val) {
 // text returns null and the caller raises.
 //
 // Equality (`==`) deliberately does not come through here: `"5" == 5` is false.
+// No ordering at all. Not a value whose sign the operators may read: an
+// ordering comparison against NaN must be false in all four directions, so the
+// callers test the code itself (see ordLt/ordLe/ordGt/ordGe).
+const INCOMPARABLE = 2;
+const ordLt = r => r === -1;
+const ordLe = r => r === -1 || r === 0;
+const ordGt = r => r === 1;
+const ordGe = r => r === 1 || r === 0;
+
 function orderValues(l, r) {
-  const cmp = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+  // `a < b ? -1 : a > b ? 1 : 0` answered 0 for NaN — both tests are false —
+  // so `nan <= 1.0` and `nan >= 1.0` were both true.
+  const cmp = (a, b) => {
+    if (typeof a === 'number' && Number.isNaN(a)) return INCOMPARABLE;
+    if (typeof b === 'number' && Number.isNaN(b)) return INCOMPARABLE;
+    return a < b ? -1 : a > b ? 1 : 0;
+  };
   const strNum = v => {
     if (v.type !== 'str') return null;
     const a = asciiDigits(v.v.trim());
@@ -2646,7 +2728,13 @@ function orderValues(l, r) {
 // Mirrors parse_numeric_string: int first, then float, with Unicode-digit normalization.
 function parseNumericInput(s) {
   const ascii = asciiDigits(s);
-  if (/^[+-]?[0-9]+$/.test(ascii)) return mkInt(Number(ascii));
+  // Text that spells an integer is judged by the integer rules alone: out of
+  // range it stays a String and is *not* retried as a float, which would answer
+  // 9007199254740992 for "9007199254740993".
+  if (/^[+-]?[0-9]+$/.test(ascii)) {
+    const n = Number(ascii);
+    return inIntRange(n) ? mkInt(n) : mkStr(s);
+  }
   if (/^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/.test(ascii)) return mkFloat(Number(ascii));
   return mkStr(s);
 }
@@ -2673,7 +2761,9 @@ function validateInput(s, cast) {
       if (!/^[+-]?[0-9]+$/.test(num)) return null;
       const digits = (num.match(/[0-9]/g) ?? []).length;
       if (cast.maxDigits != null && digits > cast.maxDigits) return null;
-      return mkInt(Number(num));
+      const n = Number(num);
+      if (!inIntRange(n)) return null;   // re-prompt: not an integer this language holds
+      return mkInt(n);
     }
     case 'text': {
       if (cast.max != null && [...s].length > cast.max) return null;
@@ -2890,7 +2980,11 @@ function buildStdlibModule(name, vfs = null) {
     exports.set('sigmoid', unary('sigmoid', x => 1 / (1 + Math.exp(-x))));
     exports.set('floor',   unary('floor',   x => Math.floor(x)));
     exports.set('ceil',    unary('ceil',    x => Math.ceil(x)));
-    exports.set('round',   unary('round',   x => Math.round(x)));
+    // Half away from zero, which is the rule the `###` cast in this same engine
+    // already followed and the other three engines follow here. `Math.round`
+    // breaks ties toward +∞ instead: it answers -2 for -2.5 where Zymbol says
+    // -3, and -0 for -0.5 where Zymbol says -1.
+    exports.set('round',   unary('round',   x => (x >= 0 ? Math.floor(x + 0.5) : Math.ceil(x - 0.5))));
     exports.set('abs',     { type: 'func', name: 'abs', native: true, call: args => {
       if (args[0]?.type === 'int')   return mkInt(Math.abs(args[0].v));
       const x = asF64(args[0]); if (x === null) typeErr('abs', args[0]);
@@ -2953,7 +3047,7 @@ function buildStdlibModule(name, vfs = null) {
     const jsonToValue = j => {
       if (j === null) return mkUnit();
       if (typeof j === 'boolean') return mkBool(j);
-      if (typeof j === 'number') return Number.isInteger(j) ? mkInt(j) : mkFloat(j);
+      if (typeof j === 'number') return Number.isSafeInteger(j) ? mkInt(j) : mkFloat(j);
       if (typeof j === 'string') return mkStr(j);
       if (Array.isArray(j)) return mkArr(j.map(jsonToValue));
       return { type: 'tuple', v: Object.values(j).map(jsonToValue), keys: Object.keys(j) };
@@ -4163,12 +4257,18 @@ export class Interpreter {
           throw new ZyRuntimeError(`${expr.op} requires a numeric value${reqSuffix}, got ${typeName}`, '##_');
         }
         if (expr.op === '##.') return mkFloat(val.v);
+        // A float with no integer form in range is a ##Range error, not the
+        // nearest Number: `###1.0e300` used to answer 1e300 as an "int".
+        const castInt = (n, op) => {
+          if (!inIntRange(n)) throw new ZyRuntimeError(`integer overflow: ${op} cannot represent this float`, '##Range');
+          return mkInt(n);
+        };
         if (expr.op === '###') {
           // Round half away from zero
           const n = val.v;
-          return mkInt(n >= 0 ? Math.floor(n + 0.5) : Math.ceil(n - 0.5));
+          return castInt(n >= 0 ? Math.floor(n + 0.5) : Math.ceil(n - 0.5), '###');
         }
-        if (expr.op === '##!') return mkInt(Math.trunc(val.v));
+        if (expr.op === '##!') return castInt(Math.trunc(val.v), '##!');
         return val;
       }
     }
@@ -4788,10 +4888,10 @@ export class Interpreter {
         throw new ZyError(`cannot compare ${cmpName(l)} ${cmpVal(l)} with ${cmpName(r)} ${cmpVal(r)} using operator '${opName}'`);
       }
       switch (op) {
-        case '<':  return mkBool(ord  < 0);
-        case '>':  return mkBool(ord  > 0);
-        case '<=': return mkBool(ord <= 0);
-        case '>=': return mkBool(ord >= 0);
+        case '<':  return mkBool(ordLt(ord));
+        case '>':  return mkBool(ordGt(ord));
+        case '<=': return mkBool(ordLe(ord));
+        case '>=': return mkBool(ordGe(ord));
       }
     }
 
@@ -4799,14 +4899,18 @@ export class Interpreter {
     const mk = isFloat ? mkFloat : mkInt;
     const lv = l.v, rv = r.v;
     switch (op) {
-      case '+':  return mk(lv + rv);
-      case '-':  return mk(lv - rv);
-      case '*':  return mk(lv * rv);
+      case '+':  return isFloat ? mkFloat(lv + rv) : intResult(lv + rv, lv, '+', rv);
+      case '-':  return isFloat ? mkFloat(lv - rv) : intResult(lv - rv, lv, '-', rv);
+      case '*':  return isFloat ? mkFloat(lv * rv) : intResult(lv * rv, lv, '*', rv);
       case '/':  if (rv === 0) throw new ZyRuntimeError('division by zero', '##Div');
                  return isFloat ? mkFloat(lv / rv) : mkInt(Math.trunc(lv / rv));
-      case '%':  if (rv === 0) throw new ZyRuntimeError('Modulo by zero', '##Div');
+      case '%':  if (rv === 0) throw new ZyRuntimeError('modulo by zero', '##Div');
                  return mk(lv % rv);
-      case '^':  return mk(Math.pow(lv, rv));
+      // A negative exponent is a float operation, as in every other engine;
+      // this used to truncate, so `2 ^ -2` was 0 here and 0.25 there.
+      case '^':  if (isFloat) return mkFloat(Math.pow(lv, rv));
+                 if (rv < 0)  return mkFloat(Math.pow(lv, rv));
+                 return intResult(Math.pow(lv, rv), lv, '^', rv);
       case '==': return mkBool(this.equals(l, r));
       case '<>': return mkBool(!this.equals(l, r));
       case '<':  return mkBool(lv < rv);
@@ -4841,7 +4945,7 @@ export class Interpreter {
     // as `()` — mirrors Rust `Value::to_display_string` (unified 2026-06-12).
     const nested = (v) => (v && v.type === 'unit') ? '()' : this.display(v);
     if (val.type === 'int')   return String(val.v);
-    if (val.type === 'float') return String(val.v);
+    if (val.type === 'float') return floatText(val.v);
     if (val.type === 'str')  return val.v;
     if (val.type === 'char') return val.v;
     if (val.type === 'bool') return val.v ? '#1' : '#0';
