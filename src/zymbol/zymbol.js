@@ -507,6 +507,12 @@ export class Lexer {
         if (a === '?')                      { this.consume(); this.consume();               tok('DCONTAINS',  '$?');  continue; }
         if (a === '-' && b === '-')         { this.consume(); this.consume(); this.consume(); tok('DREMOVEALL','$--'); continue; }
         if (a === '-')                      { this.consume(); this.consume();               tok('DREMOVE',    '$-');  continue; }
+        // `$+[` with no space between them is the positional insert `$+[i] val`;
+        // a space makes it a plain append whose operand happens to be an array
+        // literal (`grid$+ [0, 0]`). Same split the Rust lexer makes with
+        // DollarPlusLBracket vs DollarPlus + LBracket — see
+        // crates/zymbol-lexer/src/collection_ops.rs.
+        if (a === '+' && b === '[')         { this.consume(); this.consume();               tok('DAPPEND_AT', '$+['); continue; }
         if (a === '+')                      { this.consume(); this.consume();               tok('DAPPEND',    '$+');  continue; }
         if (a === '*')                      { this.consume(); this.consume();               tok('DREPEAT',    '$*');  continue; }
         if (a === '/' )                     { this.consume(); this.consume();               tok('DSPLIT',     '$/');  continue; }
@@ -580,35 +586,59 @@ export class Lexer {
       }
     }
     let value = 0;
+    // The digits as ASCII, whatever script they were written in: a float is
+    // parsed from the literal rather than assembled from its parts, because
+    // `3 + 14159265/100000000` is 3.1415926499999998 while the literal
+    // 3.14159265 rounds to the nearest double exactly — which is the value the
+    // Rust engines read, and what `>>` then prints.
+    let intText = '';
     while (this.pos < this.src.length) {
       const dv = digitValue(this.ch());
       if (dv < 0) break;
       value = value * 10 + dv;
+      intText += String(dv);
       this.consume();
     }
     if (this.ch() === '.' && this.ch(1) !== '.') {
       this.consume();
-      let frac = 0, div = 1;
+      let fracText = '';
       while (this.pos < this.src.length) {
         const dv = digitValue(this.ch());
         if (dv < 0) break;
-        frac = frac * 10 + dv;
-        div *= 10;
+        fracText += String(dv);
         this.consume();
       }
-      const f = value + frac / div;
-      let sci = '';
-      if (this.ch() === 'e' || this.ch() === 'E') {
-        sci += this.consume();
-        if (this.ch() === '+' || this.ch() === '-') sci += this.consume();
-        while (/[0-9]/.test(this.ch())) sci += this.consume();
-      }
-      toks.push({ type: 'FLOAT', value: sci ? parseFloat(f + sci) : f, line: this.line });
+      const sci = this.readExponentSuffix();
+      const f = parseFloat(`${intText || '0'}.${fracText || '0'}${sci}`);
+      toks.push({ type: 'FLOAT', value: f, line: this.line });
     } else {
+      // `1e10` with no decimal point is a Float too, exactly as the Rust engines
+      // read it (`1e10#?` is `##.`). This case used to fall through to the integer
+      // branch, and `e10` was then lexed as an identifier — "undefined variable 'e10'".
+      const sci = this.readExponentSuffix();
+      if (sci) {
+        toks.push({ type: 'FLOAT', value: parseFloat(value + sci), line: this.line });
+        return;
+      }
       if (!inIntRange(value))
         throw new ZyStaticError(`integer literal out of range: '${value}' (integers range from ${ZY_INT_MIN} to ${ZY_INT_MAX})`);
       toks.push({ type: 'NUM', value, line: this.line });
     }
+  }
+
+  // The `e[+-]?digits` tail of a numeric literal, or '' when there is none.
+  //
+  // Requires at least one digit after the `e`, so `1 e|x|` — the data operator —
+  // keeps its meaning and only a real exponent is consumed.
+  readExponentSuffix() {
+    if (this.ch() !== 'e' && this.ch() !== 'E') return '';
+    let k = 1;
+    if (this.ch(k) === '+' || this.ch(k) === '-') k++;
+    if (!/[0-9]/.test(this.ch(k) ?? '')) return '';
+    let sci = this.consume();
+    if (this.ch() === '+' || this.ch() === '-') sci += this.consume();
+    while (/[0-9]/.test(this.ch())) sci += this.consume();
+    return sci;
   }
 
   readString(toks) {
@@ -679,6 +709,12 @@ export class Lexer {
       // breaking here would truncate real identifiers mid-word (HLZ-KL-001-
       // adjacent parity gap, found via klingon_galaxy/HuD.zy).
       if (/[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(c)) { s += this.consume(); continue; }
+      // `'` continues an identifier once one has begun — `Lexer::is_ident_continue`
+      // in Rust admits any non-whitespace, non-operator character, and the
+      // apostrophe is not an operator. Klingon needs it (`mI'`, `tlhIngan Hol`),
+      // and without it `_ { <~ mI' }` was read as an unterminated char literal
+      // that swallowed the rest of the file.
+      if (c === "'" && s.length > 0) { s += this.consume(); continue; }
       break;
     }
     const hot = this.ch() === '°';
@@ -1339,9 +1375,12 @@ export class Parser {
   }
   parseAdditive()       { return this.parseBinLeft(['PLUS','MINUS'], () => this.parseMultiplicative()); }
   parseMultiplicative() { return this.parseBinLeft(['TIMES','DIV','MOD'], () => this.parseExponent()); }
+  // `^` is right-associative, so `2 ^ 3 ^ 2` is 2^(3^2) = 512, not (2^3)^2 = 64.
+  // Recursing on the right is what makes that so; the `if` this replaced parsed
+  // exactly one `^` and then failed on the second ("Expected RPAREN, got '^'").
   parseExponent() {
-    let left = this.parseUnary();
-    if (this.match('POW')) left = { type:'BinOp', op:'^', left, right: this.parseUnary() };
+    const left = this.parseUnary();
+    if (this.match('POW')) return { type:'BinOp', op:'^', left, right: this.parseExponent() };
     return left;
   }
 
@@ -1395,7 +1434,7 @@ export class Parser {
   }
 
   parsePostfixRest(left) {
-    const COL_TOKENS = new Set(['DLEN','DAPPEND','DREMOVEALL','DREMOVE',
+    const COL_TOKENS = new Set(['DLEN','DAPPEND','DAPPEND_AT','DREMOVEALL','DREMOVE',
       'DFINDALL','DCONTAINS','DSORTASC','DSORTDESC','DSORT',
       'DMAP','DFILTER','DREDUCE','DSLICE','DERROR','DERRORPROP','DREPLACE',
       'DSPLIT','DCONCATBUILD','DREPEAT']);
@@ -1534,12 +1573,14 @@ export class Parser {
       case 'DLEN':
         return { type: 'CollectionOp', op: '$#', obj: left };
 
+      case 'DAPPEND_AT': {
+        // `$+[i] val` — the '[' was glued to the '$+', so this is the insert.
+        this.eat('LBRACKET');
+        const idx = this.parseExpr(); this.eat('RBRACKET');
+        return { type: 'CollectionOp', op: '$+[i]', obj: left, index: idx, arg: this.parseUnary(true) };
+      }
+
       case 'DAPPEND':
-        if (this.check('LBRACKET')) {
-          this.adv();
-          const idx = this.parseExpr(); this.eat('RBRACKET');
-          return { type: 'CollectionOp', op: '$+[i]', obj: left, index: idx, arg: this.parseUnary(true) };
-        }
         // Use parseUnary(true) to prevent right-nesting: arr$+4$+5 → (arr$+4)$+5 not arr$+(4$+5)
         return { type: 'CollectionOp', op: '$+', obj: left, arg: this.parseUnary(true) };
 
@@ -1685,12 +1726,19 @@ export class Parser {
     return { type: 'OutputPos', slots, items };
   }
 
+  // Returns the arguments, with the indices written `x<~` recorded on the array
+  // as `outArgs` — the call-site output mark (REFERENCE.md L36). Carried beside
+  // the list rather than wrapping each argument, so every existing reader of
+  // `args` keeps working unchanged.
   parseArgList() {
     const args = [];
+    const outArgs = [];
     while (!this.check('RPAREN') && !this.check('EOF')) {
       args.push(this.parseExprJuxt());
+      if (this.check('RETURN')) { this.adv(); outArgs.push(args.length - 1); }
       this.match('COMMA');
     }
+    args.outArgs = outArgs;
     return args;
   }
 
@@ -1813,7 +1861,13 @@ class Env {
   _getFuncOnly(name) {
     if (this.vars.has(name)) {
       const v = this.vars.get(name);
-      return (v.type === 'func' || v.type === 'module') ? v : undefined;
+      if (v.type === 'func' || v.type === 'module') return v;
+      // Root-scope constants resolve at any call depth (MM-9, settled for the
+      // Rust engines in v0.0.8): `K := 5` is readable inside a function called
+      // from a function. Only constants, and only where the chain ends — a plain
+      // variable still cannot be seen across a function boundary.
+      if (this.consts.has(name) && !this.parent) return v;
+      return undefined;
     }
     if (this.parent) return this.parent._getFuncOnly(name);
     return undefined;
@@ -1883,12 +1937,16 @@ class Checker {
     //   reassigned: names later bound to something else, so `f(…)` is no longer
     //               known to be that function and is left unchecked
     this.funcArity  = new Map();
+    //   funcOutSlots : local function name → indices of its `<~` parameters
+    this.funcOutSlots = new Map();
     this.aliasPath  = new Map();
     this.reassigned = new Set();
     // alias → (function → arity) for user modules. Empty unless a caller
     // supplies it; a qualified call is left unchecked rather than guessed at,
     // exactly as TypeChecker::set_module_arities does in Rust.
     this.moduleArities = new Map();
+    //   moduleOutSlots : alias → (function → indices of its `<~` parameters)
+    this.moduleOutSlots = new Map();
   }
 
   /**
@@ -1906,6 +1964,58 @@ class Checker {
     this.error('E016',
       `function '${name}' expects ${expected} argument(s), but ${actual} were provided`,
       line, { name, expected, actual });
+  }
+
+  /**
+   * A `<~` parameter writes its change back into the caller's variable, so the
+   * argument has to be a name. An expression gives it nowhere to write and the
+   * write is silently lost — `g(2 + 3)` against `g(b<~)` used to be accepted by
+   * every engine (REFERENCE.md L34).
+   *
+   * Worded exactly as `check_output_arguments` in
+   * crates/zymbol-semantic/src/type_check.rs: the two are compared by
+   * web/tests/test_check.mjs.
+   */
+  checkOutputArgs(name, args, line) {
+    const slots = this.funcOutSlots.get(name);
+    if (!slots) return;
+    for (const i of slots) {
+      const arg = args[i];
+      if (arg === undefined) continue;
+      const node = arg.value ?? arg;
+      if (node?.type === 'Ident') continue;
+      this.error('E017',
+        `argument ${i + 1} of '${name}' is an output parameter '<~' and needs a variable, not an expression`,
+        line, { name, index: i + 1 });
+    }
+  }
+
+  /**
+   * The call site must spell `<~` on exactly the arguments the callee declares
+   * as outputs (REFERENCE.md L36). The mark is redundant with the signature on
+   * purpose — it states the same contract where the consequence lands — and
+   * being required is what stops it drifting out of date.
+   *
+   * `slots` is null when the callee's signature is unknown (an unresolvable
+   * module), and the call is then left alone rather than guessed at. Worded as
+   * `check_out_marks` in crates/zymbol-semantic/src/type_check.rs.
+   */
+  checkOutMarks(name, slots, args, line) {
+    if (slots === null) return;
+    const marked = args.outArgs ?? [];
+    for (let i = 0; i < args.length; i++) {
+      const declared = slots.includes(i);
+      if (declared === marked.includes(i)) continue;
+      if (declared) {
+        this.error('E018',
+          `argument ${i + 1} of '${name}' is an output parameter and must be marked '<~' at the call site`,
+          line, { name, index: i + 1 });
+      } else {
+        this.error('E019',
+          `argument ${i + 1} of '${name}' is marked '<~' but the function does not declare it as an output parameter`,
+          line, { name, index: i + 1 });
+      }
+    }
   }
 
   /** Arity of `alias::field`, or null when nothing reliable is known. */
@@ -1931,10 +2041,17 @@ class Checker {
     for (const s of stmts) {
       if (!s) continue;
       switch (s.type) {
-        case 'FuncDecl':
+        case 'FuncDecl': {
           this.funcArity.set(s.name, (s.params ?? []).length);
+          // Which slots are `<~` outputs, so a call can be checked against them
+          // (REFERENCE.md L34). Functions without one — nearly all — store nothing.
+          const outs = (s.params ?? [])
+            .map((p, i) => (p.isOut ? i : -1))
+            .filter(i => i >= 0);
+          if (outs.length) this.funcOutSlots.set(s.name, outs);
           this.collectArities(s.body);
           break;
+        }
         case 'Import':
           if (s.alias && s.path) this.aliasPath.set(s.alias, s.path);
           break;
@@ -1985,8 +2102,8 @@ class Checker {
     }
   }
 
-  push(funcBoundary = false) {
-    this.stack.push({ vars: new Map(), funcBoundary });
+  push(funcBoundary = false, moduleScope = false) {
+    this.stack.push({ vars: new Map(), funcBoundary, moduleScope });
   }
 
   pop() {
@@ -2067,7 +2184,7 @@ class Checker {
       if (frame.vars.has(name)) {
         // Found — check underscore scope violation: _name cannot be read from inner scope
         // that crosses at least one non-funcBoundary scope to reach the definition
-        if (name.startsWith('_') && i < this.stack.length - 1) {
+        if (name.startsWith('_') && i < this.stack.length - 1 && !frame.moduleScope) {
           const crossedNonBoundary = this.stack.slice(i + 1).some(f => !f.funcBoundary);
           if (crossedNonBoundary) {
             this.error('E_SCOPE', `cannot access underscore variable '${name}' from inner scope`, usageLine, { name });
@@ -2311,6 +2428,31 @@ class Checker {
           if (s && !allowedInModule.has(s.type))
             this.error('E013', `E013: executable statement not allowed in module body`, s.line ?? stmt.line, {});
         }
+        // And then analyse it. Only the *shape* of the body was checked here, so
+        // a module function reassigning the module's own `:=` constant went
+        // unreported and the module simply ran — MM-4, which the Rust engines
+        // settled in v0.0.8 by giving a module the same gate as the entry file.
+        // Analysed in the current frame, not a nested one: the module body *is*
+        // the module's root scope, and its `_private` helpers are visible to the
+        // module's own functions. Pushing a frame here put a non-boundary scope
+        // between a `_name` and its use, which is exactly what the underscore
+        // rule refuses.
+        // `moduleScope`: a `_name` declared here is module-private, not
+        // block-local, so the module's own functions may read it — the same
+        // distinction `Env` makes with `isModuleScope` at run time.
+        //
+        // Warnings raised inside are dropped: what MM-4 asks for is the error
+        // gate, and this engine's `unused variable` analysis reports a false
+        // positive for a name reassigned inside a branch and then returned
+        // (`nueva = dir / ? … { nueva = 1 } / <~ nueva`) — a pre-existing defect
+        // that has nothing to do with modules, and that keeping would have
+        // buried every module file in warnings the CLI does not raise.
+        const mark = this.diagnostics.length;
+        this.push(false, true);
+        this.checkBlock(stmt.body ?? []);
+        this.pop();
+        const raised = this.diagnostics.splice(mark);
+        for (const d of raised) if (d.severity !== 'warning') this.diagnostics.push(d);
         return;
       }
 
@@ -2380,14 +2522,6 @@ class Checker {
         return;
       }
 
-      case 'DestructureAssign': {
-        this.checkExpr(stmt.value);
-        for (const item of (stmt.pattern ?? [])) {
-          if (item.type === 'Bind' || item.type === 'Rest') this.define(item.name, stmt.line, false);
-        }
-        return;
-      }
-
       case 'ExprStmt': {
         const expr = stmt.expr ?? stmt.value;
         // Prefix hot-def sentinel: ExprStmt with empty hot Ident (°name produces this)
@@ -2449,6 +2583,11 @@ class Checker {
           else if (this.funcArity.has(expr.callee) && !this.reassigned.has(expr.callee)) {
             this.checkArity(expr.callee, this.funcArity.get(expr.callee),
                             (expr.args ?? []).length, expr.line);
+            this.checkOutputArgs(expr.callee, expr.args ?? [], expr.line);
+            // A locally declared function always has a known signature: no
+            // recorded slots means it declares no output parameter.
+            this.checkOutMarks(expr.callee, this.funcOutSlots.get(expr.callee) ?? [],
+                               expr.args ?? [], expr.line);
           }
         } else if (expr.callee && typeof expr.callee === 'object') {
           this.checkExpr(expr.callee);
@@ -2466,6 +2605,10 @@ class Checker {
           if (expected !== null) {
             this.checkArity(`${callee.obj.name}::${callee.field}`, expected,
                             (expr.args ?? []).length, expr.line);
+            // The signature is known, so the call-site mark can be checked too.
+            const slots = this.moduleOutSlots.get(callee.obj.name)?.get(callee.field) ?? [];
+            this.checkOutMarks(`${callee.obj.name}::${callee.field}`, slots,
+                               expr.args ?? [], expr.line);
           }
         }
         this.checkExpr(callee);
@@ -2635,6 +2778,7 @@ const mkBool  = v => ({ type: 'bool',  v: !!v });
 const mkStr   = v => ({ type: 'str',   v: String(v) });
 const mkChar  = v => ({ type: 'char',  v: String(v) });
 const mkArr   = v => ({ type: 'arr',   v });
+const mkTuple = v => ({ type: 'tuple', v, keys: null });
 const mkUnit  = () => ({ type: 'unit' });
 
 // ─── Typed input validation (mirrors execute_input in zymbol-interpreter/io.rs) ─
@@ -3330,6 +3474,23 @@ export class Interpreter {
     const tokens = new Lexer(src).tokenize();
     const ast    = new Parser(tokens).parse();
 
+    // A module loaded at run time passes the same analysis as the entry file
+    // (MM-4, settled for the Rust engines in v0.0.8). Without this, a module
+    // whose function reassigns its own `:=` constant simply ran, with the entry
+    // file and the module holding different ideas of the constant's value.
+    {
+      const modDiags = new Checker(ast).check().filter(d => d.severity === 'error');
+      if (modDiags.length) {
+        const where = (typeof result === 'object' && result.displayPath) || cacheKey;
+        const detail = modDiags
+          .map(d => `  ${where}:${d.line ?? 0}:${d.col ?? 0}: ${d.message}` +
+                    (d.help ? `\n    help: ${d.help}` : ''))
+          .join('\n');
+        throw new ZyStaticError(
+          `failed to parse module: ${modDiags.length} semantic error(s) in '${where}'\n${detail}`);
+      }
+    }
+
     const modInterp = new Interpreter(this.outputFn, this.inputFn, childRes);
     modInterp.moduleCache    = this.moduleCache;
     modInterp.loadingModules = this.loadingModules;
@@ -3410,7 +3571,12 @@ export class Interpreter {
       const importHint = filePath
         ? filePath.replace(/^.*[/\\]/, '').replace(/\.zy$/, '')
         : modName.replace(/^\./, '');
-      this.emit(`warning: ${pathStr} is a module file and cannot be run directly\n  = help: module '${modName}' is meant to be imported with <# ./${importHint} => alias`);
+      // Refusing to run is a failure, not output: the CLI writes this to stderr
+      // and exits 1. Recorded rather than emitted so `runZymbol` can route it to
+      // the error channel and report the failure to a caller that is a process.
+      this.moduleRefused =
+        `warning: ${pathStr} is a module file and cannot be run directly\n` +
+        `  = help: module '${modName}' is meant to be imported with <# ./${importHint} => alias`;
       return;
     }
     await this.execBlock(program.body, env);
@@ -3675,44 +3841,17 @@ export class Interpreter {
 
       case 'ArrayDestruct': {
         const arr = await this.eval(stmt.value, env);
-        if (arr.type !== 'arr' && arr.type !== 'tuple') throw new ZyError('Array destructuring requires an array');
-        if (arr.type === 'tuple') arr.v = arr.v; // tuples are compatible
-        let i = 0;
-        for (const t of stmt.targets) {
-          if (t.rest) {
-            const val = mkArr(arr.v.slice(i));
-            try { if (!env.set(t.name, val)) env.def(t.name, val); }
-            catch { env.destroy(t.name); env.def(t.name, val); }
-          } else if (t.name === '_') {
-            i++;
-          } else {
-            const val = arr.v[i] ?? mkUnit();
-            try { if (!env.set(t.name, val)) env.def(t.name, val); }
-            catch { env.destroy(t.name); env.def(t.name, val); }
-            i++;
-          }
-        }
+        if (arr.type !== 'arr')
+          throw new ZyError(`array pattern '[ … ]' requires an array, got ${this.destructTypeName(arr)}`);
+        this.bindPositional(stmt.targets, arr.v, false, env);
         return;
       }
 
       case 'TupleDestruct': {
         const tup = await this.eval(stmt.value, env);
-        if (tup.type !== 'tuple' && tup.type !== 'arr')
-          throw new ZyError('Tuple destructuring requires a tuple or array');
-        const items = tup.v;
-        let i = 0;
-        for (const t of stmt.targets) {
-          if (t.rest) {
-            const val = mkArr(items.slice(i));
-            try { if (!env.set(t.name, val)) env.def(t.name, val); }
-            catch { env.destroy(t.name); env.def(t.name, val); }
-          } else {
-            const val = items[i] ?? mkUnit();
-            try { if (!env.set(t.name, val)) env.def(t.name, val); }
-            catch { env.destroy(t.name); env.def(t.name, val); }
-            i++;
-          }
-        }
+        if (tup.type !== 'tuple' || tup.keys)
+          throw new ZyError(`tuple pattern '( … )' requires a tuple, got ${this.destructTypeName(tup)}`);
+        this.bindPositional(stmt.targets, tup.v, true, env);
         return;
       }
 
@@ -3758,6 +3897,21 @@ export class Interpreter {
         return;
       }
     }
+  }
+
+
+  // What an iterator leaves behind (REFERENCE.md L24, MM-11).
+  //
+  // The value taken is whatever the name holds at the end of the last iteration
+  // that ran — not the loop's counter — because a body that writes to the iterator
+  // keeps that write (`@ w:1..3 { w = 100 }` leaves 100), while never altering the
+  // iteration itself: each pass re-publishes the counter into a fresh scope.
+  //
+  // `env.set` returns false for a name that does not exist outside the loop, which
+  // is exactly the case where the iterator stays loop-local.
+  publishIter(env, name, lastEnv) {
+    if (!lastEnv) return;
+    try { env.set(name, lastEnv.get(name)); } catch { /* iterator was destroyed */ }
   }
 
   async execLoop(loop, env) {
@@ -3823,17 +3977,25 @@ export class Interpreter {
       if (loop.step && from > to && step > 0) step = -step;
       if (loop.step && from < to && step < 0) step = -step;
       if (step === 0) throw new ZyError('Loop step cannot be zero');
+      // The iterator does not shadow a name that already exists outside: the loop
+      // writes to it, and it keeps the last value assigned — including when the
+      // loop ends early through `@!` (REFERENCE.md L24, settled for the Rust
+      // engines in v0.0.8). `env.set` reports false for a name that does not
+      // exist, which is exactly the case where the iterator stays loop-local.
+      let lastEnv = null;
       for (let i = from; step > 0 ? i <= to : i >= to; i += step) {
         this.tick();
         const iter = new Env(outer);
         iter.def(loop.var, mkInt(i));
+        lastEnv = iter;
         const sig = await this.execBlock(loop.body, iter);
         if (brk(sig)) break;
         if (cnt(sig)) continue;
-        if (sig instanceof ZyReturn) return sig;
-        if (sig instanceof ZyBreak || sig instanceof ZyContinue) return sig;
+        if (sig instanceof ZyReturn) { this.publishIter(env, loop.var, lastEnv); return sig; }
+        if (sig instanceof ZyBreak || sig instanceof ZyContinue) { this.publishIter(env, loop.var, lastEnv); return sig; }
         await this.maybeYield();
       }
+      this.publishIter(env, loop.var, lastEnv);
       return;
     }
 
@@ -3845,17 +4007,22 @@ export class Interpreter {
       else if (it.type === 'tuple') items = it.v;
       else throw new ZyError(`Cannot iterate over ${it.type}`);
 
+      // Same rule as the range loop above: a pre-existing name keeps the last
+      // element the loop bound to it.
+      let lastEnv = null;
       for (const item of items) {
         this.tick();
         const iter = new Env(outer);
         iter.def(loop.var, item);
+        lastEnv = iter;
         const sig = await this.execBlock(loop.body, iter);
         if (brk(sig)) break;
         if (cnt(sig)) continue;
-        if (sig instanceof ZyReturn) return sig;
-        if (sig instanceof ZyBreak || sig instanceof ZyContinue) return sig;
+        if (sig instanceof ZyReturn) { this.publishIter(env, loop.var, lastEnv); return sig; }
+        if (sig instanceof ZyBreak || sig instanceof ZyContinue) { this.publishIter(env, loop.var, lastEnv); return sig; }
         await this.maybeYield();
       }
+      this.publishIter(env, loop.var, lastEnv);
       return;
     }
   }
@@ -4344,6 +4511,54 @@ export class Interpreter {
   resolve1Based(n, len) {
     if (n === 0) return 0;
     return n > 0 ? n - 1 : len + n;
+  }
+
+  // Type name as the Rust engines spell it in destructuring errors. `zyq consensus`
+  // compares the message text across all four engines, so this must match
+  // `value_type_name` (tree-walker) and `tw_type_name` (VM) to the character.
+  destructTypeName(val) {
+    const symMap = { int:'###', float:'##.', str:'##"', char:"##'", bool:'##?', arr:'##]', tuple:'##)', unit:'##_' };
+    if (val.type === 'func') return (val.name === '<lambda>') ? '##->' : '##()';
+    return symMap[val.type] ?? '##_';
+  }
+
+  // Bind an array or positional-tuple pattern — the mirror of the tree-walker's
+  // `bind_positional`. The last item absorbs whatever remains (REFERENCE.md L33):
+  // Unit when nothing is left, the bare value when one is, a collection of the
+  // container's own shape when several are. An explicit `*rest` opts out of
+  // absorption and always binds a collection.
+  bindPositional(targets, elements, isTuple, env) {
+    const wrap = (vals) => isTuple ? mkTuple(vals) : mkArr(vals);
+    const put = (name, val) => {
+      try { if (!env.set(name, val)) env.def(name, val); }
+      catch { env.destroy(name); env.def(name, val); }
+    };
+    const restAt = targets.findIndex(t => t.rest);
+    const trailing = restAt < 0 ? 0 : targets.length - restAt - 1;
+    let i = 0;
+
+    for (let pos = 0; pos < targets.length; pos++) {
+      const t = targets[pos];
+      const absorbs = restAt < 0 && pos === targets.length - 1;
+
+      if (t.rest) {
+        const end = (trailing > 0 && elements.length > i + trailing)
+          ? elements.length - trailing
+          : elements.length;
+        put(t.name, wrap(elements.slice(i, Math.max(i, end))));
+        i = Math.max(i, end);
+      } else if (t.name === '_') {
+        // In the last position `_` absorbs the remainder without binding it.
+        i = absorbs ? elements.length : i + 1;
+      } else if (absorbs) {
+        const rest = elements.slice(i);
+        put(t.name, rest.length === 0 ? mkUnit() : rest.length === 1 ? rest[0] : wrap(rest));
+        i = elements.length;
+      } else {
+        put(t.name, elements[i] ?? mkUnit());
+        i++;
+      }
+    }
   }
 
   typeMetadata(val) {
@@ -5039,6 +5254,35 @@ export function moduleAritiesFrom(src) {
 }
 
 /**
+ * Which parameter slots of each function in `src` are `<~` outputs.
+ *
+ * The mirror of `out_slots_of_file` in crates/zymbol-semantic/src/call_arity.rs,
+ * and the table `m::f(x<~)` is checked against (REFERENCE.md L36). Functions
+ * without an output parameter are left out, so an empty Map means "nothing to
+ * check", not "unknown".
+ */
+export function moduleOutSlotsFrom(src) {
+  const out = new Map();
+  let ast;
+  try {
+    ast = new Parser(new Lexer(src).tokenize()).parse();
+  } catch {
+    return out;
+  }
+  const walk = stmts => {
+    for (const s of (stmts ?? [])) {
+      if (!s) continue;
+      if (s.type === 'FuncDecl') {
+        const slots = (s.params ?? []).map((p, i) => (p.isOut ? i : -1)).filter(i => i >= 0);
+        if (slots.length) out.set(s.name, slots);
+      } else if (s.type === 'ModuleBlock') walk(s.body);
+    }
+  };
+  walk(ast.body);
+  return out;
+}
+
+/**
  * Build the alias → arity-table map for every module `ast` imports directly.
  *
  * Only the caller's resolver can reach a module's source, so this is where the
@@ -5067,6 +5311,31 @@ export async function moduleAritiesFor(ast, resolver, filePath = null) {
       if (typeof modSrc === 'string') out.set(imp.alias, moduleAritiesFrom(modSrc));
     } catch {
       // Reported at import time; nothing useful to add here.
+    }
+  }
+  return out;
+}
+
+/**
+ * The same walk as `moduleAritiesFor`, collecting output slots instead of counts.
+ * @returns {Promise<Map<string, Map<string, number[]>>>}
+ */
+export async function moduleOutSlotsFor(ast, resolver, filePath = null) {
+  const out = new Map();
+  if (!resolver || !ast?.body) return out;
+  for (const imp of ast.body) {
+    if (imp?.type !== 'Import' || !imp.alias || !imp.path) continue;
+    if (imp.path.startsWith('std/')) continue;   // no std/ function takes an output param
+    try {
+      const result = await resolver(imp.path, filePath);
+      if (result == null || result.notFound) continue;
+      const modSrc = typeof result === 'string' ? result : result.src;
+      if (typeof modSrc === 'string') {
+        const slots = moduleOutSlotsFrom(modSrc);
+        if (slots.size) out.set(imp.alias, slots);
+      }
+    } catch {
+      // Reported at import time.
     }
   }
   return out;
@@ -5106,6 +5375,7 @@ export function checkSource(src, opts = {}) {
   try {
     const checker = new Checker(ast);
     if (opts.moduleArities instanceof Map) checker.moduleArities = opts.moduleArities;
+    if (opts.moduleOutSlots instanceof Map) checker.moduleOutSlots = opts.moduleOutSlots;
     diagnostics = checker.check();
   } catch (e) {
     // The checker walking a shape it did not expect must not look like a broken program.
@@ -5262,9 +5532,18 @@ export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, f
   // `TypeChecker::set_module_arities` receives the result.
   const checker = new Checker(ast);
   checker.moduleArities = await moduleAritiesFor(ast, moduleResolver, filePath);
+  checker.moduleOutSlots = await moduleOutSlotsFor(ast, moduleResolver, filePath);
   const diags   = checker.check();
 
-  for (const d of diags) if (d.severity === 'error') onOutput(formatDiagnostic(d) + '\n\n');
+  // Where diagnostics go. The playground passes no `onError` and keeps today's
+  // behaviour — everything in the one output panel, which is all a browser has.
+  // A caller that is a process passes one and gets the CLI's split: the
+  // program's output on stdout, everything the engine has to say about the
+  // program on stderr. Mixing the two was ~63 of the 91 corpus divergences,
+  // because the Rust engines have always kept them apart.
+  const onError = typeof opts.onError === 'function' ? opts.onError : onOutput;
+
+  for (const d of diags) if (d.severity === 'error') onError(formatDiagnostic(d) + '\n\n');
   if (diags.some(d => d.severity === 'error'))
     return { failed: true, message: diags.find(d => d.severity === 'error').message };
 
@@ -5275,15 +5554,20 @@ export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, f
     if (opts.maxBytes        != null) interp.maxBytes        = opts.maxBytes;
     if (opts.maxInfiniteIter != null) interp.maxInfiniteIter = opts.maxInfiniteIter;
     await interp.run(ast, filePath);
+    // A module file run directly: refused, exactly as the CLI refuses it.
+    if (interp.moduleRefused) {
+      onError(interp.moduleRefused);
+      return { failed: true, message: interp.moduleRefused };
+    }
   } catch (e) {
-    // The error is written through onOutput rather than rethrown because the
+    // The error is written through a callback rather than rethrown because the
     // playground shows it in the output panel — an exception escaping here
     // would take the page down with it. The return value is how a caller that
     // *is* a process (tests/run_one.mjs) learns to exit non-zero: without it
     // the CLI reported success for a program the engine had refused, and
     // `zyq reject` read that as the form being accepted.
     const message = e instanceof ZyStaticError ? e.message : (e.message ?? String(e));
-    onOutput(`Runtime error: ${message}`);
+    onError(`Runtime error: ${message}`);
     return { failed: true, message };
   }
   return { failed: false };
