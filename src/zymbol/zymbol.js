@@ -231,8 +231,12 @@ function floatText(f) {
 }
 
 // `1e+21` → `1000000000000000000000`, `1.5e-10` → `0.00000000015`.
-// Mirrors `expand_exponent` in zyml/src/value.ml; the Rust engines get the same
-// shape for free, since Rust's `{}` for f64 never emits an exponent.
+// The Rust engines get the same shape for free, since Rust's `{}` for f64 never
+// emits an exponent; JavaScript is the only engine that needs this by hand.
+// (It was written to mirror `expand_exponent` in zyml/src/value.ml, which had
+// the same problem in OCaml. That engine was retired on 2026-08-17, so this is
+// no longer a two-place rule — `zyq consensus` against the Rust engines is what
+// holds it now.)
 function expandExponent(str) {
   const ei = str.indexOf('e');
   if (ei < 0) return str;

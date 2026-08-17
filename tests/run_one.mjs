@@ -6,7 +6,7 @@
 //
 // This exists so a shell script outside this repository can treat the JS engine
 // as one more command-line engine, the way it already treats the Rust
-// tree-walker, the register VM and zyml. `test_runner.mjs` compares a whole
+// tree-walker and the register VM. `test_runner.mjs` compares a whole
 // corpus and owns its own reporting; this prints one program's output and
 // nothing else, so the caller does the comparing.
 //
