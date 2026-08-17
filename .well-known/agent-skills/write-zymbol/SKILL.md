@@ -11,11 +11,11 @@ is an English word and identifiers can be written in any script — Spanish,
 Japanese, Arabic, Klingon pIqaD, emoji. `?` is if, `@` is loop, `<~` is return,
 `#1` is true, `¶` is newline.
 
-Version v0.0.8. Canonical reference: `GUIDE.md` in
+Version v0.0.9. Canonical reference: `GUIDE.md` in
 <https://github.com/zymbol-lang/interpreter>. Every code block below is executed
 by this project's CI, so it runs as written.
 
-## The eight things that trip you up
+## The eleven things that trip you up
 
 Read these before writing a line — each one is a mistake that *parses* and then
 behaves wrong.
@@ -36,6 +36,13 @@ behaves wrong.
    text) while `"5" == 5` is `#0` (`==` never coerces).
 7. **Slices include both ends.** `arr$[1..3]` is three elements.
 8. **`/` is division; `$/` splits a string.** They look alike and do not overlap.
+9. **A named function in a HOF slot takes no parentheses.** `nums$> double` is right;
+   `nums$> (double)` is a parse error, because `(` opens a lambda.
+10. **`<~` on a parameter is written twice** — in the signature *and* at every call site,
+    and both are required: `bump(b<~)` is called as `bump(y<~)`, never `bump(y)`.
+11. **The last name of a destructuring pattern absorbs the remainder.** `(a, b, c) = (1,2,3,4,5)`
+    leaves `c` holding `(3,4,5)`, and `[…]` accepts only an array while `(…)` accepts only a
+    tuple. An `Int` is a safe integer, ±(2⁵³−1): leaving that range is a `##Range` error.
 
 ## Variables, output, strings
 
@@ -154,8 +161,10 @@ nums = [1, 2, 3, 4, 5]
 >> nums$< (0, (acc, x) -> acc + x) ¶  // reduce, with an initial value
 ```
 
-A *named* function must still be wrapped in a lambda — `nums$> (double)` is a parse
-error (`expected '->' in lambda expression`), `nums$> (x -> double(x))` is correct.
+A *named* function goes in the slot bare, with no parentheses — `nums$> double` and
+`nums$| is_big` work. Wrapping it is what fails: `nums$> (double)` is a parse error
+(`expected '->' in lambda expression`), because `(` starts a lambda. Write the lambda
+out (`nums$> (x -> double(x))`) or drop the parentheses.
 
 ## Functions and lambdas
 
@@ -194,9 +203,12 @@ swap(a<~, b<~) {
 }
 x = 1
 y = 2
-swap(x, y)
+swap(x<~, y<~)    // the mark is required here too, or the call is a semantic error
 >> x " " y ¶      // 2 1
 ```
+
+`p~` is the other half of the pair: a *working copy* the body may reassign freely, with
+nothing travelling back. One `<` is the whole difference.
 
 ## Errors
 
@@ -261,7 +273,8 @@ An import path is relative (`./math`, `../lib/math`) or a stdlib name
 
 ```bash
 zymbol run file.zy          # tree-walker (default)
-zymbol run --vm file.zy     # register VM, ~4x faster
+zymbol run --vm file.zy     # register VM: 1.4-6x the tree-walker on microbenchmarks,
+                            #   40x+ on search-shaped programs
 zymbol check file.zy        # parse + semantic check, follows imports
 zymbol fmt file.zy --write  # format in place
 zymbol repl                 # interactive
