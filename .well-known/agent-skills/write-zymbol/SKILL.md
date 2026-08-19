@@ -139,7 +139,7 @@ arr = arr$+ 60       // append, returns a new array
 arr = arr$-[1]       // remove by index
 >> (arr$? 30) ¶      // #1 — contains
 >> arr$[1..2] ¶      // slice, both ends included
-arr[2] = 99          // update in place
+arr[2]$~ 99          // modify in place — `=` never writes into a collection
 >> arr ¶
 
 point = (10, 20)                        // tuple

@@ -261,6 +261,11 @@ function numeralBool(b, base)  { return '#' + numeralInt(b ? 1 : 0, base); }
 
 // ─── Signal types ─────────────────────────────────────────────────────────────
 
+const OUTPUT_STOP_OPS = {
+  EQ: '==', NEQ: '<>', LT: '<', GT: '>', LTE: '<=', GTE: '>=',
+  AND: '&&', OR: '||', PIPE: '|>',
+};
+
 class ZyReturn  { constructor(value) { this.value = value; } }
 class ZyBreak    { constructor(label = null) { this.label = label; } }
 class ZyContinue { constructor(label = null) { this.label = label; } }
@@ -416,6 +421,12 @@ export class Lexer {
         }
         // #> = export block declarator
         if (c1 === '>') { this.consume(); this.consume(); tok('EXPORT_DECL', '#>'); continue; }
+        // `#[` opens a declared-mixed array literal (decision 15). It has to be
+        // emitted here because the fallback below DROPS an unrecognised `#`
+        // without a sound — which is why `#[…]` appeared to work in this engine
+        // while being a syntax error in both Rust ones: the `#` simply vanished
+        // and what ran was a plain `[…]`.
+        if (c1 === '[') { this.consume(); tok('HASH', '#'); continue; }
         this.consume(); continue;
       }
 
@@ -749,7 +760,40 @@ export class Parser {
     return this.adv();
   }
 
-  parse() { return { type: 'Program', body: this.parseStmtList() }; }
+  parse() {
+    const body = this.parseStmtList();
+    this.checkImportsFirst(body);
+    return { type: 'Program', body };
+  }
+
+  // Imports precede every statement in an executable file.
+  //
+  // Both Rust engines enforce this in the parser — the loop that reads the
+  // leading run of `<#` stops at the first statement, and anything after it is a
+  // parse error — while this one accepted an import anywhere, because it parses
+  // `Import` as an ordinary statement. `>> "antes" ¶` followed by
+  // `<# std/json => js` ran here and was `unexpected token: ModuleImport` there
+  // (DM-12). The rule was written in no document either, so the program that
+  // broke it worked in exactly one engine and no text said which was right.
+  //
+  // A module file is exempt: its body is a single ModuleBlock and its own rules
+  // are checked elsewhere.
+  checkImportsFirst(body) {
+    if (body[0]?.type === 'ModuleBlock') return;
+    let seenStatement = false;
+    for (const stmt of body) {
+      if (stmt.type === 'Noop') continue;
+      if (stmt.type === 'Import') {
+        if (seenStatement)
+          throw new ZyError(
+            'imports must come before any statement — ' +
+            'move this `<#` above the first statement in the file',
+            stmt.line);
+        continue;
+      }
+      seenStatement = true;
+    }
+  }
 
   parseStmtList() {
     const stmts = [];
@@ -873,13 +917,40 @@ export class Parser {
     return { type: 'ExprStmt', expr: this.parseExpr() };
   }
 
+  // The operators that cannot continue a `>>` argument, and are therefore a
+  // mistake rather than the start of the next one. Spelled as the source writes
+  // them, so the message can quote what the programmer typed.
+  //
+  // `<>` is Zymbol's inequality; `!=` is not an operator at all, which is why
+  // `>> 1 != 2 ¶` used to print `1#12` — `1`, then `!2` negated, then `2`.
+  // `>>` has a narrower grammar than the rest of the language, and this engine
+  // used to ignore that: it called `parseExpr`, so `>> 1 == 1` printed `#1` here
+  // and was `error: expected expression, found Eq` in both Rust engines (DM-06).
+  // A program written in the playground could fail to parse outside it.
+  //
+  // The limit is real and has a cause: arguments are juxtaposed, so the parser
+  // has to decide where one ends, and `<` and `>` are the same characters that
+  // open `<#`, `<~` and close `>>|`. `parseAdditive` is exactly the Rust cut —
+  // arithmetic and below, comparison and the logical operators above it — so
+  // `>> (1 == 1) ¶` is the form that works, in every engine.
   parseOutput() {
     const opLine = this.adv().line;
     const items = [];
     while (!this.check('PILCROW') && !this.check('NEWLINE_ESC') &&
            !this.check('RBRACE') && !this.check('EOF')) {
       if (this.peek().line > opLine) break;
-      items.push(this.parseExpr());
+      items.push(this.parseAdditive());
+      // Refusing has to be explicit. Narrowing the call alone was worse than the
+      // bug: `>> 1 == 1 ¶` printed `11`, because the loop simply started a new
+      // argument and the leftover `==` fell through the primary parser without a
+      // sound. A silent wrong answer beats a parse error in no reading of
+      // anything.
+      const stray = OUTPUT_STOP_OPS[this.peek().type];
+      if (stray && this.peek().line === opLine)
+        throw new ZyError(
+          `expected expression, found ${stray} — '>>' takes arithmetic; ` +
+          `parenthesise a comparison: >> (a ${stray} b) ¶`,
+          this.peek().line);
     }
     const nl = this.match('PILCROW', 'NEWLINE_ESC');
     return { type: 'Output', items, newline: !!nl, line: this.peek().line };
@@ -980,6 +1051,20 @@ export class Parser {
     return { type: 'TryCatch', tryBody, catches, finallyBody };
   }
 
+  // Like isDestructuring, but for a loop head: the pattern is followed by `:`
+  // rather than by `=`.
+  isLoopPattern() {
+    let i = 0, depth = 0;
+    const start = this.peek(0).type;
+    const close = start === 'LBRACKET' ? 'RBRACKET' : 'RPAREN';
+    while (this.pos + i < this.toks.length) {
+      const t = this.toks[this.pos + i++];
+      if (t.type === start) depth++;
+      else if (t.type === close) { depth--; if (depth === 0) break; }
+    }
+    return this.peek(i).type === 'COLON';
+  }
+
   isDestructuring() {
     let i = 0, depth = 0;
     const start = this.peek(0).type;
@@ -992,12 +1077,77 @@ export class Parser {
     return this.peek(i).type === 'ASSIGN';
   }
 
+  // Two `*rest` in one pattern are ambiguous by definition: nothing says where
+  // the first ends and the second begins. No engine refused the form, and each
+  // invented a different split of `[a, *r, *s, z] = [1,2,3,4,5]` — `r=[2,3,4]
+  // s=[5]` in the tree-walker, `r=[2,3] s=[3]` in the register VM, which returns
+  // the 3 *twice*, and `r=[2,3] s=[4,5]` here. An answer that repeats an element
+  // cannot be right under any reading of what a rest is (DM-17, decision 26).
+  //
+  // Python refuses it too: `SyntaxError: multiple starred expressions in
+  // assignment`. Refusing while parsing means the static checker sees it, which
+  // is where a pattern mistake belongs.
+  rejectSecondRest(targets, line) {
+    if (targets.some(t => t.rest))
+      throw new ZyError(
+        "only one '*rest' is allowed in a destructure pattern — " +
+        'two rests cannot be told apart: nothing says where the first ends',
+        line);
+  }
+
+  // The pattern alone, without the `= value` an assignment adds. Split out so a
+  // loop head can use the very same pattern: `@ (k, v):pares` binds each element
+  // exactly as `(k, v) = par` binds one.
+  parseArrayDestructPattern() {
+    this.adv();
+    const targets = [];
+    while (!this.check('RBRACKET') && !this.check('EOF')) {
+      if (this.check('TIMES')) {
+        const line = this.peek().line;
+        this.adv();
+        this.rejectSecondRest(targets, line);
+        targets.push({ name: this.eat('IDENT').value, rest: true });
+      } else if (this.check('ELSE')) {
+        this.adv();
+        targets.push({ name: '_', rest: false });
+      } else {
+        targets.push({ name: this.eat('IDENT').value, rest: false });
+      }
+      this.match('COMMA');
+    }
+    this.eat('RBRACKET');
+    return { type: 'ArrayDestruct', targets };
+  }
+
+  parseTupleDestructPattern() {
+    this.adv();
+    const targets = [];
+    while (!this.check('RPAREN') && !this.check('EOF')) {
+      if (this.check('TIMES')) {
+        const line = this.peek().line;
+        this.adv();
+        this.rejectSecondRest(targets, line);
+        targets.push({ name: this.eat('IDENT').value, rest: true });
+      } else if (this.check('ELSE')) {
+        this.adv();
+        targets.push({ name: '_', rest: false });
+      } else {
+        targets.push({ name: this.eat('IDENT').value, rest: false });
+      }
+      this.match('COMMA');
+    }
+    this.eat('RPAREN');
+    return { type: 'TupleDestruct', targets };
+  }
+
   parseArrayDestruct() {
     this.adv();
     const targets = [];
     while (!this.check('RBRACKET') && !this.check('EOF')) {
       if (this.check('TIMES')) {
+        const line = this.peek().line;
         this.adv();
+        this.rejectSecondRest(targets, line);
         targets.push({ name: this.eat('IDENT').value, rest: true });
       } else if (this.check('ELSE')) {
         this.adv();
@@ -1031,8 +1181,16 @@ export class Parser {
       const targets = [];
       while (!this.check('RPAREN') && !this.check('EOF')) {
         if (this.check('TIMES')) {
+          const line = this.peek().line;
           this.adv();
+          this.rejectSecondRest(targets, line);
           targets.push({ name: this.eat('IDENT').value, rest: true });
+        } else if (this.check('ELSE')) {
+          // `_` discards a position — decision 23. It already worked in the
+          // ARRAY pattern and was an error here, which is an inconsistency
+          // between two patterns that say the same thing (DI-16).
+          this.adv();
+          targets.push({ name: '_', rest: false });
         } else {
           targets.push({ name: this.eat('IDENT').value, rest: false });
         }
@@ -1115,8 +1273,23 @@ export class Parser {
       const elems = [];
       while (!this.check('RBRACKET') && !this.check('EOF')) {
         if (this.check('TIMES')) {
-          this.adv();
-          elems.push({ kind: 'rest', name: this.eat('IDENT').value });
+          // `??` compares; it does not bind. A pattern element names a *value*
+          // to compare against (`?? codigo { umbral => … }` tests `codigo`
+          // against the value of `umbral`), and no pattern ever creates a name —
+          // `?? [1,2,3] { [a,b,c] => a }` is `undefined variable 'a'` in every
+          // engine, this one included.
+          //
+          // So `*x` has nothing to bind the rest to. All it could contribute is
+          // "and some more elements", which is a length test written in the
+          // notation of destructuring, and the length test already exists:
+          // `?? xs$# { >=3 => … }`. This engine was the only one that accepted
+          // the form, and it appeared to work only because an identifier inside
+          // a list pattern degraded to a wildcard here (DM-26) — so `[a, *x]`
+          // was measuring a named wildcard, not a rest (DM-25).
+          throw new ZyError(
+            "'*rest' has no meaning in a '??' pattern — a pattern compares, it " +
+            'does not bind; for a length test write `?? xs$# { >=3 => … }`',
+            this.peek().line);
         } else if (this.check('ELSE')) {
           this.adv();
           elems.push({ kind: 'wildcard' });
@@ -1148,6 +1321,26 @@ export class Parser {
     if (this.check('LBRACE')) {
       return { type: 'Loop', kind: 'infinite', label: null, line, body: this.parseBlock() };
     }
+    // `@ (k, v):pares { … }` — a destructuring pattern where a single name
+    // would go. It desugars to `@ __zy_par:pares { (k, v) = __zy_par; … }`,
+    // reusing the foreach and the destructure unchanged, so the loop stops
+    // needing a first line whose only job is to unpack.
+    //
+    // `@ (` is already taken — `@ (n + 1) { }` is a valid count loop — and the
+    // disambiguator is the `:` after the `)`, the same scan `isDestructuring`
+    // already does for `=`.
+    if ((this.check('LPAREN') || this.check('LBRACKET')) && this.isLoopPattern()) {
+      const pat = this.check('LBRACKET') ? this.parseArrayDestructPattern()
+                                         : this.parseTupleDestructPattern();
+      this.eat('COLON');
+      const iterable = this.parseAdditive();
+      const body = this.parseBlock();
+      const tmp = '__zy_par';
+      body.unshift({ ...pat, value: { type: 'Ident', name: tmp, line }, line });
+      return { type: 'Loop', kind: 'foreach', label: null, var: tmp, line,
+               iterable, pairs: true, body };
+    }
+
     // @ IDENT COLON  → unlabeled range/foreach (@ var:start..end)
     if (this.check('IDENT') && this.peek(1).type === 'COLON') {
       const varName = this.adv().value;
@@ -1249,23 +1442,86 @@ export class Parser {
       this.adv();
       const idx = this.parseExpr();
       this.eat('RBRACKET');
-      if (this.match('ASSIGN')) {
-        return { type: 'IndexAssign', obj: name, index: idx, value: this.parseExpr(), line };
+      // Decision 6: the indexed assignment is withdrawn, in all three
+      // collections. `=` means "this NAME now holds this value", and
+      // `u["k"] = v` names nothing — it reaches inside a structure and changes a
+      // part. Two different operations under one sign. Modifying is `$~`, which
+      // says so.
+      //
+      // It could not be withdrawn until `u["k"]$~ v` worked as a statement
+      // (decision 12), which landed first: prohibiting the old form while the
+      // new one did nothing would have left no way to change an element at all.
+      if (this.check('ASSIGN') || compound[this.peek().type]) {
+        throw new ZyError(
+          `indexed assignment does not exist: '${name}[…] =' is not a form of Zymbol\n` +
+          `help: use '${name}[i]$~ value' to modify in place — ` +
+          `'=' gives a value to a NAME, '$~' changes part of a collection`,
+          line);
       }
-      const idxCompound = compound[this.peek().type];
-      if (idxCompound) {
+      // `name[i]$~ v` as a statement. The bracket was consumed above, so the
+      // `$~` never reached the nav-index parser that builds FuncUpdate — which
+      // is why this form was a silent no-op here while neither Rust engine
+      // could even parse it. Build the node directly (decision 12).
+      if (this.check('DUPDATE')) {
         this.adv();
-        const rhs = this.parseExpr();
-        const currentElem = { type: 'NavIndex', obj: { type: 'Ident', name, line: tok0.line }, spec: { kind: 'simple', index: idx } };
-        const value = { type: 'BinOp', op: idxCompound, left: currentElem, right: rhs };
-        return { type: 'IndexAssign', obj: name, index: idx, value, line };
+        const val = this.parseUnary();
+        const obj = { type: 'Ident', name, line: tok0.line };
+        // `m[i>j]$~ v` — the deep form. `parseExpr` above read `i>j` as a
+        // COMPARISON, because at statement position the bracket is consumed
+        // before the nav parser ever sees it, so `m[1>2]$~ 77` indexed with the
+        // boolean and raised "index out of bounds" while both Rust engines
+        // navigated two levels. Rebuild the path from the comparison.
+        if (idx?.type === 'BinOp' && idx.op === '>') {
+          // Path atoms are `{kind, expr}`, the shape parseNavContent produces.
+          const flatten = (e) => (e?.type === 'BinOp' && e.op === '>')
+            ? [...flatten(e.left), ...flatten(e.right)] : [{ kind: 'index', expr: e }];
+          return this.editStmtOrExpr(
+            { type: 'DeepUpdate', obj, path: flatten(idx), value: val }, line);
+        }
+        return this.editStmtOrExpr({ type: 'FuncUpdate', obj, index: idx, value: val }, line);
       }
       let left = { type: 'NavIndex', obj: { type: 'Ident', name, line: tok0.line }, spec: { kind: 'simple', index: idx } };
-      return { type: 'ExprStmt', expr: this.parsePostfixRest(left) };
+      return this.editStmtOrExpr(this.parsePostfixRest(left), line);
     }
 
     let left = { type: 'Ident', name, hot, line: tok0.line };
-    return { type: 'ExprStmt', expr: this.parsePostfixRest(left) };
+    return this.editStmtOrExpr(this.parsePostfixRest(left), line);
+  }
+
+  // The editing half of the `$` family. The consulting half — `$#`, `$?`, `$[..]`,
+  // `$>`, `$|`, `$<`, … — never modifies anything, so discarding its result is
+  // dead code (decision 19) and not a modification.
+  static EDIT_OPS = new Set([
+    '$+', '$++', '$-', '$--', '$+[i]', '$-[i]', '$-[i..j]', '$-[i:n]',
+    '$^', '$^+', '$^-',
+  ]);
+
+  // Decision 12, the rule of the result: a `$` edit whose result is the whole
+  // statement modifies in place; one whose result is used builds and leaves the
+  // original alone. Before it, `arr$+ 3` on its own line ran and did nothing at
+  // all, with no warning (DI-01).
+  //
+  // It desugars to `name = <the same expression>`, which is observably identical
+  // because collections assign by value and there is no aliasing (DI-04). What
+  // the marker carries is the source form, and the tuple guard needs it: `t$+ 3`
+  // written as a statement means "modify this tuple", and a tuple does not change.
+  //
+  // A receiver that is not a plain name yields no statement — `f()[1]$~ 5` would
+  // modify a temporary nobody holds (decision 20).
+  editStmtOrExpr(expr, line) {
+    const isEdit =
+      (expr?.type === 'CollectionOp' && Parser.EDIT_OPS.has(expr.op)) ||
+      expr?.type === 'FuncUpdate' || expr?.type === 'DeepUpdate';
+    const baseName = (e) => {
+      while (e && (e.type === 'NavIndex' || e.type === 'FuncUpdate' || e.type === 'DeepUpdate'))
+        e = e.obj;
+      return e?.type === 'Ident' ? e.name : null;
+    };
+    if (isEdit) {
+      const name = baseName(expr.obj);
+      if (name) return { type: 'InPlaceEdit', name, expr, line };
+    }
+    return { type: 'ExprStmt', expr };
   }
 
   // Parse an expression in a delimited position — a call argument, an array
@@ -1767,15 +2023,26 @@ export class Parser {
     if (t.type === 'CAST_INT_ROUND') { this.adv(); return { type: 'CastOp', op: '###', operand: this.parseUnary() }; }
     if (t.type === 'CAST_INT_TRUNC') { this.adv(); return { type: 'CastOp', op: '##!', operand: this.parseUnary() }; }
 
+    // `#[…]` — an array whose mix of element types is DECLARED (decision 15).
+    // Same collection and same type as `[…]`: `#?` answers `##]` for both. What
+    // changes is that the checker below does not compare the elements — and
+    // that it warns when the mix turns out not to be one (decision 18).
+    if (t.type === 'HASH' && this.peek(1).type === 'LBRACKET') {
+      this.adv();
+      const arr = this.parsePrimary();
+      return { ...arr, declaredMixed: true };
+    }
+
     if (t.type === 'LBRACKET') {
       this.adv();
       const items = [];
+      const line = t.line;
       while (!this.check('RBRACKET') && !this.check('EOF')) {
         items.push(this.parseExprJuxt());
         this.match('COMMA');
       }
       this.eat('RBRACKET');
-      return { type: 'Array', items };
+      return { type: 'Array', items, line };
     }
 
     if (t.type === 'LPAREN') {
@@ -2526,6 +2793,11 @@ class Checker {
         return;
       }
 
+      case 'InPlaceEdit': {
+        this.checkExpr(stmt.expr);
+        return;
+      }
+
       case 'ExprStmt': {
         const expr = stmt.expr ?? stmt.value;
         // Prefix hot-def sentinel: ExprStmt with empty hot Ident (°name produces this)
@@ -2645,7 +2917,39 @@ class Checker {
       }
 
       case 'Array': {
-        for (const el of (expr.items ?? expr.elements ?? [])) this.checkExpr(el);
+        const items = expr.items ?? expr.elements ?? [];
+        for (const el of items) this.checkExpr(el);
+        // Decision 15: `[…]` is homogeneous and gets checked; `#[…]` declares
+        // the mix and does not. This engine checked nothing at all, so
+        // `[1, "dos", 3.0]` ran here and was `array element 2 has type String`
+        // in both Rust engines — a program written in the playground failed
+        // outside it (DM-04).
+        const kindOf = (e) => {
+          if (e?.type !== 'Literal') return null;   // only literals are decided statically
+          return e.kind === 'int' ? 'Int'
+               : e.kind === 'float' ? 'Float'
+               : e.kind === 'str' ? 'String'
+               : e.kind === 'char' ? 'Char'
+               : e.kind === 'bool' ? 'Bool' : null;
+        };
+        const kinds = items.map(kindOf);
+        if (kinds.length > 1 && kinds.every(k => k !== null)) {
+          // Int and Float mix freely, as they do in every arithmetic position.
+          const norm = (k) => (k === 'Float' ? 'Int' : k);
+          const first = kinds[0];
+          const bad = kinds.findIndex(k => norm(k) !== norm(first));
+          if (bad > 0 && !expr.declaredMixed) {
+            this.error('E_ARRAY_MIX',
+              `array element ${bad + 1} has type ${kinds[bad]}, but expected ${first} ` +
+              `(same as first element) — write \`#[…]\` if the mix is deliberate`,
+              expr.line);
+          } else if (bad < 0 && expr.declaredMixed) {
+            // Decision 18: the escape hatch used where it is not needed.
+            this.warn('W_MIX_UNNEEDED',
+              `this \`#[…]\` has no mixed types: every element is ${first} — use \`[…]\``,
+              expr.line);
+          }
+        }
         return;
       }
 
@@ -2930,6 +3234,19 @@ function validateInput(s, cast) {
 function deepUpdateValue(col, indices, newVal) {
   if (indices.length === 0) return newVal;
   const i   = indices[0];
+  // A dictionary step addresses a KEY. Adds the key when it is not there, just
+  // as the single-level `d["k"]$~ v` does; refuses a position, because a
+  // positional write corrupts data rather than returning the wrong value.
+  if (col?.type === 'tuple' && col.keys?.some(k => k)) {
+    if (typeof i !== 'string')
+      throw new ZyError(Interpreter.notPositionalMsg('d[n>…]$~ value', col.keys));
+    const ki = col.keys.indexOf(i);
+    const sub = ki < 0 ? mkUnit() : col.v[ki];
+    const updatedSub = deepUpdateValue(sub, indices.slice(1), newVal);
+    if (ki < 0) return { type:'tuple', v:[...col.v, updatedSub], keys:[...col.keys, i] };
+    const r = [...col.v]; r[ki] = updatedSub;
+    return { type:'tuple', v:r, keys:col.keys };
+  }
   const len = col.v?.length ?? 0;
   if (i === 0) throw new ZyRuntimeError('Index 0 is invalid (indices start at 1)', '##Index');
   const idx = i < 0 ? len + i : i - 1;
@@ -3583,6 +3900,23 @@ export class Interpreter {
         `  = help: module '${modName}' is meant to be imported with <# ./${importHint} => alias`;
       return;
     }
+    // Hoisting: a function declared anywhere at the top level is callable from
+    // anywhere at the top level, including above its own declaration.
+    //
+    // Architecture used to decide this instead of anybody choosing: the register
+    // VM compiles the whole file before running it, so it registers every name
+    // first, while this engine and the Rust tree-walker bound each name as its
+    // statement executed. `>> f(2) ¶` above `f(x) { <~ x * 10 }` printed 20 under
+    // `--vm` and was "undefined" in the other two — the same program, two answers
+    // (DM-03). The static checker had already taken the hoisting side, so
+    // `zymbol check` passed a program only one of the three engines would run.
+    //
+    // Top level only, matching the VM. A function declared inside a block still
+    // appears when the block runs.
+    for (const stmt of program.body) {
+      if (stmt.type === 'FuncDecl')
+        env.def(stmt.name, { type: 'func', name: stmt.name, params: stmt.params, body: stmt.body });
+    }
     await this.execBlock(program.body, env);
   }
 
@@ -3806,6 +4140,27 @@ export class Interpreter {
 
       case 'Loop': return await this.execLoop(stmt, env);
 
+      // Decision 12: the edit modifies its receiver. Evaluating the expression
+      // already produces the edited collection — the operators are pure — so the
+      // whole of "modify in place" is storing the result back under the same
+      // name, which is exactly what assignment by value makes indistinguishable
+      // from mutation (DI-04).
+      case 'InPlaceEdit': {
+        // A positional tuple does not change, whatever the operator.
+        // Immutability is a property of the value, not of the operator, so this
+        // is one check rather than an exception inside each of `$+`, `$-`, `$^`…
+        let recv = null;
+        try { recv = env.get(stmt.name); } catch { /* undefined: let eval report it */ }
+        if (recv?.type === 'tuple' && !(recv.keys ?? []).some(k => k !== null))
+          throw new ZyError(
+            `cannot modify tuple '${stmt.name}': tuples are immutable\n` +
+            `help: use 'new = ${stmt.name}[i]$~ value' for a functional update`,
+            stmt.line);
+        const edited = await this.eval(stmt.expr, env);
+        if (!env.set(stmt.name, edited)) env.def(stmt.name, edited);
+        return;
+      }
+
       case 'ExprStmt': {
         // A bare match statement (?? x { arm => { <~ v } }, no assignment) must
         // propagate its arm's control-flow signal (<~, @!, @>) the same way an
@@ -3912,7 +4267,15 @@ export class Interpreter {
   // iteration itself: each pass re-publishes the counter into a fresh scope.
   //
   // `env.set` returns false for a name that does not exist outside the loop, which
-  // is exactly the case where the iterator stays loop-local.
+  // is exactly the case where the iterator stays loop-local — and every engine
+  // agrees on that: reading the iterator after the loop is `undefined variable`
+  // in all three, refused by static analysis before anything runs.
+  //
+  // `DM-20` claimed the two Rust engines left it alive (`zytw 3 · zyvm 3`). It is
+  // not reproducible: measured against `zymbol 0.0.9` on 2026-08-18, with the
+  // pre-change binary, both answer `error: undefined variable 'i'` from
+  // zymbol-semantic. The entry contradicted the *Descartadas* table of the same
+  // document, which said the opposite and was right.
   publishIter(env, name, lastEnv) {
     if (!lastEnv) return;
     try { env.set(name, lastEnv.get(name)); } catch { /* iterator was destroyed */ }
@@ -4008,6 +4371,19 @@ export class Interpreter {
       let items;
       if      (it.type === 'arr')   items = it.v;
       else if (it.type === 'str')   items = [...it.v].map(mkChar);
+      // The pattern form asks for both halves, so a dictionary is handed over as
+      // `(clave, valor)` pairs. `@ k:d` still yields keys (decision 8).
+      else if (loop.pairs && it.type === 'tuple' && it.keys?.some(k => k))
+        items = it.keys.map((k, i) => ({ type:'tuple', v:[mkStr(k), it.v[i]], keys:null }));
+      // A DICTIONARY yields its KEYS, in insertion order — `for k in d` as
+      // Python spells it (decision 8). It used to yield the VALUES here, while
+      // the tree-walker refused to walk one at all: three engines, two answers,
+      // and neither was the decided one. With `d[k]` available the key is enough
+      // to reach the value, so no destructuring pattern has to enter `@`.
+      //
+      // A positional tuple still yields its elements (decision 21).
+      else if (it.type === 'tuple' && it.keys?.some(k => k))
+        items = it.keys.map(k => mkStr(k));
       else if (it.type === 'tuple') items = it.v;
       else throw new ZyError(`Cannot iterate over ${it.type}`);
 
@@ -4156,9 +4532,36 @@ export class Interpreter {
         const spec = expr.spec;
 
         if (spec.kind === 'simple') {
-          // Simple 1-based subscript
-          const idx = (await this.eval(spec.index, env)).v;
-          return this.navGetAt(obj, idx);
+          const iVal = await this.eval(spec.index, env);
+          // A dictionary is addressed by KEY, and the key may be computed —
+          // `d[clave]`, not just `d.nombre`. Without this the named tuple was a
+          // record, not a dictionary: readable only when the program already
+          // knew what it held (decision 7, DM-09). This engine used to answer an
+          // empty line here, which was the worst of the three.
+          //
+          // The dot only reaches keys that are identifiers; the bracket reaches
+          // any key, which is what JSON needs — `d["mi clave"]` cannot be
+          // written any other way.
+          if (iVal.type === 'str' && obj.type === 'tuple' && obj.keys) {
+            const ki = obj.keys.indexOf(iVal.v);
+            if (ki < 0)
+              throw new ZyRuntimeError(
+                Interpreter.missingKeyMsg(iVal.v, obj.keys), '##Key');
+            return obj.v[ki];
+          }
+          // Decision 11: a dictionary is addressed by KEY, never by position.
+          // In a mutable dictionary a positional index is fragile — adding a key
+          // changes what sits at each position, and a program that depended on
+          // `d[2]` stops being correct with nothing to say so. The POSITIONAL
+          // tuple keeps `t[1]` in full: there the index is the only address
+          // there is, and the size is fixed.
+          if (iVal.type === 'int' && obj.type === 'tuple' && obj.keys?.some(k => k)) {
+            const first = obj.keys.find(k => k) ?? 'clave';
+            throw new ZyError(
+              `a dictionary is addressed by key, not by position\n` +
+              `help: use d["${first}"] — adding a key changes what sits at each position`);
+          }
+          return this.navGetAt(obj, iVal.v);
         }
 
         if (spec.kind === 'path') {
@@ -4262,9 +4665,11 @@ export class Interpreter {
         if (obj.type !== 'tuple' || !obj.keys)
           throw new ZyError(`'${expr.scoped ? '::' : '.'}${expr.field}' requires a named tuple`);
         const i = obj.keys.indexOf(expr.field);
+        // ##Key, not ##_: an absent key is its own kind whichever way the
+        // reader arrived — through the dot or through the bracket (decision 10).
         if (i < 0) throw new ZyRuntimeError(
-          `Named tuple has no field '${expr.field}'. Available fields: ${obj.keys.filter(k => k).join(', ')}`,
-          '##_'
+          Interpreter.missingKeyMsg(expr.field, obj.keys),
+          '##Key'
         );
         return obj.v[i];
       }
@@ -4282,10 +4687,23 @@ export class Interpreter {
           if (arr.type !== 'tuple' || !arr.keys)
             throw new ZyError(`$~ string index requires a named tuple`);
           const fi = arr.keys.indexOf(iVal.v);
-          if (fi < 0) throw new ZyError(`named tuple has no field '${iVal.v}'. Available: ${arr.keys.filter(k=>k).join(', ')}`);
+          // A key that is not there gets ADDED, as `d[k] = v` does in Python.
+          // The array refuses the same move (decision 13) and the two are not
+          // inconsistent: an array is addressed by POSITION, so writing past the
+          // end leaves a hole — JavaScript's own `<3 empty items>` is what that
+          // looks like — while a dictionary is addressed by KEY and has none to
+          // leave. Without it, a JSON built piece by piece could not be built.
+          if (fi < 0) {
+            return { type: 'tuple', v: [...arr.v, val], keys: [...arr.keys, iVal.v] };
+          }
           const r = [...arr.v]; r[fi] = val;
           return { type: 'tuple', v: r, keys: arr.keys };
         }
+
+        // A positional WRITE corrupts data rather than returning the wrong
+        // value: strictly worse than the positional read decision 11 withdrew.
+        if (arr.type === 'tuple' && arr.keys?.some(k => k))
+          throw new ZyError(Interpreter.notPositionalMsg('d[n]$~ value', arr.keys));
 
         // Integer 1-based index
         const i = iVal.v;
@@ -4306,7 +4724,10 @@ export class Interpreter {
         for (const atom of expr.path) {
           if (atom.kind === 'range') throw new ZyError('deep update ($~) does not support ranges in the path');
           const iv = await this.eval(atom.expr, env);
-          if (iv.type !== 'int') throw new ZyError(`deep update index must be integer, got ${iv.type}`);
+          // Int → position, String → dictionary key. Same rule as the read.
+          if (iv.type !== 'int' && iv.type !== 'str')
+            throw new ZyError(
+              `a navigation step is a position (Int) or a dictionary key (String), got ${iv.type}`);
           indices.push(iv.v);
         }
         const newVal = await this.eval(expr.value, env);
@@ -4490,6 +4911,21 @@ export class Interpreter {
 
   // 1-based get with error on index 0 and out-of-bounds
   navGetAt(obj, idx) {
+    // A navigation step is an ordinary expression, and its VALUE says how to
+    // address: a number is a position, a string is a dictionary key. Same rule
+    // as `d[clave]`, one level down, which is what makes `config[k1>k2]` work
+    // with `k1 = "servidor"`.
+    //
+    // It has to be the value and not the spelling: a bare identifier inside
+    // `[…]` is a VARIABLE, which is exactly what makes a computed key possible.
+    if (obj?.type === 'tuple' && obj.keys?.some(k => k)) {
+      if (typeof idx === 'string') {
+        const ki = obj.keys.indexOf(idx);
+        if (ki < 0) throw new ZyRuntimeError(Interpreter.missingKeyMsg(idx, obj.keys), '##Key');
+        return obj.v[ki];
+      }
+      throw new ZyError(Interpreter.notPositionalMsg('d[n>…]', obj.keys));
+    }
     if (typeof idx === 'boolean') throw new ZyRuntimeError('Cannot use Bool as array index', '##Index');
     if (idx === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
     if (obj.type === 'arr') {
@@ -4731,6 +5167,23 @@ export class Interpreter {
         notSupported('$--');
       }
       case '$-[i]': {
+        // In a DICTIONARY the address IS the key, so `$-[…]` — which already
+        // means "remove by address" for the array (`arr$-[1]`, by position) — is
+        // the same operator with the same sense (decision 9). That leaves
+        // `$- valor` free to keep meaning "by value" in both collections.
+        // Checked before the index is resolved as a position, which is what made
+        // `d$-["beta"]` delete the FIRST key here instead of the named one.
+        const rawIdx = await this.eval(expr.index, env);
+        if (rawIdx.type === 'str' && col.type === 'tuple' && col.keys?.some(k => k)) {
+          const ki = col.keys.indexOf(rawIdx.v);
+          if (ki < 0)
+            throw new ZyRuntimeError(Interpreter.missingKeyMsg(rawIdx.v, col.keys), '##Key');
+          const nv = [...col.v], nk = [...col.keys];
+          nv.splice(ki, 1); nk.splice(ki, 1);
+          return { type: 'tuple', v: nv, keys: nk };
+        }
+        if (col.type === 'tuple' && col.keys?.some(k => k))
+          throw new ZyError(Interpreter.notPositionalMsg('d$-[n]', col.keys));
         const i = await idx();
         if (col.type === 'arr')   { const r=[...col.v]; r.splice(i,1); return mkArr(r); }
         if (col.type === 'str')   { const r=[...col.v]; r.splice(i,1); return mkStr(r.join('')); }
@@ -4741,6 +5194,8 @@ export class Interpreter {
         notSupported('$-[i]');
       }
       case '$-[i:n]': {
+        if (col.type === 'tuple' && col.keys?.some(k => k))
+          throw new ZyError(Interpreter.notPositionalMsg('d$-[a..b]', col.keys));
         const sv = (await this.eval(expr.start, env)).v;
         const nv = (await this.eval(expr.count, env)).v;
         const len = col.type === 'str' ? [...col.v].length : col.v.length;
@@ -4759,6 +5214,8 @@ export class Interpreter {
         const count = ti - fi + 1;
         if (col.type === 'arr')   { const r=[...col.v]; r.splice(fi,count); return mkArr(r); }
         if (col.type === 'str')   { const r=[...col.v]; r.splice(fi,count); return mkStr(r.join('')); }
+        if (col.type === 'tuple' && col.keys?.some(k => k))
+          throw new ZyError(Interpreter.notPositionalMsg('d$-[a..b]', col.keys));
         if (col.type === 'tuple') { const r=[...col.v]; r.splice(fi,count); const ks=col.keys?[...col.keys]:null; if(ks)ks.splice(fi,count); return {type:'tuple',v:r,keys:ks}; }
         notSupported('$-[i..j]');
       }
@@ -4767,6 +5224,15 @@ export class Interpreter {
         const v = await arg();
         if (col.type === 'arr')   return mkBool(col.v.some(el=>this.equals(el,v)));
         if (col.type === 'str')   return mkBool(col.v.includes(this.display(v)));
+        // On a DICTIONARY the question is about the KEY, which is what `in`
+        // asks in Python and in JS. Decision 10 makes reading an absent key an
+        // error, so this is what lets a dictionary built piece by piece be
+        // consulted at all — without it there is no way to ask before reading.
+        // Asking about a value is a different operation and would need its own
+        // sign. On a POSITIONAL tuple it stays a value question: there are no
+        // keys to ask about.
+        if (col.type === 'tuple' && col.keys?.some(k => k))
+          return mkBool(col.keys.some(k => k === this.display(v)));
         if (col.type === 'tuple') return mkBool(col.v.some(el=>this.equals(el,v)));
         notSupported('$?');
       }
@@ -4798,6 +5264,8 @@ export class Interpreter {
         const ti = expr.range.to   == null ? len : this.resolve1Based((await this.eval(expr.range.to,env)).v, len) + 1; // inclusive end
         if (col.type === 'arr')   return mkArr(col.v.slice(fi, ti));
         if (col.type === 'str')   return mkStr([...col.v].slice(fi,ti).join(''));
+        if (col.type === 'tuple' && col.keys?.some(k => k))
+          throw new ZyError(Interpreter.notPositionalMsg('d$[a..b]', col.keys));
         if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(fi,ti), keys:col.keys?col.keys.slice(fi,ti):null };
         notSupported('$[i..j]');
       }
@@ -4808,6 +5276,8 @@ export class Interpreter {
         const fi = this.resolve1Based(fv, len);
         if (col.type === 'arr')   return mkArr(col.v.slice(fi, fi+n));
         if (col.type === 'str')   return mkStr([...col.v].slice(fi,fi+n).join(''));
+        if (col.type === 'tuple' && col.keys?.some(k => k))
+          throw new ZyError(Interpreter.notPositionalMsg('d$[a..b]', col.keys));
         if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(fi,fi+n), keys:col.keys?col.keys.slice(fi,fi+n):null };
         notSupported('$[i:n]');
       }
@@ -4978,11 +5448,21 @@ export class Interpreter {
         const matchElem = async (elem, arrVal) => {
           if (elem.kind === 'wildcard') return true;
           if (elem.kind === 'literal') return this.equals(arrVal, await this.eval(elem.expr, env));
-          if (elem.kind === 'bind') { env.def(elem.name, arrVal); return true; }
+          // An identifier inside a list pattern is a *value to compare*, exactly
+          // as it is at the top of a pattern — not a name being created. This
+          // used to `env.def(elem.name, arrVal)` and return true, i.e. match
+          // anything and bind a name the arm could not even read, so
+          // `?? [9,8,7] { [a, b, c] => … }` took the branch with a, b and c
+          // undefined while the tree-walker refused it (DM-26).
+          //
+          // A pattern that matches when it should raise is the worst way to be
+          // wrong: a `??` with a typo in a constant's name takes that branch
+          // every time and says nothing.
+          if (elem.kind === 'bind') return this.matchIdentInPattern(elem.name, arrVal, env);
           // Legacy format (name, rest)
           if (elem.rest) return true;
           if (elem.name === '_') return true;
-          env.def(elem.name, arrVal); return true;
+          return this.matchIdentInPattern(elem.name, arrVal, env);
         };
         if (restIdx < 0) {
           if (val.v.length !== elems.length) return false;
@@ -5140,13 +5620,85 @@ export class Interpreter {
     throw new ZyError(`Unknown operator: ${op}`);
   }
 
+  // Structural equality, recursive, and the same relation at every depth.
+  //
+  // Collections used to be compared with `JSON.stringify(a.v) === JSON.stringify(b.v)`,
+  // which is three bugs in one line:
+  //
+  //   - It compares the *encoding*, not the values, so `[1] == [1.0]` was #0
+  //     while `1 == 1.0` is #1: element equality was a different relation from
+  //     scalar equality. Both Rust engines promote at every depth.
+  //   - It reads only `v`, and a named tuple keeps its labels in `keys`, so the
+  //     labels were invisible: `(x: 1, y: 2) == (a: 1, b: 2)` was #1, and so was
+  //     `(1, 2) == (x: 1, y: 2)`. Neither is defensible under any reading of what
+  //     a record is.
+  //   - Two structurally equal values can serialize differently (key insertion
+  //     order), so it could answer #0 for values it should call equal.
+  //
+  // What is deliberately *not* settled here: two named tuples with the same
+  // labels and the same values are #1 in this engine and #0 in both Rust ones.
+  // That is dictionary equality, and decisions 7-11 of
+  // Divergente_ES/forma/README.md are what decides it (DM-22). This function
+  // keeps whichever answer its engine already gave for that one case, so
+  // implementing the dictionary does not have to undo a guess made here.
+  // The test an identifier performs inside a pattern: the same dual rule the
+  // scalar path uses — an array variable means containment, anything else means
+  // equality — and an identifier that names nothing raises, because a pattern
+  // element is a value and there is no value to compare against.
+  matchIdentInPattern(name, val, env) {
+    const pv = env.get(name);            // throws when the name is undefined
+    if (pv.type === 'arr') return pv.v.some(el => this.equals(val, el));
+    return this.equals(val, pv);
+  }
+
+  // The refusal of an absent dictionary key, spelled as the two Rust engines
+  // spell it. The three used to say it four different ways — and this one said
+  // the least of all through the bracket. `forma/diccionarios.zy` § 2b asked for
+  // one text with the available keys in all three.
+  //
+  // The vocabulary is the decision too: it is a **dictionary**, not a named
+  // tuple. A tuple is immutable by definition and this is not (decision 7).
+  // The refusal of a positional address on a dictionary, spelled as the two Rust
+  // engines spell it.
+  //
+  // Decision 11 withdrew `d[2]`, and the reasoning covers the whole family: in a
+  // mutable dictionary a position is not a stable address, because adding a key
+  // changes what sits at each one. There is no principled line between "the
+  // second key" and "the first two keys", and a positional WRITE is strictly
+  // worse than a positional read — it corrupts data rather than returning the
+  // wrong value. This is Python's position: `dict` has no indexing and no
+  // slicing, and the slice gets no key-based replacement.
+  static notPositionalMsg(op, keys) {
+    const k = (keys ?? []).find(x => x) ?? 'clave';
+    return `a dictionary is addressed by key, not by position: \`${op}\` has no meaning here\n` +
+      `help: use the key — d["${k}"], d["${k}"]$~ value, d$-["${k}"] — ` +
+      `because adding a key changes what sits at each position`;
+  }
+
+  static missingKeyMsg(key, keys) {
+    const avail = (keys ?? []).filter(k => k);
+    return avail.length === 0
+      ? `no key '${key}' in dictionary — it is empty`
+      : `no key '${key}' in dictionary — available: ${avail.join(', ')}`;
+  }
+
   equals(a, b) {
     if (a.type !== b.type) {
       if ((a.type === 'int' || a.type === 'float') &&
           (b.type === 'int' || b.type === 'float')) return a.v === b.v;
       return false;
     }
-    if (a.type === 'arr' || a.type === 'tuple') return JSON.stringify(a.v) === JSON.stringify(b.v);
+    if (a.type === 'arr' || a.type === 'tuple') {
+      if (a.v.length !== b.v.length) return false;
+      // A positional tuple and a named one are different shapes even when their
+      // values match, and two named tuples need the same labels in the same
+      // places. `keys` is absent or all-null on a positional tuple.
+      const ka = a.keys ?? [], kb = b.keys ?? [];
+      for (let i = 0; i < a.v.length; i++) {
+        if ((ka[i] ?? null) !== (kb[i] ?? null)) return false;
+      }
+      return a.v.every((el, i) => this.equals(el, b.v[i]));
+    }
     return a.v === b.v;
   }
 
