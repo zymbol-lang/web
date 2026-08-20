@@ -113,13 +113,46 @@ try {
   // A source that does not parse is reported by checkSource below.
 }
 
+
+// Print a diagnostic the way the CLI prints one, because `zyq consensus`
+// compares text and two engines refusing the same program with different
+// LAYOUT are counted as disagreeing about the language.
+//
+// Two things were the harness and not the engine, and both looked like engine
+// bugs until they were traced:
+//
+//   * `(line 2)` was appended here, so every message differed from the CLI's —
+//     and on a message with guidance it landed after the guidance, which reads
+//     as if the line number belonged to the advice.
+//   * a `help:` line was printed flush left, where the CLI indents it by two.
+//
+// The line number is not lost: it goes where the CLI puts it, on its own
+// `-->` line, and the playground never used the text form at all — it reads
+// `d.line` as a field.
+function formatDiagnostic(severity, d) {
+  const [head, ...rest] = String(d.message).split('\n');
+  let out = `${severity}: ${head}\n`;
+  if (d.line != null) out += `  --> line ${d.line}\n`;
+  for (const line of rest) out += `  ${line}\n`;
+  return out;
+}
+
 const { diagnostics } = checkSource(source, { moduleArities, moduleOutSlots });
+// Warnings go out too, which they did not before: this engine COMPUTED them and
+// the harness dropped them on the floor, so an unused variable was flagged by
+// the two Rust engines and silent here (DM-07). It looked like an engine gap for
+// as long as nobody looked at the harness.
+//
+// The order mattered. Emitting these before the layout above was unified would
+// have given every warning both differences at once — the wording and the shape
+// — turning one fixable problem into two.
+for (const d of diagnostics.filter(d => d.severity === 'warning')) {
+  process.stderr.write(formatDiagnostic('warning', d));
+}
+
 const errors = diagnostics.filter(d => d.severity === 'error');
 if (errors.length > 0) {
-  for (const d of errors) {
-    const where = d.line == null ? '' : ` (line ${d.line})`;
-    process.stderr.write(`error: ${d.message}${where}\n`);
-  }
+  for (const d of errors) process.stderr.write(formatDiagnostic('error', d));
   process.exit(1);
 }
 

@@ -676,7 +676,31 @@ export class Lexer {
           else if (ch === '}') { depth--; if (depth > 0) inner += ch; }
           else inner += ch;
         }
+        // An interpolation is `{identifier}` and nothing else. Counting depth
+        // meant `{{…}}` opened two levels and passed, so the doubled-brace form
+        // — which is how Rust and Python spell a literal brace, and is NOT how
+        // Zymbol spells it — ran here and was a syntax error in both Rust
+        // engines. Zymbol's literal brace is `\{` and `\}`, symmetrically.
+        if (!/^[^\s{}\[\]().,;:"'`!?@#$|&~\\+\-*/%^<>=]+$/.test(inner)) {
+          throw new ZyError(
+            `invalid character in string interpolation\n` +
+            `help: interpolation must be {identifier} — use \\{ for a literal brace`,
+            this.line);
+        }
         parts.push({ t: 'expr', v: inner });
+      } else if (this.ch() === '}') {
+        // A `}` that closes nothing. The escape is symmetric: `\{` and `\}` are
+        // the literal braces, and a bare one is an error on either side.
+        //
+        // Both engines accepted it, so `"\{\"n\":1}"` — the half-escaped form —
+        // printed happily while the same JSON with neither escape was refused.
+        // Two spellings of one string, one accepted and one not, with nothing to
+        // say why.
+        throw new ZyError(
+          `unmatched '}' in string\n` +
+          `help: the escape is symmetric — write \\} for a literal brace, ` +
+          `as \\{ is for the opening one`,
+          this.line);
       } else {
         cur += this.consume();
       }
@@ -808,6 +832,21 @@ export class Parser {
     this.eat('LBRACE');
     const stmts = this.parseStmtList();
     this.eat('RBRACE');
+    // A function is free in a script or part of a module — never of a block.
+    // Both Rust engines refuse a declaration inside `? { }`, `@ { }` or a
+    // function body, and this one ran it, so a program written in the playground
+    // failed outside it (DM-23, decided 2026-08-19).
+    //
+    // Checked after the block is parsed rather than while: the shape is the same
+    // wherever the block came from, so one place covers every block form.
+    for (const s of stmts) {
+      if (s?.type === 'FuncDecl') {
+        throw new ZyError(
+          `a function cannot be declared inside a block: '${s.name}' is free in a ` +
+          `script or part of a module, not of a '?', '@' or function body`,
+          s.line);
+      }
+    }
     return stmts;
   }
 
@@ -1458,6 +1497,29 @@ export class Parser {
           `'=' gives a value to a NAME, '$~' changes part of a collection`,
           line);
       }
+      // `m[1][2] = 77` — chained brackets. The indexed assignment does not exist
+      // at ANY depth, and nesting is navigated with `>`: `m[1>2]`. This engine
+      // ran the line and changed nothing — a silent no-op, which is worse than a
+      // program that does not compile, and it is the oldest red in the gate.
+      //
+      // Both halves belong in the message: a reader who wrote this needs the
+      // notation as well as the rule.
+      if (this.check('LBRACKET')) {
+        let i = 0, depth = 0;
+        while (this.pos + i < this.toks.length) {
+          const t = this.toks[this.pos + i++];
+          if (t.type === 'LBRACKET') depth++;
+          else if (t.type === 'RBRACKET') { depth--; if (depth === 0 && this.toks[this.pos + i]?.type !== 'LBRACKET') break; }
+        }
+        const after = this.peek(i)?.type;
+        if (after === 'ASSIGN' || compound[after]) {
+          throw new ZyError(
+            `indexed assignment does not exist: '${name}[…] =' is not a form of Zymbol\n` +
+            `help: nesting is navigated with '>', so this is '${name}[i>j]$~ value' — ` +
+            `'=' gives a value to a NAME, '$~' changes part of a collection`,
+            line);
+        }
+      }
       // `name[i]$~ v` as a statement. The bracket was consumed above, so the
       // `$~` never reached the nav-index parser that builds FuncUpdate — which
       // is why this form was a silent no-op here while neither Rust engine
@@ -1508,6 +1570,13 @@ export class Parser {
   //
   // A receiver that is not a plain name yields no statement — `f()[1]$~ 5` would
   // modify a temporary nobody holds (decision 20).
+  // The editing `$` operators, by node shape — shared by the in-place rule and
+  // by the refusal of an edit that has nowhere to land.
+  static isEditNode(e) {
+    return (e?.type === 'CollectionOp' && Parser.EDIT_OPS.has(e.op)) ||
+           e?.type === 'FuncUpdate' || e?.type === 'DeepUpdate';
+  }
+
   editStmtOrExpr(expr, line) {
     const isEdit =
       (expr?.type === 'CollectionOp' && Parser.EDIT_OPS.has(expr.op)) ||
@@ -1520,6 +1589,15 @@ export class Parser {
     if (isEdit) {
       const name = baseName(expr.obj);
       if (name) return { type: 'InPlaceEdit', name, expr, line };
+      // Decision 20: modifying requires a destination with a NAME. `f()[1]$~ 5`
+      // edits whatever the call returned, which the next line discards, so the
+      // edit is unobservable by construction. This engine ran it and said
+      // nothing.
+      throw new ZyError(
+        `modifying requires a destination with a name\n` +
+        `help: this edits whatever the call returned, and nothing holds it — ` +
+        `assign the result first, or edit a named collection`,
+        line);
     }
     return { type: 'ExprStmt', expr };
   }
@@ -2391,6 +2469,119 @@ class Checker {
     this.stack[this.stack.length - 1].vars.set(name, { line, isConst, used: false });
   }
 
+  /**
+   * Assignment to a name that already exists: keep the record it already has.
+   *
+   * `define` writes into the INNERMOST frame with `used: false`, which is right
+   * for a name being introduced and wrong for one being assigned again. Two
+   * false `unused variable` warnings came out of that, and neither Rust engine
+   * has ever raised them:
+   *
+   *     c = 0                     inc(x<~) {
+   *     @ 3 { c = c + 1 }             x = x + 1
+   *     >> c ¶      // prints 3   }   // x's value flows back to the caller
+   *
+   * In the first, `c = c + 1` created a SECOND `c` inside the loop frame — a
+   * shadow, in a language whose blocks do not create scope (`DI-10`) — and that
+   * shadow died unused when the frame popped. In the second, the assignment
+   * reset the parameter's record, throwing away the read on its own right-hand
+   * side.
+   *
+   * So: if the name is visible, leave it alone. A variable that is assigned and
+   * never read still warns, because the record from its FIRST definition is the
+   * one that survives and nothing ever marks it used.
+   */
+  /**
+   * `? 1 { … }` — a condition that is not a Bool.
+   *
+   * Both Rust engines warn and this one said nothing, so a program that leans on
+   * an Int being truthy looked clean here and noisy on the command line
+   * (`DM-05`). Only literals are decided statically, which is the same limit the
+   * Rust analyser works under: it warns on a type it can infer and stays quiet
+   * on `Any` or `Unknown` rather than guessing.
+   *
+   * The wording is the Rust one, word for word — `zyq consensus` compares text.
+   */
+  warnNonBoolCondition(cond, kind) {
+    const name = this.staticTypeName(cond);
+    if (!name) return;                       // Bool, or a type this pass cannot decide
+    this.warn('W_COND_TYPE', `${kind} condition should be Bool, got ${name}`,
+              cond.line ?? null, { kind, type: name });
+  }
+
+  /** The type of an expression when it is decided without inference, else null. */
+  staticTypeName(e) {
+    const OF = { int: 'Int', float: 'Float', str: 'String', char: 'Char' };
+    if (e?.type === 'Literal') return OF[e.kind] ?? null;   // bool → null: it is fine
+    if (e?.type === 'Ident' && e.name) {
+      for (let i = this.stack.length - 1; i >= 0; i--) {
+        const info = this.stack[i].vars.get(e.name);
+        // `Bool` is what a condition is SUPPOSED to be. `noteLiteralType` records
+        // it like any other so that a later `n = 1` can clear the record on
+        // conflict; returning it here produced `if condition should be Bool, got
+        // Bool`, which says nothing and is plainly a bug.
+        if (info) return info.litType && info.litType !== 'Bool' ? info.litType : null;
+        if (this.stack[i].funcBoundary && !e.name.startsWith('_')) break;
+      }
+    }
+    return null;
+  }
+
+  noteLiteralType(name, value, line) {
+    const OF = { int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool' };
+    const t = value?.type === 'Literal' ? (OF[value.kind] ?? null) : null;
+    for (let i = this.stack.length - 1; i >= 0; i--) {
+      const info = this.stack[i].vars.get(name);
+      if (!info) {
+        if (this.stack[i].funcBoundary && !name.startsWith('_')) break;
+        continue;
+      }
+      // Reassigning a literal of a different type: both Rust engines warn, and
+      // this one said nothing. Only literal-to-literal is decided without
+      // inference, which is the same limit the condition check works under.
+      if (info.litType && t && info.litType !== t) {
+        this.warn('W_TYPE_CHANGE',
+          `type mismatch: '${name}' was ${info.litType} but assigned ${t}`,
+          line ?? null, { name, was: info.litType, now: t });
+      }
+      info.litType = (info.litType === undefined || info.litType === t) ? t : null;
+      return;
+    }
+  }
+
+  /**
+   * Walk a `??` pattern, marking the identifiers it names as used.
+   *
+   * A pattern COMPARES — it never binds — so every identifier in it is a
+   * variable being read. `corpus/match/13_ident_scalar.zy` records that at the
+   * top level and `20_list_pattern_compares.zy` inside a list.
+   */
+  checkMatchPattern(p) {
+    if (!p) return;
+    if (p.type === 'Ident' && p.name) { this.lookup(p.name, p.line); return; }
+    for (const e of (p.elems ?? p.items ?? [])) {
+      if (e?.kind === 'literal') this.checkExpr(e.expr);
+      else if (e?.kind === 'bind' && e.name) this.lookup(e.name, p.line);
+      else if (e?.name && e.name !== '_') this.lookup(e.name, p.line);
+    }
+    for (const alt of (p.alts ?? [])) this.checkMatchPattern(alt);
+  }
+
+  /** Mark a name used if it is in scope; say nothing if it is not. */
+  markUsedIfPresent(name) {
+    for (let i = this.stack.length - 1; i >= 0; i--) {
+      const info = this.stack[i].vars.get(name);
+      if (info) { info.used = true; return; }
+      if (this.stack[i].funcBoundary && !name.startsWith('_')) break;
+    }
+  }
+
+  defineOrKeep(name, line, isConst = false) {
+    if (this.stack.length === 0 || !name) return;
+    if (this.has(name)) return;
+    this.define(name, line, isConst);
+  }
+
   // Mirror Env.hotDef: walk to nearest funcBoundary or root, define there
   hotDefine(name, line) {
     if (this.stack.length === 0 || !name) return;
@@ -2532,7 +2723,14 @@ class Checker {
             return;
           }
         }
-        if (!wasHot) this.define(stmt.name, stmt.line, false);
+        if (!wasHot) this.defineOrKeep(stmt.name, stmt.line, false);
+        // Remember the type when the value is a literal, which is the only case
+        // decided without inference — enough for `n = 1  ? n { … }`, and the
+        // same limit the Rust analyser works under when it cannot infer.
+        // A second assignment of a different kind clears it rather than
+        // guessing, because after `n = 1` then `n = #1` the type is whichever
+        // ran last and this pass does not know which.
+        if (!wasHot && stmt.name) this.noteLiteralType(stmt.name, stmt.value, stmt.line);
         return;
       }
 
@@ -2629,9 +2827,11 @@ class Checker {
 
       case 'If': {
         this.checkExpr(stmt.cond);
+        this.warnNonBoolCondition(stmt.cond, 'if');
         this.push(); this.checkBlock(stmt.then); this.pop();
         for (const elif of (stmt.elseifs ?? [])) {
           this.checkExpr(elif.cond);
+          this.warnNonBoolCondition(elif.cond, 'else-if');
           this.push(); this.checkBlock(elif.body ?? elif.then); this.pop();
         }
         if (stmt.else) { this.push(); this.checkBlock(stmt.else); this.pop(); }
@@ -2730,7 +2930,12 @@ class Checker {
       case 'Match': {
         this.checkExpr(stmt.subject ?? stmt.expr);
         for (const arm of (stmt.arms ?? [])) {
-          if (arm.pattern?.type === 'Ident') this.lookup(arm.pattern.name, arm.pattern.line);
+          // An identifier in a pattern is a VALUE that gets compared, so it is a
+          // use of that variable — at the top of the pattern and, equally,
+          // inside a LIST pattern. Only the top level was looked up here, so
+          // `uno = 1  ?? [1] { [uno] => … }` reported `unused variable 'uno'`
+          // while both Rust engines said nothing.
+          this.checkMatchPattern(arm.pattern);
           if (Array.isArray(arm.body)) { this.push(); this.checkBlock(arm.body); this.pop(); }
           else this.checkExpr(arm.body);
         }
@@ -2846,6 +3051,21 @@ class Checker {
 
       case 'CastOp': {
         this.checkExpr(expr.operand ?? expr.value ?? expr.obj);
+        return;
+      }
+
+      // `x#?` — asking a value its type is a USE of it. The node was not walked
+      // here, so `d = js::decode(…)  >> d#? ¶` reported `unused variable 'd'`
+      // while both Rust engines said nothing: the one operator whose whole job
+      // is to inspect a value did not count as reading it.
+      //
+      // The operand is checked like any other expression, so an undefined name
+      // in it is reported. Asking a variable its type is not an exception to
+      // "defined before use": decided 2026-08-19, and it makes the CLI agree
+      // with the LSP, which had been flagging it all along while
+      // `zymbol check` said "No errors or warnings".
+      case 'TypeMetadata': {
+        this.checkExpr(expr.obj ?? expr.operand ?? expr.value);
         return;
       }
 
@@ -4189,7 +4409,7 @@ export class Interpreter {
         } else if (col.type === 'tuple') {
           throw new ZyError(
             `cannot modify tuple '${stmt.obj}': tuples are immutable\n` +
-            `hint: use 'new_var = ${stmt.obj}[${i}]$~ value' for a functional update`
+            `help: use 'new_var = ${stmt.obj}[${i}]$~ value' for a functional update`
           );
         } else {
           throw new ZyError(`'${stmt.obj}' is not an array`);
@@ -5690,13 +5910,24 @@ export class Interpreter {
     }
     if (a.type === 'arr' || a.type === 'tuple') {
       if (a.v.length !== b.v.length) return false;
-      // A positional tuple and a named one are different shapes even when their
-      // values match, and two named tuples need the same labels in the same
-      // places. `keys` is absent or all-null on a positional tuple.
       const ka = a.keys ?? [], kb = b.keys ?? [];
-      for (let i = 0; i < a.v.length; i++) {
-        if ((ka[i] ?? null) !== (kb[i] ?? null)) return false;
+      const aIsDict = ka.some(k => k), bIsDict = kb.some(k => k);
+      // A positional tuple and a dictionary are different shapes even when their
+      // values match.
+      if (aIsDict !== bIsDict) return false;
+      // Two DICTIONARIES are equal when they hold the same keys with the same
+      // values. Key ORDER is not part of it: insertion order is preserved for
+      // walking, as in Python's dict, but two dictionaries built in a different
+      // order still hold the same thing. This engine compared position by
+      // position, so `(x:1,y:2) == (y:2,x:1)` was #0 here and #1 in both Rust
+      // engines (DM-22).
+      if (aIsDict) {
+        return ka.every((k, i) => {
+          const j = kb.indexOf(k);
+          return j >= 0 && this.equals(a.v[i], b.v[j]);
+        });
       }
+      // A positional tuple keeps position-by-position comparison.
       return a.v.every((el, i) => this.equals(el, b.v[i]));
     }
     return a.v === b.v;
@@ -5938,6 +6169,19 @@ export function checkSource(src, opts = {}) {
     // Report nothing rather than something wrong; running the program still reports for real.
     console.warn('checkSource: analysis failed —', e?.message ?? e);
     diagnostics = [];
+  }
+  // A name reported as UNDEFINED must not also be reported as UNUSED.
+  //
+  // The two come from opposite ends of the same fact: `? #1 { v = 1 }  >> v ¶`
+  // defines `v` in the block frame, which pops — so the analyser says "unused"
+  // when the frame closes and "undefined" when the later line looks for it.
+  // Both are about a variable the program plainly meant to use, and Rust reports
+  // only the second. Saying both invites the reader to fix the wrong one.
+  const quiet = new Set(
+    diagnostics.filter(d => d.code === 'E_VAR' && d.params?.name).map(d => d.params.name));
+  if (quiet.size > 0) {
+    diagnostics = diagnostics.filter(
+      d => !(d.code === 'W_UNUSED' && quiet.has(d.params?.name)));
   }
   return { ast, diagnostics };
 }
