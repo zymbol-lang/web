@@ -430,13 +430,56 @@
       flex: 1;
       position: relative;
       overflow: hidden;
+
+      /* The line-number gutter's width, in the editor's own monospace `ch`. These are
+         custom properties rather than a fixed number because gutter.js widens them as the
+         program passes 99 lines — and because both code layers have to be padded to clear
+         the gutter by exactly the same amount, or the hover's arithmetic stops landing on
+         the token the pointer is over. The fallback of two digits keeps a gutter-less
+         fixture (tests/dom/) aligned all the same. */
+      --gutter-digits: 2;
+      --gutter-pad: 0.5rem;
+      --gutter-w: calc(var(--gutter-digits) * 1ch + var(--gutter-pad) * 2);
+      --code-pad-left: calc(var(--gutter-w) + 0.6rem);
     }
+
+    /* ─── Line numbers ───
+       A single run of text in `white-space: pre`, laid out by the same line-box machinery
+       as the code it numbers — see src/playground/gutter.js on why this is not one element
+       per line. It scrolls vertically with the textarea and never horizontally, which is
+       what keeps it a fixed ruler rather than part of the document. */
+    #editor-gutter {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: var(--gutter-w);
+      overflow: hidden;
+      padding: 0.75rem var(--gutter-pad);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      white-space: pre;
+      color: var(--dim);
+      background: var(--bg2);
+      border-right: 1px solid var(--line);
+      user-select: none;
+      /* Above both code layers: with the textarea scrolled right, its text slides under
+         the padding and would otherwise show through the numbers. Below the hover card. */
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    /* The line a diagnostic points at. The number itself is tinted, not its background:
+       a background would be as wide as its digits, marking "9" and "10" differently. */
+    #editor-gutter .gl.has-error   { color: var(--err);  font-weight: 700; }
+    #editor-gutter .gl.has-warning { color: var(--warn); font-weight: 700; }
 
     #editor-highlight {
       position: absolute;
       inset: 0;
       overflow: auto;
-      padding: 0.75rem;
+      padding: 0.75rem 0.75rem 0.75rem var(--code-pad-left);
       font-family: var(--mono);
       font-size: 0.82rem;
       line-height: 1.65;
@@ -457,7 +500,7 @@
       caret-color: var(--green);
       border: none;
       outline: none;
-      padding: 0.75rem;
+      padding: 0.75rem 0.75rem 0.75rem var(--code-pad-left);
       font-family: var(--mono);
       font-size: 0.82rem;
       line-height: 1.65;
@@ -468,12 +511,12 @@
     }
 
     /* ─── Hover help ───
-       Sits above the textarea (z-index 3) but takes no pointer events: the reader has to
-       be able to click through it to place the caret, and a card that moved when you
-       reached for it would be unusable. */
+       Sits above the textarea and the gutter (z-index 4) but takes no pointer events: the
+       reader has to be able to click through it to place the caret, and a card that moved
+       when you reached for it would be unusable. */
     #hover-card {
       position: absolute;
-      z-index: 3;
+      z-index: 4;
       pointer-events: none;
       display: none;
       max-width: min(30rem, 90%);
@@ -1102,6 +1145,8 @@
     /* ─── Mobile ─── */
     @media (max-width: 700px) {
       #split { flex-direction: column; }
+      /* The ruler earns its keep on a phone as well, but not that much of the width. */
+      #editor-wrapper { --gutter-pad: 0.3rem; }
       #editor-panel  { flex: 1 1 50%; min-width: unset; min-height: 0; }
       #output-panel  { flex: 1 1 50%; min-width: unset; min-height: 0; }
       #split-handle  { flex: 0 0 5px; cursor: row-resize; width: 100%; }

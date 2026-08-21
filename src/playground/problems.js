@@ -29,7 +29,7 @@ const WARN_KEY = 'zy-pg-warnings';
 const DEBOUNCE_MS = 600;
 
 export function createProblems({ panel, list, countEl, titleEl, toggleBtn, warningsBox,
-                                 warningsText, highlight, getSource, gotoLine }) {
+                                 warningsText, highlight, gutter, getSource, gotoLine }) {
   let diagnostics = [];
   let timer = null;
   let showWarnings = localStorage.getItem(WARN_KEY) === '1';
@@ -57,7 +57,12 @@ export function createProblems({ panel, list, countEl, titleEl, toggleBtn, warni
     return showWarnings ? diagnostics : diagnostics.filter(d => d.severity === 'error');
   }
 
-  /** Tints the lines a diagnostic points at, on the colouring layer under the textarea. */
+  /**
+   * Tints the lines a diagnostic points at: the line itself on the colouring layer under
+   * the textarea, and its number in the gutter. Both, because a tinted line off the top of
+   * a scrolled view says nothing, while "line 6" in the strip and a red 6 in the ruler are
+   * the same fact stated where each is needed.
+   */
   function markLines() {
     for (const el of highlight.querySelectorAll('.hl-line.has-error, .hl-line.has-warning')) {
       el.classList.remove('has-error', 'has-warning');
@@ -67,6 +72,7 @@ export function createProblems({ panel, list, countEl, titleEl, toggleBtn, warni
       const el = highlight.querySelector(`.hl-line[data-l="${d.line}"]`);
       if (el) el.classList.add(d.severity === 'error' ? 'has-error' : 'has-warning');
     }
+    gutter?.mark(visible());
   }
 
   function render() {

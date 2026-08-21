@@ -79,6 +79,8 @@
     <h3>Fully supported</h3>
     <ul>
       <li><code>std/math</code>, <code>std/random</code>, <code>std/json</code>, <code>std/term</code>.</li>
+      <li>Line numbers beside the editor, tinted where a diagnostic points — every message
+          names a line ("line 6", <code>Line 6:</code>), so the editor answers which one.</li>
       <li>Static checking, on its own button and while you type: <strong>✓ Check</strong> lists
           problems under the editor and marks the lines, without running anything. Warnings
           (unused variables, ambiguous lifetimes) are behind <strong>Show warnings</strong>, off by
@@ -176,6 +178,9 @@
     <div id="file-tabs"></div>
 
     <div id="editor-wrapper">
+      <!-- Line numbers. Every diagnostic names a line ("line 6", `Line 6: …`), so the
+           editor has to be able to answer which line that is. -->
+      <pre id="editor-gutter" aria-hidden="true"></pre>
       <pre id="editor-highlight" aria-hidden="true"></pre>
       <textarea id="editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
                 placeholder='>> "Hello, World!" ¶'></textarea>

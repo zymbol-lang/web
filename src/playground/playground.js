@@ -9,11 +9,17 @@ import { loadCatalog, mountEntry, collectPackage, resolveDeepLink, deepLinkOf } 
 import { registerWebMcpTools } from './webmcp.js';
 import { createHover } from './hover.js';
 import { createProblems } from './problems.js';
+import { createGutter } from './gutter.js';
 import { initI18n, t, locale, setLocale, languageList, onLocaleChange } from '../i18n/i18n.js';
 
 // ─── Editor sync ──────────────────────────────────────────────────────────────
 const editor    = document.getElementById('editor');
 const highlight = document.getElementById('editor-highlight');
+const gutter    = createGutter({
+  wrapper: document.getElementById('editor-wrapper'),
+  editor,
+  gutter: document.getElementById('editor-gutter'),
+});
 
 // Declared here, built at boot: syncHighlight runs before the wiring block and reaches for
 // it with `?.`, which would still throw on a `let` that has not been evaluated yet.
@@ -23,13 +29,16 @@ let hover    = null;
 function syncHighlight() {
   const code = editor.value;
   highlight.innerHTML = highlightCode(code) + '\n';
-  // Rebuilding the layer threw away the diagnostic tints with it.
+  gutter.sync();
+  // Rebuilding either layer threw away the diagnostic tints with it.
   problems?.remark();
   syncScroll();
 }
 function syncScroll() {
   highlight.scrollTop  = editor.scrollTop;
   highlight.scrollLeft = editor.scrollLeft;
+  // Vertically only: the numbers are a ruler beside the code, not part of it.
+  gutter.scroll();
 }
 
 editor.addEventListener('scroll', syncScroll);
@@ -1151,6 +1160,7 @@ problems = createProblems({
   warningsBox:  document.getElementById('problems-warnings'),
   warningsText: document.getElementById('problems-warnings-text'),
   highlight,
+  gutter,
   getSource: () => editor.value,
   gotoLine,
 });

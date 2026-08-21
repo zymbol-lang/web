@@ -18,6 +18,7 @@
 <body>
 <div id="editor-panel" class="panel">
   <div id="editor-wrapper">
+    <pre id="editor-gutter" aria-hidden="true"></pre>
     <pre id="editor-highlight" aria-hidden="true"></pre>
     <textarea id="editor" spellcheck="false"></textarea>
     <div id="hover-card" role="tooltip" aria-hidden="true"></div>
@@ -40,6 +41,7 @@
 import { highlightCode } from '../../src/playground/highlight.js';
 import { createHover } from '../../src/playground/hover.js';
 import { createProblems } from '../../src/playground/problems.js';
+import { createGutter } from '../../src/playground/gutter.js';
 import { initI18n, setLocale } from '../../src/i18n/i18n.js';
 
 const out = [];
@@ -68,6 +70,13 @@ await setLocale('spanish');
 editor.value = SRC;
 highlight.innerHTML = highlightCode(SRC) + '\n';
 
+const gutter = createGutter({
+  wrapper: document.getElementById('editor-wrapper'),
+  editor,
+  gutter: document.getElementById('editor-gutter'),
+});
+gutter.sync();
+
 const problems = createProblems({
   panel: document.getElementById('problems'),
   list: document.getElementById('problems-list'),
@@ -77,6 +86,7 @@ const problems = createProblems({
   warningsBox: document.getElementById('problems-warnings'),
   warningsText: document.getElementById('problems-warnings-text'),
   highlight,
+  gutter,
   getSource: () => editor.value,
   gotoLine: () => {},
 });
@@ -93,6 +103,32 @@ ok('same font',        csA.fontFamily === csB.fontFamily);
 ok('same padding',     csA.paddingTop === csB.paddingTop && csA.paddingLeft === csB.paddingLeft);
 ok('neither layer wraps', csA.whiteSpace === 'pre' && csB.whiteSpace === 'pre',
    `${csA.whiteSpace} / ${csB.whiteSpace}`);
+
+// ── the ruler agrees with the code, row for row ──────────────────────────────
+// A gutter that drifts by a line is worse than no gutter: it does not look broken, it
+// just tells the reader the wrong number. Rows are compared as laid-out rectangles,
+// because that is the only place a fractional line height can go wrong.
+const gutterEl = document.getElementById('editor-gutter');
+const numbers = [...gutterEl.querySelectorAll('.gl')];
+ok('one number per source line', numbers.length === SRC.split('\n').length,
+   `${numbers.length} numbers for ${SRC.split('\n').length} lines`);
+ok('the numbers count from 1', numbers.map(n => n.textContent.trim()).join(',') === '1,2,3,4,5,6',
+   numbers.map(n => n.textContent.trim()).join(','));
+
+let worst = 0, worstAt = 0;
+for (const n of numbers) {
+  const l = n.dataset.l;
+  const codeLine = highlight.querySelector(`.hl-line[data-l="${l}"]`);
+  const drift = Math.abs(n.getBoundingClientRect().top - codeLine.getBoundingClientRect().top);
+  if (drift > worst) { worst = drift; worstAt = l; }
+}
+ok('every number sits on its own line', worst < 1, `worst drift ${worst.toFixed(2)}px at line ${worstAt}`);
+
+// The code has to start to the right of the ruler, or the numbers cover the program.
+const gutterWidthAt6 = gutterEl.getBoundingClientRect().width;
+const gutterRight = gutterEl.getBoundingClientRect().right - editor.getBoundingClientRect().left;
+ok('the code clears the gutter', parseFloat(csA.paddingLeft) >= gutterRight,
+   `padding-left ${csA.paddingLeft} vs gutter ${gutterRight.toFixed(1)}px`);
 
 // ── resting on a token produces its card ─────────────────────────────────────
 function hoverOver(sel, label, expectSub) {
@@ -126,6 +162,7 @@ ok('exactly the error is listed', items.length === 1,
 ok('it is the constant reassignment', Boolean(items[0]?.textContent.includes('PI')),
    items[0]?.textContent.trim());
 ok('its line is tinted', Boolean(highlight.querySelector('.hl-line[data-l="6"].has-error')));
+ok('and so is its number', Boolean(gutterEl.querySelector('.gl[data-l="6"].has-error')));
 ok('warnings stay out of the way until asked',
    !items.some(i => i.textContent.includes('vida')));
 
@@ -138,6 +175,44 @@ ok('the loop iterator lifetime is one', withWarnings.some(i => i.textContent.inc
 ok('the unused variable is the other', withWarnings.some(i => i.textContent.includes('contador')));
 ok('a warning line is tinted differently',
    Boolean(highlight.querySelector('.hl-line[data-l="3"].has-warning')));
+ok('a warning number is tinted differently',
+   Boolean(gutterEl.querySelector('.gl[data-l="3"].has-warning')));
+
+// ── a long program: the ruler widens, and it follows the text ────────────────
+// Last, because it replaces what is in the editor. A gutter sized for two digits would
+// either clip the numbers past 99 or push the code sideways as they arrive.
+const LONG = Array.from({ length: 150 }, (_, i) => `>> ${i + 1} ¶`).join('\n');
+editor.value = LONG;
+highlight.innerHTML = highlightCode(LONG) + '\n';
+gutter.sync();
+
+const wide = [...gutterEl.querySelectorAll('.gl')];
+ok('a 150-line program is numbered to 150', wide.length === 150 && wide[149].textContent.trim() === '150',
+   `${wide.length} numbers, last '${wide[149]?.textContent}'`);
+ok('the gutter widened for three digits',
+   gutterEl.getBoundingClientRect().width > gutterWidthAt6,
+   `${gutterEl.getBoundingClientRect().width.toFixed(1)}px vs ${gutterWidthAt6.toFixed(1)}px`);
+ok('the code still clears the gutter',
+   parseFloat(getComputedStyle(editor).paddingLeft)
+     >= gutterEl.getBoundingClientRect().right - editor.getBoundingClientRect().left,
+   `${getComputedStyle(editor).paddingLeft}`);
+
+// Vertically the ruler follows the text; horizontally it must not, or the numbers scroll
+// off the side the moment a line is longer than the pane.
+editor.scrollTop = 60;
+editor.scrollLeft = 40;
+gutter.scroll();
+ok('the ruler follows the text down', gutterEl.scrollTop === editor.scrollTop && editor.scrollTop > 0,
+   `${gutterEl.scrollTop} vs ${editor.scrollTop}`);
+ok('the ruler stays put sideways', gutterEl.scrollLeft === 0, String(gutterEl.scrollLeft));
+
+// And the rows still line up once both layers are scrolled.
+highlight.scrollTop = editor.scrollTop;
+const n80 = gutterEl.querySelector('.gl[data-l="80"]');
+const c80 = highlight.querySelector('.hl-line[data-l="80"]');
+ok('line 80 lines up after scrolling',
+   Math.abs(n80.getBoundingClientRect().top - c80.getBoundingClientRect().top) < 1,
+   `${(n80.getBoundingClientRect().top - c80.getBoundingClientRect().top).toFixed(2)}px`);
 
 // ── switching language redraws what is already on screen ─────────────────────
 await setLocale('english');

@@ -40,6 +40,10 @@ interpreter](install.md).
 ## Fully supported
 
 - `std/math`, `std/random`, `std/json`, `std/term`.
+- Line numbers down the left of the editor. Every diagnostic names a line — the
+  problems strip says "line 6", a failed run prints `Line 6:` into the output — and
+  the numbers a message points at are tinted red for an error and amber for a
+  warning, so the line the message means can be found without counting.
 - Static checking, on its own button and while you type. **✓ Check** lists problems
   in a strip under the editor and tints the lines they point at, without running
   anything; the same check runs about 600 ms after you stop typing. The strip

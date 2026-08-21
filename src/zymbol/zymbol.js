@@ -2898,6 +2898,20 @@ class Checker {
         for (const s of (stmt.body ?? [])) {
           if (s && !allowedInModule.has(s.type))
             this.error('E013', `E013: executable statement not allowed in module body`, s.line ?? stmt.line, {});
+          // A module binding is initialised with a LITERAL — a scalar, a scalar
+          // with a sign, or a collection literal built only out of those. Only
+          // the statement's *type* was checked here, so `x = 1 + 2` and
+          // `t = json::decode(raw)` were accepted and run, while both Rust
+          // engines refused to parse the module at all. The parity gate could
+          // not see it: a file the other two engines reject has no golden to
+          // disagree with.
+          if (s && (s.type === 'VarAssign' || s.type === 'ConstAssign')
+                && !Interpreter.isModuleLiteral(s.value)) {
+            const what = s.type === 'ConstAssign' ? 'constant' : 'variable';
+            this.error('E013',
+              `E013: ${what} initializer in module must be a literal`,
+              s.line ?? stmt.line, {});
+          }
         }
         // And then analyse it. Only the *shape* of the body was checked here, so
         // a module function reassigning the module's own `:=` constant went
@@ -3953,6 +3967,28 @@ function buildStdlibModule(name, vfs = null) {
 // ─── Interpreter ──────────────────────────────────────────────────────────────
 
 export class Interpreter {
+  // A module binding's initialiser must NAME a value, not compute one — the
+  // module body runs nothing, which is what E013 is for.
+  //
+  // Mirrors `Parser::is_literal_expr` in `zymbol-parser/src/modules.rs`: a
+  // scalar, a scalar carrying a sign, or a collection literal every one of
+  // whose elements is itself one of those. The rule is recursive, so a
+  // dictionary of dictionaries — a decoded JSON object's shape — qualifies,
+  // while `json::decode(raw)` does not, at any depth.
+  //
+  // A parenthesised expression needs no unwrapping here: this parser returns
+  // the inner value rather than a wrapper node.
+  static isModuleLiteral(e) {
+    if (!e) return false;
+    switch (e.type) {
+      case 'Literal': return true;
+      case 'UnaryOp': return e.op === '-' && e.operand?.type === 'Literal';
+      case 'Array':   return (e.items ?? []).every(Interpreter.isModuleLiteral);
+      case 'Tuple':   return (e.items ?? []).every(Interpreter.isModuleLiteral);
+      default:        return false;
+    }
+  }
+
   // Default inputFn signals EOF (null): with no input source attached, << aborts
   // like the CLI does on a closed stdin instead of looping on empty reads.
   constructor(outputFn, inputFn = async () => null, moduleResolver = null, tuiContext = null) {
