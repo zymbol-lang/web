@@ -126,6 +126,12 @@
  * non-numeric text, an error when a number meets text that is not one. == still never
  * coerces. Mirrors cmp_order (VM) and compare_values (tree-walker).
  *
+ * 2026-08-21 `$~` takes a whole expression as its value, juxtaposition included,
+ * in all three parse paths (statement `name[i]$~ v`, nav-index postfix, and the
+ * CollectionOp form). It used to take one unary operand and leave the rest of the
+ * line to be parsed as a separate statement, so `d["a"]$~ "" v` assigned `""` and
+ * dropped `v` in silence — same as both Rust engines did. BUG-ZYB-002.
+ *
  * Parity re-measured 2026-08-09 against the v0.0.9 branch:
  *   node tests/test_runner.mjs              → 518/528, 39 skipped (irreducible)
  *   node tests/test_runner.mjs --dir examples → 208/210
@@ -1526,7 +1532,13 @@ export class Parser {
       // could even parse it. Build the node directly (decision 12).
       if (this.check('DUPDATE')) {
         this.adv();
-        const val = this.parseUnary();
+        /* BUG-ZYB-002: the value is a whole expression, juxtaposition included — the
+           same thing the right-hand side of `=` accepts, because `d[k]$~ v` IS an
+           assignment. `parseUnary` took one operand and left the rest of the line to
+           be parsed as its own statement, where a bare identifier is a statement with
+           no effect and no diagnostic, so `d["a"]$~ "" v` assigned `""` and dropped
+           `v` in silence. */
+        const val = this.parseExprJuxt();
         const obj = { type: 'Ident', name, line: tok0.line };
         // `m[i>j]$~ v` — the deep form. `parseExpr` above read `i>j` as a
         // COMPARISON, because at statement position the bracket is consumed
@@ -1786,7 +1798,8 @@ export class Parser {
         this.eat('RBRACKET');
         if ((spec.kind === 'simple' || spec.kind === 'path') && this.check('DUPDATE')) {
           this.adv();
-          const val = this.parseUnary();
+          // See BUG-ZYB-002 above: the value is a full expression.
+          const val = this.parseExprJuxt();
           if (spec.kind === 'simple') {
             // arr[i]$~ val — single-level functional update
             left = { type: 'FuncUpdate', obj: left, index: spec.index, value: val };
@@ -1959,7 +1972,8 @@ export class Parser {
       case 'DUPDATE':
         this.eat('LBRACKET');
         { const idx = this.parseExpr(); this.eat('RBRACKET');
-          return { type: 'CollectionOp', op: '$~', obj: left, index: idx, arg: this.parseUnary() }; }
+          // See BUG-ZYB-002 above: the value is a full expression.
+          return { type: 'CollectionOp', op: '$~', obj: left, index: idx, arg: this.parseExprJuxt() }; }
 
       case 'DSORTASC':   return { type: 'CollectionOp', op: '$^+', obj: left };
       case 'DSORTDESC':  return { type: 'CollectionOp', op: '$^-', obj: left };
