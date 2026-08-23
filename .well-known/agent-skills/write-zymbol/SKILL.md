@@ -267,8 +267,28 @@ are not executed here because each needs its own file.
 
 An import path is relative (`./math`, `../lib/math`) or a stdlib name
 (`std/math`, `std/json`, `std/io`, `std/net`, `std/random`, `std/term`,
-`std/db`). A re-export layer is how a module is translated: export
+`std/time`, `std/db`). A re-export layer is how a module is translated: export
 `m::add => sumar` and the caller writes `sumar`.
+
+Dates come from `std/time`, never from the shell. An instant is milliseconds
+since the epoch and always UTC; a date is a reading of one, so every function
+takes an optional trailing zone — `"UTC"` (default), `"local"`, `"+1000"`.
+
+```zymbol
+<# std/time => t
+
+hoy = t::today()                              // 2026-08-23, ASCII whatever the numeral mode
+inicio = t::of(2026, 8, 23, 14, 5, 9)         // year, month, day [, hour, minute, second]
+>> t::format(inicio, "%F %T", "-0400") ¶      // POSIX codes: %Y %m %d %H %M %S %L %j %u %z %F %T
+>> t::parts(inicio).weekday ¶                 // 1 = Monday, as ISO 8601 numbers it
+>> t::format(t::add(inicio, -30, "day"), "%F") ¶
+>> t::diff(inicio, t::of(2026, 7, 24), "day") ¶
+```
+
+`add`/`diff` take a unit in full — `millisecond second minute hour day week
+month year`. Below a day it is duration, from a day up it is calendar: a month
+lands on the same day of the month, clamped (31 Jan + 1 month = 28 Feb). A date
+that does not exist is a soft `##Time`, testable with `$!`.
 
 ## Running it
 

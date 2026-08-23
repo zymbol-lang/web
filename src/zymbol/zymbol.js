@@ -3821,6 +3821,244 @@ function termTruncate(s, cols) {
   return out;
 }
 
+// ─── std/time: the civil calendar ────────────────────────────────────────────
+//
+// A port of `crates/zymbol-intrinsics/src/time.rs`, function for function. The
+// browser has `Date`, which could answer most of this on its own — and would
+// answer it *differently* at the edges: `Date` rolls 2026-13-01 over into
+// January 2027 instead of refusing it, and its month is zero-based. An engine
+// that agrees with the other two only in the middle of the range is an engine
+// that diverges, so the calendar is computed here too. `Date` is used for one
+// thing the browser alone knows: the machine's own zone offset at an instant.
+//
+// Howard Hinnant's era algorithms (public domain), the same ones behind C++20's
+// <chrono>: exact over the proleptic Gregorian calendar with no tables.
+
+const MS_PER_SECOND = 1000;
+const MS_PER_MINUTE = 60 * MS_PER_SECOND;
+const MS_PER_HOUR   = 60 * MS_PER_MINUTE;
+const MS_PER_DAY    = 24 * MS_PER_HOUR;
+const MAX_SAFE_MS   = 9007199254740991;
+
+const floorDiv = (a, b) => Math.floor(a / b);
+const floorMod = (a, b) => a - floorDiv(a, b) * b;
+const truncDiv = (a, b) => Math.trunc(a / b);
+
+function daysFromCivil(year, month, day) {
+  const y = month <= 2 ? year - 1 : year;
+  const era = truncDiv(y >= 0 ? y : y - 399, 400);
+  const yoe = y - era * 400;
+  const mp = (month + 9) % 12;
+  const doy = truncDiv(153 * mp + 2, 5) + day - 1;
+  const doe = yoe * 365 + truncDiv(yoe, 4) - truncDiv(yoe, 100) + doy;
+  return era * 146097 + doe - 719468;
+}
+
+function civilFromDays(days) {
+  const z = days + 719468;
+  const era = truncDiv(z >= 0 ? z : z - 146096, 146097);
+  const doe = z - era * 146097;
+  const yoe = truncDiv(doe - truncDiv(doe, 1460) + truncDiv(doe, 36524) - truncDiv(doe, 146096), 365);
+  const y = yoe + era * 400;
+  const doy = doe - (365 * yoe + truncDiv(yoe, 4) - truncDiv(yoe, 100));
+  const mp = truncDiv(5 * doy + 2, 153);
+  const d = doy - truncDiv(153 * mp + 2, 5) + 1;
+  const m = mp < 10 ? mp + 3 : mp - 9;
+  return [m <= 2 ? y + 1 : y, m, d];
+}
+
+const isLeap = y => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+
+function daysInMonth(year, month) {
+  switch (month) {
+    case 1: case 3: case 5: case 7: case 8: case 10: case 12: return 31;
+    case 4: case 6: case 9: case 11: return 30;
+    case 2: return isLeap(year) ? 29 : 28;
+    default: return 0;
+  }
+}
+
+// A thrown ZyTimeError becomes a soft `##Time`; it never escapes the module.
+class ZyTimeError extends Error {}
+const timeFail = msg => { throw new ZyTimeError(msg); };
+
+// Units: one spelling each, in full. Duration below a day, calendar from a day up.
+const TIME_UNITS = new Map([
+  ['millisecond', ['duration', 1]],
+  ['second',      ['duration', MS_PER_SECOND]],
+  ['minute',      ['duration', MS_PER_MINUTE]],
+  ['hour',        ['duration', MS_PER_HOUR]],
+  ['day',         ['days', 1]],
+  ['week',        ['days', 7]],
+  ['month',       ['months', 1]],
+  ['year',        ['months', 12]],
+]);
+
+function parseUnit(name) {
+  const u = TIME_UNITS.get(name);
+  if (!u) timeFail(`unknown unit '${name}': one of millisecond, second, minute, hour, day, week, month, year`);
+  return u;
+}
+
+// A zone is 'UTC', 'local', or ±HHMM. `±HH:MM` is deliberately not a second
+// spelling — ±HHMM is what `%z` writes and what `date +%z` prints.
+function parseZone(spec) {
+  if (spec === 'UTC') return { kind: 'utc' };
+  if (spec === 'local') return { kind: 'local' };
+  const m = /^([+-])(\d{2})(\d{2})$/.exec(spec ?? '');
+  const bad = () => timeFail(`unknown zone '${spec}': use "UTC", "local", or an offset like "+1000" or "-0400"`);
+  if (!m) bad();
+  const hours = Number(m[2]), minutes = Number(m[3]);
+  if (hours > 23 || minutes > 59) bad();
+  return { kind: 'fixed', minutes: (m[1] === '-' ? -1 : 1) * (hours * 60 + minutes) };
+}
+
+const zoneOrUtc = spec => spec == null ? { kind: 'utc' } : parseZone(spec);
+
+/// The offset a zone means AT AN INSTANT: a zone with daylight saving is two
+/// different offsets in the same year.
+function offsetOf(zone, epochMs) {
+  if (zone.kind === 'utc') return 0;
+  if (zone.kind === 'fixed') return zone.minutes;
+  const d = new Date(epochMs);
+  if (Number.isNaN(d.getTime()))
+    timeFail(`instant ${epochMs} is outside the range a zone can be read at`);
+  return -d.getTimezoneOffset();   // getTimezoneOffset counts minutes WEST
+}
+
+function partsAt(epochMs, offsetMin) {
+  const shifted = epochMs + offsetMin * MS_PER_MINUTE;
+  const days = floorDiv(shifted, MS_PER_DAY);
+  const inDay = floorMod(shifted, MS_PER_DAY);
+  const [year, month, day] = civilFromDays(days);
+  return {
+    year, month, day,
+    hour:        truncDiv(inDay, MS_PER_HOUR),
+    minute:      truncDiv(inDay, MS_PER_MINUTE) % 60,
+    second:      truncDiv(inDay, MS_PER_SECOND) % 60,
+    millisecond: inDay % MS_PER_SECOND,
+    weekday:     floorMod(days + 3, 7) + 1,   // 1970-01-01 was a Thursday
+    offset:      offsetMin,
+  };
+}
+
+function guardMs(ms) {
+  if (Math.abs(ms) > MAX_SAFE_MS) timeFail('the result leaves the integer range, ±(2^53 − 1)');
+  return ms;
+}
+
+function epochFromCivil(year, month, day, hour, minute, second, millisecond, offsetMin) {
+  if (year < -9999 || year > 9999) timeFail(`year ${year} is outside -9999..9999`);
+  if (month < 1 || month > 12) timeFail(`month ${month} is outside 1..12`);
+  const last = daysInMonth(year, month);
+  if (day < 1 || day > last)
+    timeFail(`day ${day} is outside 1..${last} for ${year}-${String(month).padStart(2, '0')}`);
+  if (hour < 0 || hour > 23) timeFail(`hour ${hour} is outside 0..23`);
+  if (minute < 0 || minute > 59) timeFail(`minute ${minute} is outside 0..59`);
+  if (second < 0 || second > 59) timeFail(`second ${second} is outside 0..59`);
+  if (millisecond < 0 || millisecond > 999) timeFail(`millisecond ${millisecond} is outside 0..999`);
+  return guardMs(daysFromCivil(year, month, day) * MS_PER_DAY
+    + hour * MS_PER_HOUR + minute * MS_PER_MINUTE + second * MS_PER_SECOND + millisecond
+    - offsetMin * MS_PER_MINUTE);
+}
+
+// A local reading is circular — the offset depends on the instant and the
+// instant on the offset — so it is resolved twice. Around a daylight-saving
+// change the second pass is what moves the answer onto the right side.
+function epochFromCivilIn(year, month, day, hour, minute, second, millisecond, zone) {
+  let offset;
+  if (zone.kind === 'utc') offset = 0;
+  else if (zone.kind === 'fixed') offset = zone.minutes;
+  else offset = offsetOf(zone, epochFromCivil(year, month, day, hour, minute, second, millisecond, 0));
+  let ms = epochFromCivil(year, month, day, hour, minute, second, millisecond, offset);
+  if (zone.kind === 'local') {
+    const corrected = offsetOf(zone, ms);
+    if (corrected !== offset)
+      ms = epochFromCivil(year, month, day, hour, minute, second, millisecond, corrected);
+  }
+  return ms;
+}
+
+function timeAdd(epochMs, count, unit, zone) {
+  const [kind, per] = unit;
+  if (kind === 'duration') return guardMs(epochMs + count * per);
+  const p = partsAt(epochMs, offsetOf(zone, epochMs));
+  if (kind === 'days') {
+    const [year, month, day] = civilFromDays(daysFromCivil(p.year, p.month, p.day) + count * per);
+    return epochFromCivilIn(year, month, day, p.hour, p.minute, p.second, p.millisecond, zone);
+  }
+  const total = p.year * 12 + (p.month - 1) + count * per;
+  const year = floorDiv(total, 12);
+  const month = floorMod(total, 12) + 1;
+  // Clamping is what every calendar does: one month after the 31st of January
+  // is the 28th of February, because there is no 31st.
+  const day = Math.min(p.day, daysInMonth(year, month));
+  return epochFromCivilIn(year, month, day, p.hour, p.minute, p.second, p.millisecond, zone);
+}
+
+function timeDiff(a, b, unit, zone) {
+  const [kind, per] = unit;
+  if (kind === 'duration') return truncDiv(a - b, per);
+  const pa = partsAt(a, offsetOf(zone, a));
+  const pb = partsAt(b, offsetOf(zone, b));
+  if (kind === 'days')
+    return truncDiv(daysFromCivil(pa.year, pa.month, pa.day) - daysFromCivil(pb.year, pb.month, pb.day), per);
+  let months = (pa.year - pb.year) * 12 + (pa.month - pb.month);
+  const within = p => [p.day, p.hour, p.minute, p.second, p.millisecond];
+  const cmp = (x, y) => { for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i] < y[i] ? -1 : 1; return 0; };
+  const c = cmp(within(pa), within(pb));
+  // A whole month has not passed until the day-of-month is reached.
+  if (months > 0 && c < 0) months -= 1;
+  else if (months < 0 && c > 0) months += 1;
+  return truncDiv(months, per);
+}
+
+const pad2 = n => (n < 10 ? '0' : '') + n;
+const yearText = y => y < 0 ? '-' + String(-y).padStart(4, '0') : String(y).padStart(4, '0');
+const offsetText = m =>
+  (m < 0 ? '-' : '+') + pad2(truncDiv(Math.abs(m), 60)) + pad2(Math.abs(m) % 60);
+const dayOfYear = p => daysFromCivil(p.year, p.month, p.day) - daysFromCivil(p.year, 1, 1) + 1;
+
+// The digits are ALWAYS ASCII, whatever numeral mode the program is in. A date
+// is the one piece of text a program writes for a machine to read back, and
+// `२०२६-०८-२३` is not ISO 8601. Text for a person is built from `parts`, whose
+// numbers print in whatever script the mode selects.
+function timeFormat(epochMs, pattern, offsetMin) {
+  const p = partsAt(epochMs, offsetMin);
+  let out = '';
+  for (let i = 0; i < pattern.length; i++) {
+    const c = pattern[i];
+    if (c !== '%') { out += c; continue; }
+    if (i + 1 >= pattern.length) timeFail("pattern ends in a lone '%'");
+    switch (pattern[++i]) {
+      case 'Y': out += yearText(p.year); break;
+      case 'm': out += pad2(p.month); break;
+      case 'd': out += pad2(p.day); break;
+      case 'H': out += pad2(p.hour); break;
+      case 'M': out += pad2(p.minute); break;
+      case 'S': out += pad2(p.second); break;
+      case 'L': out += String(p.millisecond).padStart(3, '0'); break;
+      case 'j': out += String(dayOfYear(p)).padStart(3, '0'); break;
+      case 'u': out += String(p.weekday); break;
+      case 'z': out += offsetText(p.offset); break;
+      case 'F': out += `${yearText(p.year)}-${pad2(p.month)}-${pad2(p.day)}`; break;
+      case 'T': out += `${pad2(p.hour)}:${pad2(p.minute)}:${pad2(p.second)}`; break;
+      case '%': out += '%'; break;
+      default:
+        timeFail(`unknown pattern '%${pattern[i]}': one of %Y %m %d %H %M %S %L %j %u %z %F %T %%`);
+    }
+  }
+  return out;
+}
+
+const isoDate = (epochMs, offsetMin) => {
+  const p = partsAt(epochMs, offsetMin);
+  return `${yearText(p.year)}-${pad2(p.month)}-${pad2(p.day)}`;
+};
+
+// The order `parts` builds its dictionary in, which is the order it iterates in.
+const TIME_PART_NAMES = ['year', 'month', 'day', 'hour', 'minute', 'second', 'millisecond', 'weekday', 'offset'];
+
 // ─── What std/ exports, and with how many arguments ──────────────────────────
 //
 // Mirrors `crates/zymbol-common/src/stdlib.rs`, which is the canonical list —
@@ -3845,6 +4083,9 @@ export const STDLIB_ARITIES = new Map([
   ['std/io',     new Map([['read',1],['write',2],['append',2],['exists',1],['delete',1],['list',1],['mkdir',1]])],
   ['std/net',    new Map([['get',-1],['post',-1],['post_json',-1],['head',1]])],
   ['std/term',   new Map([['width',1],['pad_left',2],['pad_right',2],['center',2],['truncate',2]])],
+  // Everything but `now` takes an optional trailing zone, so everything but
+  // `now` is variadic.
+  ['std/time',   new Map([['now',0],['today',-1],['parts',-1],['of',-1],['format',-1],['add',-1],['diff',-1]])],
   ['std/db',     new Map([
     ['connect',2],['disconnect',1],['exec',-1],['query',-1],['query_one',-1],['query_value',-1],
     ['tx',2],['begin',1],['commit',1],['rollback',1],['savepoint',2],['release',2],
@@ -4154,6 +4395,101 @@ function buildStdlibModule(name, vfs = null) {
   // std/term — terminal display metrics (mirrors stdlib/term.rs). Answers a
   // question about the screen, not about a string's content: split, slice,
   // replace, repeat stay language symbols and never enter this module.
+  // std/time — the clock and the civil calendar. Mirrors
+  // `crates/zymbol-interpreter/src/stdlib/time.rs`; the calendar itself is
+  // ported above rather than delegated to `Date`, which rolls an impossible
+  // date over instead of refusing it.
+  //
+  // A wrong argument TYPE throws (the caller's bug); a wrong VALUE — month 13,
+  // an unknown zone, `%Q` — comes back as a soft `##Time`, catchable, because
+  // that is data and a program reading dates from outside must be able to
+  // handle it.
+  if (name === 'std/time') {
+    const exports = new Map();
+    const timeErr = msg => ({ type: 'error', errType: '##Time', v: msg });
+    // Every entry point funnels through here: anything the calendar refuses
+    // becomes a soft error, and nothing else is caught.
+    const soft = fn => { try { return fn(); } catch (e) {
+      if (e instanceof ZyTimeError) return timeErr(e.message);
+      throw e;
+    }};
+    const intArg = (a, msg) => { if (a?.type !== 'int') throw new ZyError(msg); return a.v; };
+    const strArg = (a, msg) => { if (a?.type !== 'str') throw new ZyError(msg); return a.v; };
+    // The optional trailing zone: absent, or present and text.
+    const zoneArg = (args, from, msg) => {
+      const a = args[from];
+      if (a === undefined) return null;
+      if (a.type !== 'str') throw new ZyError(msg);
+      return a.v;
+    };
+
+    exports.set('now', { type: 'func', name: 'now', native: true, call: () => mkInt(Date.now()) });
+
+    exports.set('today', { type: 'func', name: 'today', native: true, call: args => {
+      const zone = zoneArg(args, 0, 'time::today: expected an optional zone String');
+      return soft(() => {
+        const now = Date.now();
+        return mkStr(isoDate(now, offsetOf(zoneOrUtc(zone), now)));
+      });
+    }});
+
+    exports.set('parts', { type: 'func', name: 'parts', native: true, call: args => {
+      const msg = 'time::parts: expected (### epoch [, zone])';
+      const epoch = intArg(args[0], msg);
+      const zone = zoneArg(args, 1, msg);
+      return soft(() => {
+        const p = partsAt(epoch, offsetOf(zoneOrUtc(zone), epoch));
+        return { type: 'tuple', v: TIME_PART_NAMES.map(k => mkInt(p[k])), keys: [...TIME_PART_NAMES] };
+      });
+    }});
+
+    exports.set('of', { type: 'func', name: 'of', native: true, call: args => {
+      const msg = 'time::of: expected (year, month, day) or (year, month, day, hour, minute, second), each ###, plus an optional zone';
+      // The zone is text and every field is a number, so a trailing String is
+      // the zone and nothing else can be.
+      const last = args[args.length - 1];
+      const hasZone = last?.type === 'str';
+      const fields = hasZone ? args.slice(0, -1) : args;
+      const zone = hasZone ? last.v : null;
+      const n = fields.map(f => intArg(f, msg));
+      return soft(() => {
+        let y, mo, d, h = 0, mi = 0, sec = 0;
+        if (n.length === 3) [y, mo, d] = n;
+        else if (n.length === 6) [y, mo, d, h, mi, sec] = n;
+        else timeFail(`expected 3 numbers (year, month, day) or 6 (…, hour, minute, second), got ${n.length}`);
+        return mkInt(epochFromCivilIn(y, mo, d, h, mi, sec, 0, zoneOrUtc(zone)));
+      });
+    }});
+
+    exports.set('format', { type: 'func', name: 'format', native: true, call: args => {
+      const msg = 'time::format: expected (### epoch, "pattern" [, zone])';
+      const epoch = intArg(args[0], msg);
+      const pattern = strArg(args[1], msg);
+      const zone = zoneArg(args, 2, msg);
+      return soft(() => mkStr(timeFormat(epoch, pattern, offsetOf(zoneOrUtc(zone), epoch))));
+    }});
+
+    exports.set('add', { type: 'func', name: 'add', native: true, call: args => {
+      const msg = 'time::add: expected (### epoch, ### count, "unit" [, zone])';
+      const epoch = intArg(args[0], msg);
+      const count = intArg(args[1], msg);
+      const unit = strArg(args[2], msg);
+      const zone = zoneArg(args, 3, msg);
+      return soft(() => mkInt(timeAdd(epoch, count, parseUnit(unit), zoneOrUtc(zone))));
+    }});
+
+    exports.set('diff', { type: 'func', name: 'diff', native: true, call: args => {
+      const msg = 'time::diff: expected (### a, ### b, "unit" [, zone])';
+      const a = intArg(args[0], msg);
+      const b = intArg(args[1], msg);
+      const unit = strArg(args[2], msg);
+      const zone = zoneArg(args, 3, msg);
+      return soft(() => mkInt(timeDiff(a, b, parseUnit(unit), zoneOrUtc(zone))));
+    }});
+
+    return { type: 'module', exports };
+  }
+
   if (name === 'std/term') {
     const exports = new Map();
     exports.set('width', { type: 'func', name: 'width', native: true, call: args => {
