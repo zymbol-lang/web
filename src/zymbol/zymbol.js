@@ -126,6 +126,11 @@
  * non-numeric text, an error when a number meets text that is not one. == still never
  * coerces. Mirrors cmp_order (VM) and compare_values (tree-walker).
  *
+ * 2026-08-22 `#|c|` reads a digit from a Char, not only from a String —
+ * `#|'७'|` is 7 as `#|"७"|` already was, in all 69 digit scripts, and a Char
+ * that is not a digit comes back untouched (GAP-ZYB-012). `<<|` hands over a
+ * Char, so this is the shape a keyboard produces.
+ *
  * 2026-08-22 the decimal count of a format operator may be a NAME as well as
  * digits — `#,.n|x|`, `#.n|x|`, `#!n|x|`, `#^.n|x|` (GAP-ZYB-001). The count is
  * lexed inside the DATA_OP token, so the name is read there and the parser
@@ -5203,6 +5208,17 @@ export class Interpreter {
         };
         switch (expr.kind) {
           case 'eval': {
+            // GAP-ZYB-012: a Char reads like the one-character string it is.
+            // `#|"७"|` gave 7 and `#|'७'|` gave back the glyph — the same
+            // operator, the same character, two answers depending on how it had
+            // been written. A Char that is not a digit comes back untouched,
+            // which is what "safe conversion" already meant for a string.
+            if (val.type === 'char') {
+              const a = asciiDigits(val.v);
+              const p = parseFloat(a);
+              if (!isNaN(p) && /^[0-9]+$/.test(a)) return mkInt(p);
+              return val;
+            }
             if (val.type === 'str') {
               const s = val.v.trim();
               // Normalize Unicode digits to ASCII before parsing
