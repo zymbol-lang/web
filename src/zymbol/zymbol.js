@@ -126,6 +126,13 @@
  * non-numeric text, an error when a number meets text that is not one. == still never
  * coerces. Mirrors cmp_order (VM) and compare_values (tree-walker).
  *
+ * 2026-08-22 the decimal count of a format operator may be a NAME as well as
+ * digits — `#,.n|x|`, `#.n|x|`, `#!n|x|`, `#^.n|x|` (GAP-ZYB-001). The count is
+ * lexed inside the DATA_OP token, so the name is read there and the parser
+ * turns it into an expression evaluated at run time. A name and not a general
+ * expression, in all three engines: the `|` that opens the value is also how
+ * bitwise-or is spelled, and this lexer scans the count in one pass.
+ *
  * 2026-08-21 `$~` takes a whole expression as its value, juxtaposition included,
  * in all three parse paths (statement `name[i]$~ v`, nav-index postfix, and the
  * CollectionOp form). It used to take one unary operand and leave the rest of the
@@ -375,10 +382,20 @@ export class Lexer {
           tok('TYPE_QUERY', '#?'); continue;
         }
         {
-          let kind = null, prec = null, advance = 0;
+          let kind = null, prec = null, advance = 0, dynPrec = false;
           const readDigits = start => {
             let d = '', i = start;
             while (/[0-9]/.test(this.ch(i))) { d += this.ch(i); i++; }
+            return { d, i };
+          };
+          // GAP-ZYB-001: the decimal count may be a NAME instead of digits —
+          // `#,.n|x|`. The count is lexed as part of this token, so the name is
+          // read here and handed to the parser, which turns it into an
+          // expression evaluated when the program runs. For money the count is
+          // configuration: it belongs to the currency, not to the source.
+          const readName = start => {
+            let d = '', i = start;
+            while (/[\p{L}_0-9]/u.test(this.ch(i) || '')) { d += this.ch(i); i++; }
             return { d, i };
           };
           if (c1 === '|') {
@@ -386,23 +403,59 @@ export class Lexer {
           } else if (c1 === '.') {
             const { d, i } = readDigits(2);
             if (d.length > 0 && this.ch(i) === '|') { kind = 'round'; prec = parseInt(d); advance = i + 1; }
+            else {
+              const n = readName(2);
+              if (n.d.length > 0 && this.ch(n.i) === '|') { kind = 'round'; prec = n.d; dynPrec = true; advance = n.i + 1; }
+            }
           } else if (c1 === '!') {
             const { d, i } = readDigits(2);
             if (d.length > 0 && this.ch(i) === '|') { kind = 'trunc'; prec = parseInt(d); advance = i + 1; }
+            else {
+              const n = readName(2);
+              if (n.d.length > 0 && this.ch(n.i) === '|') { kind = 'trunc'; prec = n.d; dynPrec = true; advance = n.i + 1; }
+            }
           } else if (c1 === ',') {
             const c2 = this.ch(2);
             if (c2 === '|') { kind = 'comma'; advance = 3; }
-            else if (c2 === '.') { const { d, i } = readDigits(3); if (d.length > 0 && this.ch(i) === '|') { kind = 'comma_round'; prec = parseInt(d); advance = i + 1; } }
-            else if (c2 === '!') { const { d, i } = readDigits(3); if (d.length > 0 && this.ch(i) === '|') { kind = 'comma_trunc'; prec = parseInt(d); advance = i + 1; } }
+            else if (c2 === '.') {
+              const { d, i } = readDigits(3);
+              if (d.length > 0 && this.ch(i) === '|') { kind = 'comma_round'; prec = parseInt(d); advance = i + 1; }
+              else {
+                const n = readName(3);
+                if (n.d.length > 0 && this.ch(n.i) === '|') { kind = 'comma_round'; prec = n.d; dynPrec = true; advance = n.i + 1; }
+              }
+            }
+            else if (c2 === '!') {
+              const { d, i } = readDigits(3);
+              if (d.length > 0 && this.ch(i) === '|') { kind = 'comma_trunc'; prec = parseInt(d); advance = i + 1; }
+              else {
+                const n = readName(3);
+                if (n.d.length > 0 && this.ch(n.i) === '|') { kind = 'comma_trunc'; prec = n.d; dynPrec = true; advance = n.i + 1; }
+              }
+            }
           } else if (c1 === '^') {
             const c2 = this.ch(2);
             if (c2 === '|') { kind = 'sci'; advance = 3; }
-            else if (c2 === '.') { const { d, i } = readDigits(3); if (d.length > 0 && this.ch(i) === '|') { kind = 'sci_round'; prec = parseInt(d); advance = i + 1; } }
-            else if (c2 === '!') { const { d, i } = readDigits(3); if (d.length > 0 && this.ch(i) === '|') { kind = 'sci_trunc'; prec = parseInt(d); advance = i + 1; } }
+            else if (c2 === '.') {
+              const { d, i } = readDigits(3);
+              if (d.length > 0 && this.ch(i) === '|') { kind = 'sci_round'; prec = parseInt(d); advance = i + 1; }
+              else {
+                const n = readName(3);
+                if (n.d.length > 0 && this.ch(n.i) === '|') { kind = 'sci_round'; prec = n.d; dynPrec = true; advance = n.i + 1; }
+              }
+            }
+            else if (c2 === '!') {
+              const { d, i } = readDigits(3);
+              if (d.length > 0 && this.ch(i) === '|') { kind = 'sci_trunc'; prec = parseInt(d); advance = i + 1; }
+              else {
+                const n = readName(3);
+                if (n.d.length > 0 && this.ch(n.i) === '|') { kind = 'sci_trunc'; prec = n.d; dynPrec = true; advance = n.i + 1; }
+              }
+            }
           }
           if (kind !== null) {
             for (let i = 0; i < advance; i++) this.consume();
-            tok('DATA_OP', { kind, prec }); continue;
+            tok('DATA_OP', { kind, prec, dynPrec }); continue;
           }
         }
         // # followed by space/letter/dot: module block `# name {` or old-style comment
@@ -2172,7 +2225,12 @@ export class Parser {
       this.adv();
       const arg = this.parseExpr();
       this.eat('VBAR');
-      return { type: 'DataOp', kind: t.value.kind, prec: t.value.prec, arg };
+      // GAP-ZYB-001: a count written as a name is kept as an expression and
+      // evaluated when the program runs; a written count stays a number.
+      const precExpr = t.value.dynPrec
+        ? { type: 'Ident', name: String(t.value.prec), line: t.line }
+        : null;
+      return { type: 'DataOp', kind: t.value.kind, prec: t.value.prec, precExpr, arg };
     }
 
     this.adv();
@@ -3256,6 +3314,8 @@ class Checker {
       case 'DataOp': {
         this.checkExpr(expr.obj ?? expr.value);
         if (expr.arg) this.checkExpr(expr.arg);
+        // A computed decimal count reads a name like anything else.
+        if (expr.precExpr) this.checkExpr(expr.precExpr);
         return;
       }
 
@@ -5033,6 +5093,20 @@ export class Interpreter {
 
       case 'DataOp': {
         const val = await this.eval(expr.arg, env);
+        // GAP-ZYB-001: resolve a computed decimal count before anything reads
+        // `expr.prec`, so every branch below sees a plain number.
+        if (expr.precExpr) {
+          const pv = await this.eval(expr.precExpr, env);
+          if (pv.type !== 'int') {
+            throw new ZyError(
+              `decimal count must be a whole number, got ${pv.type}`, expr.line);
+          }
+          if (pv.v < 0) {
+            throw new ZyError(
+              `decimal count must not be negative, got ${pv.v}`, expr.line);
+          }
+          expr = { ...expr, prec: pv.v };
+        }
         // `what` names the operation for the error message the CLI raises on a
         // non-numeric string; digits in any script parse (see asciiDigits).
         const toNum = (v, what = null) => {
