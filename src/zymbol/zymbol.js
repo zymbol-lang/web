@@ -2744,6 +2744,60 @@ class Checker {
     this.diagnostics.push({ severity: 'warning', code, message: msg, line, params });
   }
 
+  // GAP-ZYB-006: walk the statements a top-level `<~` can be reached from —
+  // everything but a function body, which returns to its caller and not to the
+  // operating system — and require its value to be a whole number.
+  //
+  // Only a literal is judged, which is what this checker can see: it has no
+  // type inference, and the Rust one lets an inferred `Any` through for the
+  // same reason. A wrong literal is the case worth catching and the one a
+  // reader writes by mistake.
+  checkTopLevelExit(stmt) {
+    if (!stmt || stmt.type === 'FuncDecl') return;
+    const walk = (block) => {
+      if (!block) return;
+      for (const st of (Array.isArray(block) ? block : block.body ?? [])) {
+        this.checkTopLevelExit(st);
+      }
+    };
+    switch (stmt.type) {
+      case 'Return': {
+        const v = stmt.value;
+        if (v?.type === 'Literal' && v.kind !== 'int' && v.kind !== 'unit') {
+          const named = { str: 'String', float: 'Float', bool: 'Bool', char: 'Char' };
+          this.error(
+            'E-EXIT-TYPE',
+            `a top-level \`<~\` ends the program, so its value is the exit status ` +
+            `and must be a whole number — this one is ${named[v.kind] ?? v.kind}`,
+            stmt.line);
+        } else if (v?.type === 'ArrayLit' || v?.type === 'TupleLit' || v?.type === 'NamedTuple') {
+          this.error(
+            'E-EXIT-TYPE',
+            'a top-level `<~` ends the program, so its value is the exit status ' +
+            'and must be a whole number — this one is a collection',
+            stmt.line);
+        }
+        return;
+      }
+      case 'If':
+        walk(stmt.then ?? stmt.thenBody);
+        for (const b of stmt.elifs ?? []) walk(b.body ?? b.block);
+        walk(stmt.else ?? stmt.elseBody);
+        return;
+      case 'Loop':   walk(stmt.body); return;
+      case 'TryCatch':
+        walk(stmt.tryBody ?? stmt.try);
+        for (const c of stmt.catches ?? []) walk(c.body ?? c.block);
+        walk(stmt.finallyBody ?? stmt.finally);
+        return;
+      case 'Match':
+        for (const c of stmt.cases ?? []) walk(c.body ?? c.block);
+        return;
+      case 'TuiBlock': walk(stmt.body); return;
+      default: return;
+    }
+  }
+
   _leftmostIdent(expr) {
     if (!expr) return null;
     if (expr.type === 'Ident') return expr.name || null;
@@ -2761,6 +2815,9 @@ class Checker {
       if (stmt.type === 'FuncDecl') this.define(stmt.name, stmt.line);
     }
     for (const stmt of this.ast.body) this.checkStmt(stmt);
+    // GAP-ZYB-006: a `<~` at the top level ends the program, and its value is
+    // the exit status the operating system receives — a whole number.
+    for (const stmt of this.ast.body) this.checkTopLevelExit(stmt);
     this.pop();
     return this.diagnostics;
   }
@@ -4247,7 +4304,17 @@ export class Interpreter {
       if (stmt.type === 'FuncDecl')
         env.def(stmt.name, { type: 'func', name: stmt.name, params: stmt.params, body: stmt.body });
     }
-    await this.execBlock(program.body, env);
+    // GAP-ZYB-006: a `<~` that reaches the top level ends the program, and its
+    // value is the exit status. This engine already stopped here — the value
+    // was simply dropped. There is no exit status in a browser, but there is
+    // one in `tests/run_one.mjs`, which presents this engine to a shell as one
+    // more command-line engine; a runner that always reports 0 is a runner that
+    // lies about the contract it documents.
+    const signal = await this.execBlock(program.body, env);
+    if (signal instanceof ZyReturn) {
+      const v = signal.value;
+      this.exitCode = v?.type === 'int' ? v.v : (v?.type === 'unit' ? 0 : 1);
+    }
   }
 
   async execBlock(stmts, env) {
@@ -6466,13 +6533,15 @@ export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, f
   // program on stderr. Mixing the two was ~63 of the 91 corpus divergences,
   // because the Rust engines have always kept them apart.
   const onError = typeof opts.onError === 'function' ? opts.onError : onOutput;
+  // Declared out here so the exit status survives the try (GAP-ZYB-006).
+  let interp = null;
 
   for (const d of diags) if (d.severity === 'error') onError(formatDiagnostic(d) + '\n\n');
   if (diags.some(d => d.severity === 'error'))
     return { failed: true, message: diags.find(d => d.severity === 'error').message };
 
   try {
-    const interp = new Interpreter(onOutput, inputFn, moduleResolver, tuiContext);
+    interp = new Interpreter(onOutput, inputFn, moduleResolver, tuiContext);
     interp.cliArgs = cliArgs;
     if (opts.maxSteps        != null) interp.maxSteps        = opts.maxSteps;
     if (opts.maxBytes        != null) interp.maxBytes        = opts.maxBytes;
@@ -6494,5 +6563,7 @@ export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, f
     onError(`Runtime error: ${message}`);
     return { failed: true, message };
   }
-  return { failed: false };
+  // GAP-ZYB-006: the exit status a top-level `<~ n` asked for, so a caller that
+  // is a process can pass it on. Undefined when the program did not ask.
+  return { failed: false, exitCode: interp?.exitCode };
 }

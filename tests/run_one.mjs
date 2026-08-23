@@ -201,6 +201,7 @@ let errOut = '';
 const onError = s => { errOut += s; };
 
 let failed = false;
+let exitCode = 0;
 let message = '';
 try {
   // runZymbol catches the engine's own errors so the playground can render
@@ -213,10 +214,18 @@ try {
   // engines that ran them to completion. A runaway program is the shell's problem
   // now, exactly as it is under `zymbol run`.
   const limits = { maxSteps: Infinity, maxBytes: Infinity, maxInfiniteIter: Infinity };
+  // eslint-disable-next-line no-unused-vars -- assigned below, read at the foot
   const result = await runZymbol(source, inputFn, onOutput, resolver, abs, ansiTui, [], { onError, ...limits });
   if (result && result.failed) {
     failed = true;
     message = result.message ?? 'engine reported failure';
+  }
+  // GAP-ZYB-006: a top-level `<~ n` is the program's exit status, and this
+  // runner presents the engine to a shell as one more command-line engine.
+  // Reporting 0 for a program that asked to leave with 2 would make this the
+  // only engine of the three whose exit status means nothing.
+  if (result && typeof result.exitCode === 'number') {
+    exitCode = result.exitCode;
   }
 } catch (e) {
   failed = true;
@@ -234,3 +243,4 @@ if (failed) {
   }
   process.exit(1);
 }
+if (exitCode !== 0) process.exit(exitCode);
