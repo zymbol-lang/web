@@ -277,6 +277,18 @@ function expandExponent(str) {
 function numeralFloat(f, base) { return mapToScript(floatText(f), base); }
 function numeralBool(b, base)  { return '#' + numeralInt(b ? 1 : 0, base); }
 
+// Is this value a dictionary rather than a positional tuple?
+//
+// Both are `type: 'tuple'` here, and `keys` is what tells them apart: `null`
+// for a positional tuple, an array for a dictionary. The array may be EMPTY —
+// `#()` is the empty dictionary, and it is not the empty tuple: one takes
+// `d["k"]$~ v` and the other answers "tuples are immutable" (GAP-ZYB-003).
+//
+// Twelve places asked this with `keys?.some(k => k)`, which reads "has at least
+// one key" and therefore called the empty dictionary a tuple. One rule, one
+// place.
+function isDict(v) { return v?.type === 'tuple' && v.keys != null; }
+
 // ─── Signal types ─────────────────────────────────────────────────────────────
 
 const OUTPUT_STOP_OPS = {
@@ -366,6 +378,16 @@ export class Lexer {
           this.consume(); this.consume();
           if (dv1 === 0) { tok('BOOL', false); continue; }
           if (dv1 === 1) { tok('BOOL', true);  continue; }
+          continue;
+        }
+        // `#(` opens a dictionary literal (GAP-ZYB-003/004). `(a: 1)` and
+        // `(1, 2)` shared the parentheses and not the semantics — the colon was
+        // the whole of what told them apart, and an EMPTY dictionary could not
+        // be written at all, because `()` would have to be both. `#` is the
+        // meta/type mark, the same one `#[` uses to declare an array's mix.
+        if (c1 === '(') {
+          this.consume(); this.consume(); // consume #(
+          tok('HASH_LPAREN', '#(');
           continue;
         }
         if (c1 === '#') {
@@ -1012,6 +1034,10 @@ export class Parser {
     }
     if (t.type === 'LBRACKET' && this.isDestructuring()) return this.parseArrayDestruct();
     if (t.type === 'LPAREN'   && this.isDestructuring()) return this.parseTupleDestruct();
+    // `#(name: n) = …` — destructuring a dictionary. The pattern is written the
+    // way the literal is: `#(` says "this is a dictionary" on both sides of the
+    // `=`, so a reader never has to remember that they spell it differently.
+    if (t.type === 'HASH_LPAREN' && this.isDestructuring()) return this.parseTupleDestruct();
     if (t.type === 'IDENT')    return this.parseIdentStmt();
     if (t.type === 'SEMI')     { this.adv(); return null; }
     if (t.type === 'PILCROW')  { this.adv(); return { type: 'Output', items: [], newline: true }; }
@@ -1172,9 +1198,14 @@ export class Parser {
     let i = 0, depth = 0;
     const start = this.peek(0).type;
     const close = start === 'LBRACKET' ? 'RBRACKET' : 'RPAREN';
+    // `#(` opens a paren as surely as `(` does, so it counts towards depth —
+    // a dictionary literal nested in the pattern must not close it early.
+    const opens = start === 'LBRACKET'
+      ? t => t === 'LBRACKET'
+      : t => t === 'LPAREN' || t === 'HASH_LPAREN';
     while (this.pos + i < this.toks.length) {
       const t = this.toks[this.pos + i++];
-      if (t.type === start) depth++;
+      if (opens(t.type)) depth++;
       else if (t.type === close) { depth--; if (depth === 0) break; }
     }
     return this.peek(i).type === 'ASSIGN';
@@ -1266,7 +1297,8 @@ export class Parser {
   }
 
   parseTupleDestruct() {
-    const isNamed = this.peek(1).type === 'IDENT' && this.peek(2).type === 'COLON';
+    const isNamed = this.peek(0).type === 'HASH_LPAREN'
+      || (this.peek(1).type === 'IDENT' && this.peek(2).type === 'COLON');
     this.adv();
     if (isNamed) {
       const targets = [];
@@ -2195,15 +2227,66 @@ export class Parser {
       return { type: 'Array', items, line };
     }
 
+    // `#(…)` — dictionary literal. The mark says which of the two things the
+    // parentheses open, so `#()` is the empty dictionary and no lookahead
+    // decides anything. Keys may be strings as well as bare names:
+    // `d["gasto.alimentación"]$~ v` always added such a key and only the
+    // literal could not spell it.
+    if (t.type === 'HASH_LPAREN') {
+      this.adv();
+      const line = t.line;
+      const items = [], keys = [];
+      if (this.check('RPAREN')) {
+        this.adv();
+        return { type: 'Tuple', items, keys, line };
+      }
+      for (;;) {
+        if (!((this.check('IDENT') || this.check('STR')) && this.peek(1).type === 'COLON')) {
+          throw new ZyStaticError(
+            'expected a key in the dictionary: #(nombre: valor) or #("con.puntos": valor)',
+            this.peek().line);
+        }
+        const keyTok = this.adv();
+        if (keyTok.type === 'IDENT') {
+          keys.push(keyTok.value);
+        } else {
+          // A string key is lexed as interpolation parts. A key is a constant,
+          // so only literal parts are accepted — `#("{n}": v)` would give the
+          // literal a different shape on every run.
+          const parts = keyTok.value ?? [];
+          if (parts.some(pt => pt.t !== 'lit')) {
+            throw new ZyStaticError(
+              'a dictionary key cannot interpolate — use `d[…]$~ value` to add a computed key',
+              keyTok.line);
+          }
+          keys.push(parts.map(pt => pt.v).join(''));
+        }
+        this.adv(); // consume ':'
+        items.push(this.parseExprJuxt());
+        if (!this.match('COMMA')) break;
+        if (this.check('RPAREN')) break;   // trailing comma
+      }
+      this.eat('RPAREN');
+      return { type: 'Tuple', items, keys, line };
+    }
+
     if (t.type === 'LPAREN') {
       this.adv();
       if (this.check('RPAREN')) { this.adv(); return { type: 'Literal', kind: 'unit' }; }
 
-      let firstKey = null;
+      // A dictionary is written `#(…)`. The bare form was how it was written
+      // until v0.0.9, when the colon was the whole of what told `(a: 1)` from
+      // `(1, 2)` — and the empty dictionary could not be written at all,
+      // because `()` would have to be both. Refused rather than accepted
+      // quietly: two spellings for one thing is what the mark ended.
       if (this.check('IDENT') && this.peek(1).type === 'COLON') {
-        firstKey = this.adv().value;
-        this.adv();
+        throw new ZyStaticError(
+          'a dictionary is written `#(…)`: write `#(` here, as in #(nombre: valor). ' +
+          'A bare `(…)` is a positional tuple, and `#()` is the empty dictionary — ' +
+          'which `()` cannot be, since it would have to be the empty tuple as well',
+          t.line);
       }
+      const firstKey = null;
       const firstVal = this.parseExprJuxt();
       if (this.check('COMMA') || firstKey !== null) {
         const items = [firstVal];
@@ -3607,7 +3690,7 @@ function deepUpdateValue(col, indices, newVal) {
   // A dictionary step addresses a KEY. Adds the key when it is not there, just
   // as the single-level `d["k"]$~ v` does; refuses a position, because a
   // positional write corrupts data rather than returning the wrong value.
-  if (col?.type === 'tuple' && col.keys?.some(k => k)) {
+  if (isDict(col)) {
     if (typeof i !== 'string')
       throw new ZyError(Interpreter.notPositionalMsg('d[n>…]$~ value', col.keys));
     const ki = col.keys.indexOf(i);
@@ -3894,7 +3977,7 @@ function buildStdlibModule(name, vfs = null) {
         case 'str': case 'char':  return String(v.v);
         case 'arr':   return v.v.map(valueToJson);
         case 'tuple':
-          return v.keys?.some(k => k !== null)
+          return isDict(v)
             ? Object.fromEntries(v.v.map((item, i) => [v.keys[i], valueToJson(item)]))
             : v.v.map(valueToJson);
         default: return null; // unit, func, error
@@ -3909,7 +3992,7 @@ function buildStdlibModule(name, vfs = null) {
     // key rename per a NamedTuple map (data-level i18n). Unit map = plain decode.
     const buildRenameMap = map => {
       if (map == null || map.type === 'unit') return new Map();
-      if (map.type !== 'tuple' || !map.keys?.some(k => k !== null)) {
+      if (!isDict(map)) {
         throw new ZyError('json::decode_map: expected a NamedTuple map as the second argument');
       }
       const table = new Map();
@@ -4553,7 +4636,7 @@ export class Interpreter {
         // is one check rather than an exception inside each of `$+`, `$-`, `$^`…
         let recv = null;
         try { recv = env.get(stmt.name); } catch { /* undefined: let eval report it */ }
-        if (recv?.type === 'tuple' && !(recv.keys ?? []).some(k => k !== null))
+        if (recv?.type === 'tuple' && !isDict(recv))
           throw new ZyError(
             `cannot modify tuple '${stmt.name}': tuples are immutable\n` +
             `help: use 'new = ${stmt.name}[i]$~ value' for a functional update`,
@@ -4775,7 +4858,7 @@ export class Interpreter {
       else if (it.type === 'str')   items = [...it.v].map(mkChar);
       // The pattern form asks for both halves, so a dictionary is handed over as
       // `(clave, valor)` pairs. `@ k:d` still yields keys (decision 8).
-      else if (loop.pairs && it.type === 'tuple' && it.keys?.some(k => k))
+      else if (loop.pairs && isDict(it))
         items = it.keys.map((k, i) => ({ type:'tuple', v:[mkStr(k), it.v[i]], keys:null }));
       // A DICTIONARY yields its KEYS, in insertion order — `for k in d` as
       // Python spells it (decision 8). It used to yield the VALUES here, while
@@ -4784,7 +4867,7 @@ export class Interpreter {
       // to reach the value, so no destructuring pattern has to enter `@`.
       //
       // A positional tuple still yields its elements (decision 21).
-      else if (it.type === 'tuple' && it.keys?.some(k => k))
+      else if (isDict(it))
         items = it.keys.map(k => mkStr(k));
       else if (it.type === 'tuple') items = it.v;
       else throw new ZyError(`Cannot iterate over ${it.type}`);
@@ -4957,7 +5040,7 @@ export class Interpreter {
           // `d[2]` stops being correct with nothing to say so. The POSITIONAL
           // tuple keeps `t[1]` in full: there the index is the only address
           // there is, and the size is fixed.
-          if (iVal.type === 'int' && obj.type === 'tuple' && obj.keys?.some(k => k)) {
+          if (iVal.type === 'int' && isDict(obj)) {
             const first = obj.keys.find(k => k) ?? 'clave';
             throw new ZyError(
               `a dictionary is addressed by key, not by position\n` +
@@ -5104,7 +5187,7 @@ export class Interpreter {
 
         // A positional WRITE corrupts data rather than returning the wrong
         // value: strictly worse than the positional read decision 11 withdrew.
-        if (arr.type === 'tuple' && arr.keys?.some(k => k))
+        if (isDict(arr))
           throw new ZyError(Interpreter.notPositionalMsg('d[n]$~ value', arr.keys));
 
         // Integer 1-based index
@@ -5345,7 +5428,7 @@ export class Interpreter {
     //
     // It has to be the value and not the spelling: a bare identifier inside
     // `[…]` is a VARIABLE, which is exactly what makes a computed key possible.
-    if (obj?.type === 'tuple' && obj.keys?.some(k => k)) {
+    if (isDict(obj)) {
       if (typeof idx === 'string') {
         const ki = obj.keys.indexOf(idx);
         if (ki < 0) throw new ZyRuntimeError(Interpreter.missingKeyMsg(idx, obj.keys), '##Key');
@@ -5601,7 +5684,7 @@ export class Interpreter {
         // Checked before the index is resolved as a position, which is what made
         // `d$-["beta"]` delete the FIRST key here instead of the named one.
         const rawIdx = await this.eval(expr.index, env);
-        if (rawIdx.type === 'str' && col.type === 'tuple' && col.keys?.some(k => k)) {
+        if (rawIdx.type === 'str' && isDict(col)) {
           const ki = col.keys.indexOf(rawIdx.v);
           if (ki < 0)
             throw new ZyRuntimeError(Interpreter.missingKeyMsg(rawIdx.v, col.keys), '##Key');
@@ -5609,7 +5692,7 @@ export class Interpreter {
           nv.splice(ki, 1); nk.splice(ki, 1);
           return { type: 'tuple', v: nv, keys: nk };
         }
-        if (col.type === 'tuple' && col.keys?.some(k => k))
+        if (isDict(col))
           throw new ZyError(Interpreter.notPositionalMsg('d$-[n]', col.keys));
         const i = await idx();
         if (col.type === 'arr')   { const r=[...col.v]; r.splice(i,1); return mkArr(r); }
@@ -5621,7 +5704,7 @@ export class Interpreter {
         notSupported('$-[i]');
       }
       case '$-[i:n]': {
-        if (col.type === 'tuple' && col.keys?.some(k => k))
+        if (isDict(col))
           throw new ZyError(Interpreter.notPositionalMsg('d$-[a..b]', col.keys));
         const sv = (await this.eval(expr.start, env)).v;
         const nv = (await this.eval(expr.count, env)).v;
@@ -5641,7 +5724,7 @@ export class Interpreter {
         const count = ti - fi + 1;
         if (col.type === 'arr')   { const r=[...col.v]; r.splice(fi,count); return mkArr(r); }
         if (col.type === 'str')   { const r=[...col.v]; r.splice(fi,count); return mkStr(r.join('')); }
-        if (col.type === 'tuple' && col.keys?.some(k => k))
+        if (isDict(col))
           throw new ZyError(Interpreter.notPositionalMsg('d$-[a..b]', col.keys));
         if (col.type === 'tuple') { const r=[...col.v]; r.splice(fi,count); const ks=col.keys?[...col.keys]:null; if(ks)ks.splice(fi,count); return {type:'tuple',v:r,keys:ks}; }
         notSupported('$-[i..j]');
@@ -5658,7 +5741,7 @@ export class Interpreter {
         // Asking about a value is a different operation and would need its own
         // sign. On a POSITIONAL tuple it stays a value question: there are no
         // keys to ask about.
-        if (col.type === 'tuple' && col.keys?.some(k => k))
+        if (isDict(col))
           return mkBool(col.keys.some(k => k === this.display(v)));
         if (col.type === 'tuple') return mkBool(col.v.some(el=>this.equals(el,v)));
         notSupported('$?');
@@ -5691,7 +5774,7 @@ export class Interpreter {
         const ti = expr.range.to   == null ? len : this.resolve1Based((await this.eval(expr.range.to,env)).v, len) + 1; // inclusive end
         if (col.type === 'arr')   return mkArr(col.v.slice(fi, ti));
         if (col.type === 'str')   return mkStr([...col.v].slice(fi,ti).join(''));
-        if (col.type === 'tuple' && col.keys?.some(k => k))
+        if (isDict(col))
           throw new ZyError(Interpreter.notPositionalMsg('d$[a..b]', col.keys));
         if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(fi,ti), keys:col.keys?col.keys.slice(fi,ti):null };
         notSupported('$[i..j]');
@@ -5703,7 +5786,7 @@ export class Interpreter {
         const fi = this.resolve1Based(fv, len);
         if (col.type === 'arr')   return mkArr(col.v.slice(fi, fi+n));
         if (col.type === 'str')   return mkStr([...col.v].slice(fi,fi+n).join(''));
-        if (col.type === 'tuple' && col.keys?.some(k => k))
+        if (isDict(col))
           throw new ZyError(Interpreter.notPositionalMsg('d$[a..b]', col.keys));
         if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(fi,fi+n), keys:col.keys?col.keys.slice(fi,fi+n):null };
         notSupported('$[i:n]');

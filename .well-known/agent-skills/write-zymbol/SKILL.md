@@ -142,9 +142,10 @@ arr = arr$-[1]       // remove by index
 arr[2]$~ 99          // modify in place — `=` never writes into a collection
 >> arr ¶
 
-point = (10, 20)                        // tuple
-person = (name: "Alice", age: 25)       // named tuple
->> point[1] " " person.name " " person[2] ¶
+point = (10, 20)                        // positional tuple, immutable
+person = #(name: "Alice", age: 25)      // dictionary — `#(` is its mark, `#()` is the empty one
+person["city"]$~ "Lima"                 // any string may be a key
+>> point[1] " " person.name " " person["age"] ¶
 
 s = "Hola Mundo"
 >> (s$#) ¶                  // 10

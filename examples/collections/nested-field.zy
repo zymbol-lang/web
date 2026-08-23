@@ -1,4 +1,4 @@
-p = (pos: (x: 5, y: 8), label: "origin")
+p = #(pos: #(x: 5, y: 8), label: "origin")
 >> p.pos.x ¶
 >> p.pos.y ¶
 >> p.label ¶

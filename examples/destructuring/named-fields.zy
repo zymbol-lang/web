@@ -1,4 +1,4 @@
-pt = (x: 5, y: 9)
-(x: px, y: py) = pt
+pt = #(x: 5, y: 9)
+#(x: px, y: py) = pt
 >> px ¶
 >> py ¶
