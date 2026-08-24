@@ -3617,26 +3617,58 @@ class Checker {
         this.checkExpr(expr.obj);
         if (expr.arg)  this.checkExpr(expr.arg);
         if (expr.arg2) this.checkExpr(expr.arg2);
-        // Appending to a `[…]` keeps it homogeneous (decision 15). Only `$+`
-        // is checked, and deliberately: it is the one the Rust analyser checks,
-        // and being stricter HERE would be a new divergence pointing the other
-        // way. `$++`, `$+[i]` and `[i]$~` can each turn a `[…]` heterogeneous
-        // with nobody complaining, in all three engines — one hole, recorded,
-        // not three engines disagreeing.
-        if (expr.op === '$+') {
+        // Putting something INTO a `[…]` keeps it homogeneous (decision 15),
+        // and that is the whole edit family, not one member of it (L46).
+        // Until v0.0.9 only the literal and `$+` were checked — in every engine
+        // — so `$++`, `$+[i]` and `[i]$~` each turned a `[…]` heterogeneous
+        // with nobody declaring it, and `#?` then answered `##[`: a list nobody
+        // wrote. A `[…]` was not homogeneous, it was homogeneous when written.
+        //
+        // The verb matches the analyser's, because the two messages are read
+        // side by side when somebody moves a program between them.
+        const VERBS = { '$+': 'append', '$++': 'append', '$+[i]': 'insert', '$~': 'write' };
+        const verb = VERBS[expr.op];
+        if (verb) {
           const want = expr.obj?.type === 'Ident'
             ? this.peekVar(expr.obj.name)?.elemKind ?? null
             : (expr.obj?.type === 'Array' && !expr.obj.declaredMixed
                 ? this.arrayElemKind(expr.obj)
                 : null);
-          const got = this.staticKind(expr.arg);
+          // `$++` takes several; the others take one.
+          const given = expr.op === '$++' ? (expr.items ?? []) : [expr.arg];
           const norm = (k) => k.replace(/Float/g, 'Int');
-          if (want && got && norm(want) !== norm(got)) {
-            this.error('E_ARRAY_MIX',
-              `cannot append ${got} to [${want}]: type mismatch — ` +
-              `expected element of type ${want}`,
-              expr.line ?? null);
+          for (const g of given) {
+            const got = this.staticKind(g);
+            if (want && got && norm(want) !== norm(got)) {
+              this.error('E_ARRAY_MIX',
+                `cannot ${verb} ${got} to [${want}]: type mismatch — ` +
+                `expected element of type ${want}`,
+                expr.line ?? null);
+            }
           }
+        }
+        return;
+      }
+
+      // `arr[i]$~ v` — a node of its own, not a CollectionOp, because the
+      // bracket is consumed before the `$~` is seen. It writes an element, so
+      // the element has to fit (L46). The deep form `m[i>j]$~ v` is
+      // `DeepUpdate` and is not decided here: the outer type says nothing about
+      // what lands two levels down, which is what the analyser also concludes.
+      case 'FuncUpdate': {
+        this.checkExpr(expr.obj);
+        this.checkExpr(expr.index);
+        this.checkExpr(expr.value);
+        const want = expr.obj?.type === 'Ident'
+          ? this.peekVar(expr.obj.name)?.elemKind ?? null
+          : null;
+        const got = this.staticKind(expr.value);
+        const norm = (k) => k.replace(/Float/g, 'Int');
+        if (want && got && norm(want) !== norm(got)) {
+          this.error('E_ARRAY_MIX',
+            `cannot write ${got} to [${want}]: type mismatch — ` +
+            `expected element of type ${want}`,
+            expr.line ?? null);
         }
         return;
       }
