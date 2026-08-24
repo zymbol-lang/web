@@ -2700,6 +2700,65 @@ class Checker {
     return null;
   }
 
+  /**
+   * Read a variable's record WITHOUT marking it used and without diagnosing.
+   *
+   * `lookup` does both, which is right where a name is being read and wrong
+   * where the checker is only consulting what it already knows about a type.
+   */
+  peekVar(name) {
+    if (!name) return null;
+    for (let i = this.stack.length - 1; i >= 0; i--) {
+      const info = this.stack[i].vars.get(name);
+      if (info) return info;
+    }
+    return null;
+  }
+
+  /**
+   * The type of an expression, when it can be decided without inference.
+   *
+   * Scalar literals, an array literal whose elements agree (`[Int]`, and
+   * recursively `[[Int]]`), and a variable whose last assignment was one of
+   * those. `null` everywhere else — this is a checker, not a type system, and
+   * saying nothing is always allowed.
+   *
+   * Mirrors what the Rust analyser decides statically, which is what makes the
+   * two agree on which programs are refused.
+   */
+  staticKind(e) {
+    const OF = { int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool' };
+    if (!e) return null;
+    if (e.type === 'Literal') return OF[e.kind] ?? null;
+    if (e.type === 'Ident') {
+      const info = this.peekVar(e.name);
+      return info?.elemKind ? `[${info.elemKind}]` : (info?.litType ?? null);
+    }
+    if (e.type === 'Array') {
+      const k = this.arrayElemKind(e);
+      return k ? `[${k}]` : null;
+    }
+    return null;
+  }
+
+  /**
+   * The single element type of an array literal, or `null` when it cannot be
+   * decided — including when the elements disagree, which the `Array` check
+   * reports separately.
+   *
+   * Int and Float mix freely, as they do in every arithmetic position and as
+   * both Rust engines allow: `[1, 2] $+ 3.5` is not a mix.
+   */
+  arrayElemKind(e) {
+    const items = e.items ?? e.elements ?? [];
+    if (items.length === 0) return null;
+    const kinds = items.map(x => this.staticKind(x));
+    if (kinds.some(k => k === null)) return null;
+    const norm = (k) => k.replace(/Float/g, 'Int');
+    const first = kinds[0];
+    return kinds.every(k => norm(k) === norm(first)) ? first : null;
+  }
+
   noteLiteralType(name, value, line) {
     const OF = { int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool' };
     const t = value?.type === 'Literal' ? (OF[value.kind] ?? null) : null;
@@ -2718,6 +2777,13 @@ class Checker {
           line ?? null, { name, was: info.litType, now: t });
       }
       info.litType = (info.litType === undefined || info.litType === t) ? t : null;
+      // And the element type when the value is an array literal, which is what
+      // lets `a = [1, 2]` then `a $+ "x"` be caught — the shape real code has.
+      // Anything else clears it rather than guessing: after `a = [1,2]` then
+      // `a = f()` the elements are whatever `f` returned.
+      info.elemKind = (value?.type === 'Array' && !value.declaredMixed)
+        ? this.arrayElemKind(value)
+        : null;
       return;
     }
   }
@@ -3388,18 +3454,16 @@ class Checker {
         // `[1, "dos", 3.0]` ran here and was `array element 2 has type String`
         // in both Rust engines — a program written in the playground failed
         // outside it (DM-04).
-        const kindOf = (e) => {
-          if (e?.type !== 'Literal') return null;   // only literals are decided statically
-          return e.kind === 'int' ? 'Int'
-               : e.kind === 'float' ? 'Float'
-               : e.kind === 'str' ? 'String'
-               : e.kind === 'char' ? 'Char'
-               : e.kind === 'bool' ? 'Bool' : null;
-        };
-        const kinds = items.map(kindOf);
+        // `staticKind` and not a local literal-only rule: it recurses into
+        // nested array literals and reads a variable's remembered type, which
+        // is what the Rust analyser does. Without the recursion
+        // `[[1], ["x"]]` was accepted here and `array element 2 has type
+        // [String], but expected [Int]` in both Rust engines.
+        const kinds = items.map(el => this.staticKind(el));
         if (kinds.length > 1 && kinds.every(k => k !== null)) {
-          // Int and Float mix freely, as they do in every arithmetic position.
-          const norm = (k) => (k === 'Float' ? 'Int' : k);
+          // Int and Float mix freely, as they do in every arithmetic position —
+          // at any depth, so `[[1], [2.5]]` is not a mix either.
+          const norm = (k) => k.replace(/Float/g, 'Int');
           const first = kinds[0];
           const bad = kinds.findIndex(k => norm(k) !== norm(first));
           if (bad > 0 && !expr.declaredMixed) {
@@ -3440,6 +3504,27 @@ class Checker {
         this.checkExpr(expr.obj);
         if (expr.arg)  this.checkExpr(expr.arg);
         if (expr.arg2) this.checkExpr(expr.arg2);
+        // Appending to a `[…]` keeps it homogeneous (decision 15). Only `$+`
+        // is checked, and deliberately: it is the one the Rust analyser checks,
+        // and being stricter HERE would be a new divergence pointing the other
+        // way. `$++`, `$+[i]` and `[i]$~` can each turn a `[…]` heterogeneous
+        // with nobody complaining, in all three engines — one hole, recorded,
+        // not three engines disagreeing.
+        if (expr.op === '$+') {
+          const want = expr.obj?.type === 'Ident'
+            ? this.peekVar(expr.obj.name)?.elemKind ?? null
+            : (expr.obj?.type === 'Array' && !expr.obj.declaredMixed
+                ? this.arrayElemKind(expr.obj)
+                : null);
+          const got = this.staticKind(expr.arg);
+          const norm = (k) => k.replace(/Float/g, 'Int');
+          if (want && got && norm(want) !== norm(got)) {
+            this.error('E_ARRAY_MIX',
+              `cannot append ${got} to [${want}]: type mismatch — ` +
+              `expected element of type ${want}`,
+              expr.line ?? null);
+          }
+        }
         return;
       }
 
