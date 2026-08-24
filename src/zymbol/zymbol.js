@@ -6743,6 +6743,25 @@ export class Interpreter {
     const funcEnv = new Env(fn.closureEnv ?? this.globalEnv, fn.closureEnv == null);
     if (fn.captures) {
       for (const [name, value] of fn.captures) funcEnv.def(name, value);
+    } else if (fn.body) {
+      // A NAMED function called directly captures the file's variables, exactly
+      // as a lambda captures the scope it was written in (ERROR-ZYB-002). The
+      // values are read HERE, at the call, from the scope the function was
+      // written in — the global one — and never from the caller's, which would
+      // be dynamic scoping: `f` called inside `g` would see `g`'s locals.
+      //
+      // Copied into the frame, so a write inside dies with the call. The set of
+      // names is cached on the function: the names cannot change, only what
+      // they hold.
+      if (!fn._freeNames) {
+        fn._freeNames = [...collectIdentNames(fn.body, new Set())]
+          .filter(n => !(fn.params ?? []).some(p => (p?.name ?? p) === n));
+      }
+      for (const name of fn._freeNames) {
+        let v;
+        try { v = this.globalEnv.get(name); } catch { continue; }
+        if (v !== undefined && v.type !== 'func') funcEnv.def(name, v);
+      }
     }
     for (let i = 0; i < fn.params.length; i++)
       funcEnv.def(fn.params[i].name, args[i] ?? mkUnit());
