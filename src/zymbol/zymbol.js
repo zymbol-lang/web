@@ -4715,6 +4715,17 @@ function collectIdentNames(node, out) {
  * the defining scope cannot resolve is skipped — a name introduced inside the
  * body, or a function, which is reached through the global scope at call time.
  */
+/**
+ * The next function identity. Mirrors `FnIdentity` in the tree-walker.
+ *
+ * A named function taken as a value is COPIED so the copy can carry its own
+ * captures, and object identity would then say `f == adder` is `#0` while both
+ * Rust engines say `#1` — they compare the definition, not the value built from
+ * it (BUG-ZYB-012). So identity is carried explicitly and the copy keeps it.
+ */
+let NEXT_FN_ID = 1;
+const nextFnId = () => NEXT_FN_ID++;
+
 function captureFor(params, body, env) {
   const excluded = new Set(params.map(p => (typeof p === 'string' ? p : p?.name)));
   const names = collectIdentNames(body, new Set());
@@ -4935,7 +4946,7 @@ export class Interpreter {
     // appears when the block runs.
     for (const stmt of program.body) {
       if (stmt.type === 'FuncDecl')
-        env.def(stmt.name, { type: 'func', name: stmt.name, params: stmt.params, body: stmt.body });
+        env.def(stmt.name, { type: 'func', name: stmt.name, params: stmt.params, body: stmt.body, fnId: nextFnId() });
     }
     // GAP-ZYB-006: a `<~` that reaches the top level ends the program, and its
     // value is the exit status. This engine already stopped here — the value
@@ -5065,7 +5076,7 @@ export class Interpreter {
       }
 
       case 'FuncDecl': {
-        env.def(stmt.name, { type: 'func', name: stmt.name, params: stmt.params, body: stmt.body });
+        env.def(stmt.name, { type: 'func', name: stmt.name, params: stmt.params, body: stmt.body, fnId: nextFnId() });
         return;
       }
 
@@ -5452,12 +5463,26 @@ export class Interpreter {
         }
         break;
 
-      case 'Ident':
+      case 'Ident': {
         if (expr.hot) {
           try { return env.get(expr.name); }
           catch (_) { const n = mkInt(0); env.hotDef(expr.name, n); return n; }
         }
-        return env.get(expr.name);
+        const v = env.get(expr.name);
+        // A named function read AS A VALUE captures what its body reads from
+        // the scope it is being taken in, exactly as a lambda does and exactly
+        // as `func_def_to_value` does in the tree-walker. A direct call does
+        // not come through here — `case 'Call'` reads `env.get(expr.callee)` —
+        // so calling stays isolated, which is the asymmetry the two Rust
+        // engines have and this one did not.
+        //
+        // The copy keeps `fnId`, so `f = adder` is still the same function as
+        // `adder` when compared.
+        if (v?.type === 'func' && !v.native && !v.captures) {
+          return { ...v, captures: captureFor(v.params ?? [], v.body, env) };
+        }
+        return v;
+      }
 
       case 'TerminalSize': {
         if (!this.tui) return { type: 'tuple', v: [mkInt(24), mkInt(80)], keys: null };
@@ -5658,7 +5683,7 @@ export class Interpreter {
           ? expr.body.stmts
           : [{ type: 'Return', value: expr.body.value }];
         return {
-          type: 'func', name: '<lambda>', params, body,
+          type: 'func', name: '<lambda>', params, body, fnId: nextFnId(),
           // A SNAPSHOT of what the body reads from outside, not the scope
           // itself. `closureEnv: env` held a live reference, so the lambda read
           // whatever the variable held later and wrote back out through it —
@@ -6760,7 +6785,12 @@ export class Interpreter {
     // functions equal, a named one to a lambda included. It looked right on the
     // only case anybody had tried and was wrong on the rest, and nothing caught
     // it because no corpus file compared two functions.
-    if (a.type === 'func') return a === b;
+    if (a.type === 'func') {
+      // By the definition, not the object: a named function taken as a value is
+      // a copy carrying its own captures, and `f == adder` is `#1` in both Rust
+      // engines. Natives have no id and fall back to object identity.
+      return (a.fnId != null || b.fnId != null) ? a.fnId === b.fnId : a === b;
+    }
     if (a.type === 'arr' || a.type === 'tuple') {
       if (a.v.length !== b.v.length) return false;
       // `isDict`, not `keys.some(k => k)`: the empty dictionary has an empty
