@@ -4668,6 +4668,66 @@ function buildStdlibModule(name, vfs = null) {
   return null;
 }
 
+// ─── Closure capture: the names a body reads from outside itself ─────────────
+//
+// Mirrors `collect_refs_in_body` + `capture_only` in the tree-walker. A lambda
+// takes a SNAPSHOT of those names when it is created, and each call gets a fresh
+// copy of it. Three consequences, and all three used to be wrong here:
+//
+//   base = 1 ; l = (x -> x + base) ; base = 50
+//   l(0)                     → 1, not 50: the snapshot is from creation time
+//
+//   cont = 0 ; esc = (x -> { cont = cont + x  <~ cont })
+//   esc(5) esc(5) esc(5)     → 5 5 5, not 5 10 15: each call copies the snapshot
+//   cont                     → 0: a write never escapes the call
+//
+// This engine kept a live reference to the defining scope instead, so it read
+// through to whatever the variable held later and wrote back out through it.
+// `corpus.toml` carried the divergence as "closure snapshot semantics … are not
+// implemented in the browser engine" for two files; it is implemented now.
+//
+// The walk is generic over the AST — every node is a plain object — so a node
+// shape added later is covered without being listed here. Over-collecting costs
+// nothing: a name the defining scope cannot resolve is simply not captured.
+function collectIdentNames(node, out) {
+  if (node === null || typeof node !== 'object') return out;
+  if (Array.isArray(node)) {
+    for (const n of node) collectIdentNames(n, out);
+    return out;
+  }
+  if (node.type === 'Ident' && typeof node.name === 'string') out.add(node.name);
+  // A call keeps its callee as a bare STRING (`{type:'Call', callee:'f'}`), not
+  // as an `Ident` node, so the walk above cannot see it. That name is read from
+  // the scope exactly like any other — it is how `compose(f, g) { <~ x -> f(g(x)) }`
+  // reaches its own parameters from inside the lambda it returns.
+  if (node.type === 'Call' && typeof node.callee === 'string') out.add(node.callee);
+  for (const k of Object.keys(node)) {
+    if (k === 'type' || k === 'line') continue;
+    collectIdentNames(node[k], out);
+  }
+  return out;
+}
+
+/**
+ * Snapshot what a lambda body reads from outside itself.
+ *
+ * Parameters are excluded: they are bound by the call, not captured. Anything
+ * the defining scope cannot resolve is skipped — a name introduced inside the
+ * body, or a function, which is reached through the global scope at call time.
+ */
+function captureFor(params, body, env) {
+  const excluded = new Set(params.map(p => (typeof p === 'string' ? p : p?.name)));
+  const names = collectIdentNames(body, new Set());
+  const snap = new Map();
+  for (const name of names) {
+    if (excluded.has(name)) continue;
+    let v;
+    try { v = env.get(name); } catch { continue; }
+    if (v !== undefined) snap.set(name, v);
+  }
+  return snap;
+}
+
 // ─── Interpreter ──────────────────────────────────────────────────────────────
 
 export class Interpreter {
@@ -5593,13 +5653,17 @@ export class Interpreter {
       }
 
       case 'Lambda': {
+        const params = expr.params.map(p => ({ name: p }));
+        const body = expr.body.type === 'block'
+          ? expr.body.stmts
+          : [{ type: 'Return', value: expr.body.value }];
         return {
-          type: 'func', name: '<lambda>',
-          params: expr.params.map(p => ({ name: p })),
-          body: expr.body.type === 'block'
-            ? expr.body.stmts
-            : [{ type: 'Return', value: expr.body.value }],
-          closureEnv: env,
+          type: 'func', name: '<lambda>', params, body,
+          // A SNAPSHOT of what the body reads from outside, not the scope
+          // itself. `closureEnv: env` held a live reference, so the lambda read
+          // whatever the variable held later and wrote back out through it —
+          // neither of which the Rust engines do.
+          captures: captureFor(params, body, env),
         };
       }
 
@@ -6498,9 +6562,18 @@ export class Interpreter {
 
   async callFunc(fn, args, outWriteback) {
     if (fn.native) return fn.call(args);
-    const isClosure = fn.closureEnv != null;
-    const parent    = isClosure ? fn.closureEnv : this.globalEnv;
-    const funcEnv   = new Env(parent, !isClosure);
+    // Every call gets a frame over the global scope, with `funcBoundary` set so
+    // only functions are reachable past it — the isolation a direct call has
+    // always had here and in both Rust engines.
+    //
+    // A closure's captures are COPIED into that frame, not chained to. Copying
+    // is what makes a write inside die with the call: `esc(5)` three times over
+    // `cont = cont + x` gives 5, 5, 5 in the Rust engines, not 5, 10, 15.
+    // Chaining to a captured scope would have accumulated.
+    const funcEnv = new Env(fn.closureEnv ?? this.globalEnv, fn.closureEnv == null);
+    if (fn.captures) {
+      for (const [name, value] of fn.captures) funcEnv.def(name, value);
+    }
     for (let i = 0; i < fn.params.length; i++)
       funcEnv.def(fn.params[i].name, args[i] ?? mkUnit());
     let sig;
