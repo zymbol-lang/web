@@ -651,6 +651,14 @@ export class Lexer {
         '{':'LBRACE', '}':'RBRACE',
         ',':'COMMA',  ':':'COLON', '.':'DOT', ';':'SEMI', '\\':'BACKSLASH',
       };
+      // `!=` is not a Zymbol operator, and letting it through is worse than
+      // refusing it: `n$| (x -> x % 2 != 0)` printed `[1, 3]#10` here, where
+      // the correct program prints `[1, 3]`. The `!` was read as logical NOT
+      // and the rest as two more values to juxtapose, so the answer came out
+      // with a tail nobody asked for. Both Rust engines refuse it in the lexer.
+      if (c === '!' && this.ch(1) === '=') {
+        throw new ZyStaticError("'!=' is not a valid Zymbol operator — use '<>' for not-equal", this.line);
+      }
       if (single[c]) { this.consume(); tok(single[c], c); continue; }
 
       this.consume();
@@ -2158,9 +2166,17 @@ export class Parser {
       case 'DCONCATBUILD': {
         const opLine = this.toks[this.pos - 1].line;
         const items = [];
+        // What can START another operand. `LBRACKET` is deliberately absent:
+        // both Rust engines stop before a `[`, so `s$++[5:"!!!"]` leaves the
+        // bracket at statement level and is refused there. Accepting it here
+        // made this engine RUN two programs the CLI rejects — `"hola"$++[5:"!!"]`
+        // printed `hola[5, !!]`, an answer nobody could get from the CLI.
+        //
+        // A variable holding an array is fine, in every engine: `a$++ b`. The
+        // rule is about the literal, which is where a stray bracket shows up.
         const canStart = () => {
           const t = this.peek().type;
-          return ['NUM','FLOAT','BOOL','CHAR','STR','IDENT','LPAREN','LBRACKET','ELSE',
+          return ['NUM','FLOAT','BOOL','CHAR','STR','IDENT','LPAREN','ELSE',
                   'CAST_FLOAT','CAST_INT_ROUND','CAST_INT_TRUNC'].includes(t);
         };
         while (this.peek().line === opLine && !this.check('PILCROW') &&
