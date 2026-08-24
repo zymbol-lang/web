@@ -3425,6 +3425,14 @@ class Checker {
           this.pendingHot = true;
           return;
         }
+        // A statement that is only a NAME does nothing (ERROR-ZYB-001). It is
+        // the mechanism that made BUG-ZYB-002 silent: when a parse split in
+        // two, the remainder landed in a statement with no effect and vanished.
+        if (expr?.type === 'Ident' && expr.name && !expr.hot) {
+          this.warn('W_NO_EFFECT',
+            `this statement does nothing: '${expr.name}' is read and discarded`,
+            expr.line ?? stmt.line, { name: expr.name });
+        }
         this.checkExpr(expr);
         return;
       }
