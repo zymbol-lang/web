@@ -6577,10 +6577,24 @@ export class Interpreter {
           (b.type === 'int' || b.type === 'float')) return a.v === b.v;
       return false;
     }
+    // Two functions are equal when they are THE SAME function (BUG-ZYB-012).
+    // A named function is one object, made once where it is declared, so two
+    // names for it are one reference; a lambda is a fresh object per
+    // evaluation, so one written twice is two closures — which is what object
+    // identity says, and it says it without anything being carried around.
+    //
+    // Without this arm the comparison fell through to `a.v === b.v`, and a
+    // function has no `v`: `undefined === undefined` made EVERY pair of
+    // functions equal, a named one to a lambda included. It looked right on the
+    // only case anybody had tried and was wrong on the rest, and nothing caught
+    // it because no corpus file compared two functions.
+    if (a.type === 'func') return a === b;
     if (a.type === 'arr' || a.type === 'tuple') {
       if (a.v.length !== b.v.length) return false;
+      // `isDict`, not `keys.some(k => k)`: the empty dictionary has an empty
+      // key array and is still a dictionary.
       const ka = a.keys ?? [], kb = b.keys ?? [];
-      const aIsDict = ka.some(k => k), bIsDict = kb.some(k => k);
+      const aIsDict = isDict(a), bIsDict = isDict(b);
       // A positional tuple and a dictionary are different shapes even when their
       // values match.
       if (aIsDict !== bIsDict) return false;
