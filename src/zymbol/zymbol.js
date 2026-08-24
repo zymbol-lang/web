@@ -851,6 +851,20 @@ export class Lexer {
     }
     const hot = this.ch() === '°';
     if (hot) this.consume();
+    // `°x°` — both markers on the same name, which asks for two lifetimes at
+    // once: `°x` anchors ABOVE the loop and `x°` anchors AT it, so there is
+    // nothing to choose between. A prefix `°` lexes as an IDENT with an empty
+    // name (the sentinel just below), so the pair is visible right here — which
+    // is where both Rust engines refuse it, and this engine used to run the
+    // program and print an answer.
+    if (hot && s) {
+      const prev = toks[toks.length - 1];
+      if (prev && prev.type === 'IDENT' && prev.hot === true && prev.value === '') {
+        throw new ZyStaticError(
+          `ambiguous hot-definition markers on '${s}': ` +
+          `use either '°${s}' (anchors above loop) or '${s}°' (anchors at loop), not both`);
+      }
+    }
     toks.push({ type: 'IDENT', value: s, hot, line: this.line });
   }
 }
@@ -2624,8 +2638,8 @@ class Checker {
     }
   }
 
-  push(funcBoundary = false, moduleScope = false) {
-    this.stack.push({ vars: new Map(), funcBoundary, moduleScope });
+  push(funcBoundary = false, moduleScope = false, isLoop = false) {
+    this.stack.push({ vars: new Map(), funcBoundary, moduleScope, isLoop });
   }
 
   pop() {
@@ -2822,10 +2836,30 @@ class Checker {
   }
 
   // Mirror Env.hotDef: walk to nearest funcBoundary or root, define there
-  hotDefine(name, line) {
+  /**
+   * Define a hot variable where its marker says it lives.
+   *
+   * The two markers anchor in different places, which is the whole reason the
+   * language has two — and why `°x°` is refused:
+   *
+   *   `°x`  prefix   anchors at the nearest function boundary or the root, so
+   *                  it OUTLIVES the loop it was written in
+   *   `x°`  postfix  anchors at the nearest enclosing `@`, so it dies when that
+   *                  loop ends
+   *
+   * This engine walked to the boundary for both, so a postfix `x°` survived its
+   * loop and a later `>> x` printed a number where both Rust engines said
+   * `undefined variable 'x'`. Two loops each accumulating into their own `x°`
+   * silently shared one.
+   */
+  hotDefine(name, line, postfix = false) {
     if (this.stack.length === 0 || !name) return;
     let i = this.stack.length - 1;
-    while (i > 0 && !this.stack[i].funcBoundary) i--;
+    if (postfix) {
+      while (i > 0 && !this.stack[i].isLoop && !this.stack[i].funcBoundary) i--;
+    } else {
+      while (i > 0 && !this.stack[i].funcBoundary) i--;
+    }
     this.stack[i].vars.set(name, { line, isConst: false, used: false });
   }
 
@@ -3019,6 +3053,14 @@ class Checker {
             return;
           }
         }
+        if (stmt.hot && wasHot) {
+          // See CompoundAssign: `°x° = …` asks for two lifetimes at once.
+          this.error('E_HOT_AMBIG',
+            `ambiguous hot-definition markers on '${stmt.name}': ` +
+            `use either '°${stmt.name}' (anchors above loop) or '${stmt.name}°' (anchors at loop), not both`,
+            stmt.line, { name: stmt.name });
+          return;
+        }
         if (!wasHot) this.defineOrKeep(stmt.name, stmt.line, false);
         // Remember the type when the value is a literal, which is the only case
         // decided without inference — enough for `n = 1  ? n { … }`, and the
@@ -3040,13 +3082,27 @@ class Checker {
         // postfix hot: name° +=  → stmt.hot = true
         // prefix hot:  °name +=  → wasHot = true (from ExprStmt sentinel)
         const isHot = stmt.hot || wasHot;
+        // `°x°` — both markers on the same name is ambiguous, and the two
+        // anchor in DIFFERENT places: `°x` above the loop, `x°` at it. Asking
+        // for both asks for two lifetimes, so there is nothing to choose.
+        //
+        // Both Rust engines refuse it in the lexer; this engine ran the program
+        // and printed an answer, which is the shape that matters — a program
+        // that works in the playground and fails when it is installed.
+        if (stmt.hot && wasHot) {
+          this.error('E_HOT_AMBIG',
+            `ambiguous hot-definition markers on '${stmt.name}': ` +
+            `use either '°${stmt.name}' (anchors above loop) or '${stmt.name}°' (anchors at loop), not both`,
+            stmt.line, { name: stmt.name });
+          return;
+        }
         if (!isHot) {
           const info = this.lookup(stmt.name, stmt.line);
           if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line, { name: stmt.name });
           else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line, { name: stmt.name });
         } else {
           const info = this.lookup(stmt.name, stmt.line);
-          if (!info) this.hotDefine(stmt.name, stmt.line);
+          if (!info) this.hotDefine(stmt.name, stmt.line, stmt.hot === true);
         }
         this.checkExpr(stmt.value);
         return;
@@ -3110,6 +3166,18 @@ class Checker {
 
       case 'Output':
       case 'OutputPos': {
+        // `>> x°` — the marker initializes, it does not read, so in an output
+        // position it says nothing and hides the fact that `x` may not exist.
+        // Both Rust engines refuse it; this engine printed `5` and carried on.
+        for (const item of (stmt.items ?? [])) {
+          // Both spellings: `>> x°` is a hot Ident, and `>> °x` is the
+          // empty-name sentinel the prefix lexes to. Rust refuses both.
+          if (item?.type === 'Ident' && item.hot === true) {
+            this.error('E_HOT_OUTPUT',
+              '`°` has no effect in output context — use `>> x ¶`',
+              item.line ?? stmt.line, { name: item.name });
+          }
+        }
         for (const item of (stmt.items ?? [])) this.checkExpr(item);
         return;
       }
@@ -3140,7 +3208,8 @@ class Checker {
         // it the name is defined either way. `lookup` would mark the outer name used, and
         // a variable that only appears as a loop's iterator is not "used" — hence has().
         const preexisting = stmt.var ? this.has(stmt.var) : false;
-        this.push();
+        // Marked as a loop so a POSTFIX `x°` can anchor here — see `hotDefine`.
+        this.push(false, false, true);
         if (stmt.kind === 'foreach' || stmt.iterable || stmt.iter) {
           this.checkExpr(stmt.iterable ?? stmt.iter);
           if (stmt.var) this.define(stmt.var, stmt.line, false);
