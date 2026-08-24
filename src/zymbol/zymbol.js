@@ -4093,12 +4093,63 @@ export const STDLIB_ARITIES = new Map([
   ])],
 ]);
 
+// ─── The type symbols ────────────────────────────────────────────────────────
+//
+// Mirrors `crates/zymbol-common/src/typesym.rs`, which is the canonical table —
+// ten spellings, each `##` plus one character. For the collections the rule is
+// that the unmarked one takes the CLOSING delimiter and the marked one the
+// OPENING one: `[…]` is `##]` and `#[…]` is `##[`, `(…)` is `##)` and `#(…)` is
+// `##(`.
+//
+// Two kinds of answer, and the difference matters:
+//
+//   typeSymbolBase   what a value IS. A dictionary is `##(` everywhere a type is
+//                    named, error messages included, because it really is a
+//                    different type from a tuple — it carries keys, it is
+//                    mutable, and `zyq consensus` compares those messages across
+//                    engines to the character.
+//   typeSymbol       what `#?` answers: the same, except an array whose elements
+//                    are not all one type is a list, `##[`. That is NOT a type —
+//                    `[…]` and `#[…]` are one type by decision 15 — it is read
+//                    from what the value holds when asked. So a heterogeneous
+//                    array out of `json::decode` answers `##[` with no mark
+//                    anywhere, and `#[1, "dos"]$-[2]` answers `##]`, because a
+//                    single Int is not a mix.
+const TYPESYM = {
+  INT: '###', FLOAT: '##.', STRING: '##"', CHAR: "##'", BOOL: '##?',
+  ARRAY: '##]', LIST: '##[', TUPLE: '##)', DICT: '##(', UNIT: '##_',
+  FUNCTION: '##()', LAMBDA: '##->',
+};
+
+const TYPESYM_BY_TAG = {
+  int: TYPESYM.INT, float: TYPESYM.FLOAT, str: TYPESYM.STRING,
+  char: TYPESYM.CHAR, bool: TYPESYM.BOOL, arr: TYPESYM.ARRAY,
+  unit: TYPESYM.UNIT,
+};
+
+function typeSymbolBase(v) {
+  if (v?.type === 'func') return v.name === '<lambda>' ? TYPESYM.LAMBDA : TYPESYM.FUNCTION;
+  if (v?.type === 'tuple') return isDict(v) ? TYPESYM.DICT : TYPESYM.TUPLE;
+  return TYPESYM_BY_TAG[v?.type] ?? TYPESYM.UNIT;
+}
+
+// `##]` when the elements are all one type, `##[` when they are not. The
+// elements' BASE symbols are compared, so an array of arrays is uniform whatever
+// those inner arrays hold: this describes one level, and two arrays are the same
+// type as each other. An empty array is uniform — nothing in it can disagree.
+function typeSymbol(v) {
+  if (v?.type !== 'arr') return typeSymbolBase(v);
+  const items = v.v ?? [];
+  if (items.length === 0) return TYPESYM.ARRAY;
+  const first = typeSymbolBase(items[0]);
+  return items.every(x => typeSymbolBase(x) === first) ? TYPESYM.ARRAY : TYPESYM.LIST;
+}
+
 // ─── Standard library modules (std/math, std/random, std/json, std/net, std/io, std/term) ─
 
 function buildStdlibModule(name, vfs = null) {
   const asF64 = v => v?.type === 'float' ? v.v : v?.type === 'int' ? v.v : null;
-  const symMap = { int:'###', float:'##.', str:'##"', char:"##'", bool:'##?', arr:'##]', tuple:'##)' };
-  const typeCode = v => symMap[v?.type] ?? '##_';
+  const typeCode = typeSymbolBase;
   const typeErr = (fn, ...badArgs) => {
     const codes = (badArgs.length > 0 ? badArgs : [null])
       .map(a => `"${typeCode(a).replace(/"/g, '\\"')}"`)
@@ -5803,9 +5854,7 @@ export class Interpreter {
   // compares the message text across all four engines, so this must match
   // `value_type_name` (tree-walker) and `tw_type_name` (VM) to the character.
   destructTypeName(val) {
-    const symMap = { int:'###', float:'##.', str:'##"', char:"##'", bool:'##?', arr:'##]', tuple:'##)', unit:'##_' };
-    if (val.type === 'func') return (val.name === '<lambda>') ? '##->' : '##()';
-    return symMap[val.type] ?? '##_';
+    return typeSymbolBase(val);
   }
 
   // Bind an array or positional-tuple pattern — the mirror of the tree-walker's
@@ -5848,15 +5897,9 @@ export class Interpreter {
   }
 
   typeMetadata(val) {
-    const symMap = { int:'###', float:'##.', str:'##"', char:"##'", bool:'##?', arr:'##]', tuple:'##)', unit:'##_' };
-    let sym;
-    if (val.type === 'func') {
-      sym = (val.name === '<lambda>') ? '##->' : '##()';
-    } else if (val.type === 'error') {
-      sym = val.errType ?? '##_'; // error type symbol = specific error code
-    } else {
-      sym = symMap[val.type] ?? '##_';
-    }
+    // An error answers with its own code (`##IO`, `##Time`, …); everything else
+    // goes through the shared table, which is where `##[` and `##(` come from.
+    const sym = val.type === 'error' ? (val.errType ?? TYPESYM.UNIT) : typeSymbol(val);
     let count;
     switch (val.type) {
       case 'int':   count = String(Math.abs(val.v)).length; break;
