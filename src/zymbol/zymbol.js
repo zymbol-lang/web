@@ -400,6 +400,13 @@ export class Lexer {
           if (c2 === '!') { this.consume(); tok('CAST_INT_TRUNC', '##!'); continue; }
           if (c2 === '"') { this.consume(); tok('CAST_TEXT',      '##"'); continue; }
           if (c2 === "'") { this.consume(); tok('CAST_CHAR',      "##'"); continue; }
+          // `##_` — the Unit literal, and the "any kind" mark in `:! ##_`.
+          // One token for both, because they are one reading: `_` is what is
+          // not specified (GAP-ZYB-009). The lookahead keeps `##_algo` an
+          // error kind, since a name may begin with an underscore.
+          if (c2 === '_' && !/[A-Za-z0-9_]/.test(this.ch(1))) {
+            this.consume(); tok('UNIT', '##_'); continue;
+          }
           let name = '##';
           while (/[A-Za-z0-9_]/.test(this.ch())) { name += this.ch(); this.consume(); }
           tok('IDENT', name); continue;
@@ -1168,6 +1175,9 @@ export class Parser {
     const catches = [];
     while (this.check('CATCH')) {
       this.adv();
+      // `##_` is its own token since it became the Unit literal, so the
+      // wildcard is matched before the `##Kind` identifier path.
+      if (this.check('UNIT')) { this.adv(); }
       const errType = (this.check('IDENT') && this.peek().value.startsWith('##'))
         ? this.adv().value : null;
       catches.push({ errType, body: this.parseBlock() });
@@ -2194,6 +2204,9 @@ export class Parser {
     if (t.type === 'BOOL')  { this.adv(); return { type: 'Literal', kind: 'bool',  value: t.value }; }
     if (t.type === 'CHAR')  { this.adv(); return { type: 'Literal', kind: 'char',  value: t.value }; }
     if (t.type === 'STR')   { this.adv(); return { type: 'Literal', kind: 'str',   value: t.value }; }
+    // `##_` — the Unit literal (GAP-ZYB-009). The evaluator already had the
+    // `unit` case; the value was reachable long before it could be written.
+    if (t.type === 'UNIT')  { this.adv(); return { type: 'Literal', kind: 'unit' }; }
     if (t.type === 'IDENT')        { this.adv(); return { type: 'Ident',       name: t.value, hot: t.hot ?? false, line: t.line }; }
     if (t.type === 'ELSE')         { this.adv(); return { type: 'Ident',       name: '_'      }; }
     if (t.type === 'OUTPUT_QUERY') { this.adv(); return { type: 'TerminalSize' }; }
@@ -5607,14 +5620,15 @@ export class Interpreter {
       }
 
       case 'TypeMetadata': {
-        let val;
-        if (expr.obj.type === 'Ident') {
-          try { val = env.get(expr.obj.name); }
-          catch { return { type: 'tuple', v: [mkStr('##_'), mkInt(0), mkUnit()], keys: null }; }
-        } else {
-          val = await this.eval(expr.obj, env);
-        }
-        return this.typeMetadata(val);
+        // The operand is evaluated like any other expression. There used to be
+        // a special case here — an identifier that `env.get` could not find
+        // answered `("##_", 0, Unit)` instead of throwing — mirroring one in
+        // each Rust engine. All three are gone: an undefined name is refused
+        // before anything runs, so the case was unreachable, and in the Rust
+        // engines it reached a NAMED FUNCTION instead and called it Unit
+        // (GAP-ZYB-009 § 6, D-4). This engine never had that symptom, because
+        // here a named function IS in the environment.
+        return this.typeMetadata(await this.eval(expr.obj, env));
       }
 
       case 'Match': {
