@@ -1059,6 +1059,26 @@ export class Parser {
     // way the literal is: `#(` says "this is a dictionary" on both sides of the
     // `=`, so a reader never has to remember that they spell it differently.
     if (t.type === 'HASH_LPAREN' && this.isDestructuring()) return this.parseTupleDestruct();
+    // A statement that OPENS with a bracket or a paren and is not a
+    // destructuring assignment is a mistake, and both Rust engines say so.
+    // Reaching the `ExprStmt` fallthrough instead let this engine run two kinds
+    // of typo that the CLI refuses:
+    //
+    //   ins = s$++[5:"!!!"]                    `$++` then a leftover `[…]`
+    //   by_age = people$^+ (a, b -> …)         `$^+` sorts; `$^` is the one
+    //                                          that takes a comparator
+    //
+    // In both, the parser finishes the expression early and what remains starts
+    // the next statement — which is exactly the shape a stray operator makes.
+    if (t.type === 'LBRACKET' || t.type === 'LPAREN' || t.type === 'HASH_LPAREN') {
+      const shown = t.type === 'LBRACKET' ? '[' : (t.type === 'LPAREN' ? '(' : '#(');
+      const hint = t.type === 'LBRACKET'
+        ? "use '[a, b] = expr' for array destructuring"
+        : (t.type === 'LPAREN'
+            ? "use '(a, b) = expr' for tuple destructuring"
+            : "use '#(name: n) = expr' to destructure a dictionary");
+      throw new ZyStaticError(`unexpected '${shown}' at statement level — ${hint}`, t.line);
+    }
     if (t.type === 'IDENT')    return this.parseIdentStmt();
     if (t.type === 'SEMI')     { this.adv(); return null; }
     if (t.type === 'PILCROW')  { this.adv(); return { type: 'Output', items: [], newline: true }; }
