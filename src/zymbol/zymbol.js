@@ -1781,11 +1781,16 @@ export class Parser {
     const isEdit =
       (expr?.type === 'CollectionOp' && Parser.EDIT_OPS.has(expr.op)) ||
       expr?.type === 'FuncUpdate' || expr?.type === 'DeepUpdate';
-    const baseName = (e) => {
-      while (e && (e.type === 'NavIndex' || e.type === 'FuncUpdate' || e.type === 'DeepUpdate'))
-        e = e.obj;
-      return e?.type === 'Ident' ? e.name : null;
-    };
+    // The receiver of an in-place edit is a name plus EXACTLY ONE access.
+    //
+    // This used to walk the whole chain, and that was a silent
+    // data-destruction bug: `d["x"]["y"]$~ 9` found the base name `d` and
+    // desugared to `d = d["x"]["y"]$~ 9`. The expression returns the receiver
+    // it updated — the inner dictionary — so `d` was replaced by its own child
+    // and every other key vanished. No error, exit 0, and all three engines
+    // agreed, so no consensus run could see it. Assigning the result back is
+    // sound only when the receiver IS the name.
+    const baseName = (e) => (e?.type === 'Ident' ? e.name : null);
     if (isEdit) {
       const name = baseName(expr.obj);
       if (name) return { type: 'InPlaceEdit', name, expr, line };
@@ -2000,9 +2005,22 @@ export class Parser {
         }
 
       } else if (this.check('DOT') || this.check('SCOPE')) {
+        const scoped = this.check('SCOPE');
         this.adv();
         const field = this.eat('IDENT').value;
-        left = { type: 'FieldAccess', obj: left, field };
+        // `d.k$~ v` writes exactly as `d["k"]$~ v` does. The dot is how
+        // COLLECTIONS.md spells reaching a key that is an identifier, and
+        // nothing ever said it could only read — the asymmetry was inherited.
+        // `::` addresses a module namespace, which is not a place, so it is out.
+        // Carrying the key as a plain string rather than a synthesised literal
+        // node keeps it out of the checker's expression walk.
+        if (!scoped && this.check('DUPDATE')) {
+          this.adv();
+          const val = this.parseExprJuxt();
+          left = { type: 'FuncUpdate', obj: left, key: field, value: val };
+        } else {
+          left = { type: 'FieldAccess', obj: left, field, scoped };
+        }
 
       } else if (this.check('LPAREN') && sameLine() && left.type === 'Ident') {
         this.adv();
@@ -3703,7 +3721,7 @@ class Checker {
       // what lands two levels down, which is what the analyser also concludes.
       case 'FuncUpdate': {
         this.checkExpr(expr.obj);
-        this.checkExpr(expr.index);
+        if (expr.index !== undefined) this.checkExpr(expr.index);
         this.checkExpr(expr.value);
         const want = expr.obj?.type === 'Ident'
           ? this.peekVar(expr.obj.name)?.elemKind ?? null
@@ -5935,7 +5953,8 @@ export class Interpreter {
 
       case 'FuncUpdate': {
         const arr  = await this.eval(expr.obj, env);
-        const iVal = await this.eval(expr.index, env);
+        // `d.k$~ v` carries its key directly; `d[e]$~ v` evaluates one.
+        const iVal = expr.key !== undefined ? mkStr(expr.key) : await this.eval(expr.index, env);
         const val  = await this.eval(expr.value, env);
 
         // String field name — named tuple only (G2)
