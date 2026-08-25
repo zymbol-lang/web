@@ -1781,28 +1781,84 @@ export class Parser {
     const isEdit =
       (expr?.type === 'CollectionOp' && Parser.EDIT_OPS.has(expr.op)) ||
       expr?.type === 'FuncUpdate' || expr?.type === 'DeepUpdate';
-    // The receiver of an in-place edit is a name plus EXACTLY ONE access.
+    // In-place editing desugars to `name = <the same expression>`, and the
+    // expression returns the RECEIVER it edited. That is exact only when the
+    // receiver IS the name. When the receiver lives inside it — `d.x$+ 3`,
+    // `d.x["y"]$~ 5` — assigning the inner collection to the outer name
+    // replaces the whole thing, which was a silent data-destruction bug:
+    // `d["x"]["y"]$~ 9` left `d` holding `(y: 9)` with every other key gone,
+    // exit 0, no diagnostic. So a receiver with a path becomes a deep write at
+    // that path, which is machinery this engine already has.
     //
-    // This used to walk the whole chain, and that was a silent
-    // data-destruction bug: `d["x"]["y"]$~ 9` found the base name `d` and
-    // desugared to `d = d["x"]["y"]$~ 9`. The expression returns the receiver
-    // it updated — the inner dictionary — so `d` was replaced by its own child
-    // and every other key vanished. No error, exit 0, and all three engines
-    // agreed, so no consensus run could see it. Assigning the result back is
-    // sound only when the receiver IS the name.
-    const baseName = (e) => (e?.type === 'Ident' ? e.name : null);
+    // A bracket directly after a bracket is refused: `d["x"]["y"]` is the deep
+    // navigator spelled twice and `d["x">"y"]` is the form. The dot composes
+    // freely — a different syntax, not a second spelling of the same one.
+    const CHAINED = 'a bracket after a bracket is what the navigator is for: write `d["x">"y"]$~ value`';
+    const RANGE_STEP = 'a write reaches one place, so its path has no ranges';
+    const NO_NAME = 'this edits what the expression produced, and nothing holds it — assign the result to a name first';
+    const flatten = (e) => {
+      const steps = [];
+      const go = (n) => {
+        if (!n) return { err: NO_NAME };
+        if (n.type === 'Ident') return n.name;
+        if (n.type === 'NavIndex') {
+          if (n.obj?.type === 'NavIndex') return { err: CHAINED };
+          const root = go(n.obj);
+          if (typeof root !== 'string') return root;
+          if (n.spec.kind === 'simple') steps.push({ kind: 'index', expr: n.spec.index });
+          else if (n.spec.kind === 'path') {
+            for (const a of n.spec.path) {
+              if (a.kind === 'range') return { err: RANGE_STEP };
+              steps.push(a);
+            }
+          } else return { err: NO_NAME };
+          return root;
+        }
+        if (n.type === 'FieldAccess' && !n.scoped) {
+          const root = go(n.obj);
+          if (typeof root !== 'string') return root;
+          steps.push({ kind: 'index', key: n.field });
+          return root;
+        }
+        return { err: NO_NAME };
+      };
+      const r = go(e);
+      return typeof r === 'string' ? { root: r, steps } : r;
+    };
+
     if (isEdit) {
-      const name = baseName(expr.obj);
-      if (name) return { type: 'InPlaceEdit', name, expr, line };
-      // Decision 20: modifying requires a destination with a NAME. `f()[1]$~ 5`
-      // edits whatever the call returned, which the next line discards, so the
-      // edit is unobservable by construction. This engine ran it and said
-      // nothing.
-      throw new ZyError(
-        `modifying requires a destination with a name\n` +
-        `help: this edits whatever the call returned, and nothing holds it — ` +
-        `assign the result first, or edit a named collection`,
-        line);
+      // `$~` keeps its final access beside the receiver rather than inside it,
+      // so the bracket-after-bracket rule has to be asked here too: in
+      // `d["x"]["y"]$~ 5` the node is FuncUpdate{obj: NavIndex, index}, and
+      // `flatten` only ever sees the NavIndex. A key means the access was a
+      // dot, which composes.
+      if ((expr.type === 'FuncUpdate' && expr.key === undefined && expr.obj?.type === 'NavIndex')
+          || (expr.type === 'DeepUpdate' && expr.obj?.type === 'NavIndex')) {
+        throw new ZyError(`this edit has nothing to write into\nhelp: ${CHAINED}`, line);
+      }
+      const f = flatten(expr.obj);
+      // Decision 20: an edit with nowhere to write is refused, rather than run
+      // for a result nothing holds.
+      if (f.err) throw new ZyError(`this edit has nothing to write into\nhelp: ${f.err}`, line);
+      if (f.steps.length === 0) return { type: 'InPlaceEdit', name: f.root, expr, line };
+
+      // The receiver is inside the name. `$~` carries its own final step, so it
+      // moves onto the whole path; every other edit keeps its shape and is put
+      // back where it came from.
+      const obj = { type: 'Ident', name: f.root, line };
+      if (expr.type === 'FuncUpdate') {
+        const last = expr.key !== undefined
+          ? { kind: 'index', key: expr.key }
+          : { kind: 'index', expr: expr.index };
+        const deep = { type: 'DeepUpdate', obj, path: [...f.steps, last], value: expr.value };
+        return { type: 'InPlaceEdit', name: f.root, expr: deep, line };
+      }
+      if (expr.type === 'DeepUpdate') {
+        const deep = { type: 'DeepUpdate', obj, path: [...f.steps, ...expr.path], value: expr.value };
+        return { type: 'InPlaceEdit', name: f.root, expr: deep, line };
+      }
+      const deep = { type: 'DeepUpdate', obj, path: f.steps, value: expr };
+      return { type: 'InPlaceEdit', name: f.root, expr: deep, line };
     }
     return { type: 'ExprStmt', expr };
   }
@@ -5998,7 +6054,8 @@ export class Interpreter {
         const indices = [];
         for (const atom of expr.path) {
           if (atom.kind === 'range') throw new ZyError('deep update ($~) does not support ranges in the path');
-          const iv = await this.eval(atom.expr, env);
+          // A dot step carries its key directly; a bracket step has an expression.
+          const iv = atom.key !== undefined ? mkStr(atom.key) : await this.eval(atom.expr, env);
           // Int → position, String → dictionary key. Same rule as the read.
           if (iv.type !== 'int' && iv.type !== 'str')
             throw new ZyError(
