@@ -6040,20 +6040,28 @@ export class Interpreter {
             const f = Math.pow(10, expr.prec);
             return mkFloat(Math.trunc(n * f) / f);
           }
-          case 'comma':       return mkStr(toNum(val).toLocaleString('en-US'));
+          // `#,` and `#^` write their digits in the ACTIVE numeral script, as
+          // `>>` and the precision operators do. They did not: the text came
+          // from `toLocaleString`/`fmtSci`, which write ASCII, so under `#०९#`
+          // a program printed `१२३४५६७.८९` with `>>` and `1,234,567.89` one line
+          // later with `#,` — two spellings of the digits in one output, and
+          // the same in all three engines, so no consensus run could see it.
+          //
+          // Only the digits map; the separators pass through.
+          case 'comma':       return mkStr(mapToScript(toNum(val).toLocaleString('en-US'), this.numeralMode));
           case 'comma_round': {
             const n = parseFloat(toNum(val).toFixed(expr.prec));
-            return mkStr(n.toLocaleString('en-US', { minimumFractionDigits: expr.prec, maximumFractionDigits: expr.prec }));
+            return mkStr(mapToScript(n.toLocaleString('en-US', { minimumFractionDigits: expr.prec, maximumFractionDigits: expr.prec }), this.numeralMode));
           }
           case 'comma_trunc': {
             const raw = toNum(val);
             const f = Math.pow(10, expr.prec);
             const n = Math.trunc(raw * f) / f;
-            return mkStr(n.toLocaleString('en-US', { minimumFractionDigits: expr.prec, maximumFractionDigits: expr.prec }));
+            return mkStr(mapToScript(n.toLocaleString('en-US', { minimumFractionDigits: expr.prec, maximumFractionDigits: expr.prec }), this.numeralMode));
           }
-          case 'sci':       return mkStr(fmtSci(toNum(val), null, null));
-          case 'sci_round': return mkStr(fmtSci(toNum(val), expr.prec, 'round'));
-          case 'sci_trunc': return mkStr(fmtSci(toNum(val), expr.prec, 'trunc'));
+          case 'sci':       return mkStr(mapToScript(fmtSci(toNum(val), null, null), this.numeralMode));
+          case 'sci_round': return mkStr(mapToScript(fmtSci(toNum(val), expr.prec, 'round'), this.numeralMode));
+          case 'sci_trunc': return mkStr(mapToScript(fmtSci(toNum(val), expr.prec, 'trunc'), this.numeralMode));
           case 'base_conv': {
             const n = val.type === 'char' ? val.v.codePointAt(0) : Math.trunc(toNum(val));
             const base = expr.prec;
