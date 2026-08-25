@@ -218,15 +218,55 @@ function digitBlockBase(ch) {
 /** Block base of the ASCII digits — the default numeral mode. */
 const ASCII_BASE = 0x0030;
 
-function mapToScript(s, blockBase) {
+// ─── Script separators (mirrors SCRIPT_SEPARATORS in zymbol-lexer) ───────────
+//
+// `[blockBase, decimalSeparator, thousandsSeparator]` for the scripts that
+// encode their own. The admission bar is narrow and objective: Unicode itself
+// must name the character a numeric separator for that script. Exactly one
+// script clears it — Arabic, through U+066B ARABIC DECIMAL SEPARATOR and
+// U+066C ARABIC THOUSANDS SEPARATOR — and it clears it for both of its digit
+// blocks. Every other script writes ASCII `.` and `,`.
+const SCRIPT_SEPARATORS = [
+  [0x0660, '\u066B', '\u066C'],   // Arabic-Indic
+  [0x06F0, '\u066B', '\u066C'],   // Extended Arabic-Indic (Persian, Urdu)
+];
+
+function decimalSeparator(blockBase) {
+  const e = SCRIPT_SEPARATORS.find(([base]) => base === blockBase);
+  return e ? e[1] : '.';
+}
+
+function thousandsSeparator(blockBase) {
+  const e = SCRIPT_SEPARATORS.find(([base]) => base === blockBase);
+  return e ? e[2] : ',';
+}
+
+/** ASCII `.` or any script's own — reading is script-blind, writing is not. */
+function isDecimalSeparator(ch) {
+  return ch === '.' || SCRIPT_SEPARATORS.some(([, dec]) => dec === ch);
+}
+
+// Rewrites one FORMATTED NUMBER into the script identified by `blockBase`:
+// digits, decimal separator and thousands separator all follow the script.
+//
+// The argument must be a single number and nothing else — the separators are
+// ordinary punctuation, so running this over composite text would rewrite marks
+// that were never separators. Composite text never reaches here: a list, an
+// interpolation and a concatenation each map their numbers one at a time and
+// add their own commas afterwards.
+function mapNumeralNumber(s, blockBase) {
   if (blockBase === ASCII_BASE) return s;
+  const decimal = decimalSeparator(blockBase);
+  const thousands = thousandsSeparator(blockBase);
   return [...s].map(ch => {
     if (ch >= '0' && ch <= '9') return String.fromCodePoint(blockBase + (ch.charCodeAt(0) - 0x30));
+    if (ch === '.') return decimal;
+    if (ch === ',') return thousands;
     return ch;
   }).join('');
 }
 
-function numeralInt(n, base)   { return mapToScript(String(Math.trunc(n)), base); }
+function numeralInt(n, base)   { return mapNumeralNumber(String(Math.trunc(n)), base); }
 // A float as Zymbol spells it, which is not how JavaScript spells it.
 //
 // Three separate disagreements with the other engines lived in `String(f)`:
@@ -274,7 +314,7 @@ function expandExponent(str) {
   if (body.includes('.')) body = body.replace(/0+$/, '').replace(/\.$/, '');
   return neg ? '-' + body : body;
 }
-function numeralFloat(f, base) { return mapToScript(floatText(f), base); }
+function numeralFloat(f, base) { return mapNumeralNumber(floatText(f), base); }
 function numeralBool(b, base)  { return '#' + numeralInt(b ? 1 : 0, base); }
 
 // Is this value a dictionary rather than a positional tuple?
@@ -708,14 +748,20 @@ export class Lexer {
     // 3.14159265 rounds to the nearest double exactly — which is the value the
     // Rust engines read, and what `>>` then prints.
     let intText = '';
+    let activeBlock = ASCII_BASE;
     while (this.pos < this.src.length) {
       const dv = digitValue(this.ch());
       if (dv < 0) break;
+      if (intText === '') activeBlock = digitBlockBase(this.ch());
       value = value * 10 + dv;
       intText += String(dv);
       this.consume();
     }
-    if (this.ch() === '.' && this.ch(1) !== '.') {
+    // The separator is ASCII `.` or the one the digits' own script encodes
+    // (`٣٫٥`): that is what an active numeral mode writes, and a number the
+    // program writes has to read back. `..` stays the range operator.
+    const ownSeparator = decimalSeparator(activeBlock);
+    if ((this.ch() === '.' || this.ch() === ownSeparator) && this.ch(1) !== '.') {
       this.consume();
       let fracText = '';
       while (this.pos < this.src.length) {
@@ -3807,7 +3853,13 @@ function describeInputCast(cast) {
 function asciiDigits(s) {
   return [...s].map(ch => {
     const dv = digitValue(ch);
-    return (dv >= 0 && !(ch >= '0' && ch <= '9')) ? String(dv) : ch;
+    if (dv >= 0 && !(ch >= '0' && ch <= '9')) return String(dv);
+    // A script's own decimal separator reads as a decimal point, since that is
+    // what an active numeral mode writes: `٤٫٧٥` and `٤.٧٥` are one number.
+    // The callers still validate the whole shape with a regex, so `1٫2٫3` is
+    // rejected exactly as `1.2.3` is.
+    if (ch !== '.' && isDecimalSeparator(ch)) return '.';
+    return ch;
   }).join('');
 }
 
@@ -6048,20 +6100,20 @@ export class Interpreter {
           // the same in all three engines, so no consensus run could see it.
           //
           // Only the digits map; the separators pass through.
-          case 'comma':       return mkStr(mapToScript(toNum(val).toLocaleString('en-US'), this.numeralMode));
+          case 'comma':       return mkStr(mapNumeralNumber(toNum(val).toLocaleString('en-US'), this.numeralMode));
           case 'comma_round': {
             const n = parseFloat(toNum(val).toFixed(expr.prec));
-            return mkStr(mapToScript(n.toLocaleString('en-US', { minimumFractionDigits: expr.prec, maximumFractionDigits: expr.prec }), this.numeralMode));
+            return mkStr(mapNumeralNumber(n.toLocaleString('en-US', { minimumFractionDigits: expr.prec, maximumFractionDigits: expr.prec }), this.numeralMode));
           }
           case 'comma_trunc': {
             const raw = toNum(val);
             const f = Math.pow(10, expr.prec);
             const n = Math.trunc(raw * f) / f;
-            return mkStr(mapToScript(n.toLocaleString('en-US', { minimumFractionDigits: expr.prec, maximumFractionDigits: expr.prec }), this.numeralMode));
+            return mkStr(mapNumeralNumber(n.toLocaleString('en-US', { minimumFractionDigits: expr.prec, maximumFractionDigits: expr.prec }), this.numeralMode));
           }
-          case 'sci':       return mkStr(mapToScript(fmtSci(toNum(val), null, null), this.numeralMode));
-          case 'sci_round': return mkStr(mapToScript(fmtSci(toNum(val), expr.prec, 'round'), this.numeralMode));
-          case 'sci_trunc': return mkStr(mapToScript(fmtSci(toNum(val), expr.prec, 'trunc'), this.numeralMode));
+          case 'sci':       return mkStr(mapNumeralNumber(fmtSci(toNum(val), null, null), this.numeralMode));
+          case 'sci_round': return mkStr(mapNumeralNumber(fmtSci(toNum(val), expr.prec, 'round'), this.numeralMode));
+          case 'sci_trunc': return mkStr(mapNumeralNumber(fmtSci(toNum(val), expr.prec, 'trunc'), this.numeralMode));
           case 'base_conv': {
             const n = val.type === 'char' ? val.v.codePointAt(0) : Math.trunc(toNum(val));
             const base = expr.prec;
