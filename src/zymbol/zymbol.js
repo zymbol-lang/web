@@ -1734,15 +1734,22 @@ export class Parser {
         // boolean and raised "index out of bounds" while both Rust engines
         // navigated two levels. Rebuild the path from the comparison.
         if (idx?.type === 'BinOp' && idx.op === '>') {
-          // Path atoms are `{kind, expr}`, the shape parseNavContent produces.
-          const flatten = (e) => (e?.type === 'BinOp' && e.op === '>')
-            ? [...flatten(e.left), ...flatten(e.right)] : [{ kind: 'index', expr: e }];
           return this.editStmtOrExpr(
-            { type: 'DeepUpdate', obj, path: flatten(idx), value: val }, line);
+            { type: 'DeepUpdate', obj, path: Parser.flattenGtChain(idx), value: val }, line);
         }
         return this.editStmtOrExpr({ type: 'FuncUpdate', obj, index: idx, value: val }, line);
       }
-      let left = { type: 'NavIndex', obj: { type: 'Ident', name, line: tok0.line }, spec: { kind: 'simple', index: idx } };
+      // `m[i>j]` at STATEMENT position, followed by anything other than `$~`:
+      // `parseExpr` above read `i>j` as a COMPARISON, because the bracket is
+      // consumed before the nav parser ever sees it. The `$~` branch already
+      // rebuilt the path from it; every other edit fell through here with a
+      // boolean for an index, so `d["n">"l"]$+ 9` raised "a navigation step is
+      // a position or a key, got bool" while both Rust engines navigated two
+      // levels. Same rebuild, one branch earlier.
+      const spec = (idx?.type === 'BinOp' && idx.op === '>')
+        ? { kind: 'path', path: Parser.flattenGtChain(idx) }
+        : { kind: 'simple', index: idx };
+      let left = { type: 'NavIndex', obj: { type: 'Ident', name, line: tok0.line }, spec };
       return this.editStmtOrExpr(this.parsePostfixRest(left), line);
     }
 
@@ -1753,6 +1760,26 @@ export class Parser {
   // The editing half of the `$` family. The consulting half — `$#`, `$?`, `$[..]`,
   // `$>`, `$|`, `$<`, … — never modifies anything, so discarding its result is
   // dead code (decision 19) and not a modification.
+  // `i>j>k` read as a chain of `>` comparisons, rebuilt as a navigation path.
+  // Path atoms are `{kind, expr}`, the shape `parseNavContent` produces.
+  static flattenGtChain(e) {
+    return (e?.type === 'BinOp' && e.op === '>')
+      ? [...Parser.flattenGtChain(e.left), ...Parser.flattenGtChain(e.right)]
+      : [{ kind: 'index', expr: e }];
+  }
+
+  // The CONSULTING half. It always builds and never modifies, so discarding one
+  // as a statement is dead code — COLLECTIONS.md § 1, decision 19. It was
+  // documented and enforced nowhere: `s$~~["a":"X"]` on its own line ran and
+  // changed nothing, in all three engines, with no diagnostic.
+  //
+  // A list rather than "everything that is not an edit", so a new operator has
+  // to be classified deliberately instead of falling into a default. `$!` and
+  // `$!!` are not here: propagating an error is an effect.
+  static CONSULT_OPS = new Set([
+    '$#', '$?', '$??', '$[i..j]', '$[i:n]', '$>', '$|', '$<', '$/', '$*', '$~~',
+  ]);
+
   static EDIT_OPS = new Set([
     '$+', '$++', '$-', '$--', '$+[i]', '$-[i]', '$-[i..j]', '$-[i:n]',
     '$^', '$^+', '$^-',
@@ -3552,6 +3579,15 @@ class Checker {
           this.warn('W_NO_EFFECT',
             `this statement does nothing: '${expr.name}' is read and discarded`,
             expr.line ?? stmt.line, { name: expr.name });
+        }
+        // Decision 19, the other half of the rule of the result: a consulting
+        // `$` builds a value, so a statement that is only one throws it away.
+        // The operator is pure, so this holds even with a call inside it — the
+        // call's effect still happens and the `$#` around it is still pointless.
+        if (expr?.type === 'CollectionOp' && Parser.CONSULT_OPS.has(expr.op)) {
+          this.warn('W_NO_EFFECT',
+            `this statement does nothing: \`${expr.op}\` builds a value and it is discarded`,
+            expr.line ?? stmt.line, { name: expr.op });
         }
         this.checkExpr(expr);
         return;
