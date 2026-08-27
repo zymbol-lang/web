@@ -1,0 +1,23 @@
+// […] and #[…] are the SAME TYPE — the array. There is no separate "list".
+// What differs is the promise the literal makes about its elements.
+
+nums = [1, 2, 3]              // homogeneous, and CHECKED
+// [1, "two", 3.0]            // ✗ error: array element 2 has type String…
+mix  = #[1, "two", 3]         // the mix is DECLARED, and not checked
+
+>> nums ¶
+>> mix ¶
+
+// #? reads the type. The closing bracket is the plain array, the opening
+// bracket is the one carrying the # — a mix.
+>> nums#? ¶
+>> mix#? ¶
+
+// And it is read from what the array HOLDS, not from how it was written:
+// take the odd element out and the same value reads as a plain array again.
+mix$-[2]
+>> mix ¶
+>> mix#? ¶
+
+// Every operator behaves the same on both, because there is only one type.
+>> nums$# " " mix$# ¶

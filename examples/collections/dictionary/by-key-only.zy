@@ -1,0 +1,22 @@
+// The position is NOT an address. Adding a key changes what sits at each
+// position, so a program that depended on d[2] would stop being correct
+// with nothing to say so. This is Python's position on dict.
+d = #(a: 1, b: 2)
+
+!? {
+    >> d[2] ¶
+} :! {
+    >> "refused: a dictionary is addressed by key, not by position" ¶
+}
+
+// Whole family, not just the read — a positional WRITE would corrupt data
+!? {
+    d[2]$~ 99
+} :! {
+    >> "refused: d[n]$~ has no meaning here" ¶
+}
+
+// The positional tuple keeps the whole family: there the index is the
+// only address there is, and the size is fixed.
+t = (10, 20, 30)
+>> t[2] ¶

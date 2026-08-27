@@ -1,0 +1,14 @@
+// A dictionary is written #(…) and addressed by KEY.
+// The # is needed because #() is the empty dictionary and () is the empty tuple.
+user = #(name: "Ana", age: 30)
+
+>> user ¶
+>> user$# ¶           // how many keys
+
+// The dot reaches keys that are identifiers
+>> user.name ¶
+
+// The bracket reaches ANY key, including one the dot cannot spell
+prices = #("two words": 10, plain: 20)
+>> prices["two words"] ¶
+>> prices.plain ¶

@@ -1,0 +1,19 @@
+// The rule of the result: discard it and the dictionary is modified in place;
+// use it and a copy is built, leaving the original alone.
+user = #(name: "Ana", age: 30)
+
+user["age"]$~ 31              // result discarded → modifies
+>> user ¶
+
+other = user["age"]$~ 99      // result used → builds
+>> user ¶                     // untouched
+>> other ¶
+
+// A key that is NOT there gets ADDED — unlike an array, where arr[7]$~ v fails
+user["city"]$~ "Lima"
+user.country$~ "Peru"         // the dot writes what the dot reads
+>> user ¶
+
+// Removed by its address, and a dictionary's address is its key
+user$-["country"]
+>> user ¶

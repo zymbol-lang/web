@@ -1,5 +1,0 @@
-pt = #(x: 3, y: 7)
->> pt.x ¶
->> pt.y ¶
-person = #(name: "Alice", age: 30)
->> person.name " is " person.age ¶

@@ -17,10 +17,29 @@
 // colouring layer's layout by nothing at all — which matters, because that layer has to
 // stay glued to the textarea on top of it, character for character.
 
+// The digit tables come from the lexer itself rather than a second copy here:
+// `digitValue` knows all 60-odd Unicode decimal blocks, and a table kept twice
+// is a table that eventually disagrees with itself.
+import { digitValue, digitBlockBase, decimalSeparator } from '../zymbol/zymbol.js';
+
 export function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 /** Attribute values need the quote escaped too — `##"` and `##'` are real operators. */
 function escAttr(s) { return esc(s).replace(/"/g, '&quot;'); }
+
+/**
+ * The decimal digit at `k`, or null. Reads a whole CODE POINT: half the digit
+ * blocks the lexer knows are astral (Ahom, Brahmi, Mathematical Bold, Adlam…),
+ * and testing `s[k]` alone hands `digitValue` a lone surrogate, which is not a
+ * digit in any block — so every one of those numbers went uncoloured.
+ */
+function digAt(s, k) {
+  const cp = s.codePointAt(k);
+  if (cp === undefined) return null;
+  const ch = String.fromCodePoint(cp);
+  if (!/[0-9]/.test(ch) && digitValue(ch) < 0) return null;
+  return { ch, len: ch.length };
+}
 
 /** One operator span: class, visible text, and the dictionary key to look up on hover. */
 function op(cls, text, hoverKey) {
@@ -81,7 +100,7 @@ export function highlightLine(line, inBlockComment) {
       i = j+1; continue;
     }
 
-    if (/\d/.test(s[i]) && (i===0 || !/\w/.test(s[i-1]))) {
+    if (digAt(s, i) !== null && (i===0 || !/\w/.test(s[i-1]))) {
       // Base literals: 0b, 0o, 0d, 0x
       if (s[i] === '0' && i+1 < len && /[boxd]/i.test(s[i+1])) {
         const pfx = s[i+1].toLowerCase();
@@ -94,11 +113,19 @@ export function highlightLine(line, inBlockComment) {
       // A decimal point is only part of the number when a digit follows it. Scanning
       // `[\d.]` greedily instead swallowed `2..3` whole, so no range in any program ever
       // had its `..` coloured — or, once this file fed the hover, askable.
+      // Native digits count, and so does the separator their own script
+      // encodes (`٣٫٥`): the lexer reads both, so a program written in
+      // Devanagari has to colour like one written in ASCII. Scanning `/\d/`
+      // alone left `१.२५` uncoloured AND handed its decimal point to the
+      // member-access card.
       let j = i;
-      while (j < len && /\d/.test(s[j])) j++;
-      if (s[j] === '.' && j+1 < len && /\d/.test(s[j+1])) {
+      const first = digAt(s, i);
+      const block = digitBlockBase(first.ch);
+      const sep = block >= 0 ? decimalSeparator(block) : '.';
+      for (let d = digAt(s, j); d !== null; d = digAt(s, j)) j += d.len;
+      if ((s[j] === '.' || s[j] === sep) && s[j+1] !== '.' && digAt(s, j+1) !== null) {
         j++;
-        while (j < len && /\d/.test(s[j])) j++;
+        for (let d = digAt(s, j); d !== null; d = digAt(s, j)) j += d.len;
       }
       out += `<span class="t-num">${esc(s.slice(i,j))}</span>`;
       i = j; continue;
@@ -142,6 +169,12 @@ export function highlightLine(line, inBlockComment) {
         }
       }
 
+      // #( — the dictionary literal, and #[ — an array with a declared mix.
+      // Both were falling out of this branch unmarked, so the `#` was invisible
+      // and the reader hovering a dictionary was handed the card for `(`.
+      if (c1 === '(') { out += op('t-br', '#(', '#('); i += 2; continue; }
+      if (c1 === '[') { out += op('t-br', '#[', '#['); i += 2; continue; }
+
       // #? — type metadata
       if (c1 === '?') { out += op('t-op', '#?'); i += 2; continue; }
 
@@ -152,7 +185,16 @@ export function highlightLine(line, inBlockComment) {
       // The opening bracket is the operator; the closing `|` is punctuation that pairs
       // with it. Five cards cover the family: eval, round, truncate, comma, scientific.
       {
-        const digitsAt = k => { let d = 0; while (k + d < len && /[0-9]/.test(s[k+d])) d++; return d; };
+        // The count may be a NAME as well as digits — `#,.n|10.5|` reads its
+        // precision from a variable, and the lexer takes it — so a form that
+        // computes its own precision was left unmarked and unaskable.
+        const digitsAt = k => {
+          let d = 0;
+          while (k + d < len && /[0-9]/.test(s[k+d])) d++;
+          if (d > 0) return d;
+          while (k + d < len && /[\p{L}_0-9]/u.test(s[k+d])) d++;
+          return d;
+        };
         let end = -1, key = null;
         if (c1 === '|') { end = i + 2; key = '#|'; }
         else if (c1 === '.' || c1 === '!') {
@@ -208,8 +250,21 @@ export function highlightLine(line, inBlockComment) {
         }
       }
 
-      // #0 / #1 — the booleans, after numeral mode so `#09#` is not read as `#0` + `9#`
-      if (c1 === '0' || c1 === '1') { out += op('t-num', s.slice(i, i+2)); i += 2; continue; }
+      // #0 / #1 — the booleans, after numeral mode so `#09#` is not read as `#0`
+      // + `9#`. The digit is read by VALUE, not by shape: the lexer accepts
+      // `#𑜱` and `#१` as booleans, and testing for the ASCII characters left
+      // every non-Latin one unmarked.
+      if (c1 !== undefined) {
+        const _dB = digAt(s, i + 1);
+        const _chB = _dB ? _dB.ch : '';
+        const _dvB = _dB ? (/[01]/.test(_chB) ? Number(_chB) : digitValue(_chB)) : -1;
+        if (_dvB === 0 || _dvB === 1) {
+          // The card is keyed by VALUE — `#१` and `#0` are the same two cards,
+          // one per truth value, whatever script wrote the digit.
+          out += op('t-num', s.slice(i, i + 1 + _chB.length), _dvB === 1 ? '#1' : '#0');
+          i += 1 + _chB.length; continue;
+        }
+      }
     }
 
     // Four-char operators — must precede all shorter checks
@@ -303,6 +358,13 @@ export function highlightLine(line, inBlockComment) {
       }
       out += `<span class="t-op">$</span>`; i++; continue;
     }
+    // A bare `~` is the working-copy parameter mark, `f(a~)`. Every other `~`
+    // is part of a longer operator matched above (`<~`, `@~`, `$~`, `$~~`), so
+    // one that reaches here is that mark and nothing else. The browser lexer
+    // drops the token — the mark carries intent, not semantics, since a plain
+    // parameter is already a copy — but a mark the reader cannot ask about is
+    // the one thing this file exists to prevent.
+    if (one === '~') { out += op('t-op', '~'); i++; continue; }
     if (one === '°') { out += op('t-hot', '°'); i++; continue; }
     if (one === '<') { out += op('t-op', '<'); i++; continue; }
     if (one === '>') { out += op('t-op', '>'); i++; continue; }

@@ -1,0 +1,11 @@
+<# std/json => js
+
+// Nesting a dictionary in a dictionary IS JSON — no separate type was needed.
+config = #(
+    server: #(host: "localhost", port: 8080),
+    tags: ["web", "api"]
+)
+
+>> config.server.host ¶
+>> config["server"]["port"] ¶
+>> js::encode(config) ¶

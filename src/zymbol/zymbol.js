@@ -199,7 +199,11 @@ const DIGIT_BLOCKS = [
   [0x1FBF0,'Segmented/LCD'],
 ];
 
-function digitValue(ch) {
+// Exported so src/playground/highlight.js can ASK the lexer which characters
+// are digits instead of keeping a second copy of DIGIT_BLOCKS. It kept none, so
+// a number written in Devanagari was not coloured as a number at all and its
+// decimal point was offered member-access help.
+export function digitValue(ch) {
   const cp = ch.codePointAt(0);
   for (const [base] of DIGIT_BLOCKS) {
     if (cp >= base && cp <= base + 9) return cp - base;
@@ -207,7 +211,7 @@ function digitValue(ch) {
   return -1;
 }
 
-function digitBlockBase(ch) {
+export function digitBlockBase(ch) {
   const cp = ch.codePointAt(0);
   for (const [base] of DIGIT_BLOCKS) {
     if (cp >= base && cp <= base + 9) return base;
@@ -231,7 +235,7 @@ const SCRIPT_SEPARATORS = [
   [0x06F0, '\u066B', '\u066C'],   // Extended Arabic-Indic (Persian, Urdu)
 ];
 
-function decimalSeparator(blockBase) {
+export function decimalSeparator(blockBase) {
   const e = SCRIPT_SEPARATORS.find(([base]) => base === blockBase);
   return e ? e[1] : '.';
 }
@@ -341,8 +345,12 @@ class ZyBreak    { constructor(label = null) { this.label = label; } }
 class ZyContinue { constructor(label = null) { this.label = label; } }
 class ZyErrorPropagate { constructor(errVal) { this.errVal = errVal; } }
 class ZyError extends Error {
+  // The line goes in `zyLine`, never into the message. The Rust engines put it
+  // on its own `-->` line and keep the message itself clean; baking `Line 2: `
+  // into the text made the same runtime error read differently here, and put
+  // the number in front of a message whose own `help:` line follows it.
   constructor(msg, line) {
-    super(line ? `Line ${line}: ${msg}` : msg);
+    super(msg);
     this.zyLine = line;
   }
 }
@@ -831,7 +839,7 @@ export class Lexer {
         if (!/^[^\s{}\[\]().,;:"'`!?@#$|&~\\+\-*/%^<>=]+$/.test(inner)) {
           throw new ZyError(
             `invalid character in string interpolation\n` +
-            `help: interpolation must be {identifier} — use \\{ for a literal brace`,
+            `= help: interpolation must be {identifier} — use \\{ for a literal brace`,
             this.line);
         }
         parts.push({ t: 'expr', v: inner });
@@ -845,7 +853,7 @@ export class Lexer {
         // say why.
         throw new ZyError(
           `unmatched '}' in string\n` +
-          `help: the escape is symmetric — write \\} for a literal brace, ` +
+          `= help: the escape is symmetric — write \\} for a literal brace, ` +
           `as \\{ is for the opening one`,
           this.line);
       } else {
@@ -1687,7 +1695,7 @@ export class Parser {
       if (this.check('ASSIGN') || compound[this.peek().type]) {
         throw new ZyError(
           `indexed assignment does not exist: '${name}[…] =' is not a form of Zymbol\n` +
-          `help: use '${name}[i]$~ value' to modify in place — ` +
+          `= help: use '${name}[i]$~ value' to modify in place — ` +
           `'=' gives a value to a NAME, '$~' changes part of a collection`,
           line);
       }
@@ -1709,7 +1717,7 @@ export class Parser {
         if (after === 'ASSIGN' || compound[after]) {
           throw new ZyError(
             `indexed assignment does not exist: '${name}[…] =' is not a form of Zymbol\n` +
-            `help: nesting is navigated with '>', so this is '${name}[i>j]$~ value' — ` +
+            `= help: nesting is navigated with '>', so this is '${name}[i>j]$~ value' — ` +
             `'=' gives a value to a NAME, '$~' changes part of a collection`,
             line);
         }
@@ -1822,7 +1830,11 @@ export class Parser {
     // freely — a different syntax, not a second spelling of the same one.
     const CHAINED = 'a bracket after a bracket is what the navigator is for: write `d["x">"y"]$~ value`';
     const RANGE_STEP = 'a write reaches one place, so its path has no ranges';
-    const NO_NAME = 'this edits what the expression produced, and nothing holds it — assign the result to a name first';
+    // Two causes, two headlines — the Rust engines distinguish them and this
+    // engine gave the bracket-after-bracket message to both, so `f()[1]$~ 5`
+    // was reported as a path problem it does not have.
+    const NO_NAME = 'this edits whatever the call returned, and nothing holds it — assign the result first, or edit a named collection';
+    const NO_NAME_HEAD = 'modifying requires a destination with a name';
     const flatten = (e) => {
       const steps = [];
       const go = (n) => {
@@ -1861,12 +1873,14 @@ export class Parser {
       // dot, which composes.
       if ((expr.type === 'FuncUpdate' && expr.key === undefined && expr.obj?.type === 'NavIndex')
           || (expr.type === 'DeepUpdate' && expr.obj?.type === 'NavIndex')) {
-        throw new ZyError(`this edit has nothing to write into\nhelp: ${CHAINED}`, line);
+        throw new ZyError(`this edit has nothing to write into\n= help: ${CHAINED}`, line);
       }
       const f = flatten(expr.obj);
       // Decision 20: an edit with nowhere to write is refused, rather than run
       // for a result nothing holds.
-      if (f.err) throw new ZyError(`this edit has nothing to write into\nhelp: ${f.err}`, line);
+      if (f.err) throw new ZyError(
+        `${f.err === NO_NAME ? NO_NAME_HEAD : 'this edit has nothing to write into'}\n= help: ${f.err}`,
+        line);
       if (f.steps.length === 0) return { type: 'InPlaceEdit', name: f.root, expr, line };
 
       // The receiver is inside the name. `$~` carries its own final step, so it
@@ -2637,6 +2651,84 @@ function formatDiagnostic(d) {
   return `${d.severity}: ${d.message}`;
 }
 
+/**
+ * Does this block assign to `name` anywhere inside it?
+ *
+ * Walks statements structurally rather than by a name list, so a nested loop or
+ * branch counts. Used by `lifetimeWarnForIterator` to tell a loop variable that
+ * is merely read from one whose value the body changes.
+ */
+function assignsWithin(node, name) {
+  let found = false;
+  const walk = (n) => {
+    if (found || !n || typeof n !== 'object') return;
+    if (Array.isArray(n)) { for (const x of n) walk(x); return; }
+    // Every form that can write a name: plain assignment, compound assignment,
+    // ++/--, an in-place edit, and a destructuring target.
+    if ((n.type === 'Assign' || n.type === 'CompoundAssign' || n.type === 'IncDec'
+         || n.type === 'InPlaceEdit') && n.name === name) { found = true; return; }
+    if (n.type === 'Destructure' || n.type === 'NamedDestruct') {
+      for (const t of (n.targets ?? [])) {
+        if ((t?.name ?? t) === name) { found = true; return; }
+      }
+    }
+    for (const k of Object.keys(n)) {
+      if (k === 'type' || k === 'line') continue;
+      walk(n[k]);
+    }
+  };
+  walk(node);
+  return found;
+}
+
+/**
+ * A stable key for the expressions that turn up as range bounds, so a guard can
+ * be matched against the bound it protects. `null` for anything more complex
+ * than a name, a field, an index or a `$#` over one of those — an unrecognized
+ * shape is simply not treated as guarded.
+ *
+ * Mirrors `TypeChecker::expr_key` in zymbol-semantic.
+ */
+function exprKey(e) {
+  if (!e) return null;
+  if (e.type === 'Group')  return exprKey(e.expr ?? e.inner);
+  if (e.type === 'Ident')  return e.name || null;
+  if (e.type === 'CollectionOp' && e.op === '$#') {
+    const k = exprKey(e.obj); return k === null ? null : `${k}$#`;
+  }
+  if (e.type === 'FieldAccess' && !e.scoped) {
+    const k = exprKey(e.obj); return k === null ? null : `${k}.${e.field}`;
+  }
+  if (e.type === 'Index' || e.type === 'NavIndex') {
+    const k = exprKey(e.obj ?? e.array); if (k === null) return null;
+    const ie = e.index ?? e.spec?.index;
+    const ik = exprKey(ie) ?? (ie?.type === 'Literal' ? String(ie.value) : null);
+    return ik === null ? null : `${k}[${ik}]`;
+  }
+  return null;
+}
+
+/**
+ * The range bounds a condition vouches for: both sides of any comparison it
+ * contains, including the operands of `&&`/`||` chains.
+ *
+ * Mirrors `TypeChecker::guarded_bounds`.
+ */
+function guardedBoundsOf(cond) {
+  const out = [];
+  const walk = (e) => {
+    const n = (e && e.type === 'Group') ? (e.expr ?? e.inner) : e;
+    if (!n || n.type !== 'BinOp') return;
+    if (['<', '>', '<=', '>=', '==', '<>'].includes(n.op)) {
+      for (const k of [exprKey(n.left), exprKey(n.right)]) if (k !== null) out.push(k);
+    } else if (n.op === '&&' || n.op === '||') {
+      walk(n.left); walk(n.right);
+    }
+  };
+  walk(cond);
+  return out;
+}
+
 class Checker {
   constructor(ast) {
     this.ast         = ast;
@@ -2644,6 +2736,7 @@ class Checker {
     this.stack       = [];
     this.pendingHot  = false; // prefix hot-def sentinel (°name)
     this.funcDepth   = 0;     // >0 inside a function or lambda body — see lifetimeWarnForIterator
+    this.guardedBounds = [];  // range bounds an enclosing `?` vouches for
     this.lifetimeWarned = new Set();
     // One entry per enclosing @ loop, innermost last; null for an unlabelled
     // loop. Emptied at a function or lambda boundary, because a callee does not
@@ -2829,7 +2922,10 @@ class Checker {
     const frame = this.stack.pop();
     for (const [name, info] of frame.vars) {
       if (!info.used && !name.startsWith('_') && !info.isConst) {
-        this.warn('W_UNUSED', `unused variable '${name}'`, info.line, { name });
+        this.warn('W_UNUSED',
+          `unused variable '${name}'\n` +
+          `= help: consider removing this variable or prefixing with '_' if intentionally unused`,
+          info.line, { name });
       }
     }
   }
@@ -3086,6 +3182,19 @@ class Checker {
     if (this.funcDepth > 0) return;
     if (name.startsWith('_')) return;
     if (preexisting) return;
+    // The iterator has to be MODIFIED inside the body. Measured 2026-08-26 over
+    // examples/: the CLI warned about 0 of 222 files and this warned about 121,
+    // because it fired on every top-level loop instead of on the condition the
+    // Rust analyzer actually tests (`AmbiguityReason::LoopVariant` — a variable
+    // assigned inside the loop, which is what makes its value ambiguous after
+    // the pass). A read-only `@ i:1..3 { >> i ¶ }` is not ambiguous and neither
+    // engine should say it is.
+    //
+    // The Rust analyzer has two further reasons — `ConditionalUse` and
+    // `MultipleExitPaths` — that are not detected here, so this UNDER-reports
+    // rather than over-reports. That is the right way round for a diagnostic
+    // that was firing on more than half the corpus.
+    if (!assignsWithin(stmt.body, name)) return;
     // Once per name, not once per loop. The CLI's analysis is a def-use chain *per
     // variable*, so a program that walks `i` through four separate loops is told about
     // `i` once, at the first one — measured on examples/tour/control.zy, where warning
@@ -3375,7 +3484,14 @@ class Checker {
       case 'If': {
         this.checkExpr(stmt.cond);
         this.warnNonBoolCondition(stmt.cond, 'if');
+        // A comparison in the condition guards the range bounds it names for the
+        // whole THEN block — `? n >= 2 { @ i:2..n … }` is the correct way to
+        // write that loop and must not be warned about. Only the then block, as
+        // `TypeChecker::check_statement` does: an else-if guards nothing here.
+        const guardDepth = this.guardedBounds.length;
+        this.guardedBounds.push(...guardedBoundsOf(stmt.cond));
         this.push(); this.checkBlock(stmt.then); this.pop();
+        this.guardedBounds.length = guardDepth;
         for (const elif of (stmt.elseifs ?? [])) {
           this.checkExpr(elif.cond);
           this.warnNonBoolCondition(elif.cond, 'else-if');
@@ -3400,6 +3516,25 @@ class Checker {
           this.checkExpr(stmt.from);
           this.checkExpr(stmt.to);
           if (stmt.step) this.checkExpr(stmt.step);
+          // A range infers its DIRECTION from its endpoints, so `i:2..n` is not
+          // an empty range when n is 1 — it counts down, from 2 to 1, which is
+          // how "walk the rest of the list" walks off the front of a
+          // one-element list. Say so when the direction cannot be read off the
+          // source, and say nothing when an enclosing `?` already vouches for
+          // the end. Mirrors zymbol-semantic's TypeChecker.
+          const isIntLit = (e) => {
+            const n = (e && e.type === 'Group') ? (e.expr ?? e.inner) : e;
+            return n?.type === 'Literal' && n.kind === 'int';
+          };
+          const endKey = exprKey(stmt.to);
+          const guarded = endKey !== null && this.guardedBounds.includes(endKey);
+          if (!guarded && !(isIntLit(stmt.from) && isIntLit(stmt.to))) {
+            this.warn('W_RANGE_DIR',
+              'range direction is decided at runtime: if the end turns out to be ' +
+              'lower than the start, this loop counts down instead of not running. ' +
+              'Guard the empty case.',
+              stmt.line ?? null);
+          }
           if (stmt.var) this.define(stmt.var, stmt.line, false);
         } else if (stmt.cond) {
           this.checkExpr(stmt.cond);
@@ -3736,14 +3871,19 @@ class Checker {
           const first = kinds[0];
           const bad = kinds.findIndex(k => norm(k) !== norm(first));
           if (bad > 0 && !expr.declaredMixed) {
+            // The guidance goes on its own `help:` line, not folded into the
+            // headline with an em dash: the Rust engines emit two lines and
+            // `zyq consensus` compares the text.
             this.error('E_ARRAY_MIX',
               `array element ${bad + 1} has type ${kinds[bad]}, but expected ${first} ` +
-              `(same as first element) — write \`#[…]\` if the mix is deliberate`,
+              `(same as first element)\n` +
+              `= help: all array elements must have the same type — write \`#[…]\` if the mix is deliberate`,
               expr.line);
           } else if (bad < 0 && expr.declaredMixed) {
             // Decision 18: the escape hatch used where it is not needed.
             this.warn('W_MIX_UNNEEDED',
-              `this \`#[…]\` has no mixed types: every element is ${first} — use \`[…]\``,
+              `this \`#[…]\` has no mixed types: every element is ${first}\n` +
+              `= help: use \`[…]\` — \`#[…]\` is for declaring a mix that is deliberate`,
               expr.line);
           }
         }
@@ -3811,6 +3951,21 @@ class Checker {
       // the element has to fit (L46). The deep form `m[i>j]$~ v` is
       // `DeepUpdate` and is not decided here: the outer type says nothing about
       // what lands two levels down, which is what the analyser also concludes.
+      // A deep write's PATH holds expressions, and each one is a use: without
+      // this case `config[step>"port"]$~ 9` never visited `step`, so a variable
+      // that the program plainly reads was reported as unused. The Rust
+      // analyzer walks the path and says nothing.
+      case 'DeepUpdate': {
+        this.checkExpr(expr.obj);
+        for (const atom of (expr.path ?? [])) {
+          if (atom.expr)  this.checkExpr(atom.expr);
+          if (atom.from)  this.checkExpr(atom.from);
+          if (atom.to)    this.checkExpr(atom.to);
+        }
+        if (expr.value !== undefined) this.checkExpr(expr.value);
+        return;
+      }
+
       case 'FuncUpdate': {
         this.checkExpr(expr.obj);
         if (expr.index !== undefined) this.checkExpr(expr.index);
@@ -4106,10 +4261,14 @@ function deepUpdateValue(col, indices, newVal) {
     return { type:'tuple', v:r, keys:col.keys };
   }
   const len = col.v?.length ?? 0;
-  if (i === 0) throw new ZyRuntimeError('Index 0 is invalid (indices start at 1)', '##Index');
+  if (i === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
   const idx = i < 0 ? len + i : i - 1;
+  // Name the container, as the read path does: one message that always said
+  // "collection" made the same overflow read differently depending on whether
+  // it was being read or written.
+  const container = col.type === 'arr' ? 'array' : col.type === 'str' ? 'string' : 'tuple';
   if (idx < 0 || idx >= len)
-    throw new ZyError(`index out of bounds: index ${i} for collection of length ${len}`);
+    throw new ZyError(`${container} index out of bounds: index ${i} for ${container} of length ${len}`);
   const sub        = col.v[idx];
   const updatedSub = deepUpdateValue(sub, indices.slice(1), newVal);
   if (col.type === 'arr')   { const r = [...col.v]; r[idx] = updatedSub; return mkArr(r); }
@@ -4535,6 +4694,10 @@ const TYPESYM_BY_TAG = {
 function typeSymbolBase(v) {
   if (v?.type === 'func') return v.name === '<lambda>' ? TYPESYM.LAMBDA : TYPESYM.FUNCTION;
   if (v?.type === 'tuple') return isDict(v) ? TYPESYM.DICT : TYPESYM.TUPLE;
+  // An error names its OWN kind — `##Index`, `##IO` — not the generic `##_`.
+  // `typeMetadata` already knew that and this did not, so `#?` answered
+  // `##Index` while a diagnostic naming the same value answered `##_`.
+  if (v?.type === 'error') return v.errType ?? TYPESYM.UNIT;
   return TYPESYM_BY_TAG[v?.type] ?? TYPESYM.UNIT;
 }
 
@@ -5528,7 +5691,7 @@ export class Interpreter {
       case 'IndexAssign': {
         const col = env.get(stmt.obj);
         const i   = (await this.eval(stmt.index, env)).v;
-        if (i === 0) throw new ZyRuntimeError('Index 0 is invalid (indices start at 1)', '##Index');
+        if (i === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
         const val = await this.eval(stmt.value, env);
         const idx = i < 0 ? col.v.length + i : i - 1;
         let updated;
@@ -5564,11 +5727,17 @@ export class Interpreter {
 
       case 'NamedDestruct': {
         const tup = await this.eval(stmt.value, env);
-        if (tup.type !== 'tuple' || !tup.keys)
-          throw new ZyError('Named destructuring requires a named tuple');
+        if (!isDict(tup))
+          throw new ZyError(
+            `the pattern #(…) requires a dictionary, got ${typeSymbolBase(tup)}\n` +
+            `help: #(key: name) = d unpacks a dictionary; use (a, b) for a tuple, [a, b] for an array`);
         for (const { field, name } of stmt.targets) {
           const i = tup.keys.indexOf(field);
-          if (i < 0) throw new ZyError(`Unknown field '${field}'`);
+          // ##Key, exactly as reading the key would raise: binding nothing made
+          // the pattern succeed with the name empty (the tree-walker did too,
+          // until v0.0.9 — decision 10 refuses the silent undefined).
+          if (i < 0) throw new ZyRuntimeError(
+            Interpreter.missingKeyMsg(field, tup.keys), '##Key');
           const val = tup.v[i];
           if (!env.set(name, val)) env.def(name, val);
         }
@@ -6028,8 +6197,16 @@ export class Interpreter {
           return obj.exports.get(expr.field);
         }
         if (aliasMod && aliasMod.exports.has(expr.field)) return aliasMod.exports.get(expr.field);
-        if (obj.type !== 'tuple' || !obj.keys)
-          throw new ZyError(`'${expr.scoped ? '::' : '.'}${expr.field}' requires a named tuple`);
+        // The wording family the Rust engines use, verbatim — `zyq consensus`
+        // compares the text, and "named tuple" is the retired vocabulary.
+        if (obj.type === 'tuple' && !obj.keys)
+          throw new ZyError(
+            `a positional tuple is addressed by position, not by name: '${expr.field}'\n` +
+            `help: use t[1] — names live in a dictionary, #(key: value)`);
+        if (!isDict(obj))
+          throw new ZyError(
+            `the dot reaches a dictionary key, and this is ${typeSymbolBase(obj)}\n` +
+            `help: use d.${expr.field} on a #(…) — for a position, use x[1]`);
         const i = obj.keys.indexOf(expr.field);
         // ##Key, not ##_: an absent key is its own kind whichever way the
         // reader arrived — through the dot or through the bracket (decision 10).
@@ -6051,8 +6228,10 @@ export class Interpreter {
 
         // String field name — named tuple only (G2)
         if (iVal.type === 'str') {
-          if (arr.type !== 'tuple' || !arr.keys)
-            throw new ZyError(`$~ string index requires a named tuple`);
+          if (!isDict(arr))
+            throw new ZyError(
+              `$~ writes into a collection, and this is ${typeSymbolBase(arr)}\n` +
+              `help: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`);
           const fi = arr.keys.indexOf(iVal.v);
           // A key that is not there gets ADDED, as `d[k] = v` does in Python.
           // The array refuses the same move (decision 13) and the two are not
@@ -6074,11 +6253,12 @@ export class Interpreter {
 
         // Integer 1-based index
         const i = iVal.v;
-        if (i === 0) throw new ZyRuntimeError('Index 0 is invalid (indices start at 1)', '##Index');
+        if (i === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
         const len = arr.type === 'str' ? [...arr.v].length : (arr.v?.length ?? 0);
         const idx = i < 0 ? len + i : i - 1;
+        const container = arr.type === 'arr' ? 'array' : arr.type === 'str' ? 'string' : 'tuple';
         if (idx < 0 || idx >= len)
-          throw new ZyError(`index out of bounds: index ${i} for collection of length ${len}`);
+          throw new ZyError(`${container} index out of bounds: index ${i} for ${container} of length ${len}`);
         if (arr.type === 'arr')   { const r = [...arr.v]; r[idx] = val; return mkArr(r); }
         if (arr.type === 'str')   { const r = [...arr.v]; r[idx] = this.display(val); return mkStr(r.join('')); }
         if (arr.type === 'tuple') { const r = [...arr.v]; r[idx] = val; return { type:'tuple', v:r, keys:arr.keys }; }
@@ -6337,13 +6517,13 @@ export class Interpreter {
     }
     if (obj.type === 'tuple') {
       const i = idx < 0 ? obj.v.length + idx : idx - 1;
-      if (i < 0 || i >= obj.v.length) throw new ZyRuntimeError(`array index out of bounds: index ${idx} for array of length ${obj.v.length}`, '##Index');
+      if (i < 0 || i >= obj.v.length) throw new ZyRuntimeError(`tuple index out of bounds: index ${idx} for tuple of length ${obj.v.length}`, '##Index');
       return obj.v[i] ?? mkUnit();
     }
     if (obj.type === 'str') {
       const chars = [...obj.v];
       const i = idx < 0 ? chars.length + idx : idx - 1;
-      if (i < 0 || i >= chars.length) throw new ZyRuntimeError(`array index out of bounds: index ${idx} for array of length ${chars.length}`, '##Index');
+      if (i < 0 || i >= chars.length) throw new ZyRuntimeError(`string index out of bounds: index ${idx} for string of length ${chars.length}`, '##Index');
       return mkChar(chars[i]);
     }
     throw new ZyError(`Cannot subscript ${obj.type}`);
@@ -6404,7 +6584,7 @@ export class Interpreter {
   typeMetadata(val) {
     // An error answers with its own code (`##IO`, `##Time`, …); everything else
     // goes through the shared table, which is where `##[` and `##(` come from.
-    const sym = val.type === 'error' ? (val.errType ?? TYPESYM.UNIT) : typeSymbol(val);
+    const sym = val.type === 'error' ? typeSymbolBase(val) : typeSymbol(val);
     let count;
     switch (val.type) {
       case 'int':   count = String(Math.abs(val.v)).length; break;
@@ -6415,6 +6595,9 @@ export class Interpreter {
       case 'arr':   count = val.v.length; break;
       case 'tuple': count = val.v.length; break;
       case 'func':  count = val.params?.length ?? 0; break;
+      // An error counts its MESSAGE, as the tree-walker does (`data_ops.rs`);
+      // answering 0 made the same value report 57 under one engine and 0 here.
+      case 'error': count = [...(val.v ?? '')].length; break;
       default:      count = 0;
     }
     return { type: 'tuple', v: [mkStr(sym), mkInt(count), val], keys: null };
@@ -6482,7 +6665,7 @@ export class Interpreter {
 
     // 1-based index resolution for collection ops
     const resolveIdx = (n, len) => {
-      if (n === 0) throw new ZyRuntimeError('Index 0 is invalid (indices start at 1)', '##Index');
+      if (n === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
       return n < 0 ? len + n : n - 1;
     };
     const idx = async () => {
@@ -7174,8 +7357,13 @@ export class Interpreter {
     if (val.type === 'bool') return val.v ? '#1' : '#0';
     if (val.type === 'arr')  return '[' + val.v.map(nested).join(', ') + ']';
     if (val.type === 'tuple') {
-      if (val.keys?.some(k => k !== null))
-        return '(' + val.v.map((item, i) => `${val.keys[i]}: ${nested(item)}`).join(', ') + ')';
+      // `#(…)`, the way the literal is written: a dictionary printed as
+      // `(a: 1)` could not be typed back in — that spelling is refused since
+      // v0.0.9 — and `()` would be the empty tuple as well. `isDict` and not
+      // `keys?.some(…)`: the empty dictionary has an empty `keys`, and the
+      // thirteenth site to ask the question by hand would have called it a tuple.
+      if (isDict(val))
+        return '#(' + val.v.map((item, i) => `${val.keys[i]}: ${nested(item)}`).join(', ') + ')';
       return '(' + val.v.map(nested).join(', ') + ')';
     }
     if (val.type === 'func') {
@@ -7199,8 +7387,13 @@ export class Interpreter {
     if (val.type === 'bool')  return numeralBool(val.v, m);
     if (val.type === 'arr')   return '[' + val.v.map(nested).join(', ') + ']';
     if (val.type === 'tuple') {
-      if (val.keys?.some(k => k !== null))
-        return '(' + val.v.map((item, i) => `${val.keys[i]}: ${nested(item)}`).join(', ') + ')';
+      // `#(…)`, the way the literal is written: a dictionary printed as
+      // `(a: 1)` could not be typed back in — that spelling is refused since
+      // v0.0.9 — and `()` would be the empty tuple as well. `isDict` and not
+      // `keys?.some(…)`: the empty dictionary has an empty `keys`, and the
+      // thirteenth site to ask the question by hand would have called it a tuple.
+      if (isDict(val))
+        return '#(' + val.v.map((item, i) => `${val.keys[i]}: ${nested(item)}`).join(', ') + ')';
       return '(' + val.v.map(nested).join(', ') + ')';
     }
     return this.display(val);

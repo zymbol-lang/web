@@ -330,18 +330,24 @@
       "id": "data",
       "icon": "📚",
       "title": "Data",
-      "desc": "Arrays, tuples and the $ collection operators",
+      "desc": "The four collections — array, tuple, dictionary — and the $ operators",
       "categories": [
         {
           "id": "collections",
           "icon": "🧺",
           "title": "Collections $",
-          "desc": "Arrays, tuples, named tuples and their operators",
+          "desc": "The array […] #[…], the tuple (…) and the $ operators",
           "entries": [
             {
               "id": "collections-array",
               "title": "Array",
               "path": "collections/array.zy"
+            },
+            {
+              "id": "collections-array-mixed",
+              "title": "Array: […] and #[…]",
+              "path": "collections/array-mixed.zy",
+              "desc": "[…] and #[…] are one type: the mix is declared, and read from what it holds"
             },
             {
               "id": "collections-array-value-semantics",
@@ -352,21 +358,6 @@
               "id": "collections-tuple",
               "title": "Tuple",
               "path": "collections/tuple.zy"
-            },
-            {
-              "id": "collections-named-tuple",
-              "title": "Named tuple",
-              "path": "collections/named-tuple.zy"
-            },
-            {
-              "id": "collections-field-access",
-              "title": "Field access .",
-              "path": "collections/field-access.zy"
-            },
-            {
-              "id": "collections-nested-field",
-              "title": "Nested .field",
-              "path": "collections/nested-field.zy"
             },
             {
               "id": "collections-string-tuple",
@@ -441,10 +432,66 @@
           ]
         },
         {
+          "id": "dictionary",
+          "icon": "🗝️",
+          "title": "Dictionary #(…)",
+          "desc": "Addressed by key, and only by key — this is already JSON",
+          "entries": [
+            {
+              "id": "dict-basics",
+              "title": "Dictionary",
+              "path": "collections/dictionary/basics.zy",
+              "desc": "The literal, the dot and the bracket"
+            },
+            {
+              "id": "dict-computed-key",
+              "title": "Dictionary: computed key",
+              "path": "collections/dictionary/computed-key.zy",
+              "desc": "A key chosen at run time — what makes it a dictionary, not a record"
+            },
+            {
+              "id": "dict-absent-key",
+              "title": "Dictionary: an absent key",
+              "path": "collections/dictionary/absent-key.zy",
+              "desc": "$? asks about the key; reaching anyway raises ##Key"
+            },
+            {
+              "id": "dict-edit",
+              "title": "Dictionary: modify, add, remove",
+              "path": "collections/dictionary/edit.zy",
+              "desc": "Modify, add and remove — and the rule of the result"
+            },
+            {
+              "id": "dict-walk",
+              "title": "Dictionary: walking",
+              "path": "collections/dictionary/walk.zy",
+              "desc": "@ k:d yields the keys; @ (k,v):d yields both halves"
+            },
+            {
+              "id": "dict-nested-json",
+              "title": "Dictionary: nesting is JSON",
+              "path": "collections/dictionary/nested-json.zy",
+              "desc": "Nesting is JSON — no separate type was needed"
+            },
+            {
+              "id": "dict-deep-path",
+              "title": "Dictionary: the deep path",
+              "path": "collections/dictionary/deep-path.zy",
+              "desc": "The navigator, and mixing the dot with the bracket"
+            },
+            {
+              "id": "dict-by-key-only",
+              "title": "Dictionary: by key, never by position",
+              "path": "collections/dictionary/by-key-only.zy",
+              "desc": "The position is not an address"
+            }
+          ]
+        },
+        {
           "id": "destructuring",
           "icon": "🎁",
           "title": "Destructuring",
-          "desc": "Unpacking arrays and tuples, rest * and skip _",
+          "desc": "Unpacking arrays, tuples and dictionaries, rest * and skip _",
           "entries": [
             {
               "id": "destructuring-array",
@@ -467,9 +514,9 @@
               "path": "destructuring/tuple.zy"
             },
             {
-              "id": "destructuring-named-fields",
-              "title": "Named fields",
-              "path": "destructuring/named-fields.zy"
+              "id": "destructuring-dictionary",
+              "title": "Dictionary fields",
+              "path": "destructuring/dictionary.zy"
             },
             {
               "id": "destructuring-swap",

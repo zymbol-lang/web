@@ -57,6 +57,7 @@ const SRC = [
   'contador = 0',
   '@ i:1..3 {',
   '    >> i ¶',
+  '    i += 1',
   '}',
   'PI = 4',
 ].join('\n');
@@ -112,7 +113,7 @@ const gutterEl = document.getElementById('editor-gutter');
 const numbers = [...gutterEl.querySelectorAll('.gl')];
 ok('one number per source line', numbers.length === SRC.split('\n').length,
    `${numbers.length} numbers for ${SRC.split('\n').length} lines`);
-ok('the numbers count from 1', numbers.map(n => n.textContent.trim()).join(',') === '1,2,3,4,5,6',
+ok('the numbers count from 1', numbers.map(n => n.textContent.trim()).join(',') === '1,2,3,4,5,6,7',
    numbers.map(n => n.textContent.trim()).join(','));
 
 let worst = 0, worstAt = 0;
@@ -161,8 +162,8 @@ ok('exactly the error is listed', items.length === 1,
    `${items.length}: ${items.map(i => i.textContent.trim()).join(' | ')}`);
 ok('it is the constant reassignment', Boolean(items[0]?.textContent.includes('PI')),
    items[0]?.textContent.trim());
-ok('its line is tinted', Boolean(highlight.querySelector('.hl-line[data-l="6"].has-error')));
-ok('and so is its number', Boolean(gutterEl.querySelector('.gl[data-l="6"].has-error')));
+ok('its line is tinted', Boolean(highlight.querySelector('.hl-line[data-l="7"].has-error')));
+ok('and so is its number', Boolean(gutterEl.querySelector('.gl[data-l="7"].has-error')));
 ok('warnings stay out of the way until asked',
    !items.some(i => i.textContent.includes('vida')));
 
