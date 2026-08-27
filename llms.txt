@@ -27,6 +27,10 @@ interpreter repository is authoritative where the two disagree.
 - [Manual (English)](https://zymbol-lang.org/data/manuals/manual_en.md): variables, control flow, collections, functions, modules, errors.
 - [Manual (Spanish)](https://zymbol-lang.org/data/manuals/manual_es.md): the same manual in Spanish.
 
+## Embedding the engine
+
+- [LLM.md](https://zymbol-lang.org/LLM.md): the browser engine (`zyjs`) for agents — what it does not have that the CLI does (shell, `std/db`, a real filesystem, a terminal), and a complete, verified Node host: `runZymbol` arguments, the module-resolver and TUI contracts, execution limits, and running a `.zyp`.
+
 ## Skill
 
 - [write-zymbol](https://zymbol-lang.org/.well-known/agent-skills/write-zymbol/SKILL.md): the skill to load before writing Zymbol — syntax, and the mistakes that parse but behave wrong. Indexed at [/.well-known/agent-skills/index.json](https://zymbol-lang.org/.well-known/agent-skills/index.json) with a SHA-256 digest.
