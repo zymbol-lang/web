@@ -107,6 +107,17 @@ export function highlightLine(line, inBlockComment) {
         const cs = pfx==='b' ? /[01]/ : pfx==='o' ? /[0-7]/ : pfx==='d' ? /\d/ : /[0-9a-fA-F]/;
         let j = i+2;
         while (j < len && cs.test(s[j])) j++;
+        // A prefix that matched no digit at all is a MALFORMED literal — the
+        // lexer refuses `0b22` with `expected binary digits after base prefix`.
+        // The highlighter cannot refuse anything, but it must not leave the rest
+        // bare either: `0b` came out marked and `22` came out of nothing, so the
+        // two digits were uncolourable and, because this file is the hover
+        // index, unaskable. The digits are not reachable by the number branch
+        // afterwards — it requires the previous character not to be `\w`, and
+        // the previous character is the `b`. So the whole malformed run is one
+        // span. Found by ZyDDT's `diagnostic` axis, which is where `0b22` lives;
+        // no corpus file writes one.
+        if (j === i + 2) while (j < len && /\w/.test(s[j])) j++;
         out += op('t-num', s.slice(i,j), '0x');
         i = j; continue;
       }
