@@ -34,7 +34,7 @@ if (!file) {
   process.exit(2);
 }
 
-const { runZymbol, checkSource, moduleAritiesFor, moduleOutSlotsFor, Lexer, Parser } =
+const { runZymbol, checkSource, moduleAritiesFor, moduleOutSlotsFor, moduleNameErrors, Lexer, Parser } =
   await import('../src/zymbol/zymbol.js');
 
 // ─── stdin feed ───────────────────────────────────────────────────────────────
@@ -105,10 +105,16 @@ const source = readFileSync(abs, 'utf8');
 // down. Parsing twice costs nothing at this size and keeps the two paths honest.
 let moduleArities = new Map();
 let moduleOutSlots = new Map();
+let moduleNameDiags = [];
 try {
   const ast = new Parser(new Lexer(source).tokenize()).parse();
   moduleArities = await moduleAritiesFor(ast, resolver, abs);
   moduleOutSlots = await moduleOutSlotsFor(ast, resolver, abs);
+  // E001 over the imports. Same plumbing as the two tables above and for the
+  // same reason: `checkSource` has no resolver, and this is a STATIC refusal —
+  // the two Rust engines make it before running, so it has to be formatted with
+  // the other static diagnostics rather than by the engine's own printer.
+  moduleNameDiags = await moduleNameErrors(ast, resolver, abs);
 } catch {
   // A source that does not parse is reported by checkSource below.
 }
@@ -134,10 +140,15 @@ function formatDiagnostic(severity, d) {
   let out = `${severity}: ${head}\n`;
   if (d.line != null) out += `  --> line ${d.line}\n`;
   for (const line of rest) out += `  ${line}\n`;
+  // The guidance arrives as its own field, as it does from Rust's `Diagnostic`,
+  // and is printed the way the CLI prints it. Engines that fold it into the
+  // message still work — `rest` above carries those — but nothing new should.
+  if (d.help) out += `  = help: ${d.help}\n`;
   return out;
 }
 
-const { diagnostics } = checkSource(source, { moduleArities, moduleOutSlots });
+const { diagnostics: ownDiags } = checkSource(source, { moduleArities, moduleOutSlots });
+const diagnostics = [...ownDiags, ...moduleNameDiags];
 // Warnings go out too, which they did not before: this engine COMPUTED them and
 // the harness dropped them on the floor, so an unused variable was flagged by
 // the two Rust engines and silent here (DM-07). It looked like an engine gap for
@@ -215,7 +226,7 @@ try {
   // now, exactly as it is under `zymbol run`.
   const limits = { maxSteps: Infinity, maxBytes: Infinity, maxInfiniteIter: Infinity };
   // eslint-disable-next-line no-unused-vars -- assigned below, read at the foot
-  const result = await runZymbol(source, inputFn, onOutput, resolver, abs, ansiTui, [], { onError, ...limits });
+  const result = await runZymbol(source, inputFn, onOutput, resolver, abs, ansiTui, [], { onError, skipModuleNames: true, ...limits });
   if (result && result.failed) {
     failed = true;
     message = result.message ?? 'engine reported failure';

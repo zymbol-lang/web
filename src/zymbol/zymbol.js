@@ -340,6 +340,16 @@ const OUTPUT_STOP_OPS = {
   AND: '&&', OR: '||', PIPE: '|>',
 };
 
+// The guidance for a comparison written bare in an output argument. `>>` has a
+// narrower grammar than the rest of the language (REFERENCE.md L39), and this
+// is by far the commonest way to meet that edge.
+//
+// Held here, beside the operators it is about, rather than at the throw site:
+// `zyquality/messages/` reads both engines' sources and compares the prose, and
+// this text has to be findable as prose, not buried in a parser method.
+const OUTPUT_GRAMMAR_HELP = op =>
+  `'>>' takes arithmetic; parenthesise a comparison  →  >> (a ${op} b) ¶`;
+
 class ZyReturn  { constructor(value) { this.value = value; } }
 class ZyBreak    { constructor(label = null) { this.label = label; } }
 class ZyContinue { constructor(label = null) { this.label = label; } }
@@ -361,7 +371,20 @@ class ZyRuntimeError extends ZyError {
   }
 }
 class ZyStaticError extends Error {
-  constructor(msg) { super(msg); }
+  // The line goes in `zyLine`, which is where `checkSource` reads it from —
+  // exactly as `ZyError` does. It used to be dropped: the constructor took one
+  // argument and three throw sites were already passing two, so a lexer error
+  // reached the user with no position at all and neither the playground nor an
+  // editor had anywhere to jump to (ZYJS-002).
+  //
+  // `help` is a field for the same reason it is one in Rust's `Diagnostic`: the
+  // `=` of `= help:` is what separates the guidance from the message, so a
+  // guidance concatenated onto the message is separated by nothing.
+  constructor(msg, line, help = null) {
+    super(msg);
+    this.zyLine = line;
+    this.zyHelp = help;
+  }
 }
 
 // Thin-space grouping for the execution-limit messages, so they quote the limit that was
@@ -547,7 +570,7 @@ export class Lexer {
           while (_j < this.src.length && (this.src[_j] === ' ' || this.src[_j] === '\t')) _j++;
           if (_j < this.src.length && this.src[_j] === '.') _j++; // optional leading dot
           const _idStart = _j;
-          while (_j < this.src.length && /[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(this.src[_j])) _j++;
+          while (_j < this.src.length && /[\p{L}\p{M}\p{N}\p{So}\p{Co}_]/u.test(this.src[_j])) _j++;
           if (_j > _idStart) {
             let _k = _j;
             while (_k < this.src.length && (this.src[_k] === ' ' || this.src[_k] === '\t')) _k++;
@@ -638,14 +661,14 @@ export class Lexer {
           // @:label — labeled loop, break, or continue
           this.consume();
           let label = '';
-          while (/[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(this.ch())) label += this.consume();
+          while (/[\p{L}\p{M}\p{N}\p{So}\p{Co}_]/u.test(this.ch())) label += this.consume();
           if (this.ch() === '!') { this.consume(); tok('AT_BREAK', label); }
           else if (this.ch() === '>') { this.consume(); tok('AT_CONT',  label); }
           else tok('AT_LABEL', label);
         } else if (/[\p{L}\p{M}\p{So}\p{Co}_]/u.test(this.ch())) {
           // @label (legacy: label without colon)
           let label = '';
-          while (/[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(this.ch())) label += this.consume();
+          while (/[\p{L}\p{M}\p{N}\p{So}\p{Co}_]/u.test(this.ch())) label += this.consume();
           tok('AT_LABEL', label);
         } else {
           tok('AT', '@');
@@ -689,6 +712,17 @@ export class Lexer {
       if (/[0-9]/.test(c) || digitValue(c) >= 0) { this.readNumber(toks); continue; }
       if (c === '"') { this.readString(toks); continue; }
       if (c === "'") { this.readChar(toks); continue; }
+      // An identifier STARTS with a letter (never a digit — a digit here is a
+      // number, in any of the 69 scripts) and CONTINUES with `\p{N}` as well,
+      // because that is what the Rust lexer's `is_ident_continue` does:
+      // `is_alphanumeric()`, and `२`.is_alphanumeric() is true.
+      //
+      // It used to continue on `0-9` alone, so `कार्यस्थितिः२` lexed as an
+      // identifier, a NUMBER and then the `=` — and `parsePrimary`'s catch-all
+      // swallowed the `=` and left a statement that did nothing. Chaturanga is
+      // written in Sanskrit and names variables that way; the file ran here
+      // with a wrong parse and correctly under both Rust engines, and nothing
+      // said so. Closing ZYJS-001 is what turned it into a visible refusal.
       if (/[\p{L}\p{M}\p{So}\p{Co}]/u.test(c)) { this.readIdent(toks); continue; }
 
       const single = {
@@ -705,7 +739,10 @@ export class Lexer {
       // and the rest as two more values to juxtapose, so the answer came out
       // with a tail nobody asked for. Both Rust engines refuse it in the lexer.
       if (c === '!' && this.ch(1) === '=') {
-        throw new ZyStaticError("'!=' is not a valid Zymbol operator — use '<>' for not-equal", this.line);
+        throw new ZyStaticError(
+          "'!=' is not a valid Zymbol operator",
+          this.line,
+          "use '<>' for not-equal  →  a <> b");
       }
       if (single[c]) { this.consume(); tok(single[c], c); continue; }
 
@@ -718,6 +755,12 @@ export class Lexer {
 
   readNumber(toks) {
     // Handle base literals: 0x (hex), 0b (binary), 0o (octal), 0d (decimal explicit)
+    //
+    // ZYJS-003: each of the four `while` loops can match nothing — `0x`, `0xZZ`
+    // — and `String.fromCodePoint(parseInt('', 16))` is `String.fromCodePoint(NaN)`,
+    // which throws `RangeError: Invalid code point NaN`. A JavaScript exception
+    // was reaching the user as the language's diagnostic. Each guard raises the
+    // refusal the two Rust engines raise, named for its own base.
     if (this.ch() === '0') {
       const next = this.ch(1);
       if (next === 'x' || next === 'X') {
@@ -725,6 +768,7 @@ export class Lexer {
         this.consume(); this.consume();
         let hex = '';
         while (/[0-9a-fA-F]/.test(this.ch())) hex += this.consume();
+        if (!hex) throw new ZyStaticError(`expected ${'hexadecimal'} digits after base prefix`, this.line);
         toks.push({ type: 'CHAR', value: String.fromCodePoint(parseInt(hex, 16)), line: this.line }); return;
       }
       if (next === 'b' || next === 'B') {
@@ -732,6 +776,7 @@ export class Lexer {
         this.consume(); this.consume();
         let bin = '';
         while (this.ch() === '0' || this.ch() === '1') bin += this.consume();
+        if (!bin) throw new ZyStaticError(`expected ${'binary'} digits after base prefix`, this.line);
         toks.push({ type: 'CHAR', value: String.fromCodePoint(parseInt(bin, 2)), line: this.line }); return;
       }
       if (next === 'o' || next === 'O') {
@@ -739,6 +784,7 @@ export class Lexer {
         this.consume(); this.consume();
         let oct = '';
         while (/[0-7]/.test(this.ch())) oct += this.consume();
+        if (!oct) throw new ZyStaticError(`expected ${'octal'} digits after base prefix`, this.line);
         toks.push({ type: 'CHAR', value: String.fromCodePoint(parseInt(oct, 8)), line: this.line }); return;
       }
       if (next === 'd' || next === 'D') {
@@ -746,6 +792,7 @@ export class Lexer {
         this.consume(); this.consume();
         let dec = '';
         while (/[0-9]/.test(this.ch())) dec += this.consume();
+        if (!dec) throw new ZyStaticError(`expected ${'decimal'} digits after base prefix`, this.line);
         toks.push({ type: 'CHAR', value: String.fromCodePoint(parseInt(dec, 10)), line: this.line }); return;
       }
     }
@@ -791,7 +838,14 @@ export class Lexer {
         return;
       }
       if (!inIntRange(value))
-        throw new ZyStaticError(`integer literal out of range: '${value}' (integers range from ${ZY_INT_MIN} to ${ZY_INT_MAX})`);
+        // The guidance is a `= help:` line, not a parenthesis inside the
+        // message. The `=` is not decoration: it is what separates the guidance
+        // from the message, and everything downstream — the harness, the
+        // playground, `zyq` — reads that grafía.
+        throw new ZyStaticError(
+          `integer literal out of range: '${value}'`,
+          this.line,
+          ZY_INT_RANGE_HELP);
       toks.push({ type: 'NUM', value, line: this.line });
     }
   }
@@ -902,7 +956,7 @@ export class Lexer {
       // same PUA sub-range for both letters and that script's own digits, so
       // breaking here would truncate real identifiers mid-word (HLZ-KL-001-
       // adjacent parity gap, found via klingon_galaxy/HuD.zy).
-      if (/[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(c)) { s += this.consume(); continue; }
+      if (/[\p{L}\p{M}\p{N}\p{So}\p{Co}_]/u.test(c)) { s += this.consume(); continue; }
       // `'` continues an identifier once one has begun — `Lexer::is_ident_continue`
       // in Rust admits any non-whitespace, non-operator character, and the
       // apostrophe is not an operator. Klingon needs it (`mI'`, `tlhIngan Hol`),
@@ -924,7 +978,8 @@ export class Lexer {
       if (prev && prev.type === 'IDENT' && prev.hot === true && prev.value === '') {
         throw new ZyStaticError(
           `ambiguous hot-definition markers on '${s}': ` +
-          `use either '°${s}' (anchors above loop) or '${s}°' (anchors at loop), not both`);
+          `use either '°${s}' (anchors above loop) or '${s}°' (anchors at loop), not both`,
+          this.line);
       }
     }
     toks.push({ type: 'IDENT', value: s, hot, line: this.line });
@@ -1020,6 +1075,11 @@ export class Parser {
   }
 
   parseModuleBlock() {
+    // The line of the `#` itself: E001 points at the declaration, which is
+    // where the reader has to edit, and it is the line both Rust engines
+    // report. The node carried none, so the browser engine's E001 arrived
+    // without a position (GLB-005).
+    const line = this.peek()?.line ?? null;
     this.adv(); // consume HASH
     let name = '';
     if (this.check('DOT')) { this.adv(); name += '.'; }
@@ -1027,7 +1087,7 @@ export class Parser {
     this.eat('LBRACE');
     const body = this.parseStmtList();
     this.eat('RBRACE');
-    return { type: 'ModuleBlock', name, body };
+    return { type: 'ModuleBlock', name, body, line };
   }
 
   parseImport() {
@@ -1165,24 +1225,58 @@ export class Parser {
   // open `<#`, `<~` and close `>>|`. `parseAdditive` is exactly the Rust cut —
   // arithmetic and below, comparison and the logical operators above it — so
   // `>> (1 == 1) ¶` is the form that works, in every engine.
+  // Where an output's argument list ENDS, other than at `¶`.
+  //
+  // A second `>>` on the same line is a chained output — `>> "a: " >> n ¶` is
+  // two statements, and both Rust engines break here (`parse_output`, io.rs).
+  // This engine had no such rule and got the right answer by accident: the `>>`
+  // fell through to `parsePrimary`'s catch-all, came back as a Unit literal, and
+  // Unit prints as nothing. Removing that catch-all (ZYJS-001) is what made the
+  // hole visible — 18 corpus files at once, all of them chained output.
+  //
+  // The rest are the statement initiators, spelled as `parse_output` spells
+  // them: a statement that begins on the same line ends the output.
+  static OUTPUT_END = new Set([
+    'OUTPUT', 'SEMI',
+    'IF', 'MATCH', 'AT', 'AT_LABEL', 'AT_BREAK', 'AT_CONT', 'ATSLEEP',
+    'INPUT', 'KEY_BLOCK', 'KEY_NONBLOCK',
+    'OUTPUT_CLEAR', 'OUTPUT_POS', 'OUTPUT_GATE',
+    'RETURN',
+  ]);
+
   parseOutput() {
     const opLine = this.adv().line;
     const items = [];
     while (!this.check('PILCROW') && !this.check('NEWLINE_ESC') &&
            !this.check('RBRACE') && !this.check('EOF')) {
       if (this.peek().line > opLine) break;
+      if (items.length > 0 && Parser.OUTPUT_END.has(this.peek().type)) break;
       items.push(this.parseAdditive());
       // Refusing has to be explicit. Narrowing the call alone was worse than the
       // bug: `>> 1 == 1 ¶` printed `11`, because the loop simply started a new
       // argument and the leftover `==` fell through the primary parser without a
       // sound. A silent wrong answer beats a parse error in no reading of
       // anything.
+      // `>>` has a narrower grammar than the rest of the language: arithmetic
+      // and below, not comparison and not the logical operators (REFERENCE.md
+      // L39). Refusing has to be explicit — narrowing the call alone was worse
+      // than the bug: `>> 1 == 1 ¶` printed `11`, because the loop simply
+      // started a new argument and the leftover `==` fell through the primary
+      // parser without a sound. A silent wrong answer beats a parse error in no
+      // reading of anything.
+      //
+      // The message is the Rust parser's, naming the token as it names it, and
+      // the guidance is a `= help:` line rather than a clause folded into the
+      // message. Both engines gained the help in the same commit; this one had
+      // it and could not share it, they had the message and no guidance.
       const stray = OUTPUT_STOP_OPS[this.peek().type];
-      if (stray && this.peek().line === opLine)
-        throw new ZyError(
-          `expected expression, found ${stray} — '>>' takes arithmetic; ` +
-          `parenthesise a comparison: >> (a ${stray} b) ¶`,
-          this.peek().line);
+      if (stray && this.peek().line === opLine) {
+        const named = Parser.RUST_TOKEN_NAME[this.peek().type] ?? this.peek().type;
+        throw new ZyStaticError(
+          `expected expression, found ${named}`,
+          this.peek().line,
+          OUTPUT_GRAMMAR_HELP(stray));
+      }
     }
     const nl = this.match('PILCROW', 'NEWLINE_ESC');
     return { type: 'Output', items, newline: !!nl, line: this.peek().line };
@@ -2019,24 +2113,30 @@ export class Parser {
   // Recursing on the right is what makes that so; the `if` this replaced parsed
   // exactly one `^` and then failed on the second ("Expected RPAREN, got '^'").
   parseExponent() {
+    const line = this.peek()?.line ?? null;
     const left = this.parseUnary();
-    if (this.match('POW')) return { type:'BinOp', op:'^', left, right: this.parseExponent() };
+    if (this.match('POW')) return { type:'BinOp', op:'^', left, right: this.parseExponent(), line };
     return left;
   }
 
   parseBinLeft(tokenTypes, sub) {
     const opMap = { OR:'||', AND:'&&', PLUS:'+', MINUS:'-', TIMES:'*', DIV:'/', MOD:'%' };
+    // The line the LEFT operand starts on. The node had no line at all, so
+    // `warnBinaryOperandType` had none to report and its warnings arrived
+    // positionless — the same defect ZYJS-002 fixed for the lexer, one layer up.
+    const line = this.peek()?.line ?? null;
     let left = sub();
     while (tokenTypes.includes(this.peek().type)) {
       const op = opMap[this.adv().type] ?? this.toks[this.pos - 1].value;
-      left = { type: 'BinOp', op, left, right: sub() };
+      left = { type: 'BinOp', op, left, right: sub(), line };
     }
     return left;
   }
 
   parseUnary(noCollectionChain) {
-    if (this.match('MINUS')) return { type: 'UnaryOp', op: '-', operand: this.parseUnary() };
-    if (this.match('NOT'))   return { type: 'UnaryOp', op: '!', operand: this.parseUnary() };
+    const uline = this.peek()?.line ?? null;
+    if (this.match('MINUS')) return { type: 'UnaryOp', op: '-', operand: this.parseUnary(), line: uline };
+    if (this.match('NOT'))   return { type: 'UnaryOp', op: '!', operand: this.parseUnary(), line: uline };
     if (noCollectionChain && this.isLambdaStart()) return this.parseLambda();
     return noCollectionChain ? this.parsePostfixNoChain() : this.parsePostfix();
   }
@@ -2064,10 +2164,10 @@ export class Parser {
         left = { type: 'FieldAccess', obj: left, field, scoped };
       } else if (this.check('LPAREN') && sameLine() && left.type === 'Ident') {
         this.adv(); const args = this.parseArgList(); this.eat('RPAREN');
-        left = { type: 'Call', callee: left.name, args };
+        left = { type: 'Call', callee: left.name, args, line: left.line ?? this.peek()?.line ?? null };
       } else if (this.check('LPAREN') && sameLine() && left.type !== 'Ident') {
         this.adv(); const args = this.parseArgList(); this.eat('RPAREN');
-        left = { type: 'CallExpr', callee: left, args };
+        left = { type: 'CallExpr', callee: left, args, line: left.line ?? this.peek()?.line ?? null };
       } else break;
     }
     return left;
@@ -2123,13 +2223,13 @@ export class Parser {
         this.adv();
         const args = this.parseArgList();
         this.eat('RPAREN');
-        left = { type: 'Call', callee: left.name, args };
+        left = { type: 'Call', callee: left.name, args, line: left.line ?? this.peek()?.line ?? null };
 
       } else if (this.check('LPAREN') && sameLine() && left.type !== 'Ident' && left.type !== 'Literal') {
         this.adv();
         const args = this.parseArgList();
         this.eat('RPAREN');
-        left = { type: 'CallExpr', callee: left, args };
+        left = { type: 'CallExpr', callee: left, args, line: left.line ?? this.peek()?.line ?? null };
 
       } else if (COL_TOKENS.has(this.peek().type)) {
         left = this.parseCollectionOp(left);
@@ -2405,6 +2505,36 @@ export class Parser {
     return args;
   }
 
+  // The token as the Rust parser NAMES it, for `expected expression, found X`.
+  //
+  // The two lexers agree about what a token is and disagree about what it is
+  // called — `RPAREN` here, `RParen` there — so a refusal that quotes the name
+  // would read differently in the two engines for no reason anybody chose. The
+  // map is the tokens that can actually reach a "there is no expression here"
+  // refusal; anything outside it falls back to its own name, which is a
+  // difference a cell would then show rather than one hidden by a guess.
+  static RUST_TOKEN_NAME = {
+    ASSIGN: 'Assign', CONST_ASSIGN: 'ConstAssign', FAT_ARROW: 'FatArrow',
+    COMMA: 'Comma', COLON: 'Colon', SEMI: 'Semicolon', DOT: 'Dot',
+    RANGE: 'DotDot', BACKSLASH: 'Backslash',
+    LPAREN: 'LParen', RPAREN: 'RParen',
+    LBRACKET: 'LBracket', RBRACKET: 'RBracket',
+    LBRACE: 'LBrace', RBRACE: 'RBrace',
+    PLUS: 'Plus', MINUS: 'Minus', TIMES: 'Star', DIV: 'Slash',
+    MOD: 'Percent', POW: 'Caret',
+    EQ: 'Eq', NEQ: 'Neq', LT: 'Lt', GT: 'Gt', LTE: 'Le', GTE: 'Ge',
+    AND: 'And', OR: 'Or', NOT: 'Not', PIPE: 'PipeOp', VBAR: 'Pipe',
+    PLUS_EQ: 'PlusAssign', MINUS_EQ: 'MinusAssign', TIMES_EQ: 'StarAssign',
+    DIV_EQ: 'SlashAssign', MOD_EQ: 'PercentAssign', POW_EQ: 'CaretAssign',
+    INC: 'PlusPlus', DEC: 'MinusMinus',
+    IF: 'Question', MATCH: 'DoubleQuestion', ELSEIF: 'ElseIf', ELSE: 'Underscore',
+    ARROW: 'Arrow', RETURN: 'Return', SCOPE: 'ScopeResolution',
+    AT: 'At', BREAK: 'AtBreak', CONTINUE: 'AtContinue', ATSLEEP: 'AtTilde',
+    OUTPUT: 'Output', INPUT: 'Input', IMPORT: 'ModuleImport',
+    TRY: 'TryBlock', CATCH: 'CatchBlock', FINALLY: 'FinallyBlock',
+    EOF: 'end of file',
+  };
+
   parsePrimary() {
     if (this.peek().type === 'LPAREN' && this.isLambdaStart()) return this.parseLambda();
 
@@ -2545,8 +2675,20 @@ export class Parser {
       return { type: 'DataOp', kind: t.value.kind, prec: t.value.prec, precExpr, arg };
     }
 
-    this.adv();
-    return { type: 'Literal', kind: 'unit' };
+    // ZYJS-001: this used to be `this.adv(); return Literal unit` — a catch-all
+    // that consumed ANY token no branch above recognised and handed back a Unit
+    // literal. It built nothing: `##_` has its own explicit branch some fifty
+    // lines up. All it did was swallow, so `x = =`, `x = ,`, `x = )` and their
+    // family parsed cleanly here and were refused by both Rust engines. It is,
+    // very probably, the mechanism under the whole family of "the browser
+    // engine accepts a wider grammar than the other two" — DM-06 was narrowed
+    // at `parseOutput`, which decides which grammar is invoked and cannot reach
+    // this, at the bottom of `parsePrimary`.
+    //
+    // The refusal names the token the way the Rust parser names it, so the
+    // three engines refuse the same program with the same sentence.
+    const shown = Parser.RUST_TOKEN_NAME[t.type] ?? t.type;
+    throw new ZyStaticError(`expected expression, found ${shown}`, t.line ?? this.peek()?.line);
   }
 }
 
@@ -2648,7 +2790,10 @@ class Env {
 // ─── Checker ──────────────────────────────────────────────────────────────────
 
 function formatDiagnostic(d) {
-  return `${d.severity}: ${d.message}`;
+  // `= help:` on its own line, which is the spelling the whole tool chain
+  // agreed on and what the Rust engines print. The guidance lives in `d.help`,
+  // never inside `d.message` — see the note on `ZyStaticError`.
+  return `${d.severity}: ${d.message}` + (d.help ? `\n  = help: ${d.help}` : '');
 }
 
 /**
@@ -2730,6 +2875,11 @@ function guardedBoundsOf(cond) {
 }
 
 class Checker {
+  // The guidance the two Rust engines attach to `undefined variable`
+  // (`type_check.rs`, `.with_help(...)`). This engine emitted the message and
+  // not the help, so the same refusal read as two different diagnostics.
+  static HELP_UNDEFINED = 'variables must be defined before use';
+
   constructor(ast) {
     this.ast         = ast;
     this.diagnostics = [];
@@ -3035,6 +3185,80 @@ class Checker {
   }
 
   /**
+   * `-"a"` and `!7` — the unary counterpart of `warnBinaryOperandType`, with
+   * the wording `type_check.rs` uses: `unary - on non-numeric type: String`,
+   * `logical not on non-boolean type: Int`.
+   */
+  warnUnaryOperandType(expr) {
+    const operand = expr.operand ?? expr.value;
+    const name = this.operandTypeName(operand);
+    if (!name) return;
+    if (expr.op === '-' || expr.op === '+') {
+      if (name === 'Int' || name === 'Float') return;
+      this.warn('W_UNARY_TYPE', `unary ${expr.op} on non-numeric type: ${name}`,
+                operand?.line ?? expr.line ?? null, { op: expr.op, type: name });
+    } else if (expr.op === '!') {
+      if (name === 'Bool') return;
+      this.warn('W_UNARY_TYPE', `logical not on non-boolean type: ${name}`,
+                operand?.line ?? expr.line ?? null, { op: expr.op, type: name });
+    }
+  }
+
+  /**
+   * The type of a binary operand as `zymbol-semantic`'s `ZymbolType::name()`
+   * spells it — `Int`, `[Int]`, `(Int, Int)`, `(x: Int)`, `Unit` — or `null`
+   * when this pass cannot decide it, which is always allowed.
+   *
+   * Separate from `staticKind` on purpose: that one feeds the array-element and
+   * `$+` checks, and teaching it about tuples would change what those decide.
+   * This one exists only for `warnBinaryOperandType`.
+   */
+  operandTypeName(e) {
+    if (!e) return null;
+    if (e.type === 'Literal' && e.kind === 'unit') return 'Unit';
+    if (e.type === 'Tuple') {
+      const items = e.items ?? [];
+      if (items.length === 0) return null;
+      const kinds = items.map(x => this.staticKind(x));
+      if (kinds.some(k => k === null)) return null;
+      return e.keys
+        ? `(${e.keys.map((k, i) => `${k}: ${kinds[i]}`).join(', ')})`
+        : `(${kinds.join(', ')})`;
+    }
+    return this.staticKind(e);
+  }
+
+  /**
+   * `"a" - 3` and `7 && #1` — an operand whose type the operator cannot take.
+   *
+   * Both Rust engines warn here, from the semantic analyser, with a span. This
+   * engine warned only for arithmetic, only at RUN time, and wrote it through
+   * `outputFn` — so the text landed in the program's own stdout (ZYJS-004), it
+   * carried no line, and `&&` had no check at all (ZYJS-005). Emitting it here
+   * fixes all three at once: it is a static diagnostic like every other, and it
+   * goes wherever the caller sends diagnostics.
+   *
+   * Only the LEFT operand, and only for these operators, because that is what
+   * `type_check.rs` does — `+` is silent and so is every comparison.
+   */
+  warnBinaryOperandType(expr) {
+    const ARITH   = new Set(['-', '*', '/', '%', '^']);
+    const LOGICAL = new Set(['&&', '||']);
+    if (!ARITH.has(expr.op) && !LOGICAL.has(expr.op)) return;
+    const name = this.operandTypeName(expr.left);
+    if (!name) return;
+    if (ARITH.has(expr.op)) {
+      if (name === 'Int' || name === 'Float') return;
+      this.warn('W_ARITH_TYPE', `arithmetic operation on non-numeric type: ${name}`,
+                expr.left.line ?? expr.line ?? null, { type: name });
+    } else {
+      if (name === 'Bool') return;
+      this.warn('W_LOGIC_TYPE', `logical operation on non-boolean type: ${name}`,
+                expr.left.line ?? expr.line ?? null, { type: name });
+    }
+  }
+
+  /**
    * The single element type of an array literal, or `null` when it cannot be
    * decided — including when the elements disagree, which the `Array` check
    * reports separately.
@@ -3229,12 +3453,20 @@ class Checker {
   // `params` is what makes a diagnostic translatable: the playground renders it from its
   // own catalogue keyed by `code`, and `message` stays as the English fallback for callers
   // that have no catalogue (runZymbol's own output, and any embedder).
-  error(code, msg, line = null, params = null) {
-    this.diagnostics.push({ severity: 'error', code, message: msg, line, params });
+  // `help` is a FIELD, never text appended to `message`.
+  //
+  // The `=` of `= help:` is what separates the guidance from the message, so a
+  // guidance folded into the message is not separated by anything — and the
+  // diagnostic inventory (`zyquality/messages/`) reads the two engines' sources
+  // and would see one string here against a message plus a `.with_help(…)`
+  // there, i.e. a difference that is not one. Rust keeps them apart; so does
+  // this (ZYJS-002).
+  error(code, msg, line = null, params = null, help = null) {
+    this.diagnostics.push({ severity: 'error', code, message: msg, line, params, help });
   }
 
-  warn(code, msg, line = null, params = null) {
-    this.diagnostics.push({ severity: 'warning', code, message: msg, line, params });
+  warn(code, msg, line = null, params = null, help = null) {
+    this.diagnostics.push({ severity: 'warning', code, message: msg, line, params, help });
   }
 
   // GAP-ZYB-006: walk the statements a top-level `<~` can be reached from —
@@ -3390,7 +3622,7 @@ class Checker {
         }
         if (!isHot) {
           const info = this.lookup(stmt.name, stmt.line);
-          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line, { name: stmt.name });
+          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line, { name: stmt.name }, Checker.HELP_UNDEFINED);
           else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line, { name: stmt.name });
         } else {
           const info = this.lookup(stmt.name, stmt.line);
@@ -3404,7 +3636,7 @@ class Checker {
         const isHot = stmt.hot || wasHot;
         if (!isHot) {
           const info = this.lookup(stmt.name, stmt.line);
-          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line, { name: stmt.name });
+          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line, { name: stmt.name }, Checker.HELP_UNDEFINED);
           else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line, { name: stmt.name });
         } else {
           const info = this.lookup(stmt.name, stmt.line);
@@ -3418,7 +3650,7 @@ class Checker {
         const obj = stmt.obj ?? stmt.name;
         if (obj) {
           const info = this.lookup(obj, stmt.line);
-          if (!info) this.error('E_VAR', `undefined variable '${obj}'`, stmt.line, { name: obj });
+          if (!info) this.error('E_VAR', `undefined variable '${obj}'`, stmt.line, { name: obj }, Checker.HELP_UNDEFINED);
         }
         this.checkExpr(stmt.index);
         this.checkExpr(stmt.value);
@@ -3429,7 +3661,7 @@ class Checker {
         const name = stmt.name ?? stmt.obj;
         if (name) {
           const info = this.lookup(name, stmt.line);
-          if (!info) this.error('E_VAR', `undefined variable '${name}'`, stmt.line, { name });
+          if (!info) this.error('E_VAR', `undefined variable '${name}'`, stmt.line, { name }, Checker.HELP_UNDEFINED);
         }
         for (const idx of (stmt.indices ?? [])) this.checkExpr(idx);
         this.checkExpr(stmt.value);
@@ -3439,7 +3671,7 @@ class Checker {
       case 'LifetimeEnd': {
         if (stmt.name) {
           const info = this.lookup(stmt.name, stmt.line);
-          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line, { name: stmt.name });
+          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line, { name: stmt.name }, Checker.HELP_UNDEFINED);
           else {
             for (let i = this.stack.length - 1; i >= 0; i--) {
               if (this.stack[i].vars.has(stmt.name)) {
@@ -3748,18 +3980,20 @@ class Checker {
           return;
         }
         const info = this.lookup(expr.name, expr.line);
-        if (!info) this.error('E_VAR', `undefined variable '${expr.name}'`, expr.line, { name: expr.name });
+        if (!info) this.error('E_VAR', `undefined variable '${expr.name}'`, expr.line, { name: expr.name }, Checker.HELP_UNDEFINED);
         return;
       }
 
       case 'BinOp': {
         this.checkExpr(expr.left);
         this.checkExpr(expr.right);
+        this.warnBinaryOperandType(expr);
         return;
       }
 
       case 'UnaryOp': {
         this.checkExpr(expr.operand ?? expr.value);
+        this.warnUnaryOperandType(expr);
         return;
       }
 
@@ -4033,7 +4267,7 @@ class Checker {
               // classes mirror readIdent's lexer rule (HLZ-KL-001 parity) — a
               // narrower rule here would under-mark PUA-script (e.g. pIqaD)
               // identifiers as used, producing a false W_UNUSED.
-              if (/^[\p{L}\p{M}\p{So}\p{Co}_][\p{L}\p{M}\p{So}\p{Co}0-9_]*$/u.test(name)) this.lookup(name, expr.line);
+              if (/^[\p{L}\p{M}\p{So}\p{Co}_][\p{L}\p{M}\p{N}\p{So}\p{Co}_]*$/u.test(name)) this.lookup(name, expr.line);
             }
           }
         }
@@ -4076,6 +4310,11 @@ class Checker {
 // past 2^53 a Number silently rounds, so `9007199254740993` printed ...992.
 const ZY_INT_MAX = 9007199254740991;
 const ZY_INT_MIN = -9007199254740991;
+// Spelled out rather than built from the two constants above, because that is
+// how `zymbol_common::num::ZY_INT_RANGE_HELP` spells it, and the diagnostic
+// inventory compares the engines' prose: `from § to §` and `from -9007…` are
+// two different messages however identically they print.
+const ZY_INT_RANGE_HELP = 'integers range from -9007199254740991 to 9007199254740991 (±2⁵³−1)';
 const inIntRange = v => Number.isSafeInteger(v);
 
 // An integer result, or the overflow every engine words identically.
@@ -4699,6 +4938,24 @@ function typeSymbolBase(v) {
   // `##Index` while a diagnostic naming the same value answered `##_`.
   if (v?.type === 'error') return v.errType ?? TYPESYM.UNIT;
   return TYPESYM_BY_TAG[v?.type] ?? TYPESYM.UNIT;
+}
+
+// The type as a DIAGNOSTIC spells it — `Int`, `String`, `Dict` — as opposed to
+// `typeSymbolBase`, which gives the language's `##` symbol. It is the Rust
+// engines' `type_ident`/`type_name`, and it exists so that a message naming a
+// type is one text across the three engines (GLOBAL-001).
+//
+// A dictionary is `Dict`, never `Tuple`: the two are different types here, and
+// a diagnostic that calls `#(x: 1)` a tuple sends the reader to the wrong page
+// of the guide (ZYJS-006).
+const TYPEIDENT_BY_TAG = {
+  int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool',
+  arr: 'Array', unit: 'Unit', error: 'Error', func: 'Function',
+};
+
+function typeIdent(v) {
+  if (v?.type === 'tuple') return isDict(v) ? 'Dict' : 'Tuple';
+  return TYPEIDENT_BY_TAG[v?.type] ?? 'Unit';
 }
 
 // `##]` when the elements are all one type, `##[` when they are not. The
@@ -5416,7 +5673,7 @@ export class Interpreter {
     // appears when the block runs.
     for (const stmt of program.body) {
       if (stmt.type === 'FuncDecl')
-        env.def(stmt.name, { type: 'func', name: stmt.name, params: stmt.params, body: stmt.body, fnId: nextFnId() });
+        env.def(stmt.name, { type: 'func', name: stmt.name, params: stmt.params, body: stmt.body, fnId: nextFnId(), moduleAliases: this.moduleAliases, homeEnv: this.globalEnv });
     }
     // GAP-ZYB-006: a `<~` that reaches the top level ends the program, and its
     // value is the exit status. This engine already stopped here — the value
@@ -5546,7 +5803,7 @@ export class Interpreter {
       }
 
       case 'FuncDecl': {
-        env.def(stmt.name, { type: 'func', name: stmt.name, params: stmt.params, body: stmt.body, fnId: nextFnId() });
+        env.def(stmt.name, { type: 'func', name: stmt.name, params: stmt.params, body: stmt.body, fnId: nextFnId(), moduleAliases: this.moduleAliases, homeEnv: this.globalEnv });
         return;
       }
 
@@ -5995,14 +6252,30 @@ export class Interpreter {
         // Prefix hot-def sentinel in RHS: [Ident{hot:true, name:''}, <inner_expr>]
         if (items.length >= 2 &&
             items[0]?.type === 'Ident' && items[0]?.hot && items[0]?.name === '') {
-          const inner = items[1];
+          // Everything after the sentinel is still a juxtaposition, and it used
+          // to return `items[1]` alone — so `s = °s "x"` evaluated to `s` and
+          // dropped the `"x"`, and the accumulator never grew. `ZyBank`'s
+          // `transliterar` is exactly that loop and came back empty, which is
+          // how a four-failure test in an application found it.
+          const rest = items.slice(1);
+          const inner = rest[0];
           const hotName = this._leftmostIdentName(inner);
           if (hotName) {
             let exists = false;
             try { env.get(hotName); exists = true; } catch (_) {}
-            if (!exists) env.hotDef(hotName, this._hotNeutralForExpr(inner));
+            // The neutral follows the OPERATOR, and here the operator is
+            // juxtaposition, whose neutral is the empty string — the same
+            // answer the LHS form `°s = s ch` already gives. Only when the
+            // sentinel governs a lone expression does the operator inside it
+            // decide.
+            if (!exists)
+              env.hotDef(hotName,
+                rest.length > 1 ? mkStr('') : this._hotNeutralForExpr(inner));
           }
-          return await this.eval(inner, env);
+          if (rest.length === 1) return await this.eval(inner, env);
+          const parts = [];
+          for (const item of rest) parts.push(await this.eval(item, env));
+          return mkStr(parts.map(v => this.displayOutput(v)).join(''));
         }
         const vals = [];
         for (const item of items) vals.push(await this.eval(item, env));
@@ -6015,23 +6288,47 @@ export class Interpreter {
       }
 
       case 'BinOp': {
-        if (expr.op === '&&') {
-          return mkBool(this.truthy(await this.eval(expr.left, env)) &&
-                        this.truthy(await this.eval(expr.right, env)));
-        }
-        if (expr.op === '||') {
-          return mkBool(this.truthy(await this.eval(expr.left, env)) ||
-                        this.truthy(await this.eval(expr.right, env)));
+        // ZYJS-005: these read both operands through `truthy()`, so `7 && 3`
+        // answered `#1` with neither a warning nor a refusal, where the
+        // tree-walker refuses and the VM at least warned. There is no
+        // truthiness in Zymbol — the loop specifier settled that in v0.0.9 —
+        // so a logical operand is a Bool or the program is refused.
+        //
+        // The left operand is checked first and guards the right, which is what
+        // makes `#0 && f()` still not call `f()`: the short-circuit is kept,
+        // and the right operand is not even type-checked when it is not reached.
+        if (expr.op === '&&' || expr.op === '||') {
+          const isAnd = expr.op === '&&';
+          const name  = isAnd ? 'AND' : 'OR';
+          const l = await this.eval(expr.left, env);
+          if (l.type !== 'bool')
+            throw new ZyError(`logical ${name} requires boolean operands, got ${typeIdent(l)}`, expr.line);
+          if (l.v !== isAnd) return mkBool(l.v);
+          const r = await this.eval(expr.right, env);
+          if (r.type !== 'bool')
+            throw new ZyError(`logical ${name} requires boolean operands, got ${typeIdent(r)}`, expr.line);
+          return mkBool(r.v);
         }
         return this.applyOp(expr.op, await this.eval(expr.left, env), await this.eval(expr.right, env));
       }
 
       case 'UnaryOp': {
         const val = await this.eval(expr.operand, env);
-        if (expr.op === '-')
+        // The same rule as the binary operators, and for the same reason: there
+        // is no truthiness, and there is no arithmetic on a non-number. `-"a"`
+        // used to answer `NaN` here and `!7` used to answer `#0`, where both
+        // Rust engines refuse — a JavaScript coercion arriving as a Zymbol
+        // value, which is the family of ZYJS-003 and ZYJS-006.
+        if (expr.op === '-') {
+          if (val.type !== 'int' && val.type !== 'float')
+            throw new ZyError(`negation requires numeric operand, got ${typeIdent(val)}`, expr.line);
           return val.type === 'float' ? mkFloat(-val.v) : mkInt(-val.v);
-        if (expr.op === '!')
-          return mkBool(!this.truthy(val));
+        }
+        if (expr.op === '!') {
+          if (val.type !== 'bool')
+            throw new ZyError(`logical NOT requires boolean operand, got ${typeIdent(val)}`, expr.line);
+          return mkBool(!val.v);
+        }
         break;
       }
 
@@ -6159,7 +6456,7 @@ export class Interpreter {
           ? expr.body.stmts
           : [{ type: 'Return', value: expr.body.value }];
         return {
-          type: 'func', name: '<lambda>', params, body, fnId: nextFnId(),
+          type: 'func', name: '<lambda>', params, body, fnId: nextFnId(), moduleAliases: this.moduleAliases, homeEnv: this.globalEnv,
           // A SNAPSHOT of what the body reads from outside, not the scope
           // itself. `closureEnv: env` held a live reference, so the lambda read
           // whatever the variable held later and wrote back out through it —
@@ -7087,6 +7384,27 @@ export class Interpreter {
 
   async callFunc(fn, args, outWriteback) {
     if (fn.native) return fn.call(args);
+    // A qualified call inside a function resolves against the alias table of
+    // the MODULE THE FUNCTION WAS WRITTEN IN, never the caller's.
+    //
+    // `this.moduleAliases` is one map per interpreter, and a module's functions
+    // run on the interpreter that called them — so `A::saluda()` inside
+    // `medio.zy` looked up the caller's `A`. Chaturanga imports `आकलनम्` as `आ`
+    // inside `मूल/मतिः.zy` and its test file imports a DIFFERENT module under
+    // that same name, so the search died with "module 'आ' does not export
+    // function 'सारणी'". This is the tree-walker's rule — a function value
+    // carries the aliases visible where it was written (`ModuleAliases`) — and
+    // it is dynamic scoping without it.
+    const callerAliases = this.moduleAliases;
+    if (fn.moduleAliases) this.moduleAliases = fn.moduleAliases;
+    try {
+      return await this._callFuncBody(fn, args, outWriteback);
+    } finally {
+      this.moduleAliases = callerAliases;
+    }
+  }
+
+  async _callFuncBody(fn, args, outWriteback) {
     // Every call gets a frame over the global scope, with `funcBoundary` set so
     // only functions are reachable past it — the isolation a direct call has
     // always had here and in both Rust engines.
@@ -7095,10 +7413,36 @@ export class Interpreter {
     // is what makes a write inside die with the call: `esc(5)` three times over
     // `cont = cont + x` gives 5, 5, 5 in the Rust engines, not 5, 10, 15.
     // Chaining to a captured scope would have accumulated.
-    const funcEnv = new Env(fn.closureEnv ?? this.globalEnv, fn.closureEnv == null);
+    // The frame sits over the globals of the file the function was WRITTEN in,
+    // never the caller's. A module's functions run on the interpreter that
+    // called them, so `this.globalEnv` here is the caller's — and a module that
+    // calls its own function by bare name found whatever the caller happened to
+    // have under that name. `klingon_galaxy` names a local array exactly as the
+    // module function that produces it, which is the ordinary thing to do, and
+    // the call died with "'…' is not a function".
+    //
+    // Same defect as ZYJS-009 one layer down: that one was the alias table,
+    // this one is the scope. Both are dynamic scoping, and both are answered
+    // the way the tree-walker answers them — on the value, not on the engine.
+    const home = fn.homeEnv ?? this.globalEnv;
+    // A function from ANOTHER file — a module's — is a different case from one
+    // written here, and the difference is module state.
+    //
+    // Its frame sits over that module's globals with NO boundary and NO copy,
+    // so `estado` is read and written live: `_asegurar()` builds the catalogue
+    // and the sibling `texto()` that called it sees it. Snapshotting instead
+    // made ZyBank's dispatcher read the `#0` the module starts with, for ever
+    // — `$? not supported on bool`, four locales down.
+    //
+    // A function written HERE keeps exactly what it had: a boundary, and the
+    // file's variables copied in, so a write inside dies with the call
+    // (ERROR-ZYB-002). Both Rust engines draw the line in the same place —
+    // module state is shared and mutable, a local is not.
+    const foreign = fn.homeEnv != null && fn.homeEnv !== this.globalEnv;
+    const funcEnv = new Env(fn.closureEnv ?? home, fn.closureEnv == null && !foreign);
     if (fn.captures) {
       for (const [name, value] of fn.captures) funcEnv.def(name, value);
-    } else if (fn.body) {
+    } else if (fn.body && !foreign) {
       // A NAMED function called directly captures the file's variables, exactly
       // as a lambda captures the scope it was written in (ERROR-ZYB-002). The
       // values are read HERE, at the call, from the scope the function was
@@ -7114,7 +7458,7 @@ export class Interpreter {
       }
       for (const name of fn._freeNames) {
         let v;
-        try { v = this.globalEnv.get(name); } catch { continue; }
+        try { v = home.get(name); } catch { continue; }
         if (v !== undefined && v.type !== 'func') funcEnv.def(name, v);
       }
     }
@@ -7164,32 +7508,51 @@ export class Interpreter {
 
   applyOp(op, l, r) {
     const isNum = v => v.type === 'int' || v.type === 'float';
-    const fmtArg = v => {
-      if (v.type === 'str')   return `String("${v.v}")`;
-      if (v.type === 'int')   return `Int(${v.v})`;
-      if (v.type === 'float') return `Float(${v.v})`;
-      if (v.type === 'bool')  return `Bool(${v.v})`;
-      return `${v.type}(${String(v.v)})`;
-    };
 
     if (op === '+' || op === '-' || op === '*' || op === '/' || op === '%' || op === '^') {
       if (!isNum(l) || !isNum(r)) {
+        // The refusal is spelled per operator, exactly as the two Rust engines
+        // spell it (ZYVM-002 fixed the mirror-image defect there). It used to be
+        // one message for `-`, `*`, `/`, `%` and `^` alike, so `"ab" / "cd"` was
+        // refused without ever mentioning `$/`.
+        //
+        // It also used to interpolate the VALUES — `fmtArg` — which for a tuple
+        // or a dictionary produced `tuple([object Object])`, and for `##_`
+        // produced `undefined` (ZYJS-006). The family names types.
         if (op === '+')
           throw new ZyError(`+ is arithmetic only — use juxtaposition to concatenate strings: "a" b "c"`);
-        const badType = !isNum(l) ? l : r;
-        const rustCap = { int:'Int', float:'Float', str:'String', bool:'Bool', arr:'Array', tuple:'Tuple' };
-        this.outputFn(`warning: arithmetic operation on non-numeric type: ${rustCap[badType.type] ?? badType.type}\n\n`);
-        throw new ZyError(`arithmetic requires numeric operands: ${fmtArg(l)}, ${fmtArg(r)}`);
+        if (op === '/')
+          throw new ZyError(`/ requires numeric operands — use $/ to split strings`);
+        if (op === '^')
+          throw new ZyError(`power operator requires numeric operands: ${typeIdent(l)}, ${typeIdent(r)}`);
+        throw new ZyError(`arithmetic requires numeric operands: ${typeIdent(l)}, ${typeIdent(r)}`);
       }
     }
 
     if (op === '<' || op === '>' || op === '<=' || op === '>=') {
       const ord = orderValues(l, r);
       if (ord === null) {
+        // GLOBAL-001: three engines wrote this refusal three ways — the value
+        // inside the type, the type alone, and this one's prose. The type alone
+        // is the form, because it is the only one an engine can always produce.
         const opName = { '<':'Lt', '>':'Gt', '<=':'Le', '>=':'Ge' }[op];
-        const cmpName = v => ({ int:'integer', float:'float', str:'string', bool:'boolean', arr:'array', tuple:'tuple' })[v.type] ?? v.type;
-        const cmpVal  = v => v.type === 'str' ? `'${v.v}'` : String(v.v);
-        throw new ZyError(`cannot compare ${cmpName(l)} ${cmpVal(l)} with ${cmpName(r)} ${cmpVal(r)} using operator '${opName}'`);
+        // A string against a number keeps its own wording in all three engines:
+        // that comparison is DEFINED when the string is a number in any script,
+        // so the refusal is about this particular text, not about the types.
+        // Four messages spelled out rather than one with the type word
+        // interpolated, because that is how `arithmetic_ops.rs` and the VM's
+        // `cmp_order_error` write them — and `zyquality/messages/` compares the
+        // engines' SOURCES, where `with integer §` and `with § §` are two
+        // different messages however identically they print.
+        if (l.type === 'str' && r.type === 'int')
+          throw new ZyError(`cannot compare string '${l.v}' with integer ${r.v} using operator '${opName}'`);
+        if (l.type === 'str' && r.type === 'float')
+          throw new ZyError(`cannot compare string '${l.v}' with float ${r.v} using operator '${opName}'`);
+        if (l.type === 'int' && r.type === 'str')
+          throw new ZyError(`cannot compare integer ${l.v} with string '${r.v}' using operator '${opName}'`);
+        if (l.type === 'float' && r.type === 'str')
+          throw new ZyError(`cannot compare float ${l.v} with string '${r.v}' using operator '${opName}'`);
+        throw new ZyError(`cannot compare values with operator '${opName}': ${typeIdent(l)} and ${typeIdent(r)}`);
       }
       switch (op) {
         case '<':  return mkBool(ordLt(ord));
@@ -7499,6 +7862,81 @@ export function moduleOutSlotsFrom(src) {
  * @param {string|null} filePath
  * @returns {Promise<Map<string, Map<string, number>>>}
  */
+/// The E001 the module-name convention asks for, over every import, BEFORE the
+/// program runs.
+///
+/// `DOT_CONVENTION`: a bare name is the file stem, a dotted one is the directory
+/// and the stem joined with `_`.
+///
+/// GLB-005 settled that the engines enforce this and not only `zymbol check`.
+/// It belongs in this pass and not in `loadModule` because a module is loaded
+/// while the program RUNS: raising there gives `error/runtime` where the two
+/// Rust engines give `error/static`, and a refusal that lands in a different
+/// category is a divergence even when the words match.
+export function moduleNameErrorFor(modParts, modSrc) {
+  let ast;
+  try { ast = new Parser(new Lexer(modSrc).tokenize()).parse(); } catch { return null; }
+  const block = (ast.body?.length === 1 && ast.body[0].type === 'ModuleBlock') ? ast.body[0] : null;
+  if (!block?.name) return null;
+
+  const parts = modParts.filter(Boolean);
+  const stem  = (parts[parts.length - 1] ?? '').replace(/\.zy$/, '');
+  const dir   = parts.length > 1 ? parts[parts.length - 2] : '';
+  const expected = block.name.startsWith('.') ? `${dir}_${stem}` : stem;
+  const declared = block.name.replace(/^\./, '');
+  if (declared === expected) return null;
+
+  return {
+    severity: 'error',
+    code: 'E001',
+    message: `E001: module '${block.name}' should be named '${expected}' for its path`,
+    line: block.line ?? null,
+    params: { declared: block.name, expected },
+    help: "a bare name matches the file stem (`# util` in util.zy); a leading dot names the whole path, joined with `_` (`# .lib_util` in lib/util.zy). See DOT_CONVENTION.md",
+  };
+}
+
+/// Where a module FILE sits, worked out from the importer and the import path.
+///
+/// Not from whatever the resolver calls the module: a display path is a label,
+/// and the rule is about the file's real location. Deriving the directory from a
+/// label is the same defect this finding is about, one layer over — measured on
+/// `GO/試験/盤試験.zy`, which imports `./図` and got `_図` where the file is
+/// `試験/図.zy` and the answer is `試験_図`.
+function modulePathParts(filePath, importPath) {
+  if (!filePath) return null;              // no anchor: say nothing rather than guess
+  const out = String(filePath).split('/').slice(0, -1);
+  for (const part of String(importPath).split('/')) {
+    if (part === '' || part === '.') continue;
+    if (part === '..') out.pop();
+    else out.push(part);
+  }
+  return out;
+}
+
+export async function moduleNameErrors(ast, resolver, filePath = null) {
+  const out = [];
+  if (!resolver || !ast?.body) return out;
+  for (const imp of ast.body) {
+    if (imp?.type !== 'Import' || !imp.alias || !imp.path) continue;
+    if (imp.path.startsWith('std/')) continue;
+    const parts = modulePathParts(filePath, imp.path);
+    if (!parts) continue;
+    try {
+      const result = await resolver(imp.path, filePath);
+      if (result == null || result.notFound) continue;
+      const modSrc = typeof result === 'string' ? result : result.src;
+      if (typeof modSrc === 'string') {
+        const d = moduleNameErrorFor(parts, modSrc);
+        if (d) out.push(d);
+      }
+    } catch {
+      // Reported at import time.
+    }
+  }
+  return out;
+}
+
 export async function moduleAritiesFor(ast, resolver, filePath = null) {
   const out = new Map();
   if (!resolver || !ast?.body) return out;
@@ -7568,6 +8006,7 @@ export function checkSource(src, opts = {}) {
         message,
         line: line === null ? null : Number(line),
         params: { message },
+        help: e?.zyHelp ?? null,
       }],
     };
   }
@@ -7748,6 +8187,14 @@ export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, f
   checker.moduleArities = await moduleAritiesFor(ast, moduleResolver, filePath);
   checker.moduleOutSlots = await moduleOutSlotsFor(ast, moduleResolver, filePath);
   const diags   = checker.check();
+  // The module-name convention, before anything runs (GLB-005).
+  //
+  // A caller that formats the static diagnostics itself — `tests/run_one.mjs`,
+  // which needs them in the CLI's layout — asks for them separately through
+  // `moduleNameErrors` and passes `skipModuleNames` so they are not reported
+  // twice.
+  if (!opts.skipModuleNames)
+    diags.push(...await moduleNameErrors(ast, moduleResolver, filePath));
 
   // Where diagnostics go. The playground passes no `onError` and keeps today's
   // behaviour — everything in the one output panel, which is all a browser has.
