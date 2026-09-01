@@ -1,45 +1,39 @@
 # Web Interpreter — Gaps & Status
 
-**Date:** 2026-08-09
-**Tests:** 518/528 on the interpreter suite (**10 failing**, 39 skipped as irreducible) +
-208/210 on the example pool (**2 failing**, 6 skipped)
-**Tool:** `node tests/test_runner.mjs` — `web/src/zymbol/zymbol.js` vs `zymbol run` CLI
-(v0.0.9 branch)
+**Date:** 2026-08-31
+**Tests:** 661 corpus files — **631 agree, 0 diverge** · 222 example files — **216 agree,
+0 diverge**
+**Tool:** `node tests/test_runner.mjs`, which delegates to `zyq consensus --engines
+zytw,zyjs` (v0.0.9 branch)
 
-> The corpus is the Rust one, so it grows when the Rust engines do and this page goes stale
-> without anyone editing `zymbol.js`. The jump from 521 to 528 files between 2026-08-01 and
-> this pass added seven tests and five failures, none of which were a regression here.
-> Re-run the tool before quoting any figure above.
+> The corpus is the shared one in `zyquality/`, so it grows when any engine's tests do and
+> this page goes stale without anyone editing `zymbol.js`. **Re-run the tool before quoting
+> any figure above** — that is not boilerplate here: between 2026-08-09 and this pass the
+> gaps below were fixed and this page kept reporting them, along with the header comment in
+> `zymbol.js` and `interpreter/IMPL_V008.md` § E.3, all three saying twelve where the
+> measurement said zero.
 
 ---
 
-## Open parity gaps (12)
+## Open parity gaps — none
 
-`zymbol.js` is **not** at full parity on the v0.0.9 branch. Twelve cases diverge from the
-Rust engines. For the seven that predate this branch, the authoritative list — with the
-direction of each divergence and why it matters — is
-[`interpreter/IMPL_V008.md` § E.3](https://github.com/zymbol-lang/interpreter/blob/main/IMPL_V008.md).
-Summarised:
+`zymbol.js` is **at parity** with the Rust engines on the whole corpus and the whole example
+pool. Each of the twelve cases this section used to list was verified on its own rather than
+inferred from the total:
 
-| Case | Gap |
-| --- | --- |
-| `arity/local_call_too_many.zy`, `arity/module_call_too_few.zy`, `arity/module_call_too_many.zy`, `arity/stdlib_call_too_many.zy`, `arity/wrong_arity_on_a_dead_branch.zy` | Static argument-count checking (`zymbol-semantic/call_arity.rs`, new on v0.0.9) has no counterpart in the web `Checker`, for local, module-qualified and `std/` calls alike — JS **permissive** (5 cases) |
-| `bug_mm11_iterator_leftover.zy` | MM-11 leftover loop-iterator value — JS **permissive** |
-| `bug_mm4_module_const_guard.zy` | MM-4 import-time semantic gate missing — JS **permissive** |
-| `bug_mm9_const_call_depth.zy` | MM-9 root-scope constants at call depth ≥ 2 |
-| `parent_path_alias.zy` | HLZ-005 diagnostic text and error count |
-| `interp_global_const.zy` | Interpolating a global constant prints `{DIR}` verbatim |
-| `examples/rosetta-stone/klingon.zy` | HLZ-KL-001 not ported — the JS lexer rejects `'` inside an identifier, so `f(mI')` will not parse |
-| `examples/projects/math-es/calculadora.zy` | Float literals are accumulated digit by digit (`value + frac / div`), so `3.14159265` prints as `3.1415926499999998`. Affects **every** float literal; predates v0.0.8 (introduced with digit-script support in v0.0.4) |
+| Case | Was | Now |
+| --- | --- | --- |
+| `arity/` (5 files) | Static argument-count checking (`zymbol-semantic/call_arity.rs`) had no counterpart in the web `Checker` — JS **permissive** | 7 files, three engines, **7 agree**. This engine was the last one that filled a missing argument with `Unit` |
+| `bugs/bug_mm4_*`, `bug_mm9_*`, `bug_mm11_*` | MM-4 import-time gate, MM-9 root-scope constants at depth ≥ 2, MM-11 leftover loop-iterator value | `corpus/bugs/bug_mm*` — 12 files, **12 agree** |
+| `errors/parser/parent_path_alias.zy` | HLZ-005 diagnostic text and error count | agrees |
+| `modules_scope/interp_global_const.zy` | Interpolating a global constant printed `{DIR}` verbatim | agrees |
+| `examples/rosetta-stone/klingon.zy` | HLZ-KL-001 not ported — the lexer rejected `'` inside an identifier | `f(mI') { <~ mI' }` returns `7` here and in the CLI; tlhIngan Hol parses |
+| `examples/projects/math-es/calculadora.zy` | Float literals accumulated digit by digit, so `3.14159265` printed as `3.1415926499999998` | `>> 3.14159265 ¶` prints `3.14159265` in both engines |
 
-The **permissive** rows are the ones to fix first: a playground user gets output where the
-CLI would have refused. The arity group is now the largest of them, and
-`wrong_arity_on_a_dead_branch.zy` is the one that shows why running the program cannot
-substitute for the check — the bad call sits on a branch that never executes, so only a
-static pass can reach it.
-
-Note that the last two are only reachable through the **example pool**, not through
-`interpreter/tests/` — which is the argument for the pool being real files on disk.
+The float row was the worst of the twelve: it affected **every** float literal, not the one
+example that caught it, and it went unnoticed from v0.0.4 until the example pool became real
+files on disk. The last two rows are reachable only through the pool — which is the argument
+for the pool being real files rather than string literals in a JS module.
 
 ---
 
@@ -74,7 +68,7 @@ by line (CLI: stdin; web: `inputFn`, `null` when exhausted).
 
 ---
 
-## Irreducible skips (39)
+## Irreducible skips (30 corpus files, 6 examples)
 
 | Category | Count | Reason |
 | --- | --- | --- |
@@ -85,7 +79,11 @@ by line (CLI: stdin; web: `inputFn`, `null` when exhausted).
 | Closure snapshot semantics | 2 | Web `Env` is a live linked list; capture-by-value needs structural rework |
 | STD_DB | 4 | `std/db` requires ODBC — no browser equivalent. Importing it errors with a clear message |
 
-The full skip list with per-test comments lives in `tests/test_runner.mjs` (`SKIP_SET`).
+The authority is `zyquality/corpus.toml`, which declares four tags that exclude a file from
+`zyjs` — `BASH_EXEC`, `ANSI_FORMAT`, `TUI`, `STD_DB` — each with a written reason, because an
+exclusion nobody justified cannot be told from a bug somebody hid. The `SKIP_SET` literal that
+used to live inside `tests/test_runner.mjs` is gone: it was one of the five incompatible
+exclusion mechanisms `corpus.toml` replaced.
 Files in the **example pool** do not go in that table: an example whose CLI/browser
 divergence is irreducible declares `// @skip-parity: <reason>` in its own first lines, so
 the reason travels with the file.
@@ -99,7 +97,7 @@ the reason travels with the file.
 - `##Parse(...)` / `##Network(...)` message bodies differ from the Rust equivalents
   (V8/fetch wording vs serde/ureq wording); kinds and catchability match.
 - The engine caps steps and output (browser hang protection); the Rust engines have no
-  such cap, so this is a divergence by design. Defaults are 50 000 steps / 32 KB, the
+  such cap, so this is a divergence by design. Defaults are 2 000 000 steps / 32 KB, the
   playground raises both to 2 000 000 for a `.zyp` mount, and the test runner lifts them
   to `Infinity` via `opts.maxSteps` — benchmark tests are excluded by directory, not by
   SKIP entries. A `>>|` block is exempt: it runs uncapped, and on exit both counters are

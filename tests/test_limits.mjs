@@ -74,7 +74,7 @@ check('a statement after a heavy TUI block still runs',
       afterBlock.includes('done: 2500000'), afterBlock.trim());
 
 // The same program under the playground's *default* ceiling. The bug was never specific to
-// the raised `.zyp` limits — 50 000 steps is a few frames of any TUI.
+// the raised `.zyp` limits — even a generous ceiling is a few seconds of any TUI.
 const afterBlockDefault = await run(`
 i = 0
 >>| {
@@ -84,7 +84,7 @@ i = 0
 }
 >> "done" ¶
 `, {});
-check('and under the default 50 000-step ceiling too',
+check('and under the default ceiling too',
       afterBlockDefault.includes('done'), afterBlockDefault.trim());
 
 // Nesting: each block snapshots the counters as it finds them, so unwinding two of them
@@ -180,8 +180,8 @@ check('output outside a TUI block is still capped',
 // ─── the message names the limit that was actually configured ─────────────────
 section('limit messages');
 
-// These strings used to be hardcoded to the defaults, so a `.zyp` running at 2 000 000
-// reported "50 000 steps" and sent whoever was debugging it looking in the wrong place.
+// These strings used to be hardcoded to the defaults, so a run at a raised ceiling
+// reported the default instead and sent whoever was debugging it looking in the wrong place.
 const stepMsg = await run('i = 0\n@ i < 2500000 { i = i + 1 }\n', { maxSteps: 123_000 });
 check('the step message quotes the configured ceiling',
       stepMsg.includes('123 000 steps'), stepMsg.trim());

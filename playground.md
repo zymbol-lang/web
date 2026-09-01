@@ -27,7 +27,7 @@ interpreter](install.md).
 - **`std/net`** — `get` / `post` / `post_json` / `head` run over `fetch()`, so the
   browser's CORS rules apply: a server that sends no CORS headers is unreachable
   from here even though the same program works from the CLI.
-- A run stops after 50 000 statements or 32 KB of output, so a runaway loop cannot
+- A run stops after 2 000 000 statements or 32 KB of output, so a runaway loop cannot
   freeze the tab. A loaded `.zyp` package runs at 2 000 000 of each instead: it is a
   real multi-file program, not the single-statement snippet those defaults were sized
   for. Statements inside a `>>|` block count against neither — a TUI program is

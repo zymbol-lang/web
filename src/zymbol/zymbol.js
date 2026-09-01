@@ -144,32 +144,31 @@
  * line to be parsed as a separate statement, so `d["a"]$~ "" v` assigned `""` and
  * dropped `v` in silence — same as both Rust engines did. BUG-ZYB-002.
  *
- * Parity re-measured 2026-08-09 against the v0.0.9 branch:
- *   node tests/test_runner.mjs              → 518/528, 39 skipped (irreducible)
- *   node tests/test_runner.mjs --dir examples → 208/210
- * The 10 failures are known gaps, not regressions:
- *   - arity  argument counts are not checked at all (JS PERMISSIVE — 5 tests)
- *     `for (let i = 0; i < fn.params.length; i++) def(params[i], args[i] ?? mkUnit())`
- *     fills a missing argument with Unit and drops a surplus one. That is what the
- *     register VM did until v0.0.9, when a mismatch became a semantic error fatal
- *     before execution in both Rust engines (REFERENCE.md L28) — so this engine is
- *     now the only one that runs `m::f(a, b)` against a one-parameter `f`.
- *     The whole of interpreter/tests/arity/ fails here for that one reason.
- *   - MM-4  import-time semantic gate            (JS PERMISSIVE — worse failure mode)
- *   - MM-11 leftover loop-iterator value         (JS PERMISSIVE — worse failure mode)
- *   - MM-9  root-scope constants at call depth >= 2
- *   - HLZ-005 './../' diagnostic text and error count
- *   - interpolation of a global constant prints {DIR} verbatim
- *   - HLZ-KL-001 NOT ported: is_ident_continue here rejects "'" inside an identifier,
- *     so f(mI') — ordinary tlhIngan Hol — fails to parse. The Rust rule is "any
- *     non-whitespace, non-operator character"; this lexer is narrower.
- *   - float literals are accumulated digit by digit (value + frac / div, see readNumber),
- *     so 3.14159265 prints as 3.1415926499999998. Affects EVERY float literal, not just
- *     the one example that catches it. Predates v0.0.8 — introduced with digit-script
- *     support in v0.0.4, and unnoticed until the example pool became real files.
- * The three PERMISSIVE rows produce output the CLI would have refused, and are the ones
- * to fix first — arity most of all, since it is the only gap where the other three
- * engines now agree with each other and not with this one. Detail and the per-test table: interpreter/IMPL_V008.md § E.3.
+ * Parity re-measured 2026-08-31 on v0.0.9, through zyq — the count is zero:
+ *   node tests/test_runner.mjs               → 661 files: 631 agree, 0 diverge
+ *   node tests/test_runner.mjs --dir examples → 222 files: 216 agree, 0 diverge
+ * The residue is excused, not divergent: 30 corpus files and 6 examples that
+ * corpus.toml excludes for zyjs with a written reason (std/db is ODBC, <\ cmd \>
+ * entropy, TUI needs a real TTY), plus the pool's own @skip-parity markers.
+ *
+ * Every gap this comment used to list is closed, and each was verified on its own
+ * rather than inferred from the total:
+ *   - arity            corpus/arity/ → 7 files, 3 engines, 7 agree. This engine no
+ *                      longer fills a missing argument with Unit; it was the last one
+ *                      that did.
+ *   - MM-4, MM-9, MM-11  corpus/bugs/bug_mm* → 12 files, 12 agree.
+ *   - HLZ-005          errors/parser/parent_path_alias.zy → agrees.
+ *   - global-const interpolation  modules_scope/interp_global_const.zy → agrees.
+ *   - HLZ-KL-001       f(mI') { <~ mI' } returns 7 here and in the CLI; the lexer
+ *                      accepts "'" inside an identifier, so tlhIngan Hol parses.
+ *   - float literals   >> 3.14159265 ¶ prints 3.14159265 in both engines. This was
+ *                      the worst of them: it affected EVERY float literal, and went
+ *                      unnoticed until the example pool became real files on disk.
+ *
+ * Keep this block measured, never edited: it was wrong for three weeks because the
+ * gaps were fixed and the comment was not. Re-run the two commands above; do not
+ * reason about parity from this text. The historical per-test table, with the same
+ * correction applied, is interpreter/IMPL_V008.md § E.3.
  */
 
 // ─── Unicode digit blocks (mirrors DIGIT_BLOCKS in zymbol-lexer) ─────────────
@@ -5497,7 +5496,14 @@ export class Interpreter {
     this.outputFn        = outputFn;
     this.inputFn         = inputFn;
     this.steps           = 0;
-    this.maxSteps        = 50_000;
+    // Raised from 50 000 on 2026-08-31. That ceiling cut a program off after roughly
+    // 30 ms of work, which is less than any program that computes something: the
+    // 65x23 Mandelbrot in examples/graphics/ needs 605 920 steps and 355 ms, and died
+    // a third of the way down the first frame. 2 000 000 leaves that 3x of headroom
+    // and still stops a runaway loop inside a couple of seconds. The tab stays
+    // responsive throughout either way — the interpreter yields every 16 ms
+    // (maybeYield), so this ceiling bounds wasted work, not the page.
+    this.maxSteps        = 2_000_000;
     this.maxInfiniteIter = 100_000;
     this.outputBytes     = 0;
     this.maxBytes        = 32_000;
