@@ -1,0 +1,650 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   essay.css — the long-form reading of the language (index2.html)
+   Layered on top of site.css: the palette, the header and the footer come from
+   there, and nothing here redefines a token. Only the essay's own furniture.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── xterm-256 indices used by the captured terminal frames ───────────────
+   A capture keeps its own ground in both themes. It is a photograph of a
+   terminal, and a terminal is dark; recolouring it for the light theme would
+   be redrawing the evidence rather than showing it. */
+.term {
+  --c2:   #00a050;  --c8:   #7d7d7d;  --c9:   #ff5c57;  --c10: #4ee87a;
+  --c11:  #f3f99d;  --c15:  #f0f0f0;  --c137: #af875f;  --c201: #ff6ac1;
+  --c240: #6a6a6a;  --c245: #9a9a9a;  --c252: #d4d4d4;  --c255: #f2f2f2;
+}
+.c2   { color: var(--c2);   } .c8   { color: var(--c8);   }
+.c9   { color: var(--c9);   } .c10  { color: var(--c10);  }
+.c11  { color: var(--c11);  } .c15  { color: var(--c15);  }
+.c137 { color: var(--c137); } .c201 { color: var(--c201); }
+.c240 { color: var(--c240); } .c245 { color: var(--c245); }
+.c252 { color: var(--c252); } .c255 { color: var(--c255); }
+
+/* ─── page rhythm ─────────────────────────────────────────────────────────── */
+
+body.essay {
+  line-height: 1.72;
+  /* --mono in site.css lists 'pIqaD qolqoS' as a plain family name, so on a machine
+     where the Klingon face is installed (which is the audience that would install it)
+     it is picked up WITHOUT the @font-face unicode-range that constrains the webfont —
+     and it supplies U+0020 at a 40% narrow advance. Ten spaces then measure 43px where
+     ten letters measure 72px, and every aligned code block, every board and every frame
+     on the page silently loses its columns. This page asks for the webfont by its
+     hyphenated @font-face name only, where the unicode-range holds. */
+  --mono: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* No coding ligatures anywhere on this page. JetBrains Mono draws `->` as an arrow,
+   `<>` as a diamond and `!=` as a struck equals — which is a pleasant thing to read
+   code in and a fatal thing on a page whose subject is the shape of the marks. Every
+   operator here has to appear as the characters it is actually made of. */
+body.essay,
+body.essay code,
+body.essay pre,
+body.essay .marks .m,
+body.essay .slot-fill,
+body.essay .gloss-line .seg b,
+body.essay .mp-art {
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "clig" 0, "calt" 0, "dlig" 0;
+}
+
+body.essay section { padding: 4.5rem 0; }
+body.essay section.band {
+  background: var(--bg2);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+body.essay .container { max-width: 1080px; }
+
+body.essay p { max-width: 68ch; }
+
+body.essay code {
+  font-family: var(--mono);
+  font-size: 0.92em;
+  color: var(--green);
+  background: var(--green-dim);
+  padding: 0.08em 0.34em;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+body.essay .section-title { margin-bottom: 1.2rem; }
+body.essay .section-desc  { max-width: 66ch; margin-bottom: 2.5rem; font-size: 1.05rem; }
+
+.two-col {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2rem 3rem;
+  margin: 2rem 0;
+}
+.two-col p { max-width: none; }
+
+.pull {
+  margin: 3rem 0 0;
+  padding: 1.4rem 0 1.4rem 1.6rem;
+  border-left: 2px solid var(--green);
+  font-size: 1.12rem;
+  color: var(--hi);
+  max-width: 74ch;
+}
+.pull em { color: var(--green); font-style: normal; font-weight: 600; }
+
+/* ─── draft strip ─────────────────────────────────────────────────────────── */
+
+.draft-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  padding: 0.6rem max(2rem, calc((100% - 1080px) / 2 + 2rem));
+  background: var(--bg3);
+  border-bottom: 1px solid var(--line);
+  font-size: 0.8rem;
+  color: var(--mid);
+}
+.draft-badge {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--green);
+  border: 1px solid var(--green-mid);
+  border-radius: 999px;
+  padding: 0.14rem 0.6rem;
+  white-space: nowrap;
+}
+
+/* ─── opening ─────────────────────────────────────────────────────────────── */
+
+.opening { padding-top: 4rem !important; }
+
+.kicker {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 1.6rem;
+}
+
+.lede {
+  font-size: clamp(1.9rem, 4.6vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  color: var(--white);
+  margin-bottom: 3rem;
+  max-width: none;
+  text-wrap: balance;
+}
+.lede em { font-style: normal; color: var(--green); }
+
+/* ─── interlinear glosses ─────────────────────────────────────────────────── */
+
+.gloss-hero { margin: 0 0 3rem; }
+
+.gloss {
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 1.6rem 1.8rem 1.4rem;
+}
+.gloss-hero .gloss { padding: 2.2rem 2.2rem 1.8rem; }
+
+.gloss-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0 1.5rem;
+  margin-bottom: 1.1rem;
+}
+.gloss-line .seg { display: flex; flex-direction: column; gap: 0.25rem; }
+.gloss-line .seg b {
+  font-family: var(--mono);
+  font-size: 1.9rem;
+  font-weight: 600;
+  color: var(--green);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.gloss-hero .gloss-line .seg b { font-size: 2.6rem; }
+.gloss-line .seg i {
+  font-family: var(--mono);
+  font-style: normal;
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  color: var(--dim);
+  border-top: 1px solid var(--muted);
+  padding-top: 0.3rem;
+}
+
+.gloss-say  { color: var(--text); font-size: 0.95rem; margin-bottom: 0.35rem; }
+.gloss-mean { color: var(--hi); font-size: 0.95rem; font-weight: 500; }
+
+.gloss-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 2.5rem 0;
+}
+.gloss-grid .wide { grid-column: 1 / -1; }
+.gloss-grid .wide .gloss-line .seg b { font-size: 1.5rem; }
+
+/* ─── modes of signification ──────────────────────────────────────────────── */
+
+.modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+.mode {
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 1.5rem 1.6rem;
+}
+.mode.conventional { border-color: var(--green-mid); }
+.mode h3 {
+  font-size: 1.05rem;
+  color: var(--white);
+  margin-bottom: 0.35rem;
+  letter-spacing: -0.01em;
+}
+.mode-def  { font-size: 0.86rem; color: var(--dim); margin-bottom: 1rem; }
+.mode-note { font-size: 0.88rem; color: var(--text); margin-top: 1rem; }
+.mode-note code, .mode p code { white-space: nowrap; }
+
+.marks { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0; }
+.marks .m {
+  font-family: var(--mono);
+  font-size: 0.88rem;
+  color: var(--op);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  white-space: nowrap;
+}
+
+/* ─── minimal pairs ───────────────────────────────────────────────────────── */
+
+.minimal-pair { margin-top: 1rem; }
+.mp-caption { font-size: 0.92rem; color: var(--mid); margin-bottom: 1.2rem; }
+.mp-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 1rem; max-width: 720px; }
+.mp {
+  text-align: center;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 1.6rem 1rem;
+}
+.mp-art {
+  font-family: var(--mono);
+  font-size: 2.4rem;
+  color: var(--green);
+  letter-spacing: 0.1em;
+  line-height: 1;
+  margin-bottom: 0.7rem;
+}
+.mp-word {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 0.6rem;
+}
+.mp p { font-size: 0.9rem; color: var(--text); margin: 0 auto 0.9rem; max-width: none; }
+.mp-op { font-size: 0.86rem; color: var(--mid); }
+.mp-note { font-size: 0.9rem; color: var(--mid); margin-top: 1.2rem; }
+
+/* ─── the slot template ───────────────────────────────────────────────────── */
+
+.template {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: stretch;
+  margin-bottom: 1.2rem;
+}
+.slot {
+  flex: 1 1 130px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius);
+  border: 1px dashed var(--muted);
+  background: var(--bg3);
+}
+.slot.required { border-style: solid; border-color: var(--green); background: var(--green-dim); }
+.slot-name {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  color: var(--dim);
+}
+.slot.required .slot-name { color: var(--green); }
+.slot-fill {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  color: var(--hi);
+  word-spacing: 0.2em;
+}
+.template-note { font-size: 0.95rem; color: var(--text); max-width: 74ch; }
+
+/* ─── iconic placement ────────────────────────────────────────────────────── */
+
+.conflict {
+  margin-top: 3rem;
+  padding: 1.8rem 2rem;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+.conflict h3 { font-size: 1.05rem; color: var(--white); margin-bottom: 1.2rem; }
+.conflict-pair { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 1rem; margin-bottom: 1.3rem; }
+.conflict-pair > div { display: flex; align-items: center; gap: 1rem; }
+.conflict-pair span { font-size: 0.9rem; color: var(--text); }
+code.big {
+  font-size: 1.7rem;
+  padding: 0.25rem 0.6rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--green);
+}
+.conflict p { font-size: 0.95rem; }
+
+/* ─── transparency classes ────────────────────────────────────────────────── */
+
+.classes { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1rem; margin-bottom: 2.5rem; }
+.cls {
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 1.4rem 1.5rem;
+}
+.cls-n {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 0.4rem;
+}
+.cls h3 { font-size: 1.02rem; color: var(--white); margin-bottom: 0.5rem; }
+.cls p { font-size: 0.88rem; color: var(--text); margin-bottom: 0.9rem; max-width: none; }
+
+table.surplus, .diachrony table, table.squares {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0 2rem;
+  font-size: 0.9rem;
+}
+table.surplus caption {
+  text-align: left;
+  font-size: 0.85rem;
+  color: var(--mid);
+  padding-bottom: 0.7rem;
+}
+table.surplus th, .diachrony th, table.squares th {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+  font-weight: 500;
+  padding: 0.5rem 0.9rem 0.5rem 0;
+  border-bottom: 1px solid var(--line);
+}
+table.surplus td, .diachrony td, table.squares td {
+  padding: 0.65rem 0.9rem 0.65rem 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  vertical-align: top;
+}
+table.surplus td:first-child, .diachrony td:first-child { white-space: nowrap; }
+.diachrony td:first-child { font-family: var(--mono); color: var(--green); font-size: 0.85rem; }
+
+/* ─── design rules ────────────────────────────────────────────────────────── */
+
+.rules { list-style: none; counter-reset: rule; display: grid; gap: 0.5rem; margin: 0 0 3rem; }
+.rules li {
+  counter-increment: rule;
+  position: relative;
+  padding: 0.9rem 1.2rem 0.9rem 3.2rem;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 0.93rem;
+  color: var(--text);
+  max-width: 78ch;
+}
+.rules li::before {
+  content: counter(rule);
+  position: absolute;
+  left: 1.1rem;
+  top: 0.9rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--green);
+  width: 1.4rem;
+}
+.rules b { color: var(--hi); font-weight: 600; }
+
+.diachrony h3 { font-size: 1.05rem; color: var(--white); margin-bottom: 0.6rem; }
+.dia-note { font-size: 0.95rem; color: var(--text); }
+
+/* ─── the LDV cycle ───────────────────────────────────────────────────────── */
+
+.cycle {
+  display: flex;
+  align-items: stretch;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin: 2.5rem 0 1rem;
+}
+.stage {
+  flex: 1 1 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.1rem 1.2rem;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  border-top-width: 2px;
+}
+.stage b { font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.12em; }
+.stage span { font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+.stage.red   { border-top-color: #ff5c57; } .stage.red b   { color: #ff5c57; }
+.stage.green { border-top-color: var(--green); } .stage.green b { color: var(--green); }
+.stage.blue  { border-top-color: var(--op); } .stage.blue b  { color: var(--op); }
+.stage.grey  { border-top-color: var(--mid); } .stage.grey b  { color: var(--mid); }
+.cycle .arrow { align-self: center; color: var(--dim); font-size: 1.1rem; }
+.cycle-note { font-size: 0.95rem; color: var(--text); }
+
+/* ─── captured terminal frames ────────────────────────────────────────────── */
+
+.games { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3rem; margin: 3.5rem 0; }
+.game, .game > * { min-width: 0; }
+.game { margin: 0; }
+.game figcaption { margin-bottom: 1.3rem; }
+.game h3 { font-size: 1.15rem; color: var(--white); margin-bottom: 0.5rem; }
+.game figcaption p { font-size: 0.95rem; color: var(--text); }
+
+.shot {
+  background: #0a0a0a;
+  border: 1px solid #222;
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  margin-bottom: 0.8rem;
+  width: max-content;
+  max-width: 100%;
+}
+.game .shot:first-of-type + .shot { margin-bottom: 0.8rem; }
+
+pre.term {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.34;
+  color: #cfcfcf;
+  white-space: pre;
+  margin: 0;
+  tab-size: 4;
+}
+.shot.wide pre.term { font-size: 0.7rem; line-height: 1.25; }
+
+/* A wide glyph is boxed to exactly two columns, and a board cell to exactly two,
+   because that is what the program measured when it laid the frame out. Left to
+   a font fallback the advance is whatever the CJK or emoji face happens to use,
+   and every cell to the right of it walks. */
+pre.term i {
+  font-style: normal;
+  display: inline-block;
+  text-align: center;
+  overflow: hidden;
+}
+pre.term i.w2   { width: 2ch; }
+pre.term i.cell { width: 2ch; text-align: left; }
+pre.term i.rank { width: 2ch; text-align: left; color: var(--c245, #9a9a9a); }
+
+.shot-cap { font-size: 0.88rem; color: var(--mid); margin-top: 0.9rem; }
+
+/* ─── findings ────────────────────────────────────────────────────────────── */
+
+.findings { margin: 3rem 0 0; }
+.findings h3 { font-size: 1.1rem; color: var(--white); margin-bottom: 0.6rem; }
+.findings-lede { font-size: 0.95rem; color: var(--text); margin-bottom: 1.2rem; }
+.findings ul { list-style: none; display: grid; gap: 0.5rem; margin: 0 0 1.2rem; }
+.findings li {
+  padding: 0.85rem 1.1rem;
+  background: var(--bg3);
+  border-left: 2px solid #ff5c57;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 0.92rem;
+  color: var(--text);
+  max-width: 78ch;
+}
+.findings li b { color: var(--hi); font-weight: 600; }
+
+.callout {
+  margin-top: 2.5rem;
+  padding: 1.7rem 2rem;
+  background: var(--bg3);
+  border: 1px solid var(--green-mid);
+  border-radius: var(--radius-lg);
+}
+.callout p { font-size: 0.98rem; color: var(--text); }
+.callout-punch {
+  margin-top: 0.9rem;
+  font-size: 1.05rem;
+  color: var(--green);
+  font-weight: 600;
+}
+
+/* ─── i18n ────────────────────────────────────────────────────────────────── */
+
+.i18n-split { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 1.6rem; margin-bottom: 3.5rem; }
+.i18n-half { min-width: 0; }
+.i18n-half {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 1.6rem 1.7rem;
+}
+body.essay .band .i18n-half { background: var(--bg3); }
+.half-tag {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 0.8rem;
+}
+.i18n-half p { font-size: 0.93rem; max-width: none; }
+.half-note { font-size: 0.88rem; color: var(--mid); margin-top: 1rem; }
+
+pre.code {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.7;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  margin: 1.1rem 0;
+  color: var(--id);
+  white-space: pre;
+}
+pre.code .k { color: var(--green); }
+pre.code .s { color: var(--str); }
+pre.code .c { color: var(--cmt); font-style: italic; }
+
+/* ─── squares & boards ────────────────────────────────────────────────────── */
+
+.i18n-proof h3, .boards h3 { font-size: 1.1rem; color: var(--white); margin-bottom: 0.6rem; }
+.i18n-proof > p, .boards-lede { font-size: 0.95rem; color: var(--text); }
+table.squares { max-width: 620px; }
+table.squares td.mono { font-family: var(--mono); color: var(--hi); }
+table.squares td.big  { font-size: 1.2rem; color: var(--green); }
+.proof-note { font-size: 0.92rem; color: var(--mid); }
+
+.boards { margin-top: 3rem; }
+.board-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-top: 1.5rem;
+}
+.board-row figure { min-width: 0; }
+.board-row figure { margin: 0; }
+.board-row figcaption {
+  font-size: 0.8rem;
+  color: var(--dim);
+  margin-bottom: 0.5rem;
+  font-family: var(--mono);
+}
+pre.term.board {
+  background: #0a0a0a;
+  border: 1px solid #222;
+  border-radius: var(--radius);
+  padding: 0.9rem 0.8rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  overflow-x: auto;
+  color: #d8d8d8;
+}
+
+/* ─── pIqaD ───────────────────────────────────────────────────────────────── */
+
+.piqad-strip { margin-top: 3rem; }
+.piqad-label {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 0.7rem;
+}
+pre.code.piqad {
+  font-size: 1rem;
+  line-height: 2;
+  font-family: 'pIqaD-qolqoS', var(--mono);
+}
+.piqad-strip p { font-size: 0.93rem; color: var(--text); }
+
+/* ─── consequences ────────────────────────────────────────────────────────── */
+
+.consequences {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 3.5rem;
+}
+.cq {
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 1.6rem;
+}
+.cq-mark {
+  font-family: var(--mono);
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--green);
+  line-height: 1;
+  margin-bottom: 0.8rem;
+}
+.cq h3 { font-size: 1rem; color: var(--white); margin-bottom: 0.5rem; }
+.cq p  { font-size: 0.88rem; color: var(--text); max-width: none; }
+.cq b  { color: var(--hi); }
+
+.closing {
+  border-top: 1px solid var(--line);
+  padding-top: 2.5rem;
+}
+.closing p { font-size: 1.05rem; color: var(--hi); max-width: 74ch; }
+.closing em { color: var(--green); font-style: normal; }
+.closing-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 2rem; }
+
+/* ─── responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 980px) {
+  .modes, .classes, .consequences, .gloss-grid,
+  .board-row { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+}
+@media (max-width: 760px) {
+  body.essay section { padding: 3rem 0; }
+  .two-col, .modes, .classes, .consequences, .gloss-grid,
+  .i18n-split, .mp-grid, .conflict-pair, .board-row { grid-template-columns: minmax(0, 1fr); }
+  .lede { font-size: 2rem; }
+  .cycle .arrow { display: none; }
+  .draft-strip { padding-left: 1.2rem; padding-right: 1.2rem; }
+}

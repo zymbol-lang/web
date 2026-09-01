@@ -1,0 +1,526 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   atlas.css — index3.html: the marks, how they join, and one program.
+   Layered on site.css for the palette, the header and the footer.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body.atlas {
+  /* site.css's --mono lists 'pIqaD qolqoS' as a bare family name. Where the Klingon
+     face is installed it is picked up without the @font-face unicode-range, and its
+     space advance is 40% narrow — which silently breaks every aligned block and the
+     `ch` unit with it. This page never shows pIqaD, so it drops the face. */
+  --mono: 'JetBrains Mono', 'Courier New', monospace;
+  /* No coding ligatures: -> must stay two characters on a page about characters. */
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "clig" 0, "calt" 0, "dlig" 0;
+}
+body.atlas code, body.atlas pre, body.atlas b, body.atlas .made, body.atlas .atom {
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "clig" 0, "calt" 0, "dlig" 0;
+}
+
+body.atlas section { padding: 7rem 0; }
+body.atlas section.band {
+  background: var(--bg2);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+body.atlas .container { max-width: 1000px; padding: 0 2rem; margin: 0 auto; }
+
+/* ─── section heads: three lines, never more ──────────────────────────────── */
+
+.head { margin-bottom: 3rem; }
+.head .num {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  color: var(--green);
+  margin-bottom: 1rem;
+}
+.head h2 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: var(--white);
+  line-height: 1;
+  margin-bottom: 0.9rem;
+}
+.head p { font-size: 1.05rem; color: var(--mid); max-width: 46ch; }
+
+.foot {
+  margin-top: 3.5rem;
+  font-size: 1rem;
+  color: var(--mid);
+  max-width: 54ch;
+}
+.foot b { color: var(--green); font-weight: 600; }
+.foot.small { font-size: 0.88rem; margin-top: 1.6rem; max-width: 62ch; }
+.foot.small code { font-size: 0.82rem; }
+/* <i> quotes another language's word; <s> strikes a claim being rejected. */
+.foot i { color: var(--mid); font-style: italic; }
+.foot s { color: var(--dim); }
+.foot a.more { color: var(--green); border-bottom: 1px solid var(--green-mid); }
+.foot a.more:hover { border-bottom-color: var(--green); }
+
+/* ─── hero ────────────────────────────────────────────────────────────────── */
+
+#hero3 {
+  min-height: 78vh;
+  display: grid;
+  grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem clamp(1.5rem, 5vw, 4rem) 3.5rem !important;
+  position: relative;
+  overflow: hidden;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.hero-core { text-align: center; position: relative; z-index: 1; }
+
+/* The mascot keeps the float from the front page — same 6s keyframes, same -12px,
+   so the bird breathes at the same rate on both pages. The download card under it is
+   site.css's .mascot-download-card, unchanged, so the two pages cannot drift apart on
+   the version they offer. */
+.hero-bird {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+.hero-bird .mascot-img {
+  width: clamp(150px, 17vw, 250px);
+  height: auto;
+  filter: drop-shadow(0 0 45px #00e87a2e);
+  animation: float 6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-bird .mascot-img { animation: none; }
+}
+#hero3::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -60%;
+  width: 150%;
+  aspect-ratio: 2 / 1;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, var(--green-dim), transparent 70%);
+  pointer-events: none;
+}
+
+.glyph-stage {
+  position: relative;
+  height: clamp(118px, 17vw, 160px);
+  width: 100%;
+  margin-bottom: 1.4rem;
+}
+.glyph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  opacity: 0;
+  transform: scale(0.88);
+  transition: opacity 0.55s ease, transform 0.55s ease;
+}
+.glyph.is-on { opacity: 1; transform: scale(1); }
+.glyph b {
+  font-family: var(--mono);
+  font-size: clamp(3.6rem, 10.5vw, 7.5rem);
+  font-weight: 500;
+  line-height: 0.85;
+  color: var(--green);
+  text-shadow: 0 0 70px var(--green-mid);
+}
+.glyph em {
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+
+#hero3 .kicker {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 1.1rem;
+}
+#hero3 h1 {
+  font-size: clamp(2.4rem, 6.6vw, 4.4rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 0.98;
+  color: var(--white);
+  margin-bottom: 1.1rem;
+}
+#hero3 h1 .t2 { color: var(--green); }
+
+#hero3 .sub {
+  font-size: clamp(1.08rem, 2vw, 1.35rem);
+  color: var(--hi);
+  max-width: 52ch;
+  margin: 0 auto 1rem;
+  line-height: 1.5;
+}
+#hero3 .sub s { color: var(--dim); text-decoration-color: var(--dim); }
+#hero3 .sub b { color: var(--green); font-weight: 700; }
+
+#hero3 .sub2 {
+  font-size: clamp(0.95rem, 1.6vw, 1.08rem);
+  color: var(--mid);
+  max-width: 46ch;
+  margin: 0 auto 1.2rem;
+}
+#hero3 .sub2 em {
+  font-style: normal;
+  color: var(--green);
+  font-weight: 600;
+  border-bottom: 1px dashed var(--green-mid);
+}
+#hero3 .sub em {
+  font-style: normal;
+  color: var(--green);
+  font-weight: 600;
+  border-bottom: 1px dashed var(--green-mid);
+}
+
+/* The two claims the language is actually built on, stated as flat facts — one to a
+   line, no capsules. The argument for them is section 02 and index2.html. */
+.claims {
+  margin: 0 auto 1.7rem;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.9;
+  letter-spacing: 0.02em;
+  color: var(--mid);
+}
+.claims span { display: block; }
+
+.hero-cta { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; position: relative; z-index: 1; }
+#read .hero-cta { justify-content: flex-start; margin-top: 2.5rem; }
+.permalink { margin-top: 0.9rem; font-size: 0.82rem; color: var(--dim); }
+.permalink code { font-family: var(--mono); color: var(--mid); font-size: 0.82rem; }
+
+/* ─── 01 · the marks ──────────────────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+.mk {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--bg3);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 0.5rem 1.1rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  transition: border-color 0.18s, background 0.18s, transform 0.18s;
+  font: inherit;
+  color: inherit;
+}
+.mk:hover, .mk:focus-visible { border-color: var(--green-mid); background: var(--bg4); transform: translateY(-3px); outline: none; }
+.mk.sel { border-color: var(--green); background: var(--green-dim); }
+.mk b {
+  font-family: var(--mono);
+  font-size: clamp(1.5rem, 3.2vw, 2.1rem);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--green);
+}
+.mk i {
+  font-style: normal;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--dim);
+  text-align: center;
+}
+.mk.sel i { color: var(--text); }
+
+.mk-out {
+  margin-top: 1.4rem;
+  display: flex;
+  align-items: baseline;
+  gap: 1.4rem;
+  flex-wrap: wrap;
+  padding: 1.1rem 1.4rem;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--green);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--bg3);
+  min-height: 3.6rem;
+}
+.mk-out code {
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  color: var(--hi);
+  white-space: nowrap;
+}
+.mk-out span { font-size: 0.92rem; color: var(--mid); }
+.mk-out.pop { animation: pop 0.32s ease; }
+@keyframes pop { from { opacity: 0.25; transform: translateX(-5px); } to { opacity: 1; transform: none; } }
+
+/* ─── 02 · joining ────────────────────────────────────────────────────────── */
+
+.joins { display: grid; gap: 0.6rem; }
+.jn {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 1.1rem 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--bg3);
+  transition: border-color 0.2s, background 0.2s;
+}
+.jn:hover { border-color: var(--green-mid); background: var(--bg4); }
+
+.jn .atom {
+  font-family: var(--mono);
+  font-size: 1.35rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--muted);
+  border-radius: var(--radius);
+  min-width: 2.6rem;
+  padding: 0.35rem 0.6rem;
+  text-align: center;
+}
+.jn .plus { color: var(--dim); font-size: 0.9rem; }
+.jn .eq   { color: var(--dim); font-size: 0.9rem; margin: 0 0.7rem; }
+.jn .made {
+  font-family: var(--mono);
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--green);
+  background: var(--green-dim);
+  border: 1px solid var(--green-mid);
+  border-radius: var(--radius);
+  padding: 0.3rem 0.85rem;
+}
+.jn .gloss { margin-left: auto; color: var(--mid); font-size: 0.95rem; text-align: right; }
+
+/* ─── 03 · read one ───────────────────────────────────────────────────────── */
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+.pane {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--bg3);
+  overflow: hidden;
+}
+.pane-tag {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dim);
+  padding: 0.75rem 1.1rem;
+  border-bottom: 1px solid var(--line);
+}
+/* The program is 58 columns wide; stretching its pane to the full grid leaves
+   half of it empty. The fractal is the one that wants the whole width. */
+.code-pane { max-width: 60rem; margin: 0 auto; width: 100%; }
+
+pre.zy {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  padding: 1.2rem 1.3rem;
+  margin: 0;
+  overflow-x: auto;
+  color: var(--id);
+  white-space: pre;
+}
+pre.zy .o { color: var(--green); }        /* the marks */
+pre.zy .s { color: var(--str); }
+pre.zy .n { color: var(--num); }
+pre.zy .c { color: var(--cmt); }
+pre.zy .p { color: var(--punct); }
+
+.out-pane { background: #080808; border-color: #1d1d1d; display: flex; flex-direction: column; }
+.out-pane .pane-tag { border-bottom-color: #1d1d1d; }
+pre.fractal {
+  font-family: var(--mono);
+  font-size: clamp(0.4rem, 0.9vw, 0.78rem);
+  line-height: 1.15;
+  padding: 1.2rem 0.9rem;
+  margin: auto;
+  white-space: pre;
+  overflow-x: auto;
+}
+/* The colours are the program's own. It picks an ANSI-256 index per escape step and
+   writes it with >>~; these are those indices converted to hex, nothing invented.
+   Kept identical to the terminal so the page shows what the playground shows. */
+pre.fractal .c28  { color: #008700; }
+pre.fractal .c34  { color: #00af00; }
+pre.fractal .c40  { color: #00d700; }
+pre.fractal .c46  { color: #00ff00; }
+pre.fractal .c82  { color: #5fff00; }
+pre.fractal .c118 { color: #87ff00; }
+pre.fractal .c154 { color: #afff00; }
+pre.fractal .c191 { color: #d7ff5f; }
+pre.fractal .c231 { color: #ffffff; }
+pre.fractal .c244 { color: #808080; }
+
+/* ─── 04 · captured terminal frames ───────────────────────────────────────── */
+
+/* A capture keeps its own ground in both themes: it is a photograph of a terminal,
+   and recolouring it for the light theme would be redrawing the evidence. */
+
+/* The ANSI-256 indices the four captured frames actually emit, converted to hex.
+   Kept in one place so a recapture is a one-line regeneration. */
+pre.term .c2   { color: #00a050; }
+pre.term .c8   { color: #7d7d7d; }
+pre.term .c9   { color: #ff5c57; }
+pre.term .c10  { color: #4ee87a; }
+pre.term .c11  { color: #f3f99d; }
+pre.term .c15  { color: #f0f0f0; }
+pre.term .c28  { color: #008700; }
+pre.term .c34  { color: #00af00; }
+pre.term .c40  { color: #00d700; }
+pre.term .c46  { color: #00ff00; }
+pre.term .c82  { color: #5fff00; }
+pre.term .c118 { color: #87ff00; }
+pre.term .c137 { color: #af875f; }
+pre.term .c154 { color: #afff00; }
+pre.term .c191 { color: #d7ff5f; }
+pre.term .c201 { color: #ff00ff; }
+pre.term .c231 { color: #ffffff; }
+pre.term .c240 { color: #585858; }
+pre.term .c244 { color: #808080; }
+pre.term .c245 { color: #8a8a8a; }
+pre.term .c252 { color: #d0d0d0; }
+pre.term .c255 { color: #eeeeee; }
+
+.builds { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.2rem; }
+.build { margin: 0; min-width: 0; display: flex; flex-direction: column; }
+.build .shot {
+  background: #080808;
+  align-items: center;
+  border: 1px solid #1d1d1d;
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1rem;
+  overflow-x: auto;
+  display: flex;
+  justify-content: center;
+}
+/* The two frames of one game sit side by side — the screen that sets it up and
+   the game itself — so a tall snake field does not leave a hole under the Go board. */
+.shots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, auto));
+  gap: 0.7rem;
+  justify-content: start;
+  align-items: stretch;
+}
+pre.term {
+  font-family: var(--mono);
+  font-size: clamp(0.5rem, 0.92vw, 0.72rem);
+  /* The Go grid is drawn out of box-drawing characters, so the rows have to keep
+     enough leading to read as a lattice rather than a solid block. */
+  line-height: 1.25;
+  margin: 0;
+  white-space: pre;
+  color: #cfcfcf;
+}
+/* Every non-ASCII cell is boxed to the width the terminal gave it — one column or
+   two — because none of box-drawing, CJK or emoji is in the page's monospace
+   webfont, and each fallback picks its own advance. Measured here: `┼` and `⚫`
+   both come back at 3ch where the cell is 1ch and 2ch. Boxing fixes the columns;
+   fitGlyphs() in the page then scales any glyph still wider than its box, which
+   is what a terminal and the playground canvas do when they draw cell by cell. */
+pre.term i {
+  font-style: normal;
+  display: inline-block;
+  text-align: center;
+  /* No overflow:hidden — it clips the tall box-drawing verticals and the frame
+     comes out dotted. fitGlyphs() already guarantees the glyph fits its box, so
+     there is nothing left to clip. */
+}
+pre.term i.w1 { width: 1ch; }
+pre.term i.w2 { width: 2ch; }
+
+.build figcaption {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 0.2rem 0;
+  margin-top: auto;   /* captions line up even when the two frames differ in height */
+}
+.build figcaption b { font-size: 1.05rem; color: var(--white); font-weight: 600; }
+.build figcaption span { font-size: 0.86rem; color: var(--mid); flex: 1 1 12ch; }
+.build figcaption a {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--green);
+  border: 1px solid var(--green-mid);
+  border-radius: 100px;
+  padding: 0.18rem 0.7rem;
+  white-space: nowrap;
+  transition: background 0.18s;
+}
+.build figcaption a:hover { background: var(--green-dim); }
+
+/* ─── entrance: the joins assemble as they come into view ─────────────────── */
+
+.reveal > * {
+  opacity: 0;
+  transform: translateY(14px);
+}
+.reveal.in > * {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(.2,.7,.3,1);
+}
+.reveal.in > *:nth-child(1) { transition-delay: 0.00s; }
+.reveal.in > *:nth-child(2) { transition-delay: 0.07s; }
+.reveal.in > *:nth-child(3) { transition-delay: 0.14s; }
+.reveal.in > *:nth-child(4) { transition-delay: 0.21s; }
+.reveal.in > *:nth-child(5) { transition-delay: 0.28s; }
+.reveal.in > *:nth-child(6) { transition-delay: 0.35s; }
+.reveal.in > *:nth-child(7) { transition-delay: 0.42s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal > *, .reveal.in > * { opacity: 1; transform: none; transition: none; }
+  .glyph { transition: none; }
+}
+
+/* ─── responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .grid  { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .split { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 860px) {
+  #hero3 { grid-template-columns: minmax(0, 1fr); text-align: center; }
+  .hero-bird .mascot-img { width: clamp(120px, 34vw, 190px); }
+}
+@media (max-width: 700px) {
+  body.atlas section { padding: 4.5rem 0; }
+  .head { margin-bottom: 2.5rem; }
+  .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .shots { grid-template-columns: minmax(0, 1fr); }
+  .jn { flex-wrap: wrap; }
+  .jn .gloss { margin-left: 0; width: 100%; text-align: left; padding-top: 0.4rem; }
+  .mk-out code { white-space: normal; }
+}

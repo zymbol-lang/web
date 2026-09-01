@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zymbol — No Words, Just Symbols</title>
+  <meta name="description" content="Not no keywords — no words: nothing in Zymbol’s grammar is a word in any language. Fourteen marks, one meaning each, agglutinating into every operator.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="Zymbol-Lang">
+  <link rel="canonical" href="https://zymbol-lang.org/index3.html">
+
+  <meta property="og:type"        content="website">
+  <meta property="og:url"         content="https://zymbol-lang.org/index3.html">
+  <meta property="og:title"       content="Zymbol — No Words, Just Symbols">
+  <meta property="og:description" content="A minimalist symbolic language. Fourteen marks, one meaning each, and they agglutinate.">
+  <meta property="og:image"       content="https://zymbol-lang.org/zymbol_logo.png">
+  <meta property="og:locale"      content="en_US">
+  <meta property="og:site_name"   content="Zymbol-Lang">
+
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="Zymbol — No Words, Just Symbols">
+  <meta name="twitter:description" content="A minimalist symbolic language. Fourteen marks, one meaning each, and they agglutinate.">
+  <meta name="twitter:image"       content="https://zymbol-lang.org/zymbol_logo.png">
+
+  <link rel="alternate" type="text/markdown" href="index3.md">
+  <link rel="license" href="LICENSE">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="assets/img/favicon.png">
+
+  <script>
+  (function(){
+    var s = localStorage.getItem('zy-theme');
+    var light = s ? s === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+    if (light) document.documentElement.classList.add('light');
+  })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/site.css">
+  <link rel="stylesheet" href="src/css/atlas.css">
+</head>
+<body class="atlas">
+
+<header>
+  <a href="index.html" class="logo">
+    <img src="assets/img/logo.png" alt="Zymbol-Lang">
+    <span class="logo-code">
+      <span class="logo-sym">@{</span>
+      <span class="logo-op">&gt;&gt;</span><span class="logo-str">" Zymbol-Lang "</span>
+      <span class="logo-sym">}</span>
+    </span>
+  </a>
+  <div class="header-right">
+    <nav id="main-nav">
+      <a href="#marks">Marks</a>
+      <a href="#join">Joining</a>
+      <a href="#read">Read one</a>
+      <a href="#built">Built with it</a>
+      <a href="index.html">Home</a>
+      <a href="playground.html" class="nav-cta">Try Online</a>
+    </nav>
+    <button id="theme-toggle" aria-label="Toggle theme" title="Toggle light/dark">
+      <span id="theme-icon">🌙</span>
+    </button>
+    <button id="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span>☰</span>
+    </button>
+  </div>
+</header>
+
+<!-- ═══ HERO ═══ -->
+<section id="hero3">
+  <div class="hero-bird">
+    <div class="mascot-wrap">
+      <img class="mascot-img" src="assets/img/logo.png" alt="Zymbol-Lang mascot">
+      <div class="mascot-download-card">
+        <div class="dl-version">v0.0.8 &middot; Public Alpha</div>
+        <div class="dl-title">Get Zymbol</div>
+        <a href="install.html" class="btn-primary dl-btn">
+          <span>&darr;</span>&nbsp;Download &amp; Install
+        </a>
+        <div class="dl-meta">Linux &nbsp;&middot;&nbsp; Windows &nbsp;&middot;&nbsp; macOS</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-core">
+  <div class="glyph-stage" aria-hidden="true">
+    <span class="glyph is-on"><b>?</b><em>condition</em></span>
+    <span class="glyph"><b>@</b><em>time</em></span>
+    <span class="glyph"><b>&gt;&gt;</b><em>out</em></span>
+    <span class="glyph"><b>&lt;~</b><em>give back</em></span>
+    <span class="glyph"><b>$</b><em>collection</em></span>
+    <span class="glyph"><b>¶</b><em>newline</em></span>
+  </div>
+
+  <p class="kicker">why zymbol</p>
+  <h1>No words.<br><span class="t2">Just symbols.</span></h1>
+  <p class="sub">
+    Not <s>no keywords</s> — <b>no words</b>.<br>
+    Nothing in the grammar is a word in any language.
+  </p>
+  <p class="sub2">
+    A minimalist symbolic language: fourteen marks, one meaning each, and they
+    <em>agglutinate</em> into everything else.
+  </p>
+  <p class="claims">
+    <span>Identifiers in any human language.</span>
+    <span>Symbols never change.</span>
+  </p>
+
+  <div class="hero-cta">
+    <a href="#marks" class="btn-primary">↓&nbsp; Start with the marks</a>
+    <a href="playground.html" class="btn-ghost">▶&nbsp; Playground</a>
+  </div>
+  </div><!-- .hero-core -->
+</section>
+
+<!-- ═══ 1 · THE MARKS ═══ -->
+<section id="marks">
+  <div class="container">
+    <div class="head">
+      <span class="num">01</span>
+      <h2>The marks</h2>
+      <p>Each one means one thing. Tap to see it used.</p>
+    </div>
+
+    <div class="grid reveal" id="mark-grid">
+      <button class="mk sel" data-code='name = 5'                data-note="binds a name to a value">
+        <b>=</b><i>bind</i></button>
+      <button class="mk" data-code='&gt;&gt; "hi"'          data-note="writes to the output stream">
+        <b>&gt;&gt;</b><i>out</i></button>
+      <button class="mk" data-code='&lt;&lt; "name?" who'    data-note="the mirror of &gt;&gt; — it reads instead of writes">
+        <b>&lt;&lt;</b><i>in</i></button>
+      <button class="mk" data-code='&gt;&gt; "hi" ¶'        data-note="ends the line — the pilcrow, as a proofreader marks it">
+        <b>¶</b><i>newline</i></button>
+      <button class="mk" data-code='? n &gt; 0 { … }'        data-note="the outcome hangs on a question that may come back false, empty or nothing">
+        <b>?</b><i>condition</i></button>
+      <button class="mk" data-code='_ { … }'                data-note="a slot that exists but takes no name — the arm nothing else matched, a skipped element, a pipe hole">
+        <b>_</b><i>binds nothing</i></button>
+      <button class="mk" data-code='@ x : list { … }'       data-note="the time context — repeat over a list, a range or a condition; break, continue and sleep all live here">
+        <b>@</b><i>time</i></button>
+      <button class="mk" data-code='1..10'                  data-note="two dots, two ends: the span between them">
+        <b>..</b><i>range</i></button>
+      <button class="mk" data-code='&lt;~ n * 2'            data-note="hands the value back to the caller">
+        <b>&lt;~</b><i>give back</i></button>
+      <button class="mk" data-code='x -&gt; x * 2'           data-note="the arrow points at what comes out">
+        <b>-&gt;</b><i>goes to</i></button>
+      <button class="mk" data-code='list$'                  data-note="never alone — it heads the collection family">
+        <b>$</b><i>collection</i></button>
+      <button class="mk" data-code='#1  #0'                 data-note="the level above values: types, truth, modes">
+        <b>#</b><i>meta</i></button>
+      <button class="mk" data-code='@!'                     data-note="do it, and do not be gentle about it">
+        <b>!</b><i>force</i></button>
+      <button class="mk" data-code='&lt;&lt;|'               data-note="just one of the thing — one key, not a line">
+        <b>|</b><i>one</i></button>
+    </div>
+
+    <div class="mk-out" id="mk-out">
+      <code id="mk-code">name = 5</code>
+      <span id="mk-note">binds a name to a value</span>
+    </div>
+
+    <p class="foot small">
+      <b>None of those readings is another language's keyword.</b> <code>?</code> is not
+      <i>if</i> — <i>if</i> is the word English picked for it. <code>?</code> is a
+      <b>condition</b>: the outcome hangs on a question. Same for the rest — <code>@</code>
+      heads the time context rather than being a <i>loop</i>, and <code>_</code> binds no
+      name rather than being an <i>else</i>. Glossing a mark with the keyword some other
+      language chose would put the words straight back in.
+    </p>
+
+    <p class="foot small">
+      Even Zymbol's own analyser files these under <code>KEYWORD</code> — the language
+      server has no other slot to put them in. That is a convention inside a tokenizer,
+      not a word in the language. Hence <b>no words</b>, which is exact, rather than
+      <s>no keywords</s>, which is only nearly true.
+    </p>
+  </div>
+</section>
+
+<!-- ═══ 2 · JOINING ═══ -->
+<section id="join" class="band">
+  <div class="container">
+    <div class="head">
+      <span class="num">02</span>
+      <h2>They join</h2>
+      <p>Agglutination, in the plain linguistic sense: one mark, one meaning, and the
+      meanings stack. An operator is <em>spelled</em>, not coined.</p>
+    </div>
+
+    <div class="joins reveal">
+      <div class="jn">
+        <span class="atom">$</span><span class="plus">+</span><span class="atom">#</span>
+        <span class="eq">=</span>
+        <span class="made">$#</span>
+        <span class="gloss">how many</span>
+      </div>
+      <div class="jn">
+        <span class="atom">$</span><span class="plus">+</span><span class="atom">+</span>
+        <span class="eq">=</span>
+        <span class="made">$+</span>
+        <span class="gloss">append</span>
+      </div>
+      <div class="jn">
+        <span class="atom">$</span><span class="plus">+</span><span class="atom">^</span><span class="plus">+</span><span class="atom">-</span>
+        <span class="eq">=</span>
+        <span class="made">$^-</span>
+        <span class="gloss">sort, descending</span>
+      </div>
+      <div class="jn">
+        <span class="atom">&gt;&gt;</span><span class="plus">+</span><span class="atom">!</span>
+        <span class="eq">=</span>
+        <span class="made">&gt;&gt;!</span>
+        <span class="gloss">wipe the screen</span>
+      </div>
+      <div class="jn">
+        <span class="atom">&lt;&lt;</span><span class="plus">+</span><span class="atom">|</span><span class="plus">+</span><span class="atom">?</span>
+        <span class="eq">=</span>
+        <span class="made">&lt;&lt;|?</span>
+        <span class="gloss">one key, if there is one</span>
+      </div>
+    </div>
+
+    <p class="foot">
+      Five releases. <b>One</b> new mark. Everything else was spelled from the ones already
+      here — <a class="more" href="index2.html">the long version of why, if you want it</a>.
+    </p>
+  </div>
+</section>
+
+<!-- ═══ 3 · READ ONE ═══ -->
+<section id="read">
+  <div class="container">
+    <div class="head">
+      <span class="num">03</span>
+      <h2>Now read this</h2>
+      <p>Every mark below is one you have already met.</p>
+    </div>
+
+    <div class="split">
+      <div class="pane code-pane">
+        <div class="pane-tag">mandelbrot.zy</div>
+        <pre class="zy" id="zy-src"><span class="c">// Outside the set: faint to solid, dark green to bright.</span>
+trazo  <span class="o">=</span> <span class="s">&quot; .:-=+*#%&quot;</span>
+tintes <span class="o">=</span> <span class="p">[</span><span class="n">22</span><span class="p">,</span> <span class="n">28</span><span class="p">,</span> <span class="n">34</span><span class="p">,</span> <span class="n">40</span><span class="p">,</span> <span class="n">46</span><span class="p">,</span> <span class="n">82</span><span class="p">,</span> <span class="n">118</span><span class="p">,</span> <span class="n">154</span><span class="p">,</span> <span class="n">191</span><span class="p">]</span>
+
+<span class="c">// Steps survived before the orbit runs away; 0 if it never does.</span>
+<span class="c">// zr2 and zi2 are carried, so each step costs four products, not six.</span>
+fuga<span class="p">(</span>cr<span class="p">,</span> ci<span class="p">)</span> <span class="p">{</span>
+    zr  <span class="o">=</span> <span class="n">0.0</span>
+    zi  <span class="o">=</span> <span class="n">0.0</span>
+    zr<span class="n">2</span> <span class="o">=</span> <span class="n">0.0</span>
+    zi<span class="n">2</span> <span class="o">=</span> <span class="n">0.0</span>
+    <span class="o">@</span> i<span class="o">:</span><span class="n">1</span><span class="o">..</span><span class="n">36</span> <span class="p">{</span>
+        <span class="o">?</span> zr<span class="n">2</span> <span class="o">+</span> zi<span class="n">2</span> <span class="o">&gt;</span> <span class="n">4.0</span> <span class="p">{</span> <span class="o">&lt;~</span> i <span class="p">}</span>
+        zi  <span class="o">=</span> <span class="n">2.0</span> <span class="o">*</span> zr <span class="o">*</span> zi <span class="o">+</span> ci
+        zr  <span class="o">=</span> zr<span class="n">2</span> <span class="o">-</span> zi<span class="n">2</span> <span class="o">+</span> cr
+        zr<span class="n">2</span> <span class="o">=</span> zr <span class="o">*</span> zr
+        zi<span class="n">2</span> <span class="o">=</span> zi <span class="o">*</span> zi
+    <span class="p">}</span>
+    <span class="o">&lt;~</span> <span class="n">0</span>
+<span class="p">}</span>
+
+<span class="o">&gt;&gt;|</span> <span class="p">{</span>
+    <span class="o">&gt;&gt;!</span>
+    <span class="p">(</span>alto<span class="p">,</span> ancho<span class="p">)</span> <span class="o">=</span> <span class="o">&gt;&gt;?</span>
+    filas <span class="o">=</span> alto <span class="o">-</span> <span class="n">2</span>
+    cols  <span class="o">=</span> ancho <span class="o">-</span> <span class="n">1</span>
+
+    <span class="c">// A cell is ~2.5x taller than wide; the vertical span is</span>
+    <span class="c">// scaled by that so the set comes out round.</span>
+    anchura <span class="o">=</span> <span class="n">2.7</span>
+    altura  <span class="o">=</span> filas <span class="o">*</span> anchura <span class="o">*</span> <span class="n">2.5</span> <span class="o">/</span> cols
+    medio   <span class="o">=</span> filas <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> <span class="n">1</span>
+
+    <span class="o">@</span> y<span class="o">:</span><span class="n">1</span><span class="o">..</span>medio <span class="p">{</span>
+        espejo <span class="o">=</span> filas <span class="o">+</span> <span class="n">1</span> <span class="o">-</span> y
+        <span class="o">@</span> x<span class="o">:</span><span class="n">1</span><span class="o">..</span>cols <span class="p">{</span>
+            cr <span class="o">=</span> <span class="p">(</span>x <span class="o">-</span> <span class="n">1</span><span class="p">)</span> <span class="o">*</span> anchura <span class="o">/</span> cols <span class="o">-</span> <span class="n">2.1</span>
+            ci <span class="o">=</span> <span class="p">(</span>y <span class="o">-</span> <span class="n">1</span><span class="p">)</span> <span class="o">*</span> altura  <span class="o">/</span> filas <span class="o">-</span> altura <span class="o">/</span> <span class="n">2.0</span>
+            n  <span class="o">=</span> fuga<span class="p">(</span>cr<span class="p">,</span> ci<span class="p">)</span>
+            marca <span class="o">=</span> <span class="s">&quot;@&quot;</span>
+            tinte <span class="o">=</span> <span class="n">231</span>
+            <span class="o">?</span> n <span class="o">&lt;&gt;</span> <span class="n">0</span> <span class="p">{</span>
+                paso <span class="o">=</span> n <span class="o">/</span> <span class="n">4</span> <span class="o">+</span> <span class="n">1</span>
+                <span class="o">?</span> paso <span class="o">&gt;</span> <span class="n">9</span> <span class="p">{</span> paso <span class="o">=</span> <span class="n">9</span> <span class="p">}</span>
+                marca <span class="o">=</span> trazo<span class="p">[</span>paso<span class="p">]</span>
+                tinte <span class="o">=</span> tintes<span class="p">[</span>paso<span class="p">]</span>
+            <span class="p">}</span>
+            <span class="o">&gt;&gt;~</span> <span class="p">(</span>y<span class="p">,</span> x<span class="p">,</span> <span class="n">0</span><span class="p">,</span> tinte<span class="p">)</span> <span class="o">&gt;</span> marca
+            <span class="o">?</span> espejo <span class="o">&gt;</span> medio <span class="p">{</span> <span class="o">&gt;&gt;~</span> <span class="p">(</span>espejo<span class="p">,</span> x<span class="p">,</span> <span class="n">0</span><span class="p">,</span> tinte<span class="p">)</span> <span class="o">&gt;</span> marca <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="o">&gt;&gt;~</span> <span class="p">(</span>alto<span class="p">,</span> <span class="n">2</span><span class="p">,</span> <span class="n">0</span><span class="p">,</span> <span class="n">244</span><span class="p">)</span> <span class="o">&gt;</span> <span class="s">&quot;any key to leave&quot;</span>
+    <span class="o">&lt;&lt;|</span> <span class="o">_</span>tecla
+<span class="p">}</span></pre>
+      </div>
+      <div class="pane out-pane">
+        <div class="pane-tag">its output — the program's own colours</div>
+        <pre class="fractal">                                         <span class="c28">...................................................................</span>
+                                    <span class="c28">...................................................</span><span class="c34">:</span><span class="c40">-</span><span class="c34">::</span><span class="c28">......................</span>
+                                <span class="c28">........................................................</span><span class="c34">::</span><span class="c40">-</span><span class="c34">:</span><span class="c28">.........................</span>
+                             <span class="c28">...........................................................</span><span class="c34">:::</span><span class="c40">--</span><span class="c34">::::</span><span class="c40">-</span><span class="c34">:</span><span class="c28">......................</span>
+                          <span class="c28">.............................................................</span><span class="c34">::::</span><span class="c40">--</span><span class="c231">@</span><span class="c40">-</span><span class="c34">::::</span><span class="c28">.........................</span>
+                       <span class="c28">..............................................................</span><span class="c34">:::::</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@</span><span class="c118">*</span><span class="c40">-</span><span class="c46">=</span><span class="c34">::::</span><span class="c28">..........................</span>
+                    <span class="c28">...............................................................</span><span class="c34">:</span><span class="c40">--</span><span class="c231">@</span><span class="c82">+</span><span class="c40">-</span><span class="c154">#</span><span class="c118">*</span><span class="c154">#</span><span class="c231">@@</span><span class="c118">*</span><span class="c46">=</span><span class="c40">--</span><span class="c118">*</span><span class="c40">-</span><span class="c34">:</span><span class="c28">.........................</span>
+                  <span class="c28">...............................................................</span><span class="c34">:::::</span><span class="c40">-</span><span class="c191">%</span><span class="c231">@@@@@@@@@@</span><span class="c46">=</span><span class="c34">::::</span><span class="c28">.......................</span>
+                <span class="c28">.............................................................</span><span class="c34">::::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@</span><span class="c82">+</span><span class="c34">:::::</span><span class="c28">......................</span>
+              <span class="c28">......................................................</span><span class="c34">:::::</span><span class="c82">+</span><span class="c46">=</span><span class="c34">:::::::::</span><span class="c40">---</span><span class="c82">+</span><span class="c231">@@@@@@@@@</span><span class="c46">=</span><span class="c40">--</span><span class="c34">::::</span><span class="c82">+</span><span class="c34">:::</span><span class="c28">....</span><span class="c34">::::</span><span class="c28">..........</span>
+             <span class="c28">......................................................</span><span class="c34">::</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@</span><span class="c118">*</span><span class="c46">==</span><span class="c82">+</span><span class="c40">---</span><span class="c82">+</span><span class="c231">@@</span><span class="c82">++</span><span class="c231">@@@@@@@@@@@@@@@@@@</span><span class="c46">=</span><span class="c231">@@</span><span class="c118">*</span><span class="c40">-</span><span class="c34">:::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c34">::</span><span class="c28">........</span>
+           <span class="c28">.......................................................</span><span class="c34">::::</span><span class="c40">-</span><span class="c46">=</span><span class="c154">#</span><span class="c231">@@@</span><span class="c191">%</span><span class="c82">+</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c191">%</span><span class="c118">*</span><span class="c40">-</span><span class="c82">+</span><span class="c154">#</span><span class="c231">@@@</span><span class="c118">*</span><span class="c82">+</span><span class="c40">-</span><span class="c34">:</span><span class="c28">........</span>
+          <span class="c28">.......................................................</span><span class="c34">:::::</span><span class="c40">--</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c46">=</span><span class="c40">-</span><span class="c34">::</span><span class="c28">........</span>
+         <span class="c28">.....................................................</span><span class="c34">:::</span><span class="c82">+</span><span class="c40">-</span><span class="c118">*</span><span class="c46">=</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c82">+</span><span class="c40">--</span><span class="c34">:::</span><span class="c28">........</span>
+        <span class="c28">.............................</span><span class="c34">:::</span><span class="c28">.................</span><span class="c34">::::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c154">#</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c231">@</span><span class="c40">-</span><span class="c34">::::</span><span class="c28">......</span>
+       <span class="c28">..............................</span><span class="c34">:</span><span class="c40">--</span><span class="c34">:::::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c34">:::::::::::::</span><span class="c40">-</span><span class="c154">#</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c82">+</span><span class="c231">@</span><span class="c46">===</span><span class="c34">:</span><span class="c28">.....</span>
+      <span class="c28">..............................</span><span class="c34">:::</span><span class="c40">-</span><span class="c46">=</span><span class="c154">#</span><span class="c46">=</span><span class="c40">-</span><span class="c82">+</span><span class="c40">-</span><span class="c34">::</span><span class="c40">-</span><span class="c46">=</span><span class="c118">*</span><span class="c46">=</span><span class="c40">----</span><span class="c34">:::::::</span><span class="c40">--</span><span class="c82">+</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c82">+</span><span class="c40">-</span><span class="c34">::</span><span class="c28">.....</span>
+      <span class="c28">.............................</span><span class="c34">::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c191">%</span><span class="c231">@@</span><span class="c82">++</span><span class="c231">@</span><span class="c82">+</span><span class="c231">@@</span><span class="c118">*</span><span class="c231">@</span><span class="c191">%</span><span class="c231">@</span><span class="c46">=</span><span class="c231">@</span><span class="c40">------</span><span class="c82">+</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c40">-</span><span class="c34">::</span><span class="c28">......</span>
+     <span class="c28">............................</span><span class="c34">::::::</span><span class="c40">---</span><span class="c46">=</span><span class="c154">#</span><span class="c231">@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c46">=</span><span class="c40">---</span><span class="c118">*</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c34">:</span><span class="c28">......</span>
+     <span class="c28">.........................</span><span class="c34">::::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@</span><span class="c82">++</span><span class="c191">%</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c40">-</span><span class="c34">:</span><span class="c28">.......</span>
+    <span class="c28">......................</span><span class="c34">::::::</span><span class="c46">=</span><span class="c40">-----</span><span class="c46">=</span><span class="c118">*</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c118">*</span><span class="c34">:</span><span class="c28">........</span>
+    <span class="c28">.........</span><span class="c34">:::::::</span><span class="c28">...</span><span class="c34">::::::::</span><span class="c40">--</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c34">:::</span><span class="c28">........</span>
+    <span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c46">=</span><span class="c40">-</span><span class="c34">::::</span><span class="c28">.........</span>
+    <span class="c28">......................</span><span class="c34">::::::</span><span class="c46">=</span><span class="c40">-----</span><span class="c46">=</span><span class="c118">*</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c118">*</span><span class="c34">:</span><span class="c28">........</span>
+     <span class="c28">.........................</span><span class="c34">::::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@</span><span class="c82">++</span><span class="c191">%</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c40">-</span><span class="c34">:</span><span class="c28">.......</span>
+     <span class="c28">............................</span><span class="c34">::::::</span><span class="c40">---</span><span class="c46">=</span><span class="c154">#</span><span class="c231">@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c46">=</span><span class="c40">---</span><span class="c118">*</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c34">:</span><span class="c28">......</span>
+      <span class="c28">.............................</span><span class="c34">::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c191">%</span><span class="c231">@@</span><span class="c82">++</span><span class="c231">@</span><span class="c82">+</span><span class="c231">@@</span><span class="c118">*</span><span class="c231">@</span><span class="c191">%</span><span class="c231">@</span><span class="c46">=</span><span class="c231">@</span><span class="c40">------</span><span class="c82">+</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c40">-</span><span class="c34">::</span><span class="c28">......</span>
+      <span class="c28">..............................</span><span class="c34">:::</span><span class="c40">-</span><span class="c46">=</span><span class="c154">#</span><span class="c46">=</span><span class="c40">-</span><span class="c82">+</span><span class="c40">-</span><span class="c34">::</span><span class="c40">-</span><span class="c46">=</span><span class="c118">*</span><span class="c46">=</span><span class="c40">----</span><span class="c34">:::::::</span><span class="c40">--</span><span class="c82">+</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c82">+</span><span class="c40">-</span><span class="c34">::</span><span class="c28">.....</span>
+       <span class="c28">..............................</span><span class="c34">:</span><span class="c40">--</span><span class="c34">:::::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c34">:::::::::::::</span><span class="c40">-</span><span class="c154">#</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c82">+</span><span class="c231">@</span><span class="c46">===</span><span class="c34">:</span><span class="c28">.....</span>
+        <span class="c28">.............................</span><span class="c34">:::</span><span class="c28">.................</span><span class="c34">::::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c154">#</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c231">@</span><span class="c40">-</span><span class="c34">::::</span><span class="c28">......</span>
+         <span class="c28">.....................................................</span><span class="c34">:::</span><span class="c82">+</span><span class="c40">-</span><span class="c118">*</span><span class="c46">=</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c82">+</span><span class="c40">--</span><span class="c34">:::</span><span class="c28">........</span>
+          <span class="c28">.......................................................</span><span class="c34">:::::</span><span class="c40">--</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c46">=</span><span class="c40">-</span><span class="c34">::</span><span class="c28">........</span>
+           <span class="c28">.......................................................</span><span class="c34">::::</span><span class="c40">-</span><span class="c46">=</span><span class="c154">#</span><span class="c231">@@@</span><span class="c191">%</span><span class="c82">+</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c191">%</span><span class="c118">*</span><span class="c40">-</span><span class="c82">+</span><span class="c154">#</span><span class="c231">@@@</span><span class="c118">*</span><span class="c82">+</span><span class="c40">-</span><span class="c34">:</span><span class="c28">........</span>
+             <span class="c28">......................................................</span><span class="c34">::</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@</span><span class="c118">*</span><span class="c46">==</span><span class="c82">+</span><span class="c40">---</span><span class="c82">+</span><span class="c231">@@</span><span class="c82">++</span><span class="c231">@@@@@@@@@@@@@@@@@@</span><span class="c46">=</span><span class="c231">@@</span><span class="c118">*</span><span class="c40">-</span><span class="c34">:::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c34">::</span><span class="c28">........</span>
+              <span class="c28">......................................................</span><span class="c34">:::::</span><span class="c82">+</span><span class="c46">=</span><span class="c34">:::::::::</span><span class="c40">---</span><span class="c82">+</span><span class="c231">@@@@@@@@@</span><span class="c46">=</span><span class="c40">--</span><span class="c34">::::</span><span class="c82">+</span><span class="c34">:::</span><span class="c28">....</span><span class="c34">::::</span><span class="c28">..........</span>
+                <span class="c28">.............................................................</span><span class="c34">::::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@</span><span class="c82">+</span><span class="c34">:::::</span><span class="c28">......................</span>
+                  <span class="c28">...............................................................</span><span class="c34">:::::</span><span class="c40">-</span><span class="c191">%</span><span class="c231">@@@@@@@@@@</span><span class="c46">=</span><span class="c34">::::</span><span class="c28">.......................</span>
+                    <span class="c28">...............................................................</span><span class="c34">:</span><span class="c40">--</span><span class="c231">@</span><span class="c82">+</span><span class="c40">-</span><span class="c154">#</span><span class="c118">*</span><span class="c154">#</span><span class="c231">@@</span><span class="c118">*</span><span class="c46">=</span><span class="c40">--</span><span class="c118">*</span><span class="c40">-</span><span class="c34">:</span><span class="c28">.........................</span>
+                       <span class="c28">..............................................................</span><span class="c34">:::::</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@</span><span class="c118">*</span><span class="c40">-</span><span class="c46">=</span><span class="c34">::::</span><span class="c28">..........................</span>
+                          <span class="c28">.............................................................</span><span class="c34">::::</span><span class="c40">--</span><span class="c231">@</span><span class="c40">-</span><span class="c34">::::</span><span class="c28">.........................</span>
+                             <span class="c28">...........................................................</span><span class="c34">:::</span><span class="c40">--</span><span class="c34">::::</span><span class="c40">-</span><span class="c34">:</span><span class="c28">......................</span>
+                                <span class="c28">........................................................</span><span class="c34">::</span><span class="c40">-</span><span class="c34">:</span><span class="c28">.........................</span>
+                                    <span class="c28">...................................................</span><span class="c34">:</span><span class="c40">-</span><span class="c34">::</span><span class="c28">......................</span>
+                                         <span class="c28">...................................................................</span>
+
+<span class="c244">any key to leave</span></pre>
+      </div>
+    </div>
+
+        <p class="foot">
+      Not one word in any of it. The colours are the program's own: it picks an
+      ANSI-256 index per escape step and writes each cell with <code>&gt;&gt;~</code>
+      on the canvas <code>&gt;&gt;|</code> opens. The tree-walker and the register VM
+      draw it identically, cell for cell.
+    </p>
+
+    <div class="hero-cta">
+      <a href="playground.html?open=graphics/mandelbrot.zy" class="btn-primary">▶&nbsp; Run it in the browser</a>
+      <a href="index.html" class="btn-ghost">The full front page</a>
+    </div>
+    <p class="permalink">
+      direct link — <code>zymbol-lang.org/playground.html?open=graphics/mandelbrot.zy</code>
+    </p>
+  </div>
+</section>
+
+
+<!-- ═══ 4 · WRITTEN IN IT ═══ -->
+<section id="built" class="band">
+  <div class="container">
+    <div class="head">
+      <span class="num">04</span>
+      <h2>And people build with it</h2>
+      <p>Same marks. The names are whatever the author thinks in.</p>
+    </div>
+
+    <div class="builds reveal">
+      <figure class="build">
+        <div class="shots">
+        <div class="shot"><pre class="term"><i class="w1 c240">╭</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">╮</i>
+<i class="w1 c255">│</i>                 <i class="w2 c255">囲</i><i class="w2 c255">碁</i>                 <i class="w1 c255">│</i>
+<i class="w1 c245">│</i><span class="c245">            Zymbol v0.0.8             </span><i class="w1 c245">│</i>
+<i class="w1 c240">├</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">┤</i>
+<i class="w1 c255">│</i> <i class="w1 c255">►</i> <i class="w2 c255">路</i><i class="w2 c255">盤</i>        <i class="w1 c255">‹</i>    <i class="w2 c255">九</i><i class="w2 c255">路</i><i class="w2 c255">盤</i>    <i class="w1 c255">›</i>       <i class="w1 c255">│</i>
+<i class="w1 c252">│</i>   <i class="w2 c252">棋</i><i class="w2 c252">力</i>        <i class="w1 c252">‹</i>     <i class="w2 c252">中</i><i class="w2 c252">級</i>     <i class="w1 c252">›</i>       <i class="w1 c252">│</i>
+<i class="w1 c252">│</i>   <i class="w2 c252">手</i><i class="w2 c252">番</i>        <i class="w1 c252">‹</i>      <i class="w2 c252">黒</i>      <i class="w1 c252">›</i>       <i class="w1 c252">│</i>
+<i class="w1 c252">│</i>   <i class="w2 c252">コ</i><i class="w2 c252">ミ</i>        <i class="w1 c252">‹</i><span class="c252">     6.5      </span><i class="w1 c252">›</i>       <i class="w1 c252">│</i>
+<i class="w1 c252">│</i>   <i class="w2 c252">主</i><i class="w2 c252">題</i>        <i class="w1 c252">‹</i>      <i class="w2 c252">石</i>      <i class="w1 c252">›</i>       <i class="w1 c252">│</i>
+<i class="w1 c252">│</i>   <i class="w2 c252">言</i><i class="w2 c252">語</i>        <i class="w1 c252">‹</i>    <i class="w2 c252">日</i><i class="w2 c252">本</i><i class="w2 c252">語</i>    <i class="w1 c252">›</i>       <i class="w1 c252">│</i>
+<i class="w1 c240">├</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">┤</i>
+<i class="w1 c245">│</i>      <i class="w1 c245">↑</i><i class="w1 c245">↓</i> <i class="w2 c245">選</i><i class="w2 c245">択</i>   <i class="w1 c245">←</i><i class="w1 c245">→</i> <i class="w2 c245">変</i><i class="w2 c245">更</i>   <i class="w1 c245">↵</i> <i class="w2 c245">開</i><i class="w2 c245">始</i>      <i class="w1 c245">│</i>
+<i class="w1 c240">╰</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">╯</i></pre></div>
+        <div class="shot"><pre class="term">  <span class="c245">A B C D E F G H J </span>    <i class="w1 c240">╭</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">╮</i>
+<span class="c245">9</span> <i class="w1 c137">┌</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┐</i> <span class="c245"> 9</span>  <i class="w1 c252">│</i> <i class="w2 c252">九</i><i class="w2 c252">路</i><i class="w2 c252">盤</i> <i class="w1 c252">·</i> <i class="w2 c252">中</i><i class="w2 c252">級</i>        <i class="w1 c252">│</i>
+<span class="c245">8</span> <i class="w1 c137">├</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┤</i> <span class="c245"> 8</span>  <i class="w1 c240">├</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">┤</i>
+<span class="c245">7</span> <i class="w1 c137">├</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w2 c137">⚪</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w2 c137">⚪</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┤</i> <span class="c245"> 7</span>  <i class="w1 c252">│</i> <i class="w2 c252">手</i><i class="w2 c252">番</i>      <i class="w2 c252">⚫</i> <i class="w2 c252">あ</i><i class="w2 c252">な</i><i class="w2 c252">た</i>  <i class="w1 c252">│</i>
+<span class="c245">6</span> <i class="w1 c137">├</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┤</i> <span class="c245"> 6</span>  <i class="w1 c252">│</i> <i class="w2 c252">手</i><i class="w2 c252">数</i><span class="c252">      10         </span><i class="w1 c252">│</i>
+<span class="c245">5</span> <i class="w1 c137">├</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">╋</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┤</i> <span class="c245"> 5</span>  <i class="w1 c252">│</i> <i class="w2 c252">ア</i><i class="w2 c252">ゲ</i><i class="w2 c252">ハ</i><i class="w2 c252">マ</i>  <i class="w2 c252">⚫</i><span class="c252">0  </span><i class="w2 c252">⚪</i><span class="c252">0   </span><i class="w1 c252">│</i>
+<span class="c245">4</span> <i class="w1 c137">├</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┤</i> <span class="c245"> 4</span>  <i class="w1 c252">│</i> <i class="w2 c252">コ</i><i class="w2 c252">ミ</i><span class="c252">      6.5        </span><i class="w1 c252">│</i>
+<span class="c245">3</span> <i class="w1 c137">├</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">╋</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w2 c137">⚪</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w2 c137">⚪</i><i class="w2 c137">⚪</i><i class="w1 c137">┤</i> <span class="c245"> 3</span>  <i class="w1 c252">│</i> <i class="w2 c252">最</i><i class="w2 c252">終</i><i class="w2 c252">手</i><span class="c252">    E3         </span><i class="w1 c252">│</i>
+<span class="c245">2</span> <i class="w1 c137">├</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w2 c137">⚫</i><i class="w2 c137">⚫</i><span class="c245"> 2</span>  <i class="w1 c252">│</i> <i class="w2 c252">目</i><i class="w2 c252">算</i>      <i class="w2 c252">⚪</i><span class="c252"> +5.5    </span><i class="w1 c252">│</i>
+<span class="c245">1</span> <i class="w1 c137">└</i><i class="w1 c137">─</i><i class="w1 c137">┴</i><i class="w1 c137">─</i><i class="w1 c137">┴</i><i class="w1 c137">─</i><i class="w1 c137">┴</i><i class="w1 c137">─</i><i class="w1 c137">┴</i><i class="w1 c137">─</i><i class="w2 c137">⚫</i><i class="w2 c255">⚫</i><i class="w1 c137">┴</i><i class="w1 c137">─</i><i class="w2 c137">⚫</i><span class="c245"> 1</span>  <i class="w1 c240">╰</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">╯</i>
+  <span class="c245">A B C D E F G H J </span></pre></div>
+        </div>
+        <figcaption>
+          <b>囲碁</b><span>Go — written in Japanese. Board size, rank, komi and language are chosen on the first screen; the second is a game in progress.</span>
+          <a href="playground.html?open=games/classic/go.zyp">▶ play</a>
+        </figcaption>
+      </figure>
+      <figure class="build">
+        <div class="shots">
+        <div class="shot"><pre class="term"><i class="w1 c15">╭</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">╮</i>
+<i class="w1 c15">│</i><span class="c15">          Z Y M B O L          </span><i class="w1 c15">│</i>
+<i class="w1 c15">│</i><span class="c15">       S E R P I E N T E       </span><i class="w1 c15">│</i>
+<i class="w1 c15">├</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">┤</i>
+<i class="w1 c11">│</i><span class="c11">   Elige tu velocidad:         </span><i class="w1 c11">│</i>
+<i class="w1 c15">│</i>                               <i class="w1 c15">│</i>
+<i class="w1 c10">│</i>   <i class="w1 c10">►</i><span class="c10"> [1]  Lento       160 ms   </span><i class="w1 c10">│</i>
+<i class="w1 c15">│</i><span class="c15">     [2]  Normal      130 ms   </span><i class="w1 c15">│</i>
+<i class="w1 c15">│</i><span class="c15">     [3]  R</span><i class="w1 c15">á</i><span class="c15">pido      100 ms   </span><i class="w1 c15">│</i>
+<i class="w1 c9">│</i><span class="c9">     [4]  Infernal    70 ms    </span><i class="w1 c9">│</i>
+<i class="w1 c201">│</i><span class="c201">     [5]  Demencial   40 ms    </span><i class="w1 c201">│</i>
+<i class="w1 c15">├</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">┤</i>
+<i class="w1 c15">│</i><span class="c15">     [L]  Idioma: Espa</span><i class="w1 c15">ñ</i><span class="c15">ol      </span><i class="w1 c15">│</i>
+<i class="w1 c11">╰</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">╯</i></pre></div>
+        <div class="shot"><pre class="term"><i class="w1 c8">╭</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">┤</i> <i class="w1 c11">✦</i><span class="c11"> PUNTOS 13 </span><i class="w1 c11">✦</i> <i class="w1 c8">├</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">╮</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                     <i class="w2 c11">🥝</i>                       <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                   <i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">╮</i>                                    <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                         <i class="w1 c10">│</i>                                    <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                         <i class="w1 c10">│</i>                                    <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                   <i class="w1 c2">◀</i><i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">╯</i>                                    <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">╰</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">╯</i></pre></div>
+        </div>
+        <figcaption>
+          <b>Serpiente</b><span>Snake — written in Spanish. Five speeds on the first screen; the second is thirteen points in, mid-turn.</span>
+          <a href="playground.html?open=games/arcade/serpiente.zyp">▶ play</a>
+        </figcaption>
+      </figure>
+    </div>
+
+    <p class="foot">
+      Both are captures of the running program. Not one identifier in either of them is
+      an English word — and nothing in the grammar had to change for that.
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">
+      <img src="assets/img/logo.png" alt="Zymbol-Lang" style="height:1.6rem;width:auto;opacity:0.8;vertical-align:middle;">
+    </div>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="playground.html">Playground</a>
+      <a href="install.html">Install</a>
+      <a href="changelog.html">Releases</a>
+      <a href="https://github.com/zymbol-lang/interpreter" target="_blank" rel="noopener">GitHub</a>
+    </div>
+    <div class="footer-copy">No words. Just symbols.</div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  // theme
+  var tb = document.getElementById('theme-toggle'), ti = document.getElementById('theme-icon');
+  function paint(){ ti.textContent = document.documentElement.classList.contains('light') ? '☀️' : '🌙'; }
+  paint();
+  tb.addEventListener('click', function () {
+    var l = document.documentElement.classList.toggle('light');
+    localStorage.setItem('zy-theme', l ? 'light' : 'dark'); paint();
+  });
+
+  // mobile nav
+  var mt = document.getElementById('menu-toggle'), nav = document.getElementById('main-nav');
+  function shut(){ nav.classList.remove('open'); mt.setAttribute('aria-expanded','false'); mt.querySelector('span').textContent='☰'; }
+  mt.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var o = nav.classList.toggle('open');
+    mt.setAttribute('aria-expanded', String(o));
+    mt.querySelector('span').textContent = o ? '✕' : '☰';
+  });
+  nav.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', shut); });
+  document.addEventListener('click', function (e) { if (!nav.contains(e.target) && !mt.contains(e.target)) shut(); });
+
+  // Hero glyph cycle. The word rides inside the same element as the mark and fades
+  // with it — when they were two elements the text swapped instantly while the glyph
+  // took 0.55s to cross, so for half a second the page named the wrong mark.
+  var glyphs = [].slice.call(document.querySelectorAll('.glyph'));
+  var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!still && glyphs.length > 1) {
+    var g = 0;
+    setInterval(function () {
+      glyphs[g].classList.remove('is-on');
+      g = (g + 1) % glyphs.length;
+      glyphs[g].classList.add('is-on');
+    }, 2400);
+  }
+
+  // Make every boxed cell fit its box. The boxes come from the capture, so the
+  // columns are already right; what is left is a glyph whose fallback face draws
+  // it wider than the cell it belongs to — squeeze it horizontally rather than
+  // let it spill over its neighbour. Each distinct character is measured once.
+  function fitGlyphs() {
+    var boxes = document.querySelectorAll('pre.term i');
+    if (!boxes.length) return;
+    var probe = document.createElement('span');
+    probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;left:-9999px';
+    document.body.appendChild(probe);
+    var seen = Object.create(null);
+    boxes.forEach(function (b) {
+      var ch = b.textContent, key = ch + '|' + b.className;
+      if (!(key in seen)) {
+        var cs = getComputedStyle(b);
+        probe.style.font = cs.fontSize + '/' + cs.lineHeight + ' ' + cs.fontFamily;
+        probe.textContent = ch;
+        var natural = probe.getBoundingClientRect().width;
+        var box = b.getBoundingClientRect().width;
+        seen[key] = (natural > box + 0.5 && natural > 0) ? box / natural : 1;
+      }
+      var k = seen[key];
+      if (k < 1) {
+        // Box-drawing is squeezed on X only: shrinking it vertically too would
+        // pull the verticals apart and the frame comes out dotted. A wide glyph
+        // (emoji, CJK) is scaled evenly instead, so it does not end up oval.
+        b.style.transform = b.classList.contains('w2')
+          ? 'scale(' + k.toFixed(3) + ')'
+          : 'scaleX(' + k.toFixed(3) + ')';
+      }
+    });
+    probe.remove();
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitGlyphs);
+  else addEventListener('load', fitGlyphs);
+
+  // reveal on entry; with no IntersectionObserver everything is simply already visible
+  var reveals = document.querySelectorAll('.reveal');
+  if (window.IntersectionObserver) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { rootMargin: '0px 0px -12% 0px' });
+    reveals.forEach(function (r) { io.observe(r); });
+  } else {
+    reveals.forEach(function (r) { r.classList.add('in'); });
+  }
+
+  // the mark grid writes into one shared line instead of twelve tooltips
+  var out = document.getElementById('mk-out'),
+      oc  = document.getElementById('mk-code'),
+      on_ = document.getElementById('mk-note');
+  document.querySelectorAll('.mk').forEach(function (b) {
+    function show() {
+      document.querySelectorAll('.mk.sel').forEach(function (x) { x.classList.remove('sel'); });
+      b.classList.add('sel');
+      oc.textContent  = b.dataset.code;
+      on_.textContent = b.dataset.note;
+      out.classList.remove('pop'); void out.offsetWidth; out.classList.add('pop');
+    }
+    b.addEventListener('click', show);
+    b.addEventListener('mouseenter', show);
+    b.addEventListener('focus', show);
+  });
+}());
+</script>
+</body>
+</html>

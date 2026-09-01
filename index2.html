@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zymbol — A Notation, Not a Dialect</title>
+  <meta name="description" content="Zymbol read as a writing system: how its marks mean, how they compose into operators, where the system is irregular and says so, and how a game of Go is used to find out what the language cannot yet say.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="Zymbol-Lang">
+  <link rel="canonical" href="https://zymbol-lang.org/index2.html">
+
+  <meta property="og:type"        content="article">
+  <meta property="og:url"         content="https://zymbol-lang.org/index2.html">
+  <meta property="og:title"       content="Zymbol — A Notation, Not a Dialect">
+  <meta property="og:description" content="A language with no keywords has to supply the meaning of its own marks. This is how Zymbol does it — and how a Go board is used to find out what it still cannot say.">
+  <meta property="og:image"       content="https://zymbol-lang.org/zymbol_logo.png">
+  <meta property="og:locale"      content="en_US">
+  <meta property="og:site_name"   content="Zymbol-Lang">
+
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="Zymbol — A Notation, Not a Dialect">
+  <meta name="twitter:description" content="How a keyword-free language gives its own marks meaning — and how a Go board finds the bugs no test case can.">
+  <meta name="twitter:image"       content="https://zymbol-lang.org/zymbol_logo.png">
+
+  <link rel="alternate" type="text/markdown" href="index2.md">
+  <link rel="license" href="LICENSE">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="assets/img/favicon.png">
+
+  <script>
+  // Theme before first paint, same key as the rest of the site.
+  (function(){
+    var s = localStorage.getItem('zy-theme');
+    var light = s ? s === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+    if (light) document.documentElement.classList.add('light');
+  })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/site.css">
+  <link rel="stylesheet" href="src/css/essay.css">
+</head>
+<body class="essay">
+
+<!-- ═══ HEADER ═══ -->
+<header>
+  <a href="index.html" class="logo">
+    <img src="assets/img/logo.png" alt="Zymbol-Lang">
+    <span class="logo-code">
+      <span class="logo-sym">@{</span>
+      <span class="logo-op">&gt;&gt;</span><span class="logo-str">" Zymbol-Lang "</span>
+      <span class="logo-sym">}</span>
+    </span>
+  </a>
+  <div class="header-right">
+    <nav id="main-nav">
+      <a href="#meaning">Meaning</a>
+      <a href="#shape">Shape</a>
+      <a href="#irregular">Irregular</a>
+      <a href="#admission">Admission</a>
+      <a href="#board">The board</a>
+      <a href="#hand">Another hand</a>
+      <a href="index.html">Home</a>
+      <a href="playground.html" class="nav-cta">Try Online</a>
+    </nav>
+    <button id="theme-toggle" aria-label="Toggle theme" title="Toggle light/dark">
+      <span id="theme-icon">🌙</span>
+    </button>
+    <button id="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span>☰</span>
+    </button>
+  </div>
+</header>
+
+<div class="draft-strip">
+  <span class="draft-badge">Working draft</span>
+  <span>An alternative reading of the front page — the same language, described as a writing system rather than as a feature list.</span>
+</div>
+
+<!-- ═══ OPENING ═══ -->
+<section id="open" class="opening">
+  <div class="container">
+    <p class="kicker">Zymbol · public alpha v0.0.8</p>
+    <h1 class="lede">
+      A language with no keywords<br>
+      has to <em>supply the meaning</em><br>
+      of its own marks.
+    </h1>
+
+    <div class="gloss-hero">
+      <div class="gloss">
+        <div class="gloss-line">
+          <span class="seg"><b>&lt;&lt;</b><i>IN</i></span>
+          <span class="seg"><b>|</b><i>UNIT</i></span>
+          <span class="seg"><b>?</b><i>IRR</i></span>
+        </div>
+        <p class="gloss-say">“take one unit from the input stream, non-committally”</p>
+        <p class="gloss-mean">→ poll for a keypress, and do not block if none has arrived</p>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <p>
+        The usual way to introduce this language is to say that it has no <code>if</code>, no
+        <code>while</code>, no <code>return</code> and no <code>true</code> — that <code>?</code>
+        is if, <code>@</code> is loop, <code>&lt;~</code> is return. That is accurate, and it is
+        where most descriptions stop.
+      </p>
+      <p>
+        It is a better place to start. A keyword carries its meaning in from outside: <code>while</code>
+        means what English already made it mean. A mark carries nothing. If no construct of a grammar
+        may be a word, then every construct is a mark or a run of marks, and the language owes an
+        account of what its marks mean and how they join — or the coherence is only asserted.
+      </p>
+    </div>
+
+    <p class="pull">
+      <code>&lt;&lt;|?</code> is not an arbitrary trigraph that happens to mean “poll for a key”.
+      It is three morphemes, and you can take it apart.
+    </p>
+  </div>
+</section>
+
+<!-- ═══ 1 · THREE WAYS A MARK CAN MEAN ═══ -->
+<section id="meaning" class="band">
+  <div class="container">
+    <div class="section-tag">one</div>
+    <h2 class="section-title">Three ways a mark can mean</h2>
+    <p class="section-desc">
+      The inventory is not uniform. Some marks depict what they do, some point at a context,
+      and some are simply arbitrary and have to be learned. The split is not decoration: it
+      decides which parts of the language teach themselves.
+    </p>
+
+    <div class="modes">
+      <article class="mode">
+        <h3>Iconic</h3>
+        <p class="mode-def">The shape resembles the meaning.</p>
+        <p class="marks">
+          <span class="m">&gt;&gt;</span><span class="m">&lt;&lt;</span><span class="m">-&gt;</span><span class="m">&lt;~</span><span class="m">|&gt;</span><span class="m">..</span><span class="m">&lt;&gt;</span><span class="m">&gt;&lt;</span><span class="m">##]</span><span class="m">#०९#</span>
+        </p>
+        <p class="mode-note">
+          A reader who has never seen Zymbol will guess <code>&gt;&gt;</code> and
+          <code>-&gt;</code> correctly on sight. That is not luck; it is the property being
+          selected for.
+        </p>
+      </article>
+
+      <article class="mode">
+        <h3>Indexical</h3>
+        <p class="mode-def">Points at a context instead of depicting it.</p>
+        <p class="marks">
+          <span class="m">°</span><span class="m">_</span><span class="m">@:label</span><span class="m">@:label!</span>
+        </p>
+        <p class="mode-note">
+          <code>°</code> says nothing about what a value <em>is</em>; it says which scope the
+          binding is anchored to. Its whole meaning is positional — <code>x°</code> dies with the
+          loop, <code>°x</code> outlives it.
+        </p>
+      </article>
+
+      <article class="mode conventional">
+        <h3>Conventional</h3>
+        <p class="mode-def">Arbitrary. Must be learned.</p>
+        <p class="marks">
+          <span class="m">$</span><span class="m">@</span><span class="m">#</span><span class="m">¶</span><span class="m">?</span><span class="m">!</span><span class="m">~</span><span class="m">#1</span><span class="m">#0</span>
+        </p>
+        <p class="mode-note">
+          Nobody guesses <code>$^-</code>. Every mark in this column is a memorisation cost that
+          the other two columns do not impose, which is the argument for keeping the column
+          <em>short</em> rather than for apologising about it.
+        </p>
+      </article>
+    </div>
+
+    <div class="minimal-pair">
+      <p class="mp-caption">Two minimal pairs, offered as evidence that the iconic claim is falsifiable rather than flattering:</p>
+      <div class="mp-grid">
+        <div class="mp">
+          <div class="mp-art">&gt;&nbsp;&nbsp;&lt;</div>
+          <div class="mp-word">converging</div>
+          <p>intake at the process boundary</p>
+          <div class="mp-op"><code>&gt;&lt;</code> — command-line arguments</div>
+        </div>
+        <div class="mp">
+          <div class="mp-art">&lt;&nbsp;&nbsp;&gt;</div>
+          <div class="mp-word">diverging</div>
+          <p>the two sides differ</p>
+          <div class="mp-op"><code>&lt;&gt;</code> — not equal</div>
+        </div>
+      </div>
+      <p class="mp-note">
+        Neither falls out of a slot template. Both are readable as pictures the first time you
+        see them, and the language chose them for that reason — <code>&lt;&gt;</code> over
+        <code>!=</code>, deliberately.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 2 · THE SHAPE OF AN OPERATOR ═══ -->
+<section id="shape">
+  <div class="container">
+    <div class="section-tag">two</div>
+    <h2 class="section-title">The shape of an operator</h2>
+    <p class="section-desc">
+      Operators are built, not coined. A mark contributes one meaning, the meanings compose, and
+      the seams stay visible in the written form — which is what makes the claim checkable:
+      either you can segment an operator and gloss each segment, or you cannot, and the ones you
+      cannot are listed by name further down.
+    </p>
+
+    <div class="template">
+      <div class="slot optional"><span class="slot-name">BINDER</span><span class="slot-fill">:</span></div>
+      <div class="slot required"><span class="slot-name">DOMAIN</span><span class="slot-fill">$ @ # &gt;&gt; &lt;&lt; ? !</span></div>
+      <div class="slot optional"><span class="slot-name">OPERATION</span><span class="slot-fill">+ − * / ^ ~ # &lt; &gt; | . ,</span></div>
+      <div class="slot optional"><span class="slot-name">MODALITY</span><span class="slot-fill">? !</span></div>
+      <div class="slot optional"><span class="slot-name">ARGUMENT</span><span class="slot-fill">[i] (n) |x| label</span></div>
+    </div>
+    <p class="template-note">
+      The domain slot is the only required one — <em>which world the operation lives in</em>. And
+      the modality slot is always last: across the whole inventory there is no operator in which a
+      modal <code>?</code> or <code>!</code> is followed by another operation mark. It is the most
+      reliable structural generalisation in the language, and it is why labelled break is written
+      <code>@:outer!</code> and never <code>@!outer</code>.
+    </p>
+
+    <div class="gloss-grid">
+      <div class="gloss">
+        <div class="gloss-line">
+          <span class="seg"><b>$</b><i>COLL</i></span>
+          <span class="seg"><b>^</b><i>ORDER</i></span>
+          <span class="seg"><b>-</b><i>REV</i></span>
+        </div>
+        <p class="gloss-say">“impose an order on the collection, reversed”</p>
+        <p class="gloss-mean">→ sort descending</p>
+      </div>
+      <div class="gloss">
+        <div class="gloss-line">
+          <span class="seg"><b>@</b><i>TEMP</i></span>
+          <span class="seg"><b>:outer</b><i>LBL</i></span>
+          <span class="seg"><b>!</b><i>FRC</i></span>
+        </div>
+        <p class="gloss-say">“act forcefully on the time-context named outer”</p>
+        <p class="gloss-mean">→ break the labelled loop</p>
+      </div>
+      <div class="gloss">
+        <div class="gloss-line">
+          <span class="seg"><b>#</b><i>META</i></span>
+          <span class="seg"><b>#</b><i>TYPE</i></span>
+          <span class="seg"><b>!</b><i>FRC</i></span>
+        </div>
+        <p class="gloss-say">“cross to the type level, forcefully”</p>
+        <p class="gloss-mean">→ cast to Int, truncating rather than rounding</p>
+      </div>
+      <div class="gloss wide">
+        <div class="gloss-line">
+          <span class="seg"><b>&lt;&lt;</b><i>IN</i></span>
+          <span class="seg"><b>##.</b><i>TYPE.F</i></span>
+          <span class="seg"><b>(5,2)</b><i>ARG</i></span>
+          <span class="seg"><b>"p"</b><i>PROMPT</i></span>
+          <span class="seg"><b>v</b><i>TARGET</i></span>
+        </div>
+        <p class="gloss-say">“read inward, constrained to Float with 5 total digits and 2 decimals”</p>
+        <p class="gloss-mean">→ typed input, assembled from marks that already existed</p>
+      </div>
+    </div>
+
+    <div class="conflict">
+      <h3>When two principles disagree, the picture wins</h3>
+      <div class="conflict-pair">
+        <div><code class="big">&lt;#</code><span>IN + META — <b>import</b>, arrow on the left: flow enters</span></div>
+        <div><code class="big">#&gt;</code><span>META + OUT — <b>export</b>, arrow on the right: flow leaves</span></div>
+      </div>
+      <p>
+        Under the template alone this is an inconsistency: one puts the direction mark before the
+        domain, the other after. Under a second rule it is not — <em>a direction mark sits on the
+        edge of the sign that faces the way it points</em> — and the same rule explains
+        <code>&lt;~</code>, <code>-&gt;</code>, <code>|&gt;</code>, <code>=&gt;</code> and the
+        mirrored halves of <code>&lt;\ … \&gt;</code>. Two principles, and a stated winner, is a
+        more honest description than one template with an exception attached.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 3 · WHERE THE SYSTEM IS NOT REGULAR ═══ -->
+<section id="irregular" class="band">
+  <div class="container">
+    <div class="section-tag">three</div>
+    <h2 class="section-title">Where the system is not regular</h2>
+    <p class="section-desc">
+      Every operator falls into one of three classes. Publishing the counts is what turns the
+      agglutinative claim into a measurement instead of a slogan — and the interesting column is
+      not the first one.
+    </p>
+
+    <div class="classes">
+      <div class="cls">
+        <div class="cls-n">majority</div>
+        <h3>Transparent</h3>
+        <p>Fully segmentable. The meaning is the composition of the parts.</p>
+        <p class="marks"><span class="m">&lt;&lt;|?</span><span class="m">$^-</span><span class="m">@:outer!</span><span class="m">##!</span><span class="m">$??</span><span class="m">#.2|x|</span></p>
+      </div>
+      <div class="cls">
+        <div class="cls-n">6</div>
+        <h3>Semi-transparent</h3>
+        <p>Segmentable, but the whole means more than the parts. The surplus is written down.</p>
+        <p class="marks"><span class="m">!?</span><span class="m">:!</span><span class="m">:&gt;</span><span class="m">|&gt;</span><span class="m">::</span><span class="m">$++</span></p>
+      </div>
+      <div class="cls">
+        <div class="cls-n">10</div>
+        <h3>Opaque</h3>
+        <p>Not compositional at all. A single lexical sign, whatever its internal shape.</p>
+        <p class="marks"><span class="m">¶</span><span class="m">&gt;&lt;</span><span class="m">#1</span><span class="m">#0</span><span class="m">0x</span><span class="m">0b</span><span class="m">0o</span><span class="m">0d</span><span class="m">###</span><span class="m">°</span></p>
+      </div>
+    </div>
+
+    <table class="surplus">
+      <caption>The six semi-transparent forms, with the part that the segments do not predict</caption>
+      <thead><tr><th>Form</th><th>Segments</th><th>Surplus</th></tr></thead>
+      <tbody>
+        <tr><td><code>!?</code></td><td>ERR + IRR</td><td>that it opens a <em>block</em> whose failure is captured</td></tr>
+        <tr><td><code>:!</code></td><td>BND + ERR</td><td>that it binds specifically into <code>_err</code></td></tr>
+        <tr><td><code>:&gt;</code></td><td>BND + OUT</td><td>that it runs unconditionally after the block</td></tr>
+        <tr><td><code>|&gt;</code></td><td>GATE + OUT</td><td>that the left value is injected as an <em>argument</em></td></tr>
+        <tr><td><code>::</code></td><td>BND + BND</td><td>that the left name is a <em>module namespace</em></td></tr>
+        <tr><td><code>$++</code></td><td>COLL + ADD + PL</td><td>that it accepts mixed types and stringifies</td></tr>
+      </tbody>
+    </table>
+
+    <div class="two-col">
+      <p>
+        One mark can also be read differently depending on what it attaches to, and the host —
+        not the reader's judgement — is what selects. <code>!</code> has three readings: negation
+        in <code>!flag</code>, force in <code>@!</code> and <code>&gt;&gt;!</code>, the error
+        domain in <code>!?</code> and <code>$!</code>. In <code>##!</code> the <code>!</code>
+        truncates; in <code>$!</code> it tests for an error; the only thing telling them apart is
+        <code>#</code> versus <code>$</code>.
+      </p>
+      <p>
+        That is <em>allosemy</em>, and it is a different thing from a mark carrying two unrelated
+        meanings — which is a defect, and is treated as one. Six such homographs are on the books
+        as standing debt rather than as features. When <code>&lt;=</code> meant both “less than or
+        equal” and “known as”, the second reading was moved to <code>=&gt;</code> and the debt was
+        paid. <code>&lt;=</code> is now exclusively comparison.
+      </p>
+    </div>
+
+    <p class="pull">
+      A document maintained against itself drifts. This one is checked against four running
+      engines, and the checking has turned up defects in the language it was only supposed to
+      describe: a label agreement rule nothing enforced, a loop constraint that was documented
+      and never applied, a parameter slot the grammar said could not be empty while two engines
+      already ran it empty. <em>A rule that is written down but not enforced is not a rule.</em>
+    </p>
+  </div>
+</section>
+
+<!-- ═══ 4 · HOW A MARK IS ADMITTED ═══ -->
+<section id="admission">
+  <div class="container">
+    <div class="section-tag">four</div>
+    <h2 class="section-title">How a mark is admitted</h2>
+    <p class="section-desc">
+      New notation is the cheapest thing in the world to add and the most expensive thing to
+      remove. So the interesting question is not what the language can express — it is what it is
+      allowed to write down next.
+    </p>
+
+    <ol class="rules">
+      <li><b>Derive, do not invent.</b> A new operator must be explainable as a composition of marks already in the inventory. Write the gloss; if every segment has one, it is derivable.</li>
+      <li><b>One abstract meaning per base mark.</b> <code>~</code> means modification, so a new <code>~X</code> has to involve transforming something.</li>
+      <li><b>Constraints are inherited, not restated.</b> A new <code>@</code> statement acting on the time context is invalid outside a loop, and that is not a decision to be re-made.</li>
+      <li><b>No natural-language words in the grammar.</b> Not in English, not in any language. Identifiers are free; the grammar is marks.</li>
+      <li><b>Describe before implementing.</b> A mark that ships before it is described acquires its meaning from whatever the first few uses happen to be — and that meaning is very hard to correct afterwards.</li>
+      <li><b>No mark carries two unrelated meanings.</b> If the readings cannot be stated as one contract, they are homographs, and a homograph is debt.</li>
+      <li><b>Prefer iconic over conventional.</b> Where two derivable forms exist, take the one that depicts.</li>
+      <li><b>Modality goes last.</b> Always.</li>
+    </ol>
+
+    <div class="diachrony">
+      <h3>What five releases actually added</h3>
+      <table>
+        <thead><tr><th>Version</th><th>Change to the sign system</th></tr></thead>
+        <tbody>
+          <tr><td>v0.0.5</td><td><b>One new base mark</b> — <code>°</code>, with two positional readings — plus seven derived operators: <code>&gt;&gt;!</code> <code>&gt;&gt;?</code> <code>&gt;&gt;~</code> <code>&gt;&gt;|</code> <code>&lt;&lt;|</code> <code>&lt;&lt;|?</code> <code>@~</code>.</td></tr>
+          <tr><td>v0.0.6</td><td>No new mark. <code>=&gt;</code> unified as the single “maps to” separator across match arms, import aliases and export renames — retiring the <code>&lt;=</code> dual role.</td></tr>
+          <tr><td>v0.0.7</td><td>No new mark. Typed input by composition: <code>&lt;&lt; ##.(5,2)</code>, <code>&lt;&lt; ###(4)</code>, <code>&lt;&lt; ##"(20)</code>. The standard library established as modules rather than as symbols.</td></tr>
+          <tr><td>v0.0.8</td><td>No new mark. <code>||</code> extended to match arms; <code>##!</code> extended to <code>Char</code> → code point. Packaging added with no language surface at all.</td></tr>
+          <tr><td>v0.0.9</td><td>No new mark. <code>-&gt;</code> accepts an empty parameter list. Two enforcement changes with no surface at all.</td></tr>
+        </tbody>
+      </table>
+      <p class="dia-note">
+        One genuinely new mark in five versions. Everything else is recombination — which is what
+        an agglutinative system is <em>for</em>: a composition nobody has written yet already has
+        a meaning, worked out in advance by the marks it is made of. Adding it is a matter of
+        implementing what the notation already said.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 5 · THE BOARD IS THE TEST ═══ -->
+<section id="board" class="band">
+  <div class="container">
+    <div class="section-tag">five</div>
+    <h2 class="section-title">The board is the test</h2>
+    <p class="section-desc">
+      Every automated suite here takes a program that already exists and asks whether the
+      implementation handles it correctly. None of them can tell you that the language cannot
+      express a Go board. A missing capability produces no failing test, because there is no
+      test — that is what <em>missing</em> means.
+    </p>
+
+    <div class="two-col">
+      <p>
+        So the instrument is a whole application, written in a domain that was not chosen to be
+        easy, as if the language already supported it. Every place it does not — every
+        incapacity, every workaround, every silently wrong answer — is a finding with an
+        identifier, a reproduction and a status. The cycle does not close because the game works.
+        It closes when the language has changed.
+      </p>
+      <p>
+        A workaround counts as a failure. If the program can only say the thing by leaving the
+        language — a shell call, a hand-written table, a duplicated block — then the language did
+        not support it, however well the program runs. That rule is easy to state and easy to
+        skip past, because routing around an incapacity is always the smoother path.
+      </p>
+    </div>
+
+    <div class="cycle">
+      <div class="stage red"><b>RED</b><span>Write the application as if the language supported it. Log every incapacity.</span></div>
+      <div class="arrow">→</div>
+      <div class="stage green"><b>GREEN</b><span>Change the language — derive the operator, fix the semantics, close the engine gap — or reject the finding in writing.</span></div>
+      <div class="arrow">→</div>
+      <div class="stage blue"><b>REFACTOR</b><span>Distil it into a minimal program in the corpus with its golden. That is the layer that <em>names</em> what broke.</span></div>
+      <div class="arrow">→</div>
+      <div class="stage grey"><b>MIGRATE</b><span>The application enters the gate and stays. When the language moves again, carry it across — and log what the carrying finds.</span></div>
+    </div>
+
+    <p class="cycle-note">
+      The distinction the third stage protects: the application says <em>“something changed in
+      囲碁”</em>; the minimal program says <em>“the interpolated-string arm is gone”</em>. Only the
+      second is a diagnosis. But the first is not thrown away afterwards — eight applications are
+      in the gate, and they are still finding things.
+    </p>
+
+    <!-- GAMES -->
+    <div class="games">
+
+      <figure class="game">
+        <figcaption>
+          <h3>囲碁 — Go, written in Japanese</h3>
+          <p>
+            A 361-point structure threaded through cooperating modules with recursive traversal.
+            Nothing in the source below is an English identifier: <code>核/盤.zy</code> is the
+            board, <code>表示/描画.zy</code> the drawing, <code>標準/</code> a Japanese wrapper over
+            the standard library.
+          </p>
+        </figcaption>
+        <div class="shot"><pre class="term"><span class="c240">╭──────────────────────────────────────╮</span>
+<span class="c255">│                 </span><i class="w2 c255">囲</i><i class="w2 c255">碁</i><span class="c255">                 │</span>
+<span class="c245">│            Zymbol v0.0.8             │</span>
+<span class="c240">├──────────────────────────────────────┤</span>
+<span class="c255">│ ► </span><i class="w2 c255">路</i><i class="w2 c255">盤</i><span class="c255">        ‹    </span><i class="w2 c255">九</i><i class="w2 c255">路</i><i class="w2 c255">盤</i><span class="c255">    ›       │</span>
+<span class="c252">│   </span><i class="w2 c252">棋</i><i class="w2 c252">力</i><span class="c252">        ‹     </span><i class="w2 c252">中</i><i class="w2 c252">級</i><span class="c252">     ›       │</span>
+<span class="c252">│   </span><i class="w2 c252">手</i><i class="w2 c252">番</i><span class="c252">        ‹      </span><i class="w2 c252">黒</i><span class="c252">      ›       │</span>
+<span class="c252">│   </span><i class="w2 c252">コ</i><i class="w2 c252">ミ</i><span class="c252">        ‹     6.5      ›       │</span>
+<span class="c252">│   </span><i class="w2 c252">主</i><i class="w2 c252">題</i><span class="c252">        ‹      </span><i class="w2 c252">石</i><span class="c252">      ›       │</span>
+<span class="c252">│   </span><i class="w2 c252">言</i><i class="w2 c252">語</i><span class="c252">        ‹    </span><i class="w2 c252">日</i><i class="w2 c252">本</i><i class="w2 c252">語</i><span class="c252">    ›       │</span>
+<span class="c240">├──────────────────────────────────────┤</span>
+<span class="c245">│      ↑↓ </span><i class="w2 c245">選</i><i class="w2 c245">択</i><span class="c245">   ←→ </span><i class="w2 c245">変</i><i class="w2 c245">更</i><span class="c245">   ↵ </span><i class="w2 c245">開</i><i class="w2 c245">始</i><span class="c245">      │</span>
+<span class="c240">╰──────────────────────────────────────╯</span></pre></div>
+        <div class="shot"><pre class="term">  <span class="c245">A B C D E F G H J </span>    <span class="c240">╭──────────────────────╮</span>
+<span class="c245">9</span> <span class="c137">┌─┬─┬─┬─┬─┬─┬─┬─┐ </span><span class="c245"> 9</span>  <span class="c252">│ </span><i class="w2 c252">九</i><i class="w2 c252">路</i><i class="w2 c252">盤</i><span class="c252"> · </span><i class="w2 c252">中</i><i class="w2 c252">級</i><span class="c252">        │</span>
+<span class="c245">8</span> <span class="c137">├─┼─┼─┼─┼─┼─┼─┼─┤ </span><span class="c245"> 8</span>  <span class="c240">├──────────────────────┤</span>
+<span class="c245">7</span> <span class="c137">├─┼─</span><i class="w2 c137">⚪</i><span class="c137">┼─┼─┼─</span><i class="w2 c137">⚪</i><span class="c137">┼─┤ </span><span class="c245"> 7</span>  <span class="c252">│ </span><i class="w2 c252">手</i><i class="w2 c252">番</i>      <i class="w2 c252">⚫</i> <i class="w2 c252">あ</i><i class="w2 c252">な</i><i class="w2 c252">た</i><span class="c252">  │</span>
+<span class="c245">6</span> <span class="c137">├─┼─┼─┼─┼─┼─┼─┼─┤ </span><span class="c245"> 6</span>  <span class="c252">│ </span><i class="w2 c252">手</i><i class="w2 c252">数</i><span class="c252">      10         │</span>
+<span class="c245">5</span> <span class="c137">├─┼─┼─┼─╋─┼─┼─┼─┤ </span><span class="c245"> 5</span>  <span class="c252">│ </span><i class="w2 c252">ア</i><i class="w2 c252">ゲ</i><i class="w2 c252">ハ</i><i class="w2 c252">マ</i>  <i class="w2 c252">⚫</i><span class="c252">0  </span><i class="w2 c252">⚪</i><span class="c252">0   │</span>
+<span class="c245">4</span> <span class="c137">├─┼─┼─┼─┼─┼─┼─┼─┤ </span><span class="c245"> 4</span>  <span class="c252">│ </span><i class="w2 c252">コ</i><i class="w2 c252">ミ</i><span class="c252">      6.5        │</span>
+<span class="c245">3</span> <span class="c137">├─┼─╋─┼─</span><i class="w2 c137">⚪</i><span class="c137">┼─</span><i class="w2 c137">⚪</i><i class="w2 c137">⚪</i><span class="c137">┤ </span><span class="c245"> 3</span>  <span class="c252">│ </span><i class="w2 c252">最</i><i class="w2 c252">終</i><i class="w2 c252">手</i><span class="c252">    E3         │</span>
+<span class="c245">2</span> <span class="c137">├─┼─┼─┼─┼─┼─┼─</span><i class="w2 c137">⚫</i><i class="w2 c137">⚫</i><span class="c245"> 2</span>  <span class="c252">│ </span><i class="w2 c252">目</i><i class="w2 c252">算</i>      <i class="w2 c252">⚪</i><span class="c252"> +5.5    │</span>
+<span class="c245">1</span> <span class="c137">└─┴─┴─┴─┴─</span><i class="w2 c137">⚫</i><i class="w2 c255">⚫</i><span class="c137">┴─</span><i class="w2 c137">⚫</i><span class="c245"> 1</span>  <span class="c240">╰──────────────────────╯</span>
+  <span class="c245">A B C D E F G H J </span></pre></div>
+        <p class="shot-cap">
+          Both frames are the running program, captured through a real terminal. The board holds a
+          two-column invariant in every theme — a stone is two columns wide, and so is an empty
+          intersection with the line that leaves it.
+        </p>
+      </figure>
+
+      <figure class="game">
+        <figcaption>
+          <h3>Serpiente — arcade, written in Spanish</h3>
+          <p>
+            Twelve files, a frame loop, and a layout that is measured rather than assumed: the
+            panel is not centred against a guessed width, because a line centred against a guess
+            goes off-centre the moment a longer line joins the same panel.
+          </p>
+        </figcaption>
+        <div class="shot"><pre class="term"><span class="c15">╭───────────────────────────────╮</span>
+<span class="c15">│          Z Y M B O L          │</span>
+<span class="c15">│       S E R P I E N T E       │</span>
+<span class="c15">├───────────────────────────────┤</span>
+<span class="c11">│   Elige tu velocidad:         │</span>
+<span class="c15">│                               │</span>
+<span class="c10">│   ► [1]  Lento       160 ms   │</span>
+<span class="c15">│     [2]  Normal      130 ms   │</span>
+<span class="c15">│     [3]  Rápido      100 ms   │</span>
+<span class="c9">│     [4]  Infernal    70 ms    │</span>
+<span class="c201">│     [5]  Demencial   40 ms    │</span>
+<span class="c15">├───────────────────────────────┤</span>
+<span class="c15">│     [L]  Idioma: Español      │</span>
+<span class="c11">╰───────────────────────────────╯</span></pre></div>
+        <div class="shot wide"><pre class="term"><span class="c8">╭──────────────────────────────┤</span><span class="c11"> ✦ PUNTOS 11 ✦ </span><span class="c8">├───────────────────────────────╮</span>
+<span class="c8">│</span>                                                                              <span class="c8">│</span>
+<span class="c8">│</span>                                                                              <span class="c8">│</span>
+<span class="c8">│</span>                                                                              <span class="c8">│</span>
+<span class="c8">│</span>                                                                              <span class="c8">│</span>
+<span class="c8">│</span>                                                                              <span class="c8">│</span>
+<span class="c8">│</span>                                                                              <span class="c8">│</span>
+<span class="c8">│</span>                                                                              <span class="c8">│</span>
+<span class="c8">│</span>                                                                              <span class="c8">│</span>
+<span class="c8">│</span>                                                                              <span class="c8">│</span>
+<span class="c8">│</span>                                                                              <span class="c8">│</span>
+<span class="c8">│</span>                                                                              <span class="c8">│</span>
+<span class="c8">│</span>                                                                              <span class="c8">│</span>
+<span class="c8">│</span>                                                                              <span class="c8">│</span>
+<span class="c8">│</span>                                            <span class="c10">────╮</span>                             <span class="c8">│</span>
+<span class="c8">│</span>                                                <span class="c10">│</span>                             <span class="c8">│</span>
+<span class="c8">│</span>                                                <span class="c10">│</span>                             <span class="c8">│</span>
+<span class="c8">│</span>                                          <span class="c2">◀</span><span class="c10">─────╯</span>                             <span class="c8">│</span>
+<span class="c8">│</span>                                                                <i class="w2 c11">🍇</i>            <span class="c8">│</span>
+<span class="c8">│</span>                                                                              <span class="c8">│</span>
+<span class="c8">│</span>                                                                              <span class="c8">│</span>
+<span class="c8">│</span>                                                                              <span class="c8">│</span>
+<span class="c8">│</span>                                                                              <span class="c8">│</span>
+<span class="c8">╰──────────────────────────────────────────────────────────────────────────────╯</span></pre></div>
+        <p class="shot-cap">
+          The body glyphs are chosen from the two neighbouring segments, so a corner is
+          <code>╭ ╮ ╰ ╯</code> and a straight run is <code>─ │</code>. The head points where the
+          snake is going.
+        </p>
+      </figure>
+
+    </div>
+
+    <div class="findings">
+      <h3>Three defects that needed two features to compose</h3>
+      <p class="findings-lede">
+        The worst class is not the crash — it is the silent wrong answer. Each of these returns
+        something plausible, and none was reachable by testing the features one at a time.
+      </p>
+      <ul>
+        <li><b>Output parameters of <em>module</em> functions were dropped</b> under the register VM. Module functions worked. Output parameters worked. Together they did not.</li>
+        <li><b>A <code>String</code> was truncated <em>inside a module</em></b> — correct everywhere else.</li>
+        <li><b><code>"{CONST}"</code> interpolation compiled to literal text <em>inside a function</em></b> — the braces stayed on the screen.</li>
+      </ul>
+      <p>
+        A Go board is state threaded through cooperating modules. There was nowhere else for it
+        to live, so it hit all three.
+      </p>
+    </div>
+
+    <div class="callout">
+      <p>
+        And once the corpus, the goldens and the example pool were all green, running the same
+        engines over the applications opened <b>nine further findings</b>. The clean one:
+        the browser engine continued an identifier with ASCII digits only, so
+        <code>कार्यस्थितिः२</code> — a variable in the Sanskrit chess engine — parsed wrongly in the
+        browser and correctly under both Rust engines.
+      </p>
+      <p class="callout-punch">No file in the corpus is named that way. No file was going to be.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 6 · ANOTHER HAND ═══ -->
+<section id="hand">
+  <div class="container">
+    <div class="section-tag">six</div>
+    <h2 class="section-title">The same program, in another hand</h2>
+    <p class="section-desc">
+      Two different questions get asked at once and usually get conflated. <em>Can a team read
+      and write the code in their own language?</em> and <em>can the program show its text to a
+      user in theirs?</em> They have separate answers, and neither of them is a framework.
+    </p>
+
+    <div class="i18n-split">
+      <div class="i18n-half">
+        <div class="half-tag">the code</div>
+        <p>
+          Every identifier is a plain Unicode symbol, so a library can be written in the team's
+          own language and re-exported into anyone else's. The adapter holds no logic at all —
+          only names.
+        </p>
+<pre class="code"><span class="c">// matematicas/ελληνικά.zy — an adapter, and nothing else</span>
+<span class="k">#</span> .matematicas_ελληνικά {
+    <span class="k">&lt;#</span> ./module <span class="k">=&gt;</span> mat
+
+    <span class="k">#&gt;</span> {
+        mat<span class="k">::</span>sumar       <span class="k">=&gt;</span> προσθέτω
+        mat<span class="k">::</span>restar      <span class="k">=&gt;</span> αφαιρώ
+        mat<span class="k">::</span>multiplicar <span class="k">=&gt;</span> πολλαπλασιάζω
+        mat.PI           <span class="k">=&gt;</span> ΠΙ
+    }
+}</pre>
+        <p class="half-note">
+          It costs nothing at runtime: the layer resolves to direct references when the module
+          loads. There is no dispatch table and no string lookup, so importing through a
+          translation is not slower than importing the base.
+        </p>
+      </div>
+
+      <div class="i18n-half">
+        <div class="half-tag">the text</div>
+        <p>
+          A string a user reads is data, not an identifier — <code>"Play"</code> and
+          <code>"Jugar"</code> are two values, not one value under two names. So the second
+          mechanism is one module holding the active locale as module state, and one table per
+          language behind the same function contract.
+        </p>
+<pre class="code"><span class="c">// the key is a concept, written in the base language</span>
+texto(clave) {
+    <span class="k">&lt;~</span> <span class="k">??</span> clave {
+        <span class="s">"menú.jugar"</span>    <span class="k">=&gt;</span> <span class="s">"Play"</span>
+        <span class="s">"menú.salir"</span>    <span class="k">=&gt;</span> <span class="s">"Quit"</span>
+        <span class="s">"aviso.ocupado"</span> <span class="k">=&gt;</span> <span class="s">"there is already a piece there"</span>
+        _               <span class="k">=&gt;</span> clave
+    }
+}</pre>
+        <p class="half-note">
+          The last arm is the whole trick. A missing translation renders as its own key, so
+          completeness becomes <em>decidable</em>: walk the catalogue against every locale and
+          fail on any string that comes back unchanged. That check only works because a key can
+          never equal a correct translation of itself — which is what the domain prefix is for.
+          <code>menú.salir</code> and <code>Salir</code> can never collide.
+        </p>
+      </div>
+    </div>
+
+    <div class="i18n-proof">
+      <h3>One line of code, five ways of writing a square</h3>
+      <p>
+        The Sanskrit chess engine names a square as a Latin file plus a rank — and the rank comes
+        out in whatever numeral script the locale selected. This is the same expression, run five
+        times:
+      </p>
+      <table class="squares">
+        <thead><tr><th>locale</th><th>language</th><th>square</th><th>move</th></tr></thead>
+        <tbody>
+          <tr><td><code>sa</code></td><td>संस्कृतम्</td><td class="mono big">e४</td><td class="mono">e२–e४</td></tr>
+          <tr><td><code>hi</code></td><td>हिन्दी</td><td class="mono big">e४</td><td class="mono">e२–e४</td></tr>
+          <tr><td><code>fa</code></td><td>فارسی</td><td class="mono big">e۴</td><td class="mono">e۲–e۴</td></tr>
+          <tr><td><code>en</code></td><td>English</td><td class="mono big">e4</td><td class="mono">e2–e4</td></tr>
+          <tr><td><code>es</code></td><td>Español</td><td class="mono big">e4</td><td class="mono">e2–e4</td></tr>
+        </tbody>
+      </table>
+      <p class="proof-note">
+        The numeral script is not a formatting flag threaded through the call graph; it is a mode
+        the writing system carries, declared by <em>exhibiting</em> its own digits —
+        <code>#०९#</code> says “Devanagari” by containing Devanagari. There is no name to
+        translate and no table to consult. What the script does <em>not</em> get to choose is
+        which separator means what: <code>,</code> groups and <code>.</code> divides, in every
+        script, always. A settable pair would make every number ambiguous until you knew the
+        setting it was written under.
+      </p>
+    </div>
+
+    <div class="boards">
+      <h3>The same position, four ways of drawing a piece</h3>
+      <p class="boards-lede">
+        The style is a locale's choice too — and every one of them has to measure to the same
+        sixteen columns, which is why <code>रा</code> pads and <code>🐘</code> does not.
+      </p>
+      <div class="board-row">
+        <figure><figcaption>शतरञ्जम्</figcaption><pre class="term board"><i class="rank">8</i><i class="cell">♜ </i><i class="cell">♞ </i><i class="cell">♝ </i><i class="cell">♛ </i><i class="cell">♚ </i><i class="cell">♝ </i><i class="cell">♞ </i><i class="cell">♜ </i>
+<i class="rank">7</i><i class="cell">♟ </i><i class="cell">♟ </i><i class="cell">♟ </i><i class="cell">♟ </i><i class="cell">♟ </i><i class="cell">♟ </i><i class="cell">♟ </i><i class="cell">♟ </i>
+<i class="rank">6</i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i>
+<i class="rank">5</i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i>
+<i class="rank">4</i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i>
+<i class="rank">3</i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i>
+<i class="rank">2</i><i class="cell">♙ </i><i class="cell">♙ </i><i class="cell">♙ </i><i class="cell">♙ </i><i class="cell">♙ </i><i class="cell">♙ </i><i class="cell">♙ </i><i class="cell">♙ </i>
+<i class="rank">1</i><i class="cell">♖ </i><i class="cell">♘ </i><i class="cell">♗ </i><i class="cell">♕ </i><i class="cell">♔ </i><i class="cell">♗ </i><i class="cell">♘ </i><i class="cell">♖ </i></pre></figure>
+        <figure><figcaption>चित्रम्</figcaption><pre class="term board"><i class="rank">8</i><i class="cell">🛞</i><i class="cell">🐎</i><i class="cell">🐘</i><i class="cell">🧙</i><i class="cell">👑</i><i class="cell">🐘</i><i class="cell">🐎</i><i class="cell">🛞</i>
+<i class="rank">7</i><i class="cell">🚶</i><i class="cell">🚶</i><i class="cell">🚶</i><i class="cell">🚶</i><i class="cell">🚶</i><i class="cell">🚶</i><i class="cell">🚶</i><i class="cell">🚶</i>
+<i class="rank">6</i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i>
+<i class="rank">5</i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i>
+<i class="rank">4</i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i>
+<i class="rank">3</i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i>
+<i class="rank">2</i><i class="cell">🚶</i><i class="cell">🚶</i><i class="cell">🚶</i><i class="cell">🚶</i><i class="cell">🚶</i><i class="cell">🚶</i><i class="cell">🚶</i><i class="cell">🚶</i>
+<i class="rank">1</i><i class="cell">🛞</i><i class="cell">🐎</i><i class="cell">🐘</i><i class="cell">🧙</i><i class="cell">👑</i><i class="cell">🐘</i><i class="cell">🐎</i><i class="cell">🛞</i></pre></figure>
+        <figure><figcaption>अक्षरम्</figcaption><pre class="term board"><i class="rank">8</i><i class="cell">र </i><i class="cell">अ </i><i class="cell">ग </i><i class="cell">म </i><i class="cell">रा</i><i class="cell">ग </i><i class="cell">अ </i><i class="cell">र </i>
+<i class="rank">7</i><i class="cell">प </i><i class="cell">प </i><i class="cell">प </i><i class="cell">प </i><i class="cell">प </i><i class="cell">प </i><i class="cell">प </i><i class="cell">प </i>
+<i class="rank">6</i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i>
+<i class="rank">5</i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i>
+<i class="rank">4</i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i>
+<i class="rank">3</i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i>
+<i class="rank">2</i><i class="cell">प </i><i class="cell">प </i><i class="cell">प </i><i class="cell">प </i><i class="cell">प </i><i class="cell">प </i><i class="cell">प </i><i class="cell">प </i>
+<i class="rank">1</i><i class="cell">र </i><i class="cell">अ </i><i class="cell">ग </i><i class="cell">म </i><i class="cell">रा</i><i class="cell">ग </i><i class="cell">अ </i><i class="cell">र </i></pre></figure>
+        <figure><figcaption>लातिनम्</figcaption><pre class="term board"><i class="rank">8</i><i class="cell">r </i><i class="cell">n </i><i class="cell">b </i><i class="cell">q </i><i class="cell">k </i><i class="cell">b </i><i class="cell">n </i><i class="cell">r </i>
+<i class="rank">7</i><i class="cell">p </i><i class="cell">p </i><i class="cell">p </i><i class="cell">p </i><i class="cell">p </i><i class="cell">p </i><i class="cell">p </i><i class="cell">p </i>
+<i class="rank">6</i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i>
+<i class="rank">5</i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i>
+<i class="rank">4</i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i>
+<i class="rank">3</i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i><i class="cell">  </i>
+<i class="rank">2</i><i class="cell">P </i><i class="cell">P </i><i class="cell">P </i><i class="cell">P </i><i class="cell">P </i><i class="cell">P </i><i class="cell">P </i><i class="cell">P </i>
+<i class="rank">1</i><i class="cell">R </i><i class="cell">N </i><i class="cell">B </i><i class="cell">Q </i><i class="cell">K </i><i class="cell">B </i><i class="cell">N </i><i class="cell">R </i></pre></figure>
+      </div>
+    </div>
+
+    <div class="callout">
+      <p>
+        Writing each application in a different natural language — English, Mandarin, Spanish,
+        Klingon pIqaD, Japanese, Sanskrit — was not a flourish. It is what turned
+        “language-neutral” from a design intention into a result, and it is how the double-width
+        glyph, the pIqaD interpolation and the numeral-mode defects were found at all.
+      </p>
+    </div>
+
+    <div class="piqad-strip">
+      <div class="piqad-label">tlhIngan Hol · pIqaD</div>
+      <pre class="code piqad"><span class="k">#&gt;</span> { &#xF8DA;&#xF8E5;&#xF8E9;, &#xF8E0;&#xF8D0;&#xF8E7;&#xF8E9;&#xF8DA;&#xF8E5;&#xF8E9; }
+
+&#xF8DA;&#xF8E5;&#xF8E9;(&#xF8E1;&#xF8D7;&#xF8DB;) {
+    <span class="k">&lt;~</span> <span class="k">??</span> &#xF8E1;&#xF8D7;&#xF8DB; {
+        <span class="s">"&#xF8DB;&#xF8D0;&#xF8D1;.&#xF8D3;&#xF8E5;&#xF8D8;"</span> <span class="k">=&gt;</span> <span class="s">"&#xF8D7;&#xF8DF;&#xF8D0;&#xF8E1; &#xF8E4;&#xF8D0;&#xF8E7;"</span>
+    }
+}</pre>
+      <p>
+        Exported names, a parameter, a match arm and a string — all of them in the Klingon
+        Private Use Area, none of them a special case anywhere in the lexer. The operators
+        <code>#&gt;</code>, <code>&lt;~</code>, <code>??</code> and <code>=&gt;</code> are the
+        only things on this page that look the same in every one of them.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 7 · WHAT FOLLOWS ═══ -->
+<section id="follows" class="band">
+  <div class="container">
+    <div class="section-tag">seven</div>
+    <h2 class="section-title">What follows from it</h2>
+    <p class="section-desc">
+      Stated as consequences of the design rather than as a feature list, because that is what
+      they are.
+    </p>
+
+    <div class="consequences">
+      <div class="cq">
+        <div class="cq-mark">0</div>
+        <h3>Nothing to translate</h3>
+        <p>
+          Control flow, I/O, typing, module structure, collection operations and error handling
+          are marks from a closed inventory of 29 characters, and that inventory contains no
+          letters. A program's identifiers can move to another language without the grammar
+          moving with them.
+        </p>
+      </div>
+      <div class="cq">
+        <div class="cq-mark">3</div>
+        <h3>Three engines, one answer</h3>
+        <p>
+          A tree-walker, a register VM and a hand-written browser interpreter are graded on the
+          same corpus, and disagreement is the failure condition. Today: <b>655 of 661</b>
+          programs answered identically by all three, <b>zero</b> divergences, the remaining six
+          excused in writing with a reason attached.
+        </p>
+      </div>
+      <div class="cq">
+        <div class="cq-mark">36</div>
+        <h3>Refusal is tested too</h3>
+        <p>
+          A separate corpus of malformed programs that every engine must reject. Thirty-four of
+          thirty-six are refused everywhere; the two that are not are open, named, and the
+          reason each one is still red is written down. A gate that only tests acceptance is
+          half a gate.
+        </p>
+      </div>
+      <div class="cq">
+        <div class="cq-mark">8</div>
+        <h3>The instruments stay in service</h3>
+        <p>
+          Eight applications across seven releases, in six natural languages — English, Mandarin,
+          Spanish, Klingon, Japanese, Sanskrit — and in domains chosen to be far apart: a CLI over
+          an HTTP service, a TUI arcade game, scientific computing, a Go engine, an accounting
+          ledger. They are carried across every breaking change, and the carrying keeps finding
+          things.
+        </p>
+      </div>
+      <div class="cq">
+        <div class="cq-mark">°</div>
+        <h3>Growth is recombination</h3>
+        <p>
+          One new base mark in five versions. Everything else was assembled from marks that were
+          already there, which is the property that keeps a symbolic language learnable instead
+          of turning it into a glyph museum.
+        </p>
+      </div>
+      <div class="cq">
+        <div class="cq-mark">¶</div>
+        <h3>The irregularities are published</h3>
+        <p>
+          Six declared homographs, ten opaque signs, one grapheme that is not in the operator
+          class and survives by an exception. Naming them is what makes the rest of the
+          description worth anything.
+        </p>
+      </div>
+    </div>
+
+    <div class="closing">
+      <p>
+        None of this makes the syntax familiar, and it is not meant to. It makes it
+        <em>accountable</em>: every mark has a gloss, every operator has a segmentation or an
+        entry saying why it has none, every rule has something that enforces it, and every claim
+        on this page was executed against the running language rather than recalled from an
+        earlier version of the documentation.
+      </p>
+      <div class="closing-actions">
+        <a href="playground.html" class="btn-primary"><span>▶ </span>Run it in the browser</a>
+        <a href="index.html" class="btn-ghost">The front page</a>
+        <a href="https://github.com/zymbol-lang/interpreter" class="btn-ghost" target="_blank" rel="noopener">SYMBOLS.md · LDV.md · I18N.md</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">
+      <img src="assets/img/logo.png" alt="Zymbol-Lang" style="height:1.6rem;width:auto;opacity:0.8;vertical-align:middle;">
+    </div>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="playground.html">Playground</a>
+      <a href="install.html">Install</a>
+      <a href="changelog.html">Releases</a>
+      <a href="https://github.com/zymbol-lang/interpreter" target="_blank" rel="noopener">GitHub</a>
+    </div>
+    <div class="footer-copy">No words. Just symbols.</div>
+  </div>
+</footer>
+
+<script>
+// The essay page carries none of main.js — no language bar, no showcase, no manual
+// loader, and nothing here to translate. Only the two controls the header shows.
+(function () {
+  var btn  = document.getElementById('theme-toggle');
+  var icon = document.getElementById('theme-icon');
+  function paint() {
+    icon.textContent = document.documentElement.classList.contains('light') ? '☀️' : '🌙';
+  }
+  paint();
+  btn.addEventListener('click', function () {
+    var light = document.documentElement.classList.toggle('light');
+    localStorage.setItem('zy-theme', light ? 'light' : 'dark');
+    paint();
+  });
+
+  var menu = document.getElementById('menu-toggle');
+  var nav  = document.getElementById('main-nav');
+  function close() {
+    nav.classList.remove('open');
+    menu.setAttribute('aria-expanded', 'false');
+    menu.querySelector('span').textContent = '☰';
+  }
+  menu.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var open = nav.classList.toggle('open');
+    menu.setAttribute('aria-expanded', String(open));
+    menu.querySelector('span').textContent = open ? '✕' : '☰';
+  });
+  nav.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', close); });
+  document.addEventListener('click', function (e) {
+    if (!nav.contains(e.target) && !menu.contains(e.target)) close();
+  });
+}());
+</script>
+</body>
+</html>

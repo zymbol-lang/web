@@ -1,0 +1,76 @@
+// @skip-parity: the canvas needs a real terminal under the CLI and a canvas
+// @skip-parity: overlay in the browser, so a piped run has nothing to compare.
+// ============================================================
+// mandelbrot.zy — the Mandelbrot set, drawn on the terminal canvas.
+//
+// One number decides everything: `n`, how many steps the orbit
+// survives before it runs away. It picks the glyph and it picks
+// the colour, so the picture cannot disagree with itself. `n = 0`
+// means it never ran away — that is the set, drawn solid.
+//
+//   >>|  opens the canvas   >>!  clears it   >>?  measures it
+//   >>~  writes one cell, at a row, a column, in one colour
+//   <<|  waits for a key
+//
+// Two economies, and both show in the picture rather than in a
+// benchmark: the squares are carried between iterations instead of
+// being recomputed, and the set is mirrored about the real axis,
+// so only the top half is ever escaped. Together they buy the
+// resolution the detail needs.
+// ============================================================
+
+// Outside the set: faint to solid, dark green to bright.
+trazo  = " .:-=+*#%"
+tintes = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Steps survived before the orbit runs away; 0 if it never does.
+// zr2 and zi2 are carried, so each step costs four products, not six.
+fuga(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (alto, ancho) = >>?
+    filas = alto - 2
+    cols  = ancho - 1
+
+    // A cell is ~2.5x taller than wide; the vertical span is
+    // scaled by that so the set comes out round.
+    anchura = 2.7
+    altura  = filas * anchura * 2.5 / cols
+    medio   = filas / 2 + 1
+
+    @ y:1..medio {
+        espejo = filas + 1 - y
+        @ x:1..cols {
+            cr = (x - 1) * anchura / cols - 2.1
+            ci = (y - 1) * altura  / filas - altura / 2.0
+            n  = fuga(cr, ci)
+            marca = "@"
+            tinte = 231
+            ? n <> 0 {
+                paso = n / 4 + 1
+                ? paso > 9 { paso = 9 }
+                marca = trazo[paso]
+                tinte = tintes[paso]
+            }
+            >>~ (y, x, 0, tinte) > marca
+            ? espejo > medio { >>~ (espejo, x, 0, tinte) > marca }
+        }
+    }
+
+    >>~ (alto, 2, 0, 244) > "any key to leave"
+    <<| _tecla
+}

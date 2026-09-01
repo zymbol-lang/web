@@ -323,6 +323,25 @@
               "path": "loops/continue.zy"
             }
           ]
+        },
+        {
+          "id": "graphics",
+          "icon": "🌀",
+          "title": "Drawing",
+          "desc": "Programs whose output is a picture",
+          "entries": [
+            {
+              "id": "graphics-mandelbrot",
+              "title": "Mandelbrot",
+              "desc": "The set in ASCII — nested @ loops, ? / _, and one escape function",
+              "tags": [
+                "loops",
+                "functions",
+                "float"
+              ],
+              "path": "graphics/mandelbrot.zy"
+            }
+          ]
         }
       ]
     },

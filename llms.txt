@@ -1,6 +1,6 @@
 # Zymbol
 
-> Zymbol is a keyword-free symbolic programming language. Every construct is a
+> Zymbol is a symbolic programming language with no words in its grammar. Every construct is a
 > symbol — `?` is if, `@` is loop, `<~` is return, `#1` is true — so identifiers can
 > be written in any human language and the program reads the same everywhere. It
 > ships as a Rust interpreter (tree-walker plus a register VM), an LSP server and a
@@ -13,6 +13,8 @@ or swap the extension — `/install.html` → `/install.md`.
 ## Site
 
 - [Home](https://zymbol-lang.org/index.md): what the language is, the operator table, FizzBuzz in any human language.
+- [A notation, not a dialect](https://zymbol-lang.org/index2.md): working draft — the sign system, how an operator is segmented, how a new mark is admitted, and how a Go board is used to find what the language cannot say.
+- [Fourteen marks](https://zymbol-lang.org/index3.md): working draft — the marks one at a time, how they join into operators, and a Mandelbrot written in symbols.
 - [Install](https://zymbol-lang.org/install.md): binaries for Linux/Windows/macOS with SHA256, VS Code extension, build from source.
 - [Playground](https://zymbol-lang.org/playground.md): the browser engine's exact capabilities and limits, deep-link format, example groups.
 - [Releases](https://zymbol-lang.org/changelog.md): full changelog, v0.0.1 through v0.0.8.
