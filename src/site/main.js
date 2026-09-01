@@ -407,7 +407,7 @@ import { LANG_STORAGE_KEY, bcp47Of, resolveInitialLang } from '../i18n/detect.js
       document.getElementById('btn-examples').textContent  = i18nEntry.btn_examples  || 'See Examples';
       document.getElementById('btn-try-online').textContent  = i18nEntry.nav_try_online  || 'Try Online';
       document.getElementById('btn-ops-ref').textContent   = i18nEntry.btn_ops_ref   || 'Operator Ref';
-      document.getElementById('stat-keywords').textContent  = i18nEntry.stat_keywords  || 'Keywords';
+      document.getElementById('stat-keywords').textContent  = i18nEntry.stat_keywords  || 'Words';
       document.getElementById('stat-unicode').textContent   = i18nEntry.stat_unicode   || 'Unicode';
 
       // Nav + footer links

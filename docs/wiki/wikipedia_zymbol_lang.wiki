@@ -35,7 +35,7 @@ Zymbol is classified as an [[esoteric programming language]] due to its unconven
 
 == Design principles ==
 
-# '''No keywords''' — <code>?</code> is ''if'', <code>@</code> is ''loop'', <code><~</code> is ''return''. No natural language dependency.
+# '''No words''' — <code>?</code> is ''if'', <code>@</code> is ''loop'', <code><~</code> is ''return''. No natural language dependency.
 # '''Full Unicode''' — variable names, function names, comments, and string values accept any Unicode character or grapheme cluster.
 # '''Language-agnostic type literals''' — <code>#1</code> / <code>#0</code> instead of <code>true</code> / <code>false</code>; type tags use symbols (<code>###</code>, <code>##"</code>, <code>##?</code>).
 # '''Consistent operators''' — the same symbol has the same meaning regardless of which human language is used for identifiers.
@@ -345,7 +345,7 @@ pi = m::get_PI()
 
 == Internationalization ==
 
-Because Zymbol has no English keywords, programs written in any [[writing system]] are syntactically identical to programs written in any other. Operators remain constant; only identifiers, string contents, and comments vary.
+Because no construct of Zymbol's grammar is an English word, programs written in any [[writing system]] are syntactically identical to programs written in any other. Operators remain constant; only identifiers, string contents, and comments vary.
 
 A program written entirely in [[Arabic script|Arabic]], [[Japanese writing system|Japanese]], [[Cherokee syllabary|Cherokee Syllabics]], or [[Klingon language|Klingon]] pIqaD is structurally equivalent to one written in Latin script — no translation layer or preprocessing is required. The [[Unicode]] [[grapheme cluster]] model ensures that scripts with complex glyph composition ([[Devanagari]], [[Thai script|Thai]], [[Burmese script|Burmese]], [[Unified Canadian Aboriginal Syllabics|Cree Syllabics]]) are handled correctly at the lexer level.
 

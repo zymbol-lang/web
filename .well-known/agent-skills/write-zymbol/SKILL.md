@@ -1,12 +1,12 @@
 ---
 name: write-zymbol
-description: Write and run Zymbol — a keyword-free language where every construct is a symbol (`?` if, `@` loop, `<~` return, `#1` true) and identifiers may be in any human language. Use when writing, reading, running or debugging .zy files.
+description: Write and run Zymbol — a language with no words in its grammar, where every construct is a symbol (`?` if, `@` loop, `<~` return, `#1` true) and identifiers may be in any human language. Use when writing, reading, running or debugging .zy files.
 license: CC-BY-SA-4.0
 ---
 
 # Write Zymbol
 
-Zymbol has **no keywords**. Every construct is a symbol, so nothing in the syntax
+Zymbol has **no words** in its grammar. Every construct is a symbol, so nothing in the syntax
 is an English word and identifiers can be written in any script — Spanish,
 Japanese, Arabic, Klingon pIqaD, emoji. `?` is if, `@` is loop, `<~` is return,
 `#1` is true, `¶` is newline.

@@ -24,7 +24,7 @@ Zymbol-Lang does not aim for mass adoption. Its purpose is a proof of concept: d
 Zymbol-Lang is currently in public alpha (v0.0.5), with two execution backends: a tree-walking interpreter (default, fully featured) and a register-based VM (<code>--vm</code>, ~4.4× faster on recursive workloads). Source files use the <code>.zy</code> extension.
 
 Design principles:
-# '''No keywords''' — <code>?</code> is if, <code>@</code> is loop, <code><~</code> is return. Nothing to translate.
+# '''No words''' — <code>?</code> is if, <code>@</code> is loop, <code><~</code> is return. Nothing to translate.
 # '''Full Unicode''' — identifiers, strings, and comments accept any Unicode character or script.
 # '''Language-agnostic types''' — <code>#1</code>/<code>#0</code> instead of <code>true</code>/<code>false</code>.
 # '''Explicit over implicit''' — newlines in output and return values require explicit syntax.
@@ -159,7 +159,7 @@ fizzbuzz(n) {
 
 == Internationalization ==
 
-Because Zymbol-Lang has no English keywords, programs written in any human language are syntactically identical — only identifiers, string contents, and comments change. Numeral modes extend this to numeric output: <code>#०९#</code> switches all number display to Devanagari digits; 69 Unicode scripts are supported, including Klingon pIqaD (U+F8F0–U+F8F9). Native digit literals from any supported script may appear directly in source code.
+Because no construct of Zymbol-Lang's grammar is an English word, programs written in any human language are syntactically identical — only identifiers, string contents, and comments change. Numeral modes extend this to numeric output: <code>#०९#</code> switches all number display to Devanagari digits; 69 Unicode scripts are supported, including Klingon pIqaD (U+F8F0–U+F8F9). Native digit literals from any supported script may appear directly in source code.
 
 == Implementation ==
 

@@ -6,7 +6,7 @@
 
 <p align="center">
   Source for <a href="https://zymbol-lang.org">zymbol-lang.org</a> — the official site of the<br/>
-  keyword-free symbolic language, and the playground that runs it in the browser.
+  wordless symbolic language, and the playground that runs it in the browser.
 </p>
 
 <p align="center">
@@ -19,20 +19,20 @@
 
 ---
 
-> **Staged for v0.0.8 — 2026-08-01**
+> **Live at v0.0.8.** The `v0.0.8` tag is cut, the release assets exist, and
+> `index.html`, `install.html` and `changelog.html` carry real SHA256 digests — no
+> `pending` placeholders remain. Work for v0.0.9 happens on the `v0.0.9` branch.
 >
-> `index.html`, `install.html` and `changelog.html` are already bumped to **v0.0.8**, with
-> `pending` in place of the SHA256 hashes. Those download URLs point at a GitHub release
-> that does not exist yet, so **they 404 until the `v0.0.8` tag is cut**.
->
-> **Merge this branch to `main` only after the release assets are published**, and fill in
-> the hashes in the same change. `main` is what GitHub Pages serves; merging early puts
-> broken download links on the live site.
+> **The rule this banner used to enforce still holds**, and is the reason it is rewritten
+> rather than deleted: `main` is what GitHub Pages serves, so a version bump merges to
+> `main` **only after** the corresponding release assets are published, with the digests
+> filled in the same change. Merging early puts 404s on the live site. See
+> `agents/web_release.md` for the procedure.
 
 Source for [zymbol-lang.org](https://zymbol-lang.org) — the official website of the Zymbol
 programming language, including the in-browser playground that runs Zymbol without a server.
 
-Zymbol is a keyword-free symbolic programming language: every construct uses pure symbols
+Zymbol is a symbolic programming language with no words in its grammar: every construct uses pure symbols
 (`?` for if, `@` for loops, `->` for lambdas, `>>` for output). Identifiers can be written in
 any human language or script — Unicode, emoji, RTL, CJK, Indic. Numeric output can be
 rendered in any of 69 Unicode digit scripts (Devanagari, Arabic-Indic, Thai, Klingon pIqaD, …)
@@ -283,6 +283,26 @@ Mando'a, Quenya, Sindarin, Dothraki, High Valyrian) have UI translations staged 
 showcase entry yet, so they do not appear in the switcher. Adding a language means all three
 artifacts — see [docs/newlang.md](docs/newlang.md).
 
+### Known divergence: "no words" (English) vs "no keywords" (every other language)
+
+The English strings say **No words. Just symbols.** — `t1`, `stat_keywords` and `f1_title`
+in `i18n.json`, and the same claim throughout the English documentation. The other 118
+languages still say the equivalent of *no keywords*: `Sin palabras clave`, `Aucun mot-clé`,
+`キーワードなし`, `没有关键字`, `Без ключевых слов`.
+
+**That is a deliberate hold, not an oversight.** The English wording was corrected on
+2026-09-01 because "no keywords" is only nearly true: *keyword* is a tokenizer's term for a
+reserved token, and by that reading Zymbol has plenty — its own language server files `?`,
+`@` and `<~` under `KEYWORD` because LSP offers no other slot, and the TextMate grammar puts
+every operator under a `keyword.control.zymbol` scope. The claim that survives inspection is
+the one `interpreter/SYMBOLS.md` §1.2 states: **no construct of the grammar is a word.**
+
+Carrying that correction into 119 languages is ~357 UI strings plus the opening line of 110
+manuals, and in most languages it is a matter of dropping a modifier (`palabras clave` →
+`palabras`). It has not been done. Anyone picking it up should start from `SYMBOLS.md` §1.2,
+and should also fix `scripts/patch_african_i18n.py` and `scripts/add_mesoamerican_languages.py`,
+which would otherwise reintroduce the old wording for any language added afterwards.
+
 ## Testing
 
 Plain Node, no install step. Run from this directory:
@@ -366,21 +386,24 @@ Pointed at the example pool (`--dir examples`) it audits every published example
 in its own first lines with `// @skip-parity: <reason>` rather than being listed here — the
 pool is not this runner's corpus, and duplicating its paths into the skip table would rot.
 
-The 2 pool failures are parity gaps in `zymbol.js`, and the pool is what surfaced them:
-`projects/math-es/calculadora.zy` (the float literal `3.14159265` prints as
-`3.1415926499999998`) and `rosetta-stone/klingon.zy` (the JS lexer treats the `'` in the
-Klingon identifier `mI'` as a char literal, so the file does not parse).
+**Re-measured 2026-08-31 on v0.0.9: zero divergences**, in the corpus and in the pool alike.
 
-The 5 failures are **known parity gaps in the JS mirror**, not regressions — v0.0.8 fixes
-that have not been ported yet:
+```
+node tests/test_runner.mjs                → 661 files: 631 agree, 0 diverge
+node tests/test_runner.mjs --dir examples → 222 files: 216 agree, 0 diverge
+```
 
-| Test | Missing in `zymbol.js` |
-| ---- | ---------------------- |
-| `bugs/bug_mm11_iterator_leftover.zy` | MM-11 — leftover loop-iterator value |
-| `bugs/bug_mm4_module_const_guard.zy` | MM-4 — import-time semantic gate (constant reassignment in a module is not reported) |
-| `bugs/bug_mm9_const_call_depth.zy` | MM-9 — root-scope constants at call depth ≥ 2 |
-| `errors/parser/parent_path_alias.zy` | HLZ-005 — the `'./../' is not a module path` diagnostic (the JS mirror errors, but with different text) |
-| `modules_scope/interp_global_const.zy` | Interpolation of any identifier, including global constants (`"{DIR}"`) |
+The residue is *excused, not divergent*: 30 corpus files and 6 examples that `corpus.toml`
+excludes for `zyjs` with a written reason — `std/db` is ODBC, `<\ cmd \>` entropy differs by
+design, TUI needs a real TTY — plus the pool's own `@skip-parity` markers.
+
+The gaps this section used to list are closed, each verified on its own rather than inferred
+from the total: `arity/` (7 files, three engines, 7 agree — this engine was the last one that
+filled a missing argument with `Unit`), `bugs/bug_mm*` (MM-4, MM-9, MM-11 — 12 files, 12
+agree), `errors/parser/parent_path_alias.zy` (HLZ-005), `modules_scope/interp_global_const.zy`,
+HLZ-KL-001 (`'` inside an identifier, so tlhIngan Hol parses), and the float literal
+`3.14159265`, which was the worst of them because it affected *every* float literal and went
+unnoticed until the pool became real files on disk.
 
 See [docs/GAPS.md](docs/GAPS.md) for the full parity report.
 

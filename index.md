@@ -1,6 +1,6 @@
 # Zymbol
 
-> A keyword-free symbolic programming language. Every construct is a symbol, so
+> A symbolic programming language with no words in its grammar. Every construct is a symbol, so
 > identifiers can be written in any human language and the code reads the same
 > everywhere. Public alpha, v0.0.8.
 
@@ -15,12 +15,12 @@ Start from [/llms.txt](llms.txt) for the full map.
 release is a concept validation of the language design. APIs, syntax, and features
 may change. Source and issues: <https://github.com/zymbol-lang/interpreter>.
 
-## No keywords. Just symbols.
+## No words. Just symbols.
 
 A minimalist programming language. Write identifiers in any human language — the
 operators never change.
 
-- **0** keywords
+- **0** words in the grammar
 - **∞** Unicode: identifiers in any script, or emoji
 
 There is no `if`, no `while`, no `return`, no `true`. `?` is if, `@` is loop,
@@ -81,7 +81,10 @@ The complete symbol table lives in `REFERENCE.md` in the interpreter repository.
 
 ## Design principles
 
-**No keywords — ever.** Every construct is a symbol. `?` is if, `@` is loop, `<~`
+**No words — ever.** Not "no keywords": *keyword* names a reserved token in a
+tokenizer, and by that reading the language server files `?` and `@` under
+`KEYWORD` because it has no other slot. The checkable claim is that no construct
+of the grammar is a word. Every construct is a symbol. `?` is if, `@` is loop, `<~`
 is return. Nothing to translate per language.
 
 **Full Unicode identifiers.** Name variables in Arabic, write functions in

@@ -10,7 +10,7 @@
   "languages": {
     "english": {
       "rtl": false,
-      "t1": "No keywords.",
+      "t1": "No words.",
       "t2": "Just symbols.",
       "desc": "A minimalist programming language. Write identifiers in any human language — the operators never change.",
       "why_tag": "why zymbol",
@@ -32,7 +32,7 @@
         "rem": "remove",
         "try": "try / catch"
       },
-      "f1_title": "No keywords — ever",
+      "f1_title": "No words — ever",
       "f1_desc": "Every construct is a symbol. ? is if. @ is loop. <~ is return. Nothing to translate per language.",
       "f2_title": "Full Unicode identifiers",
       "f2_desc": "Name variables in Arabic, write functions in Japanese, use emojis. The operators ? @ >> <~ stay the same.",
@@ -50,7 +50,7 @@
       "btn_examples": "See Examples",
       "btn_ops_ref": "Operator Ref",
       "stat_languages": "Languages",
-      "stat_keywords": "Keywords",
+      "stat_keywords": "Words",
       "stat_unicode": "Unicode",
       "nav_home": "Home",
       "nav_showcase": "Showcase",

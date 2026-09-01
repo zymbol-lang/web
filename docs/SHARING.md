@@ -70,7 +70,7 @@ Opening a `?code=` link loads the code into the editor and **stops there**, with
 output panel saying the code arrived from a link. The visitor presses ▶ Run.
 
 The engine is a sandboxed interpreter with no disk access, so the risk is not exfiltration — it
-is denial of service: the 50 000-statement cap that stops a runaway loop is deliberately
+is denial of service: the 2 000 000-statement cap that stops a runaway loop is deliberately
 *exempt* for TUI blocks, so an autorun link containing `>>|` and an infinite loop would freeze
 the tab of anyone who clicks it. Not autorunning removes the whole class.
 
@@ -119,9 +119,9 @@ The catalog already knows the title, the description, the icon and whether the e
 (group `games`), so the text is generated, not typed:
 
 ```text
-game     🐍 Serpiente — Snake, written in Zymbol: no keywords, only symbols. Play it in your browser → <url>
+game     🐍 Serpiente — Snake, written in Zymbol: no words, only symbols. Play it in your browser → <url>
 example  Zymbol — <title>: <desc> → <url>
-own code I wrote this in Zymbol — no keywords, only symbols → <url>
+own code I wrote this in Zymbol — no words, only symbols → <url>
 ```
 
 ## Preview cards: one page per game
