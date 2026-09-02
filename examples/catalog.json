@@ -62,7 +62,7 @@
               "id": "pkg-go",
               "icon": "⚫",
               "title": "GO — 囲碁",
-              "desc": "Full board game: 20 files, Chinese scoring, heuristic AI, 4 language entry points, and a watch mode where the AI plays itself",
+              "desc": "Full board game: 21 files, Chinese scoring, heuristic AI, 4 language entry points, and 観戦 — the AI plays both sides while you watch",
               "zyp": "games/classic/go.zyp",
               "tags": [
                 "go",
