@@ -1,0 +1,83 @@
+// @skip-parity: ri tz'ib'anem uwäch k'o chi rajawaxik jun qas terminal chuxe'
+// @skip-parity: ri CLI xuquje' jun tz'ib'anem uwäch pa ri sik'inel, rumal ri'
+// @skip-parity: jun b'anoj pa jun b'e k'o taj jas kujunamaj wi.
+// ============================================================
+// mandelbrot — ri Mandelbrot molaj, tz'ib'atal pa ri tz'ib'anem uwäch.
+// B'i'aj pa k'iche'. Retal ronojel q'ij retal.
+//
+// Jun ajilab'al xaq xu wi kucha' ronojel: `n`, janipa' b'inem
+// ri sutub'al kuk'ase'j uloq majani kanimaj. Are' kucha' ri
+// retal xuquje' kucha' ri b'onil, rumal ri' ri tz'ib' man
+// kekowin taj kub'ij chi kaxlan chi rib'. `n = 0` kel ub'ixik
+// chi maj jumul xanimaj — are' ri molaj, tz'ib'atal nojinäq.
+//
+//   >>|  kujaq ri tz'ib'anem uwäch   >>!  kuch'aj   >>?  kuq'axaj
+//   >>~  kutz'ib'aj jun tikoj, pa jun cholaj, jun wa'alik, pa jun b'onil
+//   <<|  kuroyob'ej jun pitz'
+//
+// Keb' q'atb'al tzij, xuquje' che kikeb'ichal kek'utunik pa ri
+// tz'ib' man pa jun q'axanik taj: ri kajkaj kek'am b'i pa jun
+// sutub'al pa jun chik, man kaj'ilax ta chik, xuquje' ri molaj
+// ka'an lemo' che ri qas b'e, rumal ri' xa ri unik'ajal ajsik
+// kanimajik. Junam kekitoj ri ilb'al ri ch'utin taq wachib'al
+// karaj.
+//
+// K'ak' taq tzij: `wa'alik`, `paqalil`, `nimal` xeb'an waral.
+// K'iche' ch'ab'al ajtij chuwilo.
+// ============================================================
+
+// Chirij ri molaj: petinäq pa ch'utin k'a pa nojinäq, q'eq rax k'a pa saqil.
+retalil = " .:-=+*#%"
+b'onilal = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// B'inem kek'ase'j uloq majani kanimaj ri sutub'al; 0 we maj jumul kanimajik.
+// zr2 xuquje' zi2 kek'am b'i, rumal ri' jujun b'inem kutoj kajib' k'iyisanik, man waqib' taj.
+anim(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (paqal, nim) = >>?
+    cholaj  = paqal - 2
+    wa'alik = nim   - 1
+
+    // Jun tikoj ~2.5 mul nim upaqalil chuwäch unimal; ri paqal
+    // q'axanik kaq'axax ruk' ri' rech ri molaj kel setet.
+    nimal   = 2.7
+    paqalil = cholaj * nimal * 2.5 / wa'alik
+    unik'ajal = cholaj / 2 + 1
+
+    @ y:1..unik'ajal {
+        lemo' = cholaj + 1 - y
+        @ x:1..wa'alik {
+            cr = (x - 1) * nimal   / wa'alik - 2.1
+            ci = (y - 1) * paqalil / cholaj  - paqalil / 2.0
+            n  = anim(cr, ci)
+            retal = "@"
+            b'onil = 231
+            ? n <> 0 {
+                b'inem = n / 4 + 1
+                ? b'inem > 9 { b'inem = 9 }
+                retal  = retalil[b'inem]
+                b'onil = b'onilal[b'inem]
+            }
+            >>~ (y, x, 0, b'onil) > retal
+            ? lemo' > unik'ajal { >>~ (lemo', x, 0, b'onil) > retal }
+        }
+    }
+
+    >>~ (paqal, 2, 0, 244) > "chapitz'a' apachike pitz' rech katel b'i"
+    <<| _pitz'
+}

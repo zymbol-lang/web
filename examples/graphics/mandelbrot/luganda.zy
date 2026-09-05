@@ -1,0 +1,80 @@
+// @skip-parity: ekitambaala kyetaaga terminal entuufu wansi wa CLI n'olutindo
+// @skip-parity: lw'ekitambaala mu bbulawuza, n'olwekyo okuddukira mu ppayipu
+// @skip-parity: tekulina kya kugeraageranya.
+// ============================================================
+// mandelbrot — ekibiina kya Mandelbrot, ekisiigiddwa ku kitambaala kya terminal.
+// Amannya mu Luganda. Obubonero bulisigala bubonero bulijjo.
+//
+// Buli kimu kisalibwawo ennamba emu: `n`, emitendera emeka enkulungo
+// gy'egumira nga tennadduka. Ye alonda ennukuta, era ye alonda ebbala;
+// n'olwekyo ekifaananyi tekiyinza kwewakanya. `n = 0` kitegeeza nti
+// teyaddukanga n'akatono — ekyo kye kibiina kyennyini, ekisiigiddwa
+// nga kijjudde.
+//
+//   >>|  kibikkula ekitambaala   >>!  kisangula   >>?  kipima
+//   >>~  kiwandiika akasanduuko kamu, ku lunyiriri lumu, empagi emu, mu bbala limu
+//   <<|  kilinda ekisumuluzo kimu
+//
+// Okukekkereza kubiri, era byombi bilabika mu kifaananyi so si mu kupima:
+// obubiri butwalibwa okuva ku mutendera gumu okudda ku gugoberera mu
+// kifo ky'okuddamu okubala, era ekibiina kiragibwa mu ndabirwamu
+// nga kyetooloola olunyiriri olw'amazima, n'olwekyo kitundu kya waggulu
+// kyokka kye kidduka. Byombi awamu bisasula obukalabakalaba obwetaagisa
+// ebikwata ku buli kamu.
+// ============================================================
+
+// Ebweru w'ekibiina: okuva ku kinafu okutuuka ku kijjuvu, okuva ku kiragala ekiddugavu okutuuka ku kimasamasa.
+obubonero = " .:-=+*#%"
+amabala   = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Emitendera egyagumiriddwa nga enkulungo tennadduka; 0 bw'eba nga teyaddukanga.
+// zr2 ne zi2 bitwalibwa, n'olwekyo buli mutendera gusaasaanya ebiva mu kukubisaamu bina, so si mukaaga.
+dduka(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (obuwanvu, obugazi) = >>?
+    ennyiriri = obuwanvu - 2
+    empagi    = obugazi  - 1
+
+    // Akasanduuko kawanvu emirundi nga 2.5 okusinga obugazi bwako;
+    // obuwanvu obuyimiridde bupimibwa n'ekyo ekibiina kiryoke kifulume nga kyekulungirivu.
+    obugaziKifo   = 2.7
+    obuwanvuKifo  = ennyiriri * obugaziKifo * 2.5 / empagi
+    wakati        = ennyiriri / 2 + 1
+
+    @ y:1..wakati {
+        endabirwamu = ennyiriri + 1 - y
+        @ x:1..empagi {
+            cr = (x - 1) * obugaziKifo  / empagi    - 2.1
+            ci = (y - 1) * obuwanvuKifo / ennyiriri - obuwanvuKifo / 2.0
+            n  = dduka(cr, ci)
+            akabonero = "@"
+            ebbala    = 231
+            ? n <> 0 {
+                omutendera = n / 4 + 1
+                ? omutendera > 9 { omutendera = 9 }
+                akabonero = obubonero[omutendera]
+                ebbala    = amabala[omutendera]
+            }
+            >>~ (y, x, 0, ebbala) > akabonero
+            ? endabirwamu > wakati { >>~ (endabirwamu, x, 0, ebbala) > akabonero }
+        }
+    }
+
+    >>~ (obuwanvu, 2, 0, 244) > "nyiga ekisumuluzo kyonna okuva"
+    <<| _ekisumuluzo
+}

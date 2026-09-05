@@ -1,0 +1,76 @@
+// @skip-parity: die doek verg 'n werklike terminaal onder die CLI en 'n doeklaag
+// @skip-parity: in die blaaier, dus het 'n loop deur 'n pyp niks om te vergelyk nie.
+// ============================================================
+// mandelbrot — die Mandelbrot-versameling, geteken op 'n terminaaldoek.
+// Name in Afrikaans. Tekens bly altyd tekens.
+//
+// Alles word deur een getal beslis: `n`, hoeveel stappe die wentelbaan
+// uithou voordat dit ontsnap. Dít kies die glief en dít kies die kleur,
+// dus kan die prent homself nie weerspreek nie. `n = 0` beteken dit het
+// nooit ontsnap nie — dít is die versameling self, vol geteken.
+//
+//   >>|  open die doek   >>!  vee skoon   >>?  meet
+//   >>~  skryf een blokkie, op een ry, een kolom, in een kleur
+//   <<|  wag vir een sleutel
+//
+// Twee besparings, en albei is in die prent te sien, nie in 'n meting nie:
+// kwadrate word van stap tot stap saamgedra in plaas van herbereken, en
+// die versameling word om die reële as gespieël, sodat net die boonste
+// helfte ontsnap. Saam betaal hulle vir die skerpte wat die detail vra.
+// ============================================================
+
+// Buite die versameling: dof tot solied, donkergroen tot helder.
+helling = " .:-=+*#%"
+kleure  = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Stappe oorleef voordat die wentelbaan wegloop; 0 as dit nooit gebeur nie.
+// zr2 en zi2 word saamgedra, dus kos elke stap vier produkte, nie ses nie.
+ontsnap(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (hoog, breed) = >>?
+    rye     = hoog  - 2
+    kolomme = breed - 1
+
+    // 'n Blokkie is ~2,5 keer hoër as wat dit breed is; die vertikale
+    // strek word daarmee geskaal sodat die versameling rond uitkom.
+    breedte = 2.7
+    hoogte  = rye * breedte * 2.5 / kolomme
+    middel  = rye / 2 + 1
+
+    @ y:1..middel {
+        spieël = rye + 1 - y
+        @ x:1..kolomme {
+            cr = (x - 1) * breedte / kolomme - 2.1
+            ci = (y - 1) * hoogte  / rye     - hoogte / 2.0
+            n  = ontsnap(cr, ci)
+            teken = "@"
+            kleur = 231
+            ? n <> 0 {
+                stap = n / 4 + 1
+                ? stap > 9 { stap = 9 }
+                teken = helling[stap]
+                kleur = kleure[stap]
+            }
+            >>~ (y, x, 0, kleur) > teken
+            ? spieël > middel { >>~ (spieël, x, 0, kleur) > teken }
+        }
+    }
+
+    >>~ (hoog, 2, 0, 244) > "enige sleutel om te vertrek"
+    <<| _sleutel
+}

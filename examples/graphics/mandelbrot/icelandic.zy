@@ -1,0 +1,78 @@
+// @skip-parity: strigann þarf raunverulegan skjáglugga undir CLI og strigalag
+// @skip-parity: í vafranum, svo keyrsla gegnum pípu hefur ekkert til að bera
+// @skip-parity: sig saman við.
+// ============================================================
+// mandelbrot — Mandelbrotmengið, teiknað á striga skjágluggans.
+// Nöfn á íslensku. Tákn eru alltaf tákn.
+//
+// Ein tala ræður öllu: `n`, hversu mörg skref brautin lifir af
+// áður en hún sleppur. Hún velur stafinn og hún velur litinn, svo
+// myndin getur ekki stangast á við sjálfa sig. `n = 0` þýðir að
+// hún slapp aldrei — það er mengið, teiknað fullt.
+//
+//   >>|  opnar strigann   >>!  hreinsar hann   >>?  mælir hann
+//   >>~  skrifar einn reit, í röð, í dálk, í einum lit
+//   <<|  bíður eftir lykli
+//
+// Tveir sparnaðir, og báðir sjást í myndinni fremur en í mælingu:
+// ferningarnir eru bornir milli skrefa í stað þess að reiknast
+// upp á nýtt, og mengið speglast um raunásinn, svo aðeins efri
+// helmingurinn sleppur nokkurn tíma. Saman greiða þeir þá
+// upplausn sem smáatriðið krefst.
+// ============================================================
+
+// Utan mengisins: frá daufu til fulls, frá dökkgrænu til bjarts.
+rampi = " .:-=+*#%"
+litir = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Skref sem lifðu af áður en brautin sleppur; 0 ef hún sleppur aldrei.
+// zr2 og zi2 eru borin áfram, svo hvert skref kostar fjórar margfaldanir, ekki sex.
+flótti(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (hár, breiður) = >>?
+    raðir = hár     - 2
+    dálkar = breiður - 1
+
+    // Reitur er ~2,5 sinnum hærri en hann er breiður; lóðrétta
+    // bilið er kvarðað með því svo mengið komi hringlaga út.
+    breidd = 2.7
+    hæð    = raðir * breidd * 2.5 / dálkar
+    miðja  = raðir / 2 + 1
+
+    @ y:1..miðja {
+        spegill = raðir + 1 - y
+        @ x:1..dálkar {
+            cr = (x - 1) * breidd / dálkar - 2.1
+            ci = (y - 1) * hæð    / raðir  - hæð / 2.0
+            n  = flótti(cr, ci)
+            tákn = "@"
+            litur = 231
+            ? n <> 0 {
+                skref = n / 4 + 1
+                ? skref > 9 { skref = 9 }
+                tákn  = rampi[skref]
+                litur = litir[skref]
+            }
+            >>~ (y, x, 0, litur) > tákn
+            ? spegill > miðja { >>~ (spegill, x, 0, litur) > tákn }
+        }
+    }
+
+    >>~ (hár, 2, 0, 244) > "einhver lykill til að hætta"
+    <<| _lykill
+}

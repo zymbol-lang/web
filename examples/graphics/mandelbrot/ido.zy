@@ -1,0 +1,76 @@
+// @skip-parity: la tolo bezonas vera terminalo sub la komando-lineo ed un tolo-strato
+// @skip-parity: en la retumilo, do kurar tra tubo lasas nulo komparebla.
+// ============================================================
+// mandelbrot — la ensemblo di Mandelbrot, desegnita sur terminala tolo.
+// La nomi en Ido. La signi sempre restas signi.
+//
+// Un nombro decidas omno: `n`, quanta pazi la orbito supportas ante ke
+// ol eskapas. Ol selektas la litero ed ol selektas la koloro, do la
+// imajo ne povas kontredicar su ipsa. `n = 0` signifikas ke ol nultempe
+// eskapis — to esas la ensemblo ipsa, desegnita plena.
+//
+//   >>|  apertas la tolo   >>!  efacas   >>?  mezuras
+//   >>~  skribas un chelo, en un lineo, un kolumno, per un koloro
+//   <<|  atendas un klavo
+//
+// Du sparadi, e du esas videbla en la imajo, ne en mezuro: la quadrati
+// esas portata de un pazo al la sequanta vice rekalkulata, e la ensemblo
+// spegulesas cirkum la reala axo, do nur la supra duimo eskapas. La du
+// kune pagas la akreso quan la detalo demandas.
+// ============================================================
+
+// Exter la ensemblo: de pala til plena, de obskura verda til klara.
+deklivo = " .:-=+*#%"
+kolori  = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Pazi supportata ante ke la orbito eskapas; 0 se ol nultempe eskapas.
+// zr2 e zi2 esas portata, do singla pazo kustas quar produkti, ne sis.
+eskapar(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (alteso, larjeso) = >>?
+    linei   = alteso  - 2
+    kolumni = larjeso - 1
+
+    // Chelo esas cirkum 2,5-ople plu alta kam larja; la vertikala extenso
+    // esas skalita per to, por ke la ensemblo aparas ronda.
+    larjo = 2.7
+    alto  = linei * larjo * 2.5 / kolumni
+    mezo  = linei / 2 + 1
+
+    @ y:1..mezo {
+        spegulo = linei + 1 - y
+        @ x:1..kolumni {
+            cr = (x - 1) * larjo / kolumni - 2.1
+            ci = (y - 1) * alto  / linei   - alto / 2.0
+            n  = eskapar(cr, ci)
+            marko  = "@"
+            koloro = 231
+            ? n <> 0 {
+                pazo = n / 4 + 1
+                ? pazo > 9 { pazo = 9 }
+                marko  = deklivo[pazo]
+                koloro = kolori[pazo]
+            }
+            >>~ (y, x, 0, koloro) > marko
+            ? spegulo > mezo { >>~ (spegulo, x, 0, koloro) > marko }
+        }
+    }
+
+    >>~ (alteso, 2, 0, 244) > "presez irga klavo por ekirar"
+    <<| _klavo
+}

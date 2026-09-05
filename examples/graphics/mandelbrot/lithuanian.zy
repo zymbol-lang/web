@@ -1,0 +1,77 @@
+// @skip-parity: drobei reikia tikro terminalo po CLI ir drobės sluoksnio
+// @skip-parity: naršyklėje, tad paleidimas per vamzdį neturi su kuo lygintis.
+// ============================================================
+// mandelbrot — Mandelbroto aibė, nupiešta terminalo drobėje.
+// Vardai lietuviškai. Ženklai visada lieka ženklais.
+//
+// Viską lemia vienas skaičius: `n`, kiek žingsnių orbita ištveria,
+// kol pabėga. Jis renka ženklą ir jis renka atspalvį, tad piešinys
+// negali sau prieštarauti. `n = 0` reiškia, kad ji niekada
+// nepabėgo — tai ir yra aibė, nupiešta pilna.
+//
+//   >>|  atveria drobę   >>!  ją išvalo   >>?  ją išmatuoja
+//   >>~  rašo vieną langelį, eilutėje, stulpelyje, vienu atspalviu
+//   <<|  laukia klavišo
+//
+// Dvi santaupos, ir abi matomos piešinyje, o ne matavime:
+// kvadratai nešami iš žingsnio į žingsnį, o ne perskaičiuojami, ir
+// aibė veidrodinama apie realiąją ašį, tad pabėga tik viršutinė
+// pusė. Kartu jos apmoka tą skiriamąją gebą, kurios reikalauja
+// smulkmena.
+// ============================================================
+
+// Už aibės ribų: nuo blyškaus iki pilno, nuo tamsiai žalio iki ryškaus.
+rampa      = " .:-=+*#%"
+atspalviai = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Žingsniai, ištverti kol orbita pabėga; 0, jei ji niekada nepabėga.
+// zr2 ir zi2 nešami toliau, tad kiekvienas žingsnis kainuoja keturias sandaugas, ne šešias.
+pabėgimas(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (aukštas, platus) = >>?
+    eilutės    = aukštas - 2
+    stulpeliai = platus  - 1
+
+    // Langelis yra ~2,5 karto aukštesnis nei platesnis; statmena
+    // apimtis tuo keičiama, kad aibė išeitų apvali.
+    plotis = 2.7
+    aukštis = eilutės * plotis * 2.5 / stulpeliai
+    vidurys = eilutės / 2 + 1
+
+    @ y:1..vidurys {
+        veidrodis = eilutės + 1 - y
+        @ x:1..stulpeliai {
+            cr = (x - 1) * plotis  / stulpeliai - 2.1
+            ci = (y - 1) * aukštis / eilutės    - aukštis / 2.0
+            n  = pabėgimas(cr, ci)
+            ženklas   = "@"
+            atspalvis = 231
+            ? n <> 0 {
+                žingsnis = n / 4 + 1
+                ? žingsnis > 9 { žingsnis = 9 }
+                ženklas   = rampa[žingsnis]
+                atspalvis = atspalviai[žingsnis]
+            }
+            >>~ (y, x, 0, atspalvis) > ženklas
+            ? veidrodis > vidurys { >>~ (veidrodis, x, 0, atspalvis) > ženklas }
+        }
+    }
+
+    >>~ (aukštas, 2, 0, 244) > "bet kuris klavišas išeiti"
+    <<| _klavišas
+}

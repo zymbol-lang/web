@@ -1,0 +1,78 @@
+// @skip-parity: het canvas heeft een echte terminal onder de CLI nodig en een
+// @skip-parity: canvaslaag in de browser, dus een run door een pipe heeft niets
+// @skip-parity: om mee te vergelijken.
+// ============================================================
+// mandelbrot — de Mandelbrotverzameling, getekend op het canvas.
+// Namen in het Nederlands. Tekens blijven altijd tekens.
+//
+// Eén getal beslist alles: `n`, hoeveel stappen de baan overleeft
+// voordat hij wegloopt. Hij kiest het teken en hij kiest de tint,
+// dus de tekening kan zichzelf niet tegenspreken. `n = 0` betekent
+// dat hij nooit weggelopen is — dat is de verzameling, vol getekend.
+//
+//   >>|  opent het canvas   >>!  wist het   >>?  meet het
+//   >>~  schrijft één cel, op een rij, een kolom, in een tint
+//   <<|  wacht op een toets
+//
+// Twee besparingen, en ze zijn beide in de tekening te zien in
+// plaats van in een meting: de kwadraten worden van stap naar stap
+// meegenomen in plaats van opnieuw berekend, en de verzameling
+// wordt om de reële as gespiegeld, zodat alleen de bovenste helft
+// ooit wegloopt. Samen betalen ze de resolutie die het detail vraagt.
+// ============================================================
+
+// Buiten de verzameling: van vaag tot vol, van donkergroen tot helder.
+verloop = " .:-=+*#%"
+tinten  = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Overleefde stappen voordat de baan wegloopt; 0 als hij dat nooit doet.
+// zr2 en zi2 worden meegenomen, dus elke stap kost vier producten, geen zes.
+ontsnap(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (hoog, breed) = >>?
+    rijen    = hoog  - 2
+    kolommen = breed - 1
+
+    // Een cel is ~2,5 keer hoger dan breed; de verticale spanne
+    // wordt daarmee geschaald zodat de verzameling rond uitkomt.
+    breedte = 2.7
+    hoogte  = rijen * breedte * 2.5 / kolommen
+    midden  = rijen / 2 + 1
+
+    @ y:1..midden {
+        spiegel = rijen + 1 - y
+        @ x:1..kolommen {
+            cr = (x - 1) * breedte / kolommen - 2.1
+            ci = (y - 1) * hoogte  / rijen    - hoogte / 2.0
+            n  = ontsnap(cr, ci)
+            teken = "@"
+            tint  = 231
+            ? n <> 0 {
+                stap = n / 4 + 1
+                ? stap > 9 { stap = 9 }
+                teken = verloop[stap]
+                tint  = tinten[stap]
+            }
+            >>~ (y, x, 0, tint) > teken
+            ? spiegel > midden { >>~ (spiegel, x, 0, tint) > teken }
+        }
+    }
+
+    >>~ (hoog, 2, 0, 244) > "willekeurige toets om te stoppen"
+    <<| _toets
+}

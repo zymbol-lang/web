@@ -1,0 +1,79 @@
+// @skip-parity: elamba esengeli na terminal ya solo na nse ya CLI mpe eteni ya
+// @skip-parity: elamba na navigateur, yango wana kokima na tuyo ezali na eloko te
+// @skip-parity: ya kokokanisa.
+// ============================================================
+// mandelbrot — lisangá ya Mandelbrot, esálemi likoló ya elamba ya terminal.
+// Bankómbó na Lingála. Bilembo etikalaka bilembo ntango nyonso.
+//
+// Motángo moko nde ekataka nyonso: `n`, litambe boni nzelakati ekokanga
+// liboso ete ekima. Yango nde eponaka elembo, mpe yango nde eponaka
+// langi; yango wana elílingi ekoki komiboya te. `n = 0` elingi koloba
+// ete ekimaki ata mokolo moko te — yango nde lisangá yango moko,
+// esálemi mobimba.
+//
+//   >>|  efungolaka elamba   >>!  epetolaka   >>?  emekaka
+//   >>~  ekomaka sanduku moko, na molongo moko, likonzí moko, langi moko
+//   <<|  ezelaka fungola moko
+//
+// Kobomba mibale, mpe nyonso mibale emonanaka na elílingi kasi na
+// komeka te: bakaré bamemami longwa na litambe moko tii na oyo elandi
+// na esika ya kotánga lisusu, mpe lisangá emonisami na talatala
+// zingazinga ya likonzí ya solo, yango wana kaka ndambo ya likoló nde
+// ekimaka. Nyonso mibale esangani efutaka polele oyo makambo esengeli.
+// ============================================================
+
+// Libanda ya lisangá: kobanda na mwa moke tii na mobimba, kobanda na langi ya mai ya pondu tii na oyo engengi.
+bilembo = " .:-=+*#%"
+balangi = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Matambe oyo ekangaki liboso ete nzelakati ekima; 0 soki ekimaki te.
+// zr2 na zi2 bamemami, yango wana litambe moko na moko efutaka biloko minei, mibale-misato te.
+kokima(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (bosanda, bonene) = >>?
+    milongo = bosanda - 2
+    makonzí = bonene  - 1
+
+    // Sanduku moko ezali molai mbala ~2.5 koleka bonene na yango; molai
+    // ya likoló emekami na yango mpo lisangá ebima libungutulu.
+    boneneEsika  = 2.7
+    bosandaEsika = milongo * boneneEsika * 2.5 / makonzí
+    katikati     = milongo / 2 + 1
+
+    @ y:1..katikati {
+        talatala = milongo + 1 - y
+        @ x:1..makonzí {
+            cr = (x - 1) * boneneEsika  / makonzí - 2.1
+            ci = (y - 1) * bosandaEsika / milongo - bosandaEsika / 2.0
+            n  = kokima(cr, ci)
+            elembo = "@"
+            langi  = 231
+            ? n <> 0 {
+                litambe = n / 4 + 1
+                ? litambe > 9 { litambe = 9 }
+                elembo = bilembo[litambe]
+                langi  = balangi[litambe]
+            }
+            >>~ (y, x, 0, langi) > elembo
+            ? talatala > katikati { >>~ (talatala, x, 0, langi) > elembo }
+        }
+    }
+
+    >>~ (bosanda, 2, 0, 244) > "finá fungola nyonso mpo obima"
+    <<| _fungola
+}

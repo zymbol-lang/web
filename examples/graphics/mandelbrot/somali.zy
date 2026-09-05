@@ -1,0 +1,79 @@
+// @skip-parity: shaandhada waxay u baahan tahay terminal dhab ah oo hoos yimaada CLI
+// @skip-parity: iyo lakab shaandhad oo ku jira biraawsarka, sidaas awgeed socodsiinta
+// @skip-parity: tuubbo kuma laha wax la barbardhigo.
+// ============================================================
+// mandelbrot — ururka Mandelbrot, oo lagu sawiray shaandhada terminalka.
+// Magacyada af-Soomaali. Calaamaduhu had iyo jeer waa calaamado.
+//
+// Wax walba waxaa go'aamiya hal tiro: `n`, immisa tallaabo ayuu
+// wareeggu adkeysanayaa ka hor inta uusan baxsan. Isagaa dooranaya
+// xarafka, isagaana dooranaya midabka; sidaas awgeed sawirku isma
+// beenayn karo. `n = 0` waxay ka dhigan tahay inuusan waligiis baxsan —
+// taasi waa ururka laftiisa, oo si buuxda loo sawiray.
+//
+//   >>|  waxay furtaa shaandhada   >>!  way tirtirtaa   >>?  way cabbirtaa
+//   >>~  waxay qortaa hal sanduuq, hal saf, hal tiir, hal midab
+//   <<|  waxay sugtaa hal fure
+//
+// Laba kaydsasho, labaduba waxay ka muuqdaan sawirka ee ma aha cabbir:
+// laba-jibbaarrada ayaa laga sitaa tallaabo ilaa tan xigta halkii dib
+// loo xisaabin lahaa, ururkana waxaa muraayad lagu tusaa hareeraha
+// dhidibka dhabta ah, sidaas darteed kaliya barka sare ayaa baxsanaya.
+// Labaduba wadajir waxay bixiyaan saxnaanta uu faahfaahintu doonayso.
+// ============================================================
+
+// Ururka dibaddiisa: laga bilaabo mid daciif ah ilaa mid buuxa, laga bilaabo cagaar madow ilaa mid dhalaalaya.
+janjeer = " .:-=+*#%"
+midabbo = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Tallaabooyinka la adkeystay ka hor inta uusan wareeggu baxsan; 0 haddii uusan waligiis baxsan.
+// zr2 iyo zi2 waa la sitaa, sidaas awgeed tallaabo kastaa waxay ku kacaysaa afar isku-dhufasho, ma aha lix.
+baxso(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (dherer, ballac) = >>?
+    safaf  = dherer - 2
+    tiirar = ballac - 1
+
+    // Sanduuq waa qiyaastii 2.5 jeer ka dheer yahay ballaciisa; baaxadda
+    // taagan ayaa taas lagu cabbiraa si ururku u soo baxo goobaabin.
+    ballacGoobta = 2.7
+    dhererGoobta = safaf * ballacGoobta * 2.5 / tiirar
+    bartamaha    = safaf / 2 + 1
+
+    @ y:1..bartamaha {
+        muraayad = safaf + 1 - y
+        @ x:1..tiirar {
+            cr = (x - 1) * ballacGoobta / tiirar - 2.1
+            ci = (y - 1) * dhererGoobta / safaf  - dhererGoobta / 2.0
+            n  = baxso(cr, ci)
+            calaamad = "@"
+            midab    = 231
+            ? n <> 0 {
+                tallaabo = n / 4 + 1
+                ? tallaabo > 9 { tallaabo = 9 }
+                calaamad = janjeer[tallaabo]
+                midab    = midabbo[tallaabo]
+            }
+            >>~ (y, x, 0, midab) > calaamad
+            ? muraayad > bartamaha { >>~ (muraayad, x, 0, midab) > calaamad }
+        }
+    }
+
+    >>~ (dherer, 2, 0, 244) > "tabo fure kasta si aad uga baxdo"
+    <<| _fure
+}

@@ -1,0 +1,78 @@
+// @skip-parity: kanvas memerlukan terminal sebenar di bawah CLI dan satu lapisan
+// @skip-parity: kanvas dalam pelayar, jadi larian melalui paip tiada apa untuk
+// @skip-parity: dibandingkan.
+// ============================================================
+// mandelbrot — himpunan Mandelbrot, dilukis pada kanvas terminal.
+// Nama dalam bahasa Melayu. Tanda sentiasa kekal tanda.
+//
+// Satu nombor sahaja menentukan segalanya: `n`, berapa langkah orbit
+// bertahan sebelum terlepas. Ia memilih glif dan ia memilih warna,
+// maka lukisan tidak boleh bercanggah dengan dirinya. `n = 0`
+// bermakna ia tidak pernah terlepas — itulah himpunannya, dilukis penuh.
+//
+//   >>|  membuka kanvas   >>!  membersihkannya   >>?  mengukurnya
+//   >>~  menulis satu sel, pada satu baris, satu lajur, dalam satu warna
+//   <<|  menunggu satu kekunci
+//
+// Dua penjimatan, dan kedua-duanya kelihatan pada lukisan, bukan pada
+// ukuran: kuasa dua dibawa dari satu langkah ke langkah berikutnya
+// dan tidak dikira semula, dan himpunan dicerminkan pada paksi nyata,
+// maka hanya separuh atas yang pernah terlepas. Bersama-sama keduanya
+// membayar resolusi yang dituntut oleh perincian.
+// ============================================================
+
+// Di luar himpunan: dari samar ke penuh, dari hijau gelap ke terang.
+landaian = " .:-=+*#%"
+warna    = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Langkah yang bertahan sebelum orbit terlepas; 0 jika ia tidak pernah terlepas.
+// zr2 dan zi2 dibawa bersama, jadi setiap langkah berharga empat pendaraban, bukan enam.
+terlepas(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (tinggiSkrin, lebarSkrin) = >>?
+    baris = tinggiSkrin - 2
+    lajur = lebarSkrin  - 1
+
+    // Satu sel kira-kira 2.5 kali lebih tinggi daripada lebar; julat
+    // menegak diskalakan dengan itu supaya himpunan keluar bulat.
+    lebar  = 2.7
+    tinggi = baris * lebar * 2.5 / lajur
+    tengah = baris / 2 + 1
+
+    @ y:1..tengah {
+        cermin = baris + 1 - y
+        @ x:1..lajur {
+            cr = (x - 1) * lebar  / lajur - 2.1
+            ci = (y - 1) * tinggi / baris - tinggi / 2.0
+            n  = terlepas(cr, ci)
+            tanda = "@"
+            rona  = 231
+            ? n <> 0 {
+                langkah = n / 4 + 1
+                ? langkah > 9 { langkah = 9 }
+                tanda = landaian[langkah]
+                rona  = warna[langkah]
+            }
+            >>~ (y, x, 0, rona) > tanda
+            ? cermin > tengah { >>~ (cermin, x, 0, rona) > tanda }
+        }
+    }
+
+    >>~ (tinggiSkrin, 2, 0, 244) > "tekan sebarang kekunci untuk keluar"
+    <<| _kekunci
+}

@@ -1,0 +1,75 @@
+// @skip-parity: nISwI' HaSta poQ CLI bIngDaq je De'wI' HaSta patlh ghItlhwI'Daq,
+// @skip-parity: vaj tlhuD lulIgh qaStaHvIS pagh qelmeH Doch tu'lu'be'.
+// ============================================================
+// mandelbrot — mandelbrot ghom, HaSta pu'Daq qonlu'pu'bogh.
+// tlhIngan Hol pongmey. reH Deghmey chaH Deghmey'e'.
+//
+// Hoch wav wa' mI': `n`, nargh pa' qaStaHvIS chuq SIQ'egh. Degh wIv,
+// rItlh je wIv, vaj nagh mIllogh ngoDvam DanIS'eghbe'. `n = 0`
+// naghbe'lu'chugh — ghomvam 'oH, buy'bogh qonlu'pu'.
+//
+//   >>|  HaSta poSmoH   >>!  teq   >>?  juv
+//   >>~  wa' Sep qon, wa' tlheghDaq, wa' naQDaq, wa' rItlhDaq
+//   <<|  wa' ngaQHa'moHwI' loS
+//
+// cha' HutlhmeH mIw, cha' je mIllogh luDelbogh juvbe'bogh: loghDaq
+// qamDaq loghDaq qamDaq qImHa'lu'bogh rurDaq lo'lu', ghomvam je
+// leghwI'Daq teb'egh je, vaj Dung bID neH nargh. cha' bo'DIj mIllogh
+// nIvbogh DIlmeH ta'.
+// ============================================================
+
+// ghom Hurgh: Sub HutlhmeH buy'bogh, SuD Hurgh wovbogh je.
+Deghmey  = " .:-=+*#%"
+rItlhmey = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// nargh pa' qaStaHvIS qam SIQlu'bogh; nargh pagh 'e' 0.
+// zr2 zi2 je qengbogh, vaj Hoch qam loS boghmoH, jav Hutlhbe'.
+nargh(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (ab, Dop) = >>?
+    tlheghmey = ab  - 2
+    naQmey    = Dop - 1
+
+    // wa' Sep 'ab law' Dop puS, chuq 2.5. vaj tlhoy' chuq juvlu',
+    // ghomvam moQ rurmeH.
+    Dop_chuq = 2.7
+    ab_chuq  = tlheghmey * Dop_chuq * 2.5 / naQmey
+    botlh    = tlheghmey / 2 + 1
+
+    @ y:1..botlh {
+        leghwI = tlheghmey + 1 - y
+        @ x:1..naQmey {
+            cr = (x - 1) * Dop_chuq / naQmey    - 2.1
+            ci = (y - 1) * ab_chuq  / tlheghmey - ab_chuq / 2.0
+            n  = nargh(cr, ci)
+            Degh  = "@"
+            rItlh = 231
+            ? n <> 0 {
+                qam = n / 4 + 1
+                ? qam > 9 { qam = 9 }
+                Degh  = Deghmey[qam]
+                rItlh = rItlhmey[qam]
+            }
+            >>~ (y, x, 0, rItlh) > Degh
+            ? leghwI > botlh { >>~ (leghwI, x, 0, rItlh) > Degh }
+        }
+    }
+
+    >>~ (ab, 2, 0, 244) > "mej 'e' DaneHchugh ngaQHa'moHwI' yIqIp"
+    <<| _ngaQHamoHwI
+}

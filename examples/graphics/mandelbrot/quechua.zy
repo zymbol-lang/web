@@ -1,0 +1,80 @@
+// @skip-parity: kay qillqa TTY-ta munan CLI-pi, ñawirinapaqpas huk qatakta
+// @skip-parity: munan, chayrayku tuputa mana tupachiyta atinchu.
+// ============================================================
+// mandelbrot — Mandelbrot huñu, qillqana pampapi siq'isqa.
+// Sutikuna runasimipi. Unanchakunaqa wiñaypaq unanchallan.
+//
+// Huk yupaylla tukuyta akllan: `n`, hayk'a thaskiy muyuy
+// ayqinankama sayan. Paymi unanchata akllan, llimpitapas akllan,
+// chayrayku siq'iqa mana kikinta ninchu. `n = 0` niyta munan
+// mana hayk'appas ayqisqanta — chaymi huñu, hunt'asqa siq'isqa.
+//
+//   >>|  pampata kichan   >>!  pichan   >>?  tupun
+//   >>~  huk t'aqata qillqan, huk siqipi, huk sayaqpi, huk llimpiwan
+//   <<|  huk ñit'inata suyan
+//
+// Iskay pisichay, iskaynintaq siq'ipi rikukun, mana utqay
+// tupuypichu: tawakunaqa huk muyuymanta huk muyuyman apasqa
+// kanku, mana yapamanta yupasqachu, huñutaq cheqaq siqipi
+// rirpusqa, chayrayku hanaq chawpilla ayqin. Iskaynin kuska
+// allin rikuchiyta qullqichanku.
+//
+// Musuq simikuna: `siqikuna`, `sayaq`, `kinraynin`, `sayaynin`
+// llamk'anapaq kamasqa kanku. Runasimi rimaq allichanan.
+// ============================================================
+
+// Huñumanta hawapi: llanllamanta hunt'asqakama, yana q'umirmanta k'anchaqkama.
+siqikuna   = " .:-=+*#%"
+llimpikuna = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Hayk'a thaskiy muyuy ayqinankama sayan; 0 mana hayk'appas ayqiptin.
+// zr2 zi2 ima apasqa kanku, chayrayku sapa thaskiy tawa mirachiyta valen, mana suqtatachu.
+ayqiy(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (sayay, kinray) = >>?
+    siqi  = sayay  - 2
+    sayaq = kinray - 1
+
+    // Huk t'aqaqa ~2.5 kutita aswan sayaq kinraymanta; sayaq
+    // tupuqa chaywan tupachisqa huñu muyu lluqsinanpaq.
+    kinraynin = 2.7
+    sayaynin  = siqi * kinraynin * 2.5 / sayaq
+    chawpi    = siqi / 2 + 1
+
+    @ y:1..chawpi {
+        rirpu = siqi + 1 - y
+        @ x:1..sayaq {
+            cr = (x - 1) * kinraynin / sayaq - 2.1
+            ci = (y - 1) * sayaynin  / siqi  - sayaynin / 2.0
+            n  = ayqiy(cr, ci)
+            unancha = "@"
+            llimpi  = 231
+            ? n <> 0 {
+                thaskiy = n / 4 + 1
+                ? thaskiy > 9 { thaskiy = 9 }
+                unancha = siqikuna[thaskiy]
+                llimpi  = llimpikuna[thaskiy]
+            }
+            >>~ (y, x, 0, llimpi) > unancha
+            ? rirpu > chawpi { >>~ (rirpu, x, 0, llimpi) > unancha }
+        }
+    }
+
+    >>~ (sayay, 2, 0, 244) > "lluqsinaykipaq ima ñit'inatapas ñit'iy"
+    <<| _ñit'ina
+}

@@ -1,0 +1,78 @@
+// @skip-parity: la tela richiede un terminale vero sotto la CLI e uno strato di
+// @skip-parity: tela nel browser, quindi un'esecuzione in pipe non ha nulla con
+// @skip-parity: cui confrontarsi.
+// ============================================================
+// mandelbrot — l'insieme di Mandelbrot, disegnato sulla tela del terminale.
+// Identificatori in italiano. I segni restano sempre segni.
+//
+// Un solo numero decide tutto: `n`, quanti passi l'orbita
+// sopravvive prima di fuggire. Sceglie il glifo e sceglie la
+// tinta, così il disegno non può contraddirsi. `n = 0` vuol dire
+// che non è mai fuggita — quello è l'insieme, disegnato pieno.
+//
+//   >>|  apre la tela   >>!  la cancella   >>?  la misura
+//   >>~  scrive una cella, in una riga, una colonna, in una tinta
+//   <<|  attende un tasto
+//
+// Due economie, e si vedono entrambe nel disegno anziché in una
+// misura: i quadrati vengono portati da un passo al successivo
+// invece di essere ricalcolati, e l'insieme è specchiato attorno
+// all'asse reale, così solo la metà di sopra fugge davvero.
+// Insieme pagano la risoluzione che il dettaglio richiede.
+// ============================================================
+
+// Fuori dall'insieme: da tenue a pieno, dal verde scuro al brillante.
+rampa = " .:-=+*#%"
+tinte = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Passi sopravvissuti prima che l'orbita fugga; 0 se non fugge mai.
+// zr2 e zi2 sono portati avanti, così ogni passo costa quattro prodotti, non sei.
+fuga(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (alto, largo) = >>?
+    righe   = alto  - 2
+    colonne = largo - 1
+
+    // Una cella è ~2,5 volte più alta che larga; l'estensione
+    // verticale è scalata di conseguenza perché l'insieme venga rotondo.
+    larghezza = 2.7
+    altezza   = righe * larghezza * 2.5 / colonne
+    mezzo     = righe / 2 + 1
+
+    @ y:1..mezzo {
+        specchio = righe + 1 - y
+        @ x:1..colonne {
+            cr = (x - 1) * larghezza / colonne - 2.1
+            ci = (y - 1) * altezza   / righe   - altezza / 2.0
+            n  = fuga(cr, ci)
+            segno = "@"
+            tinta = 231
+            ? n <> 0 {
+                passo = n / 4 + 1
+                ? passo > 9 { passo = 9 }
+                segno = rampa[passo]
+                tinta = tinte[passo]
+            }
+            >>~ (y, x, 0, tinta) > segno
+            ? specchio > mezzo { >>~ (specchio, x, 0, tinta) > segno }
+        }
+    }
+
+    >>~ (alto, 2, 0, 244) > "premi un tasto qualsiasi per uscire"
+    <<| _tasto
+}

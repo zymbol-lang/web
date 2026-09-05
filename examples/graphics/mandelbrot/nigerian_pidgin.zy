@@ -1,0 +1,77 @@
+// @skip-parity: di kanvas need rial terminal onda CLI plus kanvas lieya insaid
+// @skip-parity: braoza, so if yu ron am tru paip, notin de fo kompia.
+// ============================================================
+// mandelbrot — di Mandelbrot set, we dem drɔ am fo terminal kanvas.
+// Di neim dem dey fo Naijá. Sain na sain evritaim.
+//
+// Wan nomba de disaid evritin: `n`, haw meni step di ɔbit go bia
+// bifo i ranawe. Na im de pik di leta, na im de pik di kala; so di
+// pikchɔ nɔ fit tɔk agens imsɛf. `n = 0` min se i nɔ eva ranawe —
+// na dat wan bi di set imsɛf, we dem drɔ am ful.
+//
+//   >>|  de opun di kanvas   >>!  de klin   >>?  de mɛzhɔ
+//   >>~  de rait wan boks, fo wan layn, wan kolom, wit wan kala
+//   <<|  de wet fo wan ki
+//
+// Tu sevin, an di tu dem dey shɔ fo di pikchɔ nɔ bi fo mɛzhɔmɛnt:
+// dem de kari di skwea dem frɔm wan step go di nɛks wan instead of
+// kaunt am agen, an dem de mirror di set raund di rial axis, so na
+// only di ɔp haf de ranawe. Di tu tugeda de pe fo di sharpnes we di
+// ditel de aks fɔ.
+// ============================================================
+
+// Autsaid di set: frɔm fent go ful, frɔm dak grin go brait.
+ladda = " .:-=+*#%"
+kalas = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Step dem we survaiv bifo di ɔbit ranawe; 0 if i nɔ eva du am.
+// Dem de kari zr2 an zi2, so evri step de kost fo prodok, nɔ bi siks.
+ranawe(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (hait, waid) = >>?
+    layn  = hait - 2
+    kolom = waid - 1
+
+    // Wan boks tall pas im waid raik 2.5 taims; dem de skel di ɔp-an-daun
+    // span wit dat wan so di set go kom aut raund.
+    waidPles = 2.7
+    haitPles = layn * waidPles * 2.5 / kolom
+    midul    = layn / 2 + 1
+
+    @ y:1..midul {
+        lukinglas = layn + 1 - y
+        @ x:1..kolom {
+            cr = (x - 1) * waidPles / kolom - 2.1
+            ci = (y - 1) * haitPles / layn  - haitPles / 2.0
+            n  = ranawe(cr, ci)
+            mak  = "@"
+            kala = 231
+            ? n <> 0 {
+                step = n / 4 + 1
+                ? step > 9 { step = 9 }
+                mak  = ladda[step]
+                kala = kalas[step]
+            }
+            >>~ (y, x, 0, kala) > mak
+            ? lukinglas > midul { >>~ (lukinglas, x, 0, kala) > mak }
+        }
+    }
+
+    >>~ (hait, 2, 0, 244) > "prɛs eni ki make yu komot"
+    <<| _ki
+}

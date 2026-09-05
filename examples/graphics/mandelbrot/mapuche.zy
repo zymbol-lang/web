@@ -1,0 +1,83 @@
+// @skip-parity: tüfachi wirintuwe müley ñi nieal kiñe rüf terminal CLI mew ka
+// @skip-parity: kiñe wirintuwe wente pu chillkatuwe mew, feymew kiñe rupan
+// @skip-parity: nielay chem ñi trürümal.
+// ============================================================
+// mandelbrot — ti Mandelbrot trokiñ, wirintukulen wirintuwe mew.
+// Üy kom mapudungun mew. Wirin rume rumel wirin ngey.
+//
+// Kiñe rakin müten kom dungu dulliy: `n`, tunten trekan ti
+// chiwüdün mongeley petu ñi montunon. Fey dulliy ti chillka ka
+// dulliy ti ad, feymew ti wirin pepi welulkalayay ñi kisu.
+// `n = 0` pilelu chumül no rume montulay — feytachi trokiñ ta
+// tüfa, apolen wirintukulen.
+//
+//   >>|  nülakünuy ti wirintuwe   >>!  liftuy   >>?  trürümi
+//   >>~  wirintukuy kiñe pichi ruka, kiñe wirin mew, kiñe witran
+//   >>~  mew, kiñe ad mew
+//   <<|  üngümniey kiñe llafe
+//
+// Epu inaduamün, ka epuñpüle pengeley ti wirin mew, ti trürüm
+// mew no: pu meli witran yeniengey kiñe rupa kiñe rupa mew,
+// wiño rakiduamngelay, ka ti trokiñ komütuwelen ti rüf rüpü mew,
+// feymew wente rangiñ müten montuy. Kiñewn kullifingün ti pengen
+// ti pichike dungu ñi duamnien.
+//
+// We dungu: `wirintun`, `fütalen`, `alülen` faw dewmangey.
+// Mapudungun dungufe ñi adkintual.
+// ============================================================
+
+// Trokiñ wekun: pichi ad mew apolen mew, kurü karü mew alofün mew.
+chillka = " .:-=+*#%"
+adkan   = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Tunten trekan mongeley petu ñi montunon ti chiwüdün; 0 chumül no rume montunolu.
+// zr2 ka zi2 yeniengey, feymew kiñeke trekan meli wewpin kulliy, kayu no.
+montun(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (alü, füta) = >>?
+    wirin  = alü  - 2
+    witran = füta - 1
+
+    // Kiñe pichi ruka ~2.5 rupa doy alü ñi füta mew; ti wente
+    // püle trürüm feymew trürümngey ti trokiñ ñi chodkülen tripayal.
+    fütalen = 2.7
+    alülen  = wirin * fütalen * 2.5 / witran
+    rangiñ  = wirin / 2 + 1
+
+    @ y:1..rangiñ {
+        komütuwe = wirin + 1 - y
+        @ x:1..witran {
+            cr = (x - 1) * fütalen / witran - 2.1
+            ci = (y - 1) * alülen  / wirin  - alülen / 2.0
+            n  = montun(cr, ci)
+            wirintun = "@"
+            ad       = 231
+            ? n <> 0 {
+                trekan = n / 4 + 1
+                ? trekan > 9 { trekan = 9 }
+                wirintun = chillka[trekan]
+                ad       = adkan[trekan]
+            }
+            >>~ (y, x, 0, ad) > wirintun
+            ? komütuwe > rangiñ { >>~ (komütuwe, x, 0, ad) > wirintun }
+        }
+    }
+
+    >>~ (alü, 2, 0, 244) > "chem llafe rume neykünge tripayal"
+    <<| _llafe
+}

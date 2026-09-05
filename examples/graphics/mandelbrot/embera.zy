@@ -1,0 +1,80 @@
+// @skip-parity: nau kirak'a bʉrʉ terminal wãrãda CLI ume, ax̶ĩ kirak'a b'a
+// @skip-parity: unubipanʉ ume, maʉ̃ba ab'a nʉmʉda ¬kʼawa b'ʉa igua unubida.
+// ============================================================
+// mandelbrot — nau Mandelbrot dach'ida, kirak'a k'ĩrawa b'ʉa.
+// Trʉ̃ Emberá bed'eaba. Kirak'ada bewara kirak'ada.
+//
+// Ab'a numeroba jũma b'ʉa: `n`, sãwã mĩrũ maʉ̃ wãbʉada b'ʉ
+// ¬wãbʉida naẽna. Maʉ̃ba kirak'a edabaria ax̶ĩ pak'ua edabaria,
+// maʉ̃ba kirak'ada ¬b'ʉa ẽbẽra k'ĩrawa. `n = 0` jarabaria
+// ¬wãbʉisi ni ab'aʉ̃ — maʉ̃ bʉrʉ dach'ida, jũmawa kirak'a.
+//
+//   >>|  kirak'a ewa   >>!  chiruta   >>?  k'awa
+//   >>~  ab'a d'oma kirak'ada, ab'a kirak'ai, ab'a wãrĩ, ab'a pak'ua
+//   <<|  ab'a b'itua nʉbaria
+//
+// Ume k'awabipa, ax̶ĩ ume unubipanʉ kirak'a k'ĩrawa, ¬k'awabipa
+// k'ĩrawa: nau k'ĩmarẽ edeb'aria ab'a wãbʉigui ab'a ume, ¬k'awa
+// jarabaria, ax̶ĩ dach'ida unubi b'ʉa wãrã od'e k'ĩrawa, maʉ̃ba
+// b'ʉbʉ dach'i neʼe wãbʉa. Umewa netata unubida.
+//
+// Bed'ea djiwidʉ: `kirak'a`, `pak'ua`, `wãbʉa`, `kirak'ai`, `wãrĩ`,
+// `dach'ia`, `unubia`, `mĩrũ`, `b'itua`, `borroa` ax̶ĩ `bĩgua`
+// nau ĩyaba oda. Emberá bed'ea b'ʉ k'awa unubida.
+// ============================================================
+
+// Dach'ida ide: chik'oa b'ʉdʉ jũmawa, pak'ua p'ãrãgua b'ʉdʉ sõbea.
+kirak'a = " .:-=+*#%"
+pak'ua  = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Sãwã mĩrũ b'ʉ ¬wãbʉida naẽna; 0 ¬wãbʉisi ni ab'aʉ̃.
+// zr2 ax̶ĩ zi2 edeb'aria, maʉ̃ba ab'a mĩrũ kĩmare k'obea, ¬juesomaa.
+wãbʉa(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (borro, bĩ) = >>?
+    kirak'ai = borro - 2
+    wãrĩ     = bĩ    - 1
+
+    // Ab'a d'oma ~2.5 borroa b'ʉa bĩgua ide; borro k'awada
+    // maʉ̃ba oda dach'ida k'ururu odai.
+    bĩgua  = 2.7
+    borroa = kirak'ai * bĩgua * 2.5 / wãrĩ
+    dach'ia = kirak'ai / 2 + 1
+
+    @ y:1..dach'ia {
+        unubia = kirak'ai + 1 - y
+        @ x:1..wãrĩ {
+            cr = (x - 1) * bĩgua  / wãrĩ     - 2.1
+            ci = (y - 1) * borroa / kirak'ai - borroa / 2.0
+            n  = wãbʉa(cr, ci)
+            kirak'ada = "@"
+            pak'uada  = 231
+            ? n <> 0 {
+                mĩrũ = n / 4 + 1
+                ? mĩrũ > 9 { mĩrũ = 9 }
+                kirak'ada = kirak'a[mĩrũ]
+                pak'uada  = pak'ua[mĩrũ]
+            }
+            >>~ (y, x, 0, pak'uada) > kirak'ada
+            ? unubia > dach'ia { >>~ (unubia, x, 0, pak'uada) > kirak'ada }
+        }
+    }
+
+    >>~ (borro, 2, 0, 244) > "ab'a b'itua b'itad'e ne wãi"
+    <<| _b'itua
+}

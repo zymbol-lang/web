@@ -1,0 +1,78 @@
+// @skip-parity: o canvas precisa de um terminal de verdade na CLI e de uma camada
+// @skip-parity: de canvas no navegador, então uma execução por pipe não tem com o
+// @skip-parity: que se comparar.
+// ============================================================
+// mandelbrot — o conjunto de Mandelbrot, desenhado na tela do terminal.
+// Identificadores em português. Operadores sempre simbólicos.
+//
+// Um único número decide tudo: `n`, quantos passos a órbita
+// sobrevive antes de escapar. Ele escolhe o glifo e escolhe a cor,
+// então o desenho não pode se contradizer. `n = 0` quer dizer que
+// ela nunca escapou — isso é o conjunto, desenhado maciço.
+//
+//   >>|  abre a tela   >>!  limpa   >>?  mede
+//   >>~  escreve uma célula, numa linha, numa coluna, de uma cor
+//   <<|  espera uma tecla
+//
+// Duas economias, e as duas aparecem no desenho e não num teste de
+// desempenho: os quadrados são carregados entre iterações em vez de
+// recalculados, e o conjunto é espelhado sobre o eixo real, então só
+// a metade de cima chega a escapar. Juntas, pagam a resolução que o
+// detalhe exige.
+// ============================================================
+
+// Fora do conjunto: de tênue a maciço, de verde escuro a brilhante.
+rampa = " .:-=+*#%"
+tons  = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Passos sobrevividos antes de a órbita escapar; 0 se ela nunca escapa.
+// zr2 e zi2 são carregados, então cada passo custa quatro produtos, não seis.
+fuga(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (alto, largo) = >>?
+    linhas  = alto  - 2
+    colunas = largo - 1
+
+    // Uma célula é ~2.5 vezes mais alta que larga; o trecho vertical
+    // é escalado por isso para o conjunto sair redondo.
+    largura = 2.7
+    altura  = linhas * largura * 2.5 / colunas
+    meio    = linhas / 2 + 1
+
+    @ y:1..meio {
+        espelho = linhas + 1 - y
+        @ x:1..colunas {
+            cr = (x - 1) * largura / colunas - 2.1
+            ci = (y - 1) * altura  / linhas  - altura / 2.0
+            n  = fuga(cr, ci)
+            marca = "@"
+            tom   = 231
+            ? n <> 0 {
+                passo = n / 4 + 1
+                ? passo > 9 { passo = 9 }
+                marca = rampa[passo]
+                tom   = tons[passo]
+            }
+            >>~ (y, x, 0, tom) > marca
+            ? espelho > meio { >>~ (espelho, x, 0, tom) > marca }
+        }
+    }
+
+    >>~ (alto, 2, 0, 244) > "pressione qualquer tecla para sair"
+    <<| _tecla
+}

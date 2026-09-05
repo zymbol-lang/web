@@ -1,0 +1,76 @@
+// @skip-parity: plátno potřebuje skutečný terminál pod CLI a vrstvu plátna
+// @skip-parity: v prohlížeči, takže běh rourou nemá s čím porovnávat.
+// ============================================================
+// mandelbrot — Mandelbrotova množina, nakreslená na plátno terminálu.
+// Jména česky. Znaky zůstávají vždy znaky.
+//
+// O všem rozhoduje jediné číslo: `n`, kolik kroků dráha vydrží,
+// než uteče. Ono vybírá znak a ono vybírá barvu, takže si obraz
+// nemůže odporovat. `n = 0` znamená, že neutekla nikdy — to je
+// ta množina, nakreslená plně.
+//
+//   >>|  otevře plátno   >>!  smaže je   >>?  změří je
+//   >>~  zapíše jednu buňku, v řádku, ve sloupci, jednou barvou
+//   <<|  čeká na klávesu
+//
+// Dvě úspory, a obě jsou vidět na obraze, ne v měření: čtverce
+// se přenášejí z kroku na krok místo přepočítávání a množina se
+// zrcadlí kolem reálné osy, takže utíká jen horní polovina.
+// Společně zaplatí rozlišení, které detail vyžaduje.
+// ============================================================
+
+// Mimo množinu: od bledého k plnému, od tmavě zelené k jasné.
+rampa = " .:-=+*#%"
+barvy = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Kroky vydržené, než dráha uteče; 0, pokud neuteče nikdy.
+// zr2 a zi2 se přenášejí, takže každý krok stojí čtyři součiny, ne šest.
+únik(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (vysoký, široký) = >>?
+    řádky   = vysoký - 2
+    sloupce = široký - 1
+
+    // Buňka je asi 2,5krát vyšší než širší; svislý rozsah se tím
+    // škáluje, aby množina vyšla kulatá.
+    šířka = 2.7
+    výška = řádky * šířka * 2.5 / sloupce
+    střed = řádky / 2 + 1
+
+    @ y:1..střed {
+        zrcadlo = řádky + 1 - y
+        @ x:1..sloupce {
+            cr = (x - 1) * šířka / sloupce - 2.1
+            ci = (y - 1) * výška / řádky   - výška / 2.0
+            n  = únik(cr, ci)
+            značka = "@"
+            barva  = 231
+            ? n <> 0 {
+                krok = n / 4 + 1
+                ? krok > 9 { krok = 9 }
+                značka = rampa[krok]
+                barva  = barvy[krok]
+            }
+            >>~ (y, x, 0, barva) > značka
+            ? zrcadlo > střed { >>~ (zrcadlo, x, 0, barva) > značka }
+        }
+    }
+
+    >>~ (vysoký, 2, 0, 244) > "libovolná klávesa pro odchod"
+    <<| _klávesa
+}

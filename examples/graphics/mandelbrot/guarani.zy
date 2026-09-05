@@ -1,0 +1,82 @@
+// @skip-parity: pe ta'anga renda oikotevẽ peteĩ terminal añetegua CLI-pe ha
+// @skip-parity: peteĩ ta'anga jehai kundaharãme, upévare peteĩ ñembohape rupi
+// @skip-parity: ndaipóri mba'eve oñembojojávo.
+// ============================================================
+// mandelbrot — Mandelbrot atýra, ojehai ta'anga rendápe.
+// Téra guaraníme. Techaukaha katu opa ára techaukaha.
+//
+// Peteĩ papapy añoite ohechauka opa mba'e: `n`, mboýpa pyrũ
+// pe jere ojapo okañy mboyve. Ha'e oiporavo techaukaha ha
+// oiporavo sa'y, upévare ta'anga ndaikatúi ojoavy ijehegui.
+// `n = 0` he'ise araka'eve ndokañyhague — upéva pe atýra,
+// ojehai henyhẽva.
+//
+//   >>|  oipe'a ta'anga renda   >>!  omopotĩ   >>?  oha'ã
+//   >>~  ohai peteĩ koty, peteĩ tysýipe, peteĩ tysýipu'ãme, peteĩ sa'ýpe
+//   <<|  oha'arõ peteĩ tekla
+//
+// Mokõi ñeñongatu, ha mokõivéva ojehecha ta'angápe, ndaha'éi
+// peteĩ ha'ãhápe: umi mbojoapy ojegueraha peteĩ jeregui ambuépe
+// ha ndojejapói jey, ha pe atýra oñemboja'o itaverárõ ojoykére
+// pe ysyry añetegua rehe, upévare yvate gotyo mbyte añoite
+// okañy. Oñondive ohepyme'ẽ pe jehecha porã oikotevẽva.
+//
+// Ñe'ẽ pyahu: `tysýipu'ã` (columna) ha `techaukaha` ojejapo ko
+// tembiapoguáme. Guaraní ñe'ẽhára tohesa'ỹijo.
+// ============================================================
+
+// Atýra okápe: hesakãgui henyhẽmeve, hovyũgui overámeve.
+haipy    = " .:-=+*#%"
+sa'ykuéra = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Mboýpa pyrũ ojapo pe jere okañy mboyve; 0 araka'eve ndokañýiramo.
+// zr2 ha zi2 ojegueraha, upévare peteĩteĩ pyrũ ohepyme'ẽ irundy jekuaa, ndaha'éi poteĩ.
+kañy(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (yvate, ipe) = >>?
+    tysýi     = yvate - 2
+    tysýipu'ã = ipe   - 1
+
+    // Peteĩ koty ~2.5 jey yvateve ipeguágui; pe yvate pukukue
+    // oñembojoja upévare atýra osẽ haguã apu'a.
+    ipekue    = 2.7
+    yvatekue  = tysýi * ipekue * 2.5 / tysýipu'ã
+    mbyte     = tysýi / 2 + 1
+
+    @ y:1..mbyte {
+        itaverá = tysýi + 1 - y
+        @ x:1..tysýipu'ã {
+            cr = (x - 1) * ipekue   / tysýipu'ã - 2.1
+            ci = (y - 1) * yvatekue / tysýi     - yvatekue / 2.0
+            n  = kañy(cr, ci)
+            techaukaha = "@"
+            sa'y       = 231
+            ? n <> 0 {
+                pyrũ = n / 4 + 1
+                ? pyrũ > 9 { pyrũ = 9 }
+                techaukaha = haipy[pyrũ]
+                sa'y       = sa'ykuéra[pyrũ]
+            }
+            >>~ (y, x, 0, sa'y) > techaukaha
+            ? itaverá > mbyte { >>~ (itaverá, x, 0, sa'y) > techaukaha }
+        }
+    }
+
+    >>~ (yvate, 2, 0, 244) > "eikutu tekla oimeraẽva esẽ haguã"
+    <<| _tekla
+}

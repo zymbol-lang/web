@@ -331,15 +331,1324 @@
           "desc": "Programs whose output is a picture",
           "entries": [
             {
-              "id": "graphics-mandelbrot",
-              "title": "Mandelbrot",
-              "desc": "The set in ASCII — nested @ loops, ? / _, and one escape function",
+              "id": "graphics-mandelbrot-en",
+              "title": "Mandelbrot — English",
+              "desc": "The set in ASCII, identifiers in English — nested @ loops, ? / _, and one escape function",
               "tags": [
                 "loops",
                 "functions",
-                "float"
+                "float",
+                "mandelbrot"
               ],
-              "path": "graphics/mandelbrot.zy"
+              "path": "graphics/mandelbrot/english.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-es",
+              "title": "Mandelbrot — Español",
+              "desc": "El conjunto en ASCII, identificadores en español — bucles @ anidados, ? / _, y una función de fuga",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/spanish.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-pt",
+              "title": "Mandelbrot — Português (BR)",
+              "desc": "O conjunto em ASCII, identificadores em português — laços @ aninhados, ? / _, e uma função de fuga",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/portuguese.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-pt-eu",
+              "title": "Mandelbrot — Português (PT)",
+              "desc": "O conjunto em ASCII, identificadores em português — ciclos @ encadeados, ? / _, e uma função de fuga",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/portugues_eu.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-fr",
+              "title": "Mandelbrot — Français",
+              "desc": "L'ensemble en ASCII, identificateurs en français — boucles @ imbriquées, ? / _, et une fonction d'échappement",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/french.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ht",
+              "title": "Mandelbrot — Kreyòl ayisyen",
+              "desc": "Ansanm nan an ASCII, idantifyan an kreyòl — bouk @ youn nan lòt, ? / _, ak yon fonksyon chape",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/haitian_creole.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-qu",
+              "title": "Mandelbrot — Runasimi",
+              "desc": "Huñu ASCII-pi, sutikuna runasimipi — @ muyukuna ukupi, ? / _, huk ayqiy llamk'anawan",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/quechua.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-gn",
+              "title": "Mandelbrot — Guaraní",
+              "desc": "Pe atýra ASCII-pe, téra guaraníme — @ jere ojoapytépe, ? / _, ha peteĩ kañy tembiaporã",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/guarani.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-nah",
+              "title": "Mandelbrot — Nāhuatl",
+              "desc": "In centiliztli ipan ASCII, tōcāitl ica nāhuatl — @ mālacatl ihtic, ? / _, īhuān cē choloa tequitl",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/nahuatl.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-jam",
+              "title": "Mandelbrot — Patwa",
+              "desc": "Di set iina ASCII, identifaya iina Patwa — nes @ luup, ? / _, an wan ronwe fongshan",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/jamaican_patois.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ay",
+              "title": "Mandelbrot — Aymara",
+              "desc": "Tantachawi ASCII-na, sutinaka aymarata — @ muyuwinaka manqhana, ? / _, ukat mä phatiña luräwi",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/aymara.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-arn",
+              "title": "Mandelbrot — Mapudungun",
+              "desc": "Ti trokiñ ASCII mew, üy mapudungun mew — @ wallon ponwi, ? / _, ka kiñe montun küdaw",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/mapuche.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-yua",
+              "title": "Mandelbrot — Màaya T'àan",
+              "desc": "Le much' ich ASCII, k'aaba'ob ich maaya — @ sutuko'ob ichil, ? / _, yéetel junp'éel púuts'ul meyaj",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/maya.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-quc",
+              "title": "Mandelbrot — K'iche'",
+              "desc": "Ri molaj pa ASCII, b'i'aj pa k'iche' — @ sutub'al chupam, ? / _, xuquje' jun anim chak",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/kiche.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-nv",
+              "title": "Mandelbrot — Diné bizaad",
+              "desc": "Ałhąąh ASCII bee, bízhi' Diné bizaad bee — @ ałhąąh biyi', ? / _, dóó t'áálá'í dilwo naanish",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/navajo.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-chr",
+              "title": "Mandelbrot — ᏣᎳᎩ",
+              "desc": "ᎤᎾᏓᏡᎬ ASCII, ᏚᎾᏙᎥ ᏣᎳᎩ — @ ᎠᏂᎩᏍᎩ ᎭᏫᎾᏗᏢ, ? / _, ᎠᎴ ᏌᏊ ᎠᏟᏙᎠ ᏗᎦᎸᏫᏍᏓᏁᏗ",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/cherokee.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-cr",
+              "title": "Mandelbrot — ᓀᐦᐃᔭᐍᐏᐣ",
+              "desc": "ᒫᒪᐏ ASCII ᐊᓴ, ᐏᔦᐏᓇ ᓀᐦᐃᔭᐍᐏᐣ — @ ᑳᐃᐢᐸᔨᐠ ᐊᓴ, ? / _, ᒥᓇ ᐯᔭᐠ ᐱᒥᐸᐦᑖᐤ ᐊᑑᐢᑫᐏᐣ",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/cree_syl.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-guc",
+              "title": "Mandelbrot — Wayuunaiki",
+              "desc": "Tü outkajaakat ASCII sünain, sünülia wayuunaiki — @ waneʼewai saʼaka, ? / _, otta wanee awataa aainjala",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/wayuu.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-emp",
+              "title": "Mandelbrot — Emberá",
+              "desc": "Dach'ida ASCII ume, trʉ̃ Emberá bed'eaba — @ ãbaa ide, ? / _, ax̶ĩ ab'a wãbʉa o b'ʉa",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/embera.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-wca",
+              "title": "Mandelbrot — Yanomamɨ",
+              "desc": "Pëhëtëo ASCII hami, thëpë ãhã yanomamɨ — @ mãyõ hami, ? / _, ai mõrĩ waripo thë kuo",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/yanomami.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-de",
+              "title": "Mandelbrot — Deutsch",
+              "desc": "Die Menge in ASCII, Bezeichner auf Deutsch — verschachtelte @-Schleifen, ? / _, und eine Fluchtfunktion",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/german.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-it",
+              "title": "Mandelbrot — Italiano",
+              "desc": "L'insieme in ASCII, identificatori in italiano — cicli @ annidati, ? / _, e una funzione di fuga",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/italian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-nl",
+              "title": "Mandelbrot — Nederlands",
+              "desc": "De verzameling in ASCII, namen in het Nederlands — geneste @-lussen, ? / _, en één ontsnapfunctie",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/dutch.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-pl",
+              "title": "Mandelbrot — Polski",
+              "desc": "Zbiór w ASCII, nazwy po polsku — zagnieżdżone pętle @, ? / _, i jedna funkcja ucieczki",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/polish.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ru",
+              "title": "Mandelbrot — Русский",
+              "desc": "Множество в ASCII, имена по-русски — вложенные циклы @, ? / _, и одна функция побега",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/russian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-el",
+              "title": "Mandelbrot — Ελληνικά",
+              "desc": "Το σύνολο σε ASCII, ονόματα στα ελληνικά — φωλιασμένοι βρόχοι @, ? / _, και μία συνάρτηση διαφυγής",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/greek.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-uk",
+              "title": "Mandelbrot — Українська",
+              "desc": "Множина в ASCII, імена українською — вкладені цикли @, ? / _, і одна функція втечі",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/ukrainian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-cs",
+              "title": "Mandelbrot — Čeština",
+              "desc": "Množina v ASCII, jména česky — vnořené smyčky @, ? / _, a jedna funkce úniku",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/czech.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-sv",
+              "title": "Mandelbrot — Svenska",
+              "desc": "Mängden i ASCII, namn på svenska — nästlade @-slingor, ? / _, och en flyktfunktion",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/swedish.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-da",
+              "title": "Mandelbrot — Dansk",
+              "desc": "Mængden i ASCII, navne på dansk — indlejrede @-løkker, ? / _, og én flugtfunktion",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/danish.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ro",
+              "title": "Mandelbrot — Română",
+              "desc": "Mulțimea în ASCII, nume în română — bucle @ imbricate, ? / _, și o funcție de evadare",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/romanian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ca",
+              "title": "Mandelbrot — Català",
+              "desc": "El conjunt en ASCII, noms en català — bucles @ imbricats, ? / _, i una funció de fuga",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/catalan.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-no",
+              "title": "Mandelbrot — Norsk",
+              "desc": "Mengden i ASCII, navn på norsk — nøstede @-løkker, ? / _, og én rømmefunksjon",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/norwegian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-is",
+              "title": "Mandelbrot — Íslenska",
+              "desc": "Mengið í ASCII, nöfn á íslensku — hreiðraðar @-lykkjur, ? / _, og eitt flóttafall",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/icelandic.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-fi",
+              "title": "Mandelbrot — Suomi",
+              "desc": "Joukko ASCII:na, nimet suomeksi — sisäkkäiset @-silmukat, ? / _, ja yksi pakofunktio",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/finnish.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-sk",
+              "title": "Mandelbrot — Slovenčina",
+              "desc": "Množina v ASCII, mená po slovensky — vnorené slučky @, ? / _, a jedna funkcia úniku",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/slovak.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-hr",
+              "title": "Mandelbrot — Hrvatski",
+              "desc": "Skup u ASCII-ju, imena na hrvatskom — ugniježđene @-petlje, ? / _, i jedna funkcija bijega",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/croatian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-bg",
+              "title": "Mandelbrot — Български",
+              "desc": "Множеството в ASCII, имена на български — вложени цикли @, ? / _, и една функция за бягство",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/bulgarian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-et",
+              "title": "Mandelbrot — Eesti",
+              "desc": "Hulk ASCII-s, nimed eesti keeles — pesastatud @-tsüklid, ? / _, ja üks põgenemisfunktsioon",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/estonian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-lv",
+              "title": "Mandelbrot — Latviešu",
+              "desc": "Kopa ASCII, vārdi latviski — ligzdoti @ cikli, ? / _, un viena bēgšanas funkcija",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/latvian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-lt",
+              "title": "Mandelbrot — Lietuvių",
+              "desc": "Aibė ASCII, vardai lietuviškai — įdėti @ ciklai, ? / _, ir viena pabėgimo funkcija",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/lithuanian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-sr",
+              "title": "Mandelbrot — Српски",
+              "desc": "Скуп у ASCII, имена на српском — угнежђене @ петље, ? / _, и једна функција бекства",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/serbian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-eu",
+              "title": "Mandelbrot — Euskara",
+              "desc": "Multzoa ASCII-n, izenak euskaraz — @ begizta habiaratuak, ? / _, eta ihes funtzio bat",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/basque.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-gl",
+              "title": "Mandelbrot — Galego",
+              "desc": "O conxunto en ASCII, nomes en galego — bucles @ aniñados, ? / _, e unha función de fuga",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/galician.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-sl",
+              "title": "Mandelbrot — Slovenščina",
+              "desc": "Množica v ASCII, imena v slovenščini — gnezdene @ zanke, ? / _, in ena funkcija pobega",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/slovenian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-sq",
+              "title": "Mandelbrot — Shqip",
+              "desc": "Bashkësia në ASCII, emra në shqip — cikle @ të ndërthurura, ? / _, dhe një funksion arratisjeje",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/albanian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-be",
+              "title": "Mandelbrot — Беларуская",
+              "desc": "Мноства ў ASCII, імёны па-беларуску — укладзеныя цыклы @, ? / _, і адна функцыя ўцёкаў",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/belarusian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-mk",
+              "title": "Mandelbrot — Македонски",
+              "desc": "Множеството во ASCII, имиња на македонски — вгнездени циклуси @, ? / _, и една функција за бегство",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/macedonian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-zh",
+              "title": "Mandelbrot — 中文",
+              "desc": "ASCII 里的曼德博集合，标识符用中文 — 嵌套的 @ 循环、? / _，以及一个逃逸函数",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/mandarin.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ja",
+              "title": "Mandelbrot — 日本語",
+              "desc": "ASCII のマンデルブロ集合、識別子は日本語 — 入れ子の @、? / _、そして発散の関数一つ",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/japanese.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ko",
+              "title": "Mandelbrot — 한국어",
+              "desc": "ASCII 로 그린 만델브로 집합, 이름은 한국어 — 중첩된 @ 되풀이, ? / _, 그리고 발산 함수 하나",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/korean.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-hi",
+              "title": "Mandelbrot — हिन्दी",
+              "desc": "ASCII में मंडेलब्रोट समुच्चय, नाम हिन्दी में — नेस्टेड @ चक्र, ? / _, और एक पलायन फलन",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/hindi.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-vi",
+              "title": "Mandelbrot — Tiếng Việt",
+              "desc": "Tập Mandelbrot bằng ASCII, tên bằng tiếng Việt — vòng @ lồng nhau, ? / _, và một hàm thoát",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/vietnamese.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-id",
+              "title": "Mandelbrot — Bahasa Indonesia",
+              "desc": "Himpunan Mandelbrot dalam ASCII, nama dalam bahasa Indonesia — kalang @ bersarang, ? / _, dan satu fungsi lolos",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/indonesian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-th",
+              "title": "Mandelbrot — ไทย",
+              "desc": "เซตมันเดลบรอตแบบ ASCII ชื่อเป็นภาษาไทย — วง @ ซ้อนกัน, ? / _, และฟังก์ชันหนีหนึ่งตัว",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/thai.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-bn",
+              "title": "Mandelbrot — বাংলা",
+              "desc": "ASCII-তে মান্ডেলব্রট সেট, নাম বাংলায় — নেস্টেড @ চক্র, ? / _, আর একটি পলায়ন ফাংশন",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/bengali.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ta",
+              "title": "Mandelbrot — தமிழ்",
+              "desc": "ASCII-இல் மாண்டல்ப்ரோட் கணம், பெயர்கள் தமிழில் — உள்ளடங்கிய @ சுழற்சிகள், ? / _, ஒரு தப்பல் செயற்கூறு",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/tamil.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-te",
+              "title": "Mandelbrot — తెలుగు",
+              "desc": "ASCII లో మాండెల్‌బ్రోట్ సమితి, పేర్లు తెలుగులో — లోపలి @ చక్రాలు, ? / _, ఒక తప్పించుక ప్రమేయం",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/telugu.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ms",
+              "title": "Mandelbrot — Bahasa Melayu",
+              "desc": "Himpunan Mandelbrot dalam ASCII, nama dalam bahasa Melayu — gelung @ bersarang, ? / _, dan satu fungsi terlepas",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/malay.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-tl",
+              "title": "Mandelbrot — Tagalog",
+              "desc": "Ang tipon ng Mandelbrot sa ASCII, mga pangalan sa Tagalog — magkakapatong na @, ? / _, at isang tungkuling takas",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/tagalog.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-mr",
+              "title": "Mandelbrot — मराठी",
+              "desc": "ASCII मधला मांडेलब्रोट संच, नावे मराठीत — आतल्या आत @ फेऱ्या, ? / _, आणि एक पलायन कृती",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/marathi.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-gu",
+              "title": "Mandelbrot — ગુજરાતી",
+              "desc": "ASCII માં માંડેલબ્રોટ સમુચ્ચય, નામ ગુજરાતીમાં — અંદરોઅંદર @ ફેરા, ? / _, અને એક પલાયન ક્રિયા",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/gujarati.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-pa",
+              "title": "Mandelbrot — ਪੰਜਾਬੀ",
+              "desc": "ASCII ਵਿੱਚ ਮੰਡਲਬਰੋਟ ਸਮੂਹ, ਨਾਂ ਪੰਜਾਬੀ ਵਿੱਚ — ਅੰਦਰੋ-ਅੰਦਰ @ ਗੇੜੇ, ? / _, ਤੇ ਇੱਕ ਭੱਜਣ ਕਾਰਜ",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/punjabi.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-kn",
+              "title": "Mandelbrot — ಕನ್ನಡ",
+              "desc": "ASCII ನಲ್ಲಿ ಮಾಂಡೆಲ್‌ಬ್ರೋಟ್ ಗಣ, ಹೆಸರುಗಳು ಕನ್ನಡದಲ್ಲಿ — ಒಳಗೊಳಗೆ @ ಸುತ್ತುಗಳು, ? / _, ಮತ್ತು ಒಂದು ಪಲಾಯನ ಕಾರ್ಯ",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/kannada.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ml",
+              "title": "Mandelbrot — മലയാളം",
+              "desc": "ASCII-ൽ മാൻഡൽബ്രോട്ട് ഗണം, പേരുകൾ മലയാളത്തിൽ — അകത്തകത്ത് @ ചുറ്റുകൾ, ? / _, ഒരു രക്ഷപ്പെടൽ ധർമം",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/malayalam.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ne",
+              "title": "Mandelbrot — नेपाली",
+              "desc": "ASCII मा मान्डेलब्रोट समुच्चय, नाम नेपालीमा — भित्रभित्र @ फन्का, ? / _, र एउटा भागाइ कार्य",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/nepali.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-my",
+              "title": "Mandelbrot — မြန်မာ",
+              "desc": "ASCII ဖြင့် မန်ဒယ်ဘရော့ အစု၊ အမည်များ မြန်မာလို — အထပ်ထပ် @ ပတ်များ၊ ? / _ နှင့် ထွက်ပြေးမှု လုပ်ဆောင်ချက် တစ်ခု",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/burmese.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-jv",
+              "title": "Mandelbrot — Jawa",
+              "desc": "Himpunan Mandelbrot ing ASCII, jeneng nganggo basa Jawa — puteran @ tumpuk-tumpuk, ? / _, lan siji pakaryan oncat",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/javanese.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-km",
+              "title": "Mandelbrot — ខ្មែរ",
+              "desc": "សំណុំម៉ង់ដិលប្រូតជា ASCII ឈ្មោះជាភាសាខ្មែរ — រង្វិល @ ជាន់គ្នា, ? / _ និងអនុគមន៍រត់គេចមួយ",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/khmer.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-lo",
+              "title": "Mandelbrot — ລາວ",
+              "desc": "ຊຸດມັນເດວບຣົດເປັນ ASCII ຊື່ເປັນພາສາລາວ — ວົງ @ ຊ້ອນກັນ, ? / _ ແລະ ໜ້າທີ່ໜີໜຶ່ງອັນ",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/lao.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-su",
+              "title": "Mandelbrot — Sunda",
+              "desc": "Himpunan Mandelbrot dina ASCII, ngaran dina basa Sunda — puteran @ tumpang-tindih, ? / _, jeung hiji pancén kabur",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/sundanese.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-si",
+              "title": "Mandelbrot — සිංහල",
+              "desc": "ASCII හි මැන්ඩල්බ්‍රොට් කුලකය, නම් සිංහලෙන් — එකිනෙක තුළ @ වට, ? / _, සහ එක් පලායාම් ශ්‍රිතයක්",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/sinhala.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-sw",
+              "title": "Mandelbrot — Kiswahili",
+              "desc": "Seti ya Mandelbrot katika ASCII, majina kwa Kiswahili — mizunguko @ iliyoingiliana, ? / _, na kazi moja ya kutoroka",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/swahili.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-af",
+              "title": "Mandelbrot — Afrikaans",
+              "desc": "Die Mandelbrot-versameling in ASCII, name in Afrikaans — geneste @-lusse, ? / _, en een ontsnappingsfunksie",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/afrikaans.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-am",
+              "title": "Mandelbrot — አማርኛ",
+              "desc": "የማንደልብሮት ስብስብ በASCII፣ ስሞቹ በአማርኛ — የተደራረቡ @ ዑደቶች፣ ? / _፣ እና አንድ የማምለጫ ተግባር",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/amharic.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ha",
+              "title": "Mandelbrot — Hausa",
+              "desc": "Tarin Mandelbrot da ASCII, sunaye da Hausa — kewaye @ masu shiga juna, ? / _, da aiki ɗaya na tsere",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/hausa.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-yo",
+              "title": "Mandelbrot — Yorùbá",
+              "desc": "Àkójọ Mandelbrot ní ASCII, àwọn orúkọ ní Yorùbá — àwọn yíyípo @ tí ó wọ ara wọn, ? / _, àti iṣẹ́ ìsálọ kan",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/yoruba.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-zu",
+              "title": "Mandelbrot — isiZulu",
+              "desc": "Iqoqo likaMandelbrot nge-ASCII, amagama ngesiZulu — imijikelezo @ efakwe ngaphakathi, ? / _, nomsebenzi owodwa wokubaleka",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/zulu.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ig",
+              "title": "Mandelbrot — Igbo",
+              "desc": "Mkpokọta Mandelbrot na ASCII, aha n'Igbo — okirikiri @ ndị dị n'ime ibe ha, ? / _, na otu ọrụ mgbapụ",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/igbo.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-xh",
+              "title": "Mandelbrot — isiXhosa",
+              "desc": "Ingqokelela kaMandelbrot nge-ASCII, amagama ngesiXhosa — imijikelo @ engaphakathi komnye, ? / _, nomsebenzi omnye wokubaleka",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/xhosa.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-so",
+              "title": "Mandelbrot — Soomaali",
+              "desc": "Ururka Mandelbrot ee ASCII, magacyada af-Soomaali — wareegyo @ isku dhex jira, ? / _, iyo hal shaqo baxsad",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/somali.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ln",
+              "title": "Mandelbrot — Lingála",
+              "desc": "Lisangá ya Mandelbrot na ASCII, bankómbó na Lingála — bazingazinga @ na kati ya mosusu, ? / _, mpe mosala moko ya kokima",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/lingala.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-sn",
+              "title": "Mandelbrot — chiShona",
+              "desc": "Boka raMandelbrot muASCII, mazita muchiShona — matenderedzwa @ ari mukati memamwe, ? / _, nebasa rimwe rekutiza",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/shona.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ny",
+              "title": "Mandelbrot — Chichewa",
+              "desc": "Mulu wa Mandelbrot mu ASCII, mayina m'Chichewa — mazungulira @ omwe ali mkati mwa ena, ? / _, ndi ntchito imodzi yothawa",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/nyanja.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-om",
+              "title": "Mandelbrot — Afaan Oromoo",
+              "desc": "Tuuta Mandelbrot ASCII'n, maqaawwan Afaan Oromootiin — marsaawwan @ wal keessa jiran, ? / _, fi hojii baqannaa tokko",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/oromo.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ti",
+              "title": "Mandelbrot — ትግርኛ",
+              "desc": "ጥርናፈ ማንደልብሮት ብASCII፡ ስማት ብትግርኛ — ተደራረብቲ @ ዑደታት፡ ? / _፡ ከምኡ​ውን ሓደ ናይ ምህዳም ተግባር",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/tigrinya.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-lg",
+              "title": "Mandelbrot — Luganda",
+              "desc": "Ekibiina kya Mandelbrot mu ASCII, amannya mu Luganda — enkulungo @ ezirimu endala, ? / _, n'omulimu gumu ogw'okudduka",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/luganda.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-tn",
+              "title": "Mandelbrot — Setswana",
+              "desc": "Setlhopha sa Mandelbrot ka ASCII, maina ka Setswana — ditikologo @ tse di mo teng ga tse dingwe, ? / _, le tiro e le nngwe ya go tshaba",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/setswana.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-wo",
+              "title": "Mandelbrot — Wolof",
+              "desc": "Mbooloom Mandelbrot ci ASCII, tur yi ci Wolof — ay dawal @ yu dugg ci seen biir, ? / _, ak benn liggéey daw",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/wolof.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-bm",
+              "title": "Mandelbrot — Bamanankan",
+              "desc": "Mandelbrot ka jɛkulu ASCII la, tɔgɔw Bamanankan na — lamini @ minnu bɛ ɲɔgɔn kɔnɔ, ? / _, ani boli baara kelen",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/bambara.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ff",
+              "title": "Mandelbrot — Fulfulde",
+              "desc": "Dental Mandelbrot e ASCII, inɗe e Fulfulde — taariiɗe @ naatondirɗe, ? / _, e golle dogdu wootere",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/fula.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-pcm",
+              "title": "Mandelbrot — Naijá",
+              "desc": "Di Mandelbrot set fo ASCII, di neim dem fo Naijá — @ lup insaid @ lup, ? / _, an wan ranawe fɔnkshɔn",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/nigerian_pidgin.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ar",
+              "title": "Mandelbrot — العربية",
+              "desc": "مجموعة ماندلبرو بترميز ASCII، والأسماء بالعربية — حلقات @ متداخلة، و? / _، ودالة هروب واحدة",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/arabic.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-he",
+              "title": "Mandelbrot — עברית",
+              "desc": "קבוצת מנדלברוט ב־ASCII, השמות בעברית — לולאות @ מקוננות, ? / _, ופונקציית בריחה אחת",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/hebrew.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-fa",
+              "title": "Mandelbrot — فارسی",
+              "desc": "مجموعهٔ ماندلبرو در ASCII، نام‌ها به فارسی — حلقه‌های @ تودرتو، ? / _، و یک تابع گریز",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/persian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ur",
+              "title": "Mandelbrot — اردو",
+              "desc": "ASCII میں مینڈلبرو مجموعہ، نام اردو میں — ایک دوسرے کے اندر @ حلقے، ? / _، اور ایک فرار فعل",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/urdu.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ps",
+              "title": "Mandelbrot — پښتو",
+              "desc": "د مانډلبرو ټولګه په ASCII کې، نومونه په پښتو — یو په بل کې @ کړۍ، ? / _، او د تېښتې یو فعل",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/pashto.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-tr",
+              "title": "Mandelbrot — Türkçe",
+              "desc": "ASCII ile Mandelbrot kümesi, adlar Türkçe — iç içe @ döngüleri, ? / _, ve tek bir kaçış işlevi",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/turkish.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-az",
+              "title": "Mandelbrot — Azərbaycanca",
+              "desc": "ASCII ilə Mandelbrot çoxluğu, adlar Azərbaycanca — iç-içə @ dövrləri, ? / _, və bir qaçış funksiyası",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/azerbaijani.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ku",
+              "title": "Mandelbrot — Kurdî",
+              "desc": "Koma Mandelbrot bi ASCII, nav bi Kurdî — çerxên @ yên hundir hev, ? / _, û fonksiyoneke revê",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/kurdish.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ka",
+              "title": "Mandelbrot — ქართული",
+              "desc": "მანდელბროტის სიმრავლე ASCII-ში, სახელები ქართულად — ერთმანეთში ჩალაგებული @ ციკლები, ? / _, და ერთი გაქცევის ფუნქცია",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/georgian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-hy",
+              "title": "Mandelbrot — Հայերեն",
+              "desc": "Մանդելբրոտի բազմությունը ASCII-ով, անունները հայերեն — մեկը մյուսի մեջ @ ցիկլեր, ? / _, և մեկ փախուստի ֆունկցիա",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/armenian.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-eo",
+              "title": "Mandelbrot — Esperanto",
+              "desc": "La aro de Mandelbrot en ASCII, nomoj en Esperanto — ingitaj @-bukloj, ? / _, kaj unu eskapa funkcio",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/esperanto.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-io",
+              "title": "Mandelbrot — Ido",
+              "desc": "La ensemblo di Mandelbrot en ASCII, nomi en Ido — enmetita @-bukli, ? / _, ed un eskapo-funciono",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/ido.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-ia",
+              "title": "Mandelbrot — Interlingua",
+              "desc": "Le ensemble de Mandelbrot in ASCII, nomines in interlingua — buclas @ inserite, ? / _, e un function de escappata",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/interlingua.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-jbo",
+              "title": "Mandelbrot — la lojban",
+              "desc": "le mandelbrot girzu fo lo ASCII .i lo cmene cu bangu la lojban .i lo nenri @ .i ? / _ .i pa cliva cikre",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/lojban.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-tok",
+              "title": "Mandelbrot — toki pona",
+              "desc": "kulupu Mandelbrot lon ASCII. nimi li lon toki pona. @ li lon insa pi @ ante. ? / _ li lon. pali weka wan li lon.",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/toki_pona.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-emj",
+              "title": "Mandelbrot — Emoji",
+              "desc": "🌀 The Mandelbrot set in ASCII, identifiers in emoji — nested @ loops, ? / _, and one 🏃 escape function",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/emoji.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-tlh",
+              "title": "Mandelbrot — tlhIngan Hol",
+              "desc": "ASCII mandelbrot ghom, pongmey tlhIngan Hol — @ jeSbogh, ? / _, wa nargh mIw je",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/klingon.zy"
+            },
+            {
+              "id": "graphics-mandelbrot-tlh-Piqd",
+              "title": "Mandelbrot —   ",
+              "desc": "ASCII mandelbrot ,    — @ , ? / _,    ",
+              "tags": [
+                "loops",
+                "functions",
+                "float",
+                "mandelbrot"
+              ],
+              "path": "graphics/mandelbrot/klingon_piqad.zy"
             }
           ]
         }

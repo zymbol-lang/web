@@ -1,0 +1,78 @@
+// @skip-parity: kanva a bezwen yon vrè tèminal anba CLI a ak yon kouch kanva nan
+// @skip-parity: navigatè a, konsa yon egzekisyon nan yon tiyo pa gen anyen pou l
+// @skip-parity: konpare.
+// ============================================================
+// mandelbrot — ansanm Mandelbrot la, desine sou kanva tèminal la.
+// Idantifyan yo an kreyòl. Operatè yo toujou senbolik.
+//
+// Yon sèl nonm deside tout bagay: `n`, konbyen pa òbit la sipòte
+// anvan li chape. Li chwazi glif la epi li chwazi koulè a, konsa
+// desen an pa ka kontredi tèt li. `n = 0` vle di li pa janm chape —
+// se sa ki ansanm nan, desine plen.
+//
+//   >>|  louvri kanva a   >>!  efase l   >>?  mezire l
+//   >>~  ekri yon selil, nan yon liy, yon kolòn, yon koulè
+//   <<|  tann yon touch
+//
+// De ekonomi, epi tou de parèt nan desen an olye nan yon tès vitès:
+// kare yo pote soti nan yon iterasyon pou rive nan lòt la olye pou
+// yo rekalkile, epi ansanm nan miwate sou aks reyèl la, konsa se
+// mwatye anwo a sèlman ki chape. Ansanm, yo peye rezolisyon detay
+// la mande.
+// ============================================================
+
+// Deyò ansanm nan: soti nan fèb rive nan plen, vèt fonse rive nan klere.
+ranp = " .:-=+*#%"
+tent = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Pa ki sipòte anvan òbit la chape; 0 si li pa janm chape.
+// zr2 ak zi2 pote, konsa chak pa koute kat pwodwi, pa sis.
+chape(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (wo, laj) = >>?
+    liy   = wo  - 2
+    kolòn = laj - 1
+
+    // Yon selil ~2.5 fwa pi wo pase li laj; espas vètikal la
+    // mete nan echèl pa sa pou ansanm nan soti won.
+    lajè = 2.7
+    wotè = liy * lajè * 2.5 / kolòn
+    mitan = liy / 2 + 1
+
+    @ y:1..mitan {
+        miwa = liy + 1 - y
+        @ x:1..kolòn {
+            cr = (x - 1) * lajè / kolòn - 2.1
+            ci = (y - 1) * wotè / liy   - wotè / 2.0
+            n  = chape(cr, ci)
+            mak = "@"
+            koulè = 231
+            ? n <> 0 {
+                pa = n / 4 + 1
+                ? pa > 9 { pa = 9 }
+                mak = ranp[pa]
+                koulè = tent[pa]
+            }
+            >>~ (y, x, 0, koulè) > mak
+            ? miwa > mitan { >>~ (miwa, x, 0, koulè) > mak }
+        }
+    }
+
+    >>~ (wo, 2, 0, 244) > "peze nenpòt touch pou soti"
+    <<| _touch
+}

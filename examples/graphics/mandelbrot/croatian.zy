@@ -1,0 +1,77 @@
+// @skip-parity: platno traži pravi terminal pod CLI-jem i sloj platna u
+// @skip-parity: pregledniku, pa pokretanje kroz cijev nema s čim usporediti.
+// ============================================================
+// mandelbrot — Mandelbrotov skup, nacrtan na platnu terminala.
+// Imena na hrvatskom. Znakovi uvijek ostaju znakovi.
+//
+// Sve odlučuje jedan broj: `n`, koliko koraka putanja izdrži
+// prije nego pobjegne. On bira znak i on bira boju, pa si crtež
+// ne može proturječiti. `n = 0` znači da nikad nije pobjegla —
+// to je skup, nacrtan punim znakom.
+//
+//   >>|  otvara platno   >>!  briše ga   >>?  mjeri ga
+//   >>~  piše jednu ćeliju, u redak, u stupac, u jednoj boji
+//   <<|  čeka tipku
+//
+// Dvije uštede, i obje se vide na crtežu, a ne u mjerenju:
+// kvadrati se prenose s koraka na korak umjesto da se
+// preračunavaju, a skup se zrcali oko realne osi, pa bježi samo
+// gornja polovica. Zajedno plaćaju razlučivost koju pojedinost
+// traži.
+// ============================================================
+
+// Izvan skupa: od blijedog do punog, od tamnozelenog do sjajnog.
+rampa = " .:-=+*#%"
+boje  = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Koraci izdržani prije nego putanja pobjegne; 0 ako ne pobjegne nikad.
+// zr2 i zi2 se prenose, pa svaki korak stoji četiri umnoška, ne šest.
+bijeg(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (visok, širok) = >>?
+    redci  = visok - 2
+    stupci = širok - 1
+
+    // Ćelija je oko 2,5 puta viša nego šira; okomiti raspon se
+    // time skalira da skup ispadne okrugao.
+    širina  = 2.7
+    visina  = redci * širina * 2.5 / stupci
+    sredina = redci / 2 + 1
+
+    @ y:1..sredina {
+        zrcalo = redci + 1 - y
+        @ x:1..stupci {
+            cr = (x - 1) * širina / stupci - 2.1
+            ci = (y - 1) * visina / redci  - visina / 2.0
+            n  = bijeg(cr, ci)
+            znak = "@"
+            boja = 231
+            ? n <> 0 {
+                korak = n / 4 + 1
+                ? korak > 9 { korak = 9 }
+                znak = rampa[korak]
+                boja = boje[korak]
+            }
+            >>~ (y, x, 0, boja) > znak
+            ? zrcalo > sredina { >>~ (zrcalo, x, 0, boja) > znak }
+        }
+    }
+
+    >>~ (visok, 2, 0, 244) > "bilo koja tipka za izlaz"
+    <<| _tipka
+}

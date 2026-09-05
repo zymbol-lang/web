@@ -1,0 +1,79 @@
+// @skip-parity: die Leinwand braucht ein echtes Terminal unter der CLI und eine
+// @skip-parity: Leinwandschicht im Browser, also hat ein Lauf durch eine Pipe
+// @skip-parity: nichts zu vergleichen.
+// ============================================================
+// mandelbrot — die Mandelbrot-Menge, auf die Terminal-Leinwand gezeichnet.
+// Bezeichner auf Deutsch. Zeichen bleiben immer Zeichen.
+//
+// Eine einzige Zahl entscheidet alles: `n`, wie viele Stufen die
+// Bahn übersteht, ehe sie davonläuft. Sie wählt das Schriftzeichen
+// und sie wählt die Farbe, also kann das Bild sich nicht selbst
+// widersprechen. `n = 0` heißt, sie ist nie davongelaufen — das
+// ist die Menge, satt gezeichnet.
+//
+//   >>|  öffnet die Leinwand   >>!  löscht sie   >>?  misst sie
+//   >>~  schreibt eine Zelle, in eine Zeile, eine Spalte, in einer Farbe
+//   <<|  wartet auf eine Taste
+//
+// Zwei Ersparnisse, und beide zeigen sich im Bild statt in einer
+// Messreihe: die Quadrate werden von Schritt zu Schritt mitgeführt
+// statt neu berechnet, und die Menge wird an der reellen Achse
+// gespiegelt, sodass nur die obere Hälfte je davonläuft. Zusammen
+// bezahlen sie die Auflösung, die das Detail braucht.
+// ============================================================
+
+// Außerhalb der Menge: von zart bis satt, von dunkelgrün bis leuchtend.
+Rampe = " .:-=+*#%"
+Farben = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Überstandene Stufen, ehe die Bahn davonläuft; 0, wenn sie es nie tut.
+// zr2 und zi2 werden mitgeführt, also kostet jede Stufe vier Produkte, nicht sechs.
+entkommen(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (hoch, breit) = >>?
+    Zeilen  = hoch  - 2
+    Spalten = breit - 1
+
+    // Eine Zelle ist ~2,5-mal höher als breit; die senkrechte
+    // Spanne wird damit skaliert, damit die Menge rund herauskommt.
+    Breite = 2.7
+    Höhe   = Zeilen * Breite * 2.5 / Spalten
+    Mitte  = Zeilen / 2 + 1
+
+    @ y:1..Mitte {
+        Spiegel = Zeilen + 1 - y
+        @ x:1..Spalten {
+            cr = (x - 1) * Breite / Spalten - 2.1
+            ci = (y - 1) * Höhe   / Zeilen  - Höhe / 2.0
+            n  = entkommen(cr, ci)
+            Zeichen = "@"
+            Farbe   = 231
+            ? n <> 0 {
+                Stufe = n / 4 + 1
+                ? Stufe > 9 { Stufe = 9 }
+                Zeichen = Rampe[Stufe]
+                Farbe   = Farben[Stufe]
+            }
+            >>~ (y, x, 0, Farbe) > Zeichen
+            ? Spiegel > Mitte { >>~ (Spiegel, x, 0, Farbe) > Zeichen }
+        }
+    }
+
+    >>~ (hoch, 2, 0, 244) > "beliebige Taste zum Verlassen"
+    <<| _Taste
+}

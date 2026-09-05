@@ -1,0 +1,78 @@
+// @skip-parity: sarax bi dafa soxla benn terminal bu dëgg ci suuf CLI ak benn
+// @skip-parity: kalaam sarax ci nawigateur bi, kon dawal ci tuyoo amul dara lu
+// @skip-parity: mu mengale.
+// ============================================================
+// mandelbrot — mbooloom Mandelbrot, bi ñu natt ci saraxu terminal.
+// Tur yi ci Wolof. Màndarga yi ay màndarga lañu ba fàww.
+//
+// Benn limu rekk moo dogal lépp: `n`, ñaata pas la dawal bi di muñ
+// balaa mu daw. Moom mooy tànn araf bi, moom itam mooy tànn melo bi;
+// kon nataal bi mënul weddi boppam. `n = 0` mooy tekki ne musul a daw —
+// loolu mooy mbooloo mi ci boppam, bu ñu natt ba mu fees.
+//
+//   >>|  dafay ubbi sarax bi   >>!  dafay far   >>?  dafay natt
+//   >>~  dafay bind benn kees, ci benn rëdd, benn samp, ci benn melo
+//   <<|  dafay xaar benn caabi
+//
+// Ñaari denc, te ñoom ñaar ñépp ñu ngi feeñ ci nataal bi waaye du ci
+// natt: karre yi ñu leen di yóbbu jóge ci benn pas ba ci bi ci topp
+// ci kaw waxtaan leen ci yeneen, te mbooloo mi ñu koy won ci seetu bi
+// ci wetu axe bu dëgg bi, kon genn-wàll gu kawe rekk moo daw. Ñoom ñaar
+// ñoo bokk fey leeral gi ay ndaje di laaj.
+// ============================================================
+
+// Ci biti mbooloo mi: jóge ci lu néew ba ci lu fees, jóge ci wert bu lëndëm ba ci bu leer.
+màndargaYi = " .:-=+*#%"
+meloYi     = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Pas yi dawal bi muñ balaa mu daw; 0 su musul a daw.
+// zr2 ak zi2 ñu ngi leen yóbbu, kon benn pas bu nekk day jariñ ñeenti mbind, du juróom-benn.
+daw(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (gudday, yaatuwaay) = >>?
+    rëdd = gudday    - 2
+    samp = yaatuwaay - 1
+
+    // Benn kees dafa gudd lu tollu ci 2.5 yoon ci kaw yaatuwaayam;
+    // yoonu kaw wi ñu koy natt ci loolu ngir mbooloo mi génn mu ne kurr.
+    yaatuwaayBerab = 2.7
+    guddayBerab    = rëdd * yaatuwaayBerab * 2.5 / samp
+    digg           = rëdd / 2 + 1
+
+    @ y:1..digg {
+        seetu = rëdd + 1 - y
+        @ x:1..samp {
+            cr = (x - 1) * yaatuwaayBerab / samp - 2.1
+            ci = (y - 1) * guddayBerab    / rëdd - guddayBerab / 2.0
+            n  = daw(cr, ci)
+            màndarga = "@"
+            melo     = 231
+            ? n <> 0 {
+                pas = n / 4 + 1
+                ? pas > 9 { pas = 9 }
+                màndarga = màndargaYi[pas]
+                melo     = meloYi[pas]
+            }
+            >>~ (y, x, 0, melo) > màndarga
+            ? seetu > digg { >>~ (seetu, x, 0, melo) > màndarga }
+        }
+    }
+
+    >>~ (gudday, 2, 0, 244) > "bësal benn caabi ngir génn"
+    <<| _caabi
+}

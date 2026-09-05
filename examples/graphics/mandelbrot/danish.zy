@@ -1,0 +1,78 @@
+// @skip-parity: lærredet kræver en rigtig terminal under CLI'en og et
+// @skip-parity: lærredslag i browseren, så en kørsel gennem et rør har intet
+// @skip-parity: at sammenligne med.
+// ============================================================
+// mandelbrot — Mandelbrotmængden, tegnet på terminalens lærred.
+// Navne på dansk. Tegn forbliver altid tegn.
+//
+// Ét tal afgør det hele: `n`, hvor mange trin banen overlever,
+// før den stikker af. Det vælger tegnet og det vælger tonen, så
+// billedet kan ikke modsige sig selv. `n = 0` betyder, at den
+// aldrig stak af — det er mængden, tegnet fuldt.
+//
+//   >>|  åbner lærredet   >>!  rydder det   >>?  måler det
+//   >>~  skriver én celle, i en række, en kolonne, i én tone
+//   <<|  venter på en tast
+//
+// To besparelser, og begge ses i billedet i stedet for i en
+// måling: kvadraterne bæres med fra trin til trin i stedet for at
+// blive regnet om, og mængden spejles om den reelle akse, så kun
+// den øverste halvdel nogensinde stikker af. Tilsammen betaler de
+// den opløsning, detaljen kræver.
+// ============================================================
+
+// Uden for mængden: fra svag til fuld, fra mørkegrøn til lysende.
+rampe = " .:-=+*#%"
+toner = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Trin overlevet, før banen stikker af; 0 hvis den aldrig gør det.
+// zr2 og zi2 bæres med, så hvert trin koster fire produkter, ikke seks.
+flugt(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (høj, bred) = >>?
+    rækker   = høj  - 2
+    kolonner = bred - 1
+
+    // En celle er ~2,5 gange højere end bred; det lodrette spænd
+    // skaleres med det, så mængden kommer ud rund.
+    bredde = 2.7
+    højde  = rækker * bredde * 2.5 / kolonner
+    midte  = rækker / 2 + 1
+
+    @ y:1..midte {
+        spejl = rækker + 1 - y
+        @ x:1..kolonner {
+            cr = (x - 1) * bredde / kolonner - 2.1
+            ci = (y - 1) * højde  / rækker   - højde / 2.0
+            n  = flugt(cr, ci)
+            tegn = "@"
+            tone = 231
+            ? n <> 0 {
+                trin = n / 4 + 1
+                ? trin > 9 { trin = 9 }
+                tegn = rampe[trin]
+                tone = toner[trin]
+            }
+            >>~ (y, x, 0, tone) > tegn
+            ? spejl > midte { >>~ (spejl, x, 0, tone) > tegn }
+        }
+    }
+
+    >>~ (høj, 2, 0, 244) > "vilkårlig tast for at gå ud"
+    <<| _tast
+}

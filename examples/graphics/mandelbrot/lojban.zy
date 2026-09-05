@@ -1,0 +1,76 @@
+// @skip-parity: le pixra cukta cu nitcu lo je'a samtcise'u ne'i lo minde linji
+// @skip-parity: .e lo pixra rafsi ne'i lo kibro ja'e lo nu na da simsa
+// ============================================================
+// mandelbrot — le mandelbrot girzu poi se pixra fi lo samtcise'u pixra cukta
+// lo cmene cu bangu la lojban. lo sinxa ca ro roi sinxa
+//
+// pa namcu cu jdice ro da: `n`, lo ni le kruca cu vlipa ba'o lo nu cliva
+// ri cuxna le lerfu gi'e cuxna le skari ja'e lo nu le pixra na ka'e
+// natfe le ri. `n = 0` smuni lo nu ri na cliva — ta le girzu ki'a poi
+// se pixra fi lo mulno
+//
+//   >>|  cu sturaji le pixra cukta   >>!  cu lumci   >>?  cu merli
+//   >>~  cu ciska pa kubli, pa pinta, pa sraji, pa skari
+//   <<|  cu denpa pa batke
+//
+// re sisti gi'e ro re cu se viska le pixra na le merli: lo kurfa cu se
+// bevri fi pa stapa fe le se lidne ja'e lo nu na se cnino cnano gi'e
+// le girzu cu se minra le je'a linji ja'e lo nu le gapru xadba po'o cu
+// cliva. re cu jdima le tolcumla poi le cmalu cu cpedu
+// ============================================================
+
+// bartu le girzu: lo cmalu cu se galfi lo mulno, lo xekri crino cu se galfi lo carmi
+salpo   = " .:-=+*#%"
+roskari = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// lo stapa poi le kruca cu vlipa ba'o lo nu cliva; 0 va'o lo nu na cliva
+// zr2 .e zi2 cu se bevri ja'e lo nu ro stapa cu jdima vo pilji na xa
+cliva(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (clani, ganra) = >>?
+    pinta = clani - 2
+    sraji = ganra - 1
+
+    // pa kubli cu clani li 2.5 pi'i lo ganra be ri; le sraji jbini cu se
+    // mapti ta ja'e lo nu le girzu cu cukla
+    ganra_pixra = 2.7
+    clani_pixra = pinta * ganra_pixra * 2.5 / sraji
+    midju       = pinta / 2 + 1
+
+    @ y:1..midju {
+        minra = pinta + 1 - y
+        @ x:1..sraji {
+            cr = (x - 1) * ganra_pixra / sraji - 2.1
+            ci = (y - 1) * clani_pixra / pinta - clani_pixra / 2.0
+            n  = cliva(cr, ci)
+            sinxa = "@"
+            skari = 231
+            ? n <> 0 {
+                stapa = n / 4 + 1
+                ? stapa > 9 { stapa = 9 }
+                sinxa = salpo[stapa]
+                skari = roskari[stapa]
+            }
+            >>~ (y, x, 0, skari) > sinxa
+            ? minra > midju { >>~ (minra, x, 0, skari) > sinxa }
+        }
+    }
+
+    >>~ (clani, 2, 0, 244) > "ko danre ro batke lo nu cliva"
+    <<| _batke
+}

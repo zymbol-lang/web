@@ -1,0 +1,77 @@
+// @skip-parity: di kanvas nyuu wan riil terminal andaneet di CLI an wan kanvas
+// @skip-parity: liya iina di browsa, so wan piep-run no av notn fi kompiier.
+// ============================================================
+// mandelbrot — di Mandelbrot set, jraa pan di terminal kanvas.
+// Identifaya dem iina Patwa. Simbal dem aalwiez simbal.
+//
+// Wan numba disaid evriting: `n`, ou moch step di aabit servaiv
+// bifuo it ron we. It pik di glif an it pik di kola, so di
+// pikcha kyaan kanchradik itself. `n = 0` miin it neva ron we —
+// dat a di set, jraa said-tu-said.
+//
+//   >>|  uop di kanvas   >>!  kliin it   >>?  mezha it
+//   >>~  rait wan sel, a wan rou, a wan kalam, iina wan kola
+//   <<|  wiet fi wan kii
+//
+// Tuu ekanomi, an aal tuu shuo iina di pikcha, no iina no
+// benchmaak: di skwier dem kyari uova fram wan raun tu di neks
+// instidda get kalkyulate agen, an di set get mirara roun di riil
+// aksis, so a onggl di tap aaf ron we. Tugeda dem bai di
+// rezalushan wa di diteel nyuu.
+// ============================================================
+
+// Outsaid di set: fram fient tu suolid, daak griin tu brait.
+ramp  = " .:-=+*#%"
+kolaz = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Step wa servaiv bifuo di aabit ron we; 0 if it neva du it.
+// zr2 an zi2 get kyari uova, so evri step kaas fuor prodok, no siks.
+ronwe(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (hai, waid) = >>?
+    rou   = hai  - 2
+    kalam = waid - 1
+
+    // Wan sel a ~2.5 taim taala dan it waid; di op-an-doun span
+    // get skiel bai dat so di set kom out roun.
+    widt = 2.7
+    hait = rou * widt * 2.5 / kalam
+    migl = rou / 2 + 1
+
+    @ y:1..migl {
+        mirara = rou + 1 - y
+        @ x:1..kalam {
+            cr = (x - 1) * widt / kalam - 2.1
+            ci = (y - 1) * hait / rou   - hait / 2.0
+            n  = ronwe(cr, ci)
+            maak = "@"
+            kola = 231
+            ? n <> 0 {
+                step = n / 4 + 1
+                ? step > 9 { step = 9 }
+                maak = ramp[step]
+                kola = kolaz[step]
+            }
+            >>~ (y, x, 0, kola) > maak
+            ? mirara > migl { >>~ (mirara, x, 0, kola) > maak }
+        }
+    }
+
+    >>~ (hai, 2, 0, 244) > "prezz eni kii fi lef"
+    <<| _kii
+}

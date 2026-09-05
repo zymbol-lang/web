@@ -1,0 +1,83 @@
+// @skip-parity: in tlahcuilolpan monequi cē nelli terminal ipan CLI īhuān cē
+// @skip-parity: tlahcuilolpan tlapechtli ipan tlatemoāni, ic cē tlaōlōliztli
+// @skip-parity: ahtle quipiya in quinehnehuiliz.
+// ============================================================
+// mandelbrot — in Mandelbrot centiliztli, tlahcuiloltīcah ipan tlahcuilolpan.
+// Tōcāitl ica nāhuatl. Machiyōtl mochipa machiyōtl.
+//
+// Cē tlapōhualli quimonequi mochi: `n`, quēzqui tlamantli in
+// mālacatl quipanoa in ahmo quīza. Yehhuātl quipehpena in
+// machiyōtl īhuān quipehpena in tlapalli, ic in tlahcuilolli
+// ahmo huel monamiqui. `n = 0` quihtōznequi ahmo quēmman ōquīz —
+// yehhuātl in centiliztli, tlahcuiloltīcah tetzāhuac.
+//
+//   >>|  quitlapoa in tlahcuilolpan   >>!  quipohpoa   >>?  quitamachīhua
+//   >>~  quihcuiloa cē caltōntli, ipan cē pantli, cē temimilli, ica cē tlapalli
+//   <<|  quichia cē tzotzonalli
+//
+// Ōme tlaixnextiliztli, īhuān ōmextin motta ipan in tlahcuilolli
+// ahmo ipan cē tlatamachīhualiztli: in nāhuiyacoyōtl motqui
+// cequin tlamantli ipan occequin, ahmo occeppa mopōhua, īhuān in
+// centiliztli motezcahuia ipan in melāhuac ohtli, ic zan in
+// tlacpac tlahco quīza. Cencan quixtlāhua in tlanēxtiliztli in
+// tlamachiyōtl quimonequi.
+//
+// Yancuic tlahtōlli: `tlamantli` (paso), `tzotzonalli` (tecla) īhuān
+// `cuauhticayotl` nicān omochīuh. Nāhuatlahtoāni ma quitta.
+// ============================================================
+
+// In centiliztli quiyahuac: canāhuac ixquich tetzāhuac, yayauhqui xoxoctic ixquich pepetlaca.
+machiyotin = " .:-=+*#%"
+tlapaltin  = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Quēzqui tlamantli quipanoa in ahmo quīza in mālacatl; 0 intlā ahmo quēmman quīza.
+// zr2 īhuān zi2 motqui, ic cē tlamantli quipatiyoa nāhui tlamiyecquīliztli, ahmo chicuacen.
+choloa(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (cuauhtic, patlahuac) = >>?
+    pantli    = cuauhtic  - 2
+    temimilli = patlahuac - 1
+
+    // Cē caltōntli ~2.5 ixquich achi cuauhtic in patlahuac; in
+    // tlacpac tlamachiotl ic motamachīhua inic in centiliztli ololtic quīza.
+    patlahualiztli = 2.7
+    cuauhticayotl  = pantli * patlahualiztli * 2.5 / temimilli
+    tlanepantla    = pantli / 2 + 1
+
+    @ y:1..tlanepantla {
+        tezcatl = pantli + 1 - y
+        @ x:1..temimilli {
+            cr = (x - 1) * patlahualiztli / temimilli - 2.1
+            ci = (y - 1) * cuauhticayotl  / pantli    - cuauhticayotl / 2.0
+            n  = choloa(cr, ci)
+            machiyotl = "@"
+            tlapalli  = 231
+            ? n <> 0 {
+                tlamantli = n / 4 + 1
+                ? tlamantli > 9 { tlamantli = 9 }
+                machiyotl = machiyotin[tlamantli]
+                tlapalli  = tlapaltin[tlamantli]
+            }
+            >>~ (y, x, 0, tlapalli) > machiyotl
+            ? tezcatl > tlanepantla { >>~ (tezcatl, x, 0, tlapalli) > machiyotl }
+        }
+    }
+
+    >>~ (cuauhtic, 2, 0, 244) > "xictzotzona cē tzotzonalli inic tiquīzaz"
+    <<| _tzotzonalli
+}

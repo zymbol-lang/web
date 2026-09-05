@@ -1,0 +1,84 @@
+// @skip-parity: tü ashajuushikat choujaasü wanee terminal shiimüin CLI amüin, otta
+// @skip-parity: wanee ashajuushi süpüla eraajaa, mayaainje tü kaʼwayuusekat nnojotsü
+// @skip-parity: kasa süpüla süpülajaa.
+// ============================================================
+// mandelbrot — tü Mandelbrot outkajaakat, ashajuushi ashajaanaka.
+// Sünülia wayuunaiki. Ayaawase waneepia ayaawase.
+//
+// Wanee ayatia sülüʼüjüin süpüshua: `n`, jeraʼttaa wanaa tü
+// awanajawaakat katsü nnojotpa awataain. Nia aneeka tü ayaawaakat
+// otta nia aneeka tü ayaakuaakat, mayaainje tü ashajuushikat
+// nnojotsü süpülajüin shiima. `n = 0` müsü nnojoluin awataain
+// jamaya — tia shia tü outkajaakat, ashajuushi eesü.
+//
+//   >>|  suʼttia tü ashajuushikat   >>!  osha   >>?  ayaawata
+//   >>~  ashajaa wanee mma, wanee ashajuushi, wanee atchinjaa, wanee ayaakua
+//   <<|  aʼatapajaa wanee aʼatiraa
+//
+// Piamasü ayatawaa, otta piamashii eʼnnaka sünain tü
+// ashajuushikat, nnojotsü sünain wanee ayaawatia: tü piamakat
+// süpüshua asütünüsü suulia wanee sünainmüin waneemüin, nnojotsü
+// aküjünüin jaʼralüin, otta tü outkajaakat eraajünüsü sünain tü
+// shiimainkat wopu, mayaainje iipünaa paʼata neʼe awatasü. Wanaa
+// nayaawatüin tü eʼnnakat.
+//
+// Pütchi jeketü: `ayaawase`, `ayaakuaa`, `ashajuushi`, `atchinjaa`,
+// `paʼata`, `eraajia`, `wanaa`, `aʼatiraa`, `miyoʼukuaa` otta
+// `iipünaakuaa` aainjuushii yaa. Wayuunaiki aküjüi eraajüinjachi.
+// ============================================================
+
+// Suulia tü outkajaakat: mütsiiwaʼaya sünainmüin eesü, mütsia siʼiraa sünainmüin warattasü.
+ayaawase = " .:-=+*#%"
+ayaakuaa = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Jeraʼttaa wanaa katsü nnojotpa awataain tü awanajawaakat; 0 nnojotpa awataain jamaya.
+// zr2 otta zi2 asütünüsü, mayaainje wanee wanaa pienchisü ayatawaa, nnojotsü akaratshi.
+awataa(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (iipünaa, miyoʼu) = >>?
+    ashajuushii = iipünaa - 2
+    atchinjaa   = miyoʼu  - 1
+
+    // Wanee mma ~2.5 kaʼi iipünaasü suulia miyoʼuin; tü iipünaa
+    // ayaawatiakat ayaawatünüsü tia süpüla tü outkajaakat mataʼalain.
+    miyoʼukuaa  = 2.7
+    iipünaakuaa = ashajuushii * miyoʼukuaa * 2.5 / atchinjaa
+    paʼata      = ashajuushii / 2 + 1
+
+    @ y:1..paʼata {
+        eraajia = ashajuushii + 1 - y
+        @ x:1..atchinjaa {
+            cr = (x - 1) * miyoʼukuaa  / atchinjaa   - 2.1
+            ci = (y - 1) * iipünaakuaa / ashajuushii - iipünaakuaa / 2.0
+            n  = awataa(cr, ci)
+            ayaawaa = "@"
+            ayaakua = 231
+            ? n <> 0 {
+                wanaa = n / 4 + 1
+                ? wanaa > 9 { wanaa = 9 }
+                ayaawaa = ayaawase[wanaa]
+                ayaakua = ayaakuaa[wanaa]
+            }
+            >>~ (y, x, 0, ayaakua) > ayaawaa
+            ? eraajia > paʼata { >>~ (eraajia, x, 0, ayaakua) > ayaawaa }
+        }
+    }
+
+    >>~ (iipünaa, 2, 0, 244) > "paʼatira wanee aʼatiraa süpüla pojuittüin"
+    <<| _aʼatiraa
+}

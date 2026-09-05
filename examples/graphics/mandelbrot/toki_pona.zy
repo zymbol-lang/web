@@ -1,0 +1,78 @@
+// @skip-parity: sitelen suli li wile e ilo pi toki lawa lon poka pi ilo CLI. ona li
+// @skip-parity: wile e sitelen lipu lon ilo kepeken. ni la pali lon linja pi ilo ante
+// @skip-parity: li jo ala e ijo pi lukin sama.
+// ============================================================
+// mandelbrot — kulupu Mandelbrot. ona li sitelen lon supa pi ilo toki.
+// nimi li lon toki pona. sitelen li sitelen lon tenpo ale.
+//
+// nanpa wan li pana e ijo ale: `n` li nanpa pi noka mute. ona li toki e
+// ni: sike li awen lon tenpo seme, la ona li weka. nanpa ni li pana e
+// sitelen, li pana e kule. ni la sitelen suli li ken ala utala e ona
+// sama. `n = 0` li toki e ni: ona li weka ala. ni li kulupu ona. ona li
+// sitelen pi pini ala.
+//
+//   >>|  li open e supa   >>!  li weka e sitelen   >>?  li lukin e suli
+//   >>~  li sitelen e leko wan, lon linja wan, lon palisa wan, kepeken kule wan
+//   <<|  li awen tawa nena wan
+//
+// awen tu li lon, li lukin lon sitelen suli, li lukin ala lon nanpa: leko
+// nanpa li tawa tan noka wan tawa noka ante, li ala pali sin. kulupu li
+// sitelen sama lon poka tu pi linja lawa. ni la sinpin sewi taso li weka.
+// awen tu ni li pana e sitelen pona pi lukin suli.
+// ============================================================
+
+// lon selo pi kulupu: tan lili tawa suli, tan laso pimeja tawa laso suno.
+sitelenMute = " .:-=+*#%"
+kuleMute    = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// noka pi awen sike lon tenpo pi weka ala; 0 la ona li weka ala.
+// zr2 en zi2 li tawa poka. ni la noka wan li wile e pali tu tu, li wile ala e pali luka wan.
+weka(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (suli, poka) = >>?
+    linja  = suli - 2
+    palisa = poka - 1
+
+    // leko wan li suli mute lon sewi. ona li suli tu en tu lili lon poka.
+    // ni la mi ante e suli sewi. kulupu li kama sike pona.
+    pokaLipu = 2.7
+    suliLipu = linja * pokaLipu * 2.5 / palisa
+    insa     = linja / 2 + 1
+
+    @ y:1..insa {
+        supaLukin = linja + 1 - y
+        @ x:1..palisa {
+            cr = (x - 1) * pokaLipu / palisa - 2.1
+            ci = (y - 1) * suliLipu / linja  - suliLipu / 2.0
+            n  = weka(cr, ci)
+            sitelen = "@"
+            kule    = 231
+            ? n <> 0 {
+                noka = n / 4 + 1
+                ? noka > 9 { noka = 9 }
+                sitelen = sitelenMute[noka]
+                kule    = kuleMute[noka]
+            }
+            >>~ (y, x, 0, kule) > sitelen
+            ? supaLukin > insa { >>~ (supaLukin, x, 0, kule) > sitelen }
+        }
+    }
+
+    >>~ (suli, 2, 0, 244) > "o luka e nena ale la sina weka"
+    <<| _nena
+}

@@ -1,0 +1,78 @@
+// @skip-parity: el lienzo necesita un terminal real bajo la CLI y una capa de
+// @skip-parity: lienzo en el navegador, así que una ejecución por tubería no
+// @skip-parity: tiene con qué compararse.
+// ============================================================
+// mandelbrot — el conjunto de Mandelbrot, dibujado en el lienzo.
+// Identificadores en español. Operadores siempre simbólicos.
+//
+// Un solo número lo decide todo: `n`, cuántos pasos sobrevive la
+// órbita antes de escaparse. Elige el glifo y elige el color, así
+// que el dibujo no puede contradecirse a sí mismo. `n = 0` significa
+// que nunca se escapó — eso es el conjunto, dibujado macizo.
+//
+//   >>|  abre el lienzo   >>!  lo limpia   >>?  lo mide
+//   >>~  escribe una celda, en una fila, una columna, de un color
+//   <<|  espera una tecla
+//
+// Dos economías, y las dos se ven en el dibujo y no en un banco de
+// pruebas: los cuadrados se arrastran entre iteraciones en vez de
+// recalcularse, y el conjunto se refleja sobre el eje real, así que
+// solo se escapa la mitad de arriba. Juntas pagan la resolución que
+// el detalle necesita.
+// ============================================================
+
+// Fuera del conjunto: de tenue a macizo, de verde oscuro a brillante.
+trazo  = " .:-=+*#%"
+tintes = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Pasos sobrevividos antes de que la órbita se escape; 0 si nunca lo hace.
+// zr2 y zi2 se arrastran, así que cada paso cuesta cuatro productos, no seis.
+fuga(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (alto, ancho) = >>?
+    filas    = alto  - 2
+    columnas = ancho - 1
+
+    // Una celda es ~2.5 veces más alta que ancha; el tramo vertical
+    // se escala por eso para que el conjunto salga redondo.
+    anchura = 2.7
+    altura  = filas * anchura * 2.5 / columnas
+    medio   = filas / 2 + 1
+
+    @ y:1..medio {
+        espejo = filas + 1 - y
+        @ x:1..columnas {
+            cr = (x - 1) * anchura / columnas - 2.1
+            ci = (y - 1) * altura  / filas    - altura / 2.0
+            n  = fuga(cr, ci)
+            marca = "@"
+            tinte = 231
+            ? n <> 0 {
+                paso = n / 4 + 1
+                ? paso > 9 { paso = 9 }
+                marca = trazo[paso]
+                tinte = tintes[paso]
+            }
+            >>~ (y, x, 0, tinte) > marca
+            ? espejo > medio { >>~ (espejo, x, 0, tinte) > marca }
+        }
+    }
+
+    >>~ (alto, 2, 0, 244) > "pulsa una tecla para salir"
+    <<| _tecla
+}

@@ -1,0 +1,77 @@
+// @skip-parity: platno potrebuje pravi terminal pod CLI in plast platna
+// @skip-parity: v brskalniku, zato zagon skozi cev nima s čim primerjati.
+// ============================================================
+// mandelbrot — Mandelbrotova množica, narisana na platno terminala.
+// Imena v slovenščini. Znaki vedno ostanejo znaki.
+//
+// Vse odloči eno samo število: `n`, koliko korakov tirnica zdrži,
+// preden pobegne. Ono izbere znak in ono izbere barvo, tako da si
+// risba ne more nasprotovati. `n = 0` pomeni, da ni pobegnila
+// nikoli — to je množica, narisana polno.
+//
+//   >>|  odpre platno   >>!  ga izbriše   >>?  ga izmeri
+//   >>~  zapiše eno celico, v vrstico, v stolpec, v eni barvi
+//   <<|  čaka na tipko
+//
+// Dva prihranka, in oba se vidita na risbi, ne v meritvi: kvadrati
+// se prenašajo iz koraka v korak namesto da bi se preračunavali,
+// množica pa se zrcali okrog realne osi, tako da pobegne le
+// zgornja polovica. Skupaj plačata ločljivost, ki jo podrobnost
+// zahteva.
+// ============================================================
+
+// Zunaj množice: od bledega do polnega, od temno zelenega do svetlega.
+rampa = " .:-=+*#%"
+barve = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Koraki, zdržani preden tirnica pobegne; 0, če ne pobegne nikoli.
+// zr2 in zi2 se prenašata, zato vsak korak stane štiri zmnožke, ne šest.
+pobeg(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (visok, širok) = >>?
+    vrstice = visok - 2
+    stolpci = širok - 1
+
+    // Celica je približno 2,5-krat višja kot širša; navpični razpon
+    // se s tem umeri, da množica izpade okrogla.
+    širina  = 2.7
+    višina  = vrstice * širina * 2.5 / stolpci
+    sredina = vrstice / 2 + 1
+
+    @ y:1..sredina {
+        zrcalo = vrstice + 1 - y
+        @ x:1..stolpci {
+            cr = (x - 1) * širina / stolpci - 2.1
+            ci = (y - 1) * višina / vrstice - višina / 2.0
+            n  = pobeg(cr, ci)
+            znak  = "@"
+            barva = 231
+            ? n <> 0 {
+                korak = n / 4 + 1
+                ? korak > 9 { korak = 9 }
+                znak  = rampa[korak]
+                barva = barve[korak]
+            }
+            >>~ (y, x, 0, barva) > znak
+            ? zrcalo > sredina { >>~ (zrcalo, x, 0, barva) > znak }
+        }
+    }
+
+    >>~ (visok, 2, 0, 244) > "katera koli tipka za izhod"
+    <<| _tipka
+}

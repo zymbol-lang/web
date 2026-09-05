@@ -1,0 +1,79 @@
+// @skip-parity: lesela le tlhoka terminal ya nnete ka fa tlase ga CLI le legato
+// @skip-parity: la lesela mo sefepiding, ka jalo go taboga ka phaephe ga go na
+// @skip-parity: sepe se se ka bapisiwang.
+// ============================================================
+// mandelbrot — setlhopha sa ga Mandelbrot, se se thadilweng mo leseleng la terminal.
+// Maina ka Setswana. Matshwao ka metlha ke matshwao.
+//
+// Sengwe le sengwe se tlhomamisiwa ke nomoro e le nngwe: `n`, gore
+// tikologo e itshokela dikgato di le kae pele e tshaba. Ke yona e e
+// tlhophang tlhaka, e bile ke yona e e tlhophang mmala; ka jalo setshwantsho
+// ga se kake sa iganetsa. `n = 0` go raya gore ga e a ka ya tshaba —
+// seo ke setlhopha ka bosona, se thadilwe se tletse.
+//
+//   >>|  se bula lesela   >>!  se a phimola   >>?  se a lekanya
+//   >>~  se kwala lebokose le le lengwe, mo moleng o le mongwe, kholomo e le nngwe, ka mmala o le mongwe
+//   <<|  se letela senotlolo se le sengwe
+//
+// Dipoloko tse pedi, mme ka bobedi di bonala mo setshwantshong e seng mo
+// tekanyong: dikwerekwere di tsholwa go tswa kgatong e nngwe go ya go e
+// e latelang mo boemong jwa go balwa gape, mme setlhopha se bontshiwa mo
+// seiponeng go dikologa mola wa nnete, ka jalo halofo ya kwa godimo fela
+// ke yona e e tshabang. Ka bobedi mmogo di duela phepafalo e dintlha di e batlang.
+// ============================================================
+
+// Kwa ntle ga setlhopha: go tswa go se se bokoa go ya go se se tletseng, go tswa mo botalanng jo bo lefifi go ya go jo bo phatsimang.
+matshwao = " .:-=+*#%"
+mebala   = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Dikgato tse di itshoketsweng pele tikologo e tshaba; 0 fa e sa ka ya tshaba.
+// zr2 le zi2 di a tsholwa, ka jalo kgato nngwe le nngwe e ja dikuno tse nne, e seng thataro.
+tshaba(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (boleele, bophara) = >>?
+    mela      = boleele - 2
+    dikholomo = bophara - 1
+
+    // Lebokose le leele makgetlo a ka nna 2.5 go feta bophara jwa lona;
+    // boleele jo bo emeng bo lekanyediwa ka seo gore setlhopha se tswe se le sedikadikwe.
+    bopharaLefelo = 2.7
+    boleeleLefelo = mela * bopharaLefelo * 2.5 / dikholomo
+    bogare        = mela / 2 + 1
+
+    @ y:1..bogare {
+        seipone = mela + 1 - y
+        @ x:1..dikholomo {
+            cr = (x - 1) * bopharaLefelo / dikholomo - 2.1
+            ci = (y - 1) * boleeleLefelo / mela      - boleeleLefelo / 2.0
+            n  = tshaba(cr, ci)
+            letshwao = "@"
+            mmala    = 231
+            ? n <> 0 {
+                kgato = n / 4 + 1
+                ? kgato > 9 { kgato = 9 }
+                letshwao = matshwao[kgato]
+                mmala    = mebala[kgato]
+            }
+            >>~ (y, x, 0, mmala) > letshwao
+            ? seipone > bogare { >>~ (seipone, x, 0, mmala) > letshwao }
+        }
+    }
+
+    >>~ (boleele, 2, 0, 244) > "tobetsa senotlolo sengwe le sengwe go tswa"
+    <<| _senotlolo
+}

@@ -1,0 +1,79 @@
+// @skip-parity: oihalak benetako terminal bat behar du CLI azpian eta oihal
+// @skip-parity: geruza bat nabigatzailean, beraz hodi baten bidezko exekuzioak
+// @skip-parity: ez du zerekin alderatu.
+// ============================================================
+// mandelbrot — Mandelbroten multzoa, terminalaren oihalean marraztua.
+// Izenak euskaraz. Markak beti marka dira.
+//
+// Zenbaki bakar batek erabakitzen du dena: `n`, zenbat urrats
+// irauten duen orbitak ihes egin aurretik. Hark aukeratzen du
+// glifoa eta hark aukeratzen du kolorea, beraz marrazkiak ezin dio
+// bere buruari kontra egin. `n = 0` esan nahi du ez zela inoiz ihes
+// egin — hori da multzoa, beteta marraztua.
+//
+//   >>|  oihala irekitzen du   >>!  garbitzen du   >>?  neurtzen du
+//   >>~  gelaxka bat idazten du, errenkada batean, zutabe batean, kolore batean
+//   <<|  tekla baten zain dago
+//
+// Bi aurrezki, eta biak marrazkian ikusten dira, ez neurketa
+// batean: karratuak urratsez urrats eramaten dira berriz kalkulatu
+// beharrean, eta multzoa ardatz errealaren inguruan ispilatzen da,
+// beraz goiko erdiak bakarrik egiten du ihes. Elkarrekin xehetasunak
+// eskatzen duen bereizmena ordaintzen dute.
+// ============================================================
+
+// Multzotik kanpo: ahuletik betera, berde ilunetik distiratsura.
+arrapala = " .:-=+*#%"
+koloreak = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Orbitak ihes egin aurretik iraundako urratsak; 0 inoiz ihes egiten ez badu.
+// zr2 eta zi2 eramaten dira, beraz urrats bakoitzak lau biderkadura balio du, ez sei.
+ihes(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (altua, zabala) = >>?
+    errenkadak = altua  - 2
+    zutabeak   = zabala - 1
+
+    // Gelaxka bat zabalera baino ~2,5 aldiz altuagoa da; hedadura
+    // bertikala horrekin eskalatzen da multzoa biribil atera dadin.
+    zabalera = 2.7
+    altuera  = errenkadak * zabalera * 2.5 / zutabeak
+    erdia    = errenkadak / 2 + 1
+
+    @ y:1..erdia {
+        ispilua = errenkadak + 1 - y
+        @ x:1..zutabeak {
+            cr = (x - 1) * zabalera / zutabeak   - 2.1
+            ci = (y - 1) * altuera  / errenkadak - altuera / 2.0
+            n  = ihes(cr, ci)
+            marka  = "@"
+            kolorea = 231
+            ? n <> 0 {
+                urratsa = n / 4 + 1
+                ? urratsa > 9 { urratsa = 9 }
+                marka   = arrapala[urratsa]
+                kolorea = koloreak[urratsa]
+            }
+            >>~ (y, x, 0, kolorea) > marka
+            ? ispilua > erdia { >>~ (ispilua, x, 0, kolorea) > marka }
+        }
+    }
+
+    >>~ (altua, 2, 0, 244) > "edozein tekla irteteko"
+    <<| _tekla
+}

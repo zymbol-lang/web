@@ -1,0 +1,79 @@
+// @skip-parity: kanavaca kërkon një terminal të vërtetë nën CLI dhe një shtresë
+// @skip-parity: kanavace në shfletues, prandaj një ekzekutim përmes një tubi
+// @skip-parity: nuk ka me çfarë të krahasohet.
+// ============================================================
+// mandelbrot — bashkësia e Mandelbrotit, vizatuar në kanavacën e terminalit.
+// Emrat në shqip. Shenjat mbeten gjithmonë shenja.
+//
+// Një numër i vetëm vendos gjithçka: `n`, sa hapa i duron orbita
+// para se të arratiset. Ai zgjedh shenjën dhe ai zgjedh ngjyrën,
+// kështu që vizatimi nuk mund të kundërshtojë vetveten. `n = 0`
+// do të thotë se nuk u arratis kurrë — ajo është bashkësia,
+// vizatuar plot.
+//
+//   >>|  hap kanavacën   >>!  e fshin   >>?  e mat
+//   >>~  shkruan një qelizë, në një rresht, në një shtyllë, në një ngjyrë
+//   <<|  pret një tast
+//
+// Dy kursime, dhe të dyja duken në vizatim e jo në një matje:
+// katrorët barten nga hapi në hap në vend që të rillogariten, dhe
+// bashkësia pasqyrohet rreth boshtit real, kështu që arratiset
+// vetëm gjysma e sipërme. Së bashku paguajnë atë qartësi që kërkon
+// hollësia.
+// ============================================================
+
+// Jashtë bashkësisë: nga i zbehtë te i plotë, nga jeshile e errët te e ndritshme.
+rampa   = " .:-=+*#%"
+ngjyrat = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Hapat e duruar para se orbita të arratiset; 0 nëse nuk arratiset kurrë.
+// zr2 dhe zi2 barten, kështu që çdo hap kushton katër prodhime, jo gjashtë.
+arratisje(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (larte, gjere) = >>?
+    rreshtat = larte - 2
+    shtyllat = gjere - 1
+
+    // Një qelizë është ~2,5 herë më e lartë se e gjerë; hapësira
+    // vertikale shkallëzohet me atë që bashkësia të dalë e rrumbullakët.
+    gjeresia = 2.7
+    lartesia = rreshtat * gjeresia * 2.5 / shtyllat
+    mesi     = rreshtat / 2 + 1
+
+    @ y:1..mesi {
+        pasqyra = rreshtat + 1 - y
+        @ x:1..shtyllat {
+            cr = (x - 1) * gjeresia / shtyllat - 2.1
+            ci = (y - 1) * lartesia / rreshtat - lartesia / 2.0
+            n  = arratisje(cr, ci)
+            shenja = "@"
+            ngjyra = 231
+            ? n <> 0 {
+                hapi = n / 4 + 1
+                ? hapi > 9 { hapi = 9 }
+                shenja = rampa[hapi]
+                ngjyra = ngjyrat[hapi]
+            }
+            >>~ (y, x, 0, ngjyra) > shenja
+            ? pasqyra > mesi { >>~ (pasqyra, x, 0, ngjyra) > shenja }
+        }
+    }
+
+    >>~ (larte, 2, 0, 244) > "cilido tast për të dalë"
+    <<| _tasti
+}
