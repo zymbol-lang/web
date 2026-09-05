@@ -34,7 +34,7 @@ if (!file) {
   process.exit(2);
 }
 
-const { runZymbol, checkSource, moduleAritiesFor, moduleOutSlotsFor, moduleNameErrors, Lexer, Parser } =
+const { runZymbol, checkSource, moduleAritiesFor, moduleOutSlotsFor, moduleDeclErrors, Lexer, Parser } =
   await import('../src/zymbol/zymbol.js');
 
 // ─── stdin feed ───────────────────────────────────────────────────────────────
@@ -110,11 +110,12 @@ try {
   const ast = new Parser(new Lexer(source).tokenize()).parse();
   moduleArities = await moduleAritiesFor(ast, resolver, abs);
   moduleOutSlots = await moduleOutSlotsFor(ast, resolver, abs);
-  // E001 over the imports. Same plumbing as the two tables above and for the
-  // same reason: `checkSource` has no resolver, and this is a STATIC refusal —
-  // the two Rust engines make it before running, so it has to be formatted with
-  // the other static diagnostics rather than by the engine's own printer.
-  moduleNameDiags = await moduleNameErrors(ast, resolver, abs);
+  // E001 and E014 over the imports. Same plumbing as the two tables above and
+  // for the same reason: `checkSource` has no resolver, and these are STATIC
+  // refusals — the two Rust engines make them before running, so they have to
+  // be formatted with the other static diagnostics rather than by the engine's
+  // own printer.
+  moduleNameDiags = await moduleDeclErrors(ast, resolver, abs);
 } catch {
   // A source that does not parse is reported by checkSource below.
 }

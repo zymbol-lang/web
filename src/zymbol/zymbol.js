@@ -660,14 +660,14 @@ export class Lexer {
           // @:label — labeled loop, break, or continue
           this.consume();
           let label = '';
-          while (/[\p{L}\p{M}\p{N}\p{So}\p{Co}_]/u.test(this.ch())) label += this.consume();
+          while (/[\p{L}\p{M}\p{N}\p{So}\p{Co}_\u200c\u200d]/u.test(this.ch())) label += this.consume();
           if (this.ch() === '!') { this.consume(); tok('AT_BREAK', label); }
           else if (this.ch() === '>') { this.consume(); tok('AT_CONT',  label); }
           else tok('AT_LABEL', label);
         } else if (/[\p{L}\p{M}\p{So}\p{Co}_]/u.test(this.ch())) {
           // @label (legacy: label without colon)
           let label = '';
-          while (/[\p{L}\p{M}\p{N}\p{So}\p{Co}_]/u.test(this.ch())) label += this.consume();
+          while (/[\p{L}\p{M}\p{N}\p{So}\p{Co}_\u200c\u200d]/u.test(this.ch())) label += this.consume();
           tok('AT_LABEL', label);
         } else {
           tok('AT', '@');
@@ -865,6 +865,14 @@ export class Lexer {
   }
 
   readString(toks) {
+    // A token belongs to the line it STARTS on, which for a string is the line
+    // of its opening quote — `this.line` has moved on by the time the closing
+    // one is read (HLZ-013). Every line-sensitive rule in the parser reads this
+    // field: `<~ "dos⏎líneas"` saw a value that began on a later line than the
+    // `<~`, decided the return had no value at all, and handed back Unit with
+    // nothing to say. Both Rust engines pass the start position into
+    // `lex_string` for exactly this reason.
+    const startLine = this.line;
     this.consume(); // opening "
     const parts = [];
     let cur = '';
@@ -889,11 +897,21 @@ export class Lexer {
         // — which is how Rust and Python spell a literal brace, and is NOT how
         // Zymbol spells it — ran here and was a syntax error in both Rust
         // engines. Zymbol's literal brace is `\{` and `\}`, symmetrically.
+        // `{}` is its own defect and says so. Falling into the message below
+        // said "invalid character" about a string that has no character in it,
+        // where both Rust engines name the empty interpolation and tell the
+        // reader what is missing (DM-10).
+        if (inner === '') {
+          throw new ZyStaticError(
+            `empty string interpolation {}`,
+            startLine,
+            `provide a variable name: {varname}`);
+        }
         if (!/^[^\s{}\[\]().,;:"'`!?@#$|&~\\+\-*/%^<>=]+$/.test(inner)) {
           throw new ZyError(
             `invalid character in string interpolation\n` +
             `= help: interpolation must be {identifier} — use \\{ for a literal brace`,
-            this.line);
+            startLine);
         }
         parts.push({ t: 'expr', v: inner });
       } else if (this.ch() === '}') {
@@ -915,7 +933,7 @@ export class Lexer {
     }
     if (this.pos < this.src.length) this.consume(); // closing "
     if (cur) parts.push({ t: 'lit', v: cur });
-    toks.push({ type: 'STR', value: parts, line: this.line });
+    toks.push({ type: 'STR', value: parts, line: startLine, endLine: this.line });
   }
 
   readChar(toks) {
@@ -962,6 +980,14 @@ export class Lexer {
       // and without it `_ { <~ mI' }` was read as an unterminated char literal
       // that swallowed the rest of the file.
       if (c === "'" && s.length > 0) { s += this.consume(); continue; }
+      // The zero-width joiners continue one for the same reason and by the same
+      // clause: they are not operators, so `is_ident_continue` admits them, and
+      // they are spelling rather than decoration. Sinhala writes the rakaransaya
+      // conjunct with U+200D, so `පළල්ප්‍රමාණය` is a single name; breaking there
+      // cut it into `පළල්ප්` + `රමාණය` and the browser reported four undefined
+      // variables in a file both Rust engines run and paint identically. U+200C
+      // rides along — Devanagari and Persian spell with it the same way.
+      if ((c === '\u200d' || c === '\u200c') && s.length > 0) { s += this.consume(); continue; }
       break;
     }
     const hot = this.ch() === '°';
@@ -1027,15 +1053,38 @@ export class Parser {
   // are checked elsewhere.
   checkImportsFirst(body) {
     if (body[0]?.type === 'ModuleBlock') return;
+
+    // An export block belongs INSIDE a module block.
+    //
+    // `#> { … }` at file top level, with no enclosing `# name { … }`, is not
+    // Zymbol: both Rust parsers refuse it where they parse the module block, and
+    // so does `zymbol check`. This engine parsed `ExportDecl` as an ordinary
+    // statement and ran the file, so a module written in the playground worked
+    // there and failed to parse in the CLI — the permissive direction, which is
+    // the worse one. Of the 83 module files across the six LDV applications, 83
+    // write the block inside the module and none at file level.
+    //
+    // It is the other half of L48: while omitting `#>` said "does not export
+    // function", a reader would add the block where they could — here — and this
+    // engine let them.
+    for (const stmt of body) {
+      if (stmt?.type === 'ExportDecl')
+        throw new ZyStaticError(
+          'an export block belongs inside a module block',
+          stmt.line ?? null,
+          'move this `#>` inside `# name { … }` — ' +
+          'a module declares what it exports, and only a module can');
+    }
+
     let seenStatement = false;
     for (const stmt of body) {
       if (stmt.type === 'Noop') continue;
       if (stmt.type === 'Import') {
         if (seenStatement)
-          throw new ZyError(
-            'imports must come before any statement — ' +
-            'move this `<#` above the first statement in the file',
-            stmt.line);
+          throw new ZyStaticError(
+            'imports must come before any statement',
+            stmt.line,
+            'move this `<#` above the first statement in the file');
         continue;
       }
       seenStatement = true;
@@ -1122,6 +1171,9 @@ export class Parser {
     if (t.type === 'SET_NUMERAL_MODE') { this.adv(); return { type: 'SetNumeralMode', base: t.value }; }
     if (t.type === 'IMPORT') return this.parseImport();
     if (t.type === 'EXPORT_DECL') {
+      // The line of the `#>` itself: a refusal has to point at the block, which
+      // is what the reader edits, and it is the line both Rust engines report.
+      const exportLine = t.line ?? null;
       this.adv();
       const names = []; // { kind:'own'|'reexport', internal, alias?, member?, exported }
       if (this.check('LBRACE')) {
@@ -1145,7 +1197,7 @@ export class Parser {
         }
         this.match('RBRACE');
       }
-      return { type: 'ExportDecl', names };
+      return { type: 'ExportDecl', names, line: exportLine };
     }
     if (t.type === 'OUTPUT')   return this.parseOutput();
     if (t.type === 'INPUT')    return this.parseInput();
@@ -1191,14 +1243,23 @@ export class Parser {
     //
     // In both, the parser finishes the expression early and what remains starts
     // the next statement — which is exactly the shape a stray operator makes.
-    if (t.type === 'LBRACKET' || t.type === 'LPAREN' || t.type === 'HASH_LPAREN') {
-      const shown = t.type === 'LBRACKET' ? '[' : (t.type === 'LPAREN' ? '(' : '#(');
-      const hint = t.type === 'LBRACKET'
-        ? "use '[a, b] = expr' for array destructuring"
-        : (t.type === 'LPAREN'
-            ? "use '(a, b) = expr' for tuple destructuring"
-            : "use '#(name: n) = expr' to destructure a dictionary");
-      throw new ZyStaticError(`unexpected '${shown}' at statement level — ${hint}`, t.line);
+    //
+    // Message and guidance in their own fields, the way Rust's `Diagnostic`
+    // carries them, and one whole message per case rather than a template: the
+    // diagnostic inventory compares the engines by the strings their SOURCES
+    // build, so `unexpected '${shown}'` is a message no other engine has, even
+    // when every rendering of it matches.
+    if (t.type === 'LBRACKET') {
+      throw new ZyStaticError("unexpected '[' at statement level", t.line,
+        "use '[a, b] = expr' for array destructuring");
+    }
+    if (t.type === 'LPAREN') {
+      throw new ZyStaticError("unexpected '(' at statement level", t.line,
+        "use '(a, b) = expr' for tuple destructuring");
+    }
+    if (t.type === 'HASH_LPAREN') {
+      throw new ZyStaticError("unexpected '#(' at statement level", t.line,
+        "use '#(name: n) = expr' to destructure a dictionary");
     }
     if (t.type === 'IDENT')    return this.parseIdentStmt();
     if (t.type === 'SEMI')     { this.adv(); return null; }
@@ -1248,7 +1309,13 @@ export class Parser {
     const items = [];
     while (!this.check('PILCROW') && !this.check('NEWLINE_ESC') &&
            !this.check('RBRACE') && !this.check('EOF')) {
-      if (this.peek().line > opLine) break;
+      // An argument list ends with the line the `>>` began on — except where
+      // the item before it ENDED on a later line, which only a multiline string
+      // can do. There the next token still juxtaposes onto that item, which is
+      // how both Rust engines read it (`parse_juxtaposed` compares against
+      // `acc.span().end.line`): `>> "[" f("a⏎b") "]" ¶` prints the closing
+      // bracket, and printed nothing at all here before HLZ-013.
+      if (this.peek().line > opLine && this.peek().line !== this.prevEndLine()) break;
       if (items.length > 0 && Parser.OUTPUT_END.has(this.peek().type)) break;
       items.push(this.parseAdditive());
       // Refusing has to be explicit. Narrowing the call alone was worse than the
@@ -1351,7 +1418,11 @@ export class Parser {
     if (this.check('RBRACE') || this.check('EOF') || this.peek().line > opLine)
       return { type: 'Return', value: null };
     const items = [];
-    while (!this.check('RBRACE') && !this.check('EOF') && this.peek().line === opLine) {
+    // Same rule as `>>`: the returned value is what stands on the `<~`'s line,
+    // and a multiline string carries the line on with it — `<~ "a⏎b" "c"`
+    // returns "a\nbc" in both Rust engines.
+    while (!this.check('RBRACE') && !this.check('EOF') &&
+           (this.peek().line === opLine || this.peek().line === this.prevEndLine())) {
       items.push(this.parseExpr());
     }
     const value = items.length === 1 ? items[0] : { type: 'JuxtaConcat', items };
@@ -1772,7 +1843,7 @@ export class Parser {
     }
 
     // subscript assign: name[idx] = val
-    if (this.check('LBRACKET') && this.peek().line === this.toks[this.pos - 1].line) {
+    if (this.check('LBRACKET') && this.peek().line === this.prevEndLine()) {
       this.adv();
       const idx = this.parseExpr();
       this.eat('RBRACKET');
@@ -2003,11 +2074,10 @@ export class Parser {
   // Unlike parseRHS, a following '(' never continues the chain here: it is
   // ambiguous with a lambda, a tuple and a grouped expression (HLZ-007).
   parseExprJuxt() {
-    const firstLine = this.peek().line;
     const first = this.parseExpr();
     const juxtStart = new Set(['STR', 'IDENT', 'NUM', 'FLOAT', 'CHAR', 'BOOL']);
     const items = [first];
-    while (this.peek().line === firstLine && juxtStart.has(this.peek().type)) {
+    while (this.peek().line === this.prevEndLine() && juxtStart.has(this.peek().type)) {
       items.push(this.parseExpr());
     }
     if (items.length === 1) return first;
@@ -2015,7 +2085,6 @@ export class Parser {
   }
 
   parseRHS() {
-    const firstLine = this.peek().line;
     const first = this.parseExpr();
     if (this.check('COMMA')) {
       const items = [first];
@@ -2025,7 +2094,7 @@ export class Parser {
     // Implicit string concatenation: collect multiple expressions on the same line
     const implicitExprStart = new Set(['STR','IDENT','NUM','FLOAT','CHAR','BOOL','LPAREN','LBRACKET','MINUS','NOT','CAST_FLOAT','CAST_INT_ROUND','CAST_INT_TRUNC','DATA_OP','MATCH','ELSE']);
     const items = [first];
-    while (this.peek().line === firstLine && implicitExprStart.has(this.peek().type)) {
+    while (this.peek().line === this.prevEndLine() && implicitExprStart.has(this.peek().type)) {
       items.push(this.parseExpr());
     }
     if (items.length === 1) return first;
@@ -2140,13 +2209,24 @@ export class Parser {
     return noCollectionChain ? this.parsePostfixNoChain() : this.parsePostfix();
   }
 
+  // The line the last consumed token ENDED on. Only a string can end on a line
+  // other than the one it started on, and `line` is where it starts (HLZ-013),
+  // so the rules that ask "does this continue the expression before it?" ask
+  // here. Both Rust engines spell the same question
+  // `peek().span.start.line != expr.span().end.line`.
+  prevEndLine() {
+    const t = this.toks[this.pos - 1];
+    if (!t) return this.peek().line;
+    return t.endLine ?? t.line;
+  }
+
   parsePostfix() {
     return this.parsePostfixRest(this.parsePrimary());
   }
 
   parsePostfixNoChain() {
     const primary = this.parsePrimary();
-    const sameLine = () => this.peek().line === (this.toks[this.pos - 1]?.line ?? this.peek().line);
+    const sameLine = () => this.peek().line === this.prevEndLine();
     let left = primary;
     while (true) {
       if (this.check('LBRACKET') && sameLine()) {
@@ -2179,7 +2259,7 @@ export class Parser {
       'DSPLIT','DCONCATBUILD','DREPEAT']);
 
     while (true) {
-      const sameLine = () => this.peek().line === (this.toks[this.pos - 1]?.line ?? this.peek().line);
+      const sameLine = () => this.peek().line === this.prevEndLine();
 
       if (this.check('LBRACKET') && sameLine()) {
         this.adv();
@@ -4266,7 +4346,7 @@ class Checker {
               // classes mirror readIdent's lexer rule (HLZ-KL-001 parity) — a
               // narrower rule here would under-mark PUA-script (e.g. pIqaD)
               // identifiers as used, producing a false W_UNUSED.
-              if (/^[\p{L}\p{M}\p{So}\p{Co}_][\p{L}\p{M}\p{N}\p{So}\p{Co}_]*$/u.test(name)) this.lookup(name, expr.line);
+              if (/^[\p{L}\p{M}\p{So}\p{Co}_][\p{L}\p{M}\p{N}\p{So}\p{Co}_\u200c\u200d]*$/u.test(name)) this.lookup(name, expr.line);
             }
           }
         }
@@ -7879,27 +7959,50 @@ export function moduleOutSlotsFrom(src) {
 /// while the program RUNS: raising there gives `error/runtime` where the two
 /// Rust engines give `error/static`, and a refusal that lands in a different
 /// category is a divergence even when the words match.
-export function moduleNameErrorFor(modParts, modSrc) {
+export function moduleDeclErrorsFor(modParts, modSrc) {
+  const out = [];
   let ast;
-  try { ast = new Parser(new Lexer(modSrc).tokenize()).parse(); } catch { return null; }
+  try { ast = new Parser(new Lexer(modSrc).tokenize()).parse(); } catch { return out; }
   const block = (ast.body?.length === 1 && ast.body[0].type === 'ModuleBlock') ? ast.body[0] : null;
-  if (!block?.name) return null;
+  if (!block?.name) return out;
 
   const parts = modParts.filter(Boolean);
   const stem  = (parts[parts.length - 1] ?? '').replace(/\.zy$/, '');
   const dir   = parts.length > 1 ? parts[parts.length - 2] : '';
   const expected = block.name.startsWith('.') ? `${dir}_${stem}` : stem;
   const declared = block.name.replace(/^\./, '');
-  if (declared === expected) return null;
+  if (declared !== expected) {
+    out.push({
+      severity: 'error',
+      code: 'E001',
+      message: `E001: module '${block.name}' should be named '${expected}' for its path`,
+      line: block.line ?? null,
+      params: { declared: block.name, expected },
+      help: "a bare name matches the file stem (`# util` in util.zy); a leading dot names the whole path, joined with `_` (`# .lib_util` in lib/util.zy). See DOT_CONVENTION.md",
+    });
+  }
 
-  return {
-    severity: 'error',
-    code: 'E001',
-    message: `E001: module '${block.name}' should be named '${expected}' for its path`,
-    line: block.line ?? null,
-    params: { declared: block.name, expected },
-    help: "a bare name matches the file stem (`# util` in util.zy); a leading dot names the whole path, joined with `_` (`# .lib_util` in lib/util.zy). See DOT_CONVENTION.md",
-  };
+  // L48 — a module says what it exports.
+  //
+  // The grammar marks `#>` optional and never said what leaving it out meant,
+  // so the three engines answered three ways: the tree-walker exported
+  // everything, this one and the VM exported nothing, and `check` said nothing
+  // at all. A module whose every call dies at runtime is not "private", it is
+  // unusable, and it passed static analysis in all three. The rule now is that
+  // the omission is refused — an empty `#> { }` is how a module says it exports
+  // nothing, and says it out loud.
+  if (!block.body?.some(st => st?.type === 'ExportDecl')) {
+    out.push({
+      severity: 'error',
+      code: 'E014',
+      message: `E014: module '${block.name}' does not declare what it exports`,
+      line: block.line ?? null,
+      params: { module: block.name },
+      help: "add '#> { … }' inside the module block, naming what it exports — an empty '#> { }' says it exports nothing",
+    });
+  }
+
+  return out;
 }
 
 /// Where a module FILE sits, worked out from the importer and the import path.
@@ -7920,7 +8023,7 @@ function modulePathParts(filePath, importPath) {
   return out;
 }
 
-export async function moduleNameErrors(ast, resolver, filePath = null) {
+export async function moduleDeclErrors(ast, resolver, filePath = null) {
   const out = [];
   if (!resolver || !ast?.body) return out;
   for (const imp of ast.body) {
@@ -7933,8 +8036,7 @@ export async function moduleNameErrors(ast, resolver, filePath = null) {
       if (result == null || result.notFound) continue;
       const modSrc = typeof result === 'string' ? result : result.src;
       if (typeof modSrc === 'string') {
-        const d = moduleNameErrorFor(parts, modSrc);
-        if (d) out.push(d);
+        out.push(...moduleDeclErrorsFor(parts, modSrc));
       }
     } catch {
       // Reported at import time.
@@ -8193,14 +8295,15 @@ export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, f
   checker.moduleArities = await moduleAritiesFor(ast, moduleResolver, filePath);
   checker.moduleOutSlots = await moduleOutSlotsFor(ast, moduleResolver, filePath);
   const diags   = checker.check();
-  // The module-name convention, before anything runs (GLB-005).
+  // What an imported module DECLARES, before anything runs: its name against
+  // its path (E001, GLB-005) and the export block it must have (E014, L48).
   //
   // A caller that formats the static diagnostics itself — `tests/run_one.mjs`,
   // which needs them in the CLI's layout — asks for them separately through
-  // `moduleNameErrors` and passes `skipModuleNames` so they are not reported
+  // `moduleDeclErrors` and passes `skipModuleNames` so they are not reported
   // twice.
   if (!opts.skipModuleNames)
-    diags.push(...await moduleNameErrors(ast, moduleResolver, filePath));
+    diags.push(...await moduleDeclErrors(ast, moduleResolver, filePath));
 
   // Where diagnostics go. The playground passes no `onError` and keeps today's
   // behaviour — everything in the one output panel, which is all a browser has.
