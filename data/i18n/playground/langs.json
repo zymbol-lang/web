@@ -1041,17 +1041,17 @@
         "if": "kung",
         "elif": "kung hindi kung",
         "else": "kung hindi",
-        "loop": "loop",
-        "out": "output",
+        "loop": "ulit",
+        "out": "labas",
         "ret": "ibalik",
         "fn": "lambda",
         "match": "itugma",
         "const": "konstante",
         "len": "haba",
         "app": "idagdag",
-        "bool": "boolean",
-        "var": "variable",
-        "input": "input",
+        "bool": "totoo / hindi",
+        "var": "baryabol",
+        "input": "pasok",
         "rem": "alisin",
         "try": "subukan / hulihin"
       }
@@ -1623,7 +1623,7 @@
         "app": "calaqui",
         "bool": "neltiliztli",
         "var": "tlahtoa",
-        "input": "calaqui",
+        "input": "calaquiliztli",
         "rem": "quixtia",
         "try": "mochīhua / māhuiztli"
       }
@@ -1645,7 +1645,7 @@
         "app": "k'uchul",
         "bool": "bix",
         "var": "k'iin",
-        "input": "k'uchul",
+        "input": "ookol",
         "rem": "ch'a'",
         "try": "kaxantik / táan"
       }
@@ -1683,7 +1683,7 @@
         "out": "nályééh",
         "ret": "naaní",
         "fn": "lambda",
-        "match": "nályééh",
+        "match": "ałhąąh náhidzid",
         "const": "doo nahalin",
         "len": "naaki",
         "app": "nééhosdzoh",
@@ -1711,8 +1711,8 @@
         "app": "ᎤᏓᏡᎬ",
         "bool": "ᎢᎦ / ᎤᏓᏡᎬ",
         "var": "ᏧᏂᎸᏫᏍᏓᏁᏗ",
-        "input": "ᎠᏂᎩᏍᎩ",
-        "rem": "ᎤᏓᏡᎬ",
+        "input": "ᎠᏴᎯᏍᏗ",
+        "rem": "ᎠᏲᏍᏗ",
         "try": "ᎠᏓᏁᎮᏍᏗ / ᎨᎵᏉᏗ"
       }
     },
@@ -1777,7 +1777,7 @@
         "app": "ekirajaa",
         "bool": "aa / nnojo",
         "var": "pütchi",
-        "input": "ayaawataa",
+        "input": "antaa",
         "rem": "achuntaa",
         "try": "kasain / nnojo"
       }
@@ -1793,7 +1793,7 @@
         "out": "ewandó",
         "ret": "nawera",
         "fn": "lambda",
-        "match": "kira",
+        "match": "unubia",
         "const": "jãni pari",
         "len": "nembirã",
         "app": "dauda",
@@ -1817,11 +1817,11 @@
         "fn": "lambda",
         "match": "nowë",
         "const": "kami pë",
-        "len": "mahi",
-        "app": "nowë",
+        "len": "hɨrama",
+        "app": "thë hɨpɨ",
         "bool": "huu / kami",
         "var": "yamaki",
-        "input": "poremai",
+        "input": "waro",
         "rem": "apë",
         "try": "thëpë / kami"
       }
@@ -2161,21 +2161,21 @@
       "dir": "ltr",
       "ops": {
         "if": "if",
-        "elif": "else if",
-        "else": "else",
-        "loop": "loop",
-        "out": "output",
-        "ret": "return",
+        "elif": "els if",
+        "else": "els",
+        "loop": "luup",
+        "out": "outpit",
+        "ret": "ritorn",
         "fn": "lambda",
-        "match": "match",
-        "const": "constant",
-        "len": "length",
-        "app": "append",
-        "bool": "boolean",
-        "var": "variable",
-        "input": "input",
-        "rem": "remove",
-        "try": "try / catch"
+        "match": "machi",
+        "const": "konstant",
+        "len": "lent",
+        "app": "put aan",
+        "bool": "buulyan",
+        "var": "varyabl",
+        "input": "inpit",
+        "rem": "tek we",
+        "try": "chrai / kech"
       }
     },
     "javanese": {
@@ -2347,8 +2347,8 @@
         "const": "chuqab'il",
         "len": "nabe",
         "app": "k'utunisäx",
-        "bool": "boolean",
-        "var": "variable",
+        "bool": "qas tzij / man qas ta",
+        "var": "jalajoj",
         "input": "ochib'äl",
         "rem": "el chi",
         "try": "xunimaj / k'utunisäx"

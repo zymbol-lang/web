@@ -18,13 +18,63 @@ body.atlas code, body.atlas pre, body.atlas b, body.atlas .made, body.atlas .ato
   font-feature-settings: "liga" 0, "clig" 0, "calt" 0, "dlig" 0;
 }
 
-body.atlas section { padding: 7rem 0; }
+body.atlas section { padding: clamp(3.25rem, 9vw, 7rem) 0; }
+/* The header is sticky and 56px tall, so an anchor lands its own heading underneath it.
+   Scoped to this page: it is the only one whose whole navigation is in-page anchors. */
+body.atlas section[id] { scroll-margin-top: 68px; }
 body.atlas section.band {
   background: var(--bg2);
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
-body.atlas .container { max-width: 1000px; padding: 0 2rem; margin: 0 auto; }
+body.atlas .container { max-width: 1000px; padding: 0 clamp(1.1rem, 5vw, 2rem); margin: 0 auto; }
+
+/* ─── blocks wider than the screen ────────────────────────────────────────────
+   The sample program, the fractal and the four terminal captures are the page's
+   evidence: none of them may be reflowed, and none of them is prose. Each declares
+   `--cols`, the width it was written or captured at, so the stylesheet can size it to
+   the reader's screen rather than guess from a breakpoint. JetBrains Mono advances
+   exactly 0.6em per cell, so N columns fill a pane at width / N / 0.6.
+
+   Where the floor bites, the block scrolls instead of shrinking further — and which
+   floor each one gets is a judgement about what the block is. The fractal is a
+   picture, so it is allowed to go tiny and stay whole; the program and the captures
+   are text, so they keep a size a person can read and give up the full width. */
+/* The prose flips with the reader; the code does not. `atlas.js` sets
+   `document.documentElement.dir = 'rtl'` for Arabic, Hebrew, Persian, Urdu and Pashto,
+   and everything inside inherits it — including `pre.zy`, which is a Zymbol program, and
+   `pre.term` / `pre.fractal`, which are box-drawing captures of a running terminal. The
+   bidi algorithm reorders the neutral characters at the edges of every one of those
+   lines, so a right-to-left reader was shown a frame with its corners swapped and source
+   whose comment markers had jumped to the far end. Measured at ?lang=arabic before this
+   rule existed: all three panes computed `direction: rtl`. `isolate` keeps each pane out
+   of the surrounding paragraph's bidi run as well. */
+pre.zy, pre.term, pre.fractal, .shot, code, kbd {
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: isolate;
+}
+
+.scroller {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+/* Only the ones that actually overflow are marked, by markScrollers() in atlas.js, and
+   they lose the mark as the reader moves them — a permanent fade would read as a
+   deliberately cropped image rather than as "there is more this way". */
+.scroller.is-wide.at-start:not(.at-end) {
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 3rem), transparent);
+          mask-image: linear-gradient(90deg, #000 calc(100% - 3rem), transparent);
+}
+.scroller.is-wide.at-end:not(.at-start) {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 3rem);
+          mask-image: linear-gradient(90deg, transparent, #000 3rem);
+}
+.scroller.is-wide:not(.at-start):not(.at-end) {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 3rem, #000 calc(100% - 3rem), transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 3rem, #000 calc(100% - 3rem), transparent);
+}
 
 /* ─── section heads: three lines, never more ──────────────────────────────── */
 
@@ -258,8 +308,11 @@ body.atlas .container { max-width: 1000px; padding: 0 2rem; margin: 0 auto; }
   flex-wrap: wrap;
   padding: 1.1rem 1.4rem;
   border: 1px solid var(--line);
-  border-left: 2px solid var(--green);
-  border-radius: 0 var(--radius) var(--radius) 0;
+  border-inline-start: 2px solid var(--green);
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  border-start-end-radius: var(--radius);
+  border-end-end-radius: var(--radius);
   background: var(--bg3);
   min-height: 3.6rem;
 }
@@ -271,7 +324,8 @@ body.atlas .container { max-width: 1000px; padding: 0 2rem; margin: 0 auto; }
 }
 .mk-out span { font-size: 0.92rem; color: var(--mid); }
 .mk-out.pop { animation: pop 0.32s ease; }
-@keyframes pop { from { opacity: 0.25; transform: translateX(-5px); } to { opacity: 1; transform: none; } }
+@keyframes pop { from { opacity: 0.25; transform: translateX(var(--slide-in, -5px)); } to { opacity: 1; transform: none; } }
+[dir="rtl"] { --slide-in: 5px; }
 
 /* ─── 02 · joining ────────────────────────────────────────────────────────── */
 
@@ -311,7 +365,7 @@ body.atlas .container { max-width: 1000px; padding: 0 2rem; margin: 0 auto; }
   border-radius: var(--radius);
   padding: 0.3rem 0.85rem;
 }
-.jn .gloss { margin-left: auto; color: var(--mid); font-size: 0.95rem; text-align: right; }
+.jn .gloss { margin-inline-start: auto; color: var(--mid); font-size: 0.95rem; text-align: end; }
 
 /* ─── 03 · read one ───────────────────────────────────────────────────────── */
 
@@ -340,6 +394,12 @@ body.atlas .container { max-width: 1000px; padding: 0 2rem; margin: 0 auto; }
    half of it empty. The fractal is the one that wants the whole width. */
 .code-pane { max-width: 60rem; margin: 0 auto; width: 100%; }
 
+/* `.pane` takes its width from a 1fr grid track, so it can be a query container at any
+   size. `.shot` cannot: on desktop its track is `auto`, and containing the inline size
+   would leave the track nothing to size from. It becomes a container further down, at the
+   width where that track is a definite 1fr — which is also the only width that needs it. */
+.pane { container-type: inline-size; }
+
 pre.zy {
   font-family: var(--mono);
   font-size: 0.78rem;
@@ -350,11 +410,9 @@ pre.zy {
   color: var(--id);
   white-space: pre;
 }
-pre.zy .o { color: var(--green); }        /* the marks */
-pre.zy .s { color: var(--str); }
-pre.zy .n { color: var(--num); }
-pre.zy .c { color: var(--cmt); }
-pre.zy .p { color: var(--punct); }
+/* The colours are site.css's `t-*` classes, written by src/site/highlight-zy.js — the
+   same pass that colours the front page's showcase. The five hand-written classes that
+   used to be here went with the hand-written markup they coloured. */
 
 .out-pane { background: #080808; border-color: #1d1d1d; display: flex; flex-direction: column; }
 .out-pane .pane-tag { border-bottom-color: #1d1d1d; }
@@ -380,6 +438,13 @@ pre.fractal .c154 { color: #afff00; }
 pre.fractal .c191 { color: #d7ff5f; }
 pre.fractal .c231 { color: #ffffff; }
 pre.fractal .c244 { color: #808080; }
+
+/* Both panes fitted to the reader's screen. The subtraction is each block's own padding,
+   which `cqi` (the container's content box) does not already exclude. */
+@supports (container-type: inline-size) {
+  pre.zy      { font-size: max(0.6rem,  min(0.78rem, calc((100cqi - var(--pad, 2.6rem)) / var(--cols) / 0.6))); }
+  pre.fractal { font-size: max(0.24rem, min(0.78rem, calc((100cqi - 1.8rem) / var(--cols) / 0.6))); }
+}
 
 /* ─── 04 · captured terminal frames ───────────────────────────────────────── */
 
@@ -470,12 +535,18 @@ pre.term i.w2 { width: 2ch; }
 .build figcaption b { font-size: 1.05rem; color: var(--white); font-weight: 600; }
 .build figcaption span { font-size: 0.86rem; color: var(--mid); flex: 1 1 12ch; }
 .build figcaption a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   font-family: var(--mono);
   font-size: 0.78rem;
   color: var(--green);
   border: 1px solid var(--green-mid);
   border-radius: 100px;
-  padding: 0.18rem 0.7rem;
+  /* 2.1rem tall rather than the 1.4rem the text alone gives it: this is the only control
+     in the section and on a phone it is hit with a thumb. */
+  min-height: 2.4rem;
+  padding: 0.2rem 0.95rem;
   white-space: nowrap;
   transition: background 0.18s;
 }
@@ -507,20 +578,73 @@ pre.term i.w2 { width: 2ch; }
 
 /* ─── responsive ──────────────────────────────────────────────────────────── */
 
+@media (max-width: 1000px) {
+  /* 7 → 5 → 4 → 3. The old jump straight from 7 to 4 left the marks stretched across a
+     tablet with the labels floating in the middle of each tile. */
+  .grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
 @media (max-width: 900px) {
   .grid  { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .split { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 860px) {
-  #hero3 { grid-template-columns: minmax(0, 1fr); text-align: center; }
-  .hero-bird .mascot-img { width: clamp(120px, 34vw, 190px); }
+  /* The headline goes above the mascot. A phone that opens on a bird and a download
+     button has to be scrolled before it is told what it is being offered. */
+  #hero3 {
+    grid-template-columns: minmax(0, 1fr);
+    text-align: center;
+    min-height: 0;
+    gap: 1.75rem;
+    padding: 1.5rem clamp(1.1rem, 5vw, 4rem) 3rem !important;
+  }
+  .hero-core { order: 1; }
+  .hero-bird { order: 2; }
+  .hero-bird .mascot-img { width: clamp(120px, 30vw, 190px); }
+  .glyph-stage { height: clamp(104px, 24vw, 160px); margin-bottom: 1rem; }
 }
 @media (max-width: 700px) {
-  body.atlas section { padding: 4.5rem 0; }
-  .head { margin-bottom: 2.5rem; }
-  .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .head { margin-bottom: 2.2rem; }
+  .foot { margin-top: 2.4rem; }
+  .foot.small { margin-top: 1.3rem; }
+
+  .grid { gap: 0.45rem; }
+  .mk { padding: 1rem 0.35rem 0.8rem; gap: 0.5rem; min-height: 5.4rem; }
+
+  /* The shared line is the whole point of the grid on a phone — a tooltip is not
+     reachable by touch — so it gets room to wrap instead of a nowrap line that scrolls. */
+  .mk-out { gap: 0.45rem 1rem; padding: 0.95rem 1.1rem; }
+  .mk-out code { white-space: normal; overflow-wrap: anywhere; }
+
+  .jn { flex-wrap: wrap; padding: 0.9rem 1rem; gap: 0.45rem; }
+  .jn .atom { font-size: 1.15rem; min-width: 2.2rem; padding: 0.28rem 0.45rem; }
+  .jn .made { font-size: 1.35rem; padding: 0.26rem 0.7rem; }
+  .jn .eq   { margin: 0 0.4rem; }
+  .jn .gloss { margin-inline-start: 0; width: 100%; text-align: start; padding-top: 0.4rem; }
+
+  pre.zy { padding: 1rem 0.9rem; --pad: 1.8rem; }
   .shots { grid-template-columns: minmax(0, 1fr); }
-  .jn { flex-wrap: wrap; }
-  .jn .gloss { margin-left: 0; width: 100%; text-align: left; padding-top: 0.4rem; }
-  .mk-out code { white-space: normal; }
+  /* Title and ▶ play share the first line, the description takes the second. Side by
+     side on a phone the description is squeezed into a 12-character column beside a pill
+     that will not wrap, and reads as a caption for the pill rather than for the game. */
+  .build figcaption { padding-top: 0.8rem; row-gap: 0.5rem; }
+  .build figcaption b { flex: 0 0 auto; }
+  .build figcaption a { min-height: 2.6rem; padding: 0.2rem 1.1rem; margin-inline-start: auto; }
+  .build figcaption span { flex: 1 1 100%; order: 3; }
+  #read .hero-cta { justify-content: center; }
+
+  /* Now that `.shots` is one definite column, a capture can be sized to it. */
+  @supports (container-type: inline-size) {
+    .shot { container-type: inline-size; }
+    pre.term { font-size: max(0.5rem, min(0.72rem, calc(100cqi / var(--cols) / 0.6))); }
+  }
+}
+@media (max-width: 480px) {
+  /* One button per line: two 44px targets side by side on a 360px screen leave each of
+     them narrower than the words inside it. */
+  .hero-cta { flex-direction: column; align-items: stretch; }
+  .hero-cta > a { justify-content: center; width: 100%; }
+  .permalink code { overflow-wrap: anywhere; }
+}
+@media (max-width: 420px) {
+  .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

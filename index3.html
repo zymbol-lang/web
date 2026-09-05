@@ -29,10 +29,89 @@
   <link rel="apple-touch-icon" href="assets/img/favicon.png">
 
   <script>
+  // Theme before the first paint, so the page does not flash the other one.
   (function(){
     var s = localStorage.getItem('zy-theme');
     var light = s ? s === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
     if (light) document.documentElement.classList.add('light');
+  })();
+  // Set <html lang> before first paint so Chrome detects the correct language.
+  //
+  // This is the one copy of the language tables that cannot import src/i18n/detect.js:
+  // a module script is deferred by definition, and this has to run before the first
+  // paint. It is kept honest by tests/test_i18n_playground.mjs, which fails if these
+  // two objects stop matching the module — that check exists because the copies had
+  // already drifted apart once (see the header of src/i18n/detect.js).
+  (function(){
+    var BCP47 = {
+      english:'en', spanish:'es', castellano:'es-ES', portuguese:'pt-BR',
+      portugues_eu:'pt-PT', french:'fr', german:'de', italian:'it',
+      dutch:'nl', polish:'pl', russian:'ru', ukrainian:'uk', bulgarian:'bg',
+      croatian:'hr', czech:'cs', slovak:'sk', romanian:'ro', hungarian:'hu',
+      finnish:'fi', estonian:'et', latvian:'lv', lithuanian:'lt',
+      norwegian:'no', danish:'da', swedish:'sv', icelandic:'is', greek:'el',
+      serbian:'sr', arabic:'ar', hebrew:'he', persian:'fa', urdu:'ur',
+      hindi:'hi', bengali:'bn', marathi:'mr', punjabi:'pa', gujarati:'gu',
+      tamil:'ta', telugu:'te', kannada:'kn', mandarin:'zh', japanese:'ja',
+      korean:'ko', indonesian:'id', vietnamese:'vi', thai:'th', tagalog:'tl',
+      swahili:'sw', hausa:'ha', yoruba:'yo', amharic:'am', turkish:'tr',
+      basque:'eu', welsh:'cy', irish:'ga', catalan:'ca', galician:'gl',
+      afrikaans:'af', zulu:'zu', xhosa:'xh', esperanto:'eo',
+      haitian_creole:'ht', quechua:'qu', guarani:'gn', nahuatl:'nah',
+      jamaican_patois:'jam', aymara:'ay', mapuche:'arn', maya:'yua', kiche:'quc',
+      navajo:'nv', cherokee:'chr', cree_syl:'cr-Cans',
+      wayuu:'guc', embera:'emp', yanomami:'wca',
+      albanian:'sq', belarusian:'be', macedonian:'mk', slovenian:'sl',
+      igbo:'ig', somali:'so', lingala:'ln', shona:'sn', nyanja:'ny',
+      oromo:'om', tigrinya:'ti', luganda:'lg', setswana:'tn', wolof:'wo', bambara:'bm', fula:'ff', nigerian_pidgin:'pcm',
+      pashto:'ps', azerbaijani:'az', kurdish:'ku', georgian:'ka', armenian:'hy',
+      ido:'io', interlingua:'ia', lojban:'jbo', toki_pona:'tok', emoji:'und-Zsye',
+      burmese:'my', javanese:'jv', khmer:'km', lao:'lo', malay:'ms',
+  malayalam:'ml', nepali:'ne', sinhala:'si', sundanese:'su',
+      klingon:'tlh_hol', klingon_piqad:'tlh_piqad',
+    };
+    var LOCALE_MAP = {
+      en:'english', es:'spanish', 'es-es':'castellano', fr:'french', de:'german',
+      'pt-pt':'portugues_eu', 'pt-br':'portuguese', pt:'portuguese',
+      it:'italian', nl:'dutch', pl:'polish', ru:'russian', uk:'ukrainian',
+      bg:'bulgarian', hr:'croatian', cs:'czech', sk:'slovak', ro:'romanian',
+      hu:'hungarian', fi:'finnish', et:'estonian', lv:'latvian', lt:'lithuanian',
+      no:'norwegian', nb:'norwegian', nn:'norwegian', da:'danish', sv:'swedish', is:'icelandic',
+      el:'greek', sr:'serbian', ar:'arabic', he:'hebrew', fa:'persian', ur:'urdu',
+      hi:'hindi', bn:'bengali', mr:'marathi', pa:'punjabi', gu:'gujarati',
+      ta:'tamil', te:'telugu', kn:'kannada', zh:'mandarin', 'zh-cn':'mandarin',
+      'zh-tw':'mandarin', cn:'mandarin', ja:'japanese', ko:'korean',
+      id:'indonesian', vi:'vietnamese', th:'thai', tl:'tagalog', sw:'swahili',
+      ha:'hausa', yo:'yoruba', am:'amharic', tr:'turkish', eu:'basque',
+      cy:'welsh', ga:'irish', ca:'catalan', gl:'galician', af:'afrikaans',
+      zu:'zulu', xh:'xhosa', eo:'esperanto', ht:'haitian_creole',
+      qu:'quechua', gn:'guarani', nah:'nahuatl',
+      'jam':'jamaican_patois', 'ay':'aymara', 'arn':'mapuche', 'yua':'maya', 'quc':'kiche',
+      'nv':'navajo', 'chr':'cherokee', 'cr':'cree_syl', 'cr-cans':'cree_syl',
+      'guc':'wayuu', 'emp':'embera', 'wca':'yanomami',
+      'sq':'albanian', 'be':'belarusian', 'mk':'macedonian', 'sl':'slovenian',
+      'ig':'igbo', 'so':'somali', 'ln':'lingala', 'sn':'shona', 'ny':'nyanja',
+      'om':'oromo', 'ti':'tigrinya', 'lg':'luganda', 'tn':'setswana', 'wo':'wolof', 'bm':'bambara', 'ff':'fula', 'pcm':'nigerian_pidgin',
+      'ps':'pashto', 'az':'azerbaijani', 'ku':'kurdish', 'ka':'georgian', 'hy':'armenian',
+      'io':'ido', 'ia':'interlingua', 'jbo':'lojban', 'tok':'toki_pona', 'und-zsye':'emoji',
+      'my':'burmese', 'jv':'javanese', 'km':'khmer', 'lo':'lao', 'ms':'malay',
+  'ml':'malayalam', 'ne':'nepali', 'si':'sinhala', 'su':'sundanese',
+      tlh_hol:'klingon', tlh_piqad:'klingon_piqad',
+    };
+    function resolveBcp47() {
+      var raw = new URLSearchParams(window.location.search).get('lang');
+      if (raw) {
+        var code = raw.replace(/^["']|["']$/g, '').toLowerCase().trim();
+        var langId = BCP47[code] ? code : LOCALE_MAP[code] || LOCALE_MAP[code.split('-')[0]];
+        if (langId && BCP47[langId]) return BCP47[langId];
+        if (BCP47[code]) return BCP47[code];
+      }
+      var saved = localStorage.getItem('zy-lang');
+      if (saved && BCP47[saved]) return BCP47[saved];
+      return null;
+    }
+    var bcp47 = resolveBcp47();
+    if (bcp47) document.documentElement.lang = bcp47;
   })();
   </script>
 
@@ -55,12 +134,15 @@
   </a>
   <div class="header-right">
     <nav id="main-nav">
-      <a href="#marks">Marks</a>
-      <a href="#join">Joining</a>
-      <a href="#read">Read one</a>
-      <a href="#built">Built with it</a>
-      <a href="index.html">Home</a>
-      <a href="playground.html" class="nav-cta">Try Online</a>
+      <a href="#marks"><span class="fade-target" data-i18n="nav.marks">Marks</span></a>
+      <a href="#join"><span class="fade-target" data-i18n="nav.join">Joining</span></a>
+      <a href="#read"><span class="fade-target" data-i18n="nav.read">Read one</span></a>
+      <a href="#built"><span class="fade-target" data-i18n="nav.built">Built with it</span></a>
+      <a href="index.html"><span class="fade-target" data-i18n="nav.home">Home</span></a>
+      <a href="changelog.html">Releases</a>
+      <a href="https://github.com/zymbol-lang/interpreter" target="_blank" rel="noopener" class="icon-link" title="GitHub" aria-label="GitHub"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+      <a href="https://x.com/ZymbolLang" target="_blank" rel="noopener" class="icon-link" title="X / Twitter" aria-label="X / Twitter"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.74-8.855L1.254 2.25H8.08l4.253 5.622L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg></a>
+      <a href="playground.html" class="nav-cta"><span class="fade-target" data-i18n="nav.try">Try Online</span></a>
     </nav>
     <button id="theme-toggle" aria-label="Toggle theme" title="Toggle light/dark">
       <span id="theme-icon">🌙</span>
@@ -71,50 +153,69 @@
   </div>
 </header>
 
+<!-- ═══ LANG SELECTOR BAR ═══ -->
+<!-- Same control as the front page, from the same data, built by the same module:
+     src/site/langbar.js. A second, different picker on one page is how a language stops
+     being offered on half a site without anyone noticing. -->
+<div id="lang-bar">
+  <div class="region-tabs" id="region-tabs"></div>
+  <div class="lang-chips" id="lang-chips"></div>
+</div>
+
+<!-- ═══ ALPHA NOTICE ═══ -->
+<!-- `alpha_msg` is the entry's own, so the notice — the AI-assisted engineering the
+     project declares in interpreter/README.md § Authorship & AI Collaboration included —
+     is already written in all 119 languages. It is not this page's to reword. -->
+<div class="alpha-notice">
+  <a href="changelog.html" style="text-decoration:none"><span class="alpha-badge">Public Alpha · v0.0.8</span></a>
+  <span id="alpha-msg" class="fade-target" data-i18n="alpha.msg">Zymbol is in active development through AI-assisted engineering — this release validates the concept of an intentional human design: Symbolic, Universal, and Immutable. APIs, syntax, and features may change.</span>
+  <a id="alpha-link" class="fade-target" data-i18n="alpha.link" href="https://github.com/zymbol-lang/interpreter" target="_blank" rel="noopener">Follow progress on GitHub →</a>
+</div>
+
 <!-- ═══ HERO ═══ -->
 <section id="hero3">
   <div class="hero-bird">
     <div class="mascot-wrap">
       <img class="mascot-img" src="assets/img/logo.png" alt="Zymbol-Lang mascot">
       <div class="mascot-download-card">
-        <div class="dl-version">v0.0.8 &middot; Public Alpha</div>
-        <div class="dl-title">Get Zymbol</div>
+        <div class="dl-version fade-target" data-i18n="dl.version">v0.0.8 &middot; Public Alpha</div>
+        <div class="dl-title fade-target" data-i18n="dl.title">Get Zymbol</div>
         <a href="install.html" class="btn-primary dl-btn">
-          <span>&darr;</span>&nbsp;Download &amp; Install
+          <span aria-hidden="true">&darr;</span><span data-i18n="dl.btn" class="fade-target">Download &amp; Install</span>
         </a>
-        <div class="dl-meta">Linux &nbsp;&middot;&nbsp; Windows &nbsp;&middot;&nbsp; macOS</div>
+        <div class="dl-meta fade-target" data-i18n="dl.meta">Linux &nbsp;&middot;&nbsp; Windows &nbsp;&middot;&nbsp; macOS</div>
       </div>
     </div>
   </div>
 
   <div class="hero-core">
   <div class="glyph-stage" aria-hidden="true">
-    <span class="glyph is-on"><b>?</b><em>condition</em></span>
-    <span class="glyph"><b>@</b><em>time</em></span>
-    <span class="glyph"><b>&gt;&gt;</b><em>out</em></span>
-    <span class="glyph"><b>&lt;~</b><em>give back</em></span>
-    <span class="glyph"><b>$</b><em>collection</em></span>
-    <span class="glyph"><b>¶</b><em>newline</em></span>
+    <span class="glyph is-on"><b>?</b><em data-i18n="glyph.cond" class="fade-target">condition</em></span>
+    <span class="glyph"><b>@</b><em data-i18n="glyph.time" class="fade-target">time</em></span>
+    <span class="glyph"><b>&gt;&gt;</b><em data-i18n="glyph.out" class="fade-target">out</em></span>
+    <span class="glyph"><b>&lt;~</b><em data-i18n="glyph.ret" class="fade-target">give back</em></span>
+    <span class="glyph"><b>$</b><em data-i18n="glyph.coll" class="fade-target">collection</em></span>
+    <span class="glyph"><b>¶</b><em data-i18n="glyph.nl" class="fade-target">newline</em></span>
   </div>
 
-  <p class="kicker">why zymbol</p>
-  <h1>No words.<br><span class="t2">Just symbols.</span></h1>
-  <p class="sub">
+  <p class="kicker fade-target" data-i18n="hero.kicker">why zymbol</p>
+  <h1><span data-i18n="hero.t1" class="fade-target">No words.</span><br><span class="t2 fade-target" data-i18n="hero.t2">Just symbols.</span></h1>
+  <p class="sub fade-target" data-i18n-html="html.heroSub">
     Not <s>no keywords</s> — <b>no words</b>.<br>
     Nothing in the grammar is a word in any language.
   </p>
-  <p class="sub2">
+  <p class="sub2 fade-target" data-i18n-html="html.heroSub2">
     A minimalist symbolic language: fourteen marks, one meaning each, and they
     <em>agglutinate</em> into everything else.
   </p>
   <p class="claims">
-    <span>Identifiers in any human language.</span>
-    <span>Symbols never change.</span>
+    <span data-i18n="hero.claim1" class="fade-target">Identifiers in any human language.</span>
+    <span data-i18n="hero.claim2" class="fade-target">Symbols never change.</span>
   </p>
 
   <div class="hero-cta">
-    <a href="#marks" class="btn-primary">↓&nbsp; Start with the marks</a>
-    <a href="playground.html" class="btn-ghost">▶&nbsp; Playground</a>
+    <a href="#marks" class="btn-primary"><span aria-hidden="true">↓</span><span data-i18n="hero.cta1" class="fade-target">Start with the marks</span></a>
+    <a href="playground.html" class="btn-ghost"><span aria-hidden="true">▶</span><span data-i18n="hero.cta2" class="fade-target">Playground</span></a>
   </div>
   </div><!-- .hero-core -->
 </section>
@@ -124,38 +225,55 @@
   <div class="container">
     <div class="head">
       <span class="num">01</span>
-      <h2>The marks</h2>
-      <p>Each one means one thing. Tap to see it used.</p>
+      <h2 data-i18n="marks.h2" class="fade-target">The marks</h2>
+      <p data-i18n="marks.lead" class="fade-target">Each one means one thing. Tap to see it used.</p>
     </div>
 
+    <!-- The English label and note stay in the markup: with no JavaScript the reader
+         gets the page in English rather than a grid of key names. paintMarks() in
+         src/site/atlas.js overwrites both from the catalogue. -->
     <div class="grid reveal" id="mark-grid">
-      <button class="mk sel" data-code='name = 5'                data-note="binds a name to a value">
+      <button class="mk sel" type="button" data-mk="bind" aria-pressed="true"
+              data-code="name = 5" data-note="binds a name to a value">
         <b>=</b><i>bind</i></button>
-      <button class="mk" data-code='&gt;&gt; "hi"'          data-note="writes to the output stream">
+      <button class="mk" type="button" data-mk="out" aria-pressed="false"
+              data-code="&gt;&gt; &quot;hi&quot;" data-note="writes to the output stream">
         <b>&gt;&gt;</b><i>out</i></button>
-      <button class="mk" data-code='&lt;&lt; "name?" who'    data-note="the mirror of &gt;&gt; — it reads instead of writes">
+      <button class="mk" type="button" data-mk="in" aria-pressed="false"
+              data-code="&lt;&lt; &quot;name?&quot; who" data-note="the mirror of &gt;&gt; — it reads instead of writes">
         <b>&lt;&lt;</b><i>in</i></button>
-      <button class="mk" data-code='&gt;&gt; "hi" ¶'        data-note="ends the line — the pilcrow, as a proofreader marks it">
+      <button class="mk" type="button" data-mk="nl" aria-pressed="false"
+              data-code="&gt;&gt; &quot;hi&quot; ¶" data-note="ends the line — the pilcrow, as a proofreader marks it">
         <b>¶</b><i>newline</i></button>
-      <button class="mk" data-code='? n &gt; 0 { … }'        data-note="the outcome hangs on a question that may come back false, empty or nothing">
+      <button class="mk" type="button" data-mk="cond" aria-pressed="false"
+              data-code="? n &gt; 0 { … }" data-note="the outcome hangs on a question that may come back false, empty or nothing">
         <b>?</b><i>condition</i></button>
-      <button class="mk" data-code='_ { … }'                data-note="a slot that exists but takes no name — the arm nothing else matched, a skipped element, a pipe hole">
+      <button class="mk" type="button" data-mk="blank" aria-pressed="false"
+              data-code="_ { … }" data-note="a slot that exists but takes no name — the arm nothing else matched, a skipped element, a pipe hole">
         <b>_</b><i>binds nothing</i></button>
-      <button class="mk" data-code='@ x : list { … }'       data-note="the time context — repeat over a list, a range or a condition; break, continue and sleep all live here">
+      <button class="mk" type="button" data-mk="time" aria-pressed="false"
+              data-code="@ x : list { … }" data-note="the time context — repeat over a list, a range or a condition; break, continue and sleep all live here">
         <b>@</b><i>time</i></button>
-      <button class="mk" data-code='1..10'                  data-note="two dots, two ends: the span between them">
+      <button class="mk" type="button" data-mk="range" aria-pressed="false"
+              data-code="1..10" data-note="two dots, two ends: the span between them">
         <b>..</b><i>range</i></button>
-      <button class="mk" data-code='&lt;~ n * 2'            data-note="hands the value back to the caller">
+      <button class="mk" type="button" data-mk="ret" aria-pressed="false"
+              data-code="&lt;~ n * 2" data-note="hands the value back to the caller">
         <b>&lt;~</b><i>give back</i></button>
-      <button class="mk" data-code='x -&gt; x * 2'           data-note="the arrow points at what comes out">
+      <button class="mk" type="button" data-mk="arrow" aria-pressed="false"
+              data-code="x -&gt; x * 2" data-note="the arrow points at what comes out">
         <b>-&gt;</b><i>goes to</i></button>
-      <button class="mk" data-code='list$'                  data-note="never alone — it heads the collection family">
+      <button class="mk" type="button" data-mk="coll" aria-pressed="false"
+              data-code="list$" data-note="never alone — it heads the collection family">
         <b>$</b><i>collection</i></button>
-      <button class="mk" data-code='#1  #0'                 data-note="the level above values: types, truth, modes">
+      <button class="mk" type="button" data-mk="meta" aria-pressed="false"
+              data-code="#1  #0" data-note="the level above values: types, truth, modes">
         <b>#</b><i>meta</i></button>
-      <button class="mk" data-code='@!'                     data-note="do it, and do not be gentle about it">
+      <button class="mk" type="button" data-mk="force" aria-pressed="false"
+              data-code="@!" data-note="do it, and do not be gentle about it">
         <b>!</b><i>force</i></button>
-      <button class="mk" data-code='&lt;&lt;|'               data-note="just one of the thing — one key, not a line">
+      <button class="mk" type="button" data-mk="one" aria-pressed="false"
+              data-code="&lt;&lt;|" data-note="just one of the thing — one key, not a line">
         <b>|</b><i>one</i></button>
     </div>
 
@@ -164,7 +282,7 @@
       <span id="mk-note">binds a name to a value</span>
     </div>
 
-    <p class="foot small">
+    <p class="foot small fade-target" data-i18n-html="html.marksFoot1">
       <b>None of those readings is another language's keyword.</b> <code>?</code> is not
       <i>if</i> — <i>if</i> is the word English picked for it. <code>?</code> is a
       <b>condition</b>: the outcome hangs on a question. Same for the rest — <code>@</code>
@@ -173,7 +291,7 @@
       language chose would put the words straight back in.
     </p>
 
-    <p class="foot small">
+    <p class="foot small fade-target" data-i18n-html="html.marksFoot2">
       Even Zymbol's own analyser files these under <code>KEYWORD</code> — the language
       server has no other slot to put them in. That is a convention inside a tokenizer,
       not a word in the language. Hence <b>no words</b>, which is exact, rather than
@@ -187,8 +305,8 @@
   <div class="container">
     <div class="head">
       <span class="num">02</span>
-      <h2>They join</h2>
-      <p>Agglutination, in the plain linguistic sense: one mark, one meaning, and the
+      <h2 data-i18n="join.h2" class="fade-target">They join</h2>
+      <p data-i18n-html="html.joinLead" class="fade-target">Agglutination, in the plain linguistic sense: one mark, one meaning, and the
       meanings stack. An operator is <em>spelled</em>, not coined.</p>
     </div>
 
@@ -197,35 +315,35 @@
         <span class="atom">$</span><span class="plus">+</span><span class="atom">#</span>
         <span class="eq">=</span>
         <span class="made">$#</span>
-        <span class="gloss">how many</span>
+        <span class="gloss fade-target" data-i18n="join.g1">how many</span>
       </div>
       <div class="jn">
         <span class="atom">$</span><span class="plus">+</span><span class="atom">+</span>
         <span class="eq">=</span>
         <span class="made">$+</span>
-        <span class="gloss">append</span>
+        <span class="gloss fade-target" data-i18n="join.g2">append</span>
       </div>
       <div class="jn">
         <span class="atom">$</span><span class="plus">+</span><span class="atom">^</span><span class="plus">+</span><span class="atom">-</span>
         <span class="eq">=</span>
         <span class="made">$^-</span>
-        <span class="gloss">sort, descending</span>
+        <span class="gloss fade-target" data-i18n="join.g3">sort, descending</span>
       </div>
       <div class="jn">
         <span class="atom">&gt;&gt;</span><span class="plus">+</span><span class="atom">!</span>
         <span class="eq">=</span>
         <span class="made">&gt;&gt;!</span>
-        <span class="gloss">wipe the screen</span>
+        <span class="gloss fade-target" data-i18n="join.g4">wipe the screen</span>
       </div>
       <div class="jn">
         <span class="atom">&lt;&lt;</span><span class="plus">+</span><span class="atom">|</span><span class="plus">+</span><span class="atom">?</span>
         <span class="eq">=</span>
         <span class="made">&lt;&lt;|?</span>
-        <span class="gloss">one key, if there is one</span>
+        <span class="gloss fade-target" data-i18n="join.g5">one key, if there is one</span>
       </div>
     </div>
 
-    <p class="foot">
+    <p class="foot fade-target" data-i18n-html="html.joinFoot">
       Five releases. <b>One</b> new mark. Everything else was spelled from the ones already
       here — <a class="more" href="index2.html">the long version of why, if you want it</a>.
     </p>
@@ -237,72 +355,77 @@
   <div class="container">
     <div class="head">
       <span class="num">03</span>
-      <h2>Now read this</h2>
-      <p>Every mark below is one you have already met.</p>
+      <h2 data-i18n="read.h2" class="fade-target">Now read this</h2>
+      <p data-i18n="read.lead" class="fade-target">Every mark below is one you have already met.</p>
     </div>
 
     <div class="split">
       <div class="pane code-pane">
-        <div class="pane-tag">mandelbrot.zy</div>
-        <pre class="zy" id="zy-src"><span class="c">// Outside the set: faint to solid, dark green to bright.</span>
-trazo  <span class="o">=</span> <span class="s">&quot; .:-=+*#%&quot;</span>
-tintes <span class="o">=</span> <span class="p">[</span><span class="n">22</span><span class="p">,</span> <span class="n">28</span><span class="p">,</span> <span class="n">34</span><span class="p">,</span> <span class="n">40</span><span class="p">,</span> <span class="n">46</span><span class="p">,</span> <span class="n">82</span><span class="p">,</span> <span class="n">118</span><span class="p">,</span> <span class="n">154</span><span class="p">,</span> <span class="n">191</span><span class="p">]</span>
+        <div class="pane-tag" id="zy-file">graphics/mandelbrot/english.zy</div>
+        <!-- The English file, verbatim, as a reader with no JavaScript sees it;
+             src/site/atlas.js replaces it with the one for the chosen language,
+             coloured. tests/test_i18n_atlas.mjs fails if this stops matching
+             examples/graphics/mandelbrot/english.zy — the page may not show a
+             program that is not the one its own "run it" link opens. -->
+<pre class="zy scroller" id="zy-src" style="--cols:70">// Outside the set: faint to solid, dark green to bright.
+ramp  = " .:-=+*#%"
+tints = [22, 28, 34, 40, 46, 82, 118, 154, 191]
 
-<span class="c">// Steps survived before the orbit runs away; 0 if it never does.</span>
-<span class="c">// zr2 and zi2 are carried, so each step costs four products, not six.</span>
-fuga<span class="p">(</span>cr<span class="p">,</span> ci<span class="p">)</span> <span class="p">{</span>
-    zr  <span class="o">=</span> <span class="n">0.0</span>
-    zi  <span class="o">=</span> <span class="n">0.0</span>
-    zr<span class="n">2</span> <span class="o">=</span> <span class="n">0.0</span>
-    zi<span class="n">2</span> <span class="o">=</span> <span class="n">0.0</span>
-    <span class="o">@</span> i<span class="o">:</span><span class="n">1</span><span class="o">..</span><span class="n">36</span> <span class="p">{</span>
-        <span class="o">?</span> zr<span class="n">2</span> <span class="o">+</span> zi<span class="n">2</span> <span class="o">&gt;</span> <span class="n">4.0</span> <span class="p">{</span> <span class="o">&lt;~</span> i <span class="p">}</span>
-        zi  <span class="o">=</span> <span class="n">2.0</span> <span class="o">*</span> zr <span class="o">*</span> zi <span class="o">+</span> ci
-        zr  <span class="o">=</span> zr<span class="n">2</span> <span class="o">-</span> zi<span class="n">2</span> <span class="o">+</span> cr
-        zr<span class="n">2</span> <span class="o">=</span> zr <span class="o">*</span> zr
-        zi<span class="n">2</span> <span class="o">=</span> zi <span class="o">*</span> zi
-    <span class="p">}</span>
-    <span class="o">&lt;~</span> <span class="n">0</span>
-<span class="p">}</span>
+// Steps survived before the orbit runs away; 0 if it never does.
+// zr2 and zi2 are carried, so each step costs four products, not six.
+escape(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 &gt; 4.0 { &lt;~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    &lt;~ 0
+}
 
-<span class="o">&gt;&gt;|</span> <span class="p">{</span>
-    <span class="o">&gt;&gt;!</span>
-    <span class="p">(</span>alto<span class="p">,</span> ancho<span class="p">)</span> <span class="o">=</span> <span class="o">&gt;&gt;?</span>
-    filas <span class="o">=</span> alto <span class="o">-</span> <span class="n">2</span>
-    cols  <span class="o">=</span> ancho <span class="o">-</span> <span class="n">1</span>
+&gt;&gt;| {
+    &gt;&gt;!
+    (high, wide) = &gt;&gt;?
+    rows = high - 2
+    cols = wide - 1
 
-    <span class="c">// A cell is ~2.5x taller than wide; the vertical span is</span>
-    <span class="c">// scaled by that so the set comes out round.</span>
-    anchura <span class="o">=</span> <span class="n">2.7</span>
-    altura  <span class="o">=</span> filas <span class="o">*</span> anchura <span class="o">*</span> <span class="n">2.5</span> <span class="o">/</span> cols
-    medio   <span class="o">=</span> filas <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> <span class="n">1</span>
+    // A cell is ~2.5x taller than wide; the vertical span is
+    // scaled by that so the set comes out round.
+    width  = 2.7
+    height = rows * width * 2.5 / cols
+    middle = rows / 2 + 1
 
-    <span class="o">@</span> y<span class="o">:</span><span class="n">1</span><span class="o">..</span>medio <span class="p">{</span>
-        espejo <span class="o">=</span> filas <span class="o">+</span> <span class="n">1</span> <span class="o">-</span> y
-        <span class="o">@</span> x<span class="o">:</span><span class="n">1</span><span class="o">..</span>cols <span class="p">{</span>
-            cr <span class="o">=</span> <span class="p">(</span>x <span class="o">-</span> <span class="n">1</span><span class="p">)</span> <span class="o">*</span> anchura <span class="o">/</span> cols <span class="o">-</span> <span class="n">2.1</span>
-            ci <span class="o">=</span> <span class="p">(</span>y <span class="o">-</span> <span class="n">1</span><span class="p">)</span> <span class="o">*</span> altura  <span class="o">/</span> filas <span class="o">-</span> altura <span class="o">/</span> <span class="n">2.0</span>
-            n  <span class="o">=</span> fuga<span class="p">(</span>cr<span class="p">,</span> ci<span class="p">)</span>
-            marca <span class="o">=</span> <span class="s">&quot;@&quot;</span>
-            tinte <span class="o">=</span> <span class="n">231</span>
-            <span class="o">?</span> n <span class="o">&lt;&gt;</span> <span class="n">0</span> <span class="p">{</span>
-                paso <span class="o">=</span> n <span class="o">/</span> <span class="n">4</span> <span class="o">+</span> <span class="n">1</span>
-                <span class="o">?</span> paso <span class="o">&gt;</span> <span class="n">9</span> <span class="p">{</span> paso <span class="o">=</span> <span class="n">9</span> <span class="p">}</span>
-                marca <span class="o">=</span> trazo<span class="p">[</span>paso<span class="p">]</span>
-                tinte <span class="o">=</span> tintes<span class="p">[</span>paso<span class="p">]</span>
-            <span class="p">}</span>
-            <span class="o">&gt;&gt;~</span> <span class="p">(</span>y<span class="p">,</span> x<span class="p">,</span> <span class="n">0</span><span class="p">,</span> tinte<span class="p">)</span> <span class="o">&gt;</span> marca
-            <span class="o">?</span> espejo <span class="o">&gt;</span> medio <span class="p">{</span> <span class="o">&gt;&gt;~</span> <span class="p">(</span>espejo<span class="p">,</span> x<span class="p">,</span> <span class="n">0</span><span class="p">,</span> tinte<span class="p">)</span> <span class="o">&gt;</span> marca <span class="p">}</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
+    @ y:1..middle {
+        mirror = rows + 1 - y
+        @ x:1..cols {
+            cr = (x - 1) * width  / cols - 2.1
+            ci = (y - 1) * height / rows - height / 2.0
+            n  = escape(cr, ci)
+            mark = "@"
+            tint = 231
+            ? n &lt;&gt; 0 {
+                step = n / 4 + 1
+                ? step &gt; 9 { step = 9 }
+                mark = ramp[step]
+                tint = tints[step]
+            }
+            &gt;&gt;~ (y, x, 0, tint) &gt; mark
+            ? mirror &gt; middle { &gt;&gt;~ (mirror, x, 0, tint) &gt; mark }
+        }
+    }
 
-    <span class="o">&gt;&gt;~</span> <span class="p">(</span>alto<span class="p">,</span> <span class="n">2</span><span class="p">,</span> <span class="n">0</span><span class="p">,</span> <span class="n">244</span><span class="p">)</span> <span class="o">&gt;</span> <span class="s">&quot;any key to leave&quot;</span>
-    <span class="o">&lt;&lt;|</span> <span class="o">_</span>tecla
-<span class="p">}</span></pre>
+    &gt;&gt;~ (high, 2, 0, 244) &gt; "any key to leave"
+    &lt;&lt;| _key
+}</pre>
       </div>
       <div class="pane out-pane">
-        <div class="pane-tag">its output — the program's own colours</div>
-        <pre class="fractal">                                         <span class="c28">...................................................................</span>
+        <div class="pane-tag fade-target" data-i18n="read.tagOut">its output — the program's own colours</div>
+        <pre class="fractal scroller" style="--cols:126">                                         <span class="c28">...................................................................</span>
                                     <span class="c28">...................................................</span><span class="c34">:</span><span class="c40">-</span><span class="c34">::</span><span class="c28">......................</span>
                                 <span class="c28">........................................................</span><span class="c34">::</span><span class="c40">-</span><span class="c34">:</span><span class="c28">.........................</span>
                              <span class="c28">...........................................................</span><span class="c34">:::</span><span class="c40">--</span><span class="c34">::::</span><span class="c40">-</span><span class="c34">:</span><span class="c28">......................</span>
@@ -351,7 +474,7 @@ fuga<span class="p">(</span>cr<span class="p">,</span> ci<span class="p">)</span
       </div>
     </div>
 
-        <p class="foot">
+        <p class="foot fade-target" data-i18n-html="html.readFoot">
       Not one word in any of it. The colours are the program's own: it picks an
       ANSI-256 index per escape step and writes each cell with <code>&gt;&gt;~</code>
       on the canvas <code>&gt;&gt;|</code> opens. The tree-walker and the register VM
@@ -359,11 +482,12 @@ fuga<span class="p">(</span>cr<span class="p">,</span> ci<span class="p">)</span
     </p>
 
     <div class="hero-cta">
-      <a href="playground.html?open=graphics/mandelbrot.zy" class="btn-primary">▶&nbsp; Run it in the browser</a>
-      <a href="index.html" class="btn-ghost">The full front page</a>
+      <a id="zy-run" href="playground.html?open=graphics/mandelbrot/english.zy" class="btn-primary"><span aria-hidden="true">▶</span><span data-i18n="read.cta1" class="fade-target">Run it in the browser</span></a>
+      <a href="index.html" class="btn-ghost fade-target" data-i18n="read.cta2">The full front page</a>
     </div>
     <p class="permalink">
-      direct link — <code>zymbol-lang.org/playground.html?open=graphics/mandelbrot.zy</code>
+      <span class="fade-target" data-i18n="read.permalink">direct link</span> —
+      <code id="zy-permalink">zymbol-lang.org/playground.html?open=graphics/mandelbrot/english.zy</code>
     </p>
   </div>
 </section>
@@ -374,14 +498,14 @@ fuga<span class="p">(</span>cr<span class="p">,</span> ci<span class="p">)</span
   <div class="container">
     <div class="head">
       <span class="num">04</span>
-      <h2>And people build with it</h2>
-      <p>Same marks. The names are whatever the author thinks in.</p>
+      <h2 data-i18n="built.h2" class="fade-target">And people build with it</h2>
+      <p data-i18n="built.lead" class="fade-target">Same marks. The names are whatever the author thinks in.</p>
     </div>
 
     <div class="builds reveal">
       <figure class="build">
         <div class="shots">
-        <div class="shot"><pre class="term"><i class="w1 c240">╭</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">╮</i>
+        <div class="shot scroller" style="--cols:40"><pre class="term"><i class="w1 c240">╭</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">╮</i>
 <i class="w1 c255">│</i>                 <i class="w2 c255">囲</i><i class="w2 c255">碁</i>                 <i class="w1 c255">│</i>
 <i class="w1 c245">│</i><span class="c245">            Zymbol v0.0.8             </span><i class="w1 c245">│</i>
 <i class="w1 c240">├</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">┤</i>
@@ -394,7 +518,7 @@ fuga<span class="p">(</span>cr<span class="p">,</span> ci<span class="p">)</span
 <i class="w1 c240">├</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">┤</i>
 <i class="w1 c245">│</i>      <i class="w1 c245">↑</i><i class="w1 c245">↓</i> <i class="w2 c245">選</i><i class="w2 c245">択</i>   <i class="w1 c245">←</i><i class="w1 c245">→</i> <i class="w2 c245">変</i><i class="w2 c245">更</i>   <i class="w1 c245">↵</i> <i class="w2 c245">開</i><i class="w2 c245">始</i>      <i class="w1 c245">│</i>
 <i class="w1 c240">╰</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">╯</i></pre></div>
-        <div class="shot"><pre class="term">  <span class="c245">A B C D E F G H J </span>    <i class="w1 c240">╭</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">╮</i>
+        <div class="shot scroller" style="--cols:48"><pre class="term">  <span class="c245">A B C D E F G H J </span>    <i class="w1 c240">╭</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">╮</i>
 <span class="c245">9</span> <i class="w1 c137">┌</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┐</i> <span class="c245"> 9</span>  <i class="w1 c252">│</i> <i class="w2 c252">九</i><i class="w2 c252">路</i><i class="w2 c252">盤</i> <i class="w1 c252">·</i> <i class="w2 c252">中</i><i class="w2 c252">級</i>        <i class="w1 c252">│</i>
 <span class="c245">8</span> <i class="w1 c137">├</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┤</i> <span class="c245"> 8</span>  <i class="w1 c240">├</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">┤</i>
 <span class="c245">7</span> <i class="w1 c137">├</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w2 c137">⚪</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w2 c137">⚪</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┤</i> <span class="c245"> 7</span>  <i class="w1 c252">│</i> <i class="w2 c252">手</i><i class="w2 c252">番</i>      <i class="w2 c252">⚫</i> <i class="w2 c252">あ</i><i class="w2 c252">な</i><i class="w2 c252">た</i>  <i class="w1 c252">│</i>
@@ -407,13 +531,13 @@ fuga<span class="p">(</span>cr<span class="p">,</span> ci<span class="p">)</span
   <span class="c245">A B C D E F G H J </span></pre></div>
         </div>
         <figcaption>
-          <b>囲碁</b><span>Go — written in Japanese. Board size, rank, komi and language are chosen on the first screen; the second is a game in progress.</span>
-          <a href="playground.html?open=games/classic/go.zyp">▶ play</a>
+          <b>囲碁</b><span data-i18n="built.go" class="fade-target">Go — written in Japanese. Board size, rank, komi and language are chosen on the first screen; the second is a game in progress.</span>
+          <a href="playground.html?open=games/classic/go.zyp"><span aria-hidden="true">▶</span> <span data-i18n="built.play" class="fade-target">play</span></a>
         </figcaption>
       </figure>
       <figure class="build">
         <div class="shots">
-        <div class="shot"><pre class="term"><i class="w1 c15">╭</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">╮</i>
+        <div class="shot scroller" style="--cols:33"><pre class="term"><i class="w1 c15">╭</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">╮</i>
 <i class="w1 c15">│</i><span class="c15">          Z Y M B O L          </span><i class="w1 c15">│</i>
 <i class="w1 c15">│</i><span class="c15">       S E R P I E N T E       </span><i class="w1 c15">│</i>
 <i class="w1 c15">├</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">┤</i>
@@ -427,7 +551,7 @@ fuga<span class="p">(</span>cr<span class="p">,</span> ci<span class="p">)</span
 <i class="w1 c15">├</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">┤</i>
 <i class="w1 c15">│</i><span class="c15">     [L]  Idioma: Espa</span><i class="w1 c15">ñ</i><span class="c15">ol      </span><i class="w1 c15">│</i>
 <i class="w1 c11">╰</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">╯</i></pre></div>
-        <div class="shot"><pre class="term"><i class="w1 c8">╭</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">┤</i> <i class="w1 c11">✦</i><span class="c11"> PUNTOS 13 </span><i class="w1 c11">✦</i> <i class="w1 c8">├</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">╮</i>
+        <div class="shot scroller" style="--cols:80"><pre class="term"><i class="w1 c8">╭</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">┤</i> <i class="w1 c11">✦</i><span class="c11"> PUNTOS 13 </span><i class="w1 c11">✦</i> <i class="w1 c8">├</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">╮</i>
 <i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
 <i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
 <i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
@@ -453,13 +577,13 @@ fuga<span class="p">(</span>cr<span class="p">,</span> ci<span class="p">)</span
 <i class="w1 c8">╰</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">╯</i></pre></div>
         </div>
         <figcaption>
-          <b>Serpiente</b><span>Snake — written in Spanish. Five speeds on the first screen; the second is thirteen points in, mid-turn.</span>
-          <a href="playground.html?open=games/arcade/serpiente.zyp">▶ play</a>
+          <b>Serpiente</b><span data-i18n="built.snake" class="fade-target">Snake — written in Spanish. Five speeds on the first screen; the second is thirteen points in, mid-turn.</span>
+          <a href="playground.html?open=games/arcade/serpiente.zyp"><span aria-hidden="true">▶</span> <span data-i18n="built.play" class="fade-target">play</span></a>
         </figcaption>
       </figure>
     </div>
 
-    <p class="foot">
+    <p class="foot fade-target" data-i18n-html="html.builtFoot">
       Both are captures of the running program. Not one identifier in either of them is
       an English word — and nothing in the grammar had to change for that.
     </p>
@@ -472,117 +596,17 @@ fuga<span class="p">(</span>cr<span class="p">,</span> ci<span class="p">)</span
       <img src="assets/img/logo.png" alt="Zymbol-Lang" style="height:1.6rem;width:auto;opacity:0.8;vertical-align:middle;">
     </div>
     <div class="footer-links">
-      <a href="index.html">Home</a>
+      <a href="index.html"><span class="fade-target" data-i18n="nav.home">Home</span></a>
       <a href="playground.html">Playground</a>
-      <a href="install.html">Install</a>
+      <a href="install.html"><span class="fade-target" data-i18n="nav.install">Install</span></a>
       <a href="changelog.html">Releases</a>
-      <a href="https://github.com/zymbol-lang/interpreter" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/zymbol-lang/interpreter" target="_blank" rel="noopener" class="icon-link" title="GitHub" aria-label="GitHub"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+      <a href="https://x.com/ZymbolLang" target="_blank" rel="noopener" class="icon-link" title="X / Twitter" aria-label="X / Twitter"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.74-8.855L1.254 2.25H8.08l4.253 5.622L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg></a>
     </div>
-    <div class="footer-copy">No words. Just symbols.</div>
+    <div class="footer-copy fade-target" data-i18n="tagline">No words. Just symbols.</div>
   </div>
 </footer>
 
-<script>
-(function () {
-  // theme
-  var tb = document.getElementById('theme-toggle'), ti = document.getElementById('theme-icon');
-  function paint(){ ti.textContent = document.documentElement.classList.contains('light') ? '☀️' : '🌙'; }
-  paint();
-  tb.addEventListener('click', function () {
-    var l = document.documentElement.classList.toggle('light');
-    localStorage.setItem('zy-theme', l ? 'light' : 'dark'); paint();
-  });
-
-  // mobile nav
-  var mt = document.getElementById('menu-toggle'), nav = document.getElementById('main-nav');
-  function shut(){ nav.classList.remove('open'); mt.setAttribute('aria-expanded','false'); mt.querySelector('span').textContent='☰'; }
-  mt.addEventListener('click', function (e) {
-    e.stopPropagation();
-    var o = nav.classList.toggle('open');
-    mt.setAttribute('aria-expanded', String(o));
-    mt.querySelector('span').textContent = o ? '✕' : '☰';
-  });
-  nav.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', shut); });
-  document.addEventListener('click', function (e) { if (!nav.contains(e.target) && !mt.contains(e.target)) shut(); });
-
-  // Hero glyph cycle. The word rides inside the same element as the mark and fades
-  // with it — when they were two elements the text swapped instantly while the glyph
-  // took 0.55s to cross, so for half a second the page named the wrong mark.
-  var glyphs = [].slice.call(document.querySelectorAll('.glyph'));
-  var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!still && glyphs.length > 1) {
-    var g = 0;
-    setInterval(function () {
-      glyphs[g].classList.remove('is-on');
-      g = (g + 1) % glyphs.length;
-      glyphs[g].classList.add('is-on');
-    }, 2400);
-  }
-
-  // Make every boxed cell fit its box. The boxes come from the capture, so the
-  // columns are already right; what is left is a glyph whose fallback face draws
-  // it wider than the cell it belongs to — squeeze it horizontally rather than
-  // let it spill over its neighbour. Each distinct character is measured once.
-  function fitGlyphs() {
-    var boxes = document.querySelectorAll('pre.term i');
-    if (!boxes.length) return;
-    var probe = document.createElement('span');
-    probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;left:-9999px';
-    document.body.appendChild(probe);
-    var seen = Object.create(null);
-    boxes.forEach(function (b) {
-      var ch = b.textContent, key = ch + '|' + b.className;
-      if (!(key in seen)) {
-        var cs = getComputedStyle(b);
-        probe.style.font = cs.fontSize + '/' + cs.lineHeight + ' ' + cs.fontFamily;
-        probe.textContent = ch;
-        var natural = probe.getBoundingClientRect().width;
-        var box = b.getBoundingClientRect().width;
-        seen[key] = (natural > box + 0.5 && natural > 0) ? box / natural : 1;
-      }
-      var k = seen[key];
-      if (k < 1) {
-        // Box-drawing is squeezed on X only: shrinking it vertically too would
-        // pull the verticals apart and the frame comes out dotted. A wide glyph
-        // (emoji, CJK) is scaled evenly instead, so it does not end up oval.
-        b.style.transform = b.classList.contains('w2')
-          ? 'scale(' + k.toFixed(3) + ')'
-          : 'scaleX(' + k.toFixed(3) + ')';
-      }
-    });
-    probe.remove();
-  }
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitGlyphs);
-  else addEventListener('load', fitGlyphs);
-
-  // reveal on entry; with no IntersectionObserver everything is simply already visible
-  var reveals = document.querySelectorAll('.reveal');
-  if (window.IntersectionObserver) {
-    var io = new IntersectionObserver(function (es) {
-      es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
-    }, { rootMargin: '0px 0px -12% 0px' });
-    reveals.forEach(function (r) { io.observe(r); });
-  } else {
-    reveals.forEach(function (r) { r.classList.add('in'); });
-  }
-
-  // the mark grid writes into one shared line instead of twelve tooltips
-  var out = document.getElementById('mk-out'),
-      oc  = document.getElementById('mk-code'),
-      on_ = document.getElementById('mk-note');
-  document.querySelectorAll('.mk').forEach(function (b) {
-    function show() {
-      document.querySelectorAll('.mk.sel').forEach(function (x) { x.classList.remove('sel'); });
-      b.classList.add('sel');
-      oc.textContent  = b.dataset.code;
-      on_.textContent = b.dataset.note;
-      out.classList.remove('pop'); void out.offsetWidth; out.classList.add('pop');
-    }
-    b.addEventListener('click', show);
-    b.addEventListener('mouseenter', show);
-    b.addEventListener('focus', show);
-  });
-}());
-</script>
+<script type="module" src="src/site/atlas.js"></script>
 </body>
 </html>

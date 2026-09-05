@@ -171,12 +171,10 @@ if (existsSync(langsPath)) {
 }
 
 // ─── index.html's pre-paint copy still agrees with detect.js ─────────────────
-section('index.html pre-paint tables');
+section('pre-paint tables (index.html, index3.html)');
 
-const html = readFileSync(join(WEB_DIR, 'index.html'), 'utf8');
-
-/** Reads one object literal out of the inline script, by name. */
-function inlineTable(name) {
+/** Reads one object literal out of a page's inline script, by name. */
+function inlineTable(html, name) {
   const at = html.indexOf(`var ${name} = {`);
   if (at === -1) return null;
   const open = html.indexOf('{', at);
@@ -188,23 +186,29 @@ function inlineTable(name) {
   return new Function(`return ${html.slice(open, close + 1)}`)();
 }
 
-const inlineLocale = inlineTable('LOCALE_MAP');
-const inlineBcp47  = inlineTable('BCP47');
+// Two pages carry the copy now: index3.html offers the same 119 languages from the same
+// chip bar, so it needs the same tables before its own first paint. Two copies of a table
+// that already drifted once are two chances to drift, so both are checked, not one.
+const diff = (a, b, an, bn) => {
+  const onlyA = Object.keys(a).filter(k => !(k in b));
+  const onlyB = Object.keys(b).filter(k => !(k in a));
+  const differ = Object.keys(a).filter(k => k in b && a[k] !== b[k]);
+  check(`${an} and ${bn} have the same keys`, onlyA.length === 0 && onlyB.length === 0,
+        `only in ${an}: ${onlyA.join(' ') || '—'} | only in ${bn}: ${onlyB.join(' ') || '—'}`);
+  check(`${an} and ${bn} agree on every value`, differ.length === 0, differ.join(' '));
+};
 
-check('index.html still has LOCALE_MAP', inlineLocale !== null);
-check('index.html still has BCP47', inlineBcp47 !== null);
+for (const page of ['index.html', 'index3.html']) {
+  const src = readFileSync(join(WEB_DIR, page), 'utf8');
+  const inlineLocale = inlineTable(src, 'LOCALE_MAP');
+  const inlineBcp47  = inlineTable(src, 'BCP47');
 
-if (inlineLocale && inlineBcp47) {
-  const diff = (a, b, an, bn) => {
-    const onlyA = Object.keys(a).filter(k => !(k in b));
-    const onlyB = Object.keys(b).filter(k => !(k in a));
-    const differ = Object.keys(a).filter(k => k in b && a[k] !== b[k]);
-    check(`${an} and ${bn} have the same keys`, onlyA.length === 0 && onlyB.length === 0,
-          `only in ${an}: ${onlyA.join(' ') || '—'} | only in ${bn}: ${onlyB.join(' ') || '—'}`);
-    check(`${an} and ${bn} agree on every value`, differ.length === 0, differ.join(' '));
-  };
-  diff(BROWSER_LANG_MAP, inlineLocale, 'detect.js BROWSER_LANG_MAP', 'index.html LOCALE_MAP');
-  diff(LANG_BCP47, inlineBcp47, 'detect.js LANG_BCP47', 'index.html BCP47');
+  check(`${page} still has LOCALE_MAP`, inlineLocale !== null);
+  check(`${page} still has BCP47`, inlineBcp47 !== null);
+  if (!inlineLocale || !inlineBcp47) continue;
+
+  diff(BROWSER_LANG_MAP, inlineLocale, 'detect.js BROWSER_LANG_MAP', `${page} LOCALE_MAP`);
+  diff(LANG_BCP47, inlineBcp47, 'detect.js LANG_BCP47', `${page} BCP47`);
 }
 
 // ─── report ──────────────────────────────────────────────────────────────────

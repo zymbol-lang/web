@@ -1,24 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { LANG_STORAGE_KEY, bcp47Of, resolveInitialLang } from '../i18n/detect.js';
+// The region tabs and the language chips are shared with index3.html — one selector, one
+// data load, one place where a language stops being offered. See src/site/langbar.js.
+import { loadLanguageData, createLangBar, fadeUpdate } from './langbar.js';
+import { highlightZymbol, esc } from './highlight-zy.js';
 
 (async function() {
   // ─── Load data ───
-  const [langData, i18nData] = await Promise.all([
-    fetch('data/i18n/languages.json').then(r => r.json()),
-    fetch('data/i18n/i18n.json').then(r => r.json()),
-  ]);
-
-  const langList = langData.languages; // array
-  const i18n     = i18nData.languages; // object keyed by id
-  const regions  = i18nData.regions;   // object {id: label}
-
-  // Build lookup: id -> langList entry
-  const langById = {};
-  for (const l of langList) langById[l.id] = l;
+  const data = await loadLanguageData();
+  const { langList, langById, i18n, regions } = data;
 
   // ─── State ───
-  let currentLang   = 'english';
-  let currentRegion = null;
+  let currentLang = 'english';
 
   // ─── Browser language detection ───
   // The tables and the URL/storage/browser precedence live in ../i18n/detect.js, shared
@@ -26,266 +19,11 @@ import { LANG_STORAGE_KEY, bcp47Of, resolveInitialLang } from '../i18n/detect.js
   // `isKnownLang` is this page's answer to "do I have data for that id?".
   const isKnownLang = id => Boolean(i18n[id]);
 
-  // ─── Syntax highlight a zymbol code string ───
-  function highlight(code) {
-    // escape HTML first
-    code = code
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-
-    // comments
-    code = code.replace(/(\/\/[^\n]*)/g, '<span class="t-cmt">$1</span>');
-
-    // strings
-    code = code.replace(/("(?:[^"\\]|\\.)*")/g, '<span class="t-str">$1</span>');
-
-    // keywords / operators: &lt;~ <~ >> _? _ ? @ ¶
-    const kwPats = [
-      [/\b(&lt;~)\b/g,   't-kw'],
-      [/(&lt;~)/g,        't-kw'],
-      [/(\?(?!\?))/g,     't-kw'],
-      [/(_\?)/g,          't-kw'],
-      [/(\?\?)/g,         't-kw'],
-      [/(?<![&\w])_(?!\?)/g, 't-kw'],
-      [/(¶)/g,            't-kw'],
-      [/(@)/g,            't-kw'],
-      [/(&gt;&gt;)/g,     't-op'],
-    ];
-
-    // numbers
-    code = code.replace(/\b(\d+)\b/g, '<span class="t-num">$1</span>');
-
-    // range ".." and "::" and ":" and ".." and "%" and "==" and "!=" and operators
-    code = code.replace(/(\.\.|::|==|!=|&gt;=|&lt;=|[+\-*%])/g, '<span class="t-op">$1</span>');
-
-    // apply kw patterns (on non-spanned text only — rough but functional)
-    const KW_SYMS = ['&lt;~', '?', '_?', '??', '_', '¶', '@'];
-    for (const sym of KW_SYMS) {
-      const esc = sym.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      code = code.replace(new RegExp(`(?<!<[^>]*)${esc}`, 'g'), `<span class="t-kw">${sym}</span>`);
-    }
-    code = code.replace(/(&gt;&gt;)/g, '<span class="t-op">$1</span>');
-
-    return code;
-  }
-
-  // ─── Better highlight: token-aware ───
-  function highlightZymbol(raw) {
-    const lines = raw.split('\n');
-    return lines.map(line => highlightLine(line)).join('\n');
-  }
-
-  function highlightLine(line) {
-    // comment
-    if (/^\s*\/\//.test(line)) {
-      return `<span class="t-cmt">${esc(line)}</span>`;
-    }
-
-    let out = '';
-    let i = 0;
-    const s = line;
-    const len = s.length;
-
-    while (i < len) {
-      // comment
-      if (s[i] === '/' && s[i+1] === '/') {
-        out += `<span class="t-cmt">${esc(s.slice(i))}</span>`;
-        break;
-      }
-
-      // string
-      if (s[i] === '"') {
-        let j = i + 1;
-        while (j < len && s[j] !== '"') { if (s[j] === '\\') j++; j++; }
-        out += `<span class="t-str">${esc(s.slice(i, j+1))}</span>`;
-        i = j + 1;
-        continue;
-      }
-
-      // number
-      if (/\d/.test(s[i]) && (i === 0 || !/\w/.test(s[i-1]))) {
-        let j = i;
-        while (j < len && /[\d.]/.test(s[j])) j++;
-        out += `<span class="t-num">${esc(s.slice(i, j))}</span>`;
-        i = j;
-        continue;
-      }
-
-      // multi-char operators
-      const twoChar = s.slice(i, i+2);
-      const oneChar = s[i];
-
-      if (twoChar === '<~') { out += `<span class="t-kw">&lt;~</span>`; i += 2; continue; }
-      if (twoChar === '>>') { out += `<span class="t-op">&gt;&gt;</span>`; i += 2; continue; }
-      if (twoChar === '_?') { out += `<span class="t-kw">_?</span>`; i += 2; continue; }
-      if (twoChar === '??') { out += `<span class="t-kw">??</span>`; i += 2; continue; }
-      if (twoChar === '..') { out += `<span class="t-op">..</span>`; i += 2; continue; }
-      if (twoChar === '::') { out += `<span class="t-op">::</span>`; i += 2; continue; }
-      if (twoChar === '==') { out += `<span class="t-op">==</span>`; i += 2; continue; }
-      if (twoChar === '!=') { out += `<span class="t-op">!=</span>`; i += 2; continue; }
-      if (twoChar === '<=') { out += `<span class="t-op">&lt;=</span>`; i += 2; continue; }
-      if (twoChar === '>=') { out += `<span class="t-op">&gt;=</span>`; i += 2; continue; }
-      if (twoChar === '#1') { out += `<span class="t-num">#1</span>`; i += 2; continue; }
-      if (twoChar === '#0') { out += `<span class="t-num">#0</span>`; i += 2; continue; }
-
-      if (oneChar === '?') { out += `<span class="t-kw">?</span>`; i++; continue; }
-      if (oneChar === '@') { out += `<span class="t-kw">@</span>`; i++; continue; }
-      if (oneChar === '¶') { out += `<span class="t-kw">¶</span>`; i++; continue; }
-      if (oneChar === '_' && (i+1 >= len || !/\w/.test(s[i+1]))) {
-        out += `<span class="t-kw">_</span>`; i++; continue;
-      }
-      if (oneChar === '%') { out += `<span class="t-op">%</span>`; i++; continue; }
-      if (oneChar === '+') { out += `<span class="t-op">+</span>`; i++; continue; }
-      if (oneChar === '-' && (i+1 < len && /\d/.test(s[i+1]) && (i===0 || /[\s(,]/.test(s[i-1])))) {
-        // negative number
-        let j = i + 1;
-        while (j < len && /[\d.]/.test(s[j])) j++;
-        out += `<span class="t-num">${esc(s.slice(i, j))}</span>`;
-        i = j; continue;
-      }
-      if (oneChar === ':' && s[i+1] !== ':') { out += `<span class="t-op">:</span>`; i++; continue; }
-      if (oneChar === '<') { out += '&lt;'; i++; continue; }
-      if (oneChar === '>') { out += '&gt;'; i++; continue; }
-      if (oneChar === '&') { out += '&amp;'; i++; continue; }
-
-      // identifier
-      if (/[\p{L}\p{N}_$]/u.test(oneChar)) {
-        let j = i;
-        while (j < len && /[\p{L}\p{N}_$]/u.test(s[j])) j++;
-        const word = s.slice(i, j);
-        // peek if followed by (
-        const isFn = j < len && s[j] === '(';
-        if (isFn) {
-          out += `<span class="t-fn">${esc(word)}</span>`;
-        } else {
-          out += `<span class="t-id">${esc(word)}</span>`;
-        }
-        i = j;
-        continue;
-      }
-
-      out += esc(oneChar);
-      i++;
-    }
-
-    return out;
-  }
-
-  function esc(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  // ─── Build region tabs ───
-  const regionTabsEl = document.getElementById('region-tabs');
-  const regionOrder = ['americas','europe','mideast','asia','africa','universal'];
-
-  for (const rid of regionOrder) {
-    const tab = document.createElement('div');
-    tab.className = 'region-tab';
-    tab.textContent = regions[rid];
-    tab.dataset.region = rid;
-    tab.addEventListener('click', () => selectRegion(rid));
-    regionTabsEl.appendChild(tab);
-  }
-
-  // ─── Build language chips per region (with subgroup headers) ───
-  const srOrder  = i18nData.subregion_order  || {};
-  const srLabels = i18nData.subregion_labels || {};
-
-  function makeChip(lang) {
-    const chip = document.createElement('div');
-    chip.className = 'lang-chip' + (lang.id === currentLang ? ' active' : '');
-    chip.dataset.lang = lang.id;
-    chip.textContent = lang.native || lang.name;
-    chip.title = lang.name;
-    chip.addEventListener('click', () => selectLang(lang.id));
-    return chip;
-  }
-
-  function buildChips(regionId) {
-    const chipsEl = document.getElementById('lang-chips');
-    chipsEl.innerHTML = '';
-
-    const langsInRegion = langList.filter(l => {
-      const d = i18n[l.id];
-      return d && (Array.isArray(d.regions) ? d.regions.includes(regionId) : d.region === regionId);
-    });
-
-    const order = srOrder[regionId];
-    if (!order || order.length === 0) {
-      // No subgroups — flat sorted list
-      langsInRegion.sort((a,b) => a.name.localeCompare(b.name));
-      for (const lang of langsInRegion) chipsEl.appendChild(makeChip(lang));
-      return;
-    }
-
-    // Group by subregion (per-region dict or flat field)
-    const grouped = {};
-    for (const lang of langsInRegion) {
-      const d = i18n[lang.id];
-      const sr = (d.subregions && d.subregions[regionId]) || d.subregion || '_other';
-      (grouped[sr] = grouped[sr] || []).push(lang);
-    }
-
-    // Render in defined order
-    for (const sr of order) {
-      const group = grouped[sr];
-      if (!group || group.length === 0) continue;
-      group.sort((a,b) => a.name.localeCompare(b.name));
-      const lbl = document.createElement('div');
-      lbl.className = 'subregion-label';
-      lbl.textContent = srLabels[sr] || sr;
-      chipsEl.appendChild(lbl);
-      for (const lang of group) chipsEl.appendChild(makeChip(lang));
-    }
-
-    // Any unclassified languages
-    if (grouped['_other']) {
-      grouped['_other'].sort((a,b) => a.name.localeCompare(b.name));
-      for (const lang of grouped['_other']) chipsEl.appendChild(makeChip(lang));
-    }
-  }
-
-  function collapseChips() {
-    const chipsEl = document.getElementById('lang-chips');
-    chipsEl.classList.remove('open');
-    document.querySelectorAll('.region-tab').forEach(t => t.classList.remove('active'));
-    currentRegion = null;
-  }
-
-  function selectRegion(rid) {
-    const chipsEl = document.getElementById('lang-chips');
-    const alreadyOpen = currentRegion === rid && chipsEl.classList.contains('open');
-    if (alreadyOpen) {
-      collapseChips();
-      return;
-    }
-    currentRegion = rid;
-    buildChips(rid);
-    chipsEl.classList.add('open');
-    document.querySelectorAll('.region-tab').forEach(t => {
-      t.classList.toggle('active', t.dataset.region === rid);
-    });
-  }
-
-  // ─── Fade transition helper ───
-  function fadeUpdate(fn) {
-    const targets = [...document.querySelectorAll('.fade-target')];
-    // Fade out
-    targets.forEach(el => {
-      el.style.transition = 'opacity 0.18s ease';
-      el.style.opacity = '0';
-    });
-    setTimeout(() => {
-      try { fn(); } catch(e) { console.error('[fadeUpdate]', e); }
-      // Fade in
-      targets.forEach(el => { el.style.opacity = '1'; });
-      setTimeout(() => {
-        targets.forEach(el => { el.style.transition = ''; el.style.opacity = ''; });
-      }, 220);
-    }, 190);
-  }
+  const langBar = createLangBar(data, {
+    tabsEl:   document.getElementById('region-tabs'),
+    chipsEl:  document.getElementById('lang-chips'),
+    onSelect: id => selectLang(id),
+  });
 
   // ─── Operators grid ───
   // 15 tiles (5×3 / 3×5) + 1 hidden tile (4×4 at <500px)
@@ -339,13 +77,9 @@ import { LANG_STORAGE_KEY, bcp47Of, resolveInitialLang } from '../i18n/detect.js
     history.replaceState(null, '', url.toString());
     const piqadLink = document.getElementById('piqad-ref-link');
     if (piqadLink) piqadLink.hidden = (langId !== 'klingon_piqad');
-    collapseChips();
+    langBar.collapse();
+    langBar.setActive(langId);
     loadManual(langId);
-
-    // update chip active state
-    document.querySelectorAll('.lang-chip').forEach(c => {
-      c.classList.toggle('active', c.dataset.lang === langId);
-    });
 
     const langMeta  = langById[langId];
     const i18nEntry = i18n[langId];

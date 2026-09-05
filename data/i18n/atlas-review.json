@@ -1,0 +1,808 @@
+{
+  "_meta": {
+    "note": "Which of index3's translations a speaker still has to look at, and at what exactly. Every language with an `atlas` block in i18n.json appears here; tests/test_i18n_atlas.mjs fails on one that does not.",
+    "why": "The prose was written against what could be sourced. Where a term for a computing concept could not be sourced, a transparent compound was coined from the language's own roots — which is legitimate in an agglutinative language and is also exactly the kind of thing that reads as fluent to someone who does not speak it and as nonsense to someone who does. Counting the coinages is the difference between a draft a speaker can review in an afternoon and one they would have to re-read line by line.",
+    "coined": "term → the concept it was made for. They are also listed in the header comment of the language's own examples/graphics/mandelbrot/<id>.zy, which the page does not display.",
+    "not_a_score": "A short list does not mean the prose is right, only that its nouns are attested. Nothing here has been read by a speaker.",
+    "attested": "The terms taken from the language as it is written, not made here. `coined` against `attested` is the ratio that matters: where coinages outnumber attested terms, what is on the page is a draft with the shape of the language and mostly invented nouns, and a speaker is not reviewing it — they are writing it.",
+    "tags": "Where an entry's BCP-47 code stands in for a language the site names generically, it says so in the note. An approximate tag still names the right language; the raw id is not a language tag at all."
+  },
+  "languages": {
+    "english": {
+      "coined": {},
+      "attested": [],
+      "note": "The base. Everything else is measured against it."
+    },
+    "spanish": {
+      "coined": {},
+      "attested": [],
+      "note": "Written by the project. `castellano` reads this block by alias."
+    },
+    "portuguese": {
+      "coined": {},
+      "attested": [],
+      "note": "pt-BR."
+    },
+    "portugues_eu": {
+      "coined": {},
+      "attested": [],
+      "note": "pt-PT. Differs from pt-BR on everyday computing words: `limpar o ecrã` vs `limpar a tela`."
+    },
+    "french": {
+      "coined": {},
+      "attested": [],
+      "note": "`échappement` is the standard French term for the Mandelbrot escape-time algorithm, not a coinage."
+    },
+    "haitian_creole": {
+      "coined": {},
+      "attested": [],
+      "note": "Official IPN orthography. Technical terms follow the French lexifier, which is what Kreyòl does."
+    },
+    "jamaican_patois": {
+      "coined": {},
+      "attested": [],
+      "note": "No coinages: this is respelling, not coining. The concept names a Patwa speaker uses are the English ones, and `if` genuinely is `if`. What changed is the orthography, which is the language's own."
+    },
+    "quechua": {
+      "coined": {
+        "siqikuna": "the glyph ramp",
+        "sayaq": "column",
+        "kinraynin": "width of the complex window",
+        "sayaynin": "its height"
+      },
+      "attested": [
+        "ayqiy",
+        "chawpi",
+        "rirpu",
+        "unancha",
+        "llimpi",
+        "thaskiy",
+        "siqi",
+        "kinray",
+        "sayay"
+      ],
+      "note": "Core nouns attested: ayqiy, chawpi, rirpu, unancha, llimpi, thaskiy, siqi, kinray, sayay."
+    },
+    "guarani": {
+      "coined": {
+        "tysýipu'ã": "column",
+        "techaukaha": "mark"
+      },
+      "attested": [
+        "kañy",
+        "mbyte",
+        "itaverá",
+        "sa'y",
+        "pyrũ",
+        "tysýi",
+        "yvate",
+        "ipe"
+      ],
+      "note": "Core nouns attested: kañy, mbyte, itaverá, sa'y, pyrũ, tysýi, yvate, ipe."
+    },
+    "aymara": {
+      "coined": {
+        "sayt'ata": "column",
+        "jach'awi": "width of the complex window",
+        "patxawi": "its height"
+      },
+      "attested": [
+        "phatiña",
+        "taypi",
+        "lirphu",
+        "unancha",
+        "sami",
+        "sarawi",
+        "siqi",
+        "patxa",
+        "jach'a"
+      ],
+      "note": "Core nouns attested: phatiña, taypi, lirphu, unancha, sami, sarawi, siqi, patxa, jach'a."
+    },
+    "nahuatl": {
+      "coined": {
+        "tlamantli": "step",
+        "tzotzonalli": "key",
+        "cuauhticayotl": "height"
+      },
+      "attested": [
+        "choloa",
+        "tlanepantla",
+        "tezcatl",
+        "machiyotl",
+        "tlapalli",
+        "pantli",
+        "temimilli"
+      ],
+      "note": "Core nouns attested: choloa, tlanepantla, tezcatl, machiyotl, tlapalli, pantli, temimilli."
+    },
+    "maya": {
+      "coined": {
+        "kóochil": "width of the complex window",
+        "ka'analil": "its height",
+        "wa'al": "column"
+      },
+      "attested": [
+        "púuts'ul",
+        "chúumuk",
+        "néen",
+        "chíikul",
+        "boonil",
+        "xíimbal",
+        "tsóol",
+        "ka'anal",
+        "kóoch",
+        "péets'"
+      ],
+      "note": "Yucatec. Core nouns attested: púuts'ul, chúumuk, néen, chíikul, boonil, xíimbal, tsóol, ka'anal, kóoch, péets'."
+    },
+    "kiche": {
+      "coined": {
+        "wa'alik": "column",
+        "paqalil": "height of the complex window",
+        "nimal": "its width"
+      },
+      "attested": [
+        "anim",
+        "unik'ajal",
+        "lemo'",
+        "retal",
+        "b'onil",
+        "cholaj",
+        "paqal",
+        "pitz'"
+      ],
+      "note": "Core nouns attested: anim, unik'ajal, lemo', retal, b'onil, cholaj, paqal, pitz'."
+    },
+    "mapuche": {
+      "coined": {
+        "wirintun": "mark",
+        "fütalen": "width of the complex window",
+        "alülen": "its height"
+      },
+      "attested": [
+        "montun",
+        "rangiñ",
+        "komütuwe",
+        "chillka",
+        "ad",
+        "trekan",
+        "wirin",
+        "llafe"
+      ],
+      "note": "Mapudungun. Core nouns attested: montun, rangiñ, komütuwe, chillka, ad, trekan, wirin, llafe."
+    },
+    "navajo": {
+      "coined": {
+        "ałnááná": "column",
+        "nináltsood": "step",
+        "nineezí": "height of the complex window",
+        "niteelí": "its width"
+      },
+      "attested": [
+        "nineez",
+        "niteel",
+        "ałníi'",
+        "naaltsoos",
+        "dilwo",
+        "bikédzo"
+      ],
+      "note": "Core nouns attested: nineez, niteel, ałníi', naaltsoos, dilwo, bikédzo. The prose leans on constructions this list does not cover — read it before the word list."
+    },
+    "cherokee": {
+      "coined": {
+        "ᏗᎦᏙᏢᏒ": "row",
+        "ᏗᎦᏙᎬ": "column",
+        "ᎦᎪᏗ": "colour",
+        "ᎦᎶᏒᏍᏗ": "step",
+        "ᎠᏒᏂᏍᏗ": "key",
+        "ᎠᏟᏙᎠ": "escape",
+        "ᎤᏔᎾᎢ": "width of the complex window",
+        "ᎦᏅᎯᏓᎢ": "its height"
+      },
+      "attested": [
+        "ᎠᏰᏟ",
+        "ᎠᎦᏛᏗ",
+        "ᎠᏰᎸᏗ",
+        "ᎦᏅᎯᏓ",
+        "ᎤᏔᎾ",
+        "ᎪᏪᎳ"
+      ],
+      "note": "Eight of about fifteen. Attested: ᎠᏰᏟ (middle), ᎠᎦᏛᏗ (mirror), ᎠᏰᎸᏗ (sign), ᎦᏅᎯᏓ (long), ᎤᏔᎾ (big), ᎪᏪᎳ (write). This one needs a speaker more than any other on the list."
+    },
+    "cree_syl": {
+      "coined": {
+        "ᒪᓯᓇᐦᐃᑲᓂᐢ": "row",
+        "ᓂᐹᐏᐣ": "column",
+        "ᓇᐦᐄᔭᐏᐣ": "colour",
+        "ᐱᒧᐦᑌᐏᐣ": "step",
+        "ᓵᑲᐦᐊᒼ": "key",
+        "ᑭᓄᐋᐧᐤ": "height",
+        "ᐊᔭᐹᐤ": "width"
+      },
+      "attested": [
+        "ᑕᐢᑕᐋᐧᔨᕽ",
+        "ᐋᐧᐸᒧᐣ",
+        "ᐱᒥᐸᐦᑖᐤ",
+        "ᒪᓯᓇᐦᐃᑲᐣ"
+      ],
+      "note": "Plains Cree in syllabics. Seven of about fifteen. Attested: ᑕᐢᑕᐋᐧᔨᕽ (middle), ᐋᐧᐸᒧᐣ (mirror), ᐱᒥᐸᐦᑖᐤ (run), ᒪᓯᓇᐦᐃᑲᐣ (write). Needs a speaker, and the syllabics need checking character by character."
+    },
+    "wayuu": {
+      "attested": [
+        "awataa",
+        "iipünaa",
+        "miyoʼu",
+        "pütchi"
+      ],
+      "coined": {
+        "ayaawase": "the glyph ramp",
+        "ayaakuaa": "the colour table",
+        "ashajuushii": "row",
+        "atchinjaa": "column",
+        "miyoʼukuaa": "width of the complex window",
+        "iipünaakuaa": "its height",
+        "paʼata": "middle",
+        "eraajia": "mirror",
+        "ayaawaa": "mark",
+        "ayaakua": "tint",
+        "wanaa": "step",
+        "aʼatiraa": "key"
+      },
+      "note": "Twelve coined against four attested — the ratio is inverted here, and that changes what this is. `ayaawase`/`ayaawaa` are derived from the attested `ayaawataa` (to measure, to mark); the rest are built from roots without a computing sense in any source I could reach. BCP-47 `guc`, which is Wayuu exactly."
+    },
+    "embera": {
+      "attested": [
+        "bed'ea",
+        "ab'a",
+        "ume",
+        "unu",
+        "bia",
+        "wãrã"
+      ],
+      "coined": {
+        "kirak'a": "the glyph ramp",
+        "pak'ua": "the colour table",
+        "wãbʉa": "escape",
+        "borro": "terminal height",
+        "bĩ": "terminal width",
+        "kirak'ai": "row",
+        "wãrĩ": "column",
+        "bĩgua": "width of the complex window",
+        "borroa": "its height",
+        "dach'ia": "middle",
+        "unubia": "mirror",
+        "mĩrũ": "step",
+        "b'itua": "key"
+      },
+      "note": "Thirteen coined against six attested. Emberá has among the thinnest published computing register of any language on this list; the prose here has the grammar and mostly invented nouns. BCP-47 `emp` is Northern Emberá standing in for an entry the site names only `Embera`."
+    },
+    "yanomami": {
+      "attested": [
+        "thë ã",
+        "taai",
+        "yanomamɨ",
+        "urihi",
+        "pata",
+        "napë"
+      ],
+      "coined": {
+        "mesipë": "the glyph ramp",
+        "ũxipë": "the colour table",
+        "waripo": "escape",
+        "mãyõ": "row",
+        "hetupë": "column",
+        "patapë": "width of the complex window",
+        "hɨramapë": "its height",
+        "hɨrama": "terminal height",
+        "pei": "middle",
+        "mãyõmɨ": "mirror",
+        "mesi": "mark",
+        "ũxi": "tint",
+        "nahi": "step",
+        "wamotima": "key"
+      },
+      "note": "Fourteen coined against six attested — the furthest from a translation of anything on this list. Yanomami is several varieties with no shared written standard; BCP-47 `wca` is the Brazilian one standing in for all of them. This is a draft that needs writing, not reviewing."
+    },
+    "german": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary German one: Zeilen, Spalten, Spiegel, Stufe, Taste. Nouns capitalised, as German writes them. Nothing was coined: these languages have had a computing register for decades, which is the whole difference from the indigenous American entries above."
+    },
+    "italian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Italian one: righe, colonne, specchio, passo, tasto. Nothing was coined: these languages have had a computing register for decades, which is the whole difference from the indigenous American entries above."
+    },
+    "dutch": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Dutch one: rijen, kolommen, spiegel, stap, toets. Nothing was coined: these languages have had a computing register for decades, which is the whole difference from the indigenous American entries above."
+    },
+    "polish": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Polish one: wiersze, kolumny, lustro, krok, klawisz — with the diacritics, which the lexer takes. Nothing was coined: these languages have had a computing register for decades, which is the whole difference from the indigenous American entries above."
+    },
+    "russian": {
+      "attested": [],
+      "coined": {},
+      "note": "Identifiers in Cyrillic: строки, столбцы, зеркало, шаг, клавиша. Every term is the ordinary Russian one. Nothing was coined: these languages have had a computing register for decades, which is the whole difference from the indigenous American entries above."
+    },
+    "greek": {
+      "attested": [],
+      "coined": {},
+      "note": "Identifiers in Greek script: γραμμές, στήλες, καθρέφτης, βήμα, πλήκτρο. Every term is the ordinary Greek one. Nothing was coined: these languages have had a computing register for decades, which is the whole difference from the indigenous American entries above."
+    },
+    "ukrainian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. Identifiers in Cyrillic: рядки, стовпці, дзеркало, крок, клавіша. Nothing was coined."
+    },
+    "czech": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. řádky, sloupce, zrcadlo, krok, klávesa — with the diacritics, which the lexer takes. Nothing was coined."
+    },
+    "swedish": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. rader, kolumner, spegel, steg, tangent. Nothing was coined."
+    },
+    "danish": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. rækker, kolonner, spejl, trin, tast. Nothing was coined."
+    },
+    "romanian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. rânduri, coloane, oglindă, pas, tastă. Nothing was coined."
+    },
+    "catalan": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. files, columnes, mirall, pas, tecla. Nothing was coined."
+    },
+    "norwegian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. rader, kolonner, speil, steg, tast. Nothing was coined."
+    },
+    "icelandic": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. raðir, dálkar, spegill, skref, lykill. Nothing was coined."
+    },
+    "finnish": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. rivit, sarakkeet, peili, askel, näppäin. Nothing was coined."
+    },
+    "slovak": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. riadky, stĺpce, zrkadlo, krok, kláves. Nothing was coined."
+    },
+    "croatian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. redci, stupci, zrcalo, korak, tipka. Nothing was coined."
+    },
+    "bulgarian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. Identifiers in Cyrillic: редове, колони, огледало, стъпка, клавиш. Nothing was coined."
+    },
+    "estonian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. read, veerud, peegel, samm, klahv. Nothing was coined."
+    },
+    "latvian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. rindas, kolonnas, spogulis, solis, taustiņš. Nothing was coined."
+    },
+    "lithuanian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. eilutės, stulpeliai, veidrodis, žingsnis, klavišas. Nothing was coined."
+    },
+    "serbian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. Identifiers in Cyrillic: редови, колоне, огледало, корак, тастер. Nothing was coined."
+    },
+    "basque": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. errenkadak, zutabeak, ispilua, urratsa, tekla — the terms Euskaltzaindia fixed decades ago. Nothing was coined."
+    },
+    "galician": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. filas, columnas, espello, paso, tecla. Nothing was coined."
+    },
+    "slovenian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. vrstice, stolpci, zrcalo, korak, tipka. Nothing was coined."
+    },
+    "albanian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. rreshtat, shtyllat, pasqyra, hapi, tasti. Nothing was coined."
+    },
+    "belarusian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. Identifiers in Cyrillic: радкі, слупкі, люстра, крок, клавіша. Nothing was coined."
+    },
+    "macedonian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. Identifiers in Cyrillic: редови, колони, огледало, чекор, копче. Nothing was coined."
+    },
+    "mandarin": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. 行, 列, 镜像, 步, 按键. 逃逸 is the standard Chinese term for the Mandelbrot escape. Nothing was coined."
+    },
+    "japanese": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. 行, 列, 鏡, 段, キー. 発散 is the standard Japanese term for the orbit diverging. Nothing was coined."
+    },
+    "korean": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. 행, 열, 거울, 단계, 키. 발산 is the standard Korean term. Nothing was coined."
+    },
+    "hindi": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. पंक्तियाँ, स्तंभ, दर्पण, चरण, कुंजी. Nothing was coined."
+    },
+    "vietnamese": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. hàng, cột, gương, bước, phím. Nothing was coined."
+    },
+    "indonesian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. baris, kolom, cermin, langkah, tombol. Nothing was coined."
+    },
+    "thai": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. แถว, คอลัมน์, กระจก, ขั้น, ปุ่ม. Nothing was coined."
+    },
+    "bengali": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. সারি, স্তম্ভ, দর্পণ, ধাপ, চাবি. Nothing was coined."
+    },
+    "tamil": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. வரிசைகள், நெடுவரிசைகள், கண்ணாடி, படி, விசை. Nothing was coined."
+    },
+    "telugu": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. వరుసలు, నిలువువరుసలు, అద్దం, అడుగు, మీట. Nothing was coined."
+    },
+    "malay": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. baris, lajur, cermin, langkah, kekunci. Nothing was coined."
+    },
+    "tagalog": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. hanay, haligi, salamin, hakbang, pindutan. The five concept names the sweep had flagged as English were rewritten in Tagalog at the same time: ulit, labas, pasok, totoo/hindi, baryabol. Nothing was coined."
+    },
+    "marathi": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. ओळी, स्तंभ, आरसा, पाऊल, कळ. Nothing was coined."
+    },
+    "gujarati": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. હરોળ, સ્તંભ, અરીસો, પગલું, કળ. Nothing was coined."
+    },
+    "punjabi": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. ਕਤਾਰਾਂ, ਕਾਲਮ, ਸ਼ੀਸ਼ਾ, ਕਦਮ, ਕੁੰਜੀ. Nothing was coined."
+    },
+    "kannada": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. ಸಾಲುಗಳು, ಕಂಬಗಳು, ಕನ್ನಡಿ, ಹೆಜ್ಜೆ, ಕೀಲಿ. Nothing was coined."
+    },
+    "malayalam": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. വരികൾ, നിരകൾ, കണ്ണാടി, ചുവട്, കീ. Nothing was coined."
+    },
+    "nepali": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary one in the language. पङ्क्तिहरू, स्तम्भ, ऐना, पाइला, कुञ्जी. Nothing was coined."
+    },
+    "burmese": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Burmese one. အတန်း row, ကော်လံ column, မှန် mirror, ခြေလှမ်း step, ခလုတ် key. ထွက်ပြေး is the everyday verb for escaping and is what the orbit does. Nothing was coined."
+    },
+    "javanese": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is ordinary Javanese in the ngoko register the rest of the page uses. larik row, kolom column, pangilon mirror, jangkah step, tuts key, oncat escape. Nothing was coined."
+    },
+    "khmer": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Khmer one. ជួរដេក row, ជួរឈរ column, កញ្ចក់ mirror, ជំហាន step, គ្រាប់ចុច key, រត់គេច escape. Nothing was coined."
+    },
+    "lao": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Lao one. ແຖວ row, ຖັນ column, ແວ່ນ mirror, ບາດກ້າວ step, ປຸ່ມ key, ໜີ escape. Nothing was coined."
+    },
+    "sundanese": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is ordinary Sundanese in the loma register. baris row, kolom column, eunteung mirror, léngkah step, kenop key, kabur escape. Nothing was coined."
+    },
+    "sinhala": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Sinhala one. පේළි row, තීරු column, කැඩපත mirror, පියවර step, යතුර key, පලායාම escape. Nothing was coined."
+    },
+    "swahili": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Swahili one. mistari rows, safu columns, kioo mirror, hatua step, kitufe key, toroka to flee. rangiZote reads \"all the colours\" so the single tint can stay rangi. Nothing was coined."
+    },
+    "afrikaans": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is ordinary Afrikaans. rye rows, kolomme columns, spieël mirror, stap step, sleutel key, ontsnap escape. bind and in are spelled as in English because Afrikaans spells them that way, not because they were left untranslated. Nothing was coined."
+    },
+    "amharic": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Amharic one. ረድፎች rows, አምዶች columns, መስተዋት mirror, እርምጃ step, ቁልፍ key, ማምለጥ to escape. The terminal dimensions use ከፍታ/ወርድ and the plane ቁመት/ስፋት, four distinct everyday words. Nothing was coined."
+    },
+    "hausa": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Hausa one. layuka rows, ginshiƙai columns (ginshiƙi is a pillar), madubi mirror, mataki step, maɓalli key, tsere to flee. Nothing was coined."
+    },
+    "yoruba": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Yoruba one, tone marks included. ìlà rows, ọwọ̀n columns, dígí mirror, ìgbésẹ̀ step, kọ́kọ́rọ́ key, sálọ to flee. àkójọàwọ̀ is a compound of two ordinary words (collection + colour) so the single tint can stay àwọ̀. Nothing was coined."
+    },
+    "zulu": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary isiZulu one. imigqa rows, izinsika columns (insika is a pillar), isibuko mirror, isinyathelo step, ukhiye key, baleka to flee. Nothing was coined."
+    },
+    "igbo": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Igbo one. ahịrị rows, ogidi columns (a pillar), enyo mirror, nzọụkwụ step, igodo key, gbapụ to escape. agbaNiile reads \"all the colours\" so the single tint can stay agba. Nothing was coined."
+    },
+    "xhosa": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary isiXhosa one, and each differs from its isiZulu cousin: imigca rows, iintsika columns, isipili mirror, inyathelo step, isitshixo key, baleka to flee. Nothing was coined."
+    },
+    "somali": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Somali one. safaf rows, tiirar columns (pillars), muraayad mirror, tallaabo step, fure key, baxso to escape. janjeer is the everyday word for a slope. Nothing was coined."
+    },
+    "lingala": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is ordinary Lingala. milongo rows, makonzí columns (pillars), talatala mirror, litambe step, fungola key, kokima to flee. The ramp is named bilembo (signs) so the single glyph can stay elembo. Nothing was coined."
+    },
+    "shona": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary chiShona one. mitsara rows, mbiru columns (pillars), chionioni mirror, danho step, kiyi key, tiza to flee. materu is the everyday word for a slope. Nothing was coined."
+    },
+    "nyanja": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Chichewa one. mizere rows, mizati columns (pillars), galasi mirror, gawo step, kiyi key, thawa to flee. The ramp is named zizindikiro (signs) so the single glyph can stay chizindikiro. Nothing was coined."
+    },
+    "oromo": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Afaan Oromoo one. tarreewwan rows, utubaawwan columns (utubaa is a pillar), daawwitii mirror, tarkaanfii step, furtuu key, baqachuu to flee. gulantaa is the everyday word for a stair or grade. Nothing was coined."
+    },
+    "tigrinya": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Tigrinya one. ረድፍታት rows, ዓምድታት columns, መስትያት mirror, ስጉምቲ step, መፍትሕ key, ምህዳም to flee. The terminal dimensions use ቁመት/ወርዲ and the plane ንውሓት/ስፍሓት, four distinct everyday words. Nothing was coined."
+    },
+    "luganda": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Luganda one. ennyiriri rows, empagi columns (a pillar), endabirwamu mirror, omutendera step, ekisumuluzo key, dduka to run. The ramp is named obubonero (signs) so the single glyph can stay akabonero. Nothing was coined."
+    },
+    "setswana": {
+      "attested": [
+        "dikholomo"
+      ],
+      "coined": {},
+      "note": "Almost every term is the ordinary Setswana one: mela rows, seipone mirror, kgato step, senotlolo key, tshaba to flee, and matshwao/letshwao for the ramp and the single glyph. ONE IS A LOAN: dikholomo, a naturalised borrowing of English 'column'. It is in ordinary use in Setswana tables and it is not a coinage, but a speaker should confirm it: no non-loan Setswana term for a table column was found."
+    },
+    "wolof": {
+      "attested": [
+        "màndargaYi",
+        "meloYi",
+        "pas",
+        "caabi"
+      ],
+      "coined": {
+        "samp": "column — coined here from samp 'to plant, to erect (a post)'. No attested Wolof term for a table column was found; a speaker should replace this if one exists."
+      },
+      "note": "Most terms are ordinary Wolof: rëdd rows, seetu mirror, digg middle, daw to flee, caabi key (a fully naturalised borrowing). TWO THINGS A SPEAKER SHOULD CHECK. First, màndargaYi and meloYi are the noun plus the plural article yi ('màndarga yi', 'melo yi') written closed up, because an identifier cannot hold a space — the words are ordinary, the spelling is an accommodation. Second, pas is the everyday French borrowing for a step. ONE COINAGE: samp, for column."
+    },
+    "bambara": {
+      "attested": [
+        "kulɛri",
+        "layini",
+        "gilasi"
+      ],
+      "coined": {
+        "jɔyɔrɔw": "columns — coined here from jɔ 'to stand' + yɔrɔ 'place'. No attested Bambara term for a table column was found; a speaker should replace this if one exists."
+      },
+      "note": "The core is ordinary Bambara: taamasiɲɛnw/taamasiɲɛn for the ramp and the glyph, boli to run, cɛmancɛ middle, sen step, konnɛgɛ key (door-iron), janya and bonya for length and size. THREE ARE FRENCH BORROWINGS in everyday use, not coinages: kulɛri colour, layini line, gilasi mirror. ONE COINAGE: jɔyɔrɔw, for columns."
+    },
+    "fula": {
+      "attested": [
+        "noone"
+      ],
+      "coined": {
+        "tuggorɗe": "columns — coined here as the plural of tuggordu, a prop or support. No attested Fulfulde term for a table column was found.",
+        "tappol": "step — coined here from tappude 'to tread'. The derivation is regular but the noun itself was not confirmed in a source; a speaker should check it."
+      },
+      "note": "Most terms are ordinary Fulfulde: diide rows, daarorgal mirror, hakkunde middle, coktirgal key, dogde to run, juutol and yaajol for length and width, and maandeeji/maande for the ramp and the glyph. ONE SEMANTIC EXTENSION: noone, which means kind or sort and is used here for colour. TWO COINAGES: tuggorɗe and tappol."
+    },
+    "nigerian_pidgin": {
+      "attested": [],
+      "coined": {},
+      "note": "Nothing was coined, and nothing was left untranslated either. Naijá is an English-lexified creole, so ladda, layn, kolom, mak, kala, step and ki look like English words because they ARE the Naijá words, written in Naijá orthography — the same argument as Jamaican Patois. What is NOT Naijá is the front-page claim 'No keyword.', which this page's hero corrects to 'No wɔd. / Na sain alone.' The sweep still reports 14 of 16 concept names as English for this entry; that is a fact about the entry's ops table, not about this program."
+    },
+    "arabic": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Arabic one. صفوف rows, أعمدة columns, مرآة mirror, خطوة step, مفتاح key, هروب escape. The terminal dimensions use علو/عرض and the plane ارتفاع/اتساع, four distinct everyday words. Nothing was coined. This is the first right-to-left sample program: the identifiers are RTL, the marks are not, and the page pins every code pane to direction:ltr so the file is shown in its own order."
+    },
+    "hebrew": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Hebrew one. שורות rows, עמודות columns, מראה mirror, צעד step, מקש key, בריחה escape. The two plane spans are compounds of ordinary words joined with an underscore, since an identifier cannot hold a space. Nothing was coined."
+    },
+    "persian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Persian one. سطرها rows, ستون‌ها columns, آینه mirror, گام step, کلید key, گریز escape. Two identifiers carry U+200C, the zero-width non-joiner Persian spells with — رنگ‌ها and ستون‌ها — which is why the joiners had to be admitted into the identifier rule. Nothing was coined."
+    },
+    "urdu": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Urdu one. سطریں rows, ستون columns, آئینہ mirror, قدم step, کنجی key, فرار escape. تمام_رنگ reads \"all the colours\" so the single tint can stay رنگ. Nothing was coined."
+    },
+    "pashto": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Pashto one. کتارونه rows, ستنې columns (a pillar), هنداره mirror, ګام step, کیلي key, تښتېدل to flee. The ramp is named نښې (marks) so the single glyph can stay نښه. Nothing was coined."
+    },
+    "turkish": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Turkish one. satırlar rows, sütunlar columns, ayna mirror, adım step, tuş key, kaçış escape. Nothing was coined."
+    },
+    "azerbaijani": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Azerbaijani one. sətirlər rows, sütunlar columns, güzgü mirror, addım step, açar key, qaçış escape. Nothing was coined."
+    },
+    "kurdish": {
+      "attested": [],
+      "coined": {},
+      "note": "Kurmanji, in the Latin orthography the site offers, and left-to-right. Every term is ordinary: rêz rows, stûn columns, neynik mirror, gav step, kilît key, rev escape. Nothing was coined."
+    },
+    "georgian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Georgian one. სტრიქონები rows, სვეტები columns, სარკე mirror, ნაბიჯი step, ღილაკი key, გაქცევა escape. Nothing was coined."
+    },
+    "armenian": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is the ordinary Armenian one. տողեր rows, սյունակներ columns, հայելի mirror, քայլ step, ստեղն key, փախուստ escape. Nothing was coined."
+    },
+    "esperanto": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is ordinary Esperanto. linioj rows, kolumnoj columns, spegulo mirror, paŝo step, klavo key, eskapi to escape. Nothing was coined — Esperanto has had a computing register for decades."
+    },
+    "ido": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is ordinary Ido. linei rows, kolumni columns, spegulo mirror, pazo step, klavo key, eskapar to escape. Nothing was coined."
+    },
+    "interlingua": {
+      "attested": [],
+      "coined": {},
+      "note": "Every term is ordinary Interlingua. lineas rows, columnas columns, speculo mirror, passo step, clave key, escappar to escape. Several strings match the English word for word (condition, collection, meta) because Interlingua's vocabulary is the international one — that is the language working, not a gap."
+    },
+    "lojban": {
+      "attested": [
+        "roskari",
+        "pinta",
+        "sraji",
+        "ganra_pixra",
+        "clani_pixra"
+      ],
+      "coined": {},
+      "note": "The core is attested gismu: salpo slope, skari colour, cliva to leave, minra mirror, midju middle, stapa step, batke key, sinxa sign, clani long, ganra wide. FIVE THINGS A SPEAKER SHOULD CHECK, none of them invented words. roskari is `ro skari` (all colours) written closed up, because an identifier cannot hold a space, so the single tint can stay skari. pinta (horizontal) and sraji (vertical) are used as the counts of rows and columns — a semantic extension of two gismu, not a new one. ganra_pixra and clani_pixra join two gismu with an underscore for the same spacing reason."
+    },
+    "toki_pona": {
+      "attested": [
+        "sitelenMute",
+        "kuleMute",
+        "pokaLipu",
+        "suliLipu",
+        "supaLukin",
+        "noka",
+        "palisa"
+      ],
+      "coined": {},
+      "note": "toki pona has about 120 words and no geometry vocabulary, so almost every name here is a compound of ordinary words written closed up — the language's normal way of saying a new thing, and an identifier cannot hold the space. sitelenMute many-symbols, kuleMute many-colours, pokaLipu side-of-the-sheet, suliLipu height-of-the-sheet, supaLukin looking-surface for the mirror, palisa a long rigid thing for a column, noka a foot used for a step. Nothing was invented; every part is in the word list. A speaker should still check that each compound reads the way it is meant to."
+    },
+    "emoji": {
+      "attested": [],
+      "coined": {},
+      "note": "The identifiers are emoji, and both engines take them: 🪜 the ramp, 🌈 the colours, 🏃 escape, ➡ rows, ⬇ columns, 🪞 the mirror, 👣 the step, 🔑 the key. That is the site's existing convention for this entry — emoji leading, English behind — carried into a program that runs. Nothing was coined. Verified against the lexer first: a bare emoji, two emoji in a row, a letter plus an emoji and an underscore plus an emoji all parse and run."
+    },
+    "klingon": {
+      "attested": [
+        "ab",
+        "Dop",
+        "Dop_chuq",
+        "ab_chuq",
+        "qam"
+      ],
+      "coined": {
+        "leghwI": "mirror — coined here from legh (to see) plus the agentive -wI', so 'seer'. Klingon has no canonical noun for a mirror."
+      },
+      "note": "Most terms are canonical Klingon: Degh insignia/symbol, rItlh pigment, nargh to escape, tlhegh line, naQ staff (used for a column), botlh middle, chuq range, ngaQHa'moHwI' the unlocker for a key. FIVE ARE CANONICAL WORDS PUT TO A NEW USE: 'ab (be tall) and Dop (side) as the terminal's height and width, the two underscore compounds built on chuq, and qam (foot) for a step. ONE COINAGE: leghwI', for the mirror."
+    },
+    "klingon_piqad": {
+      "attested": [
+        "",
+        "",
+        "Dop_chuq",
+        "ab_chuq",
+        ""
+      ],
+      "coined": {
+        "": "mirror — the same coinage as the Latin-script Klingon entry (leghwI'), transliterated."
+      },
+      "note": "Not written but GENERATED: every string is the Klingon entry transliterated into the CSUR pIqaD block (U+F8D0–U+F8E9), longest-match first so tlh, ch, gh and ng are single characters. HTML markup and the contents of <code> and <i> are left alone, because those hold the other languages' keywords and must stay Latin. The transliteration is checked by decoding it back: it returns the Latin entry exactly. The same script produced the sample program, which decodes back to klingon.zy character for character."
+    }
+  }
+}

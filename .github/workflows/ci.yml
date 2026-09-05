@@ -64,8 +64,16 @@ jobs:
       - name: Translations (completeness gate, derived langs.json, pre-paint tables)
         run: node tests/test_i18n_playground.mjs
 
+      - name: Translations of index3 (completeness, page ↔ catalogue, pre-paint block)
+        run: node tests/test_i18n_atlas.mjs
+
       # Needs a browser, because the hover maps pointer positions to source lines by
       # arithmetic over the laid-out line height. GitHub's ubuntu runners ship Chrome;
       # the test says so and passes if one is ever missing.
       - name: Reading help in a real browser (hover cards, problems strip)
         run: node tests/test_playground_dom.mjs
+
+      # Also a browser, and for the same kind of reason: a block that spills off a 360px
+      # screen, or a picker that re-labels half the page, is a laid-out box and a live DOM.
+      - name: index3 on a phone (layout at 360px, language switch in place)
+        run: node tests/test_atlas_dom.mjs

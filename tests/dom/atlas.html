@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>atlas fixture</title>
+<!--
+  Fixture for tests/test_atlas_dom.mjs. It loads the real index3.html in an iframe of a
+  phone's width and reads the result, because that is the only way to know any of it:
+
+    the mobile layout   whether a block overflows the screen, at what size the fitted
+                        panes land, whether the header still fits once the language
+                        picker is in it — all of them are questions about laid-out
+                        boxes, and every one of them looks fine in the markup;
+    the language switch  the picker re-labels the page in place, including the <title>,
+                        <html lang>, the mark grid's fourteen labels and the sentences
+                        that carry inline markup. Nothing in Node can see that happen.
+
+  An iframe of a given width is a viewport of that width, so the page's media queries
+  answer to it and not to the window running the test.
+-->
+<style>
+  body { margin: 0; font: 13px/1.5 system-ui, sans-serif; }
+  iframe { border: 0; display: block; }
+  #results { white-space: pre; }
+</style>
+</head>
+<body>
+<iframe id="frame" height="760"></iframe>
+<!-- There used to be a second page here, in a language with no `atlas` block, to check the
+     fallback. It found that language by asking the data rather than naming one, because an
+     earlier version said `?lang=ja` and broke the day Japanese was written. On 2026-09-05
+     it ran out of subjects: every language the switcher offers has a block, so the lookup
+     returned nothing and the check said so and failed, which is what it was built to do.
+     Removed rather than pinned to a language that no longer needs it. The fallback is still
+     real code and still covered — `test_i18n_atlas.mjs` holds the line that a language
+     without a block answers every key from English. -->
+<!-- A CJK page at 480px, and that width is the whole point. The pane's font size is
+     `max(floor, min(cap, width / --cols / 0.6))`, so a wrong --cols is invisible at desktop
+     width (the cap binds, the pane fits either way) and invisible at phone width (the floor
+     binds, it scrolls either way). It only shows in the band between, where the division is
+     live: measured, a character-counted --cols overflows at 420px and 520px and fits from
+     570px up. The first version of this check used a 1100px frame and passed happily with
+     the bug reinstated. -->
+<iframe id="cjk" width="480" height="240" src="/index3.html?lang=ja"></iframe>
+
+<!-- Right to left. `atlas.js` sets `document.documentElement.dir` from the entry's `rtl`
+     flag, which flips the whole page — and everything inside inherits it. Arabic is loaded
+     even while it has no atlas block of its own, because the flag alone is what turns the
+     page around: the direction is live for a reader today whether the prose is written or
+     not. Measured before the rule that fixes it, `pre.zy`, `pre.term` and `pre.fractal`
+     all computed `direction: rtl` — a Zymbol program and two box-drawing captures handed
+     to the bidi algorithm. -->
+<iframe id="rtl" width="1000" height="700" src="/index3.html?lang=arabic"></iframe>
+<pre id="results">running…</pre>
+
+<script>
+const out = [];
+const ok = (label, cond, detail = '') =>
+  out.push(`${cond ? 'PASS' : 'FAIL'} ${label}${detail ? ' :: ' + detail : ''}`);
+
+const PHONE = 360;                       // the narrow end of what people actually carry
+const frame = document.getElementById('frame');
+frame.width = PHONE;
+
+frame.src = '/index3.html?lang=en';      // start from a known locale, not the runner's
+
+frame.addEventListener('load', () => {
+  // The page resolves its locale, fetches a catalogue and re-labels itself; markScrollers
+  // and fitGlyphs run on load. Give all of it a turn before measuring.
+  setTimeout(measure, 1200);
+});
+
+function measure() {
+  const w = frame.contentWindow, d = w.document;
+  const cs = el => w.getComputedStyle(el);
+  const box = el => el.getBoundingClientRect();
+
+  // ─── nothing may stick out sideways ────────────────────────────────────────
+  // A page that scrolls horizontally on a phone is the one failure a reader cannot work
+  // around: every vertical swipe drifts, and the right edge of every line is gone.
+  ok('the document does not scroll sideways',
+     d.documentElement.scrollWidth <= w.innerWidth + 1,
+     `${d.documentElement.scrollWidth} > ${w.innerWidth}`);
+
+  // A block that overflows on purpose scrolls inside its own box: those are excluded by
+  // walking up to the nearest scroller, which is what the reader's finger finds too.
+  const scrolls = el => {
+    for (let e = el; e && e !== d.body; e = e.parentElement) {
+      const ox = cs(e).overflowX;
+      if (ox === 'auto' || ox === 'scroll') return true;
+    }
+    return false;
+  };
+  const spills = [...d.querySelectorAll('body *')].filter(el => {
+    if (scrolls(el)) return false;
+    const r = box(el);
+    return r.width > 0 && (r.right > w.innerWidth + 1 || r.left < -1);
+  }).map(el => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') +
+               (typeof el.className === 'string' && el.className ? '.' + el.className.trim().split(/\s+/)[0] : ''));
+  ok('no element outside a scroller spills past the viewport', spills.length === 0,
+     spills.slice(0, 5).join(', '));
+
+  // ─── the header still holds everything ─────────────────────────────────────
+  const header = d.querySelector('header');
+  ok('the header fits its own width', header.scrollWidth <= header.clientWidth + 1,
+     `${header.scrollWidth} > ${header.clientWidth}`);
+  // The site's own selector, from the site's own data — the same bar the front page has.
+  const tabs = d.querySelectorAll('#region-tabs .region-tab');
+  ok('the region tabs are there', tabs.length === 6, `${tabs.length} tab(s)`);
+  ok('the alpha notice is there', Boolean(d.querySelector('.alpha-notice .alpha-badge')));
+  ok('the alpha notice names the AI-assisted engineering',
+     /AI-assisted|asistida por IA/.test(d.getElementById('alpha-msg').textContent),
+     d.getElementById('alpha-msg').textContent.slice(0, 60));
+  ok('the header links to GitHub',
+     Boolean(d.querySelector('header a[href*="github.com/zymbol-lang"]')));
+  ok('the footer links to GitHub',
+     Boolean(d.querySelector('footer a[href*="github.com/zymbol-lang"]')));
+
+  // ─── the hero leads with the headline, not the mascot ──────────────────────
+  const core = d.querySelector('.hero-core'), bird = d.querySelector('.hero-bird');
+  ok('the headline comes before the mascot on a phone', box(core).top < box(bird).top,
+     `core ${Math.round(box(core).top)}, bird ${Math.round(box(bird).top)}`);
+  ok('the hero buttons stack', cs(d.querySelector('.hero-cta')).flexDirection === 'column');
+
+  // ─── the marks are a usable grid, not fourteen slivers ─────────────────────
+  const cols = cs(d.getElementById('mark-grid')).gridTemplateColumns.split(' ').length;
+  ok('the mark grid is 3 or 4 columns on a phone', cols === 3 || cols === 4, `${cols} columns`);
+  const mk = d.querySelector('.mk');
+  ok('a mark is a real tap target', box(mk).width >= 72 && box(mk).height >= 64,
+     `${Math.round(box(mk).width)}×${Math.round(box(mk).height)}`);
+  const play = d.querySelector('.build figcaption a');
+  ok('the play link is a real tap target', box(play).height >= 40,
+     `${Math.round(box(play).height)}px tall`);
+
+  // ─── the evidence: fitted where it is a picture, legible where it is text ──
+  const fractal = d.querySelector('pre.fractal');
+  ok('the fractal fits the pane whole', fractal.scrollWidth <= fractal.clientWidth + 1,
+     `${fractal.scrollWidth} > ${fractal.clientWidth} — it is a picture, it may shrink`);
+  const zy = d.getElementById('zy-src');
+  ok('the sample program stays legible', parseFloat(cs(zy).fontSize) >= 9,
+     `${cs(zy).fontSize} — it is text, it may scroll instead of shrinking`);
+  // The pane shows a real file out of examples/, coloured, and the two links beside it
+  // point at that same file. A page that displays one program and opens another is the
+  // exact drift the whole section is an argument against.
+  ok('the sample is fetched and coloured', zy.querySelectorAll('span.t-kw').length > 5,
+     `${zy.querySelectorAll('span').length} span(s)`);
+  ok('the sample is the English one', /\bramp\b/.test(zy.textContent) && /escape\(/.test(zy.textContent));
+  ok('the run link opens the file on show',
+     d.getElementById('zy-run').getAttribute('href').endsWith('graphics/mandelbrot/english.zy'),
+     d.getElementById('zy-run').getAttribute('href'));
+  ok('the permalink names the file on show',
+     d.getElementById('zy-permalink').textContent.endsWith('graphics/mandelbrot/english.zy'),
+     d.getElementById('zy-permalink').textContent);
+  for (const term of d.querySelectorAll('pre.term')) {
+    ok('a capture stays legible', parseFloat(cs(term).fontSize) >= 7.5, cs(term).fontSize);
+  }
+  // Whatever ends up scrolling has to say so.
+  const wide = [...d.querySelectorAll('.scroller')].filter(el => el.scrollWidth - el.clientWidth > 4);
+  ok('every block that scrolls is marked as one', wide.every(el => el.classList.contains('is-wide')),
+     `${wide.filter(el => !el.classList.contains('is-wide')).length} unmarked of ${wide.length}`);
+
+  // ─── the page speaks the reader's language ─────────────────────────────────
+  ok('starts in the locale the URL asked for', d.documentElement.lang === 'en', d.documentElement.lang);
+  ok('no key is rendered at the reader',
+     !/>(?:meta|ui|nav|dl|glyph|hero|marks|mark|join|read|built|footer|html)\.[a-zA-Z0-9.]+</.test(d.body.innerHTML));
+
+  const before = {
+    title: d.title,
+    h1: d.querySelector('h1').textContent,
+    label: d.querySelector('[data-mk="bind"] i').textContent,
+    note: d.getElementById('mk-note').textContent,
+    nav: d.querySelector('[data-i18n="nav.marks"]').textContent,
+  };
+
+  // Open a region and click a chip — the reader's path, not a synthetic event on a control
+  // the page does not have.
+  let chip = null, found = '';
+  for (const tab of tabs) {
+    tab.click();
+    chip = d.querySelector('#lang-chips .lang-chip[data-lang="spanish"]');
+    if (chip) { found = tab.dataset.region; break; }
+  }
+  ok('a region opens and its chips include Spanish', Boolean(chip),
+     chip ? `in ${found}` : 'no region listed spanish');
+  if (chip) chip.click();
+
+  setTimeout(() => {
+    ok('<html lang> follows the picker', d.documentElement.lang === 'es', d.documentElement.lang);
+    ok('the title follows the picker', d.title !== before.title, d.title);
+    ok('the headline follows the picker', d.querySelector('h1').textContent !== before.h1);
+    ok('the nav follows the picker', d.querySelector('[data-i18n="nav.marks"]').textContent !== before.nav);
+    ok('the mark labels follow the picker',
+       d.querySelector('[data-mk="bind"] i').textContent !== before.label);
+    ok('the shared note follows the picker', d.getElementById('mk-note').textContent !== before.note);
+    // The sentences with <b>/<s>/<code>/<a> inside go through innerHTML: the markup has to
+    // survive the swap, or the argument they make comes out as flat prose.
+    const foot = d.querySelector('[data-i18n-html="html.marksFoot1"]');
+    ok('inline markup survives the swap', /<b>/.test(foot.innerHTML) && /<code>/.test(foot.innerHTML));
+    const join = d.querySelector('[data-i18n-html="html.joinFoot"]');
+    ok('a link inside a translated sentence survives', /<a [^>]*href="index2\.html"/.test(join.innerHTML));
+    ok('no key is rendered after the swap',
+       !/>(?:meta|ui|nav|dl|glyph|hero|marks|mark|join|read|built|footer|html)\.[a-zA-Z0-9.]+</.test(d.body.innerHTML));
+    ok('the choice is stored where the rest of the site reads it',
+       w.localStorage.getItem('zy-lang') === 'spanish', String(w.localStorage.getItem('zy-lang')));
+    ok('the chip is marked active', Boolean(d.querySelector('#lang-chips .lang-chip.active[data-lang="spanish"]')));
+    ok('the alpha notice follows the picker too',
+       /asistida por IA/.test(d.getElementById('alpha-msg').textContent),
+       d.getElementById('alpha-msg').textContent.slice(0, 50));
+
+    // ─── the sample follows the language, and it is a real file ─────────────
+    // Not a translated string: a different file out of examples/, whose identifiers are
+    // Spanish and whose marks are the same. tests/test_i18n_atlas.mjs proves the two are
+    // the same program; this proves the page actually swaps them.
+    ok('the sample program follows the picker',
+       /\btrazo\b/.test(zy.textContent) && /fuga\(/.test(zy.textContent),
+       zy.textContent.split('\n')[1]);
+    ok('the run link follows the picker',
+       d.getElementById('zy-run').getAttribute('href').endsWith('graphics/mandelbrot/spanish.zy'),
+       d.getElementById('zy-run').getAttribute('href'));
+    ok('the permalink follows the picker',
+       d.getElementById('zy-permalink').textContent.endsWith('graphics/mandelbrot/spanish.zy'));
+    ok('the pane is refitted to the wider translation',
+       Number(zy.style.getPropertyValue('--cols')) > 70,
+       `--cols: ${zy.style.getPropertyValue('--cols')}`);
+
+    // A CJK ideograph is one code point and two columns. Counting characters sized the
+    // Japanese pane for 46 columns of content that needs 68, and the code spilled out of a
+    // pane with room for it. Two checks, because either alone can be satisfied by accident.
+    const cjkDoc = document.getElementById('cjk').contentDocument;
+    const czy = cjkDoc.getElementById('zy-src');
+    ok('the CJK frame really holds the CJK sample', /発散\(/.test(czy.textContent),
+       czy.textContent.split('\n')[1]);
+    const chars = Math.max(...czy.textContent.split('\n').map(l => [...l].length));
+    ok('--cols counts columns, not characters',
+       Number(czy.style.getPropertyValue('--cols')) > chars,
+       `--cols=${czy.style.getPropertyValue('--cols')} but the longest line is ${chars} characters`);
+    ok('and so the CJK pane fits at the width where that decides',
+       czy.scrollWidth <= czy.clientWidth + 1,
+       `${czy.scrollWidth} > ${czy.clientWidth} at 480px — see the comment on #cjk`);
+
+    // ─── and the captures did not move ──────────────────────────────────────
+    // They are photographs of the running programs; a translation that touched them
+    // would be a redrawing of the thing being shown.
+    ok('the captures are untouched by the translation',
+       d.querySelectorAll('pre.term').length === 4 &&
+       d.querySelector('.build b').textContent === '囲碁');
+
+    // ─── right to left ──────────────────────────────────────────────────────
+    const rDoc = document.getElementById('rtl').contentDocument;
+    const rWin = document.getElementById('rtl').contentWindow;
+    const dirOf = sel => { const el = rDoc.querySelector(sel);
+                           return el ? rWin.getComputedStyle(el).direction : '(missing)'; };
+    ok('an RTL language turns the page around',
+       rDoc.documentElement.dir === 'rtl', `dir=${rDoc.documentElement.dir}`);
+    // The prose flips; the code does not. A Zymbol program has one reading order and the
+    // terminal captures are box-drawing art — reversed, their frames come apart.
+    for (const sel of ['pre.zy', 'pre.term', 'pre.fractal', '.shot', '#zy-permalink']) {
+      ok(`${sel} stays left-to-right on an RTL page`, dirOf(sel) === 'ltr', dirOf(sel));
+    }
+    // The accent stripe and the gloss are on the reading edge, not on a fixed side.
+    const mkCS = rWin.getComputedStyle(rDoc.querySelector('.mk-out'));
+    ok('the mark accent moves to the right edge in RTL',
+       parseFloat(mkCS.borderRightWidth) > parseFloat(mkCS.borderLeftWidth),
+       `left=${mkCS.borderLeftWidth} right=${mkCS.borderRightWidth}`);
+    ok('the gloss aligns to the reading end, not to the right',
+       rWin.getComputedStyle(rDoc.querySelector('.jn .gloss')).textAlign === 'end');
+    // And nothing spills sideways once everything has flipped.
+    ok('the RTL page does not scroll horizontally',
+       rDoc.documentElement.scrollWidth <= rDoc.documentElement.clientWidth + 1,
+       `${rDoc.documentElement.scrollWidth} > ${rDoc.documentElement.clientWidth}`);
+
+    document.getElementById('results').textContent = out.join('\n');
+  }, 800);
+}
+</script>
+</body>
+</html>

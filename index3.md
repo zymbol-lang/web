@@ -9,6 +9,33 @@
 > <https://zymbol-lang.org/>.
 
 This is the Markdown representation of <https://zymbol-lang.org/index3.html>.
+The page carries the same language bar as the front page — the region tabs and
+the native-name chips, from the same `data/i18n/i18n.json` — and
+<https://zymbol-lang.org/index3.html?lang=es> opens it in Spanish. **All hundred
+and eleven languages the switcher offers are written** — the Americas, Europe,
+Asia, Africa, the Middle East and the constructed languages, six regions of six.
+This twin is the English one.
+
+Five of those languages are read right to left — Arabic, Hebrew, Persian, Urdu
+and Pashto — and the page turns around for them. The prose turns; the code does
+not. A Zymbol program has one reading order and the terminal captures are
+box-drawing art, so every code pane is pinned to `direction: ltr`.
+
+The sample program is a real file per language, not a translated string:
+`examples/graphics/mandelbrot/` holds one Mandelbrot each for English, Spanish,
+Portuguese (Brazil and Portugal), French, Haitian Creole, Jamaican Patois,
+Quechua, Guaraní, Aymara, Nahuatl, Yucatec Maya, K'iche', Mapudungun, Navajo,
+Cherokee, Plains Cree, Wayuunaiki, Emberá, Yanomami, German, Italian, Dutch,
+Polish, Russian, Greek and eighty-four more — one for every language the switcher
+offers, the same program with the identifiers in each, some in their own scripts,
+five of them written right to left, one written in emoji and one in the pIqaD
+Private Use Area — proved the same by running all a hundred and ten under a pty
+and diffing every one of the 5,588 painted cells — and the page shows the one for
+the language on show and links to it. Six of the hundred and ten carry a coined
+term, and `data/i18n/atlas-review.json` names each one and says why it had to be
+made. The pIqaD one is not written but generated: it is the Klingon file
+transliterated character by character, and it decodes back to it exactly. The terminal captures are the same in every
+language: they are photographs of running programs, not prose about them.
 Other pages: [/index.md](index.md), [/index2.md](index2.md),
 [/install.md](install.md), [/playground.md](playground.md),
 [/changelog.md](changelog.md), [/piqad-reference.md](piqad-reference.md). Start
@@ -166,7 +193,7 @@ lays itself out from the answer. Two economies pay for the resolution: the
 squares are carried between iterations instead of being recomputed (four
 products a step instead of six), and the set is mirrored about the real axis, so
 only the top half is ever escaped. Run it in the browser:
-<https://zymbol-lang.org/playground.html?open=graphics/mandelbrot.zy>
+<https://zymbol-lang.org/playground.html?open=graphics/mandelbrot/english.zy>
 
 ## 04 — And people build with it
 
