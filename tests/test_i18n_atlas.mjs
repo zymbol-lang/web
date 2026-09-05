@@ -25,6 +25,7 @@
 import { readFileSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { digitValue } from '../src/zymbol/zymbol.js';
 
 const WEB_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
 const PAGE    = join(WEB_DIR, 'index3.html');
@@ -250,6 +251,20 @@ function skeleton(src) {
     // written in it, and klingon_galaxy has been for longer. Neither is exotic here: the
     // Rust lexer admits any character that is not whitespace and not an operator, so the
     // narrow rule was always this file's, never the language's.
+    // A fifth time, and the same lesson: the numerals. `zymbol` reads a literal in any of
+    // the 69 blocks in `digit_blocks.rs`, so the Hindi program writes `२.७` where the
+    // English one writes `2.7` — same value, same program, different script, exactly as
+    // `ढाल` and `ramp` are. Leaving the digits verbatim reported all twenty files that
+    // write their own numerals as different programs from English.
+    //
+    // What is normalised is the SCRIPT, never the value: each digit becomes the ASCII
+    // digit of the same value, so `२२` and `٢٢` both read as `22` and a file that said
+    // 35 where English says 36 is still a different program. Collapsing every literal to
+    // one placeholder would have passed this file and stopped testing anything. The value
+    // comes from the engine's own `digitValue`, not from a table copied to here — the
+    // pIqaD digits live in the PUA, where `\p{Nd}` does not reach, and this is the fifth
+    // entry in a list of things a narrower local copy got wrong.
+    .replace(/\p{Nd}|[\uf8f0-\uf8f9]/gu, ch => String(digitValue(ch)))  // numerals
     .replace(/[\p{L}\p{So}\p{Co}_][\p{L}\p{M}\p{N}\p{So}\p{Co}_'’\u200c\u200d]*/gu, '·')  // identifiers
     .split('\n').map(l => l.trim().replace(/\s+/g, ' ')).filter(Boolean).join('\n');
 }
