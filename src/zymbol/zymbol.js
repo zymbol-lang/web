@@ -1845,7 +1845,25 @@ export class Parser {
     // subscript assign: name[idx] = val
     if (this.check('LBRACKET') && this.peek().line === this.prevEndLine()) {
       this.adv();
-      const idx = this.parseExpr();
+      let idx = this.parseExpr();
+      // `m[i>j>k]$~ v` — a nav path of three steps or more (ZYJS-012).
+      //
+      // At statement position the bracket is consumed before the nav parser
+      // sees it, so the path arrives here as a `>` COMPARISON and the branches
+      // below rebuild it with `flattenGtChain`. But `parseExpr` reads exactly
+      // ONE comparison — `>` does not chain — so `m[1>2>1]` left a `>` sitting
+      // in front of the `]` and the whole statement died on
+      // `Expected RBRACKET, got '>'`. The READ `>> m[1>2>1] ¶` was fine all
+      // along: it goes through `parseNavContent`, which loops over `>` itself.
+      //
+      // Keep folding to the left, which is the shape `flattenGtChain` already
+      // flattens, so the rebuild below is unchanged. `parseAdditive` for the
+      // operand, for the reason `parseNavAtom` gives: at this position `>` is a
+      // separator and not an operator, so a full comparison would swallow it.
+      while (this.check('GT')) {
+        this.adv();
+        idx = { type: 'BinOp', op: '>', left: idx, right: this.parseAdditive() };
+      }
       this.eat('RBRACKET');
       // Decision 6: the indexed assignment is withdrawn, in all three
       // collections. `=` means "this NAME now holds this value", and
@@ -2220,6 +2238,35 @@ export class Parser {
     return t.endLine ?? t.line;
   }
 
+  // Refuse `arr[i][j]` — chained brackets, at any depth.
+  //
+  // Nesting is navigated with `>`: `arr[i>j]`. The write form went first
+  // (`m[i][j] = v`, and `d["x"]["y"]$~ v` — see CHAINED above); the read was
+  // left parsing and called deprecated in the guide, which put the rule in the
+  // prose and in no engine. Both Rust engines refuse it in their parser with
+  // this wording.
+  //
+  // Only `simple` and `path` specs: those reach into a collection, while
+  // `arr[[i>j]]` and `arr[p ; q]` build a new one out of it.
+  rejectChainedIndex(left, line) {
+    if (left?.type !== 'NavIndex') return;
+    if (left.spec?.kind !== 'simple' && left.spec?.kind !== 'path') return;
+    const name = this.indexRootName(left);
+    throw new ZyError(
+      `chained index does not exist: '${name}[…][…]' is not a form of Zymbol\n` +
+      `= help: nesting is navigated with '>', so this is '${name}[i>j]' — one bracket group addresses one element, however deep it lies`,
+      line);
+  }
+
+  // The name the chained access hangs off. Anything but an identifier at the
+  // root has no name to quote, and the rule is about the notation anyway.
+  indexRootName(n) {
+    if (!n) return '…';
+    if (n.type === 'Ident') return n.name;
+    if (n.type === 'NavIndex') return this.indexRootName(n.obj);
+    return '…';
+  }
+
   parsePostfix() {
     return this.parsePostfixRest(this.parsePrimary());
   }
@@ -2230,6 +2277,7 @@ export class Parser {
     let left = primary;
     while (true) {
       if (this.check('LBRACKET') && sameLine()) {
+        this.rejectChainedIndex(left, this.peek().line);
         this.adv(); const spec = this.parseNavContent(); this.eat('RBRACKET');
         left = { type: 'NavIndex', obj: left, spec };
       } else if (this.check('DOT') || this.check('SCOPE')) {
@@ -2262,6 +2310,12 @@ export class Parser {
       const sameLine = () => this.peek().line === this.prevEndLine();
 
       if (this.check('LBRACKET') && sameLine()) {
+        // Before the group is read, so it lands whatever follows: a chained
+        // access is refused for reading and for every action alike. Asking
+        // after the `$~` branch left `arr[1][1]$~ 0` and `x = arr[1][1]$~ 0`
+        // running, because those have somewhere to put the result and so never
+        // reached the edit refusal that was supposed to catch them.
+        this.rejectChainedIndex(left, this.peek().line);
         this.adv();
         const spec = this.parseNavContent();
         this.eat('RBRACKET');
@@ -4045,6 +4099,38 @@ class Checker {
     }
   }
 
+  // Every step of a nav spec is an expression, and the checker has to descend
+  // into all of them. It used to look at `spec.index`, `spec.from` and
+  // `spec.to` — but `from`/`to` live on an ATOM, never on the spec, so only
+  // `kind: 'simple'` was ever walked and `m[i>j]` reported `unused variable
+  // 'i'` while both Rust engines saw the use (ZYJS-013).
+  //
+  // The four shapes, from `parseNavContent`/`parseNavStructured`:
+  //   simple      { index }
+  //   path        { path:   [atom, …] }
+  //   flat        { paths:  [[atom, …], …] }
+  //   structured  { groups: [{ paths: [[atom, …], …] }, …] }
+  // and an atom is `{ kind:'index', expr }` or `{ kind:'range', from, to }`.
+  //
+  // Written over the shapes rather than over `kind`, so a spec that grows a
+  // field is walked by whichever branch matches it instead of falling silently
+  // through a `switch` — the failure being fixed here is precisely a step that
+  // nothing looked at.
+  checkNavSpec(spec) {
+    if (!spec) return;
+    const atom = (a) => {
+      if (!a) return;
+      if (a.expr) this.checkExpr(a.expr);
+      if (a.from) this.checkExpr(a.from);
+      if (a.to)   this.checkExpr(a.to);
+    };
+    const path = (p) => (p || []).forEach(atom);
+    if (spec.index) this.checkExpr(spec.index);
+    if (spec.path)  path(spec.path);
+    (spec.paths || []).forEach(path);
+    (spec.groups || []).forEach((g) => (g.paths || []).forEach(path));
+  }
+
   checkExpr(expr) {
     if (!expr) return;
     switch (expr.type) {
@@ -4210,10 +4296,7 @@ class Checker {
 
       case 'NavIndex': {
         this.checkExpr(expr.obj);
-        const spec = expr.spec;
-        if (spec?.index) this.checkExpr(spec.index);
-        if (spec?.from)  this.checkExpr(spec.from);
-        if (spec?.to)    this.checkExpr(spec.to);
+        this.checkNavSpec(expr.spec);
         return;
       }
 
