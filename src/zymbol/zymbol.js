@@ -114,7 +114,7 @@
  * Regression test: interpreter/tests/modules_scope/alias_shadowed_by_variable.zy.
  *
  * CLI args (><): supported — pass cliArgs array to runZymbol().
- * BashExec (<\ \>): returns high-resolution timestamp (entropy stub).
+ * BashExec (<\ \>): entropy stub, ranged to match the command it stands in for.
  * Not supported: shell inclusion (</ />).
  * TUI operators require a >>| { } block to activate the canvas overlay.
  *
@@ -6404,8 +6404,27 @@ export class Interpreter {
         if (_cmd.includes('%S')) return mkStr(_pad(_now.getSeconds()));
         if (_cmd.includes('%s')) return mkStr(String(Math.floor(Date.now() / 1000)));
         if (_cmd.startsWith('echo ') && !_cmd.includes('$')) return mkStr(_cmd.slice(5).trim().replace(/^['"]|['"]$/g, ''));
-        // Default: nanosecond-ish timestamp for random seeds
-        return mkStr(String(Date.now() * 1000000 + Math.trunc(Math.random() * 999999)));
+
+        // Entropy stubs. A stand-in has to match the ORDER OF MAGNITUDE of the command it
+        // stands in for, not merely be random — because v0.0.9's integer is ±(2^53−1),
+        // fail-closed, and a seed is nearly always multiplied on the next line.
+        //
+        // This used to return `Date.now() * 1000000`, epoch in nanoseconds: 1.79e18, some
+        // 199× over the ceiling, and already an imprecise JS Number before Zymbol saw it.
+        // Serpiente's `(#|_ns| + #|_pid| * 31337 + #|_rnd| * 65537) % 2147483647` therefore
+        // raised `integer overflow` before the game drew a frame, in the browser only —
+        // under the CLI `date +%N` returns nanoseconds *within the second*, nine digits.
+        // The stub was reproducing a shell command's purpose and not its range.
+        const _rand = n => Math.trunc(Math.random() * n);
+        // date +%N — nanoseconds within the current second, never the epoch
+        if (_cmd.includes('%N')) return mkStr(String(_rand(1e9)));
+        // echo $$ — a plausible pid, under Linux's default pid_max
+        if (/\$\$/.test(_cmd)) return mkStr(String(1 + _rand(4194304)));
+        // od -An -N2 -tu2 /dev/urandom — two bytes, so a uint16
+        if (_cmd.includes('urandom')) return mkStr(String(_rand(65536)));
+        // Anything else: entropy in the same nine-digit range, which survives being
+        // multiplied by the usual LCG constants without leaving the integer.
+        return mkStr(String(_rand(1e9)));
       }
 
       case 'Array':
