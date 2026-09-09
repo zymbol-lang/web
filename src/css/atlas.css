@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   atlas.css — index3.html: the marks, how they join, and one program.
+   atlas.css — index.html, the front page: the marks, how they join, and one program.
    Layered on site.css for the palette, the header and the footer.
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -244,7 +244,7 @@ pre.zy, pre.term, pre.fractal, .shot, code, kbd {
 }
 
 /* The two claims the language is actually built on, stated as flat facts — one to a
-   line, no capsules. The argument for them is section 02 and index2.html. */
+   line, no capsules. The argument for them is section 02. */
 .claims {
   margin: 0 auto 1.7rem;
   font-family: var(--mono);

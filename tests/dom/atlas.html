@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>atlas fixture</title>
 <!--
-  Fixture for tests/test_atlas_dom.mjs. It loads the real index3.html in an iframe of a
+  Fixture for tests/test_atlas_dom.mjs. It loads the real index.html (the atlas) in an iframe of a
   phone's width and reads the result, because that is the only way to know any of it:
 
     the mobile layout   whether a block overflows the screen, at what size the fitted
@@ -41,7 +41,7 @@
      live: measured, a character-counted --cols overflows at 420px and 520px and fits from
      570px up. The first version of this check used a 1100px frame and passed happily with
      the bug reinstated. -->
-<iframe id="cjk" width="480" height="240" src="/index3.html?lang=ja"></iframe>
+<iframe id="cjk" width="480" height="240" src="/index.html?lang=ja"></iframe>
 
 <!-- Right to left. `atlas.js` sets `document.documentElement.dir` from the entry's `rtl`
      flag, which flips the whole page — and everything inside inherits it. Arabic is loaded
@@ -50,7 +50,7 @@
      not. Measured before the rule that fixes it, `pre.zy`, `pre.term` and `pre.fractal`
      all computed `direction: rtl` — a Zymbol program and two box-drawing captures handed
      to the bidi algorithm. -->
-<iframe id="rtl" width="1000" height="700" src="/index3.html?lang=arabic"></iframe>
+<iframe id="rtl" width="1000" height="700" src="/index.html?lang=arabic"></iframe>
 <pre id="results">running…</pre>
 
 <script>
@@ -62,7 +62,7 @@ const PHONE = 360;                       // the narrow end of what people actual
 const frame = document.getElementById('frame');
 frame.width = PHONE;
 
-frame.src = '/index3.html?lang=en';      // start from a known locale, not the runner's
+frame.src = '/index.html?lang=en';      // start from a known locale, not the runner's
 
 frame.addEventListener('load', () => {
   // The page resolves its locale, fetches a catalogue and re-labels itself; markScrollers
@@ -192,12 +192,17 @@ function measure() {
     ok('the mark labels follow the picker',
        d.querySelector('[data-mk="bind"] i').textContent !== before.label);
     ok('the shared note follows the picker', d.getElementById('mk-note').textContent !== before.note);
-    // The sentences with <b>/<s>/<code>/<a> inside go through innerHTML: the markup has to
+    // The sentences with <b>/<s>/<code> inside go through innerHTML: the markup has to
     // survive the swap, or the argument they make comes out as flat prose.
     const foot = d.querySelector('[data-i18n-html="html.marksFoot1"]');
     ok('inline markup survives the swap', /<b>/.test(foot.innerHTML) && /<code>/.test(foot.innerHTML));
-    const join = d.querySelector('[data-i18n-html="html.joinFoot"]');
-    ok('a link inside a translated sentence survives', /<a [^>]*href="index2\.html"/.test(join.innerHTML));
+    // A link inside a translated sentence was checked here too, on `html.joinFoot`, which
+    // ended in one to index2.html. index2 was a first draft and was deleted; the clause that
+    // linked to it was cut from all 110 translations, and no string in the catalogue carries
+    // an <a> any more. The check is kept in words rather than code because the property is
+    // still real: put a link back inside a translated sentence and it needs testing again.
+    ok('no translated string smuggles in a link',
+       ![...d.querySelectorAll('[data-i18n-html]')].some(el => /<a[\s>]/i.test(el.innerHTML)));
     ok('no key is rendered after the swap',
        !/>(?:meta|ui|nav|dl|glyph|hero|marks|mark|join|read|built|footer|html)\.[a-zA-Z0-9.]+</.test(d.body.innerHTML));
     ok('the choice is stored where the rest of the site reads it',

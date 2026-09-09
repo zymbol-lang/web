@@ -76,13 +76,19 @@ check('the playground offers the running source too',
 // ─── every manual carries CC BY-SA ───────────────────────────────────────────
 section('manuals: CC BY-SA 4.0');
 
-const manuals = readdirSync(join(WEB_DIR, 'data/manuals'))
-  .filter(f => f.startsWith('manual_') && f.endsWith('.md'));
+// Two generations, both published, both prose: the 110 of v0.0.5 and the v0.0.9 rewrite
+// under v009/. The rewrite was outside this gate until the front page started serving it —
+// a directory of manuals nothing audited, which is how the first unlicensed one gets in.
+const manualDirs = ['data/manuals', 'data/manuals/v009'];
+const manuals = manualDirs.flatMap(dir =>
+  readdirSync(join(WEB_DIR, dir))
+    .filter(f => f.startsWith('manual_') && f.endsWith('.md'))
+    .map(f => join(dir, f)));
 
 check('the manuals are where they are expected', manuals.length > 100, `${manuals.length} found`);
 for (const f of manuals) {
-  const text = read(join('data/manuals', f));
-  check(`data/manuals/${f} declares CC-BY-SA-4.0`,
+  const text = read(f);
+  check(`${f} declares CC-BY-SA-4.0`,
         text.includes('SPDX-License-Identifier: CC-BY-SA-4.0') &&
         text.includes('creativecommons.org/licenses/by-sa/4.0/'));
 }

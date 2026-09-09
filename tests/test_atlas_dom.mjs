@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: AGPL-3.0-only
-// Browser test for index3.html: the phone layout and the language switch.
+// Browser test for the front page (index.html — the atlas): the phone layout and the language switch.
 //
 //   node tests/test_atlas_dom.mjs
 //
@@ -38,7 +38,7 @@ function findChrome() {
 
 const chrome = findChrome();
 if (!chrome) {
-  console.log('– no Chrome or Chromium found — index3 layout and language switch not checked.');
+  console.log('– no Chrome or Chromium found — atlas layout and language switch not checked.');
   console.log('  Install one, or open tests/dom/atlas.html in a browser by hand.');
   process.exit(0);
 }
@@ -82,7 +82,7 @@ try {
 
   if (!results || /^running…/.test(results[1].trim())) {
     failures++;
-    console.log('  ✗ the fixture produced no results — index3\'s module graph probably failed to load');
+    console.log('  ✗ the fixture produced no results — the atlas module graph probably failed to load');
     const err = (r.stderr ?? '').split('\n')
       .filter(l => /error|Error|failed/.test(l) && !/GPU|gpu|dbus|DevTools|sqlite/.test(l))
       .slice(0, 6);
@@ -105,6 +105,6 @@ try {
 }
 
 console.log(failures === 0
-  ? '✓ index3 fits a phone and changes language in place'
+  ? '✓ the atlas fits a phone and changes language in place'
   : `✗ ${failures} failure(s)`);
 process.exit(failures === 0 ? 0 : 1);

@@ -42,7 +42,8 @@ via numeral modes.
 
 ```text
 web/
-├── index.html                 Landing page (i18n showcase, embedded manual reader)
+├── index.html                 Front page — the atlas: fourteen marks, and the v0.0.9 manual
+├── overview.html              The former front page, archived (i18n showcase, v0.0.5 manual)
 ├── playground.html            Interactive editor — multi-file, .zyp packages
 ├── install.html               Download / install instructions per platform
 ├── changelog.html             Release history
@@ -77,7 +78,9 @@ web/
 │   │   ├── highlight.js       Syntax highlighter (esc, highlightCode)
 │   │   └── webmcp.js          navigator.modelContext tools — feature-detected no-op
 │   ├── site/
-│   │   └── main.js            Landing-page logic: language switcher, manual reader, transitions
+│   │   ├── main.js            overview.html logic: language switcher, transitions
+│   │   ├── atlas.js           Front-page logic: the marks, the sample, the manual
+│   │   └── manual.js          language→file table, fetch + render + highlight (both pages)
 │   └── css/
 │       ├── site.css           Shared styles for every page except the playground
 │       └── playground.css     Playground-only styles
@@ -88,7 +91,7 @@ web/
 │
 ├── data/
 │   ├── i18n/                  languages.json, i18n.json, languages.xml
-│   ├── manuals/               manual_<lang>.md (110 translations) + translation_progress.md
+│   ├── manuals/               manual_<lang>.md (110, v0.0.5) + v009/ (4, current)
 │   └── archive/               v004/, v005/ — superseded manual sets, kept for diffing
 │
 ├── examples/                  THE EXAMPLE POOL — the playground's only source of examples
@@ -107,10 +110,11 @@ web/
 │   ├── test_catalog.mjs       catalog.json ↔ examples/ integrity (dead refs, orphans)
 │   ├── test_filestore.mjs     The mounted-vs-open file model and its persistence
 │   ├── test_zyp.mjs           .zyp reader + module resolver (builds its own fixtures)
-│   ├── test_manual.mjs        Smoke-runs every ```zymbol block in manual_en.md
+│   ├── test_manual.mjs        Smoke-runs every ```zymbol block in v009/manual_en.md
+│   ├── test_manual_v009.mjs   V009_CODES ↔ the directory, both directions
 │   ├── test_markdown.mjs      Page twins, llms.txt, robots.txt and the negotiation Worker
-│   ├── test_i18n_atlas.mjs    index3's atlas blocks in i18n.json: complete, used, nothing dead
-│   ├── test_atlas_dom.mjs     index3 at 360px and its language switch (headless Chrome)
+│   ├── test_i18n_atlas.mjs    The front page's atlas blocks in i18n.json: complete, used, no dead key
+│   ├── test_atlas_dom.mjs     The front page at 360px and its language switch (headless Chrome)
 │   ├── test_licenses.mjs      The AGPL/CC BY-SA split, per file
 │   ├── test_agents.mjs        Skill digest + every SKILL.md block runs + WebMCP tools
 │   ├── serve.mjs              Dev server with Cache-Control: no-store (LAN device testing)
@@ -141,11 +145,11 @@ playground. `src/playground/` and `src/site/` depend on it, never the reverse.
 
 ```text
 src/zymbol/  ←  src/playground/     (playground.html)
-             ←  src/site/           (index.html, index3.html)
+             ←  src/site/           (index.html, overview.html)
 ```
 
 `src/i18n/detect.js` sits beside them: it holds the language tables and the
-URL → storage → browser precedence, so the landing page, the playground and `index3.html`
+URL → storage → browser precedence, so the front page, the playground and `overview.html`
 all resolve the reader's language the same way and share `zy-lang` in `localStorage`. A
 choice made on one page is honoured by the next.
 
@@ -284,28 +288,75 @@ different relative paths as two distinct modules, loading and running it twice.
 | `data/i18n/languages.json` | 111 languages — FizzBuzz tokens and showcase constructs. Drives the language switcher. |
 | `data/i18n/i18n.json` | 119 languages — ~50 UI strings each, plus region labels, plus an `atlas` block of ~80 more for **all 111 the switcher offers**. The eight without one are not offered as chips. |
 | `data/i18n/playground/<lang>.json` | The playground's own catalogue, one file per fully translated locale. |
-| `data/manuals/manual_<lang>.md` | 110 full manual translations, rendered by the landing page. |
+| `data/manuals/manual_<lang>.md` | 110 full manual translations, last revised for v0.0.5. Rendered by `overview.html`. |
+| `data/manuals/v009/manual_<code>.md` | The v0.0.9 rewrite — 4 languages so far. Rendered by the front page, and by nothing else. |
 
 `languages.json` is a strict subset of `i18n.json`: 8 languages (Hungarian, Welsh, Cree,
 Mando'a, Quenya, Sindarin, Dothraki, High Valyrian) have UI translations staged but no
 showcase entry yet, so they do not appear in the switcher. Adding a language means all three
 artifacts — see [docs/newlang.md](docs/newlang.md).
 
-### `index3.html` shares the landing page's machinery
+### `index.html` and `overview.html` share one set of machinery
 
-`index3.html` reads the same `i18n.json`, offers the same region tabs and chips, and writes
-the same `zy-lang` — a language chosen on either page is the language the other one opens
-in. Its own ~80 strings live on an `atlas` block of each language entry, and the four it has
-no business rewording (`nav_home`, `nav_try_online`, `alpha_msg`, `alpha_link`) it reads off
-the top level, so the alpha notice — including the AI-assisted engineering the project
+`index.html` — the atlas, fourteen marks one at a time — became the front page on
+2026-09-09. What was the front page until then is `overview.html`: the showcase, the
+operator table, the features and the manuals, kept accessible and carrying a notice that it
+is no longer updated. `index2.html`, a first draft of the argument the atlas now makes, was
+deleted outright rather than archived, and the clause that linked to it was cut from
+`html.joinFoot` in all 110 translations.
+
+Both pages read the same `i18n.json`, offer the same region tabs and chips, and write the
+same `zy-lang` — a language chosen on either page is the language the other one opens in.
+The front page's own ~79 strings live on an `atlas` block of each language entry, and the
+three it has no business rewording (`nav_try_online`, `alpha_msg`, `alpha_link`) it reads
+off the top level, so the alpha notice — including the AI-assisted engineering the project
 declares in `interpreter/README.md` § *Authorship & AI Collaboration* — is already right in
-all 119 languages.
+all 119 languages. `nav_home` was a fourth until the swap: an item labelled *Home* on the
+page you are already on. `overview.html` still reads that key for its own footer.
+
+Two strings did not survive the swap, and neither could be fixed by re-pointing a link.
+`read.cta2` said *the full front page* in 110 languages about a page that is no longer the
+front page, and the archived notice on `overview.html` is text that exists in no language
+yet — so the button was removed with its key, and the notice and the footer link to it are
+in English alone. Inventing either in 118 languages would pass every gate here and be worse
+than saying it once, in one language, truthfully.
 
 The selector itself is `src/site/langbar.js`, imported by both pages. It used to be a block
 inside `main.js`; a second, different picker on the second page is how a language quietly
-stops being offered on half a site. For the same reason, `index3.html` carries the pre-paint
-`<html lang>` tables verbatim from `index.html`, and `test_i18n_playground.mjs` now checks
-both copies against `src/i18n/detect.js` rather than one.
+stops being offered on half a site. For the same reason, `overview.html` carries the
+pre-paint `<html lang>` tables verbatim from `index.html`, and `test_i18n_playground.mjs`
+checks both copies against `src/i18n/detect.js` rather than one.
+
+### The manual: two generations, and what each does when a language is missing
+
+`src/site/manual.js` holds the language→file table and the fetch/render/highlight, shared by
+both pages — the third extraction out of `main.js`, after `langbar.js` and `highlight-zy.js`,
+and for the same reason. What is *not* shared is the fallback policy, and the difference is
+deliberate:
+
+| | `data/manuals/manual_<code>.md` | `data/manuals/v009/manual_<code>.md` |
+|---|---|---|
+| revision | v0.0.5 | **v0.0.9** |
+| languages | 110 | **4** — en, es, it, qu |
+| served by | `overview.html` | the front page |
+| language missing | falls back: Spanish, then English | **shows nothing at all** |
+
+With 110 written, a gap is an accident and English is a reasonable floor. With four, a
+fallback would put English prose under a heading that says *ドキュメント*, which reads to
+that reader as "your language is finished" — so the section and its nav item are hidden
+outright. Absent is honest; wrong is not.
+
+Which languages have one is a **hand-written list** (`V009_CODES`), not a 404 probe: probing
+paints a heading and takes it away again, and it makes an offline reader look like an
+untranslated one. A hand-written list drifts, so `tests/test_manual_v009.mjs` compares it
+against the directory **in both directions** — a code listed with no file (readers get an
+empty box) and a file with no code (nobody is ever shown it) both fail. Verified by breaking
+it each way.
+
+The section's three labels (`nav_manual`, `manual_title`, `manual_sub`) were already written
+in all 119 languages for the old front page, so the manual arrived translated without a key
+being invented. `manual_qu_borrador.md` sits in that directory and is **not** published: the
+gate matches `manual_<code>.md` exactly rather than globbing `manual_*`.
 
 **Two of the last eight are not prose in the ordinary sense.** The emoji program's
 identifiers *are* emoji — `🪜` the ramp, `🌈` the colours, `🏃` the escape function — which
@@ -485,10 +536,10 @@ reserved token, and by that reading Zymbol has plenty — its own language serve
 every operator under a `keyword.control.zymbol` scope. The claim that survives inspection is
 the one `interpreter/SYMBOLS.md` §1.2 states: **no construct of the grammar is a word.**
 
-The `atlas` blocks are the exception, and deliberately so: the distinction *is* index3's
-argument, so its Spanish says `Sin palabras` and strikes `sin palabras clave` on the same
-line, exactly as the English does — while `spanish.t1`, four keys above it in the same file,
-still says `Sin palabras clave.` for the front page. Any language that gets an `atlas` block
+The `atlas` blocks are the exception, and deliberately so: the distinction *is* the front
+page's argument, so its Spanish says `Sin palabras` and strikes `sin palabras clave` on the
+same line, exactly as the English does — while `spanish.t1`, four keys above it in the same
+file, still says `Sin palabras clave.` for `overview.html`. Any language that gets an `atlas` block
 has to make the same correction, and `test_i18n_atlas.mjs` fails on a headline that does
 not: a page whose thesis is the correction cannot translate to the claim it corrects.
 
@@ -509,12 +560,13 @@ node tests/test_limits.mjs            # step/output caps: the TUI exemption and 
 node tests/test_catalog.mjs [--check] # catalog.json ↔ examples/ (--check also compiles every .zy)
 node tests/test_runner.mjs            # parity: zymbol CLI vs the JS engine
 node tests/test_runner.mjs --dir examples   # …over the example pool
-node tests/test_manual.mjs            # smoke-runs every code block in manual_en.md
+node tests/test_manual.mjs            # smoke-runs every code block in v009/manual_en.md
+node tests/test_manual_v009.mjs       # the v0.0.9 manual list vs the directory it describes
 node tests/test_markdown.mjs          # page twins, llms.txt, robots.txt, negotiation Worker
 node tests/test_licenses.mjs          # SPDX headers on every source, CC BY-SA on every manual
 node tests/test_agents.mjs            # skill digest, SKILL.md blocks execute, WebMCP tools
-node tests/test_i18n_atlas.mjs        # index3's atlas blocks: complete, used, nothing dead
-node tests/test_atlas_dom.mjs         # index3 at 360px + the language switch (needs Chrome)
+node tests/test_i18n_atlas.mjs        # the front page's atlas blocks: complete, used, nothing dead
+node tests/test_atlas_dom.mjs         # the front page at 360px + the language switch (needs Chrome)
 ```
 
 Every one of those runs in CI on each push to `main` and on every pull request

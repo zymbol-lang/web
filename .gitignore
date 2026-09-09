@@ -3,6 +3,11 @@ scripts/
 *.py
 __pycache__/
 
+# …except the manual gates, which are not one-off: translation_progress.md documents them
+# as the procedure every translation goes through, and 92 languages are still queued.
+# gates.sh runs them, so shipping it without these would ship a broken script.
+!data/manuals/v009/*.py
+
 # Old/replaced assets
 assets/img/zymbol_logo.png
 

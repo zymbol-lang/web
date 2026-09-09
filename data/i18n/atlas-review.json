@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "note": "Which of index3's translations a speaker still has to look at, and at what exactly. Every language with an `atlas` block in i18n.json appears here; tests/test_i18n_atlas.mjs fails on one that does not.",
+    "note": "Which of the front page's translations a speaker still has to look at, and at what exactly. Every language with an `atlas` block in i18n.json appears here; tests/test_i18n_atlas.mjs fails on one that does not.",
     "why": "The prose was written against what could be sourced. Where a term for a computing concept could not be sourced, a transparent compound was coined from the language's own roots — which is legitimate in an agglutinative language and is also exactly the kind of thing that reads as fluent to someone who does not speak it and as nonsense to someone who does. Counting the coinages is the difference between a draft a speaker can review in an afternoon and one they would have to re-read line by line.",
     "coined": "term → the concept it was made for. They are also listed in the header comment of the language's own examples/graphics/mandelbrot/<id>.zy, which the page does not display.",
     "not_a_score": "A short list does not mean the prose is right, only that its nouns are attested. Nothing here has been read by a speaker.",

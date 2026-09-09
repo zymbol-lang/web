@@ -2,10 +2,10 @@
 /**
  * highlight-zy.js — the colouring the static pages use for Zymbol source.
  *
- * Lifted out of src/site/main.js when index3.html started showing a real program fetched
+ * Lifted out of src/site/main.js when the atlas page started showing a real program fetched
  * from examples/, for the reason langbar.js exists: the second copy is the one that falls
  * behind. The landing page uses it for the showcase and for the ```zymbol blocks of the
- * manual; index3 uses it for the sample it displays.
+ * manual; the front page uses it for the sample it displays.
  *
  * It is deliberately NOT src/playground/highlight.js. That one is the audited highlighter
  * — it carries the hover dictionary's keys and is checked against the lexer by

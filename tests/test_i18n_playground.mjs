@@ -171,7 +171,7 @@ if (existsSync(langsPath)) {
 }
 
 // ─── index.html's pre-paint copy still agrees with detect.js ─────────────────
-section('pre-paint tables (index.html, index3.html)');
+section('pre-paint tables (index.html, overview.html)');
 
 /** Reads one object literal out of a page's inline script, by name. */
 function inlineTable(html, name) {
@@ -186,9 +186,10 @@ function inlineTable(html, name) {
   return new Function(`return ${html.slice(open, close + 1)}`)();
 }
 
-// Two pages carry the copy now: index3.html offers the same 119 languages from the same
-// chip bar, so it needs the same tables before its own first paint. Two copies of a table
-// that already drifted once are two chances to drift, so both are checked, not one.
+// Two pages carry the copy now: overview.html — the former front page, kept archived —
+// offers the same 119 languages from the same chip bar as index.html, so it needs the same
+// tables before its own first paint. Two copies of a table that already drifted once are two
+// chances to drift, so both are checked, not one.
 const diff = (a, b, an, bn) => {
   const onlyA = Object.keys(a).filter(k => !(k in b));
   const onlyB = Object.keys(b).filter(k => !(k in a));
@@ -198,7 +199,7 @@ const diff = (a, b, an, bn) => {
   check(`${an} and ${bn} agree on every value`, differ.length === 0, differ.join(' '));
 };
 
-for (const page of ['index.html', 'index3.html']) {
+for (const page of ['index.html', 'overview.html']) {
   const src = readFileSync(join(WEB_DIR, page), 'utf8');
   const inlineLocale = inlineTable(src, 'LOCALE_MAP');
   const inlineBcp47  = inlineTable(src, 'BCP47');

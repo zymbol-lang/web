@@ -3,7 +3,7 @@
  * langbar.js — the site's language selector: region tabs, then native-name chips.
  *
  * This is the control the landing page has always had, lifted out of src/site/main.js so
- * that index3.html can carry the same one rather than a second, different picker. The
+ * that overview.html can carry the same one rather than a second, different picker. The
  * reason is the reason detect.js gives for existing: a table or a widget copied into two
  * pages drifts, and the drift is invisible until a reader lands on the page that fell
  * behind. There is one selector, one data load, one set of chips.

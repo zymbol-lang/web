@@ -3,29 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zymbol — Programming Language in Any Human Language | No Words</title>
-  <meta name="description" content="Zymbol is a symbolic programming language with no words in its grammar — write code using pure symbols in any human language: Spanish, Japanese, Arabic, Chinese, and 100+ more.">
-  <meta name="keywords" content="programming language, no words, no keywords, symbolic language, code in Spanish, code in Japanese, code in Arabic, code in Chinese, multilingual programming, unicode programming, international programming language, lenguaje de programación, 日本語プログラミング, البرمجة بالعربية">
+  <title>Zymbol — No Words, Just Symbols</title>
+  <meta name="description" content="Not no keywords — no words: nothing in Zymbol’s grammar is a word in any language. Fourteen marks, one meaning each, agglutinating into every operator.">
   <meta name="robots" content="index, follow">
   <meta name="author" content="Zymbol-Lang">
   <link rel="canonical" href="https://zymbol-lang.org/">
 
-  <!-- Open Graph -->
   <meta property="og:type"        content="website">
   <meta property="og:url"         content="https://zymbol-lang.org/">
-  <meta property="og:title"       content="Zymbol — Programming Language in Any Human Language">
-  <meta property="og:description" content="No words. Just symbols. Write code in Spanish, Japanese, Arabic, Chinese or any of 100+ human languages. Every identifier is yours.">
+  <meta property="og:title"       content="Zymbol — No Words, Just Symbols">
+  <meta property="og:description" content="A minimalist symbolic language. Fourteen marks, one meaning each, and they agglutinate.">
   <meta property="og:image"       content="https://zymbol-lang.org/zymbol_logo.png">
   <meta property="og:locale"      content="en_US">
   <meta property="og:site_name"   content="Zymbol-Lang">
 
-  <!-- Twitter Card -->
   <meta name="twitter:card"        content="summary_large_image">
-  <meta name="twitter:title"       content="Zymbol — Programming Language in Any Human Language">
-  <meta name="twitter:description" content="No words. Just symbols. Code in Spanish, Japanese, Arabic, Chinese and 100+ languages.">
+  <meta name="twitter:title"       content="Zymbol — No Words, Just Symbols">
+  <meta name="twitter:description" content="A minimalist symbolic language. Fourteen marks, one meaning each, and they agglutinate.">
   <meta name="twitter:image"       content="https://zymbol-lang.org/zymbol_logo.png">
 
-  <!-- JSON-LD structured data -->
+  <!-- JSON-LD structured data. It names https://zymbol-lang.org/ as the software's URL,
+       so it belongs on the page that is that URL. It sat on the former front page until
+       this one took the root; two copies would be two claims about the same thing. -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -43,14 +42,14 @@
   }
   </script>
 
-  <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
   <link rel="alternate" type="text/markdown" href="index.md">
   <link rel="license" href="LICENSE">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png">
   <link rel="apple-touch-icon" href="assets/img/favicon.png">
+
   <script>
-  // Apply theme before first paint to avoid flash
+  // Theme before the first paint, so the page does not flash the other one.
   (function(){
     var s = localStorage.getItem('zy-theme');
     var light = s ? s === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
@@ -134,24 +133,18 @@
     var bcp47 = resolveBcp47();
     if (bcp47) document.documentElement.lang = bcp47;
   })();
-</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="src/css/site.css">
-  <style>
-    @font-face {
-      font-family: 'pIqaD qolqoS';
-      src: local('pIqaD qolqoS'), url('assets/fonts/pIqaD-qolqoS.ttf') format('truetype');
-      font-display: swap;
-    }
-  </style>
-</head>
-<body>
+  </script>
 
-<!-- ═══ HEADER ═══ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/site.css">
+  <link rel="stylesheet" href="src/css/atlas.css">
+</head>
+<body class="atlas">
+
 <header>
-  <a href="#hero" class="logo">
+  <a href="index.html" class="logo">
     <img src="assets/img/logo.png" alt="Zymbol-Lang">
     <span class="logo-code">
       <span class="logo-sym">@{</span>
@@ -161,14 +154,16 @@
   </a>
   <div class="header-right">
     <nav id="main-nav">
-      <a href="#showcase"><span id="nav-showcase" class="fade-target">Showcase</span></a>
-      <a href="#operators"><span id="nav-operators" class="fade-target">Operators</span></a>
-      <a href="#features"><span id="nav-features" class="fade-target">Features</span></a>
-      <a href="#manual"><span id="nav-manual" class="fade-target">Documentación</span></a>
+      <a href="#marks"><span class="fade-target" data-i18n="nav.marks">Marks</span></a>
+      <a href="#join"><span class="fade-target" data-i18n="nav.join">Joining</span></a>
+      <a href="#read"><span class="fade-target" data-i18n="nav.read">Read one</span></a>
+      <a href="#built"><span class="fade-target" data-i18n="nav.built">Built with it</span></a>
+      <!-- Revealed with the section itself: no link to a manual that is not there. -->
+      <a href="#manual" id="nav-manual-link" hidden><span class="fade-target" data-i18n="nav.manual">Documentation</span></a>
       <a href="changelog.html">Releases</a>
       <a href="https://github.com/zymbol-lang/interpreter" target="_blank" rel="noopener" class="icon-link" title="GitHub" aria-label="GitHub"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
       <a href="https://x.com/ZymbolLang" target="_blank" rel="noopener" class="icon-link" title="X / Twitter" aria-label="X / Twitter"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.74-8.855L1.254 2.25H8.08l4.253 5.622L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg></a>
-      <a href="playground.html" class="nav-cta"><span id="nav-try-online" class="fade-target">Try Online</span></a>
+      <a href="playground.html" class="nav-cta"><span class="fade-target" data-i18n="nav.try">Try Online</span></a>
     </nav>
     <button id="theme-toggle" aria-label="Toggle theme" title="Toggle light/dark">
       <span id="theme-icon">🌙</span>
@@ -180,251 +175,479 @@
 </header>
 
 <!-- ═══ LANG SELECTOR BAR ═══ -->
+<!-- Same control as the front page, from the same data, built by the same module:
+     src/site/langbar.js. A second, different picker on one page is how a language stops
+     being offered on half a site without anyone noticing. -->
 <div id="lang-bar">
   <div class="region-tabs" id="region-tabs"></div>
   <div class="lang-chips" id="lang-chips"></div>
 </div>
 
-<!-- ═══ APRIL FOOLS BANNER (disabled — reusable for future campaigns) ═══
-<div id="april-banner" class="visible">
-  <div class="april-inner">
-    <span class="april-rocket">🖖</span>
-    <div class="april-msg">
-      <strong id="april-welcome">Welcome Zymbol-Lang</strong>
-      <span id="april-sub" class="april-sub">We renamed all operators to emojis. JK. Maybe. 😈</span>
-    </div>
-    <span class="april-rocket">🚀</span>
-    <button id="april-dismiss" aria-label="Dismiss banner">✕</button>
-  </div>
-</div>
-═══ END APRIL FOOLS BANNER ═══ -->
-
 <!-- ═══ ALPHA NOTICE ═══ -->
+<!-- `alpha_msg` is the entry's own, so the notice — the AI-assisted engineering the
+     project declares in interpreter/README.md § Authorship & AI Collaboration included —
+     is already written in all 119 languages. It is not this page's to reword. -->
 <div class="alpha-notice">
-  <a href="changelog.html" style="text-decoration:none"><span class="alpha-badge">Public Alpha · v0.0.8</span></a>
-  <span id="alpha-msg">Zymbol is in active development — this release is a concept validation of the language design. APIs, syntax, and features may change.</span>
-  <a id="alpha-link" href="https://github.com/zymbol-lang/interpreter" target="_blank">Follow progress on GitHub →</a>
+  <a href="changelog.html" style="text-decoration:none"><span class="alpha-badge">Public Alpha · v0.0.9</span></a>
+  <span id="alpha-msg" class="fade-target" data-i18n="alpha.msg">Zymbol is in active development through AI-assisted engineering — this release validates the concept of an intentional human design: Symbolic, Universal, and Immutable. APIs, syntax, and features may change.</span>
+  <a id="alpha-link" class="fade-target" data-i18n="alpha.link" href="https://github.com/zymbol-lang/interpreter" target="_blank" rel="noopener">Follow progress on GitHub →</a>
 </div>
 
 <!-- ═══ HERO ═══ -->
-<section id="hero">
-  <div class="hero-right">
+<section id="hero3">
+  <div class="hero-bird">
     <div class="mascot-wrap">
       <img class="mascot-img" src="assets/img/logo.png" alt="Zymbol-Lang mascot">
       <div class="mascot-download-card">
-        <div class="dl-version">v0.0.8 · Public Alpha</div>
-        <div class="dl-title">Get Zymbol</div>
+        <div class="dl-version fade-target" data-i18n="dl.version">v0.0.8 &middot; Public Alpha</div>
+        <div class="dl-title fade-target" data-i18n="dl.title">Get Zymbol</div>
         <a href="install.html" class="btn-primary dl-btn">
-          <span>↓</span>&nbsp;Download &amp; Install
+          <span aria-hidden="true">&darr;</span><span data-i18n="dl.btn" class="fade-target">Download &amp; Install</span>
         </a>
-        <div class="dl-meta">Linux &nbsp;·&nbsp; Windows &nbsp;·&nbsp; macOS</div>
+        <div class="dl-meta fade-target" data-i18n="dl.meta">Linux &nbsp;&middot;&nbsp; Windows &nbsp;&middot;&nbsp; macOS</div>
       </div>
     </div>
   </div>
 
-  <div class="hero-left">
-    <div class="hero-tag fade-target" id="hero-why-tag">why zymbol</div>
-    <h1>
-      <span class="fade-target" id="hero-t1">No words.</span>
-      <span class="t2 fade-target" id="hero-t2">Just symbols.</span>
-    </h1>
-    <p class="hero-desc fade-target" id="hero-desc">
-      A minimalist programming language. Write identifiers in any human language — the operators never change.
+  <div class="hero-core">
+  <div class="glyph-stage" aria-hidden="true">
+    <span class="glyph is-on"><b>?</b><em data-i18n="glyph.cond" class="fade-target">condition</em></span>
+    <span class="glyph"><b>@</b><em data-i18n="glyph.time" class="fade-target">time</em></span>
+    <span class="glyph"><b>&gt;&gt;</b><em data-i18n="glyph.out" class="fade-target">out</em></span>
+    <span class="glyph"><b>&lt;~</b><em data-i18n="glyph.ret" class="fade-target">give back</em></span>
+    <span class="glyph"><b>$</b><em data-i18n="glyph.coll" class="fade-target">collection</em></span>
+    <span class="glyph"><b>¶</b><em data-i18n="glyph.nl" class="fade-target">newline</em></span>
+  </div>
+
+  <p class="kicker fade-target" data-i18n="hero.kicker">why zymbol</p>
+  <h1><span data-i18n="hero.t1" class="fade-target">No words.</span><br><span class="t2 fade-target" data-i18n="hero.t2">Just symbols.</span></h1>
+  <p class="sub fade-target" data-i18n-html="html.heroSub">
+    Not <s>no keywords</s> — <b>no words</b>.<br>
+    Nothing in the grammar is a word in any language.
+  </p>
+  <p class="sub2 fade-target" data-i18n-html="html.heroSub2">
+    A minimalist symbolic language: fourteen marks, one meaning each, and they
+    <em>agglutinate</em> into everything else.
+  </p>
+  <p class="claims">
+    <span data-i18n="hero.claim1" class="fade-target">Identifiers in any human language.</span>
+    <span data-i18n="hero.claim2" class="fade-target">Symbols never change.</span>
+  </p>
+
+  <div class="hero-cta">
+    <a href="#marks" class="btn-primary"><span aria-hidden="true">↓</span><span data-i18n="hero.cta1" class="fade-target">Start with the marks</span></a>
+    <a href="playground.html" class="btn-ghost"><span aria-hidden="true">▶</span><span data-i18n="hero.cta2" class="fade-target">Playground</span></a>
+  </div>
+  </div><!-- .hero-core -->
+</section>
+
+<!-- ═══ 1 · THE MARKS ═══ -->
+<section id="marks">
+  <div class="container">
+    <div class="head">
+      <span class="num">01</span>
+      <h2 data-i18n="marks.h2" class="fade-target">The marks</h2>
+      <p data-i18n="marks.lead" class="fade-target">Each one means one thing. Tap to see it used.</p>
+    </div>
+
+    <!-- The English label and note stay in the markup: with no JavaScript the reader
+         gets the page in English rather than a grid of key names. paintMarks() in
+         src/site/atlas.js overwrites both from the catalogue. -->
+    <div class="grid reveal" id="mark-grid">
+      <button class="mk sel" type="button" data-mk="bind" aria-pressed="true"
+              data-code="name = 5" data-note="binds a name to a value">
+        <b>=</b><i>bind</i></button>
+      <button class="mk" type="button" data-mk="out" aria-pressed="false"
+              data-code="&gt;&gt; &quot;hi&quot;" data-note="writes to the output stream">
+        <b>&gt;&gt;</b><i>out</i></button>
+      <button class="mk" type="button" data-mk="in" aria-pressed="false"
+              data-code="&lt;&lt; &quot;name?&quot; who" data-note="the mirror of &gt;&gt; — it reads instead of writes">
+        <b>&lt;&lt;</b><i>in</i></button>
+      <button class="mk" type="button" data-mk="nl" aria-pressed="false"
+              data-code="&gt;&gt; &quot;hi&quot; ¶" data-note="ends the line — the pilcrow, as a proofreader marks it">
+        <b>¶</b><i>newline</i></button>
+      <button class="mk" type="button" data-mk="cond" aria-pressed="false"
+              data-code="? n &gt; 0 { … }" data-note="the outcome hangs on a question that may come back false, empty or nothing">
+        <b>?</b><i>condition</i></button>
+      <button class="mk" type="button" data-mk="blank" aria-pressed="false"
+              data-code="_ { … }" data-note="a slot that exists but takes no name — the arm nothing else matched, a skipped element, a pipe hole">
+        <b>_</b><i>binds nothing</i></button>
+      <button class="mk" type="button" data-mk="time" aria-pressed="false"
+              data-code="@ x : list { … }" data-note="the time context — repeat over a list, a range or a condition; break, continue and sleep all live here">
+        <b>@</b><i>time</i></button>
+      <button class="mk" type="button" data-mk="range" aria-pressed="false"
+              data-code="1..10" data-note="two dots, two ends: the span between them">
+        <b>..</b><i>range</i></button>
+      <button class="mk" type="button" data-mk="ret" aria-pressed="false"
+              data-code="&lt;~ n * 2" data-note="hands the value back to the caller">
+        <b>&lt;~</b><i>give back</i></button>
+      <button class="mk" type="button" data-mk="arrow" aria-pressed="false"
+              data-code="x -&gt; x * 2" data-note="the arrow points at what comes out">
+        <b>-&gt;</b><i>goes to</i></button>
+      <button class="mk" type="button" data-mk="coll" aria-pressed="false"
+              data-code="list$" data-note="never alone — it heads the collection family">
+        <b>$</b><i>collection</i></button>
+      <button class="mk" type="button" data-mk="meta" aria-pressed="false"
+              data-code="#1  #0" data-note="the level above values: types, truth, modes">
+        <b>#</b><i>meta</i></button>
+      <button class="mk" type="button" data-mk="force" aria-pressed="false"
+              data-code="@!" data-note="do it, and do not be gentle about it">
+        <b>!</b><i>force</i></button>
+      <button class="mk" type="button" data-mk="one" aria-pressed="false"
+              data-code="&lt;&lt;|" data-note="just one of the thing — one key, not a line">
+        <b>|</b><i>one</i></button>
+    </div>
+
+    <div class="mk-out" id="mk-out">
+      <code id="mk-code">name = 5</code>
+      <span id="mk-note">binds a name to a value</span>
+    </div>
+
+    <p class="foot small fade-target" data-i18n-html="html.marksFoot1">
+      <b>None of those readings is another language's keyword.</b> <code>?</code> is not
+      <i>if</i> — <i>if</i> is the word English picked for it. <code>?</code> is a
+      <b>condition</b>: the outcome hangs on a question. Same for the rest — <code>@</code>
+      heads the time context rather than being a <i>loop</i>, and <code>_</code> binds no
+      name rather than being an <i>else</i>. Glossing a mark with the keyword some other
+      language chose would put the words straight back in.
     </p>
-    <div class="hero-actions">
-      <a href="#showcase" class="btn-ghost">
-        <span>→</span> <span id="btn-examples" class="fade-target">See Examples</span>
-      </a>
-      <a href="playground.html" class="btn-primary">
-        <span>▶ </span><span id="btn-try-online" class="fade-target">Try Online</span>
-      </a>
-      <a href="#operators" class="btn-ghost">
-        <span id="btn-ops-ref" class="fade-target">Operator Ref</span>
-      </a>
-    </div>
-    <div class="hero-stats">
-      <div class="stat">
-        <span class="stat-num">0</span>
-        <span class="stat-label fade-target" id="stat-keywords">Words</span>
-      </div>
-      <div class="stat">
-        <span class="stat-num">∞</span>
-        <span class="stat-label fade-target" id="stat-unicode">Unicode</span>
-      </div>
-    </div>
+
+    <p class="foot small fade-target" data-i18n-html="html.marksFoot2">
+      Even Zymbol's own analyser files these under <code>KEYWORD</code> — the language
+      server has no other slot to put them in. That is a convention inside a tokenizer,
+      not a word in the language. Hence <b>no words</b>, which is exact, rather than
+      <s>no keywords</s>, which is only nearly true.
+    </p>
   </div>
 </section>
 
-<!-- ═══ SHOWCASE ═══ -->
-<section id="showcase">
+<!-- ═══ 2 · JOINING ═══ -->
+<section id="join" class="band">
   <div class="container">
-    <div class="showcase-inner">
-      <div class="showcase-info">
-        <div class="lang-badge">
-          <span id="showcase-region-tag">americas</span>
-          · FizzBuzz
-        </div>
-        <div id="showcase-lang-name" class="fade-target">English</div>
-        <div id="showcase-native" class="fade-target">English</div>
-        <p id="showcase-desc" class="fade-target">
-          FizzBuzz written with English identifiers. The operators ?, _?, _, @, >>, <~ are always the same — only the variable names change.
-        </p>
-        <div class="showcase-meta">
-          <div class="showcase-meta-row">
-            <span class="meta-label">script</span>
-            <span class="meta-val green" id="meta-dir">LTR</span>
-          </div>
-          <div class="showcase-meta-row">
-            <span class="meta-label">fizz</span>
-            <span class="meta-val" id="meta-fizz">Fizz</span>
-          </div>
-          <div class="showcase-meta-row">
-            <span class="meta-label">buzz</span>
-            <span class="meta-val" id="meta-buzz">Buzz</span>
-          </div>
-          <div class="showcase-meta-row">
-            <span class="meta-label">greeting</span>
-            <span class="meta-val" id="meta-greeting">Hello, English-speaking World!</span>
-          </div>
-        </div>
-      </div>
+    <div class="head">
+      <span class="num">02</span>
+      <h2 data-i18n="join.h2" class="fade-target">They join</h2>
+      <p data-i18n-html="html.joinLead" class="fade-target">Agglutination, in the plain linguistic sense: one mark, one meaning, and the
+      meanings stack. An operator is <em>spelled</em>, not coined.</p>
+    </div>
 
-      <div class="code-window">
-        <div class="code-titlebar">
-          <div class="dot dot-r"></div>
-          <div class="dot dot-y"></div>
-          <div class="dot dot-g"></div>
-          <span class="code-filename" id="showcase-filename">fizzbuzz_english.zy</span>
-          <span class="code-lang-badge">zymbol</span>
-        </div>
-        <pre style="padding:1.25rem 1.1rem; font-family:var(--mono); font-size:0.78rem; line-height:1.75; overflow-x:auto; color:var(--hi); scrollbar-width:thin;"><code id="showcase-code"></code></pre>
+    <div class="joins reveal">
+      <div class="jn">
+        <span class="atom">$</span><span class="plus">+</span><span class="atom">#</span>
+        <span class="eq">=</span>
+        <span class="made">$#</span>
+        <span class="gloss fade-target" data-i18n="join.g1">how many</span>
+      </div>
+      <div class="jn">
+        <span class="atom">$</span><span class="plus">+</span><span class="atom">+</span>
+        <span class="eq">=</span>
+        <span class="made">$+</span>
+        <span class="gloss fade-target" data-i18n="join.g2">append</span>
+      </div>
+      <div class="jn">
+        <span class="atom">$</span><span class="plus">+</span><span class="atom">^</span><span class="plus">+</span><span class="atom">-</span>
+        <span class="eq">=</span>
+        <span class="made">$^-</span>
+        <span class="gloss fade-target" data-i18n="join.g3">sort, descending</span>
+      </div>
+      <div class="jn">
+        <span class="atom">&gt;&gt;</span><span class="plus">+</span><span class="atom">!</span>
+        <span class="eq">=</span>
+        <span class="made">&gt;&gt;!</span>
+        <span class="gloss fade-target" data-i18n="join.g4">wipe the screen</span>
+      </div>
+      <div class="jn">
+        <span class="atom">&lt;&lt;</span><span class="plus">+</span><span class="atom">|</span><span class="plus">+</span><span class="atom">?</span>
+        <span class="eq">=</span>
+        <span class="made">&lt;&lt;|?</span>
+        <span class="gloss fade-target" data-i18n="join.g5">one key, if there is one</span>
       </div>
     </div>
+
+    <p class="foot fade-target" data-i18n-html="html.joinFoot">
+      Five releases. <b>One</b> new mark. Everything else was spelled from the ones already
+      here.
+    </p>
   </div>
 </section>
 
-<!-- ═══ OPERATORS ═══ -->
-<section id="operators">
+<!-- ═══ 3 · READ ONE ═══ -->
+<section id="read">
   <div class="container">
-    <div class="ops-header">
-      <div>
-        <div class="section-tag fade-target" id="ops-tag">operator reference</div>
-        <h2 class="section-title fade-target" id="ops-title">Symbolic. Universal. Immutable.</h2>
-        <p class="section-desc fade-target" id="ops-desc">
-          These operators never change — regardless of which human language you code in.
-          Concept names below update to your selected language.
-        </p>
+    <div class="head">
+      <span class="num">03</span>
+      <h2 data-i18n="read.h2" class="fade-target">Now read this</h2>
+      <p data-i18n="read.lead" class="fade-target">Every mark below is one you have already met.</p>
+    </div>
+
+    <div class="split">
+      <div class="pane code-pane">
+        <div class="pane-tag" id="zy-file">graphics/mandelbrot/english.zy</div>
+        <!-- The English file, verbatim, as a reader with no JavaScript sees it;
+             src/site/atlas.js replaces it with the one for the chosen language,
+             coloured. tests/test_i18n_atlas.mjs fails if this stops matching
+             examples/graphics/mandelbrot/english.zy — the page may not show a
+             program that is not the one its own "run it" link opens. -->
+<pre class="zy scroller" id="zy-src" style="--cols:70">// Outside the set: faint to solid, dark green to bright.
+ramp  = " .:-=+*#%"
+tints = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Steps survived before the orbit runs away; 0 if it never does.
+// zr2 and zi2 are carried, so each step costs four products, not six.
+escape(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 &gt; 4.0 { &lt;~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    &lt;~ 0
+}
+
+&gt;&gt;| {
+    &gt;&gt;!
+    (high, wide) = &gt;&gt;?
+    rows = high - 2
+    cols = wide - 1
+
+    // A cell is ~2.5x taller than wide; the vertical span is
+    // scaled by that so the set comes out round.
+    width  = 2.7
+    height = rows * width * 2.5 / cols
+    middle = rows / 2 + 1
+
+    @ y:1..middle {
+        mirror = rows + 1 - y
+        @ x:1..cols {
+            cr = (x - 1) * width  / cols - 2.1
+            ci = (y - 1) * height / rows - height / 2.0
+            n  = escape(cr, ci)
+            mark = "@"
+            tint = 231
+            ? n &lt;&gt; 0 {
+                step = n / 4 + 1
+                ? step &gt; 9 { step = 9 }
+                mark = ramp[step]
+                tint = tints[step]
+            }
+            &gt;&gt;~ (y, x, 0, tint) &gt; mark
+            ? mirror &gt; middle { &gt;&gt;~ (mirror, x, 0, tint) &gt; mark }
+        }
+    }
+
+    &gt;&gt;~ (high, 2, 0, 244) &gt; "any key to leave"
+    &lt;&lt;| _key
+}</pre>
       </div>
-      <div style="padding-top:0.5rem; display:flex; flex-direction:column; gap:0.75rem;">
-        <div style="padding:1rem 1.25rem; background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); font-family:var(--mono); font-size:0.8rem; color:var(--mid);">
-          <span style="color:var(--green);">?</span>  <span id="sc-cond" class="fade-target">condition</span> { ... }
-          <br><span style="color:var(--green);">_?</span> <span id="sc-cond2" class="fade-target">condition</span> { ... }
-          <br><span style="color:var(--green);">_</span>  { ... }
-        </div>
-        <div style="padding:1rem 1.25rem; background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); font-family:var(--mono); font-size:0.8rem; color:var(--mid);">
-          <span style="color:var(--green);">@</span>  <span id="sc-loopvar" class="fade-target">i</span>:1..10 { ... }
-          <br><span style="color:var(--green);">&gt;&gt;</span> <span id="sc-val" class="fade-target">value</span> <span style="color:var(--green);">¶</span>
-          <br><span style="color:var(--green);">&lt;~</span> <span id="sc-expr" class="fade-target">expression</span>
-        </div>
+      <div class="pane out-pane">
+        <div class="pane-tag fade-target" data-i18n="read.tagOut">its output — the program's own colours</div>
+        <pre class="fractal scroller" style="--cols:126">                                         <span class="c28">...................................................................</span>
+                                    <span class="c28">...................................................</span><span class="c34">:</span><span class="c40">-</span><span class="c34">::</span><span class="c28">......................</span>
+                                <span class="c28">........................................................</span><span class="c34">::</span><span class="c40">-</span><span class="c34">:</span><span class="c28">.........................</span>
+                             <span class="c28">...........................................................</span><span class="c34">:::</span><span class="c40">--</span><span class="c34">::::</span><span class="c40">-</span><span class="c34">:</span><span class="c28">......................</span>
+                          <span class="c28">.............................................................</span><span class="c34">::::</span><span class="c40">--</span><span class="c231">@</span><span class="c40">-</span><span class="c34">::::</span><span class="c28">.........................</span>
+                       <span class="c28">..............................................................</span><span class="c34">:::::</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@</span><span class="c118">*</span><span class="c40">-</span><span class="c46">=</span><span class="c34">::::</span><span class="c28">..........................</span>
+                    <span class="c28">...............................................................</span><span class="c34">:</span><span class="c40">--</span><span class="c231">@</span><span class="c82">+</span><span class="c40">-</span><span class="c154">#</span><span class="c118">*</span><span class="c154">#</span><span class="c231">@@</span><span class="c118">*</span><span class="c46">=</span><span class="c40">--</span><span class="c118">*</span><span class="c40">-</span><span class="c34">:</span><span class="c28">.........................</span>
+                  <span class="c28">...............................................................</span><span class="c34">:::::</span><span class="c40">-</span><span class="c191">%</span><span class="c231">@@@@@@@@@@</span><span class="c46">=</span><span class="c34">::::</span><span class="c28">.......................</span>
+                <span class="c28">.............................................................</span><span class="c34">::::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@</span><span class="c82">+</span><span class="c34">:::::</span><span class="c28">......................</span>
+              <span class="c28">......................................................</span><span class="c34">:::::</span><span class="c82">+</span><span class="c46">=</span><span class="c34">:::::::::</span><span class="c40">---</span><span class="c82">+</span><span class="c231">@@@@@@@@@</span><span class="c46">=</span><span class="c40">--</span><span class="c34">::::</span><span class="c82">+</span><span class="c34">:::</span><span class="c28">....</span><span class="c34">::::</span><span class="c28">..........</span>
+             <span class="c28">......................................................</span><span class="c34">::</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@</span><span class="c118">*</span><span class="c46">==</span><span class="c82">+</span><span class="c40">---</span><span class="c82">+</span><span class="c231">@@</span><span class="c82">++</span><span class="c231">@@@@@@@@@@@@@@@@@@</span><span class="c46">=</span><span class="c231">@@</span><span class="c118">*</span><span class="c40">-</span><span class="c34">:::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c34">::</span><span class="c28">........</span>
+           <span class="c28">.......................................................</span><span class="c34">::::</span><span class="c40">-</span><span class="c46">=</span><span class="c154">#</span><span class="c231">@@@</span><span class="c191">%</span><span class="c82">+</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c191">%</span><span class="c118">*</span><span class="c40">-</span><span class="c82">+</span><span class="c154">#</span><span class="c231">@@@</span><span class="c118">*</span><span class="c82">+</span><span class="c40">-</span><span class="c34">:</span><span class="c28">........</span>
+          <span class="c28">.......................................................</span><span class="c34">:::::</span><span class="c40">--</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c46">=</span><span class="c40">-</span><span class="c34">::</span><span class="c28">........</span>
+         <span class="c28">.....................................................</span><span class="c34">:::</span><span class="c82">+</span><span class="c40">-</span><span class="c118">*</span><span class="c46">=</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c82">+</span><span class="c40">--</span><span class="c34">:::</span><span class="c28">........</span>
+        <span class="c28">.............................</span><span class="c34">:::</span><span class="c28">.................</span><span class="c34">::::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c154">#</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c231">@</span><span class="c40">-</span><span class="c34">::::</span><span class="c28">......</span>
+       <span class="c28">..............................</span><span class="c34">:</span><span class="c40">--</span><span class="c34">:::::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c34">:::::::::::::</span><span class="c40">-</span><span class="c154">#</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c82">+</span><span class="c231">@</span><span class="c46">===</span><span class="c34">:</span><span class="c28">.....</span>
+      <span class="c28">..............................</span><span class="c34">:::</span><span class="c40">-</span><span class="c46">=</span><span class="c154">#</span><span class="c46">=</span><span class="c40">-</span><span class="c82">+</span><span class="c40">-</span><span class="c34">::</span><span class="c40">-</span><span class="c46">=</span><span class="c118">*</span><span class="c46">=</span><span class="c40">----</span><span class="c34">:::::::</span><span class="c40">--</span><span class="c82">+</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c82">+</span><span class="c40">-</span><span class="c34">::</span><span class="c28">.....</span>
+      <span class="c28">.............................</span><span class="c34">::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c191">%</span><span class="c231">@@</span><span class="c82">++</span><span class="c231">@</span><span class="c82">+</span><span class="c231">@@</span><span class="c118">*</span><span class="c231">@</span><span class="c191">%</span><span class="c231">@</span><span class="c46">=</span><span class="c231">@</span><span class="c40">------</span><span class="c82">+</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c40">-</span><span class="c34">::</span><span class="c28">......</span>
+     <span class="c28">............................</span><span class="c34">::::::</span><span class="c40">---</span><span class="c46">=</span><span class="c154">#</span><span class="c231">@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c46">=</span><span class="c40">---</span><span class="c118">*</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c34">:</span><span class="c28">......</span>
+     <span class="c28">.........................</span><span class="c34">::::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@</span><span class="c82">++</span><span class="c191">%</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c40">-</span><span class="c34">:</span><span class="c28">.......</span>
+    <span class="c28">......................</span><span class="c34">::::::</span><span class="c46">=</span><span class="c40">-----</span><span class="c46">=</span><span class="c118">*</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c118">*</span><span class="c34">:</span><span class="c28">........</span>
+    <span class="c28">.........</span><span class="c34">:::::::</span><span class="c28">...</span><span class="c34">::::::::</span><span class="c40">--</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c34">:::</span><span class="c28">........</span>
+    <span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c46">=</span><span class="c40">-</span><span class="c34">::::</span><span class="c28">.........</span>
+    <span class="c28">......................</span><span class="c34">::::::</span><span class="c46">=</span><span class="c40">-----</span><span class="c46">=</span><span class="c118">*</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c118">*</span><span class="c34">:</span><span class="c28">........</span>
+     <span class="c28">.........................</span><span class="c34">::::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@</span><span class="c82">++</span><span class="c191">%</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c40">-</span><span class="c34">:</span><span class="c28">.......</span>
+     <span class="c28">............................</span><span class="c34">::::::</span><span class="c40">---</span><span class="c46">=</span><span class="c154">#</span><span class="c231">@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c46">=</span><span class="c40">---</span><span class="c118">*</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c34">:</span><span class="c28">......</span>
+      <span class="c28">.............................</span><span class="c34">::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c191">%</span><span class="c231">@@</span><span class="c82">++</span><span class="c231">@</span><span class="c82">+</span><span class="c231">@@</span><span class="c118">*</span><span class="c231">@</span><span class="c191">%</span><span class="c231">@</span><span class="c46">=</span><span class="c231">@</span><span class="c40">------</span><span class="c82">+</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c40">-</span><span class="c34">::</span><span class="c28">......</span>
+      <span class="c28">..............................</span><span class="c34">:::</span><span class="c40">-</span><span class="c46">=</span><span class="c154">#</span><span class="c46">=</span><span class="c40">-</span><span class="c82">+</span><span class="c40">-</span><span class="c34">::</span><span class="c40">-</span><span class="c46">=</span><span class="c118">*</span><span class="c46">=</span><span class="c40">----</span><span class="c34">:::::::</span><span class="c40">--</span><span class="c82">+</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c82">+</span><span class="c40">-</span><span class="c34">::</span><span class="c28">.....</span>
+       <span class="c28">..............................</span><span class="c34">:</span><span class="c40">--</span><span class="c34">:::::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c34">:::::::::::::</span><span class="c40">-</span><span class="c154">#</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c82">+</span><span class="c231">@</span><span class="c46">===</span><span class="c34">:</span><span class="c28">.....</span>
+        <span class="c28">.............................</span><span class="c34">:::</span><span class="c28">.................</span><span class="c34">::::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c154">#</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c231">@</span><span class="c40">-</span><span class="c34">::::</span><span class="c28">......</span>
+         <span class="c28">.....................................................</span><span class="c34">:::</span><span class="c82">+</span><span class="c40">-</span><span class="c118">*</span><span class="c46">=</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c154">#</span><span class="c82">+</span><span class="c40">--</span><span class="c34">:::</span><span class="c28">........</span>
+          <span class="c28">.......................................................</span><span class="c34">:::::</span><span class="c40">--</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c46">=</span><span class="c40">-</span><span class="c34">::</span><span class="c28">........</span>
+           <span class="c28">.......................................................</span><span class="c34">::::</span><span class="c40">-</span><span class="c46">=</span><span class="c154">#</span><span class="c231">@@@</span><span class="c191">%</span><span class="c82">+</span><span class="c231">@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span><span class="c191">%</span><span class="c118">*</span><span class="c40">-</span><span class="c82">+</span><span class="c154">#</span><span class="c231">@@@</span><span class="c118">*</span><span class="c82">+</span><span class="c40">-</span><span class="c34">:</span><span class="c28">........</span>
+             <span class="c28">......................................................</span><span class="c34">::</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@</span><span class="c118">*</span><span class="c46">==</span><span class="c82">+</span><span class="c40">---</span><span class="c82">+</span><span class="c231">@@</span><span class="c82">++</span><span class="c231">@@@@@@@@@@@@@@@@@@</span><span class="c46">=</span><span class="c231">@@</span><span class="c118">*</span><span class="c40">-</span><span class="c34">:::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c34">::</span><span class="c28">........</span>
+              <span class="c28">......................................................</span><span class="c34">:::::</span><span class="c82">+</span><span class="c46">=</span><span class="c34">:::::::::</span><span class="c40">---</span><span class="c82">+</span><span class="c231">@@@@@@@@@</span><span class="c46">=</span><span class="c40">--</span><span class="c34">::::</span><span class="c82">+</span><span class="c34">:::</span><span class="c28">....</span><span class="c34">::::</span><span class="c28">..........</span>
+                <span class="c28">.............................................................</span><span class="c34">::::::::</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@@@@@@@@@@@</span><span class="c82">+</span><span class="c34">:::::</span><span class="c28">......................</span>
+                  <span class="c28">...............................................................</span><span class="c34">:::::</span><span class="c40">-</span><span class="c191">%</span><span class="c231">@@@@@@@@@@</span><span class="c46">=</span><span class="c34">::::</span><span class="c28">.......................</span>
+                    <span class="c28">...............................................................</span><span class="c34">:</span><span class="c40">--</span><span class="c231">@</span><span class="c82">+</span><span class="c40">-</span><span class="c154">#</span><span class="c118">*</span><span class="c154">#</span><span class="c231">@@</span><span class="c118">*</span><span class="c46">=</span><span class="c40">--</span><span class="c118">*</span><span class="c40">-</span><span class="c34">:</span><span class="c28">.........................</span>
+                       <span class="c28">..............................................................</span><span class="c34">:::::</span><span class="c40">-</span><span class="c46">=</span><span class="c231">@</span><span class="c118">*</span><span class="c40">-</span><span class="c46">=</span><span class="c34">::::</span><span class="c28">..........................</span>
+                          <span class="c28">.............................................................</span><span class="c34">::::</span><span class="c40">--</span><span class="c231">@</span><span class="c40">-</span><span class="c34">::::</span><span class="c28">.........................</span>
+                             <span class="c28">...........................................................</span><span class="c34">:::</span><span class="c40">--</span><span class="c34">::::</span><span class="c40">-</span><span class="c34">:</span><span class="c28">......................</span>
+                                <span class="c28">........................................................</span><span class="c34">::</span><span class="c40">-</span><span class="c34">:</span><span class="c28">.........................</span>
+                                    <span class="c28">...................................................</span><span class="c34">:</span><span class="c40">-</span><span class="c34">::</span><span class="c28">......................</span>
+                                         <span class="c28">...................................................................</span>
+
+<span class="c244">any key to leave</span></pre>
       </div>
     </div>
 
-    <div class="ops-grid" id="ops-grid"></div>
+        <p class="foot fade-target" data-i18n-html="html.readFoot">
+      Not one word in any of it. The colours are the program's own: it picks an
+      ANSI-256 index per escape step and writes each cell with <code>&gt;&gt;~</code>
+      on the canvas <code>&gt;&gt;|</code> opens. The tree-walker and the register VM
+      draw it identically, cell for cell.
+    </p>
+
+    <div class="hero-cta">
+      <a id="zy-run" href="playground.html?open=graphics/mandelbrot/english.zy" class="btn-primary"><span aria-hidden="true">▶</span><span data-i18n="read.cta1" class="fade-target">Run it in the browser</span></a>
+    </div>
+    <p class="permalink">
+      <span class="fade-target" data-i18n="read.permalink">direct link</span> —
+      <code id="zy-permalink">zymbol-lang.org/playground.html?open=graphics/mandelbrot/english.zy</code>
+    </p>
   </div>
 </section>
 
-<!-- ═══ FEATURES ═══ -->
-<section id="features">
+
+<!-- ═══ 4 · WRITTEN IN IT ═══ -->
+<section id="built" class="band">
   <div class="container">
-    <div style="text-align:center; margin-bottom:0;">
-      <div class="section-tag fade-target" style="justify-content:center" id="features-tag">design principles</div>
-      <h2 class="section-title fade-target" id="features-title">Built for every language.</h2>
-      <p class="section-desc fade-target" style="margin:0 auto;" id="features-desc">
-        Zymbol's core idea: the syntax belongs to no culture.
-      </p>
+    <div class="head">
+      <span class="num">04</span>
+      <h2 data-i18n="built.h2" class="fade-target">And people build with it</h2>
+      <p data-i18n="built.lead" class="fade-target">Same marks. The names are whatever the author thinks in.</p>
     </div>
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">?@</div>
-        <div class="feature-title fade-target" id="f1-title">No words — ever</div>
-        <p class="feature-desc fade-target" id="f1-desc">Every construct is a symbol. ? is if. @ is loop. &lt;~ is return. Nothing to translate per language.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">∀</div>
-        <div class="feature-title fade-target" id="f2-title">Full Unicode identifiers</div>
-        <p class="feature-desc fade-target" id="f2-desc">Name variables in Arabic, write functions in Japanese, use emojis. The operators ? @ >> &lt;~ stay the same.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">#1</div>
-        <div class="feature-title fade-target" id="f3-title">Language-agnostic types</div>
-        <p class="feature-desc fade-target" id="f3-desc">#1 and #0 instead of true / false. No English words in the type system.</p>
-      </div>
+
+    <div class="builds reveal">
+      <figure class="build">
+        <div class="shots">
+        <div class="shot scroller" style="--cols:40"><pre class="term"><i class="w1 c240">╭</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">╮</i>
+<i class="w1 c255">│</i>                 <i class="w2 c255">囲</i><i class="w2 c255">碁</i>                 <i class="w1 c255">│</i>
+<i class="w1 c245">│</i><span class="c245">            Zymbol v0.0.8             </span><i class="w1 c245">│</i>
+<i class="w1 c240">├</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">┤</i>
+<i class="w1 c255">│</i> <i class="w1 c255">►</i> <i class="w2 c255">路</i><i class="w2 c255">盤</i>        <i class="w1 c255">‹</i>    <i class="w2 c255">九</i><i class="w2 c255">路</i><i class="w2 c255">盤</i>    <i class="w1 c255">›</i>       <i class="w1 c255">│</i>
+<i class="w1 c252">│</i>   <i class="w2 c252">棋</i><i class="w2 c252">力</i>        <i class="w1 c252">‹</i>     <i class="w2 c252">中</i><i class="w2 c252">級</i>     <i class="w1 c252">›</i>       <i class="w1 c252">│</i>
+<i class="w1 c252">│</i>   <i class="w2 c252">手</i><i class="w2 c252">番</i>        <i class="w1 c252">‹</i>      <i class="w2 c252">黒</i>      <i class="w1 c252">›</i>       <i class="w1 c252">│</i>
+<i class="w1 c252">│</i>   <i class="w2 c252">コ</i><i class="w2 c252">ミ</i>        <i class="w1 c252">‹</i><span class="c252">     6.5      </span><i class="w1 c252">›</i>       <i class="w1 c252">│</i>
+<i class="w1 c252">│</i>   <i class="w2 c252">主</i><i class="w2 c252">題</i>        <i class="w1 c252">‹</i>      <i class="w2 c252">石</i>      <i class="w1 c252">›</i>       <i class="w1 c252">│</i>
+<i class="w1 c252">│</i>   <i class="w2 c252">言</i><i class="w2 c252">語</i>        <i class="w1 c252">‹</i>    <i class="w2 c252">日</i><i class="w2 c252">本</i><i class="w2 c252">語</i>    <i class="w1 c252">›</i>       <i class="w1 c252">│</i>
+<i class="w1 c240">├</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">┤</i>
+<i class="w1 c245">│</i>      <i class="w1 c245">↑</i><i class="w1 c245">↓</i> <i class="w2 c245">選</i><i class="w2 c245">択</i>   <i class="w1 c245">←</i><i class="w1 c245">→</i> <i class="w2 c245">変</i><i class="w2 c245">更</i>   <i class="w1 c245">↵</i> <i class="w2 c245">開</i><i class="w2 c245">始</i>      <i class="w1 c245">│</i>
+<i class="w1 c240">╰</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">╯</i></pre></div>
+        <div class="shot scroller" style="--cols:48"><pre class="term">  <span class="c245">A B C D E F G H J </span>    <i class="w1 c240">╭</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">╮</i>
+<span class="c245">9</span> <i class="w1 c137">┌</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┬</i><i class="w1 c137">─</i><i class="w1 c137">┐</i> <span class="c245"> 9</span>  <i class="w1 c252">│</i> <i class="w2 c252">九</i><i class="w2 c252">路</i><i class="w2 c252">盤</i> <i class="w1 c252">·</i> <i class="w2 c252">中</i><i class="w2 c252">級</i>        <i class="w1 c252">│</i>
+<span class="c245">8</span> <i class="w1 c137">├</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┤</i> <span class="c245"> 8</span>  <i class="w1 c240">├</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">┤</i>
+<span class="c245">7</span> <i class="w1 c137">├</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w2 c137">⚪</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w2 c137">⚪</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┤</i> <span class="c245"> 7</span>  <i class="w1 c252">│</i> <i class="w2 c252">手</i><i class="w2 c252">番</i>      <i class="w2 c252">⚫</i> <i class="w2 c252">あ</i><i class="w2 c252">な</i><i class="w2 c252">た</i>  <i class="w1 c252">│</i>
+<span class="c245">6</span> <i class="w1 c137">├</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┤</i> <span class="c245"> 6</span>  <i class="w1 c252">│</i> <i class="w2 c252">手</i><i class="w2 c252">数</i><span class="c252">      10         </span><i class="w1 c252">│</i>
+<span class="c245">5</span> <i class="w1 c137">├</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">╋</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┤</i> <span class="c245"> 5</span>  <i class="w1 c252">│</i> <i class="w2 c252">ア</i><i class="w2 c252">ゲ</i><i class="w2 c252">ハ</i><i class="w2 c252">マ</i>  <i class="w2 c252">⚫</i><span class="c252">0  </span><i class="w2 c252">⚪</i><span class="c252">0   </span><i class="w1 c252">│</i>
+<span class="c245">4</span> <i class="w1 c137">├</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┤</i> <span class="c245"> 4</span>  <i class="w1 c252">│</i> <i class="w2 c252">コ</i><i class="w2 c252">ミ</i><span class="c252">      6.5        </span><i class="w1 c252">│</i>
+<span class="c245">3</span> <i class="w1 c137">├</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">╋</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w2 c137">⚪</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w2 c137">⚪</i><i class="w2 c137">⚪</i><i class="w1 c137">┤</i> <span class="c245"> 3</span>  <i class="w1 c252">│</i> <i class="w2 c252">最</i><i class="w2 c252">終</i><i class="w2 c252">手</i><span class="c252">    E3         </span><i class="w1 c252">│</i>
+<span class="c245">2</span> <i class="w1 c137">├</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w1 c137">┼</i><i class="w1 c137">─</i><i class="w2 c137">⚫</i><i class="w2 c137">⚫</i><span class="c245"> 2</span>  <i class="w1 c252">│</i> <i class="w2 c252">目</i><i class="w2 c252">算</i>      <i class="w2 c252">⚪</i><span class="c252"> +5.5    </span><i class="w1 c252">│</i>
+<span class="c245">1</span> <i class="w1 c137">└</i><i class="w1 c137">─</i><i class="w1 c137">┴</i><i class="w1 c137">─</i><i class="w1 c137">┴</i><i class="w1 c137">─</i><i class="w1 c137">┴</i><i class="w1 c137">─</i><i class="w1 c137">┴</i><i class="w1 c137">─</i><i class="w2 c137">⚫</i><i class="w2 c255">⚫</i><i class="w1 c137">┴</i><i class="w1 c137">─</i><i class="w2 c137">⚫</i><span class="c245"> 1</span>  <i class="w1 c240">╰</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">─</i><i class="w1 c240">╯</i>
+  <span class="c245">A B C D E F G H J </span></pre></div>
+        </div>
+        <figcaption>
+          <b>囲碁</b><span data-i18n="built.go" class="fade-target">Go — written in Japanese. Board size, rank, komi and language are chosen on the first screen; the second is a game in progress.</span>
+          <a href="playground.html?open=games/classic/go.zyp"><span aria-hidden="true">▶</span> <span data-i18n="built.play" class="fade-target">play</span></a>
+        </figcaption>
+      </figure>
+      <figure class="build">
+        <div class="shots">
+        <div class="shot scroller" style="--cols:33"><pre class="term"><i class="w1 c15">╭</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">╮</i>
+<i class="w1 c15">│</i><span class="c15">          Z Y M B O L          </span><i class="w1 c15">│</i>
+<i class="w1 c15">│</i><span class="c15">       S E R P I E N T E       </span><i class="w1 c15">│</i>
+<i class="w1 c15">├</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">┤</i>
+<i class="w1 c11">│</i><span class="c11">   Elige tu velocidad:         </span><i class="w1 c11">│</i>
+<i class="w1 c15">│</i>                               <i class="w1 c15">│</i>
+<i class="w1 c10">│</i>   <i class="w1 c10">►</i><span class="c10"> [1]  Lento       160 ms   </span><i class="w1 c10">│</i>
+<i class="w1 c15">│</i><span class="c15">     [2]  Normal      130 ms   </span><i class="w1 c15">│</i>
+<i class="w1 c15">│</i><span class="c15">     [3]  R</span><i class="w1 c15">á</i><span class="c15">pido      100 ms   </span><i class="w1 c15">│</i>
+<i class="w1 c9">│</i><span class="c9">     [4]  Infernal    70 ms    </span><i class="w1 c9">│</i>
+<i class="w1 c201">│</i><span class="c201">     [5]  Demencial   40 ms    </span><i class="w1 c201">│</i>
+<i class="w1 c15">├</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">─</i><i class="w1 c15">┤</i>
+<i class="w1 c15">│</i><span class="c15">     [L]  Idioma: Espa</span><i class="w1 c15">ñ</i><span class="c15">ol      </span><i class="w1 c15">│</i>
+<i class="w1 c11">╰</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">─</i><i class="w1 c11">╯</i></pre></div>
+        <div class="shot scroller" style="--cols:80"><pre class="term"><i class="w1 c8">╭</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">┤</i> <i class="w1 c11">✦</i><span class="c11"> PUNTOS 13 </span><i class="w1 c11">✦</i> <i class="w1 c8">├</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">╮</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                     <i class="w2 c11">🥝</i>                       <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                   <i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">╮</i>                                    <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                         <i class="w1 c10">│</i>                                    <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                         <i class="w1 c10">│</i>                                    <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                   <i class="w1 c2">◀</i><i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">─</i><i class="w1 c10">╯</i>                                    <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">│</i>                                                                              <i class="w1 c8">│</i>
+<i class="w1 c8">╰</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">─</i><i class="w1 c8">╯</i></pre></div>
+        </div>
+        <figcaption>
+          <b>Serpiente</b><span data-i18n="built.snake" class="fade-target">Snake — written in Spanish. Five speeds on the first screen; the second is thirteen points in, mid-turn.</span>
+          <a href="playground.html?open=games/arcade/serpiente.zyp"><span aria-hidden="true">▶</span> <span data-i18n="built.play" class="fade-target">play</span></a>
+        </figcaption>
+      </figure>
     </div>
+
+    <p class="foot fade-target" data-i18n-html="html.builtFoot">
+      Both are captures of the running program. Not one identifier in either of them is
+      an English word — and nothing in the grammar had to change for that.
+    </p>
   </div>
 </section>
 
-<!-- ═══ MANUAL ═══ -->
-<section id="manual">
+<!-- ═══ 5 · MANUAL ═══
+     Hidden by default and revealed by atlas.js only when the reader's language has a
+     v0.0.9 manual written. `hidden` in the markup rather than a class, so a reader with no
+     JavaScript is not shown a heading over an empty box. -->
+<section id="manual" hidden>
   <div class="container">
     <div class="section-header">
-      <h2 class="section-title"><span id="manual-title" class="fade-target">Documentación</span></h2>
-      <p class="section-sub"><span id="manual-sub" class="fade-target">Manual compacto de Zymbol-Lang</span></p>
+      <div class="section-tag fade-target" data-i18n="nav.manual">Documentation</div>
+      <h2 class="section-title fade-target" data-i18n="manual.title">Documentation</h2>
+      <p class="section-desc fade-target" data-i18n="manual.sub">Compact Zymbol-Lang manual</p>
     </div>
-    <div id="piqad-ref-link" hidden style="text-align:center;margin-bottom:2rem">
-      <a href="piqad-reference.html"
-         style="font-family:'pIqaD qolqoS',monospace;font-size:2.4rem;color:var(--green);text-decoration:none;letter-spacing:.05em;filter:drop-shadow(0 0 8px var(--green))">&#xF8E4;&#xF8D9;&#xF8D6;&#xF8DB;&#xF8D5;&#xF8D0;&#xF8DB; &#xF8D0;&#xF8DB;&#xF8DC;&#xF8E4;&#xF8D7;&#xF8DA;</a>
-    </div>
-    <div id="manual-content" class="manual-body">
-      <p style="color:var(--dim);text-align:center">Cargando…</p>
-    </div>
+    <div id="manual-content" class="manual-body"></div>
   </div>
 </section>
 
-<!-- ═══ FOOTER ═══ -->
 <footer>
   <div class="footer-inner">
     <div class="footer-logo">
       <img src="assets/img/logo.png" alt="Zymbol-Lang" style="height:1.6rem;width:auto;opacity:0.8;vertical-align:middle;">
     </div>
     <div class="footer-links">
-      <a href="#hero"><span id="footer-home" class="fade-target">Home</span></a>
-      <a href="#showcase"><span id="footer-showcase" class="fade-target">Showcase</span></a>
-      <a href="#operators"><span id="footer-operators" class="fade-target">Operators</span></a>
-      <a href="#features"><span id="footer-features" class="fade-target">Features</span></a>
-      <a href="#manual"><span id="footer-manual" class="fade-target">Documentation</span></a>
+      <a href="playground.html">Playground</a>
+      <a href="install.html"><span class="fade-target" data-i18n="nav.install">Install</span></a>
       <a href="changelog.html">Releases</a>
+      <!-- The former front page. English only, like its own notice: the label says it is
+           archived, and there is no honest translation of that in the other 118. -->
+      <a href="overview.html">Overview (archived)</a>
       <a href="https://github.com/zymbol-lang/interpreter" target="_blank" rel="noopener" class="icon-link" title="GitHub" aria-label="GitHub"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
       <a href="https://x.com/ZymbolLang" target="_blank" rel="noopener" class="icon-link" title="X / Twitter" aria-label="X / Twitter"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.74-8.855L1.254 2.25H8.08l4.253 5.622L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg></a>
     </div>
-    <div class="footer-copy fade-target" id="footer-tagline">No words. Just symbols.</div>
+    <div class="footer-copy fade-target" data-i18n="tagline">No words. Just symbols.</div>
   </div>
 </footer>
 
-<script type="module" src="src/site/main.js"></script>
-
-<!-- APRIL FOOLS BANNER SCRIPT (disabled — reusable for future campaigns)
-<script>
-(function () {
-  var STORAGE_KEY = 'zy-april-dismissed-2026';
-  var now = new Date();
-  // Show from April 1 UTC through April 7 UTC
-  var utcNow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  var start   = new Date(Date.UTC(2026, 3, 1));
-  var end     = new Date(Date.UTC(2026, 3, 8)); // exclusive (April 8)
-  var isActive = utcNow >= start && utcNow < end;
-  var banner = document.getElementById('april-banner');
-
-  if (!isActive || localStorage.getItem(STORAGE_KEY)) {
-    banner.classList.remove('visible');
-    return;
-  }
-
-  document.getElementById('april-dismiss').addEventListener('click', function () {
-    banner.classList.remove('visible');
-    localStorage.setItem(STORAGE_KEY, '1');
-  });
-}());
-</script>
-END APRIL FOOLS BANNER SCRIPT -->
+<!-- The manual is Markdown on disk; this renders it. Same CDN and version the former
+     front page used. It is loaded before atlas.js, which reads `marked` as a global and
+     simply shows no manual if it is absent. -->
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+<script type="module" src="src/site/atlas.js"></script>
 </body>
 </html>

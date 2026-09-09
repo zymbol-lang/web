@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: AGPL-3.0-only
-// The gate for index3.html's translations.
+// The gate for the front page's translations (index.html — the atlas).
 //
 //   node tests/test_i18n_atlas.mjs
 //
-// index3's strings live in `data/i18n/i18n.json`, on an `atlas` block of each language
+// The atlas's strings live in `data/i18n/i18n.json`, on an `atlas` block of each language
 // entry, next to the front page's — one file, one language list, one selector. A language
 // that has no `atlas` block yet falls back to English key by key, exactly as the manual
 // does; that is the site's policy and this test does not fight it. What it will not allow:
@@ -17,7 +17,7 @@
 //   a translated capture      the sample program, its output and the terminal frames are
 //                             the page's evidence, and translating evidence is redrawing it
 //
-// The pre-paint <html lang> tables index3 now carries are checked by
+// The pre-paint <html lang> tables the front page now carries are checked by
 // tests/test_i18n_playground.mjs, against src/i18n/detect.js, for both pages at once.
 //
 // Self-contained: plain Node, no npm dependency (web/ has no package.json — see CLAUDE.md).
@@ -28,18 +28,21 @@ import { fileURLToPath } from 'url';
 import { digitValue } from '../src/zymbol/zymbol.js';
 
 const WEB_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
-const PAGE    = join(WEB_DIR, 'index3.html');
+const PAGE    = join(WEB_DIR, 'index.html');
 const SCRIPT  = join(WEB_DIR, 'src/site/atlas.js');
 const BASE_LOCALE = 'english';
 
-/** The four keys index3 takes from the top level of an entry rather than from `atlas`,
- *  because the front page already says them in all 119 languages. Kept in step with
- *  stringsFor() in src/site/atlas.js. */
+/** The keys the atlas takes from the top level of an entry rather than from `atlas`,
+ *  because they are said in all 119 languages. Kept in step with stringsFor() in
+ *  src/site/atlas.js. `nav.home` was one of these until this page became the front page;
+ *  the three manual labels joined when the manual section did. */
 const SHARED = {
-  'nav.home':   'nav_home',
-  'nav.try':    'nav_try_online',
-  'alpha.msg':  'alpha_msg',
-  'alpha.link': 'alpha_link',
+  'nav.try':      'nav_try_online',
+  'alpha.msg':    'alpha_msg',
+  'alpha.link':   'alpha_link',
+  'nav.manual':   'nav_manual',
+  'manual.title': 'manual_title',
+  'manual.sub':   'manual_sub',
 };
 
 let failures = 0;
@@ -76,12 +79,12 @@ const baseKeys = Object.keys(base).sort();
 check('the base block has keys', baseKeys.length > 50, `${baseKeys.length} keys`);
 
 for (const [ours, theirs] of Object.entries(SHARED)) {
-  check(`${BASE_LOCALE} has ${theirs} (index3 reads it as ${ours})`,
+  check(`${BASE_LOCALE} has ${theirs} (the page reads it as ${ours})`,
         typeof i18n[BASE_LOCALE]?.[theirs] === 'string' && i18n[BASE_LOCALE][theirs].trim() !== '');
 }
 
 // ─── page and catalogue answer each other ────────────────────────────────────
-section('index3.html ↔ the catalogue');
+section('index.html ↔ the catalogue');
 
 const used = new Set();
 for (const m of page.matchAll(/data-i18n(?:-html)?="([^"]+)"/g)) used.add(m[1]);
@@ -156,11 +159,11 @@ for (const id of translated) {
 
   for (const theirs of Object.values(SHARED)) {
     check(`${id} has ${theirs}`, typeof i18n[id][theirs] === 'string' && i18n[id][theirs].trim() !== '',
-          'index3 shows it in the nav or the alpha notice');
+          'the page shows it in the nav or the alpha notice');
   }
 }
 
-// index3 is the page whose whole argument is the distinction, so its own strings may not
+// This is the page whose whole argument is the distinction, so its own strings may not
 // translate to the claim it corrects — see README, "Known divergence".
 //
 // This used to be a regex of every language's word for "keyword" — `palabras clave`,
@@ -169,17 +172,18 @@ for (const id of translated) {
 // list that has to be fed by hand for every language cannot guard a file that is meant to
 // grow by language.
 //
-// The data already knows. Every entry's top-level `t1` is the *uncorrected* claim — that
-// is the deliberate hold the README documents, English excepted — so the failure this is
-// really guarding against is a translator copying `t1` into the atlas block. Comparing the
-// two needs no vocabulary at all, and it works for the hundred languages not written yet.
+// The data already knows. Every entry's top-level `t1` is the *uncorrected* claim — the one
+// overview.html still makes, the deliberate hold the README documents, English excepted — so
+// the failure this is really guarding against is a translator copying `t1` into the atlas
+// block. Comparing the two needs no vocabulary at all, and it works for the hundred
+// languages not written yet.
 section('the page does not argue against itself');
 for (const id of translated) {
   const loc = flatten(i18n[id].atlas);
   if (id !== BASE_LOCALE) {
-    check(`${id} corrects the front page's headline`, loc['hero.t1'] !== i18n[id].t1,
-          `atlas hero.t1 and the entry's t1 are both ${JSON.stringify(i18n[id].t1)} — index3 ` +
-          `says "no words" where the front page still says "no keywords"`);
+    check(`${id} corrects the old headline`, loc['hero.t1'] !== i18n[id].t1,
+          `atlas hero.t1 and the entry's t1 are both ${JSON.stringify(i18n[id].t1)} — the atlas ` +
+          `says "no words" where overview.html still says "no keywords"`);
   }
   // The claim is made twice on the page: the headline, and the sentence under it that
   // strikes the rejected version and bolds the exact one. Both halves have to be there and
@@ -303,7 +307,7 @@ const bodyOf = src => {
 };
 check('the inline fallback is the English file, verbatim',
       unescape(inline) === bodyOf(sources[BASE_LOCALE] ?? ''),
-      'index3.html carries a copy of the program that no longer matches the file');
+      'index.html carries a copy of the program that no longer matches the file');
 
 // ─── every translation says who still has to read it ─────────────────────────
 //
@@ -348,6 +352,6 @@ for (const m of page.matchAll(/<pre[^>]*class="(?:zy|fractal|term)[^"]*"[^>]*>/g
 
 // ─── verdict ─────────────────────────────────────────────────────────────────
 console.log(failures === 0
-  ? `\n✓ index3 i18n: ${translated.length} written + ${aliased.length} aliased of ${Object.keys(i18n).length} language(s) × ${baseKeys.length} keys, complete`
+  ? `\n✓ atlas i18n: ${translated.length} written + ${aliased.length} aliased of ${Object.keys(i18n).length} language(s) × ${baseKeys.length} keys, complete`
   : `\n✗ ${failures} failure(s)`);
 process.exit(failures === 0 ? 0 : 1);

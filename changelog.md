@@ -6,6 +6,123 @@
 This is the Markdown representation of <https://zymbol-lang.org/changelog.html>.
 Downloads for the current release: [/install.md](install.md).
 
+## v0.0.9 — in development (unreleased)
+
+**The Collections Settled, the Editing Model, and a Calendar**
+
+On the `v0.0.9` branch; `Cargo.toml` already reads 0.0.9. **There is no tag, no
+release and nothing to download yet** — [v0.0.8 is the current download](install.md).
+The full text is in the interpreter repository:
+<https://github.com/zymbol-lang/interpreter/blob/v0.0.9/CHANGELOG.md>.
+
+### Added
+
+- **The dictionary has a notation of its own: `#(…)`** — the bare `(a: 1)` is withdrawn.
+  What forced it was the *empty* one: `()` cannot be both the empty positional tuple and
+  the empty dictionary, because one takes `d["k"]$~ v` and the other answers *tuples are
+  immutable*. The empty dictionary was reachable and unwritable, so every program that
+  filled one at run time began with an invented key and deleted it afterwards. **Keys may
+  now be strings** as well as bare names — the set a program actually needs: keys out of a
+  database, out of JSON, keys carrying a domain prefix
+- **The named tuple *is* the dictionary**, and the vocabulary follows: a tuple is immutable
+  by definition and this is not. `(1, 2)` is a positional tuple, `#(a: 1)` a dictionary. It
+  gained computed keys, key insertion, `d$? "k"`, `d$-["k"]`, `@ k:d` over keys and `##Key`
+  on an absent one — six pieces, each of which alone was enough to stop a JSON built piece
+  by piece from being built at all
+- **The dot writes what the dot reads** — `d.a$~ 9` is now exactly `d["a"]$~ 9`. Both
+  spellings read a key and only one wrote, and nothing anywhere said why; the asymmetry was
+  inherited, not decided. A deep write has one form, `d["x">"y"]$~ 5`
+- **`#[…]` — an array whose mix of element types is declared** — same type as `[…]`, so
+  `json::decode`'s heterogeneous array finally has a spelling. `[…]` stays checked; a
+  homogeneous `#[…]` warns
+- **`##_` — the Unit literal**, and `#?` can now tell the four collections apart with `##(`
+  and `##[`. Asking "did this column arrive NULL" used to mean taking `#?` apart and reading
+  the count — which is **0 for four different values**: Unit, `""`, `[]` and `#()`. When the
+  right way to ask a question does not exist, the way each program invents it resembles the
+  right one closely enough to pass every test anybody thinks of
+- **`std/time` — the clock and the civil calendar** — below a day it is duration, from a day
+  up it is calendar: a minute is always 60 000 ms and a day is not always 86 400 000.
+  `add(e, 1, "day", "local")` across a daylight-saving change gives the same wall clock 23
+  hours later, which is what a person means by "tomorrow". Digits are always ASCII, because
+  a date is the one piece of text written for a machine to read back and `२०२६-०८-२३` is not
+  ISO 8601. The era algorithms live in `zymbol-intrinsics`, shared by both Rust engines; the
+  browser engine ports them a third time rather than delegating to JavaScript's `Date`,
+  which rolls 2026-13-01 over into 2027 instead of refusing it
+- **A named function captures the file's variables, like a lambda** — and it cost 44% of
+  `bench_recursion` before the capture set was cached against the definition instead of
+  re-derived per call. Back under the baseline it started from. The benchmark gate is what
+  caught it; nothing else would have
+- **`#,` and `#^` write their digits in the active numeral script**, and the separators
+  follow the script. What did *not* change is the pair: `,` groups and `.` divides, in every
+  script, with no mode that inverts them — a settable pair would make every number ambiguous
+  until you knew the setting it was written under, a cost paid by every reader to spare one
+  writer
+- **Discarding a consulting `$` is dead code, and says so** — ten operators, one warning
+  each, identical wording in all three engines. That line ran, changed nothing, and no
+  engine said a word
+- **A pattern where a name goes** — `@ (k, v):pares { … }` binds each element as
+  `(k, v) = par` would, and `_` discards a position. Plus `() -> body`, the zero-parameter
+  lambda
+
+### Changed
+
+- **The indexed assignment is withdrawn** — `arr[i] = v`, `m[i][j] = v` and `d["k"] = v`
+  are errors in all three collections. `=` means "this NAME now holds this value", and
+  `arr[2] = 99` names nothing: it reaches inside a structure and changes a part. Two
+  different operations under one sign. The form that exists is `arr[2]$~ 99`
+- **The chained index is refused for reading too** — `m[2][3]` is now an error naming
+  itself, with `help: nesting is navigated with '>', so this is 'm[i>j]'`. It *never gave a
+  wrong answer*: all three engines returned the same value as `m[2>3]` at every depth. What
+  is withdrawn is a second spelling, not a defect — it had been deprecated since v0.0.4 and
+  refused by nothing, so the rule lived in the prose and in no executable. Migration was 16
+  files
+- **The rule of the result** — a `$` edit whose result is *used* builds and leaves the
+  original alone; one that *is* the whole statement modifies in place. Before this, a bare
+  `arr$+ 4` ran and did nothing at all, with no warning. This had to exist before the
+  indexed assignment could go, or the language would have had no way to change an element.
+  107 sites migrated
+- **`==` no longer constrains a parameter's type** — `es_cinco(v) { <~ v == 5 }` refused a
+  String argument one line away from `("hola" == 5)` answering `#0`. Equality never coerces,
+  so a parameter compared against a known type can still be any type. Ordering keeps its
+  constraint
+- **Diagnostics stop naming the engine** — `VM compile error:` is now `error:`. A reader is
+  told what the language refuses, not which of its three implementations noticed. And
+  `zymbol run` warns like `zymbol check`: the def-use pass ran only in `check`, so a loop
+  variable warned there and said nothing on `run`
+- **Only one `*rest` per pattern** — two are ambiguous by definition, and the three engines
+  invented three different splits, one of them returning an element twice
+
+### Fixed
+
+- **A silent data-destruction bug across the whole editing family** — `d["x"]["y"]$~ 9` left
+  `d` as `(y: 9)` with every other key gone, and `d["lista"]$+ 3` left it as `[1, 2, 3]`.
+  Exit 0, no diagnostic, and *all three engines agreed*, so no consensus run could see it. A
+  statement-level edit desugars to `name = <the same expression>`, which is exact only when
+  the receiver IS the name — and that was never checked
+- **`zymbol fmt` printed a literal as its value renders, not as it was written** — eleven of
+  sixteen literal forms did not survive a format. `४२`, `0x2A`, `0b101010` and `42` are all
+  `Int(42)`, so printing the value picked one spelling and threw the author's away: a program
+  written entirely in Devanagari stopped being one the moment it was formatted. `0o17` was
+  the sharp end — its value is a `Char`, so the formatter wrote a quoted raw U+000F into the
+  file. Four formatter properties and the safety gate all missed it, because the gate
+  compares *tokens* and `Integer(42)` is `Integer(42)` whichever script spelled it
+- **One bad line reported 22 errors** — recovery advanced by a single token after a failed
+  statement, so the tail of the refused line was parsed as code and each fragment raised its
+  own error. Only the first was real. Regenerating the goldens deleted 386 lines and added 4
+- **Diagnostics came out in HashMap order** — the same file reported `'k'` before `'w'` on
+  one run and after it on the next. Harmless while only `check` printed them; the moment
+  `run` did too, every differential comparison began to flap
+- **A module could not hold a collection**, and a module function call copied the whole
+  module's state. A parameter used as a dictionary key was declared an `Int`
+- **The browser engine checks argument counts**, and `@!`, `@>` and labelled jumps are
+  checked before anything runs rather than at the moment they are reached
+- **Windows: the runtime's POSIX assumptions** — the eleven findings that began as
+  `v0.0.8_HotFix01`. Eleven is not a patch on top of a release, so there is no 0.0.8.1: the
+  branch became v0.0.9 and those corrections ship inside it
+
+Three-engine consensus at 660 of 666 files agreeing, 0 diverging, the remaining six excused
+per engine with a stated reason; 38 of 38 rejected forms refused by all three.
+
 ## v0.0.8 — August 2, 2026 (latest)
 
 **Zymbol Packages, Auto-Free Memory & Terminal Metrics**

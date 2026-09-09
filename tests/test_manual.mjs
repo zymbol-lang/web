@@ -8,8 +8,16 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 // Resolve from this file, not the cwd, so the runner works from any directory.
+//
+// The v0.0.9 manual, which is the one the front page serves. It used to read
+// data/manuals/manual_en.md — the v0.0.5 generation — and reported 6 failing blocks for
+// months: forms that stopped being legal somewhere between v0.0.5 and v0.0.9, in a manual
+// nobody was revising. That file is still published (overview.html shows it, and it is
+// archived and says so), but testing it means testing the archive. The v009 rewrite went
+// through four gates of its own, including every block under `zymbol check`; this runner is
+// the browser engine's half of the same question.
 const __dir = dirname(fileURLToPath(import.meta.url));
-const src = readFileSync(join(__dir, '../data/manuals/manual_en.md'), 'utf8');
+const src = readFileSync(join(__dir, '../data/manuals/v009/manual_en.md'), 'utf8');
 
 // Extract all ```zymbol blocks with their surrounding heading context
 const blocks = [];

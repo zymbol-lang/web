@@ -199,4 +199,4 @@ console.log('─'.repeat(62));
 console.log(`${rows.length} language(s) · ${rows.length - bad.length} clean · ${bad.length} with something to look at`);
 console.log(`${rows.filter(r => r.english.length >= 12).length} entry(ies) whose concept names are still English`);
 const coined = rows.reduce((n, r) => n + Object.keys(review[r.id]?.coined ?? {}).length, 0);
-console.log(`${rows.filter(r => r.atlas).length} carry an index3 atlas block · ${coined} coined term(s) awaiting a speaker\n`);
+console.log(`${rows.filter(r => r.atlas).length} carry an atlas block · ${coined} coined term(s) awaiting a speaker\n`);

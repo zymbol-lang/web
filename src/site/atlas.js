@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * atlas.js — index3.html: its behaviour, and its share of the site's translations.
+ * atlas.js — index.html, the front page: its behaviour, and its share of the translations.
  *
  * The strings come out of `data/i18n/i18n.json`, the same file the front page reads, under
  * an `atlas` block on each language entry; the picker is the site's own region tabs and
@@ -26,6 +26,7 @@
 import { LANG_STORAGE_KEY, bcp47Of, resolveInitialLang } from '../i18n/detect.js';
 import { loadLanguageData, createLangBar, fadeUpdate } from './langbar.js';
 import { highlightZymbol } from './highlight-zy.js';
+import { manualUrlV009, renderManual } from './manual.js';
 
 const data = await loadLanguageData();
 const { i18n } = data;
@@ -59,20 +60,28 @@ function atlasEntry(id) {
 }
 
 /**
- * One flat table per language. Four keys come from the top level of the entry rather than
- * from the `atlas` block, because the front page already says those things in all 119
- * languages and this page has no business saying them differently — the alpha notice above
- * all, which is where the project declares its AI-assisted engineering.
+ * One flat table per language. Three keys come from the top level of the entry rather than
+ * from the `atlas` block, because they are said in all 119 languages and this page has no
+ * business saying them differently — the alpha notice above all, which is where the project
+ * declares its AI-assisted engineering.
+ *
+ * `nav.home` was a fourth until this page became the front page: an item labelled "Home"
+ * pointing at the page you are already on. The key still exists at the top level and
+ * `overview.html` still reads it — this page just has nothing to do with it.
  */
 function stringsFor(id) {
   const entry = i18n[id];
   if (!entry) return {};
   return {
     ...flatten(atlasEntry(id)?.atlas),
-    'nav.home':   entry.nav_home,
-    'nav.try':    entry.nav_try_online,
-    'alpha.msg':  entry.alpha_msg,
-    'alpha.link': entry.alpha_link,
+    'nav.try':      entry.nav_try_online,
+    'alpha.msg':    entry.alpha_msg,
+    'alpha.link':   entry.alpha_link,
+    // The manual section's three labels. Already written in all 119 languages for the
+    // former front page, so the section arrives translated without a key being invented.
+    'nav.manual':   entry.nav_manual,
+    'manual.title': entry.manual_title,
+    'manual.sub':   entry.manual_sub,
   };
 }
 
@@ -394,6 +403,35 @@ const langBar = createLangBar(data, {
   onSelect: id => selectLang(id),
 });
 
+// ─── the manual, when the reader's language has one ──────────────────────────
+//
+// Four languages have a v0.0.9 manual so far. For the other 107 the section and its nav
+// item stay hidden — no heading, no empty box, no English text under a Japanese title.
+// See the note at the top of manual.js for why this does not fall back the way
+// overview.html does.
+//
+// `token` guards against a reader clicking through languages faster than the fetches
+// return: a slow Spanish response must not paint itself over a page that is now Italian.
+let manualToken = 0;
+
+async function showManual(langId) {
+  const section = document.getElementById('manual');
+  const navItem = document.getElementById('nav-manual-link');
+  const el      = document.getElementById('manual-content');
+  if (!section || !el) return;
+
+  const token = ++manualToken;
+  const url   = manualUrlV009(langId);
+  const show  = on => { section.hidden = !on; if (navItem) navItem.hidden = !on; };
+
+  if (!url) { show(false); el.innerHTML = ''; return; }
+
+  const ok = await renderManual(el, url);
+  if (token !== manualToken) return;          // a later language already won
+  show(ok);
+  if (!ok) el.innerHTML = '';
+}
+
 function selectLang(langId, persist = true) {
   if (!i18n[langId]) return;
   currentLang = langId;
@@ -413,6 +451,7 @@ function selectLang(langId, persist = true) {
   langBar.setActive(langId);
   fadeUpdate(() => { applyTranslations(); paintMarks(); });
   showSample(langId);
+  showManual(langId);
 }
 
 // ─── init ────────────────────────────────────────────────────────────────────

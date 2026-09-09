@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { LANG_STORAGE_KEY, bcp47Of, resolveInitialLang } from '../i18n/detect.js';
-// The region tabs and the language chips are shared with index3.html — one selector, one
+// The region tabs and the language chips are shared with index.html — one selector, one
 // data load, one place where a language stops being offered. See src/site/langbar.js.
 import { loadLanguageData, createLangBar, fadeUpdate } from './langbar.js';
 import { highlightZymbol, esc } from './highlight-zy.js';
+import { manualUrlV005, renderManual, MANUAL_DIR_V005 } from './manual.js';
 
 (async function() {
   // ─── Load data ───
@@ -213,174 +214,30 @@ import { highlightZymbol, esc } from './highlight-zy.js';
     applyTheme(true);
   }
 
-  // ─── Manual: language → file mapping ───
-  const MANUAL_MAP = {
-    // Americas — North
-    english:          'en',
-    navajo:           'nv',
-    cherokee:         'chr',
-    cree_syl:         'cr_syl',
-    // Americas — Mesoamerica / South
-    portuguese:       'pt',
-    guarani:          'gn',
-    quechua:          'qu',
-    aymara:           'ay',
-    nahuatl:          'nah',
-    maya:             'myn',
-    mapuche:          'arn',
-    wayuu:            'way',
-    embera:           'emb',
-    yanomami:         'yno',
-    kiche:            'quc',
-    // Romance — Europe
-    spanish:          'es',
-    french:           'fr',
-    italian:          'it',
-    romanian:         'ro',
-    catalan:          'ca',
-    galician:         'gl',
-    // Germanic
-    german:           'de',
-    dutch:            'nl',
-    swedish:          'sv',
-    norwegian:        'no',
-    danish:           'da',
-    icelandic:        'is',
-    afrikaans:        'af',
-    // Finno-Ugric
-    finnish:          'fi',
-    estonian:         'et',
-    // Baltic
-    latvian:          'lv',
-    lithuanian:       'lt',
-    // Slavic (Latin)
-    polish:           'pl',
-    czech:            'cs',
-    slovak:           'sk',
-    croatian:         'hr',
-    slovenian:        'sl',
-    // Others
-    basque:           'eu',
-    albanian:         'sq',
-    // East Asia — CJK
-    mandarin:         'zh',
-    japanese:         'ja',
-    korean:           'ko',
-    // South Asia — Indic scripts
-    hindi:            'hi',
-    marathi:          'mr',
-    nepali:           'ne',
-    bengali:          'bn',
-    punjabi:          'pa',
-    gujarati:         'gu',
-    tamil:            'ta',
-    telugu:           'te',
-    kannada:          'kn',
-    malayalam:        'ml',
-    sinhala:          'si',
-    // Southeast Asia
-    indonesian:       'id',
-    malay:            'ms',
-    tagalog:          'tl',
-    vietnamese:       'vi',
-    thai:             'th',
-    burmese:          'my',
-    javanese:         'jv',
-    sundanese:        'su',
-    khmer:            'km',
-    lao:              'lo',
-    // Middle East — RTL scripts
-    arabic:           'ar',
-    hebrew:           'he',
-    persian:          'fa',
-    urdu:             'ur',
-    pashto:           'ps',
-    // Unique scripts — European
-    greek:            'el',
-    armenian:         'hy',
-    georgian:         'ka',
-    // Cyrillic — European
-    russian:          'ru',
-    ukrainian:        'uk',
-    bulgarian:        'bg',
-    serbian:          'sr',
-    macedonian:       'mk',
-    belarusian:       'be',
-    // Turkic / Caucasian (Latin script)
-    turkish:          'tr',
-    azerbaijani:      'az',
-    kurdish:          'ku',
-    // Africa
-    swahili:          'sw',
-    hausa:            'ha',
-    yoruba:           'yo',
-    igbo:             'ig',
-    wolof:            'wo',
-    xhosa:            'xh',
-    zulu:             'zu',
-    amharic:          'am',
-    oromo:            'om',
-    bambara:          'bm',
-    fula:             'ff',
-    lingala:          'ln',
-    somali:           'so',
-    tigrinya:         'ti',
-    shona:            'sn',
-    luganda:          'lg',
-    nyanja:           'ny',
-    setswana:         'tn',
-    haitian_creole:   'ht',
-    jamaican_patois:  'jam',
-    nigerian_pidgin:  'pcm',
-    // Constructed & planned languages
-    esperanto:        'eo',
-    lojban:           'jbo',
-    toki_pona:        'tp',
-    ido:              'io',
-    interlingua:      'ia',
-    // Fictional languages
-    klingon:          'tlh',
-    klingon_piqad:    'tlh_iq',
-    // Cross-references (shared manuals)
-    castellano:       'es',      // Spain Spanish → same as Spanish
-    portugues_eu:     'pt_eu',   // European Portuguese → own manual
-    // Default fallback: 'en'
-  };
-
-  function getManualFile(langId) {
-    if (MANUAL_MAP[langId]) return 'data/manuals/manual_' + MANUAL_MAP[langId] + '.md';
-    // Fallback: try Spanish for Spanish-family, else English
-    return 'data/manuals/manual_en.md';
-  }
-
+  // ─── Manual ───
+  // The language→file table and the fetch/render/highlight of a manual live in
+  // ./manual.js, shared with the front page. This page shows the v0.0.5 generation, the
+  // one written in 110 languages: it is archived at v0.0.8 and its manual is of its time.
+  // Missing here means fall back — Spanish, then English — because with 110 written a gap
+  // is an accident, not an answer. The front page, with four, does the opposite.
   function loadManual(langId) {
-    if (typeof marked === 'undefined') return;
     const el = document.getElementById('manual-content');
-    const url = getManualFile(langId || currentLang || 'spanish');
+    if (!el) return;
     el.innerHTML = '<p style="color:var(--dim);text-align:center">Cargando…</p>';
-    fetch(url)
-      .then(r => {
-        if (!r.ok) {
-          // Fallback to Spanish then English
-          if (!url.endsWith('manual_es.md')) return fetch('data/manuals/manual_es.md').then(r2 => r2.ok ? r2 : fetch('data/manuals/manual_en.md')).then(r3 => { if (!r3.ok) throw new Error(r3.status); return r3; });
-          return fetch('data/manuals/manual_en.md').then(r2 => { if (!r2.ok) throw new Error(r2.status); return r2; });
-        }
-        return r;
-      })
-      .then(r => r.text())
-      .then(md => {
-        el.innerHTML = marked.parse(md);
-        el.querySelectorAll('pre code.language-zymbol').forEach(block => {
-          block.innerHTML = highlightZymbol(block.textContent);
-        });
-      })
-      .catch(err => {
-        el.innerHTML = `<p style="color:var(--dim);text-align:center">
-          Error cargando el manual (${err.message}).<br>
-          <small>Abre el sitio desde un servidor web, no directamente como archivo.</small>
-        </p>`;
-      });
+    const tries = [manualUrlV005(langId || currentLang || 'spanish'),
+                   `${MANUAL_DIR_V005}/manual_es.md`,
+                   `${MANUAL_DIR_V005}/manual_en.md`];
+    (async () => {
+      for (const url of tries) if (await renderManual(el, url)) return;
+      throw new Error('no manual could be fetched');
+    })().catch(err => {
+      el.innerHTML = `<p style="color:var(--dim);text-align:center">
+        Error cargando el manual (${err.message}).<br>
+        <small>Abre el sitio desde un servidor web, no directamente como archivo.</small>
+      </p>`;
+    });
   }
+
 
   // Initial load
   loadManual('spanish');
