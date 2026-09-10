@@ -1142,22 +1142,30 @@
     .t-punct { color: var(--punct); }
     .t-hot   { color: var(--hot); font-weight: bold; }
 
-    /* ─── The header does not fit on a phone ───
-       Measured at 360px: the header asks for 521px, so 161 of them are off
-       screen and the page scrolls sideways. The picker is the single biggest
-       piece of that — 135px of a 312px `.header-right`, because a language name
-       is a word and words are long — and hiding it recovers 143.
+    /* ─── The language picker is hidden, at every width ───
+       Not a layout fix. The picker offered 110 languages and two of them are
+       translated: in every other one the interface stayed English while the
+       control said otherwise, which is a promise the playground does not keep.
+       A control is a claim, and this one was false.
 
-       That leaves 18px still over, so `← Home` goes too: the logo beside it is
-       already a link to index.html, so it is the one control on that row that
-       is a duplicate rather than a loss.
+       It also did not fit. Measured at 360px: the header asked for 521px, so
+       161 were off screen and the page scrolled sideways; the picker was 135 of
+       them, because a language name is a word and words are long.
 
-       The language itself is not lost. It lives in `zy-lang`, shared with the
-       front page, whose own picker works at this width — choose it there and
-       the playground follows. A picker that fits here is a design job, not a
-       media query. */
+       The element stays in the DOM and stays populated, so restoring it is
+       deleting this rule — and the language itself was never in the control: it
+       lives in `zy-lang`, shared with the front page, whose own picker works.
+       Choose it there and the playground follows.
+
+       Implementing it properly is a design job — where a picker goes in a header
+       this crowded, and what it may offer once the interface is translated. */
+    #lang-select { display: none; }
+
+    /* Hiding the picker recovers 143px of that 161, which leaves 18 still over,
+       so `← Home` goes below 600px as well: the logo beside it already links to
+       index.html, so it is the one control on that row that is a duplicate
+       rather than a loss. Measured after, at 320/360/414/600: zero overflow. */
     @media (max-width: 600px) {
-      #lang-select,
       header .back-link { display: none; }
     }
 
