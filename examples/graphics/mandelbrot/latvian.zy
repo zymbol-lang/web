@@ -1,0 +1,76 @@
+// @skip-parity: audeklam vajadzīgs īsts terminālis zem CLI un audekla slānis
+// @skip-parity: pārlūkā, tāpēc palaišanai caur cauruli nav ar ko salīdzināties.
+// ============================================================
+// mandelbrot — Mandelbrota kopa, uzzīmēta uz termināļa audekla.
+// Vārdi latviski. Zīmes vienmēr paliek zīmes.
+//
+// Visu izšķir viens skaitlis: `n`, cik soļus trajektorija iztur,
+// pirms tā aizbēg. Tas izvēlas zīmi un tas izvēlas toni, tāpēc
+// zīmējums nevar sev pretrunāt. `n = 0` nozīmē, ka tā nekad
+// neaizbēga — tā ir kopa, uzzīmēta pilna.
+//
+//   >>|  atver audeklu   >>!  notīra to   >>?  izmēra to
+//   >>~  raksta vienu šūnu, rindā, kolonnā, vienā tonī
+//   <<|  gaida taustiņu
+//
+// Divi ietaupījumi, un abi redzami zīmējumā, nevis mērījumā:
+// kvadrāti tiek pārnesti no soļa uz soli, nevis pārrēķināti, un
+// kopa tiek atspoguļota ap reālo asi, tāpēc aizbēg tikai augšējā
+// puse. Kopā tie samaksā to izšķirtspēju, ko prasa detaļa.
+// ============================================================
+
+// Ārpus kopas: no bāla līdz pilnam, no tumši zaļa līdz spožam.
+rampa = " .:-=+*#%"
+toņi  = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Soļi, kas izturēti pirms trajektorijas bēgšanas; 0, ja tā nekad neaizbēg.
+// zr2 un zi2 tiek pārnesti, tāpēc katrs solis maksā četrus reizinājumus, nevis sešus.
+bēgšana(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (augsts, plats) = >>?
+    rindas   = augsts - 2
+    kolonnas = plats  - 1
+
+    // Šūna ir ~2,5 reizes augstāka nekā platāka; vertikālais
+    // plašums tiek mērogots ar to, lai kopa iznāktu apaļa.
+    platums  = 2.7
+    augstums = rindas * platums * 2.5 / kolonnas
+    vidus    = rindas / 2 + 1
+
+    @ y:1..vidus {
+        spogulis = rindas + 1 - y
+        @ x:1..kolonnas {
+            cr = (x - 1) * platums  / kolonnas - 2.1
+            ci = (y - 1) * augstums / rindas   - augstums / 2.0
+            n  = bēgšana(cr, ci)
+            zīme = "@"
+            tonis = 231
+            ? n <> 0 {
+                solis = n / 4 + 1
+                ? solis > 9 { solis = 9 }
+                zīme  = rampa[solis]
+                tonis = toņi[solis]
+            }
+            >>~ (y, x, 0, tonis) > zīme
+            ? spogulis > vidus { >>~ (spogulis, x, 0, tonis) > zīme }
+        }
+    }
+
+    >>~ (augsts, 2, 0, 244) > "jebkurš taustiņš, lai izietu"
+    <<| _taustiņš
+}

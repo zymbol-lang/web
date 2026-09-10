@@ -1,0 +1,78 @@
+// @skip-parity: khung vẽ cần một thiết bị đầu cuối thật dưới CLI và một lớp
+// @skip-parity: khung vẽ trong trình duyệt, nên chạy qua ống dẫn thì không có
+// @skip-parity: gì để so sánh.
+// ============================================================
+// mandelbrot — tập Mandelbrot, vẽ trên khung vẽ của thiết bị đầu cuối.
+// Tên bằng tiếng Việt. Dấu hiệu bao giờ cũng là dấu hiệu.
+//
+// Chỉ một con số quyết định tất cả: `n`, quỹ đạo chịu được bao nhiêu
+// bước trước khi thoát. Nó chọn con chữ và nó chọn màu, nên bức vẽ
+// không thể tự mâu thuẫn. `n = 0` nghĩa là nó chưa từng thoát — đó
+// chính là tập hợp, vẽ đặc.
+//
+//   >>|  mở khung vẽ   >>!  xoá   >>?  đo
+//   >>~  viết một ô, ở một hàng, một cột, bằng một màu
+//   <<|  chờ một phím
+//
+// Hai chỗ tiết kiệm, và cả hai hiện ra trong bức vẽ chứ không phải
+// trong một phép đo: các bình phương được mang từ bước này sang bước
+// kia thay vì tính lại, và tập hợp được soi gương quanh trục thực,
+// nên chỉ nửa trên mới thoát. Cùng nhau chúng trả cho cái độ phân
+// giải mà chi tiết đòi hỏi.
+// ============================================================
+
+// Ngoài tập hợp: từ nhạt tới đặc, từ lục sẫm tới rực.
+thang  = " .:-=+*#%"
+màuSắc = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Số bước chịu được trước khi quỹ đạo thoát; 0 nếu nó không bao giờ thoát.
+// zr2 và zi2 được mang theo, nên mỗi bước tốn bốn phép nhân, không phải sáu.
+thoát(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (cao, rộng) = >>?
+    hàng = cao   - 2
+    cột  = rộng  - 1
+
+    // Một ô cao hơn bề ngang chừng 2,5 lần; khoảng dọc được co
+    // theo đó để tập hợp ra tròn.
+    chiềuRộng = 2.7
+    chiềuCao  = hàng * chiềuRộng * 2.5 / cột
+    giữa      = hàng / 2 + 1
+
+    @ y:1..giữa {
+        gương = hàng + 1 - y
+        @ x:1..cột {
+            cr = (x - 1) * chiềuRộng / cột  - 2.1
+            ci = (y - 1) * chiềuCao  / hàng - chiềuCao / 2.0
+            n  = thoát(cr, ci)
+            dấu = "@"
+            màu = 231
+            ? n <> 0 {
+                bước = n / 4 + 1
+                ? bước > 9 { bước = 9 }
+                dấu = thang[bước]
+                màu = màuSắc[bước]
+            }
+            >>~ (y, x, 0, màu) > dấu
+            ? gương > giữa { >>~ (gương, x, 0, màu) > dấu }
+        }
+    }
+
+    >>~ (cao, 2, 0, 244) > "bấm phím bất kỳ để thoát"
+    <<| _phím
+}

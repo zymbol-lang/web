@@ -1,0 +1,79 @@
+// @skip-parity: kangas tarvitsee oikean päätteen CLI:n alla ja kangaskerroksen
+// @skip-parity: selaimessa, joten putken läpi ajettuna ei ole mitään
+// @skip-parity: verrattavaa.
+// ============================================================
+// mandelbrot — Mandelbrotin joukko, piirrettynä päätteen kankaalle.
+// Nimet suomeksi. Merkit pysyvät aina merkkeinä.
+//
+// Yksi luku ratkaisee kaiken: `n`, kuinka monta askelta rata
+// kestää ennen kuin se karkaa. Se valitsee kuvion ja se valitsee
+// sävyn, joten kuva ei voi olla ristiriidassa itsensä kanssa.
+// `n = 0` tarkoittaa, ettei se karannut koskaan — se on joukko,
+// piirrettynä täytenä.
+//
+//   >>|  avaa kankaan   >>!  tyhjentää sen   >>?  mittaa sen
+//   >>~  kirjoittaa yhden ruudun, riville, sarakkeeseen, yhdellä sävyllä
+//   <<|  odottaa näppäintä
+//
+// Kaksi säästöä, ja molemmat näkyvät kuvassa eivätkä mittauksessa:
+// neliöt kannetaan askeleelta toiselle sen sijaan että laskettaisiin
+// uudelleen, ja joukko peilataan reaaliakselin ympäri, joten vain
+// yläpuolisko karkaa koskaan. Yhdessä ne maksavat sen tarkkuuden,
+// jota yksityiskohta vaatii.
+// ============================================================
+
+// Joukon ulkopuolella: haaleasta täyteen, tummanvihreästä kirkkaaseen.
+rampi = " .:-=+*#%"
+sävyt = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Askeleet, jotka kestettiin ennen radan karkaamista; 0 jos se ei karkaa koskaan.
+// zr2 ja zi2 kannetaan mukana, joten jokainen askel maksaa neljä tuloa, ei kuutta.
+pako(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (korkea, leveä) = >>?
+    rivit      = korkea - 2
+    sarakkeet  = leveä  - 1
+
+    // Ruutu on ~2,5 kertaa korkeampi kuin leveä; pystysuora
+    // väli skaalataan sillä, jotta joukko tulee pyöreänä.
+    leveys  = 2.7
+    korkeus = rivit * leveys * 2.5 / sarakkeet
+    keski   = rivit / 2 + 1
+
+    @ y:1..keski {
+        peili = rivit + 1 - y
+        @ x:1..sarakkeet {
+            cr = (x - 1) * leveys  / sarakkeet - 2.1
+            ci = (y - 1) * korkeus / rivit     - korkeus / 2.0
+            n  = pako(cr, ci)
+            merkki = "@"
+            sävy   = 231
+            ? n <> 0 {
+                askel = n / 4 + 1
+                ? askel > 9 { askel = 9 }
+                merkki = rampi[askel]
+                sävy   = sävyt[askel]
+            }
+            >>~ (y, x, 0, sävy) > merkki
+            ? peili > keski { >>~ (peili, x, 0, sävy) > merkki }
+        }
+    }
+
+    >>~ (korkea, 2, 0, 244) > "mikä tahansa näppäin poistuaksesi"
+    <<| _näppäin
+}

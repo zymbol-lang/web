@@ -1,0 +1,78 @@
+// @skip-parity: waraqaan kaartaa terminaala dhugaa CLI jalatti barbaada, akkasumas
+// @skip-parity: sadarkaa waraqaa kaartaa biraawzarii keessatti, kanaafuu ujummoodhaan
+// @skip-parity: fiigsuun waan wal bira qabamu hin qabu.
+// ============================================================
+// mandelbrot — tuuta Mandelbrot, waraqaa kaartaa terminaalaa irratti kaafame.
+// Maqaawwan Afaan Oromootiin. Mallattoowwan yeroo hunda mallattoo dha.
+//
+// Wanti hundi lakkoofsa tokkoon murtaa'a: `n`, naannoon sun utuu hin baqatin
+// dura tarkaanfii meeqa obsa. Isatu qubee filata, isumatu halluu filata;
+// kanaafuu fakkiin ofii isaa faallessuu hin danda'u. `n = 0` jechuun gonkumaa
+// hin baqanne jechuu dha — kun tuuticha mataa isaati, guutummaatti kaafame.
+//
+//   >>|  waraqaa kaartaa bana   >>!  haqa   >>?  safara
+//   >>~  saanduqa tokko barreessa, tarree tokko, utubaa tokko, halluu tokkoon
+//   <<|  furtuu tokko eeggata
+//
+// Qusannaa lama, lamaanuu safara keessatti utuu hin taane fakkii keessatti
+// mul'atu: iskuweerota irra deebi'anii shallaguu mannaa tarkaanfii tokko irraa
+// gara kan itti aanutti geeffamu, tuutichis siiqqee dhugaa naannoo daawwitiin
+// mul'ata, kanaafuu walakkaan gubbaa qofti baqata. Lamaanuu walitti qabamanii
+// ifa bal'inni barbaadu kaffalu.
+// ============================================================
+
+// Tuutichaan alatti: kan dadhabaa irraa gara kan guutuutti, magariisa dukkanaa'aa irraa gara kan ifaatti.
+gulantaa   = " .:-=+*#%"
+halluuwwan = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Tarkaanfiiwwan naannoon sun utuu hin baqatin dura obse; yoo gonkumaa hin baqanne 0.
+// zr2 fi zi2 ni geeffamu, kanaafuu tarkaanfiin tokkoon tokkoon isaanii oomisha afur baasa, ja'a miti.
+baqachuu(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (dheerina, bal'ina) = >>?
+    tarreewwan  = dheerina - 2
+    utubaawwan  = bal'ina  - 1
+
+    // Saanduqni tokko bal'ina isaa irra yeroo ~2.5 dheerata; hangi ol
+    // dhaabbataan sanaan safarama akka tuutichi geengoo ta'ee ba'uuf.
+    bal'inaBakka  = 2.7
+    dheerinaBakka = tarreewwan * bal'inaBakka * 2.5 / utubaawwan
+    giddu         = tarreewwan / 2 + 1
+
+    @ y:1..giddu {
+        daawwitii = tarreewwan + 1 - y
+        @ x:1..utubaawwan {
+            cr = (x - 1) * bal'inaBakka  / utubaawwan - 2.1
+            ci = (y - 1) * dheerinaBakka / tarreewwan - dheerinaBakka / 2.0
+            n  = baqachuu(cr, ci)
+            mallattoo = "@"
+            halluu    = 231
+            ? n <> 0 {
+                tarkaanfii = n / 4 + 1
+                ? tarkaanfii > 9 { tarkaanfii = 9 }
+                mallattoo = gulantaa[tarkaanfii]
+                halluu    = halluuwwan[tarkaanfii]
+            }
+            >>~ (y, x, 0, halluu) > mallattoo
+            ? daawwitii > giddu { >>~ (daawwitii, x, 0, halluu) > mallattoo }
+        }
+    }
+
+    >>~ (dheerina, 2, 0, 244) > "ba'uuf furtuu kamiyyuu dhiibi"
+    <<| _furtuu
+}

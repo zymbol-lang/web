@@ -1,0 +1,20 @@
+// A navigation step is an ordinary expression, and its VALUE says how to address:
+// an Int is a position, a String is a key.
+config = #(
+    server: #(host: "localhost", port: 8080),
+    tags: ["web", "api"]
+)
+
+step = "server"
+config[step>"port"]$~ 9090        // the navigator, with a computed step
+>> config.server.port ¶
+
+// A path may mix the two spellings freely — but never two brackets in a row
+config.server["host"]$~ "0.0.0.0"
+>> config.server.host ¶
+
+// Every editing $ writes back at its receiver's path, so the receiver
+// may live inside the name
+config.tags$+ "cli"
+config.tags[1]$~ "www"
+>> config.tags ¶

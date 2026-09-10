@@ -1,0 +1,76 @@
+// @skip-parity: kətan CLI altında əsl terminal və brauzerdə kətan qatı tələb edir,
+// @skip-parity: buna görə boru vasitəsilə işlətməyin müqayisə edəcəyi bir şey qalmır.
+// ============================================================
+// mandelbrot — Mandelbrot çoxluğu, terminalın kətanına çəkilmiş.
+// Adlar Azərbaycanca. İşarələr həmişə işarə olaraq qalır.
+//
+// Hər şeyi bir ədəd həll edir: `n`, orbitin qaçmadan əvvəl neçə addım
+// dözdüyü. Hərfi o seçir, rəngi də o seçir; buna görə şəkil özünə zidd
+// gedə bilmir. `n = 0` heç vaxt qaçmadı deməkdir — çoxluğun özü elə
+// odur, dolu çəkilmiş halı.
+//
+//   >>|  kətanı açır   >>!  silir   >>?  ölçür
+//   >>~  bir xana yazır, bir sətirdə, bir sütunda, bir rənglə
+//   <<|  bir açar gözləyir
+//
+// İki qənaət, hər ikisi ölçmədə deyil şəklin özündə görünür: kvadratlar
+// yenidən hesablanmaq əvəzinə bir addımdan digərinə daşınır və çoxluq
+// həqiqi ox ətrafında güzgülənir, beləliklə yalnız üst yarı qaçır.
+// İkisi birlikdə təfərrüatın istədiyi aydınlığın haqqını ödəyir.
+// ============================================================
+
+// Çoxluğun kənarında: solğundan doluya, tünd yaşıldan parlağa.
+pillə   = " .:-=+*#%"
+rənglər = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Orbit qaçmadan əvvəl dözülən addımlar; heç qaçmazsa 0.
+// zr2 və zi2 birlikdə daşınır, buna görə hər addım altı yox dörd vurmaya başa gəlir.
+qaçış(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (hündürlük, en) = >>?
+    sətirlər = hündürlük - 2
+    sütunlar = en        - 1
+
+    // Bir xana enindən təxminən 2,5 dəfə hündürdür; şaquli aralıq buna
+    // görə miqyaslanır ki, çoxluq dairəvi çıxsın.
+    genişlik = 2.7
+    uzunluq  = sətirlər * genişlik * 2.5 / sütunlar
+    orta     = sətirlər / 2 + 1
+
+    @ y:1..orta {
+        güzgü = sətirlər + 1 - y
+        @ x:1..sütunlar {
+            cr = (x - 1) * genişlik / sütunlar - 2.1
+            ci = (y - 1) * uzunluq  / sətirlər - uzunluq / 2.0
+            n  = qaçış(cr, ci)
+            işarə = "@"
+            rəng  = 231
+            ? n <> 0 {
+                addım = n / 4 + 1
+                ? addım > 9 { addım = 9 }
+                işarə = pillə[addım]
+                rəng  = rənglər[addım]
+            }
+            >>~ (y, x, 0, rəng) > işarə
+            ? güzgü > orta { >>~ (güzgü, x, 0, rəng) > işarə }
+        }
+    }
+
+    >>~ (hündürlük, 2, 0, 244) > "çıxmaq üçün istənilən açara basın"
+    <<| _açar
+}

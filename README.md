@@ -6,7 +6,7 @@
 
 <p align="center">
   Source for <a href="https://zymbol-lang.org">zymbol-lang.org</a> — the official site of the<br/>
-  keyword-free symbolic language, and the playground that runs it in the browser.
+  wordless symbolic language, and the playground that runs it in the browser.
 </p>
 
 <p align="center">
@@ -19,20 +19,20 @@
 
 ---
 
-> **Staged for v0.0.8 — 2026-08-01**
+> **Live at v0.0.8.** The `v0.0.8` tag is cut, the release assets exist, and
+> `index.html`, `install.html` and `changelog.html` carry real SHA256 digests — no
+> `pending` placeholders remain. Work for v0.0.9 happens on the `v0.0.9` branch.
 >
-> `index.html`, `install.html` and `changelog.html` are already bumped to **v0.0.8**, with
-> `pending` in place of the SHA256 hashes. Those download URLs point at a GitHub release
-> that does not exist yet, so **they 404 until the `v0.0.8` tag is cut**.
->
-> **Merge this branch to `main` only after the release assets are published**, and fill in
-> the hashes in the same change. `main` is what GitHub Pages serves; merging early puts
-> broken download links on the live site.
+> **The rule this banner used to enforce still holds**, and is the reason it is rewritten
+> rather than deleted: `main` is what GitHub Pages serves, so a version bump merges to
+> `main` **only after** the corresponding release assets are published, with the digests
+> filled in the same change. Merging early puts 404s on the live site. See
+> `agents/web_release.md` for the procedure.
 
 Source for [zymbol-lang.org](https://zymbol-lang.org) — the official website of the Zymbol
 programming language, including the in-browser playground that runs Zymbol without a server.
 
-Zymbol is a keyword-free symbolic programming language: every construct uses pure symbols
+Zymbol is a symbolic programming language with no words in its grammar: every construct uses pure symbols
 (`?` for if, `@` for loops, `->` for lambdas, `>>` for output). Identifiers can be written in
 any human language or script — Unicode, emoji, RTL, CJK, Indic. Numeric output can be
 rendered in any of 69 Unicode digit scripts (Devanagari, Arabic-Indic, Thai, Klingon pIqaD, …)
@@ -42,7 +42,8 @@ via numeral modes.
 
 ```text
 web/
-├── index.html                 Landing page (i18n showcase, embedded manual reader)
+├── index.html                 Front page — the atlas: fourteen marks, and the v0.0.9 manual
+├── overview.html              The former front page, archived (i18n showcase, v0.0.5 manual)
 ├── playground.html            Interactive editor — multi-file, .zyp packages
 ├── install.html               Download / install instructions per platform
 ├── changelog.html             Release history
@@ -77,7 +78,9 @@ web/
 │   │   ├── highlight.js       Syntax highlighter (esc, highlightCode)
 │   │   └── webmcp.js          navigator.modelContext tools — feature-detected no-op
 │   ├── site/
-│   │   └── main.js            Landing-page logic: language switcher, manual reader, transitions
+│   │   ├── main.js            overview.html logic: language switcher, transitions
+│   │   ├── atlas.js           Front-page logic: the marks, the sample, the manual
+│   │   └── manual.js          language→file table, fetch + render + highlight (both pages)
 │   └── css/
 │       ├── site.css           Shared styles for every page except the playground
 │       └── playground.css     Playground-only styles
@@ -88,7 +91,7 @@ web/
 │
 ├── data/
 │   ├── i18n/                  languages.json, i18n.json, languages.xml
-│   ├── manuals/               manual_<lang>.md (110 translations) + translation_progress.md
+│   ├── manuals/               manual_<lang>.md (110, v0.0.5) + v009/ (4, current)
 │   └── archive/               v004/, v005/ — superseded manual sets, kept for diffing
 │
 ├── examples/                  THE EXAMPLE POOL — the playground's only source of examples
@@ -107,8 +110,11 @@ web/
 │   ├── test_catalog.mjs       catalog.json ↔ examples/ integrity (dead refs, orphans)
 │   ├── test_filestore.mjs     The mounted-vs-open file model and its persistence
 │   ├── test_zyp.mjs           .zyp reader + module resolver (builds its own fixtures)
-│   ├── test_manual.mjs        Smoke-runs every ```zymbol block in manual_en.md
+│   ├── test_manual.mjs        Smoke-runs every ```zymbol block in v009/manual_en.md
+│   ├── test_manual_v009.mjs   V009_CODES ↔ the directory, both directions
 │   ├── test_markdown.mjs      Page twins, llms.txt, robots.txt and the negotiation Worker
+│   ├── test_i18n_atlas.mjs    The front page's atlas blocks in i18n.json: complete, used, no dead key
+│   ├── test_atlas_dom.mjs     The front page at 360px and its language switch (headless Chrome)
 │   ├── test_licenses.mjs      The AGPL/CC BY-SA split, per file
 │   ├── test_agents.mjs        Skill digest + every SKILL.md block runs + WebMCP tools
 │   ├── serve.mjs              Dev server with Cache-Control: no-store (LAN device testing)
@@ -139,8 +145,13 @@ playground. `src/playground/` and `src/site/` depend on it, never the reverse.
 
 ```text
 src/zymbol/  ←  src/playground/     (playground.html)
-             ←  src/site/           (index.html)
+             ←  src/site/           (index.html, overview.html)
 ```
+
+`src/i18n/detect.js` sits beside them: it holds the language tables and the
+URL → storage → browser precedence, so the front page, the playground and `overview.html`
+all resolve the reader's language the same way and share `zy-lang` in `localStorage`. A
+choice made on one page is honoured by the next.
 
 ## The example pool (`examples/`)
 
@@ -275,13 +286,268 @@ different relative paths as two distinct modules, loading and running it twice.
 | File | Contents |
 | ---- | -------- |
 | `data/i18n/languages.json` | 111 languages — FizzBuzz tokens and showcase constructs. Drives the language switcher. |
-| `data/i18n/i18n.json` | 119 languages — ~50 UI strings each, plus region labels. |
-| `data/manuals/manual_<lang>.md` | 110 full manual translations, rendered by the landing page. |
+| `data/i18n/i18n.json` | 119 languages — ~50 UI strings each, plus region labels, plus an `atlas` block of ~80 more for **all 111 the switcher offers**. The eight without one are not offered as chips. |
+| `data/i18n/playground/<lang>.json` | The playground's own catalogue, one file per fully translated locale. |
+| `data/manuals/manual_<lang>.md` | 110 full manual translations, last revised for v0.0.5. Rendered by `overview.html`. |
+| `data/manuals/v009/manual_<code>.md` | The v0.0.9 rewrite — 4 languages so far. Rendered by the front page, and by nothing else. |
 
 `languages.json` is a strict subset of `i18n.json`: 8 languages (Hungarian, Welsh, Cree,
 Mando'a, Quenya, Sindarin, Dothraki, High Valyrian) have UI translations staged but no
 showcase entry yet, so they do not appear in the switcher. Adding a language means all three
 artifacts — see [docs/newlang.md](docs/newlang.md).
+
+### `index.html` and `overview.html` share one set of machinery
+
+`index.html` — the atlas, fourteen marks one at a time — became the front page on
+2026-09-09. What was the front page until then is `overview.html`: the showcase, the
+operator table, the features and the manuals, kept accessible and carrying a notice that it
+is no longer updated. `index2.html`, a first draft of the argument the atlas now makes, was
+deleted outright rather than archived, and the clause that linked to it was cut from
+`html.joinFoot` in all 110 translations.
+
+Both pages read the same `i18n.json`, offer the same region tabs and chips, and write the
+same `zy-lang` — a language chosen on either page is the language the other one opens in.
+The front page's own ~79 strings live on an `atlas` block of each language entry, and the
+three it has no business rewording (`nav_try_online`, `alpha_msg`, `alpha_link`) it reads
+off the top level, so the alpha notice — including the AI-assisted engineering the project
+declares in `interpreter/README.md` § *Authorship & AI Collaboration* — is already right in
+all 119 languages. `nav_home` was a fourth until the swap: an item labelled *Home* on the
+page you are already on. `overview.html` still reads that key for its own footer.
+
+Two strings did not survive the swap, and neither could be fixed by re-pointing a link.
+`read.cta2` said *the full front page* in 110 languages about a page that is no longer the
+front page, and the archived notice on `overview.html` is text that exists in no language
+yet — so the button was removed with its key, and the notice and the footer link to it are
+in English alone. Inventing either in 118 languages would pass every gate here and be worse
+than saying it once, in one language, truthfully.
+
+The selector itself is `src/site/langbar.js`, imported by both pages. It used to be a block
+inside `main.js`; a second, different picker on the second page is how a language quietly
+stops being offered on half a site. For the same reason, `overview.html` carries the
+pre-paint `<html lang>` tables verbatim from `index.html`, and `test_i18n_playground.mjs`
+checks both copies against `src/i18n/detect.js` rather than one.
+
+### The manual: two generations, and what each does when a language is missing
+
+`src/site/manual.js` holds the language→file table and the fetch/render/highlight, shared by
+both pages — the third extraction out of `main.js`, after `langbar.js` and `highlight-zy.js`,
+and for the same reason. What is *not* shared is the fallback policy, and the difference is
+deliberate:
+
+| | `data/manuals/manual_<code>.md` | `data/manuals/v009/manual_<code>.md` |
+|---|---|---|
+| revision | v0.0.5 | **v0.0.9** |
+| languages | 110 | **4** — en, es, it, qu |
+| served by | `overview.html` | the front page |
+| language missing | falls back: Spanish, then English | **shows nothing at all** |
+
+With 110 written, a gap is an accident and English is a reasonable floor. With four, a
+fallback would put English prose under a heading that says *ドキュメント*, which reads to
+that reader as "your language is finished" — so the section and its nav item are hidden
+outright. Absent is honest; wrong is not.
+
+Which languages have one is a **hand-written list** (`V009_CODES`), not a 404 probe: probing
+paints a heading and takes it away again, and it makes an offline reader look like an
+untranslated one. A hand-written list drifts, so `tests/test_manual_v009.mjs` compares it
+against the directory **in both directions** — a code listed with no file (readers get an
+empty box) and a file with no code (nobody is ever shown it) both fail. Verified by breaking
+it each way.
+
+The section's three labels (`nav_manual`, `manual_title`, `manual_sub`) were already written
+in all 119 languages for the old front page, so the manual arrived translated without a key
+being invented. `manual_qu_borrador.md` sits in that directory and is **not** published: the
+gate matches `manual_<code>.md` exactly rather than globbing `manual_*`.
+
+**Two of the last eight are not prose in the ordinary sense.** The emoji program's
+identifiers *are* emoji — `🪜` the ramp, `🌈` the colours, `🏃` the escape function — which
+both engines take; that was checked against the lexer before a line was written. And
+`klingon_piqad` is not written at all: its block and its sample program are the Klingon ones
+transliterated into the CSUR pIqaD block, longest match first so `tlh`, `ch`, `gh` and `ng`
+are single characters, with HTML markup and the contents of `<code>` and `<i>` left in Latin
+because they hold the other languages' keywords. Both are checked by decoding back: the block
+returns the Latin block and the program returns `klingon.zy`, character for character.
+
+A language with no `atlas` block yet falls back to English key by key, which is what the
+manual already does. `test_i18n_atlas.mjs` holds the line that matters instead: a language
+that *has* an `atlas` block answers every key the English one does, every key the page asks
+for exists, and no key is translated that the page never shows.
+
+**Five of them read right to left**, and that is a page-wide fact rather than a per-language
+one: `atlas.js` sets `document.documentElement.dir` from the entry's `rtl` flag, so the whole
+document turns around for Arabic, Hebrew, Persian, Urdu and Pashto. What turns is the prose.
+The code does not — a Zymbol program has one reading order, and `pre.term`/`pre.fractal` are
+box-drawing captures whose frames come apart when the bidi algorithm reorders the neutral
+characters at the ends of their lines. Every code pane is therefore pinned to
+`direction: ltr; unicode-bidi: isolate`. That bug was **live before the Middle East was
+written at all**: `?lang=arabic` already flipped the page off the `rtl` flag alone, and
+measured then, all three panes computed `direction: rtl`. `tests/dom/atlas.html` now loads
+the page at `?lang=arabic` in a real browser and checks the direction of each pane, that the
+mark accent moved to the reading edge, and that nothing spills sideways.
+
+The prose is translated and the captures are not: the four terminal frames stay as they were
+captured in every language. They are photographs of running programs, and a capture rewritten
+in the reader's language would be a redrawing of it. `test_i18n_atlas.mjs` asserts that no
+`pre.zy`, `pre.fractal` or `pre.term` is ever marked for translation.
+
+The sample program in section 03 is the other case: it is **not** a translated string, it is a
+different file. `examples/graphics/mandelbrot/<language>.zy` holds one Mandelbrot per
+language — identifiers translated, marks untouched, which is the page's whole claim — and the
+page fetches the one for the language on show, colours it with `src/site/highlight-zy.js`, and
+points its "run it" link and its permalink at that same path. French carries it furthest:
+`échappement(cr, ci)` is an accented identifier, which is the claim being made rather than
+described. Nothing on the page is a
+transcription of a program any more, so nothing on the page can drift away from one.
+
+Three checks hold that together, all in `test_i18n_atlas.mjs`: the `SAMPLE_LANGS` list in
+`atlas.js` matches the files on disk, the no-JavaScript copy in the markup is the English file
+verbatim, and every translation reduces to the *same skeleton* as the English one — the source
+with comments, strings and identifiers stripped out, which leaves the marks. A renamed variable
+passes; a changed constant does not. The two were also run under a pty before being published:
+both paint 5588 cells at identical row, column, colour and glyph, under the tree-walker and
+under the register VM — a hundred and ten languages now, all 5588 cells identical: **one for
+every language the switcher offers**, six regions of six. Among the last written: Esperanto,
+Ido, Interlingua, Lojban, toki pona, emoji, and Klingon in both scripts:
+English, Spanish, Portuguese (BR and PT), French, Haitian Creole, Jamaican Patois, Quechua,
+Guaraní, Aymara, Nahuatl, Yucatec Maya, K'iche', Mapudungun, Navajo, Cherokee, Plains Cree,
+Wayuunaiki, Emberá and Yanomami; German through Macedonian; and Mandarin, Japanese, Korean,
+Hindi, Bengali, Tamil, Telugu, Marathi, Gujarati, Punjabi, Kannada, Malayalam, Nepali, Thai,
+Vietnamese, Indonesian, Malay, Tagalog, Burmese, Javanese, Khmer, Lao, Sundanese and
+Sinhala — Cherokee and
+Cree written in their own syllabaries, `ᏗᏰᎸᏗ` and `ᒪᓯᓇᐦᐃᑲᓇᐢ`, Russian in Cyrillic (`строки`,
+`столбцы`, `зеркало`) and Greek in Greek script (`γραμμές`, `στήλες`, `καθρέφτης`) — all of
+which run. Writing them turned up two things worth
+knowing, both verified against the lexer rather than assumed. **The apostrophe is an
+identifier character** — `ñit'i`, `k'ichee`, `ha'e`, `t'àan`, `ᏣᎳᎩ`, `ła` and `Nāhuatl` all
+pass `zymbol check` and run — which is what makes Quechua, Guaraní, Yucatec and K'iche'
+writable at all. **So are the zero-width joiners**: Sinhala spells the rakaransaya conjunct
+with U+200D, so `පළල්ප්‍රමාණය` is one name, and both the skeleton check here and the browser
+engine were splitting it in two — the browser reported four undefined variables in a file
+both Rust engines run and paint identically. Each is the language's own claim demonstrated
+rather than described.
+
+One more language, `castellano`, reads Spanish rather than carrying a copy: its entry says
+`"atlas_alias": "spanish"` and both the block and the sample follow the pointer. es-ES and
+es-LA say the same things on this page, so two copies would only be two things to keep in
+step, and the drift would be invisible — nobody reads both. The four shared keys still come
+from the reader's own entry, so a Castilian reader gets Castilian's alpha notice.
+
+Portuguese is split and French is not, and that is the site's own arrangement rather than a
+judgement made here: `i18n.json` has had two Portuguese entries with two manuals since long
+before this page, and one French entry listed under *both* Europe and the Americas. It is also
+the right split for identifiers. pt-BR and pt-PT differ on the everyday words this page
+actually uses — `join.g4` is *limpar a tela* in one and *limpar o ecrã* in the other — while
+fr-FR and fr-CA share the whole technical vocabulary these files need.
+
+### `tools/audit_i18n.mjs` — what the switcher is actually offering
+
+The chip bar offers 119 languages, which is 119 promises, and nothing checked whether they
+were kept: a browser renders a chip that hands back English exactly as happily as one that
+hands back Quechua, and the reader who would notice is the one who never files a bug about
+it. `node tools/audit_i18n.mjs [--region americas] [--lang X --verbose]` reports four
+signals per entry — an `ops` value that is still the English word, one word doing two jobs,
+Spanish or English function words inside prose that should be neither, and a missing BCP-47
+code. It is a map, not a gate: it would be red for most of the file on the day it was
+written. The same checks *are* enforced on the languages carrying an `atlas` block, because
+those claim to be finished.
+
+The `ops` signal has a floor of three: one or two English concept names has meant a cognate
+every single time it fired — German `Variable`, Italian `input`, Danish `match`, Swedish
+`loop` — and eleven European entries were being flagged for correct vocabulary, which is how
+a map teaches people to stop reading it. The count is still printed; it just stops driving
+"look here" below the level where it has ever meant anything. Above it the tool still names
+the real placeholders: `nigerian_pidgin` is at fourteen.
+
+It has already paid for itself, twice over. Over the Americas it found `nahuatl.f1_desc` and
+`maya.f1_desc` opening with *"Cada construcción es un símbolo en…"* — Spanish sentences
+sitting in a Nahuatl and a Maya entry; `jamaican_patois` with 15 of its 16 concept names
+still the English word; and `yanomami` using `mahi` for both *return* and *length*, `nowë`
+for both *match* and *append*, `poremai` for both *out* and *input* — two concepts collapsed
+into one is a translation that has stopped distinguishing. Three of the four false-positive
+sources it started with are gone: it no longer runs the Spanish probe on Romance languages,
+no longer counts `fn`/`lambda` (borrowed in all 119), no longer counts structural fields as
+missing prose, and no longer runs the *English* probe on an English-lexified creole, where
+English function words are the creole's own. Over the Americas that took the region from
+0 clean of 20 to 15.
+
+### A CJK ideograph is one character and two columns
+
+The code pane sizes itself from `--cols`, the width of the widest line, and `atlas.js` was
+counting characters. For every language up to Japanese that was the same number. It is not:
+`行 = 縦 - 2` is 46 characters of content that occupies 68 terminal columns, so the pane was
+sized two thirds of what it needed and the code spilled out of a box with room for it. The
+`w1`/`w2` boxing on this page's captured terminal frames is the same fact, acknowledged once
+already and not carried across.
+
+The check that guards it is worth reading for how it is aimed rather than for what it
+asserts. The font size is `max(floor, min(cap, width / --cols / 0.6))`, so a wrong `--cols`
+is invisible at desktop width — the cap binds and the pane fits either way — and invisible at
+phone width, where the floor binds and it scrolls either way. It shows only in the band
+between, where the division is live. The first version measured a 1100px frame and passed
+happily with the bug put back; measured across widths, a character-counted `--cols` overflows
+at 420px and 520px and fits from 570px up. The fixture now uses 480px, and says why.
+
+### `data/i18n/atlas-review.json` — who still has to read these
+
+Sixteen of those seventeen were written by someone who does not speak them, against whatever
+could be sourced. Where a term for a computing concept could not be, a compound was coined
+from the language's own roots. That is legitimate in an agglutinative language and it is
+also exactly the kind of thing that reads as fluent to everyone who does not speak it and as
+nonsense to everyone who does — so every coinage is written down, term by term, with the
+concept it was made for. `tools/audit_i18n.mjs` prints the count per language and
+`tests/test_i18n_atlas.mjs` fails on a block with no record, and on a record naming a term
+its own program does not use.
+
+Each record carries both halves, `coined` and `attested`, because the ratio is the whole
+signal and `tools/audit_i18n.mjs` prints it as `13c/6a`. Where attested leads — Maya 3/10,
+Quechua 4/9, K'iche' 3/8 — a speaker is reviewing prose whose nouns came from the language.
+Where coined leads, they are not reviewing it, they are writing it: **Cherokee 8/6, Plains
+Cree 7/4, Wayuunaiki 12/4, Emberá 13/6, Yanomami 14/6.** Those five are drafts with the shape
+of the language and mostly invented nouns, and the file says so in those words. Nothing in
+any of the twenty has been read by a speaker.
+
+Europe is the other end of that scale and worth stating for what it says about the tool
+rather than the languages: all twenty-eight European languages, and the twelve Asian ones, needed **no coinages at
+all**, and `data/i18n/atlas-review.json` records twenty-eight empty lists to say so. Every
+term is the ordinary one — `Spalten`, `colonne`, `kolommen`, `kolumny`, `столбцы`, `στήλες`,
+`стовпці`, `sloupce`, `kolumner`, `kolonner`, `coloane`, `columnes`, `dálkar`, `sarakkeet`,
+`stĺpce`, `stupci`, `колони`, `veerud`, `kolonnas`, `stulpeliai`, `колоне`, `zutabeak`,
+`columnas`, `stolpci`, `shtyllat`, `слупкі`, `колони` — and the one that needed looking up,
+Basque, had it fixed by Euskaltzaindia decades ago. These languages have had a computing register for decades,
+which is the whole difference from the indigenous American entries above, and it is why the
+`coined`/`attested` ratio is worth carrying: it distinguishes them without anyone having to
+assert it.
+
+Three of the tags are approximations, and the record says which: `emp` is Northern Emberá and
+`wca` is Brazilian Yanomami, each standing in for an entry the site names generically, and
+`cr-Cans` is Cree in syllabics. An approximate tag still names the right language; the raw id
+is not a language tag at all.
+
+### Known divergence: "no words" (English) vs "no keywords" (every other language)
+
+The English strings say **No words. Just symbols.** — `t1`, `stat_keywords` and `f1_title`
+in `i18n.json`, and the same claim throughout the English documentation. The other 118
+languages still say the equivalent of *no keywords*: `Sin palabras clave`, `Aucun mot-clé`,
+`キーワードなし`, `没有关键字`, `Без ключевых слов`.
+
+**That is a deliberate hold, not an oversight.** The English wording was corrected on
+2026-09-01 because "no keywords" is only nearly true: *keyword* is a tokenizer's term for a
+reserved token, and by that reading Zymbol has plenty — its own language server files `?`,
+`@` and `<~` under `KEYWORD` because LSP offers no other slot, and the TextMate grammar puts
+every operator under a `keyword.control.zymbol` scope. The claim that survives inspection is
+the one `interpreter/SYMBOLS.md` §1.2 states: **no construct of the grammar is a word.**
+
+The `atlas` blocks are the exception, and deliberately so: the distinction *is* the front
+page's argument, so its Spanish says `Sin palabras` and strikes `sin palabras clave` on the
+same line, exactly as the English does — while `spanish.t1`, four keys above it in the same
+file, still says `Sin palabras clave.` for `overview.html`. Any language that gets an `atlas` block
+has to make the same correction, and `test_i18n_atlas.mjs` fails on a headline that does
+not: a page whose thesis is the correction cannot translate to the claim it corrects.
+
+Carrying that correction into 119 languages is ~357 UI strings plus the opening line of 110
+manuals, and in most languages it is a matter of dropping a modifier (`palabras clave` →
+`palabras`). It has not been done. Anyone picking it up should start from `SYMBOLS.md` §1.2,
+and should also fix `scripts/patch_african_i18n.py` and `scripts/add_mesoamerican_languages.py`,
+which would otherwise reintroduce the old wording for any language added afterwards.
 
 ## Testing
 
@@ -290,13 +556,17 @@ Plain Node, no install step. Run from this directory:
 ```bash
 node tests/test_zyp.mjs               # .zyp reader + module resolver — builds its own fixtures
 node tests/test_filestore.mjs         # mounted-vs-open file model + persistence
+node tests/test_limits.mjs            # step/output caps: the TUI exemption and the guard it must not disarm
 node tests/test_catalog.mjs [--check] # catalog.json ↔ examples/ (--check also compiles every .zy)
 node tests/test_runner.mjs            # parity: zymbol CLI vs the JS engine
 node tests/test_runner.mjs --dir examples   # …over the example pool
-node tests/test_manual.mjs            # smoke-runs every code block in manual_en.md
+node tests/test_manual.mjs            # smoke-runs every code block in v009/manual_en.md
+node tests/test_manual_v009.mjs       # the v0.0.9 manual list vs the directory it describes
 node tests/test_markdown.mjs          # page twins, llms.txt, robots.txt, negotiation Worker
 node tests/test_licenses.mjs          # SPDX headers on every source, CC BY-SA on every manual
 node tests/test_agents.mjs            # skill digest, SKILL.md blocks execute, WebMCP tools
+node tests/test_i18n_atlas.mjs        # the front page's atlas blocks: complete, used, nothing dead
+node tests/test_atlas_dom.mjs         # the front page at 360px + the language switch (needs Chrome)
 ```
 
 Every one of those runs in CI on each push to `main` and on every pull request
@@ -314,30 +584,75 @@ applies heuristic freshness and stops revalidating — which is invisible until 
 renamed or deleted, at which point a stale cached `playground.js` imports a file that 404s and
 the whole ES module graph fails silently. `serve.mjs` sends `no-store` on everything.
 
-`test_runner.mjs` runs the Rust test corpus (`../interpreter/tests/`) through both engines and
-diffs the output — it needs the `zymbol` CLI on `PATH`. Current: **513/518 passing**, 39
-skipped (irreducible in a browser: BashExec, ANSI/TUI, `std/db`, step limits).
+`test_runner.mjs` is a wrapper over
+[ZyQuality](https://github.com/zymbol-lang/zyquality), the project's point of record for
+testing: the corpus lives there, and the browser engine is graded on the same files as the
+other three. It exits **2** if that checkout is absent — a gate must not read "nothing ran"
+as "nothing failed".
+
+```bash
+git clone https://github.com/zymbol-lang/zyquality.git ../zyquality
+make -C ../zyquality
+node tests/test_runner.mjs                  # → zyq consensus --engines zytw,zyjs
+node tests/test_runner.mjs --dir examples   # the example pool, which this repo owns
+```
+
+The 40-entry `SKIP_SET` that used to sit inside this file is gone. It was a list of paths in
+JavaScript describing files in another repository, which no other runner could read — so a
+file skipped here because it shells out was still counted as a divergence by zyml. Those
+exclusions are now `[[rule]]` entries in `zyquality/corpus.toml`, tagged (BASH_EXEC,
+ANSI_FORMAT, TUI, HOT_DEF, FEATURE_GAP, STD_DB) with the reason each gives, and every
+engine's suite reads the same file. A file in *this* repository's example pool declares its
+own with a `// @zyq-skip:` marker in its first lines, so the rule travels with the file.
+
+`tests/run_one.mjs` is the driver: it runs one `.zy` and prints what the engine produced,
+which is what lets a runner outside this repo treat the browser engine as one more
+command-line engine. ZyQuality had a copy of it that skipped the `checkSource` pass, so a
+rejected program printed its diagnostic on **stdout** and exited **0**; the copy is deleted
+and `engines.toml` points here. That alone accounted for 14 of the divergences.
+
+Measured 2026-08-12 over the shared corpus of 585 files: **90 files where the browser engine
+is the sole outlier**, and that number needs qualifying before anyone acts on it — a good
+share are diagnostics the CLI colours and the browser cannot, which is a channel difference,
+not a semantic one. Characterising the rest is the next piece of work, and until it is done
+the honest statement is "90 differences, most of them probably not bugs", not "90 bugs".
+
+That count used to include ten more. This runner was the *only* suite in the project that
+executed `interpreter/tests/scripts/*.zy` — seven benchmarks, a stress test, a timing module
+the CLI refuses to run at all, and an orphan nobody referenced. Every one of them printed
+elapsed wall time or failed outright, so every one of them was scored as a divergence of the
+JavaScript engine. They are `zyquality/bench/` now, outside the corpus, and the ten failures
+went with them.
+
+The corpus grows with the Rust engines, so this figure moves when they gain a check the web
+Checker has not been given yet — which is what half of those 10 are. Five of them are the
+`arity/` tests added on this branch: `zymbol-semantic` now rejects a call whose argument count
+is wrong (`call_arity.rs`) and the web Checker has no counterpart, so the playground runs a
+program the CLI refuses. Quote this number from a fresh run, not from this line.
 
 Pointed at the example pool (`--dir examples`) it audits every published example the same way:
-**206/208 passing**, 6 skipped. A file whose divergence is irreducible declares it in its own
-first lines with `// @skip-parity: <reason>` rather than being listed here — the pool is not
-this runner's corpus, and duplicating its paths into the skip table would rot.
+**208/210 passing, 2 failing**, 6 skipped. A file whose divergence is irreducible declares it
+in its own first lines with `// @skip-parity: <reason>` rather than being listed here — the
+pool is not this runner's corpus, and duplicating its paths into the skip table would rot.
 
-The 2 pool failures are parity gaps in `zymbol.js`, and the pool is what surfaced them:
-`projects/math-es/calculadora.zy` (the float literal `3.14159265` prints as
-`3.1415926499999998`) and `rosetta-stone/klingon.zy` (the JS lexer treats the `'` in the
-Klingon identifier `mI'` as a char literal, so the file does not parse).
+**Re-measured 2026-08-31 on v0.0.9: zero divergences**, in the corpus and in the pool alike.
 
-The 5 failures are **known parity gaps in the JS mirror**, not regressions — v0.0.8 fixes
-that have not been ported yet:
+```
+node tests/test_runner.mjs                → 661 files: 631 agree, 0 diverge
+node tests/test_runner.mjs --dir examples → 282 files: 216 agree, 0 diverge
+```
 
-| Test | Missing in `zymbol.js` |
-| ---- | ---------------------- |
-| `bugs/bug_mm11_iterator_leftover.zy` | MM-11 — leftover loop-iterator value |
-| `bugs/bug_mm4_module_const_guard.zy` | MM-4 — import-time semantic gate (constant reassignment in a module is not reported) |
-| `bugs/bug_mm9_const_call_depth.zy` | MM-9 — root-scope constants at call depth ≥ 2 |
-| `errors/parser/parent_path_alias.zy` | HLZ-005 — the `'./../' is not a module path` diagnostic (the JS mirror errors, but with different text) |
-| `modules_scope/interp_global_const.zy` | Interpolation of any identifier, including global constants (`"{DIR}"`) |
+The residue is *excused, not divergent*: 30 corpus files and 66 examples that `corpus.toml`
+excludes for `zyjs` with a written reason — `std/db` is ODBC, `<\ cmd \>` entropy differs by
+design, TUI needs a real TTY — plus the pool's own `@skip-parity` markers.
+
+The gaps this section used to list are closed, each verified on its own rather than inferred
+from the total: `arity/` (7 files, three engines, 7 agree — this engine was the last one that
+filled a missing argument with `Unit`), `bugs/bug_mm*` (MM-4, MM-9, MM-11 — 12 files, 12
+agree), `errors/parser/parent_path_alias.zy` (HLZ-005), `modules_scope/interp_global_const.zy`,
+HLZ-KL-001 (`'` inside an identifier, so tlhIngan Hol parses), and the float literal
+`3.14159265`, which was the worst of them because it affected *every* float literal and went
+unnoticed until the pool became real files on disk.
 
 See [docs/GAPS.md](docs/GAPS.md) for the full parity report.
 

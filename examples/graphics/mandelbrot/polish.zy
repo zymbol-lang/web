@@ -1,0 +1,77 @@
+// @skip-parity: płótno wymaga prawdziwego terminala pod CLI oraz warstwy płótna
+// @skip-parity: w przeglądarce, więc przebieg przez potok nie ma z czym się
+// @skip-parity: porównać.
+// ============================================================
+// mandelbrot — zbiór Mandelbrota, narysowany na płótnie terminala.
+// Nazwy po polsku. Znaki zawsze pozostają znakami.
+//
+// Jedna liczba decyduje o wszystkim: `n`, ile kroków orbita
+// przetrwa, zanim ucieknie. Ona wybiera glif i ona wybiera barwę,
+// więc rysunek nie może sam sobie przeczyć. `n = 0` znaczy, że
+// nigdy nie uciekła — to jest zbiór, narysowany pełnym znakiem.
+//
+//   >>|  otwiera płótno   >>!  czyści je   >>?  mierzy je
+//   >>~  zapisuje jedną komórkę, w wierszu, w kolumnie, w barwie
+//   <<|  czeka na klawisz
+//
+// Dwie oszczędności, i obie widać na rysunku, a nie w pomiarze:
+// kwadraty przenoszone są z kroku na krok zamiast liczone od nowa,
+// a zbiór jest odbity względem osi rzeczywistej, więc ucieka tylko
+// górna połowa. Razem opłacają rozdzielczość, której wymaga detal.
+// ============================================================
+
+// Poza zbiorem: od bladego do pełnego, od ciemnej zieleni do jasnej.
+rampa = " .:-=+*#%"
+barwy = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Kroki przetrwane, zanim orbita ucieknie; 0, jeśli nigdy nie ucieka.
+// zr2 i zi2 są przenoszone, więc każdy krok kosztuje cztery mnożenia, nie sześć.
+ucieczka(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (wysoki, szeroki) = >>?
+    wiersze = wysoki  - 2
+    kolumny = szeroki - 1
+
+    // Komórka jest ~2,5 raza wyższa niż szeroka; pionowy zakres
+    // jest tym skalowany, żeby zbiór wyszedł okrągły.
+    szerokość = 2.7
+    wysokość  = wiersze * szerokość * 2.5 / kolumny
+    środek    = wiersze / 2 + 1
+
+    @ y:1..środek {
+        lustro = wiersze + 1 - y
+        @ x:1..kolumny {
+            cr = (x - 1) * szerokość / kolumny - 2.1
+            ci = (y - 1) * wysokość  / wiersze - wysokość / 2.0
+            n  = ucieczka(cr, ci)
+            znak = "@"
+            barwa = 231
+            ? n <> 0 {
+                krok = n / 4 + 1
+                ? krok > 9 { krok = 9 }
+                znak  = rampa[krok]
+                barwa = barwy[krok]
+            }
+            >>~ (y, x, 0, barwa) > znak
+            ? lustro > środek { >>~ (lustro, x, 0, barwa) > znak }
+        }
+    }
+
+    >>~ (wysoki, 2, 0, 244) > "dowolny klawisz, aby wyjść"
+    <<| _klawisz
+}

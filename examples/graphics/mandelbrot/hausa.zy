@@ -1,0 +1,78 @@
+// @skip-parity: zane yana buƙatar ainihin tashar a ƙarƙashin CLI da kuma
+// @skip-parity: yadudduka na zane a cikin burauza, don haka gudu ta bututu ba shi
+// @skip-parity: da abin da zai kwatanta.
+// ============================================================
+// mandelbrot — tarin Mandelbrot, an zana shi a kan zanen tasha.
+// Sunaye da Hausa. Alamu koyaushe alamu ne.
+//
+// Lamba ɗaya ce ke yanke komai: `n`, matakai nawa kewayen ke jurewa
+// kafin ya tsere. Ita ce ke zaɓar siffa kuma ita ce ke zaɓar launi,
+// don haka hoton ba zai iya musanta kansa ba. `n = 0` yana nufin bai
+// taɓa tserewa ba — wannan shi ne tarin kansa, an zana shi cike.
+//
+//   >>|  yana buɗe zane   >>!  yana share   >>?  yana auna
+//   >>~  yana rubuta akwati ɗaya, a layi ɗaya, ginshiƙi ɗaya, launi ɗaya
+//   <<|  yana jiran maɓalli ɗaya
+//
+// Tanadi biyu, kuma dukansu ana ganinsu a cikin hoton ba a ma'auni ba:
+// ana ɗaukar murabba'ai daga wannan mataki zuwa na gaba maimakon a sake
+// lissafta su, kuma ana nuna tarin a madubi kewaye da axis na gaskiya,
+// don haka rabin sama kaɗai ke tsere. Duka biyun tare suna biyan
+// kaifin da cikakken bayani ke buƙata.
+// ============================================================
+
+// A wajen tarin: daga rauni zuwa cika, daga kore mai duhu zuwa mai haske.
+gangara = " .:-=+*#%"
+launuka = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Matakan da aka jure kafin kewayen ya tsere; 0 idan bai taɓa tsere ba.
+// Ana ɗaukar zr2 da zi2, don haka kowane mataki yana kashe ninki huɗu, ba shida ba.
+tsere(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (tsayi, faɗi) = >>?
+    layuka     = tsayi - 2
+    ginshiƙai  = faɗi  - 1
+
+    // Akwati ɗaya ya fi faɗinsa tsayi kusan sau 2.5; ana auna tsawon
+    // tsaye da wannan don tarin ya fito zagaye.
+    faɗinFili = 2.7
+    tsayinFili = layuka * faɗinFili * 2.5 / ginshiƙai
+    tsakiya    = layuka / 2 + 1
+
+    @ y:1..tsakiya {
+        madubi = layuka + 1 - y
+        @ x:1..ginshiƙai {
+            cr = (x - 1) * faɗinFili  / ginshiƙai - 2.1
+            ci = (y - 1) * tsayinFili / layuka    - tsayinFili / 2.0
+            n  = tsere(cr, ci)
+            alama = "@"
+            launi = 231
+            ? n <> 0 {
+                mataki = n / 4 + 1
+                ? mataki > 9 { mataki = 9 }
+                alama = gangara[mataki]
+                launi = launuka[mataki]
+            }
+            >>~ (y, x, 0, launi) > alama
+            ? madubi > tsakiya { >>~ (madubi, x, 0, launi) > alama }
+        }
+    }
+
+    >>~ (tsayi, 2, 0, 244) > "danna kowane maɓalli don fita"
+    <<| _maɓalli
+}

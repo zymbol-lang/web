@@ -1,0 +1,19 @@
+// An absent key is an error (Python's KeyError), never a silent undefined.
+user = #(name: "Ana", age: 30)
+
+// $? asks about the KEY — this is why it has to exist
+>> user$? "age" ¶
+>> user$? "salary" ¶
+
+? user$? "salary" {
+    >> user["salary"] ¶
+} _ {
+    >> "no salary on file" ¶
+}
+
+// Reaching for it anyway raises ##Key
+!? {
+    >> user["salary"] ¶
+} :! ##Key {
+    >> "caught: no such key" ¶
+}

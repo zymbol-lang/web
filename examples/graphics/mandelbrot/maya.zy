@@ -1,0 +1,84 @@
+// @skip-parity: le bo'oyilo' k'a'abet ti' junp'éel jach terminal yáanal le CLI
+// @skip-parity: yéetel junp'éel bo'oyil ti' le xookil, le beetike' junp'éel
+// @skip-parity: meyaj tu beel mina'an ba'ax u ket.
+// ============================================================
+// mandelbrot — le Mandelbrot much', ts'íibta'an ti' le bo'oyil.
+// K'aaba'obo' ich maaya. Chíikulo'obe' mantats' chíikulo'ob.
+//
+// Junp'éel xookil ku ye'esik tuláakal: `n`, buka'aj xíimbal ku
+// muk'yaj le súutulil ti'al u púuts'ul. Letie' ku yéeyik le
+// chíikul yéetel ku yéeyik le boonil, le beetike' le ts'íib
+// ma' tu páajtal u k'exik u t'aan. `n = 0` u k'áat ya'al mix
+// bik'in púuts'nak — leti' le much'o', ts'íibta'an chuka'an.
+//
+//   >>|  ku je'ik le bo'oyil   >>!  ku míistik   >>?  ku p'isik
+//   >>~  ku ts'íibtik junp'éel táabla, ti' junp'éel tsóol, junp'éel
+//   >>~  wa'al, yéetel junp'éel boonil
+//   <<|  ku pa'atik junp'éel péets'
+//
+// Ka'ap'éel kanáantaj, yéetel tu ka'ap'éelal ku chíikpajal ti'
+// le ts'íib ma' ti' junp'éel p'is: le kwaadrado'obo' ku bisa'al
+// ti' junp'éel súutul tak u láak', ma' ku ka' xoko'obi', yéetel
+// le much'o' ku néenta'al ti' le jaajil beel, le beetike' chéen
+// le ka'anal chúumuk ku púuts'ul. Múuch'ul ku bo'otiko'ob le
+// ilbil k'a'abet ti' le mejen ba'alo'ob.
+//
+// Túumben t'aan: `kóochil`, `ka'analil` yéetel `wa'al` beeta'ab
+// waye'. Maaya t'aan aj ka'ansaj u yilik.
+// ============================================================
+
+// Táanxel ti' le much': ti' sáasil tak chuka'an, ti' éek' ya'ax tak sáasil.
+chíikulo'ob = " .:-=+*#%"
+boonilo'ob  = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Xíimbal ku muk'yaj ti'al u púuts'ul le súutulil; 0 wa mix bik'in ku púuts'ul.
+// zr2 yéetel zi2 ku bisa'alo'ob, le beetike' junp'éel xíimbal ku bo'otik kanp'éel much'kinaj, ma' wakp'éeli'.
+púuts'ul(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (ka'anal, kóoch) = >>?
+    tsóol = ka'anal - 2
+    wa'al = kóoch   - 1
+
+    // Junp'éel táabla ~2.5 u téenel maas ka'anal ti' u kóochil;
+    // le ka'anal p'iiso' ku p'isbil yéetel ti'al le much' u wóolis.
+    kóochil   = 2.7
+    ka'analil = tsóol * kóochil * 2.5 / wa'al
+    chúumuk   = tsóol / 2 + 1
+
+    @ y:1..chúumuk {
+        néen = tsóol + 1 - y
+        @ x:1..wa'al {
+            cr = (x - 1) * kóochil   / wa'al - 2.1
+            ci = (y - 1) * ka'analil / tsóol - ka'analil / 2.0
+            n  = púuts'ul(cr, ci)
+            chíikul = "@"
+            boonil  = 231
+            ? n <> 0 {
+                xíimbal = n / 4 + 1
+                ? xíimbal > 9 { xíimbal = 9 }
+                chíikul = chíikulo'ob[xíimbal]
+                boonil  = boonilo'ob[xíimbal]
+            }
+            >>~ (y, x, 0, boonil) > chíikul
+            ? néen > chúumuk { >>~ (néen, x, 0, boonil) > chíikul }
+        }
+    }
+
+    >>~ (ka'anal, 2, 0, 244) > "péets'e' je'el ba'ax péets'e' utia'al a jóok'ol"
+    <<| _péets'
+}

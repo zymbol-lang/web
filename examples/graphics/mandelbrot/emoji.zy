@@ -1,0 +1,76 @@
+// @skip-parity: 🖼 canvas needs a real terminal under the CLI and a canvas layer in
+// @skip-parity: the browser, so a run through a pipe has nothing to compare.
+// ============================================================
+// mandelbrot — 🌀 the Mandelbrot set, drawn on a terminal canvas.
+// 🏷 The names are emoji. The marks are still marks.
+//
+// 1️⃣ number decides everything: `💪`, how many steps the orbit survives
+// before it runs away. It picks the glyph 🪜 and it picks the colour 🎨,
+// so the picture cannot contradict itself. `💪 = 0` means it never ran —
+// that is the set itself, drawn full.
+//
+//   >>|  opens 🖼   >>!  clears   >>?  measures
+//   >>~  writes one 🔲, on one ➡, one ⬇, in one 🎨
+//   <<|  waits for one 🔑
+//
+// 2️⃣ savings, and both show in the picture rather than in a measurement:
+// the squares are carried from one 👣 to the next instead of recomputed,
+// and the set is mirrored 🪞 about the real axis, so only the top half
+// runs. Together they pay for the sharpness the detail asks for.
+// ============================================================
+
+// Outside the set: faint to solid, dark green to bright.
+🪜 = " .:-=+*#%"
+🌈 = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Steps survived before the orbit runs away; 0 if it never does.
+// 🌀⬌2 and 🌀⬍2 are carried, so each 👣 costs four products, not six.
+🏃(📍⬌, 📍⬍) {
+    🌀⬌  = 0.0
+    🌀⬍  = 0.0
+    🌀⬌2 = 0.0
+    🌀⬍2 = 0.0
+    @ 🔁:1..36 {
+        ? 🌀⬌2 + 🌀⬍2 > 4.0 { <~ 🔁 }
+        🌀⬍  = 2.0 * 🌀⬌ * 🌀⬍ + 📍⬍
+        🌀⬌  = 🌀⬌2 - 🌀⬍2 + 📍⬌
+        🌀⬌2 = 🌀⬌ * 🌀⬌
+        🌀⬍2 = 🌀⬍ * 🌀⬍
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (📏, 📐) = >>?
+    ➡ = 📏 - 2
+    ⬇ = 📐 - 1
+
+    // A 🔲 is ~2.5x taller than wide; the vertical span is scaled by that
+    // so the set comes out round.
+    🗺📐 = 2.7
+    🗺📏 = ➡ * 🗺📐 * 2.5 / ⬇
+    🎯  = ➡ / 2 + 1
+
+    @ ➡🔢:1..🎯 {
+        🪞 = ➡ + 1 - ➡🔢
+        @ ⬇🔢:1..⬇ {
+            📍⬌ = (⬇🔢 - 1) * 🗺📐 / ⬇ - 2.1
+            📍⬍ = (➡🔢 - 1) * 🗺📏 / ➡ - 🗺📏 / 2.0
+            💪  = 🏃(📍⬌, 📍⬍)
+            ✏   = "@"
+            🎨  = 231
+            ? 💪 <> 0 {
+                👣 = 💪 / 4 + 1
+                ? 👣 > 9 { 👣 = 9 }
+                ✏  = 🪜[👣]
+                🎨 = 🌈[👣]
+            }
+            >>~ (➡🔢, ⬇🔢, 0, 🎨) > ✏
+            ? 🪞 > 🎯 { >>~ (🪞, ⬇🔢, 0, 🎨) > ✏ }
+        }
+    }
+
+    >>~ (📏, 2, 0, 244) > "🔑 any key to leave"
+    <<| _🔑
+}

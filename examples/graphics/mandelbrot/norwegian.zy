@@ -1,0 +1,78 @@
+// @skip-parity: lerretet krever en ekte terminal under CLI-en og et lerretslag
+// @skip-parity: i nettleseren, så en kjøring gjennom et rør har ingenting å
+// @skip-parity: sammenligne med.
+// ============================================================
+// mandelbrot — Mandelbrotmengden, tegnet på terminalens lerret.
+// Navn på norsk. Tegn forblir alltid tegn.
+//
+// Ett tall avgjør alt: `n`, hvor mange steg banen overlever før
+// den rømmer. Det velger tegnet og det velger tonen, så bildet
+// kan ikke motsi seg selv. `n = 0` betyr at den aldri rømte —
+// det er mengden, tegnet fullt.
+//
+//   >>|  åpner lerretet   >>!  tømmer det   >>?  måler det
+//   >>~  skriver én rute, på en rad, i en kolonne, i én tone
+//   <<|  venter på en tast
+//
+// To innsparinger, og begge synes i bildet i stedet for i en
+// måling: kvadratene bæres med fra steg til steg i stedet for å
+// regnes om, og mengden speiles om den reelle aksen, så bare den
+// øvre halvdelen rømmer noen gang. Sammen betaler de oppløsningen
+// som detaljen krever.
+// ============================================================
+
+// Utenfor mengden: fra svak til full, fra mørkegrønn til lysende.
+rampe = " .:-=+*#%"
+toner = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Steg overlevd før banen rømmer; 0 hvis den aldri gjør det.
+// zr2 og zi2 bæres med, så hvert steg koster fire produkter, ikke seks.
+rømme(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (høy, bred) = >>?
+    rader    = høy  - 2
+    kolonner = bred - 1
+
+    // En rute er ~2,5 ganger høyere enn bred; det loddrette spennet
+    // skaleres med det, så mengden kommer ut rund.
+    bredde = 2.7
+    høyde  = rader * bredde * 2.5 / kolonner
+    midt   = rader / 2 + 1
+
+    @ y:1..midt {
+        speil = rader + 1 - y
+        @ x:1..kolonner {
+            cr = (x - 1) * bredde / kolonner - 2.1
+            ci = (y - 1) * høyde  / rader    - høyde / 2.0
+            n  = rømme(cr, ci)
+            tegn = "@"
+            tone = 231
+            ? n <> 0 {
+                steg = n / 4 + 1
+                ? steg > 9 { steg = 9 }
+                tegn = rampe[steg]
+                tone = toner[steg]
+            }
+            >>~ (y, x, 0, tone) > tegn
+            ? speil > midt { >>~ (speil, x, 0, tone) > tegn }
+        }
+    }
+
+    >>~ (høy, 2, 0, 244) > "vilkårlig tast for å gå ut"
+    <<| _tast
+}

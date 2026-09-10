@@ -1,0 +1,78 @@
+// @skip-parity: pânza are nevoie de un terminal adevărat sub CLI și de un strat
+// @skip-parity: de pânză în navigator, așa că o rulare printr-o conductă nu are
+// @skip-parity: cu ce să se compare.
+// ============================================================
+// mandelbrot — mulțimea Mandelbrot, desenată pe pânza terminalului.
+// Nume în română. Semnele rămân întotdeauna semne.
+//
+// Un singur număr hotărăște totul: `n`, câți pași supraviețuiește
+// orbita înainte să evadeze. El alege glifa și el alege nuanța,
+// așa că desenul nu se poate contrazice. `n = 0` înseamnă că nu
+// a evadat niciodată — aceea este mulțimea, desenată plin.
+//
+//   >>|  deschide pânza   >>!  o șterge   >>?  o măsoară
+//   >>~  scrie o celulă, pe un rând, pe o coloană, într-o nuanță
+//   <<|  așteaptă o tastă
+//
+// Două economii, și amândouă se văd în desen, nu într-o măsurare:
+// pătratele sunt purtate de la un pas la altul în loc să fie
+// recalculate, iar mulțimea este oglindită față de axa reală, așa
+// că doar jumătatea de sus evadează. Împreună plătesc rezoluția
+// pe care o cere detaliul.
+// ============================================================
+
+// În afara mulțimii: de la palid la plin, de la verde închis la strălucitor.
+rampă  = " .:-=+*#%"
+nuanțe = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Pași supraviețuiți înainte ca orbita să evadeze; 0 dacă nu evadează niciodată.
+// zr2 și zi2 sunt purtate, așa că fiecare pas costă patru produse, nu șase.
+evadare(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (înalt, lat) = >>?
+    rânduri = înalt - 2
+    coloane = lat   - 1
+
+    // O celulă e de ~2,5 ori mai înaltă decât lată; întinderea
+    // verticală se scalează cu asta, ca mulțimea să iasă rotundă.
+    lățime   = 2.7
+    înălțime = rânduri * lățime * 2.5 / coloane
+    mijloc   = rânduri / 2 + 1
+
+    @ y:1..mijloc {
+        oglindă = rânduri + 1 - y
+        @ x:1..coloane {
+            cr = (x - 1) * lățime   / coloane - 2.1
+            ci = (y - 1) * înălțime / rânduri - înălțime / 2.0
+            n  = evadare(cr, ci)
+            semn  = "@"
+            nuanță = 231
+            ? n <> 0 {
+                pas = n / 4 + 1
+                ? pas > 9 { pas = 9 }
+                semn   = rampă[pas]
+                nuanță = nuanțe[pas]
+            }
+            >>~ (y, x, 0, nuanță) > semn
+            ? oglindă > mijloc { >>~ (oglindă, x, 0, nuanță) > semn }
+        }
+    }
+
+    >>~ (înalt, 2, 0, 244) > "orice tastă pentru a ieși"
+    <<| _tastă
+}

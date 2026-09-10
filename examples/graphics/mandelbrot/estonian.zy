@@ -1,0 +1,76 @@
+// @skip-parity: lõuend vajab CLI all päris terminali ja brauseris lõuendikihti,
+// @skip-parity: nii et toru kaudu jooksutades pole millegagi võrrelda.
+// ============================================================
+// mandelbrot — Mandelbroti hulk, joonistatud terminali lõuendile.
+// Nimed eesti keeles. Märgid jäävad alati märkideks.
+//
+// Kõik otsustab üks arv: `n`, mitu sammu rada peab vastu, enne kui
+// ta põgeneb. See valib märgi ja see valib tooni, nii et pilt ei
+// saa iseendale vastu rääkida. `n = 0` tähendab, et ta ei põgenenud
+// kunagi — see ongi hulk, joonistatud täiena.
+//
+//   >>|  avab lõuendi   >>!  puhastab selle   >>?  mõõdab selle
+//   >>~  kirjutab ühe ruudu, reale, veergu, ühes toonis
+//   <<|  ootab klahvi
+//
+// Kaks kokkuhoidu, ja mõlemad paistavad pildis, mitte mõõtmises:
+// ruudud kantakse sammult sammule kaasa, mitte ei arvutata uuesti,
+// ja hulk peegeldatakse reaaltelje ümber, nii et põgeneb ainult
+// ülemine pool. Koos maksavad nad selle lahutuse, mida detail nõuab.
+// ============================================================
+
+// Väljaspool hulka: kahvatust täieni, tumerohelisest heledani.
+ramp   = " .:-=+*#%"
+toonid = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Sammud, mis peeti vastu enne raja põgenemist; 0, kui ta ei põgene kunagi.
+// zr2 ja zi2 kantakse kaasa, nii et iga samm maksab neli korrutist, mitte kuus.
+põgenemine(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (kõrge, lai) = >>?
+    read   = kõrge - 2
+    veerud = lai   - 1
+
+    // Ruut on ~2,5 korda kõrgem kui laiem; püstine ulatus
+    // skaleeritakse sellega, et hulk tuleks ümar.
+    laius  = 2.7
+    kõrgus = read * laius * 2.5 / veerud
+    kesk   = read / 2 + 1
+
+    @ y:1..kesk {
+        peegel = read + 1 - y
+        @ x:1..veerud {
+            cr = (x - 1) * laius  / veerud - 2.1
+            ci = (y - 1) * kõrgus / read   - kõrgus / 2.0
+            n  = põgenemine(cr, ci)
+            märk = "@"
+            toon = 231
+            ? n <> 0 {
+                samm = n / 4 + 1
+                ? samm > 9 { samm = 9 }
+                märk = ramp[samm]
+                toon = toonid[samm]
+            }
+            >>~ (y, x, 0, toon) > märk
+            ? peegel > kesk { >>~ (peegel, x, 0, toon) > märk }
+        }
+    }
+
+    >>~ (kõrge, 2, 0, 244) > "suvaline klahv väljumiseks"
+    <<| _klahv
+}

@@ -1,0 +1,78 @@
+// @skip-parity: kenvasi inoda terminal chaiyo pasi peCLI uye chikamu chekenvasi
+// @skip-parity: mubhurauza, saka kumhanyisa nembombi hakuna chinoenzaniswa.
+// ============================================================
+// mandelbrot — boka raMandelbrot, rakadhirowewa pakenvasi yeterminal.
+// Mazita ari muchiShona. Zviratidzo zvinogara zviri zviratidzo.
+//
+// Zvose zvinosarudzwa nenhamba imwe: `n`, kuti danho rakawanda sei
+// rinotsungirirwa nedenderedzwa risati ratiza. Ndiyo inosarudza
+// hunyanzvi hwemavara, uye ndiyo inosarudza ruvara; saka mufananidzo
+// haugoni kuzvipikisa. `n = 0` zvinoreva kuti haana kumbotiza — iroro
+// ndiro boka pacharo, rakadhirowewa rizere.
+//
+//   >>|  inovhura kenvasi   >>!  inopukuta   >>?  inoyera
+//   >>~  inonyora bhokisi rimwe, mumutsara mumwe, mumbiru imwe, neruvara rumwe
+//   <<|  inomirira kiyi imwe
+//
+// Kuchengetedza kuviri, uye kwose kunoonekwa mumufananidzo kwete
+// mukuyera: zvikwere zvinotakurwa kubva padanho rimwe kuenda kune
+// rinotevera pane kuzvitsvagazve, uye boka rinoratidzwa muchionioni
+// rakapoteredza axis chaiyo, saka hafu yekumusoro chete ndiyo inotiza.
+// Kwose kuri kuviri pamwe chete kunobhadhara kujeka kunodiwa netsanangudzo.
+// ============================================================
+
+// Kunze kweboka: kubva pakuneta kusvika pakuzara, kubva pagirini rakasviba kusvika pakupenya.
+materu = " .:-=+*#%"
+mavara = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Matanho akatsungirirwa denderedzwa risati ratiza; 0 kana risina kumbotiza.
+// zr2 nezi2 zvinotakurwa, saka danho rimwe nerimwe rinodhura zvigadzirwa zvina, kwete zvitanhatu.
+tiza(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (kureba, upamhi) = >>?
+    mitsara = kureba - 2
+    mbiru   = upamhi - 1
+
+    // Bhokisi rakareba kanenge ka2.5 kupfuura upamhi hwaro; kureba
+    // kwakamira kunoyerwa nekwo kuitira kuti boka ribude rakatenderera.
+    upamhiNzvimbo = 2.7
+    kurebaNzvimbo = mitsara * upamhiNzvimbo * 2.5 / mbiru
+    pakati        = mitsara / 2 + 1
+
+    @ y:1..pakati {
+        chionioni = mitsara + 1 - y
+        @ x:1..mbiru {
+            cr = (x - 1) * upamhiNzvimbo / mbiru   - 2.1
+            ci = (y - 1) * kurebaNzvimbo / mitsara - kurebaNzvimbo / 2.0
+            n  = tiza(cr, ci)
+            chiratidzo = "@"
+            ruvara     = 231
+            ? n <> 0 {
+                danho = n / 4 + 1
+                ? danho > 9 { danho = 9 }
+                chiratidzo = materu[danho]
+                ruvara     = mavara[danho]
+            }
+            >>~ (y, x, 0, ruvara) > chiratidzo
+            ? chionioni > pakati { >>~ (chionioni, x, 0, ruvara) > chiratidzo }
+        }
+    }
+
+    >>~ (kureba, 2, 0, 244) > "dzvanya kiyi ipi zvayo kuti ubude"
+    <<| _kiyi
+}

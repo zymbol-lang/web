@@ -1,0 +1,76 @@
+// @skip-parity: kànfáàsì nílò ẹ̀rọ ìsopọ̀ gidi lábẹ́ CLI àti ìpele kànfáàsì nínú
+// @skip-parity: aṣàwákiri, nítorí náà ṣíṣe nípasẹ̀ ọ̀pọ̀nà kò ní ohun tí yóò fi wéra.
+// ============================================================
+// mandelbrot — àkójọ Mandelbrot, tí a yà sórí kànfáàsì ẹ̀rọ ìsopọ̀.
+// Àwọn orúkọ ní Yorùbá. Àwọn àmì máa ń jẹ́ àmì nígbà gbogbo.
+//
+// Nọ́mbà kan ló ń pinnu gbogbo rẹ̀: `n`, ìgbésẹ̀ mélòó ni yíyípo fi
+// forí tì kí ó tó sálọ. Òun ló yan lẹ́tà, òun sì ló yan àwọ̀; nítorí
+// náà àwòrán kò lè ta ara rẹ̀ lòdì. `n = 0` túmọ̀ sí pé kò sálọ rí —
+// ìyẹn ni àkójọ náà fúnra rẹ̀, tí a yà kún.
+//
+//   >>|  ń ṣí kànfáàsì   >>!  ń nù   >>?  ń wọ̀n
+//   >>~  ń kọ àpótí kan, ní ìlà kan, ọwọ̀n kan, àwọ̀ kan
+//   <<|  ń dúró de kọ́kọ́rọ́ kan
+//
+// Ìṣúra méjì, méjèèjì sì hàn nínú àwòrán kì í ṣe nínú ìwọ̀n: a ń gbé
+// ìlọ́po méjì láti ìgbésẹ̀ kan sí èkejì dípò kí a tún wọn ṣírò, a sì ń
+// fi dígí ṣe àfihàn àkójọ náà yí ipò gidi ká, nítorí náà ìdajì òkè
+// nìkan ló ń sálọ. Àwọn méjèèjì papọ̀ ń san owó ìmọ́lẹ̀ tí kúlẹ̀kúlẹ̀ béèrè.
+// ============================================================
+
+// Lóde àkójọ náà: láti rẹ̀wẹ̀sì dé kíkún, láti ewé dúdú dé ìmọ́lẹ̀.
+àtẹ̀gùn   = " .:-=+*#%"
+àkójọàwọ̀ = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Ìgbésẹ̀ tí ó forí tì kí yíyípo tó sálọ; 0 bí kò bá sálọ rí.
+// A ń gbé zr2 àti zi2, nítorí náà ìgbésẹ̀ kọ̀ọ̀kan ná ìlọ́po mẹ́rin, kì í ṣe mẹ́fà.
+sálọ(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (gíga, fífẹ̀) = >>?
+    ìlà   = gíga  - 2
+    ọwọ̀n  = fífẹ̀ - 1
+
+    // Àpótí kan ga ní ìlọ́po ~2.5 ju fífẹ̀ rẹ̀ lọ; a ń wọn ìnà ìdúró
+    // pẹ̀lú ìyẹn kí àkójọ náà lè jáde ní ròbótò.
+    ìfẹ̀   = 2.7
+    ìga   = ìlà * ìfẹ̀ * 2.5 / ọwọ̀n
+    àárín = ìlà / 2 + 1
+
+    @ y:1..àárín {
+        dígí = ìlà + 1 - y
+        @ x:1..ọwọ̀n {
+            cr = (x - 1) * ìfẹ̀ / ọwọ̀n - 2.1
+            ci = (y - 1) * ìga / ìlà   - ìga / 2.0
+            n  = sálọ(cr, ci)
+            àmì  = "@"
+            àwọ̀ = 231
+            ? n <> 0 {
+                ìgbésẹ̀ = n / 4 + 1
+                ? ìgbésẹ̀ > 9 { ìgbésẹ̀ = 9 }
+                àmì  = àtẹ̀gùn[ìgbésẹ̀]
+                àwọ̀ = àkójọàwọ̀[ìgbésẹ̀]
+            }
+            >>~ (y, x, 0, àwọ̀) > àmì
+            ? dígí > àárín { >>~ (dígí, x, 0, àwọ̀) > àmì }
+        }
+    }
+
+    >>~ (gíga, 2, 0, 244) > "tẹ kọ́kọ́rọ́ èyíkéyìí láti jáde"
+    <<| _kọ́kọ́rọ́
+}

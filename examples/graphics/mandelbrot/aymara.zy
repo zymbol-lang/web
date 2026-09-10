@@ -1,0 +1,81 @@
+// @skip-parity: aka qillqañaxa mä chiqa terminal muni CLI ukana, ullañataki
+// @skip-parity: mä qillqaña pata muni, ukatwa mä tuputa jani chikachaña.
+// ============================================================
+// mandelbrot — Mandelbrot tantachawi, qillqaña patana qillqata.
+// Sutinakaxa aymarata. Unanchanakasti wiñaya unanchakiwa.
+//
+// Mä jakhuwikiwa taqi chiqa amtaña: `n`, qawqha sarawi muyuwi
+// jani phatxañkama qhipaqti. Jupawa unancha ajlliri, sami
+// ajlliriraki, ukatwa qillqata jani pachpa arsuñapati. `n = 0`
+// sañ muni janiw kunapachas phatxkiti — ukawa tantachawi,
+// phuqata qillqata.
+//
+//   >>|  qillqaña jistara   >>!  qhuma   >>?  tupu
+//   >>~  mä tama qillqi, mä siqina, mä sayt'atana, mä samimpi
+//   <<|  mä limiña suyt'i
+//
+// Paya pisichawi, panpachani qillqatana uñstixa, janiw mä
+// jank'aki tuputanakana: pusichatanakaxa mä muyuwita yaqhaparu
+// apata, janiw wasitat jakhutakiti, tantachawisti chiqa thakhi
+// patxaru lirphuchata, ukatwa alaya chikaki phatxi. Pä chika
+// uñjañataki askichawi payllapxi.
+//
+// Machaq aru: `sayt'ata`, `jach'awi`, `patxawi` aka luräwitakiwa
+// lurata. Aymara arsuri askichañapa.
+// ============================================================
+
+// Tantachawi anqaxa: pisitata phuqatkama, ch'iyar ch'uxñata q'ajarkama.
+unanchanaka = " .:-=+*#%"
+saminaka    = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Qawqha sarawi qhipaqi jani muyuwi phatxañkama; 0 janiw kunapachas phatxkchi ukhaxa.
+// zr2 zi2 apatawa, ukatwa sapa sarawi pusi mirawi payllti, janiw suxtakiti.
+phatiña(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (patxa, jach'a) = >>?
+    siqi     = patxa  - 2
+    sayt'ata = jach'a - 1
+
+    // Mä tamaxa ~2.5 kuti jilïri sayt'u jach'apata; alaya
+    // tupuxa ukampi tupt'ata tantachawi muyu mistuñapataki.
+    jach'awi = 2.7
+    patxawi  = siqi * jach'awi * 2.5 / sayt'ata
+    taypi    = siqi / 2 + 1
+
+    @ y:1..taypi {
+        lirphu = siqi + 1 - y
+        @ x:1..sayt'ata {
+            cr = (x - 1) * jach'awi / sayt'ata - 2.1
+            ci = (y - 1) * patxawi  / siqi     - patxawi / 2.0
+            n  = phatiña(cr, ci)
+            unancha = "@"
+            sami    = 231
+            ? n <> 0 {
+                sarawi = n / 4 + 1
+                ? sarawi > 9 { sarawi = 9 }
+                unancha = unanchanaka[sarawi]
+                sami    = saminaka[sarawi]
+            }
+            >>~ (y, x, 0, sami) > unancha
+            ? lirphu > taypi { >>~ (lirphu, x, 0, sami) > unancha }
+        }
+    }
+
+    >>~ (patxa, 2, 0, 244) > "mistuñataki kuna limiñsa limt'am"
+    <<| _limiña
+}

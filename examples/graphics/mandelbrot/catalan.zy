@@ -1,0 +1,78 @@
+// @skip-parity: el llenç necessita un terminal de debò sota la CLI i una capa
+// @skip-parity: de llenç al navegador, de manera que una execució per canonada
+// @skip-parity: no té amb què comparar-se.
+// ============================================================
+// mandelbrot — el conjunt de Mandelbrot, dibuixat al llenç del terminal.
+// Noms en català. Els signes són sempre signes.
+//
+// Un sol nombre ho decideix tot: `n`, quants passos sobreviu
+// l'òrbita abans de fugir. Ell tria el glif i ell tria el to, de
+// manera que el dibuix no es pot contradir. `n = 0` vol dir que
+// no ha fugit mai — això és el conjunt, dibuixat ple.
+//
+//   >>|  obre el llenç   >>!  l'esborra   >>?  el mesura
+//   >>~  escriu una cel·la, en una fila, una columna, en un to
+//   <<|  espera una tecla
+//
+// Dues economies, i totes dues es veuen al dibuix i no en un
+// mesurament: els quadrats es porten d'un pas al següent en lloc
+// de recalcular-se, i el conjunt s'emmiralla al voltant de l'eix
+// real, de manera que només la meitat de dalt arriba a fugir.
+// Juntes paguen la resolució que el detall demana.
+// ============================================================
+
+// Fora del conjunt: de tènue a ple, de verd fosc a brillant.
+rampa = " .:-=+*#%"
+tons  = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Passos sobreviscuts abans que l'òrbita fugi; 0 si no fuig mai.
+// zr2 i zi2 es porten, de manera que cada pas costa quatre productes, no sis.
+fuga(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (alt, ample) = >>?
+    files    = alt   - 2
+    columnes = ample - 1
+
+    // Una cel·la és ~2,5 vegades més alta que ampla; l'extensió
+    // vertical s'escala amb això perquè el conjunt surti rodó.
+    amplada = 2.7
+    alçada  = files * amplada * 2.5 / columnes
+    mig     = files / 2 + 1
+
+    @ y:1..mig {
+        mirall = files + 1 - y
+        @ x:1..columnes {
+            cr = (x - 1) * amplada / columnes - 2.1
+            ci = (y - 1) * alçada  / files    - alçada / 2.0
+            n  = fuga(cr, ci)
+            marca = "@"
+            to    = 231
+            ? n <> 0 {
+                pas = n / 4 + 1
+                ? pas > 9 { pas = 9 }
+                marca = rampa[pas]
+                to    = tons[pas]
+            }
+            >>~ (y, x, 0, to) > marca
+            ? mirall > mig { >>~ (mirall, x, 0, to) > marca }
+        }
+    }
+
+    >>~ (alt, 2, 0, 244) > "qualsevol tecla per sortir"
+    <<| _tecla
+}

@@ -1,0 +1,16 @@
+// @ k:d yields the KEYS, in insertion order — `for k in d`, as Python spells it.
+stock = #(apples: 12, pears: 3, figs: 40)
+
+@ k:stock {
+    >> k " = " stock[k] ¶
+}
+
+// Ask for both halves with a pattern where a name would go
+@ (k, v):stock {
+    >> k " -> " v ¶
+}
+
+// The key catalogue is DERIVED from the table, never kept beside it
+keys = []
+@ k:stock { keys$+ k }
+>> keys ¶

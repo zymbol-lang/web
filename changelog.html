@@ -123,6 +123,23 @@
       50%       { opacity: 0.55; }
     }
 
+    /* For a version that is on its branch and not on a tag: the manifest reads it and
+       nothing is downloadable yet. Deliberately not the green `latest` badge and
+       deliberately not pulsing — this one says "being written", not "get this one".
+       Unused between releases; v0.0.9 wore it until it was tagged. */
+    .cl-badge-dev {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--mid);
+      background: var(--bg3);
+      border: 1px dashed var(--line);
+      padding: 0.15rem 0.5rem;
+      border-radius: 100px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
     .cl-date {
       font-size: 0.8rem;
       color: var(--dim);
@@ -272,11 +289,80 @@
 <!-- ═══ TIMELINE ═══ -->
 <div class="cl-timeline">
 
+  <!-- ── v0.0.9 ── -->
+  <div class="cl-entry">
+    <div class="cl-entry-head">
+      <span class="cl-version">v0.0.9</span>
+      <span class="cl-badge-latest">latest</span>
+      <span class="cl-date">September 9, 2026</span>
+    </div>
+    <div class="cl-title">The Collections Settled, the Editing Model, and a Calendar</div>
+
+    <div class="cl-groups">
+
+      <div class="cl-group">
+        <span class="cl-group-label added">Added</span>
+        <ul class="cl-change-list">
+          <li><strong>The dictionary has a notation of its own: <code>#(…)</code></strong> — the bare <code>(a: 1)</code> is withdrawn. What forced it was the <em>empty</em> one: <code>()</code> cannot be both the empty positional tuple and the empty dictionary, because one takes <code>d["k"]$~ v</code> and the other answers <em>tuples are immutable</em>. The empty dictionary was reachable and unwritable, so every program that filled one at run time began with an invented key and deleted it afterwards. <strong>Keys may now be strings</strong> as well as bare names, which is exactly the set a program needs — keys out of a database, out of JSON, keys carrying a domain prefix</li>
+          <li><strong>The named tuple <em>is</em> the dictionary</strong>, and the vocabulary follows: a tuple is immutable by definition and this is not. <code>(1, 2)</code> is a positional tuple, <code>#(a: 1)</code> a dictionary. It gained computed keys, key insertion, <code>d$? "k"</code>, <code>d$-["k"]</code>, <code>@ k:d</code> over keys and <code>##Key</code> on an absent one — six pieces, each of which alone was enough to stop a JSON built piece by piece from being built at all</li>
+          <li><strong>The dot writes what the dot reads</strong> — <code>d.a$~ 9</code> is now exactly <code>d["a"]$~ 9</code>. Both spellings read a key and only one wrote, and nothing anywhere said why; the asymmetry was inherited, not decided. A deep write has one form, <code>d["x">"y"]$~ 5</code></li>
+          <li><strong><code>#[…]</code> — an array whose mix of element types is declared</strong> — same type as <code>[…]</code>, so <code>json::decode</code>'s heterogeneous array finally has a spelling. <code>[…]</code> stays checked; a homogeneous <code>#[…]</code> warns</li>
+          <li><strong><code>##_</code> — the Unit literal</strong>, and <code>#?</code> can now tell the four collections apart with <code>##(</code> and <code>##[</code>. Asking "did this column arrive NULL" used to mean taking <code>#?</code> apart and reading the count — which is <strong>0 for four different values</strong>: Unit, <code>""</code>, <code>[]</code> and <code>#()</code>. When the right way to ask a question does not exist, the way each program invents it resembles the right one closely enough to pass every test anybody thinks of</li>
+          <li><strong><code>std/time</code> — the clock and the civil calendar</strong> — below a day it is duration, from a day up it is calendar: a minute is always 60 000 ms and a day is not always 86 400 000. <code>add(e, 1, "day", "local")</code> across a daylight-saving change gives the same wall clock 23 hours later, which is what a person means by "tomorrow". Digits are always ASCII, because a date is the one piece of text written for a machine to read back and <code>२०२६-०८-२३</code> is not ISO 8601. The era algorithms live in <code>zymbol-intrinsics</code>, shared by both Rust engines; the browser engine ports them a third time rather than delegating to JavaScript's <code>Date</code>, which rolls 2026-13-01 over into 2027 instead of refusing it</li>
+          <li><strong>A named function captures the file's variables, like a lambda</strong> — and it cost 44% of <code>bench_recursion</code> before the capture set was cached against the definition instead of re-derived per call. Back under the baseline it started from. The benchmark gate is what caught it; nothing else would have</li>
+          <li><strong><code>#,</code> and <code>#^</code> write their digits in the active numeral script</strong>, and the separators follow the script. What did <em>not</em> change is the pair: <code>,</code> groups and <code>.</code> divides, in every script, with no mode that inverts them — a settable pair would make every number ambiguous until you knew the setting it was written under, a cost paid by every reader to spare one writer</li>
+          <li><strong>Discarding a consulting <code>$</code> is dead code, and says so</strong> — ten operators, one warning each, identical wording in all three engines. That line ran, changed nothing, and no engine said a word</li>
+          <li><strong>A pattern where a name goes</strong> — <code>@ (k, v):pares { … }</code> binds each element as <code>(k, v) = par</code> would, and <code>_</code> discards a position. Plus <code>() -> body</code>, the zero-parameter lambda</li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label changed">Changed</span>
+        <ul class="cl-change-list">
+          <li><strong>The indexed assignment is withdrawn</strong> — <code>arr[i] = v</code>, <code>m[i][j] = v</code> and <code>d["k"] = v</code> are errors in all three collections. <code>=</code> means "this NAME now holds this value", and <code>arr[2] = 99</code> names nothing: it reaches inside a structure and changes a part. Two different operations under one sign. The form that exists is <code>arr[2]$~ 99</code></li>
+          <li><strong>The chained index is refused for reading too</strong> — <code>m[2][3]</code> is now an error naming itself, with <code>help: nesting is navigated with '>', so this is 'm[i>j]'</code>. It <em>never gave a wrong answer</em>: all three engines returned the same value as <code>m[2>3]</code> at every depth. What is withdrawn is a second spelling, not a defect — it had been deprecated since v0.0.4 and refused by nothing, so the rule lived in the prose and in no executable. Migration was 16 files</li>
+          <li><strong>The rule of the result</strong> — a <code>$</code> edit whose result is <em>used</em> builds and leaves the original alone; one that <em>is</em> the whole statement modifies in place. Before this, a bare <code>arr$+ 4</code> ran and did nothing at all, with no warning. This had to exist before the indexed assignment could go, or the language would have had no way to change an element. 107 sites migrated</li>
+          <li><strong><code>==</code> no longer constrains a parameter's type</strong> — <code>es_cinco(v) { &lt;~ v == 5 }</code> refused a String argument one line away from <code>("hola" == 5)</code> answering <code>#0</code>. Equality never coerces, so a parameter compared against a known type can still be any type. Ordering keeps its constraint</li>
+          <li><strong>Diagnostics stop naming the engine</strong> — <code>VM compile error:</code> is now <code>error:</code>. A reader is told what the language refuses, not which of its three implementations noticed. And <code>zymbol run</code> warns like <code>zymbol check</code>: the def-use pass ran only in <code>check</code>, so a loop variable warned there and said nothing on <code>run</code></li>
+          <li><strong>Only one <code>*rest</code> per pattern</strong> — two are ambiguous by definition, and the three engines invented three different splits, one of them returning an element twice</li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label fixed">Fixed</span>
+        <ul class="cl-change-list">
+          <li><strong>A silent data-destruction bug across the whole editing family</strong> — <code>d["x"]["y"]$~ 9</code> left <code>d</code> as <code>(y: 9)</code> with every other key gone, and <code>d["lista"]$+ 3</code> left it as <code>[1, 2, 3]</code>. Exit 0, no diagnostic, and <em>all three engines agreed</em>, so no consensus run could see it. A statement-level edit desugars to <code>name = &lt;the same expression&gt;</code>, which is exact only when the receiver IS the name — and that was never checked</li>
+          <li><strong><code>zymbol fmt</code> printed a literal as its value renders, not as it was written</strong> — eleven of sixteen literal forms did not survive a format. <code>४२</code>, <code>0x2A</code>, <code>0b101010</code> and <code>42</code> are all <code>Int(42)</code>, so printing the value picked one spelling and threw the author's away: a program written entirely in Devanagari stopped being one the moment it was formatted. <code>0o17</code> was the sharp end — its value is a <code>Char</code>, so the formatter wrote a quoted raw U+000F into the file. Four formatter properties and the safety gate all missed it, because the gate compares <em>tokens</em> and <code>Integer(42)</code> is <code>Integer(42)</code> whichever script spelled it</li>
+          <li><strong>One bad line reported 22 errors</strong> — recovery advanced by a single token after a failed statement, so the tail of the refused line was parsed as code and each fragment raised its own error. Only the first was real. Regenerating the goldens deleted 386 lines and added 4</li>
+          <li><strong>Diagnostics came out in HashMap order</strong> — the same file reported <code>'k'</code> before <code>'w'</code> on one run and after it on the next. Harmless while only <code>check</code> printed them; the moment <code>run</code> did too, every differential comparison began to flap</li>
+          <li><strong>A module could not hold a collection</strong>, and a module function call copied the whole module's state. A parameter used as a dictionary key was declared an <code>Int</code></li>
+          <li><strong>The browser engine checks argument counts</strong>, and <code>@!</code>, <code>@&gt;</code> and labelled jumps are checked before anything runs rather than at the moment they are reached</li>
+          <li><strong>Windows: the runtime's POSIX assumptions</strong> — the eleven findings that began as <code>v0.0.8_HotFix01</code>. Eleven is not a patch on top of a release, so there is no 0.0.8.1: the branch became v0.0.9 and those corrections ship inside it</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <p style="font-size:0.82rem;color:var(--dim);line-height:1.55;margin:0 0 1.1rem;">
+      Three-engine consensus at 660 of 666 files agreeing, 0 diverging, the remaining six
+      excused per engine with a stated reason; 41 of 41 rejected forms refused by all three;
+      1026 unit tests. This is also the first release graded somewhere other than the
+      author's machine: the corpus, the formatter contract and the declared matrix now run
+      on every push, and the Linux package is installed and exercised in a clean container
+      before it can be published.
+    </p>
+
+    <div class="cl-actions">
+      <a href="https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.9" target="_blank" rel="noopener" class="btn-ghost">↗ GitHub</a>
+      <a href="install.html" class="btn-ghost">↓ Download</a>
+      <a href="https://github.com/zymbol-lang/interpreter/blob/v0.0.9/CHANGELOG.md" target="_blank" rel="noopener" class="btn-ghost">↗ Full changelog</a>
+    </div>
+  </div>
+
   <!-- ── v0.0.8 ── -->
   <div class="cl-entry">
     <div class="cl-entry-head">
       <span class="cl-version">v0.0.8</span>
-      <span class="cl-badge-latest">latest</span>
       <span class="cl-date">August 2, 2026</span>
     </div>
     <div class="cl-title">Zymbol Packages, Auto-Free Memory &amp; Terminal Metrics</div>
@@ -736,7 +822,7 @@
       <a href="https://github.com/zymbol-lang/interpreter" target="_blank" rel="noopener" class="icon-link" title="GitHub" aria-label="GitHub"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
       <a href="https://x.com/ZymbolLang" target="_blank" rel="noopener" class="icon-link" title="X / Twitter" aria-label="X / Twitter"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.74-8.855L1.254 2.25H8.08l4.253 5.622L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg></a>
     </div>
-    <div class="footer-copy">No keywords. Just symbols.</div>
+    <div class="footer-copy">No words. Just symbols.</div>
   </div>
 </footer>
 

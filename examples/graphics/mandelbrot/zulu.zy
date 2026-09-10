@@ -1,0 +1,80 @@
+// @skip-parity: ikhanvasi lidinga itheminali yangempela ngaphansi kwe-CLI kanye
+// @skip-parity: nesendlalelo sekhanvasi kusiphequluli, ngakho ukusebenza ngepayipi
+// @skip-parity: akunalutho okungaluqhathanisa.
+// ============================================================
+// mandelbrot — iqoqo likaMandelbrot, elidwetshwe ekhanvasini letheminali.
+// Amagama ngesiZulu. Izimpawu zihlala ziyizimpawu.
+//
+// Konke kunqunywa yinombolo eyodwa: `n`, ukuthi umjikelezo ubekezelela
+// izinyathelo ezingaki ngaphambi kokuba ubaleke. Yiyo ekhetha uhlamvu,
+// futhi yiyo ekhetha umbala, ngakho isithombe asikwazi ukuziphikisa.
+// `n = 0` kusho ukuthi awukaze ubaleke — yilelo iqoqo ngokwalo,
+// lidwetshwe ligcwele.
+//
+//   >>|  livula ikhanvasi   >>!  liyasula   >>?  liyakala
+//   >>~  libhala ibhokisi elilodwa, kumugqa owodwa, insika eyodwa, umbala owodwa
+//   <<|  lilinda ukhiye owodwa
+//
+// Ukonga okubili, futhi kokubili kubonakala esithombeni hhayi
+// ekulinganiseni: amakhwadretha athwalwa kusukela esinyathelweni esisodwa
+// kuya kwesilandelayo esikhundleni sokubalwa kabusha, futhi iqoqo
+// libonakaliswa esibukweni lizungeze i-axis yangempela, ngakho ingxenye
+// engenhla kuphela ebalekayo. Kokubili ndawonye kukhokhela ubucayi
+// obufunwa yimininingwane.
+// ============================================================
+
+// Ngaphandle kweqoqo: kusukela okufiphele kuye kokugcwele, okuluhlaza okuqinile kuye kokukhanyayo.
+umthambeka = " .:-=+*#%"
+imibala    = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Izinyathelo ezibekezelelwe ngaphambi kokuba umjikelezo ubaleke; 0 uma ungakaze.
+// I-zr2 ne-zi2 ziyathwalwa, ngakho isinyathelo ngasinye sibiza imikhiqizo emine, hhayi eyisithupha.
+baleka(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (ubude, ububanzi) = >>?
+    imigqa   = ubude    - 2
+    izinsika = ububanzi - 1
+
+    // Ibhokisi lide ngokuphindwe ka-2.5 kunobubanzi balo; ububanzi
+    // obumile bulinganiswa ngalokho ukuze iqoqo liphume liyindilinga.
+    ububanziBendawo = 2.7
+    ubudeBendawo    = imigqa * ububanziBendawo * 2.5 / izinsika
+    phakathi        = imigqa / 2 + 1
+
+    @ y:1..phakathi {
+        isibuko = imigqa + 1 - y
+        @ x:1..izinsika {
+            cr = (x - 1) * ububanziBendawo / izinsika - 2.1
+            ci = (y - 1) * ubudeBendawo    / imigqa   - ubudeBendawo / 2.0
+            n  = baleka(cr, ci)
+            uphawu = "@"
+            umbala = 231
+            ? n <> 0 {
+                isinyathelo = n / 4 + 1
+                ? isinyathelo > 9 { isinyathelo = 9 }
+                uphawu = umthambeka[isinyathelo]
+                umbala = imibala[isinyathelo]
+            }
+            >>~ (y, x, 0, umbala) > uphawu
+            ? isibuko > phakathi { >>~ (isibuko, x, 0, umbala) > uphawu }
+        }
+    }
+
+    >>~ (ubude, 2, 0, 244) > "cindezela noma yikuphi ukhiye ukuze uphume"
+    <<| _ukhiye
+}

@@ -1,0 +1,76 @@
+// @skip-parity: tuval, CLI altında gerçek bir uçbirim ve tarayıcıda bir tuval katmanı
+// @skip-parity: ister; boru üzerinden çalıştırmanın karşılaştıracak bir şeyi olmaz.
+// ============================================================
+// mandelbrot — Mandelbrot kümesi, uçbirim tuvaline çizilmiş.
+// Adlar Türkçe. İşaretler her zaman işaret kalır.
+//
+// Her şeyi tek bir sayı belirler: `n`, yörüngenin kaçmadan önce kaç
+// adım dayandığı. Simgeyi o seçer, rengi de o seçer; bu yüzden resim
+// kendisiyle çelişemez. `n = 0` hiç kaçmadı demektir — küme de zaten
+// odur, dolu çizilmiş hâli.
+//
+//   >>|  tuvali açar   >>!  siler   >>?  ölçer
+//   >>~  tek bir hücre yazar, bir satıra, bir sütuna, tek bir renkle
+//   <<|  tek bir tuş bekler
+//
+// İki tasarruf, ikisi de bir ölçümde değil resmin kendisinde görünür:
+// kareler yeniden hesaplanmak yerine bir adımdan ötekine taşınır ve
+// küme gerçek eksen çevresinde aynalanır, böylece yalnızca üst yarı
+// kaçar. İkisi birlikte ayrıntının istediği keskinliğin bedelini öder.
+// ============================================================
+
+// Kümenin dışında: soluktan doluya, koyu yeşilden parlağa.
+rampa    = " .:-=+*#%"
+renkler  = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Yörünge kaçmadan önce dayanılan adımlar; hiç kaçmazsa 0.
+// zr2 ile zi2 birlikte taşınır, böylece her adım altı değil dört çarpıma mal olur.
+kaçış(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (yükseklik, genişlik) = >>?
+    satırlar = yükseklik - 2
+    sütunlar = genişlik  - 1
+
+    // Bir hücre eninden yaklaşık 2,5 kat uzundur; dikey açıklık buna
+    // göre ölçeklenir ki küme yuvarlak çıksın.
+    en   = 2.7
+    boy  = satırlar * en * 2.5 / sütunlar
+    orta = satırlar / 2 + 1
+
+    @ y:1..orta {
+        ayna = satırlar + 1 - y
+        @ x:1..sütunlar {
+            cr = (x - 1) * en  / sütunlar - 2.1
+            ci = (y - 1) * boy / satırlar - boy / 2.0
+            n  = kaçış(cr, ci)
+            im  = "@"
+            renk = 231
+            ? n <> 0 {
+                adım = n / 4 + 1
+                ? adım > 9 { adım = 9 }
+                im   = rampa[adım]
+                renk = renkler[adım]
+            }
+            >>~ (y, x, 0, renk) > im
+            ? ayna > orta { >>~ (ayna, x, 0, renk) > im }
+        }
+    }
+
+    >>~ (yükseklik, 2, 0, 244) > "çıkmak için herhangi bir tuşa basın"
+    <<| _tuş
+}

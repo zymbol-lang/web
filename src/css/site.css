@@ -831,6 +831,18 @@
 
     .manual-body p { color: var(--mid); margin: 0.5rem 0; font-size: 0.9rem; }
 
+    /* A code block is left to right even when the page is not. The manual is published in
+       Arabic and Urdu, and `<html dir="rtl">` reaches every descendant: measured at
+       ?lang=urdu, all 78 <pre> blocks computed `direction: rtl`, which hands a Zymbol
+       program to the bidi algorithm — comment markers jump to the far end and a line like
+       `x = ۱۰  // متغیر` comes apart, precisely because its digits are Urdu and its
+       operators are not.
+
+       atlas.css already states this rule, but only for `pre.zy`, `pre.term` and
+       `pre.fractal` — the marked-up panes the front page writes by hand. The manual's
+       blocks come out of `marked` as a bare <pre><code>, so they carried no class the rule
+       could match. `isolate` also keeps each block out of the surrounding paragraph's bidi
+       run. The inline `code` case was already covered below. */
     .manual-body pre {
       background: var(--bg2);
       border: 1px solid var(--line);
@@ -841,6 +853,9 @@
       font-size: 0.82rem;
       font-family: var(--mono);
       font-variant-ligatures: none;
+      direction: ltr;
+      text-align: left;
+      unicode-bidi: isolate;
     }
 
     .manual-body pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
@@ -1192,6 +1207,29 @@
     }
 
     .install-hero .section-tag { margin-bottom: 0.75rem; }
+
+    /* Archived-page notice — overview.html only, the former front page.
+       Deliberately grey and not another yellow band: the alpha notice below it warns
+       about the language, this one only says where the reader is.
+
+       It is one sentence, so it is a block and not a flex row: `gap` on a flex container
+       treats the full stop after a link as its own item and pushes it off the word. */
+    .archived-notice {
+      background: var(--bg3);
+      border-bottom: 1px solid var(--line);
+      padding: 0.6rem 1.5rem;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      color: var(--mid);
+      text-align: center;
+    }
+
+    .archived-notice strong { color: var(--hi); font-weight: 700; }
+    .archived-notice a      { color: var(--green); white-space: nowrap; }
+
+    @media (max-width: 640px) {
+      .archived-notice { padding: 0.6rem 1rem; }
+    }
 
     /* Alpha notice banner */
     .alpha-notice {

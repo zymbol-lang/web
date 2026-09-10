@@ -1,0 +1,81 @@
+// @skip-parity: naaltsoos bikáá' éí terminal ayóo bee hólǫ́ǫ doo CLI biyi', áádóó
+// @skip-parity: naaltsoos bikáá' béeso naaltsoos biyi' — áko t'áá bíhólníi'go
+// @skip-parity: naaznilgo doo ałhaa'áhígíí da.
+// ============================================================
+// mandelbrot — Mandelbrot ałhąąh naaznilígíí, naaltsoos bikáá' ák'e'elchí.
+// Bízhi' Diné bizaad bee. Bee'ak'e'elchíhí t'áá áłtsé bee'ak'e'elchíhí.
+//
+// T'áálá'í naaltsoos yidooltał: `n`, díkwíí ha'át'éego náhookǫs
+// naaz'áá doo t'áadoo diłkǫǫhí da. Éí bee'ak'e'elchíhí yiyíísts'ą́ą́'
+// dóó bikédzo yiyíísts'ą́ą́', áko naaltsoos doo ádaadin da. `n = 0`
+// éí doo háadida diłkǫǫh da — éí ałhąąh, ayóo naaznil.
+//
+//   >>|  naaltsoos ályaa   >>!  hodiyin   >>?  bee hááhwiidoo'ááł
+//   >>~  t'áálá'í bii' ák'e'elchí, ałhąąh, ałnááná, bikédzo bee
+//   <<|  t'áálá'í bik'i'dídléhí yíníłta'
+//
+// Naaki bee bíhólníi', dóó t'áá ałtso naaltsoos bikáá' hodíína',
+// doo bee ałhaa'áhí da: dį́į́' ałts'ą́ą́h ałhaa naaznil doo t'áá
+// ánáádiiníł da, dóó ałhąąh béésh nák'eesinilí bee bik'i'diitą́,
+// áko t'áá wóláchíí' t'éiyá diłkǫǫh. Ałhąąh bee ayóo yá'át'ééh
+// hazlį́į́'.
+//
+// Saad ániidí: `ałnááná` (columna), `nináltsood` (paso), `nineezí`
+// dóó `niteelí` kwe'é ályaa. Diné bizaad yee yáłti'í yiyiiłtsą́ą doo.
+// ============================================================
+
+// Ałhąąh bitł'ááh: doo hodiyingo bine'déé' ayóo, chʼil łitsooí bine'déé' diłhił.
+bee'ak'e'elchi = " .:-=+*#%"
+bikédzo        = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Díkwíí nináltsood naaz'áá doo t'áadoo diłkǫǫhí da; 0 doo háadida diłkǫǫh da.
+// zr2 dóó zi2 ałhaa naaznil, áko t'áálá'í nináltsood dį́į́' bąąh ílį́, doo hastą́ą́ da.
+dilwo(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (nineez, niteel) = >>?
+    ałhąąh   = nineez - 2
+    ałnááná  = niteel - 1
+
+    // T'áálá'í bii' ~2.5 nineez niteel bilááh; wóláchíí' bee
+    // hááhwiidoo'ááł éí bee áltso, áko ałhąąh nímazgo hazlį́į́'.
+    niteelí = 2.7
+    nineezí = ałhąąh * niteelí * 2.5 / ałnááná
+    ałníi'  = ałhąąh / 2 + 1
+
+    @ y:1..ałníi' {
+        aganitsoos = ałhąąh + 1 - y
+        @ x:1..ałnááná {
+            cr = (x - 1) * niteelí / ałnááná - 2.1
+            ci = (y - 1) * nineezí / ałhąąh  - nineezí / 2.0
+            n  = dilwo(cr, ci)
+            naaltsoos = "@"
+            bikédzoí  = 231
+            ? n <> 0 {
+                nináltsood = n / 4 + 1
+                ? nináltsood > 9 { nináltsood = 9 }
+                naaltsoos = bee'ak'e'elchi[nináltsood]
+                bikédzoí  = bikédzo[nináltsood]
+            }
+            >>~ (y, x, 0, bikédzoí) > naaltsoos
+            ? aganitsoos > ałníi' { >>~ (aganitsoos, x, 0, bikédzoí) > naaltsoos }
+        }
+    }
+
+    >>~ (nineez, 2, 0, 244) > "ha'át'íí bik'i'dídléhí bik'ídíníłbįįh, áko didíínááł"
+    <<| _bik'i'dídléhí
+}

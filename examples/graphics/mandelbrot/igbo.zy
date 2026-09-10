@@ -1,0 +1,78 @@
+// @skip-parity: kanvas chọrọ ezigbo ọdụ n'okpuru CLI na ihe mkpuchi kanvas na
+// @skip-parity: ihe nchọgharị, ya mere ịgba ọsọ site na ọkpọkọ enweghị ihe ọ ga-atụnyere.
+// ============================================================
+// mandelbrot — mkpokọta Mandelbrot, e sere ya na kanvas ọdụ.
+// Aha ndị ahụ n'asụsụ Igbo. Akara na-abụkwa akara mgbe niile.
+//
+// Otu nọmba na-ekpebi ihe niile: `n`, ọnụ ọgụgụ nzọụkwụ okirikiri ahụ
+// na-anagide tupu ọ gbapụ. Ọ bụ ya na-ahọrọ mkpụrụedemede, ọ bụkwa ya
+// na-ahọrọ agba; ya mere foto ahụ enweghị ike ịgọnahụ onwe ya. `n = 0`
+// pụtara na ọ gbapụghị ma ọlị — nke ahụ bụ mkpokọta ahụ n'onwe ya,
+// e sere ya juputara.
+//
+//   >>|  na-emeghe kanvas   >>!  na-ehichapụ   >>?  na-atụ
+//   >>~  na-ede otu igbe, n'otu ahịrị, otu ogidi, n'otu agba
+//   <<|  na-echere otu igodo
+//
+// Nchekwa abụọ, ha abụọ ka a na-ahụ na foto ahụ ọ bụghị na nha: a
+// na-ebu skwuea site n'otu nzọụkwụ gaa na nke ọzọ kama ịgụghachi ha,
+// a na-egosipụtakwa mkpokọta ahụ n'enyo gburugburu axis ezi, ya mere
+// naanị ọkara elu na-agbapụ. Ha abụọ ọnụ na-akwụ ụgwọ nkọwa nke
+// nkọwapụta chọrọ.
+// ============================================================
+
+// N'èzí mkpokọta ahụ: site na nke dara ụda ruo na nke zuru ezu, site na akwụkwọ ndụ gbara ọchịchịrị ruo na nke na-egbuke egbuke.
+mkpọda    = " .:-=+*#%"
+agbaNiile = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Nzọụkwụ ndị e nagidere tupu okirikiri ahụ agbapụ; 0 ma ọ gbapụghị.
+// A na-ebu zr2 na zi2, ya mere nzọụkwụ ọ bụla na-efu ngwaahịa anọ, ọ bụghị isii.
+gbapụ(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (ogologo, obosara) = >>?
+    ahịrị = ogologo - 2
+    ogidi = obosara - 1
+
+    // Otu igbe toro ogologo ihe dị ka ugboro 2.5 karịa obosara ya; a
+    // na-atụ ogologo kwụ ọtọ site na nke ahụ ka mkpokọta ahụ pụta okirikiri.
+    obosaraOhere = 2.7
+    ogologoOhere = ahịrị * obosaraOhere * 2.5 / ogidi
+    etiti        = ahịrị / 2 + 1
+
+    @ y:1..etiti {
+        enyo = ahịrị + 1 - y
+        @ x:1..ogidi {
+            cr = (x - 1) * obosaraOhere / ogidi - 2.1
+            ci = (y - 1) * ogologoOhere / ahịrị - ogologoOhere / 2.0
+            n  = gbapụ(cr, ci)
+            akara = "@"
+            agba  = 231
+            ? n <> 0 {
+                nzọụkwụ = n / 4 + 1
+                ? nzọụkwụ > 9 { nzọụkwụ = 9 }
+                akara = mkpọda[nzọụkwụ]
+                agba  = agbaNiile[nzọụkwụ]
+            }
+            >>~ (y, x, 0, agba) > akara
+            ? enyo > etiti { >>~ (enyo, x, 0, agba) > akara }
+        }
+    }
+
+    >>~ (ogologo, 2, 0, 244) > "pịa igodo ọ bụla ka ị pụọ"
+    <<| _igodo
+}

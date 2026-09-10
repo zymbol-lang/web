@@ -1,0 +1,77 @@
+// @skip-parity: turubai inahitaji terminal halisi chini ya CLI na safu ya turubai
+// @skip-parity: katika kivinjari, hivyo kukimbia kupitia bomba hakuna cha kulinganisha.
+// ============================================================
+// mandelbrot — seti ya Mandelbrot, imechorwa kwenye turubai ya terminal.
+// Majina kwa Kiswahili. Alama hubaki alama daima.
+//
+// Kila kitu huamuliwa na namba moja: `n`, hatua ngapi mzunguko
+// huvumilia kabla ya kutoroka. Hiyo huchagua herufi na hiyo huchagua
+// rangi, hivyo picha haiwezi kujipinga yenyewe. `n = 0` maana yake
+// haukutoroka kamwe — hiyo ndiyo seti yenyewe, imechorwa kamili.
+//
+//   >>|  hufungua turubai   >>!  husafisha   >>?  hupima
+//   >>~  huandika kisanduku kimoja, mstari mmoja, safu moja, rangi moja
+//   <<|  husubiri kitufe kimoja
+//
+// Akiba mbili, na zote mbili huonekana katika picha si katika kipimo:
+// miraba hubebwa kutoka hatua moja hadi nyingine badala ya kuhesabiwa
+// upya, na seti huakisiwa kuzunguka mhimili halisi, hivyo nusu ya juu
+// pekee ndiyo hutoroka. Zote mbili pamoja hulipia uwazi ambao maelezo
+// huhitaji.
+// ============================================================
+
+// Nje ya seti: hafifu hadi imara, kijani kizito hadi angavu.
+mteremko  = " .:-=+*#%"
+rangiZote = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Hatua zilizovumiliwa kabla mzunguko haujatoroka; 0 ikiwa haukutoroka.
+// zr2 na zi2 hubebwa, hivyo kila hatua hugharimu bidhaa nne, si sita.
+toroka(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (kimo, upana) = >>?
+    mistari = kimo  - 2
+    safu    = upana - 1
+
+    // Kisanduku ni kirefu mara ~2.5 kuliko upana wake; kipimo cha wima
+    // hupunguzwa kwa hiyo ili seti itoke duara.
+    upanaRamani = 2.7
+    kimoRamani  = mistari * upanaRamani * 2.5 / safu
+    katikati    = mistari / 2 + 1
+
+    @ y:1..katikati {
+        kioo = mistari + 1 - y
+        @ x:1..safu {
+            cr = (x - 1) * upanaRamani / safu    - 2.1
+            ci = (y - 1) * kimoRamani  / mistari - kimoRamani / 2.0
+            n  = toroka(cr, ci)
+            alama = "@"
+            rangi = 231
+            ? n <> 0 {
+                hatua = n / 4 + 1
+                ? hatua > 9 { hatua = 9 }
+                alama = mteremko[hatua]
+                rangi = rangiZote[hatua]
+            }
+            >>~ (y, x, 0, rangi) > alama
+            ? kioo > katikati { >>~ (kioo, x, 0, rangi) > alama }
+        }
+    }
+
+    >>~ (kimo, 2, 0, 244) > "bonyeza kitufe chochote kuondoka"
+    <<| _kitufe
+}

@@ -1,117 +1,240 @@
-# Zymbol
+# Zymbol — No Words, Just Symbols
 
-> A keyword-free symbolic programming language. Every construct is a symbol, so
-> identifiers can be written in any human language and the code reads the same
-> everywhere. Public alpha, v0.0.8.
+> Not *no keywords* — **no words**: nothing in Zymbol's grammar is a word, in any
+> language. A minimalist symbolic language of fourteen marks, one meaning each,
+> agglutinating into every operator — so identifiers can be written in any human
+> language while the operators never change. This page teaches the marks one at a
+> time, shows the rules by which they join, and then hands you a fractal written
+> entirely in symbols.
 
-This is the Markdown representation of <https://zymbol-lang.org/>. Other pages:
-[/install.md](install.md), [/playground.md](playground.md),
-[/changelog.md](changelog.md), [/piqad-reference.md](piqad-reference.md).
-Start from [/llms.txt](llms.txt) for the full map.
+This is the Markdown representation of <https://zymbol-lang.org/>, the front
+page. The page carries a language bar — region tabs and native-name chips, from
+`data/i18n/i18n.json` — and <https://zymbol-lang.org/?lang=es> opens it in
+Spanish. **All hundred
+and eleven languages the switcher offers are written** — the Americas, Europe,
+Asia, Africa, the Middle East and the constructed languages, six regions of six.
+This twin is the English one.
 
-## Status
+Five of those languages are read right to left — Arabic, Hebrew, Persian, Urdu
+and Pashto — and the page turns around for them. The prose turns; the code does
+not. A Zymbol program has one reading order and the terminal captures are
+box-drawing art, so every code pane is pinned to `direction: ltr`.
 
-**Public alpha · v0.0.8** (August 2, 2026). Zymbol is in active development — this
-release is a concept validation of the language design. APIs, syntax, and features
-may change. Source and issues: <https://github.com/zymbol-lang/interpreter>.
+The sample program is a real file per language, not a translated string:
+`examples/graphics/mandelbrot/` holds one Mandelbrot each for English, Spanish,
+Portuguese (Brazil and Portugal), French, Haitian Creole, Jamaican Patois,
+Quechua, Guaraní, Aymara, Nahuatl, Yucatec Maya, K'iche', Mapudungun, Navajo,
+Cherokee, Plains Cree, Wayuunaiki, Emberá, Yanomami, German, Italian, Dutch,
+Polish, Russian, Greek and eighty-four more — one for every language the switcher
+offers, the same program with the identifiers in each, some in their own scripts,
+five of them written right to left, one written in emoji and one in the pIqaD
+Private Use Area — proved the same by running all a hundred and ten under a pty
+and diffing every one of the 5,588 painted cells — and the page shows the one for
+the language on show and links to it. Six of the hundred and ten carry a coined
+term, and `data/i18n/atlas-review.json` names each one and says why it had to be
+made. The pIqaD one is not written but generated: it is the Klingon file
+transliterated character by character, and it decodes back to it exactly. The terminal captures are the same in every
+language: they are photographs of running programs, not prose about them.
+Other pages: [/install.md](install.md), [/playground.md](playground.md),
+[/changelog.md](changelog.md), [/piqad-reference.md](piqad-reference.md), and
+[/overview.md](overview.md) — the former front page, kept as it was and no longer
+updated. Start from [/llms.txt](llms.txt) for the full map.
 
-## No keywords. Just symbols.
+## No words. Just symbols.
 
-A minimalist programming language. Write identifiers in any human language — the
-operators never change.
+Not ~~no keywords~~ — **no words**.
+Nothing in the grammar is a word in any language.
 
-- **0** keywords
-- **∞** Unicode: identifiers in any script, or emoji
+A minimalist symbolic language: fourteen marks, one meaning each, and they
+**agglutinate** into everything else.
 
-There is no `if`, no `while`, no `return`, no `true`. `?` is if, `@` is loop,
-`<~` is return, `#1` is true. Nothing in the syntax is an English word, so nothing
-has to be translated when you code in Spanish, Japanese, Arabic or Klingon.
+Identifiers in any human language.
+Symbols never change.
 
-## Showcase — FizzBuzz
+### The readings are concepts, not other languages' keywords
 
-The landing page renders this program in any of 111 human languages; only the
-identifiers change, never the operators. The English variant:
+`?` is not *if*. *If* is the word English picked for the idea; the idea is a
+**condition** — the outcome hangs on a question that may come back false, empty
+or nothing (`SYMBOLS.md` §8.7 calls the domain *irrealis*). The same applies down
+the column: `@` heads the **time** context rather than being a *loop*, and `_`
+**binds no name** rather than being an *else* (§9.3, *non-binding*). Glossing a
+mark with the keyword some other language chose for it would put the words
+straight back in — which is the whole thing the language is avoiding.
+
+Where a reading does match a familiar word it is because the word describes what
+happens, not because a language reserved it: `>>` is **out** and `<<` is **in**
+because that is the direction the data travels.
+
+### Why "no words" and not "no keywords"
+
+"No keywords" is the easier claim and it is only nearly true. *Keyword* is a
+tokenizer's word for a reserved token, not for a word in a language — and by that
+meaning Zymbol has plenty. Its own language server files `?`, `@` and `<~` under
+`KEYWORD`, because LSP offers no other semantic-token slot for them
+(`crates/zymbol-analyzer/src/semantic_tokens.rs`, under the comment "Control flow
+keywords").
+
+The exact claim is the one `SYMBOLS.md` states: **no construct of the grammar is
+a word.** Control flow, I/O, typing, module structure, collection operations and
+error handling are marks from a closed inventory of 29 characters, and that
+inventory contains no letters. That is checkable; "no keywords" is a slogan that
+depends on which sense of the term you take.
+
+Current release: **v0.0.9** (public alpha) — Linux, Windows, macOS.
+Download and install: <https://zymbol-lang.org/install.html> ·
+Changelog: <https://zymbol-lang.org/changelog.md>
+
+## 01 — The marks
+
+Each one means one thing.
+
+| Mark | Reads as | In use |
+| --- | --- | --- |
+| `=` | bind | `name = 5` |
+| `>>` | out | `>> "hi"` |
+| `<<` | in | `<< "name?" who` |
+| `¶` | newline | `>> "hi" ¶` |
+| `?` | condition | `? n > 0 { … }` |
+| `_` | binds nothing | `_ { … }` |
+| `@` | time | `@ x : list { … }` |
+| `..` | range | `1..10` |
+| `<~` | give back | `<~ n * 2` |
+| `->` | goes to | `x -> x * 2` |
+| `$` | collection | never alone — it heads the collection family |
+| `#` | meta | `#1` `#0` |
+| `!` | force | `@!` |
+| `\|` | one | `<<\|` — one key, not a line |
+
+## 02 — They join
+
+Agglutination, in the plain linguistic sense: one mark, one meaning, and the
+meanings stack. An operator is *spelled*, not coined.
+
+| Spelled from | Operator | Means |
+| --- | --- | --- |
+| `$` + `#` | `$#` | how many |
+| `$` + `+` | `$+` | append |
+| `$` + `^` + `-` | `$^-` | sort, descending |
+| `>>` + `!` | `>>!` | wipe the screen |
+| `<<` + `\|` + `?` | `<<\|?` | one key, if there is one |
+
+Five releases. **One** new mark. Everything else was spelled from the ones
+already here.
+
+## 03 — Now read this
+
+Every mark below is one you have already met, and not one word appears in any of
+it. The colours are the program's own: it picks an ANSI-256 index per escape step
+and writes each cell with `>>~` on the canvas `>>|` opens. The tree-walker and the
+register VM draw it identically, cell for cell.
 
 ```zymbol
-// FizzBuzz — English
-// Identifiers in English. Operators always symbolic.
+// Outside the set: faint to solid, dark green to bright.
+trazo  = " .:-=+*#%"
+tintes = [22, 28, 34, 40, 46, 82, 118, 154, 191]
 
->> "Hello, English-speaking World!" ¶
-
-classify(number) {
-    ? number % 15 == 0 { <~ "FizzBuzz" }
-    _? number % 3  == 0 { <~ "Fizz" }
-    _? number % 5  == 0 { <~ "Buzz" }
-    _ { <~ number }
+// Steps survived before the orbit runs away; 0 if it never does.
+// zr2 and zi2 are carried, so each step costs four products, not six.
+fuga(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
 }
 
-@ i:1..15 {
-    >> classify(i) ¶
+>>| {
+    >>!
+    (alto, ancho) = >>?
+    filas = alto - 2
+    cols  = ancho - 1
+
+    // A cell is ~2.5x taller than wide; the vertical span is
+    // scaled by that so the set comes out round.
+    anchura = 2.7
+    altura  = filas * anchura * 2.5 / cols
+    medio   = filas / 2 + 1
+
+    @ y:1..medio {
+        espejo = filas + 1 - y
+        @ x:1..cols {
+            cr = (x - 1) * anchura / cols - 2.1
+            ci = (y - 1) * altura  / filas - altura / 2.0
+            n  = fuga(cr, ci)
+            marca = "@"
+            tinte = 231
+            ? n <> 0 {
+                paso = n / 4 + 1
+                ? paso > 9 { paso = 9 }
+                marca = trazo[paso]
+                tinte = tintes[paso]
+            }
+            >>~ (y, x, 0, tinte) > marca
+            ? espejo > medio { >>~ (espejo, x, 0, tinte) > marca }
+        }
+    }
+
+    >>~ (alto, 2, 0, 244) > "any key to leave"
+    <<| _tecla
 }
 ```
 
-The same program with Spanish identifiers is the same program: `clasificar`,
-`número`, and the operators `? _? _ @ >> <~` untouched.
+The picture fills whatever terminal it finds — the program asks with `>>?` and
+lays itself out from the answer. Two economies pay for the resolution: the
+squares are carried between iterations instead of being recomputed (four
+products a step instead of six), and the set is mirrored about the real axis, so
+only the top half is ever escaped. Run it in the browser:
+<https://zymbol-lang.org/playground.html?open=graphics/mandelbrot/english.zy>
 
-## Operator reference
+## 04 — And people build with it
 
-These operators never change, regardless of which human language you code in.
+Same marks. The names are whatever the author thinks in. The HTML page shows a
+capture of each program running.
 
-| Symbol | Concept | Example |
+The page shows two frames of each: the opening screen where the game is set
+up, and the game itself in progress.
+
+| Program | Written in | Play it |
 | --- | --- | --- |
-| `=` | variable | `x = 5` |
-| `:=` | constant | `PI := 3.14` |
-| `>>` | output | `>> value ¶` |
-| `<<` | input | `<< "prompt" x` |
-| `#1` / `#0` | boolean | true / false |
-| `?` | if | `? condition { }` |
-| `_?` | else if | else-if branch |
-| `_` | else | fallthrough |
-| `??` | match | `?? expr { }` |
-| `@` | loop | `@ item:list { }` |
-| `->` | lambda | `x -> x * 2` |
-| `<~` | return | return / output |
-| `$#` | length | `arr$#` |
-| `$+` | append | `arr$+ val` |
-| `$-` | remove | `arr$- val` |
-| `!?` / `:!` | try / catch | `!?{ } :!{ }` |
-| `¶` | newline | in an output statement |
+| 囲碁 — Go, 9×9 to 19×19, with scoring and an opponent | Japanese | <https://zymbol-lang.org/playground.html?open=games/classic/go.zyp> |
+| Serpiente — Snake, five speeds, two languages | Spanish | <https://zymbol-lang.org/playground.html?open=games/arcade/serpiente.zyp> |
+| चतुरङ्गम् — Chaturanga, historical rules, alpha-beta search | Sanskrit | <https://zymbol-lang.org/playground.html?open=games/classic/chaturanga.zyp> |
+| Hov veS — Klingon Galaxy | Klingon pIqaD | <https://zymbol-lang.org/playground.html?open=games/arcade/klingon_galaxy.zyp> |
 
-The complete symbol table lives in `REFERENCE.md` in the interpreter repository.
+Not one identifier in any of them is an English word, and nothing in the grammar
+had to change for that.
 
-## Design principles
+## 05 — The manual
 
-**No keywords — ever.** Every construct is a symbol. `?` is if, `@` is loop, `<~`
-is return. Nothing to translate per language.
+Below the sections above, the page renders the compact **v0.0.9** manual in the
+reader's own language, with every `zymbol` block coloured by the site's
+highlighter. It is fetched from `/data/manuals/v009/manual_<code>.md`.
 
-**Full Unicode identifiers.** Name variables in Arabic, write functions in
-Japanese, use emojis. The operators `? @ >> <~` stay the same.
+**It is written in four languages so far** — English, Spanish, Italian and
+Quechua. For every other language the section and its nav item are **not shown at
+all**: no heading, no empty box, no English text under a translated title. With
+four written, a fallback would tell a reader their language was done when it is
+not; absent is honest where wrong is not. (The older 110-language manual, last
+revised for v0.0.5, is still published and still served by
+[/overview.md](overview.md) — that page is archived and its manual is of its time.)
 
-**Language-agnostic types.** `#1` and `#0` instead of `true` / `false`. No English
-words in the type system.
-
-## Documentation
-
-The compact Zymbol-Lang manual is published as Markdown in 110 languages:
-
-- English — [/data/manuals/manual_en.md](data/manuals/manual_en.md)
-- Spanish — [/data/manuals/manual_es.md](data/manuals/manual_es.md)
-- Any other: `/data/manuals/manual_<ISO 639 code>.md`
-
-The canonical, always-current reference is `GUIDE.md` in the interpreter
-repository; the site manuals were last revised for v0.0.5 and lag the interpreter.
-
-Klingon pIqaD script reference: [/piqad-reference.md](piqad-reference.md).
+Every block of the v0.0.9 manual was run through `zymbol check` and every claimed
+output compared against what the program really prints.
 
 ## Links
 
-- Try it in the browser: <https://zymbol-lang.org/playground.html>
+- Run it in the browser: <https://zymbol-lang.org/playground.html>
+- The manual (English, v0.0.9): <https://zymbol-lang.org/data/manuals/v009/manual_en.md>
+- The former front page, archived: <https://zymbol-lang.org/overview.md>
 - Download and install: <https://zymbol-lang.org/install.html>
-- Release history: <https://zymbol-lang.org/changelog.html>
 - Interpreter (Rust): <https://github.com/zymbol-lang/interpreter>
-- VS Code extension: <https://github.com/zymbol-lang/vscode>
-- This site: <https://github.com/zymbol-lang/web>
-- News: <https://x.com/ZymbolLang>
 
 License: the interpreter and the browser engine are AGPL-3.0-only; the manuals,
 examples and documentation are CC BY-SA 4.0.

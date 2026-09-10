@@ -1,0 +1,80 @@
+// @skip-parity: chinsalu chimafuna terminal yeniyeni pansi pa CLI ndi gawo la
+// @skip-parity: chinsalu mu msakatuli, choncho kuyendetsa kudzera mu chitoliro
+// @skip-parity: kulibe choyerekezera.
+// ============================================================
+// mandelbrot — mulu wa Mandelbrot, wojambulidwa pa chinsalu cha terminal.
+// Mayina m'Chichewa. Zizindikiro zimakhalabe zizindikiro nthawi zonse.
+//
+// Chirichonse chimasankhidwa ndi nambala imodzi: `n`, magawo angati
+// omwe kayendedwe kamapirira asanathawe. Iyo ndiyo imasankha chilembo,
+// ndipo iyo ndiyo imasankha mtundu; choncho chithunzi sichingadzitsutse
+// chokha. `n = 0` kutanthauza kuti sikanathawepo — umenewo ndiwo mulu
+// wokha, wojambulidwa wodzaza.
+//
+//   >>|  imatsegula chinsalu   >>!  imafufuta   >>?  imayeza
+//   >>~  imalemba bokosi limodzi, pa mzere umodzi, mzati umodzi, mtundu umodzi
+//   <<|  imadikira kiyi imodzi
+//
+// Kusunga kawiri, ndipo konse kumaonekera mu chithunzi osati mu
+// muyeso: mabwalo amanyamulidwa kuchokera pa gawo limodzi kupita ku
+// linzake m'malo mowerengedwanso, ndipo mulu umaonetsedwa mu galasi
+// mozungulira mzere weniweni, choncho hafu yakumwamba yokha ndiyo
+// imathawa. Zonse pamodzi zimalipira kuwoneka bwino komwe tsatanetsatane
+// amafuna.
+// ============================================================
+
+// Kunja kwa mulu: kuchokera pa chofooka kufika pa chodzaza, kuchokera pa chobiriwira chakuda kufika pa chowala.
+zizindikiro = " .:-=+*#%"
+mitundu     = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Magawo opirira kayendedwe kasanathawe; 0 ngati sikanathawapo.
+// zr2 ndi zi2 zimanyamulidwa, choncho gawo lililonse limawononga zinthu zinayi, osati zisanu ndi chimodzi.
+thawa(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (msinkhu, mulifupi) = >>?
+    mizere = msinkhu  - 2
+    mizati = mulifupi - 1
+
+    // Bokosi limatalika pafupifupi ka2.5 kuposa mulifupi wake; kutalika
+    // koyimirira kumayezedwa ndi kumeneko kuti mulu utuluke wozungulira.
+    mulifupiMalo = 2.7
+    msinkhuMalo  = mizere * mulifupiMalo * 2.5 / mizati
+    pakati       = mizere / 2 + 1
+
+    @ y:1..pakati {
+        galasi = mizere + 1 - y
+        @ x:1..mizati {
+            cr = (x - 1) * mulifupiMalo / mizati - 2.1
+            ci = (y - 1) * msinkhuMalo  / mizere - msinkhuMalo / 2.0
+            n  = thawa(cr, ci)
+            chizindikiro = "@"
+            mtundu       = 231
+            ? n <> 0 {
+                gawo = n / 4 + 1
+                ? gawo > 9 { gawo = 9 }
+                chizindikiro = zizindikiro[gawo]
+                mtundu       = mitundu[gawo]
+            }
+            >>~ (y, x, 0, mtundu) > chizindikiro
+            ? galasi > pakati { >>~ (galasi, x, 0, mtundu) > chizindikiro }
+        }
+    }
+
+    >>~ (msinkhu, 2, 0, 244) > "dinani kiyi ina iliyonse kuti mutuluke"
+    <<| _kiyi
+}

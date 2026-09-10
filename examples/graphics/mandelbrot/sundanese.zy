@@ -1,0 +1,79 @@
+// @skip-parity: kanvas merlukeun terminal anu saenyana di handapeun CLI jeung
+// @skip-parity: hiji lapisan kanvas dina panyungsi, jadi lumpat ngaliwatan pipa
+// @skip-parity: teu boga naon-naon pikeun dibandingkeun.
+// ============================================================
+// mandelbrot — himpunan Mandelbrot, digambar dina kanvas terminal.
+// Ngaran dina basa Sunda. Tanda salawasna tetep tanda.
+//
+// Sagalana ditangtukeun ku hiji wilangan: `n`, sabaraha léngkah
+// orbit tahan saméméh kabur. Éta anu milih glif jeung éta anu milih
+// kelir, jadi gambar teu bisa nyulayaan dirina sorangan. `n = 0`
+// hartina manéhna teu kungsi kabur — éta pisan himpunanana,
+// digambar pinuh.
+//
+//   >>|  muka kanvas   >>!  ngaberesihan   >>?  ngukur
+//   >>~  nulis hiji kotak, dina hiji baris, hiji kolom, ku hiji kelir
+//   <<|  ngadagoan hiji kenop
+//
+// Dua hémat, jeung duanana katingali dina gambar lain dina ukuran:
+// kuadrat dibawa ti hiji léngkah ka léngkah saterusna teu diitung
+// deui, jeung himpunanana dieunteungkeun kurilingeun sumbu nyata,
+// jadi ngan satengah luhur anu kabur. Duanana babarengan mayar
+// resolusi anu dipénta ku rinci.
+// ============================================================
+
+// Di luareun himpunan: ti samar ka pinuh, ti héjo poék ka caang.
+gurat = " .:-=+*#%"
+warna = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Léngkah anu tahan saméméh orbit kabur; 0 lamun manéhna teu kungsi kabur.
+// zr2 jeung zi2 dibawa milu, jadi unggal léngkah hargana opat kali, lain genep.
+kabur(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (jangkung, rubak) = >>?
+    baris = jangkung - 2
+    kolom = rubak    - 1
+
+    // Hiji kotak kira-kira 2,5 kali leuwih jangkung batan rubak;
+    // rentang nangtung diskalakeun ku éta sangkan himpunanana buleud.
+    rubakna    = 2.7
+    jangkungna = baris * rubakna * 2.5 / kolom
+    tengah     = baris / 2 + 1
+
+    @ y:1..tengah {
+        eunteung = baris + 1 - y
+        @ x:1..kolom {
+            cr = (x - 1) * rubakna    / kolom - 2.1
+            ci = (y - 1) * jangkungna / baris - jangkungna / 2.0
+            n  = kabur(cr, ci)
+            tanda = "@"
+            kelir = 231
+            ? n <> 0 {
+                léngkah = n / 4 + 1
+                ? léngkah > 9 { léngkah = 9 }
+                tanda = gurat[léngkah]
+                kelir = warna[léngkah]
+            }
+            >>~ (y, x, 0, kelir) > tanda
+            ? eunteung > tengah { >>~ (eunteung, x, 0, kelir) > tanda }
+        }
+    }
+
+    >>~ (jangkung, 2, 0, 244) > "pencét kenop naon waé pikeun kaluar"
+    <<| _kenop
+}

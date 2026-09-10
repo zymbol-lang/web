@@ -1,0 +1,11 @@
+// The computed key is what makes this a dictionary and not a record:
+// without it, only a program that already knows the keys could read it.
+user = #(name: "Ana", age: 30)
+
+key = "age"
+>> user[key] ¶        // ← the value of the step decides, not its spelling
+
+// So a key can be chosen at run time
+@ k:["name", "age"] {
+    >> k " = " user[k] ¶
+}

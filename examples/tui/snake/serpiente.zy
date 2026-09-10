@@ -5,7 +5,7 @@
 <# ./logica => l
 <# ./dibujo => d
 
-[filas, cols] = >>?
+(filas, cols) = >>?
 AN = cols  - 2
 AL = filas - 2
 
@@ -28,15 +28,15 @@ semilla = (#|_ns| + #|_pid| * 31337 + #|_rnd| * 65537) % 2147483647
         puntos    = 0
         pendiente = #0
 
-        [comida, semilla] = l::nueva_comida(serpiente, AN, AL, semilla)
-        [fruta,  semilla] = l::fruta_aleatoria(semilla)
+        (comida, semilla) = l::nueva_comida(serpiente, AN, AL, semilla)
+        (fruta,  semilla) = l::fruta_aleatoria(semilla)
 
         d::dibujar_inicio(serpiente, comida, fruta, puntos, AN, AL)
 
         @:game {
             <<|? tecla
 
-            [filas_act, cols_act] = >>?
+            (filas_act, cols_act) = >>?
             ? filas_act <> ult_filas || cols_act <> ult_cols {
                 AN = cols_act - 2
                 AL = filas_act - 2
@@ -63,9 +63,9 @@ semilla = (#|_ns| + #|_pid| * 31337 + #|_rnd| * 65537) % 2147483647
 
             crecer = pendiente <> #0
 
-            [vivo, serpiente, puntos, comio] = l::mover(serpiente, dir, comida, puntos, AN, AL, crecer)
+            (vivo, serpiente, puntos, comio) = l::mover(serpiente, dir, comida, puntos, AN, AL, crecer)
 
-            [comida, fruta, semilla] = l::tick_comida(comio, serpiente, AN, AL, semilla, comida, fruta)
+            (comida, fruta, semilla) = l::tick_comida(comio, serpiente, AN, AL, semilla, comida, fruta)
 
             pos_arroba = pendiente
             ? crecer { pendiente = #0 }

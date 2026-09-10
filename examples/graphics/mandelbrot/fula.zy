@@ -1,0 +1,79 @@
+// @skip-parity: leeso ngoo ina soklii terminal goonga e ley CLI e ngal tuggol
+// @skip-parity: leeso e nder navigateur, ko waɗi si dogginde e tuyoo alaa ko
+// @skip-parity: nannditinaa.
+// ============================================================
+// mandelbrot — dental Mandelbrot, ngal winndaa e leeso terminal.
+// Inɗe e Fulfulde. Maandeeji ko maandeeji haa abada.
+//
+// Kala huunde ina ñiiɓina e limngal gootal: `n`, no foti tappol
+// taariindi ndii muññotoo hade mum dogde. Kanko woni cuɓotooɗo alkulal,
+// kanko kadi woni cuɓotooɗo noone; ko waɗi si natal ngal waawaa
+// haɓɓondirde e hoore mum. `n = 0` firti ko wonde ngal dogaani haa
+// abada — ko ɗum woni dental ngal e hoore mum, ngal winndaa haa heewi.
+//
+//   >>|  ina uddita leeso   >>!  ina momta   >>?  ina ɓetta
+//   >>~  ina winnda kees gooto, e diidol gootol, tuggorde wootere, e noone gooto
+//   <<|  ina sabbo coktirgal gootal
+//
+// Danndugol ɗiɗi, ɗi ɗiɗi kala ina njiyee e natal ngal wonaa e ɓetgol:
+// karreeji ina ndoondee ummaade e tappol gootol haa e ngol jokki
+// nokkuure limtude ɗi kadi, dental ngal kadi ina hollire e daarorgal
+// banŋe hoore goonga, ko waɗi si feccere dow tan woni ko dogata. Ɗi
+// ɗiɗi kala ina njoɓa laaɓal ngal fiyakuuji njiɗi.
+// ============================================================
+
+// Caggal dental ngal: ummaade e lo'ungal haa e kebbungal, ummaade e haako niɓɓungal haa e jalbungal.
+maandeeji = " .:-=+*#%"
+nooneeji  = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Tappi ɗi taariindi ndii muññii hade mum dogde; 0 si ndi dogaani haa abada.
+// zr2 e zi2 ina ndoondee, ko waɗi si tappol kala ina yoɓa ɓetgol nayi, wonaa jeegom.
+dogde(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (juutol, yaajol) = >>?
+    diide     = juutol - 2
+    tuggorɗe  = yaajol - 1
+
+    // Kees gooto ina juuti ko ɓuri yaajol mum laabi 2.5; njuuteendi
+    // dariindi ndii ina ɓettiree ɗum ngam dental ngal yaltude ko taariingal.
+    yaajolNokku = 2.7
+    juutolNokku = diide * yaajolNokku * 2.5 / tuggorɗe
+    hakkunde    = diide / 2 + 1
+
+    @ y:1..hakkunde {
+        daarorgal = diide + 1 - y
+        @ x:1..tuggorɗe {
+            cr = (x - 1) * yaajolNokku / tuggorɗe - 2.1
+            ci = (y - 1) * juutolNokku / diide    - juutolNokku / 2.0
+            n  = dogde(cr, ci)
+            maande = "@"
+            noone  = 231
+            ? n <> 0 {
+                tappol = n / 4 + 1
+                ? tappol > 9 { tappol = 9 }
+                maande = maandeeji[tappol]
+                noone  = nooneeji[tappol]
+            }
+            >>~ (y, x, 0, noone) > maande
+            ? daarorgal > hakkunde { >>~ (daarorgal, x, 0, noone) > maande }
+        }
+    }
+
+    >>~ (juutol, 2, 0, 244) > "ñoƴƴu coktirgal kala ngam yaltude"
+    <<| _coktirgal
+}

@@ -187,7 +187,9 @@ const call = (path, accept) =>
   const body = await res.text();
   check('GET / with Accept: text/markdown → markdown',
         res.headers.get('content-type').startsWith('text/markdown'), res.headers.get('content-type'));
-  check('GET / with Accept: text/markdown → index.md body', body.startsWith('# Zymbol\n'), body.slice(0, 40));
+  // Against the file, not against a heading: the literal `# Zymbol\n` this used to expect
+  // was really a test of the front page's title, and it broke the day the title changed.
+  check('GET / with Accept: text/markdown → index.md body', body === read('index.md'), body.slice(0, 40));
   check('markdown response varies on Accept', res.headers.get('vary') === 'Accept');
   check('markdown response names the file it served',
         res.headers.get('content-location') === '/index.md', res.headers.get('content-location'));

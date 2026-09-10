@@ -1,0 +1,78 @@
+// @skip-parity: kanvas butuh terminal tenanan ing sangisore CLI lan lapisan
+// @skip-parity: kanvas ing panjlajah, dadi mlaku liwat pipa ora duwe apa-apa
+// @skip-parity: sing bisa dibandhingake.
+// ============================================================
+// mandelbrot — himpunan Mandelbrot, digambar ing kanvas terminal.
+// Jeneng nganggo basa Jawa. Tandha tansah tetep tandha.
+//
+// Kabeh ditemtokake dening siji angka: `n`, pira jangkah orbit
+// tahan sadurunge oncat. Iku sing milih glif lan iku sing milih
+// werna, mula gambar ora bisa nyulayani awake dhewe. `n = 0`
+// tegese dheweke ora tau oncat — iku himpunane, digambar kebak.
+//
+//   >>|  mbukak kanvas   >>!  ngresiki   >>?  ngukur
+//   >>~  nulis siji kothak, ing siji larik, siji kolom, nganggo siji werna
+//   <<|  ngenteni siji tuts
+//
+// Rong ngirit, lan loro-lorone katon ing gambar dudu ing ukuran:
+// kuadrat digawa saka siji jangkah menyang sabanjure tinimbang
+// diitung maneh, lan himpunane dipangiloni ngubengi sumbu nyata,
+// mula mung separo ndhuwur sing oncat. Bebarengan padha mbayar
+// resolusi sing dijaluk dening rincian.
+// ============================================================
+
+// Ing njabane himpunan: saka samar tekan kebak, saka ijo peteng tekan padhang.
+undhak = " .:-=+*#%"
+warna  = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Jangkah sing ditahan sadurunge orbit oncat; 0 yen ora tau oncat.
+// zr2 lan zi2 digawa mèlu, mula saben jangkah regane papat ping, dudu enem.
+oncat(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (dhuwur, amba) = >>?
+    larik = dhuwur - 2
+    kolom = amba   - 1
+
+    // Siji kothak kira-kira 2,5 ping luwih dhuwur tinimbang amba;
+    // jembar jejeg diskala nganggo iku supaya himpunane metu bunder.
+    ambane   = 2.7
+    dhuwure  = larik * ambane * 2.5 / kolom
+    tengah   = larik / 2 + 1
+
+    @ y:1..tengah {
+        pangilon = larik + 1 - y
+        @ x:1..kolom {
+            cr = (x - 1) * ambane  / kolom - 2.1
+            ci = (y - 1) * dhuwure / larik - dhuwure / 2.0
+            n  = oncat(cr, ci)
+            tandha = "@"
+            werna  = 231
+            ? n <> 0 {
+                jangkah = n / 4 + 1
+                ? jangkah > 9 { jangkah = 9 }
+                tandha = undhak[jangkah]
+                werna  = warna[jangkah]
+            }
+            >>~ (y, x, 0, werna) > tandha
+            ? pangilon > tengah { >>~ (pangilon, x, 0, werna) > tandha }
+        }
+    }
+
+    >>~ (dhuwur, 2, 0, 244) > "penet tuts apa wae kanggo metu"
+    <<| _tuts
+}

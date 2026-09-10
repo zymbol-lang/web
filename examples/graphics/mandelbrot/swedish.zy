@@ -1,0 +1,77 @@
+// @skip-parity: duken kräver en riktig terminal under CLI:t och ett duklager i
+// @skip-parity: webbläsaren, så en körning genom ett rör har inget att jämföra.
+// ============================================================
+// mandelbrot — Mandelbrotmängden, ritad på terminalens duk.
+// Namn på svenska. Tecken förblir alltid tecken.
+//
+// Ett enda tal avgör allt: `n`, hur många steg banan överlever
+// innan den rymmer. Det väljer tecknet och det väljer tonen, så
+// bilden kan inte motsäga sig själv. `n = 0` betyder att den
+// aldrig rymde — det är mängden, ritad full.
+//
+//   >>|  öppnar duken   >>!  rensar den   >>?  mäter den
+//   >>~  skriver en ruta, på en rad, i en kolumn, i en ton
+//   <<|  väntar på en tangent
+//
+// Två besparingar, och båda syns i bilden i stället för i en
+// mätning: kvadraterna bärs med från steg till steg i stället för
+// att räknas om, och mängden speglas kring den reella axeln, så
+// bara den övre halvan rymmer någonsin. Tillsammans betalar de
+// den upplösning som detaljen kräver.
+// ============================================================
+
+// Utanför mängden: från svag till full, från mörkgrön till lysande.
+ramp  = " .:-=+*#%"
+toner = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Steg som överlevts innan banan rymmer; 0 om den aldrig gör det.
+// zr2 och zi2 bärs med, så varje steg kostar fyra produkter, inte sex.
+fly(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (hög, bred) = >>?
+    rader    = hög  - 2
+    kolumner = bred - 1
+
+    // En ruta är ~2,5 gånger högre än bred; det lodräta spannet
+    // skalas med det så att mängden blir rund.
+    bredd = 2.7
+    höjd  = rader * bredd * 2.5 / kolumner
+    mitt  = rader / 2 + 1
+
+    @ y:1..mitt {
+        spegel = rader + 1 - y
+        @ x:1..kolumner {
+            cr = (x - 1) * bredd / kolumner - 2.1
+            ci = (y - 1) * höjd  / rader    - höjd / 2.0
+            n  = fly(cr, ci)
+            tecken = "@"
+            ton    = 231
+            ? n <> 0 {
+                steg = n / 4 + 1
+                ? steg > 9 { steg = 9 }
+                tecken = ramp[steg]
+                ton    = toner[steg]
+            }
+            >>~ (y, x, 0, ton) > tecken
+            ? spegel > mitt { >>~ (spegel, x, 0, ton) > tecken }
+        }
+    }
+
+    >>~ (hög, 2, 0, 244) > "valfri tangent för att lämna"
+    <<| _tangent
+}

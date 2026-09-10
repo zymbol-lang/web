@@ -34,6 +34,9 @@
       --fn-color:  #c792ea;
       --id-color:  #aaa;
       --err:       #f97070;
+      --err-dim:   #f9707022;
+      --warn:      #e8b04a;
+      --warn-dim:  #e8b04a1e;
       --header-h:  52px;
       --sidebar-w: 240px;
       --mono: 'pIqaD-qolqoS','JetBrains Mono','Courier New',monospace;
@@ -68,6 +71,9 @@
       --fn-color:  #7c3aed;
       --id-color:  #333;
       --err:       #cc2222;
+      --err-dim:   #cc222218;
+      --warn:      #a06000;
+      --warn-dim:  #a0600018;
       --header-bg: rgba(248,248,248,0.95);
     }
 
@@ -424,13 +430,56 @@
       flex: 1;
       position: relative;
       overflow: hidden;
+
+      /* The line-number gutter's width, in the editor's own monospace `ch`. These are
+         custom properties rather than a fixed number because gutter.js widens them as the
+         program passes 99 lines — and because both code layers have to be padded to clear
+         the gutter by exactly the same amount, or the hover's arithmetic stops landing on
+         the token the pointer is over. The fallback of two digits keeps a gutter-less
+         fixture (tests/dom/) aligned all the same. */
+      --gutter-digits: 2;
+      --gutter-pad: 0.5rem;
+      --gutter-w: calc(var(--gutter-digits) * 1ch + var(--gutter-pad) * 2);
+      --code-pad-left: calc(var(--gutter-w) + 0.6rem);
     }
+
+    /* ─── Line numbers ───
+       A single run of text in `white-space: pre`, laid out by the same line-box machinery
+       as the code it numbers — see src/playground/gutter.js on why this is not one element
+       per line. It scrolls vertically with the textarea and never horizontally, which is
+       what keeps it a fixed ruler rather than part of the document. */
+    #editor-gutter {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: var(--gutter-w);
+      overflow: hidden;
+      padding: 0.75rem var(--gutter-pad);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      white-space: pre;
+      color: var(--dim);
+      background: var(--bg2);
+      border-right: 1px solid var(--line);
+      user-select: none;
+      /* Above both code layers: with the textarea scrolled right, its text slides under
+         the padding and would otherwise show through the numbers. Below the hover card. */
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    /* The line a diagnostic points at. The number itself is tinted, not its background:
+       a background would be as wide as its digits, marking "9" and "10" differently. */
+    #editor-gutter .gl.has-error   { color: var(--err);  font-weight: 700; }
+    #editor-gutter .gl.has-warning { color: var(--warn); font-weight: 700; }
 
     #editor-highlight {
       position: absolute;
       inset: 0;
       overflow: auto;
-      padding: 0.75rem;
+      padding: 0.75rem 0.75rem 0.75rem var(--code-pad-left);
       font-family: var(--mono);
       font-size: 0.82rem;
       line-height: 1.65;
@@ -451,7 +500,7 @@
       caret-color: var(--green);
       border: none;
       outline: none;
-      padding: 0.75rem;
+      padding: 0.75rem 0.75rem 0.75rem var(--code-pad-left);
       font-family: var(--mono);
       font-size: 0.82rem;
       line-height: 1.65;
@@ -460,6 +509,180 @@
       white-space: pre;
       tab-size: 4;
     }
+
+    /* ─── Hover help ───
+       Sits above the textarea and the gutter (z-index 4) but takes no pointer events: the
+       reader has to be able to click through it to place the caret, and a card that moved
+       when you reached for it would be unusable. */
+    #hover-card {
+      position: absolute;
+      z-index: 4;
+      pointer-events: none;
+      display: none;
+      max-width: min(30rem, 90%);
+      padding: 0.6rem 0.7rem;
+      background: var(--bg3);
+      border: 1px solid var(--green-mid);
+      border-radius: var(--radius);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+      font-family: var(--ui);
+      font-size: 0.78rem;
+      line-height: 1.5;
+      color: var(--text);
+    }
+    #hover-card.visible { display: block; }
+
+    #hover-card .hc-head {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.35rem;
+    }
+    #hover-card .hc-sym {
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--kw);
+    }
+    #hover-card .hc-concept { color: var(--hi); font-weight: 600; }
+    /* The reader's own word for the concept, when their language has one. */
+    #hover-card .hc-native {
+      color: var(--green);
+      font-size: 0.72rem;
+      padding: 0.05rem 0.35rem;
+      border: 1px solid var(--green-mid);
+      border-radius: 999px;
+    }
+    #hover-card .hc-kind {
+      color: var(--mid);
+      font-size: 0.72rem;
+      text-transform: lowercase;
+    }
+    #hover-card .hc-summary { margin: 0 0 0.45rem; }
+    #hover-card .hc-example {
+      margin: 0;
+      padding: 0.45rem 0.55rem;
+      background: var(--bg);
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      line-height: 1.55;
+      white-space: pre;
+      overflow-x: auto;
+      color: var(--text);
+    }
+    #hover-card .hc-note {
+      margin: 0.4rem 0 0;
+      color: var(--mid);
+      font-size: 0.72rem;
+      font-style: italic;
+    }
+    #hover-card .hc-type { font-family: var(--mono); color: var(--num); }
+    #hover-card .hc-value { font-family: var(--mono); color: var(--str); }
+
+    /* ─── Diagnostics on the code itself ───
+       The tint lands on the colouring layer under the transparent textarea, so it reads as
+       a highlight on the code without touching the text the reader is editing. */
+    .hl-line.has-error   { background: var(--err-dim); }
+    .hl-line.has-warning { background: var(--warn-dim); }
+
+    /* ─── Problems ─── */
+    #problems {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      max-height: 34%;
+      border-top: 1px solid var(--bg4);
+      background: var(--bg2);
+      font-family: var(--ui);
+      font-size: 0.76rem;
+    }
+    #problems.hidden { display: none; }
+    #problems.collapsed #problems-list { display: none; }
+
+    #problems-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.3rem 0.6rem;
+      border-bottom: 1px solid var(--bg4);
+    }
+    #problems.collapsed #problems-head { border-bottom: none; }
+
+    #problems-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: none;
+      border: none;
+      padding: 0.1rem 0;
+      color: var(--hi);
+      font-family: inherit;
+      font-size: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    #problems-toggle:hover { color: var(--green); }
+    #problems-chevron { color: var(--mid); font-size: 0.7rem; transition: transform 0.15s; }
+    #problems.collapsed #problems-chevron { transform: rotate(-90deg); }
+    #problems-count { color: var(--mid); font-weight: 400; }
+
+    #problems-warnings-label {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      color: var(--mid);
+      cursor: pointer;
+      user-select: none;
+    }
+    #problems-warnings-label:hover { color: var(--text); }
+    #problems-warnings-label input { accent-color: var(--green); cursor: pointer; }
+
+    #problems-list { overflow-y: auto; padding: 0.2rem 0; }
+
+    .pb-item {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.22rem 0.6rem;
+      background: none;
+      border: none;
+      text-align: left;
+      color: var(--text);
+      font-family: inherit;
+      font-size: inherit;
+      cursor: pointer;
+    }
+    .pb-item:hover { background: var(--bg3); }
+    .pb-sev { flex: 0 0 auto; font-weight: 600; }
+    .pb-item.error   .pb-sev { color: var(--err); }
+    .pb-item.warning .pb-sev { color: var(--warn); }
+    .pb-line {
+      flex: 0 0 auto;
+      color: var(--mid);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+    }
+    .pb-msg  { flex: 1 1 auto; }
+    .pb-hint { color: var(--mid); font-style: italic; }
+    .pb-none { padding: 0.4rem 0.6rem; color: var(--mid); font-style: italic; }
+
+    /* ─── Language picker ─── */
+    #lang-select {
+      max-width: 9rem;
+      padding: 0.2rem 0.3rem;
+      background: var(--bg3);
+      color: var(--text);
+      border: 1px solid var(--bg4);
+      border-radius: 4px;
+      font-family: var(--ui);
+      font-size: 0.72rem;
+      cursor: pointer;
+    }
+    #lang-select:hover { border-color: var(--green-mid); color: var(--hi); }
 
     /* ─── Output panel ─── */
     #output-content {
@@ -919,9 +1142,38 @@
     .t-punct { color: var(--punct); }
     .t-hot   { color: var(--hot); font-weight: bold; }
 
+    /* ─── The language picker is hidden, at every width ───
+       Not a layout fix. The picker offered 110 languages and two of them are
+       translated: in every other one the interface stayed English while the
+       control said otherwise, which is a promise the playground does not keep.
+       A control is a claim, and this one was false.
+
+       It also did not fit. Measured at 360px: the header asked for 521px, so
+       161 were off screen and the page scrolled sideways; the picker was 135 of
+       them, because a language name is a word and words are long.
+
+       The element stays in the DOM and stays populated, so restoring it is
+       deleting this rule — and the language itself was never in the control: it
+       lives in `zy-lang`, shared with the front page, whose own picker works.
+       Choose it there and the playground follows.
+
+       Implementing it properly is a design job — where a picker goes in a header
+       this crowded, and what it may offer once the interface is translated. */
+    #lang-select { display: none; }
+
+    /* Hiding the picker recovers 143px of that 161, which leaves 18 still over,
+       so `← Home` goes below 600px as well: the logo beside it already links to
+       index.html, so it is the one control on that row that is a duplicate
+       rather than a loss. Measured after, at 320/360/414/600: zero overflow. */
+    @media (max-width: 600px) {
+      header .back-link { display: none; }
+    }
+
     /* ─── Mobile ─── */
     @media (max-width: 700px) {
       #split { flex-direction: column; }
+      /* The ruler earns its keep on a phone as well, but not that much of the width. */
+      #editor-wrapper { --gutter-pad: 0.3rem; }
       #editor-panel  { flex: 1 1 50%; min-width: unset; min-height: 0; }
       #output-panel  { flex: 1 1 50%; min-width: unset; min-height: 0; }
       #split-handle  { flex: 0 0 5px; cursor: row-resize; width: 100%; }

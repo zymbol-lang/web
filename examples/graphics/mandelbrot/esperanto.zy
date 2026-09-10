@@ -1,0 +1,76 @@
+// @skip-parity: la tolo bezonas veran terminalon sub la komandlinio kaj tolan tavolon
+// @skip-parity: en la retumilo, do ruli tra tubo lasas nenion kompareblan.
+// ============================================================
+// mandelbrot — la aro de Mandelbrot, desegnita sur terminala tolo.
+// La nomoj en Esperanto. La signoj ĉiam restas signoj.
+//
+// Unu nombro decidas ĉion: `n`, kiom da paŝoj la orbito eltenas antaŭ
+// ol ĝi eskapas. Ĝi elektas la literon kaj ĝi elektas la koloron, do
+// la bildo ne povas kontraŭdiri sin mem. `n = 0` signifas ke ĝi neniam
+// eskapis — tio estas la aro mem, desegnita plena.
+//
+//   >>|  malfermas la tolon   >>!  viŝas   >>?  mezuras
+//   >>~  skribas unu ĉelon, en unu linio, unu kolumno, per unu koloro
+//   <<|  atendas unu klavon
+//
+// Du ŝparoj, kaj ambaŭ videblas en la bildo, ne en mezuro: la kvadratoj
+// estas portataj de unu paŝo al la sekva anstataŭ rekalkulataj, kaj la
+// aro spegulas ĉirkaŭ la reela akso, do nur la supra duono eskapas.
+// Ambaŭ kune pagas la akrecon kiun la detalo postulas.
+// ============================================================
+
+// Ekster la aro: de pala ĝis plena, de malhelverda ĝis hela.
+deklivo = " .:-=+*#%"
+koloroj = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Paŝoj eltenitaj antaŭ ol la orbito eskapas; 0 se ĝi neniam eskapas.
+// zr2 kaj zi2 estas portataj, do ĉiu paŝo kostas kvar produktojn, ne ses.
+eskapi(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (alto, largo) = >>?
+    linioj   = alto  - 2
+    kolumnoj = largo - 1
+
+    // Ĉelo estas ĉirkaŭ 2,5-oble pli alta ol larĝa; la vertikala amplekso
+    // estas skalita per tio, por ke la aro eliru ronda.
+    larĝeco = 2.7
+    alteco  = linioj * larĝeco * 2.5 / kolumnoj
+    mezo    = linioj / 2 + 1
+
+    @ y:1..mezo {
+        spegulo = linioj + 1 - y
+        @ x:1..kolumnoj {
+            cr = (x - 1) * larĝeco / kolumnoj - 2.1
+            ci = (y - 1) * alteco  / linioj   - alteco / 2.0
+            n  = eskapi(cr, ci)
+            marko  = "@"
+            koloro = 231
+            ? n <> 0 {
+                paŝo = n / 4 + 1
+                ? paŝo > 9 { paŝo = 9 }
+                marko  = deklivo[paŝo]
+                koloro = koloroj[paŝo]
+            }
+            >>~ (y, x, 0, koloro) > marko
+            ? spegulo > mezo { >>~ (spegulo, x, 0, koloro) > marko }
+        }
+    }
+
+    >>~ (alto, 2, 0, 244) > "premu iun ajn klavon por eliri"
+    <<| _klavo
+}

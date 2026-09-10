@@ -1,0 +1,77 @@
+// @skip-parity: finiba mago bɛ terminal yɛrɛyɛrɛ la CLI kɔrɔ, ani finiba kanko
+// @skip-parity: navigateur kɔnɔ, o de kosɔn boli tuyo fɛ tɛ foyi sɔrɔ ka suma.
+// ============================================================
+// mandelbrot — Mandelbrot ka jɛkulu, min sɛbɛnna terminal ka finiba kan.
+// Tɔgɔw bɛ Bamanankan na. Taamasiɲɛnw ye taamasiɲɛnw ye tuma bɛɛ.
+//
+// Fɛn bɛɛ bɛ latigɛ ni jate kelen ye: `n`, sen joli lamini bɛ muɲu
+// sanni a ka boli. Ale de bɛ sɛbɛnni sugandi, ale de fana bɛ kulɛri
+// sugandi; o de kosɔn ja tɛ se ka a yɛrɛ sɔsɔ. `n = 0` kɔrɔ ko a ma
+// deli ka boli — o de ye jɛkulu yɛrɛ ye, min sɛbɛnna ka fa.
+//
+//   >>|  bɛ finiba da wuli   >>!  bɛ jɔsi   >>?  bɛ suma
+//   >>~  bɛ kesu kelen sɛbɛn, layini kelen kan, jɔyɔrɔ kelen, ni kulɛri kelen ye
+//   <<|  bɛ konnɛgɛ kelen makɔnɔ
+//
+// Marali fila, ani u fila bɛɛ bɛ ye ja la, u tɛ ye sumani na: karew bɛ
+// taa ni u ye ka bɔ sen kelen na ka taa a nɔfɛta la, sanni u ka jate
+// kokura, ani jɛkulu bɛ jira gilasi la ka lamini axe yɛrɛyɛrɛ la, o de
+// kosɔn sanfɛla tila kelen dɔrɔn de bɛ boli. U fila ɲɔgɔn fɛ bɛ jɛlenya
+// sara min ye kunnafoni ɲini.
+// ============================================================
+
+// Jɛkulu kɔfɛ: ka bɔ dɔgɔman na ka taa falen na, ka bɔ binkɛnɛ dibilen na ka taa yeelenman na.
+taamasiɲɛnw = " .:-=+*#%"
+kulɛriw     = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Senw minnu muɲuna sanni lamini ka boli; 0 ni a ma deli ka boli.
+// zr2 ni zi2 bɛ taa ni u ye, o de kosɔn sen kelen kelen bɛɛ bɛ fɛn naani sara, wɔɔrɔ tɛ.
+boli(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (janya, bonya) = >>?
+    layiniw  = janya - 2
+    jɔyɔrɔw  = bonya - 1
+
+    // Kesu kelen ka jan ni a bonya ye siɲɛ 2.5 ɲɔgɔn; sanfɛ janya bɛ
+    // sumani ni o ye walisa jɛkulu ka bɔ kɛrɛnkɛrɛnnen.
+    bonyaYɔrɔ = 2.7
+    janyaYɔrɔ = layiniw * bonyaYɔrɔ * 2.5 / jɔyɔrɔw
+    cɛmancɛ   = layiniw / 2 + 1
+
+    @ y:1..cɛmancɛ {
+        gilasi = layiniw + 1 - y
+        @ x:1..jɔyɔrɔw {
+            cr = (x - 1) * bonyaYɔrɔ / jɔyɔrɔw - 2.1
+            ci = (y - 1) * janyaYɔrɔ / layiniw - janyaYɔrɔ / 2.0
+            n  = boli(cr, ci)
+            taamasiɲɛn = "@"
+            kulɛri     = 231
+            ? n <> 0 {
+                sen = n / 4 + 1
+                ? sen > 9 { sen = 9 }
+                taamasiɲɛn = taamasiɲɛnw[sen]
+                kulɛri     = kulɛriw[sen]
+            }
+            >>~ (y, x, 0, kulɛri) > taamasiɲɛn
+            ? gilasi > cɛmancɛ { >>~ (gilasi, x, 0, kulɛri) > taamasiɲɛn }
+        }
+    }
+
+    >>~ (janya, 2, 0, 244) > "konnɛgɛ o konnɛgɛ digi walisa ka bɔ"
+    <<| _konnɛgɛ
+}

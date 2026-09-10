@@ -1,0 +1,78 @@
+// @skip-parity: kanvas memerlukan terminal sungguhan di bawah CLI dan sebuah
+// @skip-parity: lapisan kanvas di peramban, jadi jalan lewat pipa tidak punya
+// @skip-parity: pembanding.
+// ============================================================
+// mandelbrot — himpunan Mandelbrot, digambar pada kanvas terminal.
+// Nama dalam bahasa Indonesia. Tanda selalu tetap tanda.
+//
+// Satu bilangan menentukan segalanya: `n`, berapa langkah orbit
+// bertahan sebelum lolos. Ia memilih glif dan ia memilih rona,
+// sehingga gambar tak dapat bertentangan dengan dirinya. `n = 0`
+// berarti ia tak pernah lolos — itulah himpunannya, digambar penuh.
+//
+//   >>|  membuka kanvas   >>!  membersihkannya   >>?  mengukurnya
+//   >>~  menulis satu sel, pada satu baris, satu kolom, dalam satu rona
+//   <<|  menunggu satu tombol
+//
+// Dua penghematan, dan keduanya tampak pada gambar, bukan pada
+// pengukuran: kuadrat dibawa dari langkah ke langkah alih-alih
+// dihitung ulang, dan himpunan dicerminkan terhadap sumbu nyata,
+// sehingga hanya separuh atas yang pernah lolos. Bersama keduanya
+// membayar resolusi yang dituntut oleh rincian.
+// ============================================================
+
+// Di luar himpunan: dari samar ke penuh, dari hijau tua ke terang.
+gradasi = " .:-=+*#%"
+warna   = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Langkah yang bertahan sebelum orbit lolos; 0 jika ia tak pernah lolos.
+// zr2 dan zi2 dibawa serta, jadi tiap langkah berharga empat perkalian, bukan enam.
+lolos(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (tinggiLayar, lebarLayar) = >>?
+    baris = tinggiLayar - 2
+    kolom = lebarLayar  - 1
+
+    // Satu sel kira-kira 2,5 kali lebih tinggi daripada lebar; rentang
+    // tegak diskalakan dengan itu agar himpunan keluar bulat.
+    lebar  = 2.7
+    tinggi = baris * lebar * 2.5 / kolom
+    tengah = baris / 2 + 1
+
+    @ y:1..tengah {
+        cermin = baris + 1 - y
+        @ x:1..kolom {
+            cr = (x - 1) * lebar  / kolom - 2.1
+            ci = (y - 1) * tinggi / baris - tinggi / 2.0
+            n  = lolos(cr, ci)
+            tanda = "@"
+            rona  = 231
+            ? n <> 0 {
+                langkah = n / 4 + 1
+                ? langkah > 9 { langkah = 9 }
+                tanda = gradasi[langkah]
+                rona  = warna[langkah]
+            }
+            >>~ (y, x, 0, rona) > tanda
+            ? cermin > tengah { >>~ (cermin, x, 0, rona) > tanda }
+        }
+    }
+
+    >>~ (tinggiLayar, 2, 0, 244) > "tekan tombol apa saja untuk keluar"
+    <<| _tombol
+}

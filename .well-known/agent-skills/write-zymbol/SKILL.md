@@ -1,21 +1,21 @@
 ---
 name: write-zymbol
-description: Write and run Zymbol — a keyword-free language where every construct is a symbol (`?` if, `@` loop, `<~` return, `#1` true) and identifiers may be in any human language. Use when writing, reading, running or debugging .zy files.
+description: Write and run Zymbol — a language with no words in its grammar, where every construct is a symbol (`?` if, `@` loop, `<~` return, `#1` true) and identifiers may be in any human language. Use when writing, reading, running or debugging .zy files.
 license: CC-BY-SA-4.0
 ---
 
 # Write Zymbol
 
-Zymbol has **no keywords**. Every construct is a symbol, so nothing in the syntax
+Zymbol has **no words** in its grammar. Every construct is a symbol, so nothing in the syntax
 is an English word and identifiers can be written in any script — Spanish,
 Japanese, Arabic, Klingon pIqaD, emoji. `?` is if, `@` is loop, `<~` is return,
 `#1` is true, `¶` is newline.
 
-Version v0.0.8. Canonical reference: `GUIDE.md` in
+Version v0.0.9. Canonical reference: `GUIDE.md` in
 <https://github.com/zymbol-lang/interpreter>. Every code block below is executed
 by this project's CI, so it runs as written.
 
-## The eight things that trip you up
+## The eleven things that trip you up
 
 Read these before writing a line — each one is a mistake that *parses* and then
 behaves wrong.
@@ -36,6 +36,13 @@ behaves wrong.
    text) while `"5" == 5` is `#0` (`==` never coerces).
 7. **Slices include both ends.** `arr$[1..3]` is three elements.
 8. **`/` is division; `$/` splits a string.** They look alike and do not overlap.
+9. **A named function in a HOF slot takes no parentheses.** `nums$> double` is right;
+   `nums$> (double)` is a parse error, because `(` opens a lambda.
+10. **`<~` on a parameter is written twice** — in the signature *and* at every call site,
+    and both are required: `bump(b<~)` is called as `bump(y<~)`, never `bump(y)`.
+11. **The last name of a destructuring pattern absorbs the remainder.** `(a, b, c) = (1,2,3,4,5)`
+    leaves `c` holding `(3,4,5)`, and `[…]` accepts only an array while `(…)` accepts only a
+    tuple. An `Int` is a safe integer, ±(2⁵³−1): leaving that range is a `##Range` error.
 
 ## Variables, output, strings
 
@@ -132,12 +139,13 @@ arr = arr$+ 60       // append, returns a new array
 arr = arr$-[1]       // remove by index
 >> (arr$? 30) ¶      // #1 — contains
 >> arr$[1..2] ¶      // slice, both ends included
-arr[2] = 99          // update in place
+arr[2]$~ 99          // modify in place — `=` never writes into a collection
 >> arr ¶
 
-point = (10, 20)                        // tuple
-person = (name: "Alice", age: 25)       // named tuple
->> point[1] " " person.name " " person[2] ¶
+point = (10, 20)                        // positional tuple, immutable
+person = #(name: "Alice", age: 25)      // dictionary — `#(` is its mark, `#()` is the empty one
+person["city"]$~ "Lima"                 // any string may be a key
+>> point[1] " " person.name " " person["age"] ¶
 
 s = "Hola Mundo"
 >> (s$#) ¶                  // 10
@@ -154,8 +162,10 @@ nums = [1, 2, 3, 4, 5]
 >> nums$< (0, (acc, x) -> acc + x) ¶  // reduce, with an initial value
 ```
 
-A *named* function must still be wrapped in a lambda — `nums$> (double)` is a parse
-error (`expected '->' in lambda expression`), `nums$> (x -> double(x))` is correct.
+A *named* function goes in the slot bare, with no parentheses — `nums$> double` and
+`nums$| is_big` work. Wrapping it is what fails: `nums$> (double)` is a parse error
+(`expected '->' in lambda expression`), because `(` starts a lambda. Write the lambda
+out (`nums$> (x -> double(x))`) or drop the parentheses.
 
 ## Functions and lambdas
 
@@ -194,9 +204,12 @@ swap(a<~, b<~) {
 }
 x = 1
 y = 2
-swap(x, y)
+swap(x<~, y<~)    // the mark is required here too, or the call is a semantic error
 >> x " " y ¶      // 2 1
 ```
+
+`p~` is the other half of the pair: a *working copy* the body may reassign freely, with
+nothing travelling back. One `<` is the whole difference.
 
 ## Errors
 
@@ -254,14 +267,35 @@ are not executed here because each needs its own file.
 
 An import path is relative (`./math`, `../lib/math`) or a stdlib name
 (`std/math`, `std/json`, `std/io`, `std/net`, `std/random`, `std/term`,
-`std/db`). A re-export layer is how a module is translated: export
+`std/time`, `std/db`). A re-export layer is how a module is translated: export
 `m::add => sumar` and the caller writes `sumar`.
+
+Dates come from `std/time`, never from the shell. An instant is milliseconds
+since the epoch and always UTC; a date is a reading of one, so every function
+takes an optional trailing zone — `"UTC"` (default), `"local"`, `"+1000"`.
+
+```zymbol
+<# std/time => t
+
+hoy = t::today()                              // 2026-08-23, ASCII whatever the numeral mode
+inicio = t::of(2026, 8, 23, 14, 5, 9)         // year, month, day [, hour, minute, second]
+>> t::format(inicio, "%F %T", "-0400") ¶      // POSIX codes: %Y %m %d %H %M %S %L %j %u %z %F %T
+>> t::parts(inicio).weekday ¶                 // 1 = Monday, as ISO 8601 numbers it
+>> t::format(t::add(inicio, -30, "day"), "%F") ¶
+>> t::diff(inicio, t::of(2026, 7, 24), "day") ¶
+```
+
+`add`/`diff` take a unit in full — `millisecond second minute hour day week
+month year`. Below a day it is duration, from a day up it is calendar: a month
+lands on the same day of the month, clamped (31 Jan + 1 month = 28 Feb). A date
+that does not exist is a soft `##Time`, testable with `$!`.
 
 ## Running it
 
 ```bash
 zymbol run file.zy          # tree-walker (default)
-zymbol run --vm file.zy     # register VM, ~4x faster
+zymbol run --vm file.zy     # register VM: 1.4-6x the tree-walker on microbenchmarks,
+                            #   40x+ on search-shaped programs
 zymbol check file.zy        # parse + semantic check, follows imports
 zymbol fmt file.zy --write  # format in place
 zymbol repl                 # interactive

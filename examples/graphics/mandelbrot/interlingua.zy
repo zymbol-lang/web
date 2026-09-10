@@ -1,0 +1,78 @@
+// @skip-parity: le tela require un terminal real sub le linea de commando e un
+// @skip-parity: strato de tela in le navigator, dunque exequer per un tubo non
+// @skip-parity: lassa nihil a comparar.
+// ============================================================
+// mandelbrot — le ensemble de Mandelbrot, designate super un tela de terminal.
+// Le nomines in interlingua. Le signos remane sempre signos.
+//
+// Un sol numero decide toto: `n`, quante passos le orbita supporta ante
+// que illo escappa. Illo elige le littera e illo elige le color, dunque
+// le imagine non pote contradicer se mesme. `n = 0` significa que illo
+// non escappava jammais — illo es le ensemble mesme, designate plen.
+//
+//   >>|  aperi le tela   >>!  netta   >>?  mesura
+//   >>~  scribe un cella, in un linea, un columna, con un color
+//   <<|  attende un clave
+//
+// Duo economias, e ambes es visibile in le imagine e non in un mesura:
+// le quadratos es portate de un passo al sequente in vice de esser
+// recalculate, e le ensemble es speculate circum le axe real, dunque
+// solmente le medietate superior escappa. Ambes junctos paga le acutessa
+// que le detalio demanda.
+// ============================================================
+
+// Foras del ensemble: del pallide al plen, del verde obscur al clar.
+declivitate = " .:-=+*#%"
+colores     = [22, 28, 34, 40, 46, 82, 118, 154, 191]
+
+// Passos supportate ante que le orbita escappa; 0 si illo non escappa jammais.
+// zr2 e zi2 es portate, dunque cata passo costa quatro productos, non sex.
+escappar(cr, ci) {
+    zr  = 0.0
+    zi  = 0.0
+    zr2 = 0.0
+    zi2 = 0.0
+    @ i:1..36 {
+        ? zr2 + zi2 > 4.0 { <~ i }
+        zi  = 2.0 * zr * zi + ci
+        zr  = zr2 - zi2 + cr
+        zr2 = zr * zr
+        zi2 = zi * zi
+    }
+    <~ 0
+}
+
+>>| {
+    >>!
+    (altitude, latitude) = >>?
+    lineas   = altitude - 2
+    columnas = latitude - 1
+
+    // Un cella es circa 2,5 vices plus alte que large; le extension vertical
+    // es scalate per illo, a fin que le ensemble sia ronde.
+    largor = 2.7
+    altor  = lineas * largor * 2.5 / columnas
+    medio  = lineas / 2 + 1
+
+    @ y:1..medio {
+        speculo = lineas + 1 - y
+        @ x:1..columnas {
+            cr = (x - 1) * largor / columnas - 2.1
+            ci = (y - 1) * altor  / lineas   - altor / 2.0
+            n  = escappar(cr, ci)
+            marca = "@"
+            color = 231
+            ? n <> 0 {
+                passo = n / 4 + 1
+                ? passo > 9 { passo = 9 }
+                marca = declivitate[passo]
+                color = colores[passo]
+            }
+            >>~ (y, x, 0, color) > marca
+            ? speculo > medio { >>~ (speculo, x, 0, color) > marca }
+        }
+    }
+
+    >>~ (altitude, 2, 0, 244) > "pressa qualcunque clave pro sortir"
+    <<| _clave
+}

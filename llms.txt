@@ -1,10 +1,11 @@
 # Zymbol
 
-> Zymbol is a keyword-free symbolic programming language. Every construct is a
+> Zymbol is a symbolic programming language with no words in its grammar. Every construct is a
 > symbol — `?` is if, `@` is loop, `<~` is return, `#1` is true — so identifiers can
 > be written in any human language and the program reads the same everywhere. It
 > ships as a Rust interpreter (tree-walker plus a register VM), an LSP server and a
-> VS Code extension. Current release: v0.0.8, public alpha.
+> VS Code extension. In development: v0.0.9, public alpha. Current download: v0.0.8 —
+> there is no v0.0.9 tag or binary yet, so every install link hands you v0.0.8.
 > Code is AGPL-3.0-only; manuals, examples and documentation are CC BY-SA 4.0.
 
 Every page of this site is also served as Markdown: send `Accept: text/markdown`,
@@ -12,20 +13,36 @@ or swap the extension — `/install.html` → `/install.md`.
 
 ## Site
 
-- [Home](https://zymbol-lang.org/index.md): what the language is, the operator table, FizzBuzz in any human language.
+- [Home](https://zymbol-lang.org/index.md): the fourteen marks one at a time, how they join into operators, and a Mandelbrot written in symbols.
 - [Install](https://zymbol-lang.org/install.md): binaries for Linux/Windows/macOS with SHA256, VS Code extension, build from source.
 - [Playground](https://zymbol-lang.org/playground.md): the browser engine's exact capabilities and limits, deep-link format, example groups.
-- [Releases](https://zymbol-lang.org/changelog.md): full changelog, v0.0.1 through v0.0.8.
+- [Releases](https://zymbol-lang.org/changelog.md): full changelog, v0.0.1 through v0.0.8, plus v0.0.9 as it is being written (unreleased).
 - [pIqaD reference](https://zymbol-lang.org/piqad-reference.md): Klingon script, CSUR block U+F8D0–U+F8FF.
+- [Overview](https://zymbol-lang.org/overview.md): the former front page — the showcase, the operator table, FizzBuzz in any human language, the manuals. Archived: accurate as of v0.0.8 and no longer updated.
 
 ## Language manual
 
-The compact manual is published as Markdown in 110 languages at
-`/data/manuals/manual_<code>.md`. It was last revised for v0.0.5, so the
-interpreter repository is authoritative where the two disagree.
+Two generations are published, and the current one is the shorter list.
 
-- [Manual (English)](https://zymbol-lang.org/data/manuals/manual_en.md): variables, control flow, collections, functions, modules, errors.
-- [Manual (Spanish)](https://zymbol-lang.org/data/manuals/manual_es.md): the same manual in Spanish.
+The v0.0.9 manual is at `/data/manuals/v009/manual_<code>.md`, written so far in
+four languages — English, Spanish, Italian and Quechua. Every code block in it was
+run through `zymbol check` and every claimed output verified against what the
+program actually prints. This is the one the front page shows, and only to readers
+whose language is among the four.
+
+The older generation is at `/data/manuals/manual_<code>.md`, in 110 languages. It
+was last revised for v0.0.5 and is not being updated; `overview.html` still serves
+it. Where the two disagree, v009 is right, and the interpreter repository is
+authoritative over both.
+
+- [Manual (English, v0.0.9)](https://zymbol-lang.org/data/manuals/v009/manual_en.md): variables, control flow, collections, functions, modules, errors.
+- [Manual (Spanish, v0.0.9)](https://zymbol-lang.org/data/manuals/v009/manual_es.md): the same manual in Spanish.
+- [Manual (Italian, v0.0.9)](https://zymbol-lang.org/data/manuals/v009/manual_it.md) · [Manual (Quechua, v0.0.9)](https://zymbol-lang.org/data/manuals/v009/manual_qu.md)
+- [Manual (English, v0.0.5)](https://zymbol-lang.org/data/manuals/manual_en.md): the older generation, one of 110 languages.
+
+## Embedding the engine
+
+- [LLM.md](https://zymbol-lang.org/LLM.md): the browser engine (`zyjs`) for agents — what it does not have that the CLI does (shell, `std/db`, a real filesystem, a terminal), and a complete, verified Node host: `runZymbol` arguments, the module-resolver and TUI contracts, execution limits, and running a `.zyp`.
 
 ## Skill
 

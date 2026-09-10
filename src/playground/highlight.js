@@ -1,6 +1,50 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // ─── Syntax highlighter ───────────────────────────────────────────────────────
+//
+// Two jobs, one pass. It colours the code, and it is the index the hover help reads:
+// every operator span carries `data-h`, the key of its card in the symbol dictionary
+// (src/playground/symbols.js), and every line is wrapped in a `.hl-line` span carrying
+// `data-l` so a mouse position can be narrowed to one line before hit-testing.
+//
+// That second job is why this file is worth auditing against the lexer in
+// src/zymbol/zymbol.js rather than against intuition: a token the highlighter does not
+// know is a token the reader cannot ask about. Auditing it that way found five operators
+// this file had been splitting or swallowing — `$++` came out as `$+` then `+`, the whole
+// `#|…|` numeric-eval family was unmarked, a postfix `x°` was absorbed into the
+// identifier, and `</ f.zy />` was six unrelated punctuation marks.
+//
+// The `.hl-line` wrapper is an inline span inside `white-space: pre`, so it changes the
+// colouring layer's layout by nothing at all — which matters, because that layer has to
+// stay glued to the textarea on top of it, character for character.
+
+// The digit tables come from the lexer itself rather than a second copy here:
+// `digitValue` knows all 60-odd Unicode decimal blocks, and a table kept twice
+// is a table that eventually disagrees with itself.
+import { digitValue, digitBlockBase, decimalSeparator } from '../zymbol/zymbol.js';
+
 export function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/** Attribute values need the quote escaped too — `##"` and `##'` are real operators. */
+function escAttr(s) { return esc(s).replace(/"/g, '&quot;'); }
+
+/**
+ * The decimal digit at `k`, or null. Reads a whole CODE POINT: half the digit
+ * blocks the lexer knows are astral (Ahom, Brahmi, Mathematical Bold, Adlam…),
+ * and testing `s[k]` alone hands `digitValue` a lone surrogate, which is not a
+ * digit in any block — so every one of those numbers went uncoloured.
+ */
+function digAt(s, k) {
+  const cp = s.codePointAt(k);
+  if (cp === undefined) return null;
+  const ch = String.fromCodePoint(cp);
+  if (!/[0-9]/.test(ch) && digitValue(ch) < 0) return null;
+  return { ch, len: ch.length };
+}
+
+/** One operator span: class, visible text, and the dictionary key to look up on hover. */
+function op(cls, text, hoverKey) {
+  return `<span class="${cls}" data-h="${escAttr(hoverKey ?? text)}">${esc(text)}</span>`;
+}
 
 // Returns [html, inBlockComment] — caller threads the state between lines.
 export function highlightLine(line, inBlockComment) {
@@ -56,186 +100,310 @@ export function highlightLine(line, inBlockComment) {
       i = j+1; continue;
     }
 
-    if (/\d/.test(s[i]) && (i===0 || !/\w/.test(s[i-1]))) {
+    if (digAt(s, i) !== null && (i===0 || !/\w/.test(s[i-1]))) {
       // Base literals: 0b, 0o, 0d, 0x
       if (s[i] === '0' && i+1 < len && /[boxd]/i.test(s[i+1])) {
         const pfx = s[i+1].toLowerCase();
         const cs = pfx==='b' ? /[01]/ : pfx==='o' ? /[0-7]/ : pfx==='d' ? /\d/ : /[0-9a-fA-F]/;
         let j = i+2;
         while (j < len && cs.test(s[j])) j++;
-        out += `<span class="t-num">${esc(s.slice(i,j))}</span>`;
+        // A prefix that matched no digit at all is a MALFORMED literal — the
+        // lexer refuses `0b22` with `expected binary digits after base prefix`.
+        // The highlighter cannot refuse anything, but it must not leave the rest
+        // bare either: `0b` came out marked and `22` came out of nothing, so the
+        // two digits were uncolourable and, because this file is the hover
+        // index, unaskable. The digits are not reachable by the number branch
+        // afterwards — it requires the previous character not to be `\w`, and
+        // the previous character is the `b`. So the whole malformed run is one
+        // span. Found by ZyDDT's `diagnostic` axis, which is where `0b22` lives;
+        // no corpus file writes one.
+        if (j === i + 2) while (j < len && /\w/.test(s[j])) j++;
+        out += op('t-num', s.slice(i,j), '0x');
         i = j; continue;
       }
+      // A decimal point is only part of the number when a digit follows it. Scanning
+      // `[\d.]` greedily instead swallowed `2..3` whole, so no range in any program ever
+      // had its `..` coloured — or, once this file fed the hover, askable.
+      // Native digits count, and so does the separator their own script
+      // encodes (`٣٫٥`): the lexer reads both, so a program written in
+      // Devanagari has to colour like one written in ASCII. Scanning `/\d/`
+      // alone left `१.२५` uncoloured AND handed its decimal point to the
+      // member-access card.
       let j = i;
-      while (j < len && /[\d.]/.test(s[j])) j++;
+      const first = digAt(s, i);
+      const block = digitBlockBase(first.ch);
+      const sep = block >= 0 ? decimalSeparator(block) : '.';
+      for (let d = digAt(s, j); d !== null; d = digAt(s, j)) j += d.len;
+      if ((s[j] === '.' || s[j] === sep) && s[j+1] !== '.' && digAt(s, j+1) !== null) {
+        j++;
+        for (let d = digAt(s, j); d !== null; d = digAt(s, j)) j += d.len;
+      }
       out += `<span class="t-num">${esc(s.slice(i,j))}</span>`;
       i = j; continue;
     }
 
-    // ##ErrorType — error type specifiers in catch clauses
-    if (s[i] === '#' && s[i+1] === '#' && i+2 < len && /[A-Za-z_]/.test(s[i+2])) {
-      let j = i+2;
-      while (j < len && /[A-Za-z0-9_]/.test(s[j])) j++;
-      out += `<span class="t-kw">${esc(s.slice(i,j))}</span>`;
-      i = j; continue;
-    }
-
-    // # name { — module block declaration: highlight # as keyword
-    if (s[i] === '#' && i+1 < len && (s[i+1] === ' ' || s[i+1] === '\t' || /[\p{L}_]/u.test(s[i+1]))) {
-      let _j = i + 1;
-      while (_j < len && (s[_j] === ' ' || s[_j] === '\t')) _j++;
-      if (_j < len && s[_j] === '.') _j++;
-      const _idStart = _j;
-      while (_j < len && /[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(s[_j])) _j++;
-      if (_j > _idStart) {
-        let _k = _j;
-        while (_k < len && (s[_k] === ' ' || s[_k] === '\t')) _k++;
-        if (_k < len && s[_k] === '{') {
-          out += `<span class="t-kw">#</span>`;
-          i++; continue;
-        }
+    // ── Shell and script blocks ──────────────────────────────────────────────
+    // `<\ cmd \>` and `</ file.zy />` hold text, not Zymbol: the lexer captures the whole
+    // span as one token. Colouring the inside as code offers arithmetic help on the `-l`
+    // of `ls -la` and member access on `f.zy`, which is worse than saying nothing. Only
+    // when the closer is on this line — a block left open is coloured as before.
+    if ((s[i] === '<' && (s[i+1] === '\\' || s[i+1] === '/'))) {
+      const shell = s[i+1] === '\\';
+      const close = shell ? '\\>' : '/>';
+      const end = s.indexOf(close, i + 2);
+      if (end !== -1) {
+        out += op('t-kw', s.slice(i, end + 2), shell ? '<\\' : '</');
+        i = end + 2; continue;
       }
     }
 
-    // Numeral mode: #XY# where X and Y are the '0' and '9' digits of any Unicode digit
-    // block (ASCII, Arabic-Indic, Devanagari, Klingon pIqaD U+F8F0–U+F8F9, etc.).
-    // Must be checked before the two-char #0/#1 boolean patterns.
+    // ── The `#` family ───────────────────────────────────────────────────────
+    // Mirrors the lexer's `#` branch in zymbol.js, in the same order, because the
+    // prefixes overlap: `#!2|` is a truncate operator, `#1` is a boolean, `#०९#` is a
+    // numeral-mode switch, and `#?` is a type query. Checking these in the wrong order
+    // is how `#|"42"|` used to come out as a bare `#` followed by a stray pipe.
     if (s[i] === '#') {
-      const _nmDig = (cp) => (cp !== undefined) &&
-        (/^\p{Nd}$/u.test(String.fromCodePoint(cp)) || (cp >= 0xF8F0 && cp <= 0xF8F9));
-      const _cp1 = s.codePointAt(i + 1);
-      if (_nmDig(_cp1)) {
-        const _j1 = i + 1 + (String.fromCodePoint(_cp1).length);
-        const _cp2 = s.codePointAt(_j1);
-        if (_nmDig(_cp2)) {
-          const _j2 = _j1 + (String.fromCodePoint(_cp2).length);
-          if (s[_j2] === '#') {
-            out += `<span class="t-kw">${esc(s.slice(i, _j2 + 1))}</span>`;
-            i = _j2 + 1; continue;
+      const c1 = s[i+1];
+
+      // ##. ### ##! ##" ##' — casts and input typespecs, then ##Ident — error types
+      if (c1 === '#') {
+        const c2 = s[i+2];
+        if (c2 === '.' || c2 === '#' || c2 === '!' || c2 === '"' || c2 === "'") {
+          const tok = s.slice(i, i+3);
+          out += op('t-op', tok); i += 3; continue;
+        }
+        if (c2 !== undefined && /[A-Za-z_]/.test(c2)) {
+          let j = i+2;
+          while (j < len && /[A-Za-z0-9_]/.test(s[j])) j++;
+          out += op('t-kw', s.slice(i,j), '##type');
+          i = j; continue;
+        }
+      }
+
+      // #( — the dictionary literal, and #[ — an array with a declared mix.
+      // Both were falling out of this branch unmarked, so the `#` was invisible
+      // and the reader hovering a dictionary was handed the card for `(`.
+      if (c1 === '(') { out += op('t-br', '#(', '#('); i += 2; continue; }
+      if (c1 === '[') { out += op('t-br', '#[', '#['); i += 2; continue; }
+
+      // #? — type metadata
+      if (c1 === '?') { out += op('t-op', '#?'); i += 2; continue; }
+
+      // #> — export block
+      if (c1 === '>') { out += op('t-kw', '#>'); i += 2; continue; }
+
+      // #|x| #.N|x| #!N|x| #,|x| #,.N|x| #,!N|x| #^|x| #^.N|x| #^!N|x|
+      // The opening bracket is the operator; the closing `|` is punctuation that pairs
+      // with it. Five cards cover the family: eval, round, truncate, comma, scientific.
+      {
+        // The count may be a NAME as well as digits — `#,.n|10.5|` reads its
+        // precision from a variable, and the lexer takes it — so a form that
+        // computes its own precision was left unmarked and unaskable.
+        const digitsAt = k => {
+          let d = 0;
+          while (k + d < len && /[0-9]/.test(s[k+d])) d++;
+          if (d > 0) return d;
+          while (k + d < len && /[\p{L}_0-9]/u.test(s[k+d])) d++;
+          return d;
+        };
+        let end = -1, key = null;
+        if (c1 === '|') { end = i + 2; key = '#|'; }
+        else if (c1 === '.' || c1 === '!') {
+          const n = digitsAt(i+2);
+          if (n > 0 && s[i+2+n] === '|') { end = i+3+n; key = c1 === '.' ? '#.|' : '#!|'; }
+        } else if (c1 === ',' || c1 === '^') {
+          key = c1 === ',' ? '#,|' : '#^|';
+          const c2 = s[i+2];
+          if (c2 === '|') end = i + 3;
+          else if (c2 === '.' || c2 === '!') {
+            const n = digitsAt(i+3);
+            if (n > 0 && s[i+3+n] === '|') end = i+4+n;
           }
+          if (end === -1) key = null;
+        }
+        if (end !== -1) { out += op('t-op', s.slice(i, end), key); i = end; continue; }
+      }
+
+      // # name { — module block declaration: highlight # as keyword
+      if (c1 === ' ' || c1 === '\t' || (c1 !== undefined && /[\p{L}_]/u.test(c1))) {
+        let _j = i + 1;
+        while (_j < len && (s[_j] === ' ' || s[_j] === '\t')) _j++;
+        if (_j < len && s[_j] === '.') _j++;
+        const _idStart = _j;
+        while (_j < len && /[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(s[_j])) _j++;
+        if (_j > _idStart) {
+          let _k = _j;
+          while (_k < len && (s[_k] === ' ' || s[_k] === '\t')) _k++;
+          if (_k < len && s[_k] === '{') {
+            out += op('t-kw', '#', '#mod');
+            i++; continue;
+          }
+        }
+      }
+
+      // Numeral mode: #XY# where X and Y are the '0' and '9' digits of any Unicode digit
+      // block (ASCII, Arabic-Indic, Devanagari, Klingon pIqaD U+F8F0–U+F8F9, etc.).
+      // Must be checked before the two-char #0/#1 boolean patterns.
+      {
+        const _nmDig = (cp) => (cp !== undefined) &&
+          (/^\p{Nd}$/u.test(String.fromCodePoint(cp)) || (cp >= 0xF8F0 && cp <= 0xF8F9));
+        const _cp1 = s.codePointAt(i + 1);
+        if (_nmDig(_cp1)) {
+          const _j1 = i + 1 + (String.fromCodePoint(_cp1).length);
+          const _cp2 = s.codePointAt(_j1);
+          if (_nmDig(_cp2)) {
+            const _j2 = _j1 + (String.fromCodePoint(_cp2).length);
+            if (s[_j2] === '#') {
+              out += op('t-kw', s.slice(i, _j2 + 1), '#num#');
+              i = _j2 + 1; continue;
+            }
+          }
+        }
+      }
+
+      // #0 / #1 — the booleans, after numeral mode so `#09#` is not read as `#0`
+      // + `9#`. The digit is read by VALUE, not by shape: the lexer accepts
+      // `#𑜱` and `#१` as booleans, and testing for the ASCII characters left
+      // every non-Latin one unmarked.
+      if (c1 !== undefined) {
+        const _dB = digAt(s, i + 1);
+        const _chB = _dB ? _dB.ch : '';
+        const _dvB = _dB ? (/[01]/.test(_chB) ? Number(_chB) : digitValue(_chB)) : -1;
+        if (_dvB === 0 || _dvB === 1) {
+          // The card is keyed by VALUE — `#१` and `#0` are the same two cards,
+          // one per truth value, whatever script wrote the digit.
+          out += op('t-num', s.slice(i, i + 1 + _chB.length), _dvB === 1 ? '#1' : '#0');
+          i += 1 + _chB.length; continue;
         }
       }
     }
 
     // Four-char operators — must precede all shorter checks
     const four = s.slice(i, i+4);
-    if (four === '<<|?') { out += `<span class="t-kw">&lt;&lt;|?</span>`;   i+=4; continue; }
+    if (four === '<<|?') { out += op('t-kw', '<<|?'); i+=4; continue; }
 
     // Three-char operators — must precede two-char checks
     const thr = s.slice(i, i+3);
     // I/O variants (green — same group as >> << in VS Code)
-    if (thr === '>>~') { out += `<span class="t-kw">&gt;&gt;~</span>`;       i+=3; continue; }
-    if (thr === '>>!') { out += `<span class="t-kw">&gt;&gt;!</span>`;       i+=3; continue; }
-    if (thr === '>>?') { out += `<span class="t-kw">&gt;&gt;?</span>`;       i+=3; continue; }
-    if (thr === '>>|') { out += `<span class="t-kw">&gt;&gt;|</span>`;       i+=3; continue; }
-    if (thr === '<<|') { out += `<span class="t-kw">&lt;&lt;|</span>`;       i+=3; continue; }
-    // Cast operators: ##. (float) ### (int) ##! (char) — blue like arithmetic
-    if (thr === '##.') { out += `<span class="t-op">##.</span>`;              i+=3; continue; }
-    if (thr === '###') { out += `<span class="t-op">###</span>`;              i+=3; continue; }
-    if (thr === '##!') { out += `<span class="t-op">##!</span>`;              i+=3; continue; }
+    if (thr === '>>~') { out += op('t-kw', '>>~'); i+=3; continue; }
+    if (thr === '>>!') { out += op('t-kw', '>>!'); i+=3; continue; }
+    if (thr === '>>?') { out += op('t-kw', '>>?'); i+=3; continue; }
+    if (thr === '>>|') { out += op('t-kw', '>>|'); i+=3; continue; }
+    if (thr === '<<|') { out += op('t-kw', '<<|'); i+=3; continue; }
 
     const two = s.slice(i, i+2);
-    if (two === '>>') { out += `<span class="t-kw">&gt;&gt;</span>`; i+=2; continue; }
-    if (two === '<<') { out += `<span class="t-kw">&lt;&lt;</span>`; i+=2; continue; }
-    if (two === '<~') { out += `<span class="t-kw">&lt;~</span>`;    i+=2; continue; }
-    if (two === '<#') { out += `<span class="t-kw">&lt;#</span>`;    i+=2; continue; }
-    if (two === '<\\') { out += `<span class="t-kw">&lt;\\</span>`;  i+=2; continue; }
-    if (two === '_?') { out += `<span class="t-kw">_?</span>`;       i+=2; continue; }
-    if (two === '??') { out += `<span class="t-kw">??</span>`;       i+=2; continue; }
-    if (two === '!?') { out += `<span class="t-kw">!?</span>`;       i+=2; continue; }
-    if (two === ':=') { out += `<span class="t-op">:=</span>`;       i+=2; continue; }
-    if (two === ':!') { out += `<span class="t-kw">:!</span>`;        i+=2; continue; }
-    if (two === ':>') { out += `<span class="t-kw">:&gt;</span>`;    i+=2; continue; }
-    if (two === '::') { out += `<span class="t-op">::</span>`;        i+=2; continue; }
-    if (two === '..') { out += `<span class="t-op">..</span>`;        i+=2; continue; }
-    if (two === '==') { out += `<span class="t-op">==</span>`;        i+=2; continue; }
-    if (two === '<>') { out += `<span class="t-op">&lt;&gt;</span>`;  i+=2; continue; }
-    if (two === '<=') { out += `<span class="t-op">&lt;=</span>`;    i+=2; continue; }
-    if (two === '>=') { out += `<span class="t-op">&gt;=</span>`;    i+=2; continue; }
-    if (two === '&&') { out += `<span class="t-op">&amp;&amp;</span>`; i+=2; continue; }
-    if (two === '||') { out += `<span class="t-op">||</span>`;        i+=2; continue; }
-    if (two === '->') { out += `<span class="t-kw">-&gt;</span>`;    i+=2; continue; }
-    if (two === '=>') { out += `<span class="t-kw">=&gt;</span>`;    i+=2; continue; }
-    if (two === '><') { out += `<span class="t-kw">&gt;&lt;</span>`; i+=2; continue; }
-    if (two === '|>') { out += `<span class="t-op">|&gt;</span>`;    i+=2; continue; }
-    if (two === '#>') { out += `<span class="t-kw">#&gt;</span>`;    i+=2; continue; }
-    if (two === '#?') { out += `<span class="t-op">#?</span>`;        i+=2; continue; }
-    if (two === '@!') { out += `<span class="t-kw">@!</span>`;        i+=2; continue; }
-    if (two === '@>') { out += `<span class="t-kw">@&gt;</span>`;    i+=2; continue; }
-    if (two === '@:') { out += `<span class="t-kw">@:</span>`;        i+=2; continue; }
-    if (two === '@~') { out += `<span class="t-kw">@~</span>`;        i+=2; continue; }
-    if (two === '#0') { out += `<span class="t-num">#0</span>`;       i+=2; continue; }
-    if (two === '#1') { out += `<span class="t-num">#1</span>`;       i+=2; continue; }
-    if (two === '++') { out += `<span class="t-op">++</span>`;        i+=2; continue; }
-    if (two === '--') { out += `<span class="t-op">--</span>`;        i+=2; continue; }
-    if (two === '+=') { out += `<span class="t-op">+=</span>`;        i+=2; continue; }
-    if (two === '-=') { out += `<span class="t-op">-=</span>`;        i+=2; continue; }
-    if (two === '*=') { out += `<span class="t-op">*=</span>`;        i+=2; continue; }
-    if (two === '/=') { out += `<span class="t-op">/=</span>`;        i+=2; continue; }
-    if (two === '%=') { out += `<span class="t-op">%=</span>`;        i+=2; continue; }
-    if (two === '^=') { out += `<span class="t-op">^=</span>`;        i+=2; continue; }
+    if (two === '>>') { out += op('t-kw', '>>'); i+=2; continue; }
+    if (two === '<<') { out += op('t-kw', '<<'); i+=2; continue; }
+    if (two === '<~') { out += op('t-kw', '<~'); i+=2; continue; }
+    if (two === '<#') { out += op('t-kw', '<#'); i+=2; continue; }
+    // Shell and script brackets: <\ cmd \>  and  </ file.zy />
+    if (two === '<\\') { out += op('t-kw', '<\\'); i+=2; continue; }
+    if (two === '</')  { out += op('t-kw', '</');  i+=2; continue; }
+    // An orphan closer — the block's opener is on an earlier line, so it was never folded
+    // into one span above. It still asks about the same construct as its opener.
+    if (two === '/>')  { out += op('t-kw', '/>', '</');  i+=2; continue; }
+    if (two === '_?') { out += op('t-kw', '_?'); i+=2; continue; }
+    if (two === '??') { out += op('t-kw', '??'); i+=2; continue; }
+    if (two === '!?') { out += op('t-kw', '!?'); i+=2; continue; }
+    if (two === ':=') { out += op('t-op', ':='); i+=2; continue; }
+    if (two === ':!') { out += op('t-kw', ':!'); i+=2; continue; }
+    if (two === ':>') { out += op('t-kw', ':>'); i+=2; continue; }
+    if (two === '::') { out += op('t-op', '::'); i+=2; continue; }
+    if (two === '..') { out += op('t-op', '..'); i+=2; continue; }
+    if (two === '==') { out += op('t-op', '=='); i+=2; continue; }
+    if (two === '<>') { out += op('t-op', '<>'); i+=2; continue; }
+    if (two === '<=') { out += op('t-op', '<='); i+=2; continue; }
+    if (two === '>=') { out += op('t-op', '>='); i+=2; continue; }
+    if (two === '&&') { out += op('t-op', '&&'); i+=2; continue; }
+    if (two === '||') { out += op('t-op', '||'); i+=2; continue; }
+    if (two === '->') { out += op('t-kw', '->'); i+=2; continue; }
+    if (two === '=>') { out += op('t-kw', '=>'); i+=2; continue; }
+    if (two === '><') { out += op('t-kw', '><'); i+=2; continue; }
+    if (two === '|>') { out += op('t-op', '|>'); i+=2; continue; }
+    if (two === '@!') { out += op('t-kw', '@!'); i+=2; continue; }
+    if (two === '@>') { out += op('t-kw', '@>'); i+=2; continue; }
+    if (two === '@:') { out += `<span class="t-kw">@:</span>`;         i+=2; continue; }
+    if (two === '@~') { out += op('t-kw', '@~'); i+=2; continue; }
+    if (two === '++') { out += op('t-op', '++'); i+=2; continue; }
+    if (two === '--') { out += op('t-op', '--'); i+=2; continue; }
+    if (two === '+=' || two === '-=' || two === '*=' ||
+        two === '/=' || two === '%=' || two === '^=') {
+      out += op('t-op', two, '+='); i+=2; continue;
+    }
 
     const one = s[i];
-    if (one === '?') { out += `<span class="t-kw">?</span>`;  i++; continue; }
-    if (one === '@') { out += `<span class="t-kw">@</span>`;  i++; continue; }
-    if (one === '¶') { out += `<span class="t-kw">¶</span>`;  i++; continue; }
+    if (one === '?') { out += op('t-kw', '?');  i++; continue; }
+    if (one === '@') { out += op('t-kw', '@');  i++; continue; }
+    if (one === '¶') { out += op('t-kw', '¶');  i++; continue; }
     if (one === '_' && (i+1>=len || !/\w/.test(s[i+1]))) {
-      out += `<span class="t-kw">_</span>`; i++; continue;
+      out += op('t-kw', '_'); i++; continue;
     }
-    if (one === '!') { out += `<span class="t-op">!</span>`;   i++; continue; }
+    if (one === '!') { out += op('t-op', '!');  i++; continue; }
     if (one === '|') { out += `<span class="t-op">|</span>`;   i++; continue; }
     if (one === '\\') {
-      // \\ = newline constant, \> = script-exec close, \ = lifetime-end
-      if (s[i+1] === '\\') { out += `<span class="t-kw">\\\\</span>`; i+=2; continue; }
-      if (s[i+1] === '>') { out += `<span class="t-kw">\\&gt;</span>`; i+=2; continue; }
-      out += `<span class="t-kw">\\</span>`; i++; continue;
+      // \\ = newline constant, \> = shell-exec close, \ = lifetime-end
+      if (s[i+1] === '\\') { out += op('t-kw', '\\\\'); i+=2; continue; }
+      if (s[i+1] === '>')  { out += op('t-kw', '\\>', '<\\'); i+=2; continue; }
+      out += op('t-kw', '\\'); i++; continue;
     }
     if (one === '$') {
       const sdollar3 = s.slice(i, i+3);
+      // ConcatBuild `$++` must precede `$+`, or it is read as append followed by a plus.
+      if (sdollar3 === '$++') { out += op('t-op', '$++'); i+=3; continue; }
       // Sort with direction: $^+ $^- (3-char, must precede $^ and $+/$-)
       if (sdollar3 === '$^+' || sdollar3 === '$^-') {
-        out += `<span class="t-op">${esc(sdollar3)}</span>`; i+=3; continue;
+        out += op('t-op', sdollar3); i+=3; continue;
       }
       // Multi-char collection operators (3-char)
-      if (sdollar3==='$+[' || sdollar3==='$-[' || sdollar3==='$~~' || sdollar3==='$!!') {
-        out += `<span class="t-op">${esc(sdollar3)}</span>`; i+=3; continue;
+      if (sdollar3==='$+[' || sdollar3==='$-[') {
+        out += op('t-op', sdollar3.slice(0,2) + '[', sdollar3); i+=3; continue;
       }
-      if (sdollar3==='$--' || sdollar3==='$??') {
-        out += `<span class="t-op">${esc(sdollar3)}</span>`; i+=3; continue;
+      if (sdollar3==='$~~' || sdollar3==='$!!' || sdollar3==='$--' || sdollar3==='$??') {
+        out += op('t-op', sdollar3); i+=3; continue;
       }
       // Sort without direction: $^ (2-char, must precede single-char checks)
-      if (s[i+1] === '^') {
-        out += `<span class="t-op">$^</span>`; i+=2; continue;
-      }
+      if (s[i+1] === '^') { out += op('t-op', '$^'); i+=2; continue; }
       // Single-char collection operators: $# $+ $- $~ $? $[ $< $> $| $! $* $/
       if (i+1 < len && /[#+\-~?\[<>|!*/]/.test(s[i+1])) {
-        out += `<span class="t-op">${esc(s.slice(i,i+2))}</span>`; i+=2; continue;
+        out += op('t-op', s.slice(i,i+2)); i+=2; continue;
       }
       out += `<span class="t-op">$</span>`; i++; continue;
     }
-    if (one === '°') { out += `<span class="t-hot">°</span>`; i++; continue; }
-    if (one === '<') { out += `<span class="t-op">&lt;</span>`; i++; continue; }
-    if (one === '>') { out += `<span class="t-op">&gt;</span>`; i++; continue; }
+    // A bare `~` is the working-copy parameter mark, `f(a~)`. Every other `~`
+    // is part of a longer operator matched above (`<~`, `@~`, `$~`, `$~~`), so
+    // one that reaches here is that mark and nothing else. The browser lexer
+    // drops the token — the mark carries intent, not semantics, since a plain
+    // parameter is already a copy — but a mark the reader cannot ask about is
+    // the one thing this file exists to prevent.
+    if (one === '~') { out += op('t-op', '~'); i++; continue; }
+    if (one === '°') { out += op('t-hot', '°'); i++; continue; }
+    if (one === '<') { out += op('t-op', '<'); i++; continue; }
+    if (one === '>') { out += op('t-op', '>'); i++; continue; }
     if (one === '&') { out += '&amp;'; i++; continue; }
     if (one === '+' || one === '-' || one === '*' || one === '/' ||
-        one === '%' || one === '^' || one === '=') {
-      out += `<span class="t-op">${esc(one)}</span>`; i++; continue;
+        one === '%' || one === '^') {
+      out += op('t-op', one, '+'); i++; continue;
     }
-    if (one === '.' ) { out += `<span class="t-op">.</span>`;        i++; continue; }
+    if (one === '=') { out += op('t-op', '='); i++; continue; }
+    if (one === '.' ) { out += op('t-op', '.');         i++; continue; }
     if (one === ',' ) { out += `<span class="t-punct">,</span>`;     i++; continue; }
     if (one === ':' ) { out += `<span class="t-punct">:</span>`;     i++; continue; }
-    if (one === '{' || one === '}' || one === '[' || one === ']' || one === '(' || one === ')') {
-      out += `<span class="t-br">${esc(one)}</span>`; i++; continue;
-    }
+    if (one === ';' ) { out += op('t-punct', ';');      i++; continue; }
+    if (one === '[' || one === ']') { out += op('t-br', one, '[');   i++; continue; }
+    if (one === '{' || one === '}') { out += op('t-br', one, '{');   i++; continue; }
+    if (one === '(' || one === ')') { out += op('t-br', one, '(');   i++; continue; }
 
     // Identifiers — code-point-aware (handles emoji surrogate pairs, Klingon PUA,
     // and every Unicode script). Mirrors the Zymbol lexer: accept anything that is
     // NOT whitespace, NOT a Unicode decimal digit at start, and NOT an operator char.
+    // `°` belongs in that operator set: the lexer breaks an identifier on it (a trailing
+    // `°` is the hot-definition marker), so `suma°` is `suma` plus an operator, and
+    // leaving it out of the set made the marker invisible and unaskable.
     {
       const _cp0 = s.codePointAt(i);
       if (_cp0 !== undefined) {
         const _ch0 = String.fromCodePoint(_cp0);
-        const _opRx = /[\s"'><!=+\-*/%^&|?:.,;()\[\]{}@~#$¶\\]/u;
+        const _opRx = /[\s"'><!=+\-*/%^&|?:.,;()\[\]{}@~#$¶\\°]/u;
         if (!_opRx.test(_ch0) && !/^\p{Nd}$/u.test(_ch0)) {
           let j = i + _ch0.length;
           while (j < len) {
@@ -248,9 +416,11 @@ export function highlightLine(line, inBlockComment) {
           const word = s.slice(i, j);
           let k = j; while (k < len && s[k] === ' ') k++;
           const isFn = k < len && s[k] === '(';
+          // data-id, not data-h: an identifier's card is built from the program being
+          // read, not from the dictionary of fixed operators.
           out += isFn
-            ? `<span class="t-fn">${esc(word)}</span>`
-            : `<span class="t-id">${esc(word)}</span>`;
+            ? `<span class="t-fn" data-id="${escAttr(word)}">${esc(word)}</span>`
+            : `<span class="t-id" data-id="${escAttr(word)}">${esc(word)}</span>`;
           i = j; continue;
         }
       }
@@ -263,9 +433,9 @@ export function highlightLine(line, inBlockComment) {
 
 export function highlightCode(code) {
   let inBlockComment = false;
-  return code.split('\n').map(line => {
+  return code.split('\n').map((line, idx) => {
     const [html, nextState] = highlightLine(line, inBlockComment);
     inBlockComment = nextState;
-    return html;
+    return `<span class="hl-line" data-l="${idx + 1}">${html}</span>`;
   }).join('\n');
 }
