@@ -1142,6 +1142,25 @@
     .t-punct { color: var(--punct); }
     .t-hot   { color: var(--hot); font-weight: bold; }
 
+    /* ─── The header does not fit on a phone ───
+       Measured at 360px: the header asks for 521px, so 161 of them are off
+       screen and the page scrolls sideways. The picker is the single biggest
+       piece of that — 135px of a 312px `.header-right`, because a language name
+       is a word and words are long — and hiding it recovers 143.
+
+       That leaves 18px still over, so `← Home` goes too: the logo beside it is
+       already a link to index.html, so it is the one control on that row that
+       is a duplicate rather than a loss.
+
+       The language itself is not lost. It lives in `zy-lang`, shared with the
+       front page, whose own picker works at this width — choose it there and
+       the playground follows. A picker that fits here is a design job, not a
+       media query. */
+    @media (max-width: 600px) {
+      #lang-select,
+      header .back-link { display: none; }
+    }
+
     /* ─── Mobile ─── */
     @media (max-width: 700px) {
       #split { flex-direction: column; }

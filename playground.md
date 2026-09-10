@@ -72,7 +72,8 @@ interpreter](install.md).
   - Type names (`Int`, `Float`, `Text`) are the engine's own in every language, so
     that a card agrees with what `#?` prints.
 - An interface language picker in the header, sharing its choice with the home page
-  (both read `zy-lang`). Two languages — English and Spanish — are fully
+  (both read `zy-lang`). On a narrow screen it is hidden — it does not fit in this
+  header yet — so choose the language on the home page and this one follows. Two languages — English and Spanish — are fully
   translated. In any other, the interface stays English and every symbol card
   carries that language's own word for the concept, drawn from the same 16 terms
   the home page translates into 111 languages: `?` is labelled もし in Japanese,
