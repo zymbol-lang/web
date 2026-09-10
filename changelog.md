@@ -6,12 +6,12 @@
 This is the Markdown representation of <https://zymbol-lang.org/changelog.html>.
 Downloads for the current release: [/install.md](install.md).
 
-## v0.0.9 — in development (unreleased)
+## v0.0.9 — September 9, 2026 (latest)
 
 **The Collections Settled, the Editing Model, and a Calendar**
 
-On the `v0.0.9` branch; `Cargo.toml` already reads 0.0.9. **There is no tag, no
-release and nothing to download yet** — [v0.0.8 is the current download](install.md).
+[Download and install](install.md) ·
+[Release](https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.9).
 The full text is in the interpreter repository:
 <https://github.com/zymbol-lang/interpreter/blob/v0.0.9/CHANGELOG.md>.
 
@@ -121,9 +121,13 @@ The full text is in the interpreter repository:
   branch became v0.0.9 and those corrections ship inside it
 
 Three-engine consensus at 660 of 666 files agreeing, 0 diverging, the remaining six excused
-per engine with a stated reason; 38 of 38 rejected forms refused by all three.
+per engine with a stated reason; 41 of 41 rejected forms refused by all three; 1026
+unit tests. This is also the first release graded somewhere other than the author's
+machine: the corpus, the formatter contract and the declared matrix run on every push,
+and the Linux package is installed and exercised in a clean container before it can be
+published.
 
-## v0.0.8 — August 2, 2026 (latest)
+## v0.0.8 — August 2, 2026
 
 **Zymbol Packages, Auto-Free Memory & Terminal Metrics**
 

@@ -144,12 +144,17 @@
  * line to be parsed as a separate statement, so `d["a"]$~ "" v` assigned `""` and
  * dropped `v` in silence — same as both Rust engines did. BUG-ZYB-002.
  *
- * Parity re-measured 2026-08-31 on v0.0.9, through zyq — the count is zero:
- *   node tests/test_runner.mjs               → 661 files: 631 agree, 0 diverge
- *   node tests/test_runner.mjs --dir examples → 222 files: 216 agree, 0 diverge
- * The residue is excused, not divergent: 30 corpus files and 6 examples that
- * corpus.toml excludes for zyjs with a written reason (std/db is ODBC, <\ cmd \>
- * entropy, TUI needs a real TTY), plus the pool's own @skip-parity markers.
+ * Parity re-measured 2026-09-09 for the v0.0.9 release, through zyq — the count
+ * is still zero:
+ *   node tests/test_runner.mjs               → 666 files: 636 agree, 0 diverge
+ *   node tests/test_runner.mjs --dir examples → 332 files: 216 agree, 0 diverge
+ * The residue is excused, not divergent: 30 corpus files that corpus.toml
+ * excludes for zyjs with a written reason (std/db is ODBC, <\ cmd \> entropy,
+ * TUI needs a real TTY), plus the pool's own @skip-parity markers — 116 of them
+ * now, against 6 at the previous measurement, because the pool itself grew from
+ * 222 files to 332 and most of what arrived is TUI. A file this engine cannot
+ * run is not a file it runs differently, which is why the diverge count is the
+ * one to read.
  *
  * Every gap this comment used to list is closed, and each was verified on its own
  * rather than inferred from the total:

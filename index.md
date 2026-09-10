@@ -80,10 +80,7 @@ error handling are marks from a closed inventory of 29 characters, and that
 inventory contains no letters. That is checkable; "no keywords" is a slogan that
 depends on which sense of the term you take.
 
-In development: **v0.0.9** (public alpha) — the version the tree is on, and what
-the changelog is being written against.
-Current download: **v0.0.8** — Linux, Windows, macOS. There is no v0.0.9 tag or
-binary yet, so the download button still hands you v0.0.8.
+Current release: **v0.0.9** (public alpha) — Linux, Windows, macOS.
 Download and install: <https://zymbol-lang.org/install.html> ·
 Changelog: <https://zymbol-lang.org/changelog.md>
 

@@ -123,9 +123,10 @@
       50%       { opacity: 0.55; }
     }
 
-    /* v0.0.9 is on its branch, not on a tag: the manifest reads 0.0.9 and nothing is
-       downloadable yet. Deliberately not the green `latest` badge and deliberately not
-       pulsing — this one says "being written", not "get this one". */
+    /* For a version that is on its branch and not on a tag: the manifest reads it and
+       nothing is downloadable yet. Deliberately not the green `latest` badge and
+       deliberately not pulsing — this one says "being written", not "get this one".
+       Unused between releases; v0.0.9 wore it until it was tagged. */
     .cl-badge-dev {
       font-family: var(--mono);
       font-size: 0.65rem;
@@ -288,15 +289,12 @@
 <!-- ═══ TIMELINE ═══ -->
 <div class="cl-timeline">
 
-  <!-- ── v0.0.9 (in development) ──
-       On the `v0.0.9` branch; `Cargo.toml` already reads 0.0.9. No tag, no release and
-       nothing to download, so there is no "↗ GitHub" release link and no date — the
-       changelog in the interpreter repository is where this is being written. -->
+  <!-- ── v0.0.9 ── -->
   <div class="cl-entry">
     <div class="cl-entry-head">
       <span class="cl-version">v0.0.9</span>
-      <span class="cl-badge-dev">in development</span>
-      <span class="cl-date">unreleased — v0.0.8 is the current download</span>
+      <span class="cl-badge-latest">latest</span>
+      <span class="cl-date">September 9, 2026</span>
     </div>
     <div class="cl-title">The Collections Settled, the Editing Model, and a Calendar</div>
 
@@ -346,13 +344,17 @@
     </div>
 
     <p style="font-size:0.82rem;color:var(--dim);line-height:1.55;margin:0 0 1.1rem;">
-      In development on the <code>v0.0.9</code> branch — no tag and no binaries yet;
-      <a href="install.html" style="color:var(--green)">v0.0.8 is the current download</a>.
       Three-engine consensus at 660 of 666 files agreeing, 0 diverging, the remaining six
-      excused per engine with a stated reason; 38 of 38 rejected forms refused by all three.
+      excused per engine with a stated reason; 41 of 41 rejected forms refused by all three;
+      1026 unit tests. This is also the first release graded somewhere other than the
+      author's machine: the corpus, the formatter contract and the declared matrix now run
+      on every push, and the Linux package is installed and exercised in a clean container
+      before it can be published.
     </p>
 
     <div class="cl-actions">
+      <a href="https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.9" target="_blank" rel="noopener" class="btn-ghost">↗ GitHub</a>
+      <a href="install.html" class="btn-ghost">↓ Download</a>
       <a href="https://github.com/zymbol-lang/interpreter/blob/v0.0.9/CHANGELOG.md" target="_blank" rel="noopener" class="btn-ghost">↗ Full changelog</a>
     </div>
   </div>
@@ -361,7 +363,6 @@
   <div class="cl-entry">
     <div class="cl-entry-head">
       <span class="cl-version">v0.0.8</span>
-      <span class="cl-badge-latest">latest</span>
       <span class="cl-date">August 2, 2026</span>
     </div>
     <div class="cl-title">Zymbol Packages, Auto-Free Memory &amp; Terminal Metrics</div>

@@ -5,7 +5,7 @@
 > this Markdown twin documents what it is and what it can do, because the
 > playground is an application, not a document.
 
-The playground runs `zymbol.js` (v0.0.8), a hand-written JavaScript mirror of the
+The playground runs `zymbol.js` (v0.0.9), a hand-written JavaScript mirror of the
 Zymbol tree-walker — **not** the Rust engine compiled for the browser. It tracks
 the native interpreter closely enough to run real programs, including multi-file
 `.zyp` packages, but for the full language use the [native
