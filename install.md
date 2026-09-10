@@ -18,11 +18,11 @@ Syntax highlighting, semantic tokens, bracket matching, and LSP integration
 
 | Package | Version | Download | SHA256 |
 | --- | --- | --- | --- |
-| Zymbol-Lang VSIX | v0.1.5 | [zymbol-lang-0.1.5.vsix](https://github.com/zymbol-lang/vscode/releases/download/v0.1.5/zymbol-lang-0.1.5.vsix) | `263a81538dd5cee33e1f0184f4012fdeb8dd12f4b8a8d0988d350ff9c2e14d1c` |
+| Zymbol-Lang VSIX | v0.1.6 | [zymbol-lang-0.1.6.vsix](https://github.com/zymbol-lang/vscode/releases/download/v0.1.6/zymbol-lang-0.1.6.vsix) | `f277a2e2f7f31b0fe8f34f4e21e19bdbfb6f7741e4fadd6d42bfa0e1ded7d714` |
 
 ```bash
 # Install from the .vsix file:
-code --install-extension zymbol-lang-0.1.5.vsix
+code --install-extension zymbol-lang-0.1.6.vsix
 
 # Or in VS Code: Extensions (Ctrl+Shift+X) → ··· → Install from VSIX…
 ```
