@@ -1,8 +1,16 @@
     @font-face {
-      font-family: 'pIqaD-qolqoS';
+      /* Same face and same rules as site.css, and it has to be: this one carried
+         no unicode-range at all, so it answered for LATIN text as well — in a
+         window that is mostly a terminal, where a space 40% narrower than the
+         monospace it sits beside misaligns every TUI frame. The family name is
+         one no installed font carries, because fontconfig matches fuzzily and
+         'pIqaD-qolqoS' is the FILENAME people install the Klingon face under. */
+      font-family: 'ZymbolPIqaD';
       src: url('../../assets/fonts/pIqaD-qolqoS.woff2') format('woff2'),
            url('../../assets/fonts/pIqaD-qolqoS.ttf') format('truetype');
       font-weight: 100 900;
+      font-style: normal;
+      unicode-range: U+F8D0-U+F8FF;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -39,8 +47,8 @@
       --warn-dim:  #e8b04a1e;
       --header-h:  52px;
       --sidebar-w: 240px;
-      --mono: 'pIqaD-qolqoS','JetBrains Mono','Courier New',monospace;
-      --ui:   'pIqaD-qolqoS','Inter',system-ui,sans-serif;
+      --mono: 'ZymbolPIqaD','JetBrains Mono','Courier New',monospace;
+      --ui:   'ZymbolPIqaD','Inter',system-ui,sans-serif;
       --radius: 6px;
     }
 

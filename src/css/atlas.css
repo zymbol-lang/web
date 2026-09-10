@@ -4,11 +4,23 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 body.atlas {
-  /* site.css's --mono lists 'pIqaD qolqoS' as a bare family name. Where the Klingon
-     face is installed it is picked up without the @font-face unicode-range, and its
-     space advance is 40% narrow — which silently breaks every aligned block and the
-     `ch` unit with it. This page never shows pIqaD, so it drops the face. */
-  --mono: 'JetBrains Mono', 'Courier New', monospace;
+  /* Two Klingon faces, and only one of them is dangerous.
+   *
+   * `'pIqaD qolqoS'` — the bare family name — matches a face INSTALLED ON THE
+   * MACHINE, with no unicode-range to hold it back, so it is picked for every
+   * character it happens to cover. Its space advance is 40% narrow, which
+   * silently breaks every aligned block on this page and the `ch` unit with it.
+   * That one stays out.
+   *
+   * `'ZymbolPIqaD'` — the @font-face in site.css — carries
+   * `unicode-range: U+F8D0-U+F8FF`, so the browser only ever asks it for pIqaD
+   * codepoints and no Latin text can reach it. It has to stay in: this page
+   * dropped BOTH, on the grounds that "this page never shows pIqaD", and that
+   * stopped being true the day the atlas became the front page and inherited a
+   * picker with 110 languages in it. In tlh_piqad the hero claims, the sample
+   * program and the ▶ play buttons under GO and Serpiente all render through
+   * --mono — 21, 668 and 5 pIqaD codepoints, every one of them a blank box. */
+  --mono: 'ZymbolPIqaD', 'JetBrains Mono', 'Courier New', monospace;
   /* No coding ligatures: -> must stay two characters on a page about characters. */
   font-variant-ligatures: none;
   font-feature-settings: "liga" 0, "clig" 0, "calt" 0, "dlig" 0;

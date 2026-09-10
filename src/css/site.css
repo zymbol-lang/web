@@ -1,5 +1,14 @@
     @font-face {
-      font-family: 'pIqaD-qolqoS';
+      /* The family name is deliberately one no font on any machine carries.
+         It used to be 'pIqaD-qolqoS', which is the FILENAME of the face people
+         install, and fontconfig matches fuzzily: asked for 'pIqaD-qolqoS' it
+         answers with the installed 'pIqaD qolqoS' — a different face, chosen
+         without this @font-face's unicode-range, so it serves LATIN characters
+         too. Its space advance is 40% narrow (57.66px per ten spaces against
+         96.02px), which silently misaligns every ASCII block on the site for
+         exactly the readers who have the Klingon font installed. A name nobody
+         can shadow keeps the unicode-range in charge. */
+      font-family: 'ZymbolPIqaD';
       src: url('../../assets/fonts/pIqaD-qolqoS.woff2') format('woff2'),
            url('../../assets/fonts/pIqaD-qolqoS.ttf') format('truetype');
       font-weight: 100 900;
@@ -34,8 +43,12 @@
       --punct:     #555555;
       --kw:        #00e87a;
       --header-bg: rgba(12,12,12,0.92);
-      --mono: 'pIqaD-qolqoS', 'pIqaD qolqoS', 'JetBrains Mono', 'Courier New', monospace;
-      --ui:   'pIqaD-qolqoS', 'pIqaD qolqoS', 'Inter', system-ui, sans-serif;
+      /* 'ZymbolPIqaD' only ever answers for U+F8D0-U+F8FF, so it can lead both
+         stacks without touching a single Latin glyph. The bare 'pIqaD qolqoS'
+         that used to sit behind it is gone: it is the installed face, it has no
+         unicode-range, and it was reaching Latin text and the `ch` unit. */
+      --mono: 'ZymbolPIqaD', 'JetBrains Mono', 'Courier New', monospace;
+      --ui:   'ZymbolPIqaD', 'Inter', system-ui, sans-serif;
       --radius: 6px;
       --radius-lg: 10px;
       --page-w: 1200px;
