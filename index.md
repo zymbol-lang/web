@@ -30,7 +30,7 @@ offers, the same program with the identifiers in each, some in their own scripts
 five of them written right to left, one written in emoji and one in the pIqaD
 Private Use Area — proved the same by running all a hundred and ten under a pty
 and diffing every one of the 5,588 painted cells — and the page shows the one for
-the language on show and links to it. Six of the hundred and ten carry a coined
+the language on show and links to it. Eighteen of the hundred and ten carry a coined
 term, and `data/i18n/atlas-review.json` names each one and says why it had to be
 made. The pIqaD one is not written but generated: it is the Klingon file
 transliterated character by character, and it decodes back to it exactly. The terminal captures are the same in every

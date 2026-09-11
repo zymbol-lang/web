@@ -48,17 +48,20 @@ interpreter](install.md).
   in a strip under the editor and tints the lines they point at, without running
   anything; the same check runs about 600 ms after you stop typing. The strip
   survives ▶ Run, which clears the output panel.
-  - Errors always show. Warnings — unused variables, ambiguous lifetimes — are
-    behind a **Show warnings** switch that starts off and is remembered. That is a
-    measurement, not a preference: `zymbol check` raises an ambiguous-lifetime
-    warning for the iterator of any top-level counted loop (deliberately, see the
-    interpreter's CHANGELOG, GAP-003), and that one rule fires on 122 of the 216
-    programs in `examples/`.
+  - Errors always show. Warnings — unused variables, a range whose direction is
+    only known at run time — are behind a **Show warnings** switch that starts off
+    and is remembered. That is a measurement, not a preference: this checker warns
+    on **118 of the 332 programs** in `examples/`, and 113 of those are the same
+    rule, the one about `@ i:1..n` counting down if `n` turns out to be lower than
+    the start.
   - This is the browser checker, not the Rust one. On that same corpus the two
-    agree exactly — same severity, same line — on **211 of 216 files**. The five
-    that differ are unused-variable false positives this checker raises and the
-    real tool does not. `tests/test_check.mjs` holds that number against
-    regression.
+    agree exactly — same severity, same line — on **220 of 332 files**, and the
+    112 that differ are one divergence with a long tail: inside a `>>|` block
+    `zymbol check` stays silent about the range direction and this checker does
+    not, which is every Mandelbrot program (110 of them draw inside `>>|`) plus
+    serpiente and `tour/errors.zy`. Measured on a four-line program, so it is the
+    block and not the size of the file. `tests/test_check.mjs` holds the per-file
+    counts against regression, in `tests/check_parity_baseline.txt`.
 - Hover help over the editor. Resting on a symbol gives its concept, a one-line
   summary and a worked example that is verified to compile; resting on a name gives
   what the program on screen defined it as — `PI := 3.14159` reads as
@@ -113,12 +116,12 @@ groups, in sidebar order:
 | Group | Categories |
 | --- | --- |
 | 🎮 Games | arcade, classic |
-| Basics | tour, output, input, variables, control, match, loops |
-| Data | collections, destructuring |
-| Functions | functions, lambdas |
-| Errors | errors |
-| Multilingual | numerals, rosetta (the same program in 105 human languages) |
-| 🧪 Demos | projects, tui, cli, shell |
+| Basics | guided tours, output `>>`, input `<<`, variables, control `?`, match `??`, loops `@`, drawing |
+| Data | collections `$`, dictionary `#(…)`, destructuring |
+| Functions | functions, lambdas `->` |
+| Error handling | error handling `!?` |
+| Multilingual | numeral scripts, Rosetta Stone (the same program in 105 human languages) |
+| 🧪 Demos | multi-file projects, TUI `>>|`, CLI arguments `><`, shell `<\` |
 
 ## Agent tools (WebMCP)
 
