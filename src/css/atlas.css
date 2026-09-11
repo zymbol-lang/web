@@ -21,6 +21,27 @@ body.atlas {
    * program and the ▶ play buttons under GO and Serpiente all render through
    * --mono — 21, 668 and 5 pIqaD codepoints, every one of them a blank box. */
   --mono: 'ZymbolPIqaD', 'JetBrains Mono', 'Courier New', monospace;
+  /* ...and a third stack, for the captured game screens alone, because a
+   * unicode-range is NOT enough to make a font safe in front of `ch`.
+   *
+   * `ch` is the advance of the '0' glyph in the FIRST AVAILABLE font, and a font
+   * is available whether or not the browser will ever ask it for a character:
+   * unicode-range gates the glyphs, not the font list. 'ZymbolPIqaD' has no '0',
+   * so the spec's fallback applies and `ch` becomes 0.5em, while the ASCII around
+   * it is drawn by JetBrains Mono at 0.6em. Measured in Chrome at 8px on the four
+   * frames in § 04: `1ch` = 4.000px against an ASCII advance of 4.800px — every
+   * boxed cell 0.8px narrow, which over 40 columns walked the right-hand frame
+   * 38px out of line. That is the whole bug; the boxes were never wrong about
+   * which cell they were, only about how wide one is.
+   *
+   * So the frames get a stack whose first face has a '0' — then `ch` is the same
+   * measure that draws the text, whichever face wins, including every fallback.
+   * They can spare pIqaD: the four captures are Go in Japanese, Serpiente and
+   * Klingon Galaxy in Spanish and the Mandelbrot, and between them they contain
+   * zero U+F8D0-U+F8FF codepoints. The pIqaD on this page lives in the hero, the
+   * sample program and the play buttons, which keep --mono. */
+  --term-mono: 'JetBrains Mono', 'DejaVu Sans Mono', 'Liberation Mono', Menlo,
+               Consolas, 'Courier New', monospace;
   /* No coding ligatures: -> must stay two characters on a page about characters. */
   font-variant-ligatures: none;
   font-feature-settings: "liga" 0, "clig" 0, "calt" 0, "dlig" 0;
@@ -510,7 +531,9 @@ pre.term .c255 { color: #eeeeee; }
   align-items: stretch;
 }
 pre.term {
-  font-family: var(--mono);
+  /* Its own stack, not --mono: see --term-mono. A terminal capture is the one
+     block on this page whose columns are load-bearing. */
+  font-family: var(--term-mono);
   font-size: clamp(0.5rem, 0.92vw, 0.72rem);
   /* The Go grid is drawn out of box-drawing characters, so the rows have to keep
      enough leading to read as a lattice rather than a solid block. */
