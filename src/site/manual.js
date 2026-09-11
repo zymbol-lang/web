@@ -169,7 +169,7 @@ export const MANUAL_MAP = {
  * untranslated one. tests/test_manual_v009.mjs fails if this list and the directory ever
  * disagree, in either direction.
  */
-export const V009_CODES = ['en', 'es', 'it', 'qu', 'zh', 'hi', 'ar', 'fr', 'bn', 'pt', 'ru', 'ur', 'sw', 'id', 'de', 'pa', 'ja', 'te', 'tr', 'vi', 'ta', 'mr', 'ko', 'jv', 'ha', 'fa', 'th', 'gu', 'kn', 'yo', 'my', 'uk', 'ps', 'pl', 'tl', 'af', 'az', 'cs', 'el', 'ig', 'km', 'ku', 'lo', 'ml', 'ms', 'ne', 'nl', 'ro', 'si', 'su'];
+export const V009_CODES = ['en', 'es', 'it', 'qu', 'zh', 'hi', 'ar', 'fr', 'bn', 'pt', 'ru', 'ur', 'sw', 'id', 'de', 'pa', 'ja', 'te', 'tr', 'vi', 'ta', 'mr', 'ko', 'jv', 'ha', 'fa', 'th', 'gu', 'kn', 'yo', 'my', 'uk', 'ps', 'pl', 'tl', 'af', 'az', 'cs', 'el', 'ig', 'km', 'ku', 'lo', 'ml', 'ms', 'ne', 'nl', 'ro', 'si', 'su', 'zu'];
 
 export const MANUAL_DIR_V005 = 'data/manuals';
 export const MANUAL_DIR_V009 = 'data/manuals/v009';
