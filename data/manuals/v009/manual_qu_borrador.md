@@ -78,7 +78,7 @@ warning: kay nisqaqa mana imatapas ruwanchu: 'yupasqa' ñawinchasqa hinaspa wisc
 | Int | `42`, `-7` | `###` | Yupay chiqan: ±(2⁵³ − 1) |
 | Float | `3.14`, `1.5e10` | `##.` | IEEE-754 iskay pachak |
 | Qillqa | `"text"` | `##"` | Interpolación: `"Hello {suti}"` |
-| Char | `'A'` | `##'` | Huk grafema Unicode |
+| Char | `'A'` | `##'` | Huk Unicode código puntu |
 | Bool | `#1`, `#0` | `##?` | MANA yupaychu — `#1 ≠ 1` |
 | Huñu | `[1, 2, 3]` | `##]` | Hukllan laya, qhawasqa |
 | Chaqrusqa willasqa | `#[1, "two"]` | `##[` | `[…]` -wan kikin laya, mana qhawasqa |
@@ -738,7 +738,7 @@ Kikin módulokuna, waqkunahina haykuchisqa:
 
 | Módulo | Ruwanakuna |
 |--------|-----------|
-| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan` · `PI` `E` |
+| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan asin acos atan atan2 sinh cosh tanh sigmoid` · `PI` `E` |
 | `std/random` | `entero rango peso_f64` |
 | `std/json` | `decode decode_map encode` |
 | `std/io` | `read write append exists delete list mkdir` |

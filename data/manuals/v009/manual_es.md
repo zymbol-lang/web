@@ -80,7 +80,7 @@ Es decir: *«esta sentencia no hace nada: se lee 'cuenta' y se descarta»*.
 | Entero | `42`, `-7` | `###` | Entero seguro: ±(2⁵³ − 1) |
 | Flotante | `3.14`, `1.5e10` | `##.` | Doble IEEE-754 |
 | Cadena | `"texto"` | `##"` | Interpolación: `"Hola {nombre}"` |
-| Carácter | `'A'` | `##'` | Un grafema Unicode |
+| Carácter | `'A'` | `##'` | Un punto de código Unicode |
 | Booleano | `#1`, `#0` | `##?` | NO es numérico — `#1 ≠ 1` |
 | Arreglo | `[1, 2, 3]` | `##]` | Un solo tipo, comprobado |
 | Mezcla declarada | `#[1, "dos"]` | `##[` | Mismo tipo que `[…]`, sin comprobar |
@@ -767,7 +767,7 @@ Módulos nativos, que se importan como cualquier otro:
 
 | Módulo | Funciones |
 |--------|-----------|
-| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan` · `PI` `E` |
+| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan asin acos atan atan2 sinh cosh tanh sigmoid` · `PI` `E` |
 | `std/random` | `entero rango peso_f64` |
 | `std/json` | `decode decode_map encode` |
 | `std/io` | `read write append exists delete list mkdir` |

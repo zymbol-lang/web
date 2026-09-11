@@ -78,7 +78,7 @@ warning: this statement does nothing: 'yupay' is read and discarded
 | Yupay | `42`, `-7` | `###` | Allin yupay: ±(2⁵³ − 1) |
 | Float | `3.14`, `1.5e10` | `##.` | IEEE-754 double |
 | Simi | `"qillqa"` | `##"` | Ukhupi churay: `"Napaykuy {suti}"` |
-| Qillqa | `'A'` | `##'` | Huk Unicode grafema |
+| Qillqa | `'A'` | `##'` | Huk Unicode código punto |
 | Bool | `#1`, `#0` | `##?` | Manam yupaychu — `#1 ≠ 1` |
 | Tantasqa | `[1, 2, 3]`| `##]` | Huk laya, qhawasqa |
 | Chikanniyoq tantasqa | `#[1, "iskay"]` | `##[` | Kaqllan laya `[…]` hina, mana qhawasqa |
@@ -749,7 +749,7 @@ Kikillanmanta moduluskuna, huknin hinallataq yaykuchisqa:
 
 | Modulo | Ruwanakuna |
 |--------|-----------|
-| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan` · `PI` `E` |
+| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan asin acos atan atan2 sinh cosh tanh sigmoid` · `PI` `E` |
 | `std/random` | `entero rango peso_f64` |
 | `std/json` | `decode decode_map encode` |
 | `std/io` | `read write append exists delete list mkdir` |

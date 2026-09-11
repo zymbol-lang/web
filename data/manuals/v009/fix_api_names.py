@@ -43,6 +43,40 @@ def local_aliases(text):
     return set(re.findall(r'<#\s+\./\S+\s*=>\s*(\S+)', text))
 
 
+def _prose_segments(text):
+    """(is_prose, chunk) for the text split on fenced blocks."""
+    parts = re.split(r'(```.*?```)', text, flags=re.S)
+    return [(not p.startswith('```'), p) for p in parts]
+
+
+def _fix_prose(tgt, ref, skip_aliases, fixed):
+    """Restore `alias::name` written outside a code block, by position from English."""
+    PROSE = re.compile(r'([^\s`(]+)::([^\s(`|,)]+)')
+
+    def names(text):
+        return [m.group(2) for ok, chunk in _prose_segments(text) if ok
+                for m in PROSE.finditer(chunk)
+                if m.group(1).lstrip('`') not in skip_aliases]
+
+    want = names(ref)
+    if len(want) != len(names(tgt)):
+        return tgt                     # shapes differ -- leave it for a person
+    k = [0]
+
+    def sub(m):
+        if m.group(1).lstrip('`') in skip_aliases:
+            return m.group(0)
+        name = want[k[0]]
+        k[0] += 1
+        if m.group(2) != name:
+            fixed[0] += 1
+            return f"{m.group(1)}::{name}"
+        return m.group(0)
+
+    return ''.join(PROSE.sub(sub, chunk) if ok else chunk
+                   for ok, chunk in _prose_segments(tgt))
+
+
 def fix(path, ref_path):
     src = Path(path).read_text(encoding='utf-8')
     ref = Path(ref_path).read_text(encoding='utf-8')
@@ -98,6 +132,13 @@ def fix(path, ref_path):
             return f"| `std/{mod}` | {want} |"
         return m.group(0)
     out = TABLE.sub(row, out)
+
+    # ...and the prose. The note under the `std/term` example names `t::width` in a
+    # sentence, not in a block, so neither pass above could see it: measured on six
+    # translations in a row (te, tr, vi, ta, mr, ko), every one of them had the block
+    # fixed and the sentence still calling `t::genişlik`, `t::너비`, `t::अकलम्`.
+    # Same positional rule as the blocks, applied to what is outside the fences.
+    out = _fix_prose(out, ref, skip_aliases, fixed)
 
     Path(path).write_text(out, encoding='utf-8')
     print(f"{path}: {fixed[0]} API name(s) restored from English")

@@ -80,7 +80,7 @@ warning: this statement does nothing: 'カウンタ' is read and discarded
 | 整数 | `42`, `-7` | `###` | 安全な整数: ±(2⁵³ − 1) |
 | 浮動小数 | `3.14`, `1.5e10` | `##.` | IEEE-754 倍精度 |
 | 文字列 | `"テキスト"` | `##"` | 補間: `"こんにちは {名前}"` |
-| 文字 | `'A'` | `##'` | 1つのUnicode書記素 |
+| 文字 | `'A'` | `##'` | 1つのUnicodeコードポイント |
 | ブール | `#1`, `#0` | `##?` | 数値ではない — `#1 ≠ 1` |
 | 配列 | `[1, 2, 3]` | `##]` | 単一型、検査済み |
 | 宣言済み混合 | `#[1, "二"]` | `##[` | `[…]` と同じ型、検査なし |
@@ -235,8 +235,8 @@ n = 42
 
 ```zymbol
 s = "こんにちは世界"
-長さ = s$#                  // 6
-部分 = s$[1..3]             // "こんにちは"
+長さ = s$#                  // 7
+部分 = s$[1..5]             // "こんにちは"
 含む = s$? "世界"          // #1
 分割 = "a,b,c,d"$/ ','    // [a, b, c, d]
 置換 = s$~~["に":"ー"]        // "こんーちは世界"
@@ -727,7 +727,7 @@ t2 = t[2]$~ 999
 
 | モジュール | 関数 |
 |--------|-----------|
-| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan` · `PI` `E` |
+| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan asin acos atan atan2 sinh cosh tanh sigmoid` · `PI` `E` |
 | `std/random` | `entero rango peso_f64` |
 | `std/json` | `decode decode_map encode` |
 | `std/io` | `read write append exists delete list mkdir` |
@@ -758,7 +758,7 @@ t2 = t[2]$~ 999
 >> T::format(T::add(日, 1, "month"), "%Y-%m-%d") ¶ // → 2026-02-28
 ```
 
-> `std/term` は **表示列** を測定し、文字ではありません: CJK およびほとんどの絵文字は2列なので、`t::幅` でテーブルをレイアウトし、`$#` は決して使用しないでください。
+> `std/term` は **表示列** を測定し、文字ではありません: CJK およびほとんどの絵文字は2列なので、`t::width` でテーブルをレイアウトし、`$#` は決して使用しないでください。
 > `std/time` では、インスタントはエポックからのミリ秒です。1日未満は期間であり、1日以上はカレンダーです — そのため月は同じ日付に着地し、クランプされます。`差分(a, b)` は `a - b` なので、より早いインスタントを先にすると負の答えが得られます。
 
 ---

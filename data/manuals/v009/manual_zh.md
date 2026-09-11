@@ -80,7 +80,7 @@ warning: this statement does nothing: '计数' is read and discarded
 | 整数 | `42`, `-7` | `###` | 安全整数：±(2⁵³ − 1) |
 | 浮点数 | `3.14`, `1.5e10` | `##.` | IEEE-754 双精度 |
 | 字符串 | `"文本"` | `##"` | 插值：`"你好 {姓名}"` |
-| 字符 | `'A'` | `##'` | 一个 Unicode 字素 |
+| 字符 | `'A'` | `##'` | 一个 Unicode 码点 |
 | 布尔值 | `#1`, `#0` | `##?` | 不是数字 — `#1 ≠ 1` |
 | 数组 | `[1, 2, 3]` | `##]` | 单一类型，已检查 |
 | 声明的混合数组 | `#[1, "二"]` | `##[` | 与 `[…]` 类型相同，不检查 |
@@ -234,11 +234,11 @@ warning: this statement does nothing: '计数' is read and discarded
 
 ```zymbol
 串 = "苹果,香蕉,橙子"
-长度 = 串$#                  // 7
+长度 = 串$#                  // 8
 子串 = 串$[1..2]             // "苹果"
 包含 = 串$? "香蕉"          // #1
 部分 = "苹果,香蕉,橙子"$/ ','   // [苹果, 香蕉, 橙子]
-替换 = 串$~~["苹":"柠"]     // "柠檬,香蕉,橙子"
+替换 = 串$~~["苹":"柠"]     // "柠果,香蕉,橙子"
 线条 = "─" $* 20
 ```
 
@@ -726,7 +726,7 @@ Lambda 可以不接受任何参数：
 
 | 模块 | 函数 |
 |------|------|
-| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan` · `PI` `E` |
+| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan asin acos atan atan2 sinh cosh tanh sigmoid` · `PI` `E` |
 | `std/random` | `entero rango peso_f64` |
 | `std/json` | `decode decode_map encode` |
 | `std/io` | `read write append exists delete list mkdir` |

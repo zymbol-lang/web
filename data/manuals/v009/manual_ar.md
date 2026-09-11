@@ -80,7 +80,7 @@ warning: this statement does nothing: 'عدد' is read and discarded
 | عدد صحيح | `٤٢`, `-٧` | `###` | عدد صحيح آمن: ±(2⁵³ − 1) |
 | عدد عشري | `٣.١٤`, `١.٥e١٠` | `##.` | دقة مزدوجة IEEE-754 |
 | سلسلة نصية | `"نص"` | `##"` | استيفاء: `"مرحباً {اسم}"` |
-| حرف | `'أ'` | `##'` | مقطع يونيكود واحد |
+| حرف | `'أ'` | `##'` | نقطة كود يونيكود واحدة |
 | منطقي | `#١`, `#٠` | `##?` | ليس رقمياً — `#١ ≠ ١` |
 | مصفوفة | `[١, ٢, ٣]` | `##]` | نوع واحد، مُفحص |
 | مزيج مُصرَّح | `#[١, "اثنان"]` | `##[` | نفس نوع `[…]`، غير مُفحص |
@@ -234,8 +234,8 @@ warning: this statement does nothing: 'عدد' is read and discarded
 
 ```zymbol
 س = "مرحباً يا عالم"
-طول = س$#                  // ١١
-جزء = س$[١..٥]             // "مرحباً"
+طول = س$#                  // ١٤
+جزء = س$[١..٦]             // "مرحباً"
 يحتوي = س$? "عالم"          // #١
 أجزاء = "أ,ب,ج,د"$/ ','    // [أ, ب, ج, د]
 استبدال = س$~~["ل":"ر"]        // "مرحباً يا عارم"
@@ -726,7 +726,7 @@ warning: this statement does nothing: 'عدد' is read and discarded
 
 | الوحدة | الدوال |
 |--------|-----------|
-| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan` · `PI` `E` |
+| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan asin acos atan atan2 sinh cosh tanh sigmoid` · `PI` `E` |
 | `std/random` | `entero rango peso_f64` |
 | `std/json` | `decode decode_map encode` |
 | `std/io` | `read write append exists delete list mkdir` |
@@ -808,8 +808,8 @@ zymbol run مشروعي.zyp
 القراءة متماثلة — الرقم مفهوم في أي خط:
 
 ```zymbol
->> #|"٤٢"| ¶            // → 42
->> #|'٧'| ¶             // → 7
+>> #|"४२"| ¶            // → 42
+>> #|'७'| ¶             // → 7
 ```
 
 > `#` دائماً ASCII، لذا يبقى `#0` متميزاً بصرياً عن الرقم صفر في كل خط.

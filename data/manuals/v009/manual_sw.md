@@ -80,7 +80,7 @@ Yaani: *«taarifa hii haifanyi chochote: 'hesabu' imesomwa na kutupwa»*.
 | Nambari kamili | `42`, `-7` | `###` | Nambari salama: ±(2⁵³ − 1) |
 | Nambari sehemu | `3.14`, `1.5e10` | `##.` | IEEE-754 maradufu |
 | Mfuatano | `"maandishi"` | `##"` | Uingizaji: `"Habari {jina}"` |
-| Herufi | `'A'` | `##'` | Graphemu moja ya Unicode |
+| Herufi | `'A'` | `##'` | Nukta moja ya msimbo ya Unicode |
 | Mantiki | `#1`, `#0` | `##?` | SI nambari — `#1 ≠ 1` |
 | Safu | `[1, 2, 3]` | `##]` | Aina moja, imechunguzwa |
 | Mchanganyo uliotangazwa | `#[1, "mbili"]` | `##[` | Aina sawa na `[…]`, haichunguzwi |
@@ -238,7 +238,7 @@ urefu = s$#                  // 12
 kitabu = s$[1..6]             // "Habari"
 ina = s$? "dunia"          // #1
 sehemu = "a,b,c,d"$/ ','    // [a, b, c, d]
-badilisha = s$~~["a":"o"]     // "Hobori dunia"
+badilisha = s$~~["a":"o"]     // "Hobori dunio"
 mstari = "─" $* 20
 ```
 
@@ -726,7 +726,7 @@ Moduli asili, zinazoingizwa kama nyingine yoyote:
 
 | Moduli | Kazi |
 |--------|------|
-| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan` · `PI` `E` |
+| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan asin acos atan atan2 sinh cosh tanh sigmoid` · `PI` `E` |
 | `std/random` | `entero rango peso_f64` |
 | `std/json` | `decode decode_map encode` |
 | `std/io` | `read write append exists delete list mkdir` |
@@ -757,7 +757,7 @@ siku = T::of(2026, 1, 31)
 >> T::format(T::add(siku, 1, "month"), "%Y-%m-%d") ¶ // → 2026-02-28
 ```
 
-> `std/term` inapima **nguzo za onyesho**, si herufi: CJK na emoji nyingi ni nguzo 2, kwa hivyo weka jedwali kwa `t::upana`, kamwe `$#`.
+> `std/term` inapima **nguzo za onyesho**, si herufi: CJK na emoji nyingi ni nguzo 2, kwa hivyo weka jedwali kwa `t::width`, kamwe `$#`.
 > Katika `std/time` wakati ni millisecondi tangu enzi. Chini ya siku ni muda, kutoka siku na juu ni kalenda — kwa hivyo mwezi unaangukia siku ile ile ya mwezi, iliyobanwa. `tofauti(a, b)` ni `a - b`, kwa hivyo wakati wa mapema kwanza unatoa jibu hasi.
 
 ---

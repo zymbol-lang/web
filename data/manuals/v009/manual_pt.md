@@ -80,7 +80,7 @@ Ou seja: *«esta instrução não faz nada: 'contador' é lido e descartado»*.
 | Inteiro | `42`, `-7` | `###` | Inteiro seguro: ±(2⁵³ − 1) |
 | Ponto flutuante | `3.14`, `1.5e10` | `##.` | Duplo IEEE-754 |
 | String | `"texto"` | `##"` | Interpolação: `"Olá {nome}"` |
-| Caractere | `'A'` | `##'` | Um grafema Unicode |
+| Caractere | `'A'` | `##'` | Um ponto de código Unicode |
 | Booleano | `#1`, `#0` | `##?` | NÃO é numérico — `#1 ≠ 1` |
 | Array | `[1, 2, 3]` | `##]` | Um único tipo, verificado |
 | Mix declarado | `#[1, "dois"]` | `##[` | Mesmo tipo que `[…]`, não verificado |
@@ -235,10 +235,10 @@ descricao = "Olá {nome}, você tem {n}"
 ```zymbol
 s = "Olá mundo"
 tamanho = s$#                  // 9
-sub = s$[1..4]             // "Olá"
+sub = s$[1..3]             // "Olá"
 contem = s$? "mundo"          // #1
 partes = "a,b,c,d"$/ ','    // [a, b, c, d]
-substituicao = s$~~["o":"0"]     // "0lá mund0"
+substituicao = s$~~["o":"0"]     // "Olá mund0"
 linha = "─" $* 20
 ```
 
@@ -726,7 +726,7 @@ Módulos nativos, importados como qualquer outro:
 
 | Módulo | Funções |
 |--------|---------|
-| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan` · `PI` `E` |
+| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan asin acos atan atan2 sinh cosh tanh sigmoid` · `PI` `E` |
 | `std/random` | `entero rango peso_f64` |
 | `std/json` | `decode decode_map encode` |
 | `std/io` | `read write append exists delete list mkdir` |
@@ -757,7 +757,7 @@ dia = T::of(2026, 1, 31)
 >> T::format(T::add(dia, 1, "month"), "%Y-%m-%d") ¶ // → 2026-02-28
 ```
 
-> `std/term` mede **colunas de exibição**, não caracteres: CJK e a maioria dos emojis têm 2 colunas, portanto monte uma tabela com `t::largura`, nunca `$#`.
+> `std/term` mede **colunas de exibição**, não caracteres: CJK e a maioria dos emojis têm 2 colunas, portanto monte uma tabela com `t::width`, nunca `$#`.
 > Em `std/time`, um instante é em milissegundos desde a época. Abaixo de um dia é duração, a partir de um dia é calendário — então um mês cai no mesmo dia do mês, ajustado. `diff(a, b)` é `a - b`, então o instante anterior primeiro dá uma resposta negativa.
 
 ---

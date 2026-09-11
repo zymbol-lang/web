@@ -80,7 +80,7 @@ C'est-à-dire : *« cette instruction ne fait rien : 'compteur' est lu et ignor�
 | Entier | `42`, `-7` | `###` | Entier sûr : ±(2⁵³ − 1) |
 | Flottant | `3.14`, `1.5e10` | `##.` | Double IEEE‑754 |
 | Chaîne | `"texte"` | `##"` | Interpolation : `"Bonjour {nom}"` |
-| Caractère | `'A'` | `##'` | Un graphème Unicode |
+| Caractère | `'A'` | `##'` | Un point de code Unicode |
 | Booléen | `#1`, `#0` | `##?` | PAS numérique — `#1 ≠ 1` |
 | Tableau | `[1, 2, 3]` | `##]` | Un seul type, vérifié |
 | Mixte déclaré | `#[1, "deux"]` | `##[` | Même type que `[…]`, non vérifié |
@@ -726,7 +726,7 @@ Modules natifs, importés comme n'importe quel autre :
 
 | Module | Fonctions |
 |--------|-----------|
-| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan` · `PI` `E` |
+| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan asin acos atan atan2 sinh cosh tanh sigmoid` · `PI` `E` |
 | `std/random` | `entero rango peso_f64` |
 | `std/json` | `decode decode_map encode` |
 | `std/io` | `read write append exists delete list mkdir` |

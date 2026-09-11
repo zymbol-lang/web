@@ -80,7 +80,7 @@ Das heißt: *«diese Anweisung tut nichts: 'zaehler' wird gelesen und verworfen�
 | Ganzzahl | `42`, `-7` | `###` | Sichere Ganzzahl: ±(2⁵³ − 1) |
 | Gleitkommazahl | `3.14`, `1.5e10` | `##.` | IEEE-754-Doppel |
 | Zeichenkette | `"Text"` | `##"` | Interpolation: `"Hallo {name}"` |
-| Zeichen | `'A'` | `##'` | Ein Unicode-Graphem |
+| Zeichen | `'A'` | `##'` | Ein Unicode-Codepunkt |
 | Boolesch | `#1`, `#0` | `##?` | NICHT numerisch — `#1 ≠ 1` |
 | Array | `[1, 2, 3]` | `##]` | Ein Typ, geprüft |
 | Deklarierte Mischung | `#[1, "zwei"]` | `##[` | Gleicher Typ wie `[…]`, nicht geprüft |
@@ -238,7 +238,7 @@ laenge = s$#                  // 10
 teil = s$[1..5]             // "Hallo"
 enthaelt = s$? "Welt"          // #1
 teile = "a,b,c,d"$/ ','    // [a, b, c, d]
-ersetzen = s$~~["o":"0"]     // "Hall0 W0lt"
+ersetzen = s$~~["o":"0"]     // "Hall0 Welt"
 linie = "─" $* 20
 ```
 
@@ -726,7 +726,7 @@ Native Module, importiert wie jedes andere:
 
 | Modul | Funktionen |
 |-------|------------|
-| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan` · `PI` `E` |
+| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan asin acos atan atan2 sinh cosh tanh sigmoid` · `PI` `E` |
 | `std/random` | `entero rango peso_f64` |
 | `std/json` | `decode decode_map encode` |
 | `std/io` | `read write append exists delete list mkdir` |
@@ -757,7 +757,7 @@ tag = T::of(2026, 1, 31)
 >> T::format(T::add(tag, 1, "month"), "%Y-%m-%d") ¶ // → 2026-02-28
 ```
 
-> `std/term` misst **Anzeigespalten**, nicht Zeichen: CJK und die meisten Emojis sind 2 Spalten breit, also legen Sie eine Tabelle mit `t::breite` an, niemals mit `$#`.
+> `std/term` misst **Anzeigespalten**, nicht Zeichen: CJK und die meisten Emojis sind 2 Spalten breit, also legen Sie eine Tabelle mit `t::width` an, niemals mit `$#`.
 > In `std/time` ist ein Zeitpunkt in Millisekunden seit der Epoche. Unter einem Tag ist es eine Dauer, ab einem Tag ist es Kalender — also fällt ein Monat auf denselben Tag im Monat, begrenzt. `differenz(a, b)` ist `a - b`, also ergibt der frühere Zeitpunkt zuerst eine negative Antwort.
 
 ---

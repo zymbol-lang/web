@@ -10,7 +10,7 @@
 - Ejecutar los dos gates en la sesión actual, no delegarlos
 - Reportar resultado y esperar confirmación antes del siguiente idioma
 
-## Los cinco gates, y por qué son cinco
+## Los seis gates, y por qué son seis
 1. **Gate A — estructura:** `python3 manual_compare.py manual_XX.md` desde `v009/`.
    Todo debe decir `OK`: mismos H1/H2/H3, mismos `---`, y los 74 bloques con las mismas
    líneas internas.
@@ -54,6 +54,48 @@ Descubierto el 2026-09-09 de la peor manera: un script pensado para restaurar lo
 vez**, sin que ningún gate se enterara. La lección no es «cuidado con los scripts» — es que
 **dos saltos correctos pueden sumar un agujero**, y un agujero merece su propio gate.
 
+### Gate F — el comentario `// valor` también es una afirmación
+
+`python3 gate_f.py manual_XX.md`, y debe decir **0 wrong**.
+
+Gate C lee la anotación de una línea `>>`. La otra mitad de lo que el manual afirma no la
+leía nadie:
+
+```
+lango = s$#                  // 11
+sub   = s$[1..5]             // "Hola"
+rep   = s$~~["l":"L"]        // "HoLa MuNdo"
+```
+
+Eso no lo ejecutó nunca nada. Medido el 2026-09-10, **39 comentarios falsos en 18 de los 22
+manuales**, y los 39 en el mismo bloque: el de operaciones de cadena. El traductor cambia la
+cadena y no recalcula nada. Tres formas, siempre las mismas:
+
+- **la longitud**, copiada del inglés: marathi decía ११ de una cadena de 10 puntos de código;
+  telugu ११ de una de 16; punyabí ੧੧ de una de 18
+- **el corte**, con el límite del inglés: `s$[१..५]` sobre «नमस्ते विश्व» devuelve `नमस्त`,
+  y el comentario prometía la palabra entera
+- **el reemplazo**, inventado: hindi cambiaba `ल`→`र` en una cadena **sin ninguna `ल`**, y
+  afirmaba un resultado distinto del original; marathi hacía el reemplazo de verdad y
+  afirmaba que la cadena salía intacta
+
+**Cómo decide qué comentario es una afirmación:** no mirándolo. `// variable mutable` es un
+comentario y `// 11` es una afirmación, y ninguna regex distingue eso en un idioma que no
+sabe leer. Lo decide el manual inglés: sus bloques son línea a línea los mismos (lo prueba
+Gate A), así que una posición cuyo comentario inglés coincide con lo que el inglés imprime
+es una afirmación de valor, y la traducción tiene que coincidir con **su** ejecución en esa
+misma posición. Un comentario descriptivo no coincide nunca, y por eso no se comprueba en
+ningún idioma.
+
+Y como en Gate C, no se arregla a mano: **`python3 fix_comments.py manual_XX.md`** reescribe
+el comentario con el valor real, en la escritura de cifras que el propio bloque usa.
+
+Dos cosas que el arreglo automático **no** hace, porque son del ejemplo y no del comentario:
+si el corte deja una palabra a medias, el límite se ajusta a lo que el comentario promete
+(el inglés corta `"Hello"` de `"Hello World"`, no media palabra); y si el par de reemplazo
+no aparece en la cadena, hay que elegir otro par — hindi, italiano y tamil se quedaban sin
+enseñar nada.
+
 ### Los nombres de `std/` no se traducen
 
 También medido en hindi: `t::चौड़ाई` por `t::width` y `T::प्रारूप` por `T::format` — dos
@@ -67,6 +109,10 @@ llamadas a módulos locales — indonesio es la prueba: cambió `T::tambah` (que
 `std/time::add`) y no tocó la función `tambah(a, b)` del propio manual, que se llama igual.
 
 En suajili además restauró la tabla de `std/`, once nombres en total; en indonesio, nueve.
+Y hay un tercer sitio que el script no miraba: la **frase** que sigue al ejemplo de
+`std/term` nombra `t::width` en prosa, no dentro de un bloque. Seis traducciones seguidas
+(te, tr, vi, ta, mr, ko) tenían el bloque bien y la frase llamando a `t::genişlik`,
+`t::너비`, `t::அகலம்`. `fix_api_names.py` ya hace también esa pasada, por posición.
 Y ojo con `std/random`: sus exports **son** `entero rango peso_f64`, en español, en todos los
 idiomas. No es un residuo sin traducir — verificado contra el binario, `r::int` no existe.
    No falla solo (hay préstamos legítimos), pero tiene que cazar siempre las variables y
@@ -174,101 +220,110 @@ traducir limpio (391k tokens frente a 205k), porque el verificador tiene primero
 | — | `pa` | punjabi | 125M | MEDIO | Sonnet | ✅ |
 | — | `ja` | japanese | 125M | MEDIO | Sonnet | ✅ |
 | 1 | `pcm` | nigerian pidgin | 120M | ALTO | Sonnet+Opus | ❌ |
-| 2 | `te` | telugu | 95M | MEDIO | Sonnet | ❌ |
-| 3 | `tr` | turkish | 90M | MEDIO | Sonnet | ❌ |
-| 4 | `vi` | vietnamese | 85M | MEDIO | Sonnet | ❌ |
-| 5 | `ta` | tamil | 85M | MEDIO | Sonnet | ❌ |
-| 6 | `mr` | marathi | 83M | MEDIO | Sonnet | ❌ |
-| 7 | `ko` | korean | 82M | MEDIO | Sonnet | ❌ |
-| 8 | `jv` | javanese | 82M | MEDIO | Sonnet | ❌ |
-| 9 | `ha` | hausa | 80M | MEDIO | Sonnet | ❌ |
-| 10 | `fa` | persian | 70M | MEDIO | Sonnet | ❌ |
+| — | `te` | telugu | 95M | MEDIO | Sonnet | ✅ |
+| — | `tr` | turkish | 90M | MEDIO | Sonnet | ✅ |
+| — | `vi` | vietnamese | 85M | MEDIO | Sonnet | ✅ |
+| — | `ta` | tamil | 85M | MEDIO | Sonnet | ✅ |
+| — | `mr` | marathi | 83M | MEDIO | Sonnet | ✅ |
+| — | `ko` | korean | 82M | MEDIO | Sonnet | ✅ |
+| — | `jv` | javanese | 82M | MEDIO | Sonnet | ✅ |
+| — | `ha` | hausa | 80M | MEDIO | Sonnet | ✅ |
+| — | `fa` | persian | 70M | MEDIO | Sonnet | ✅ |
 | — | `it` | italian | 65M | BAJO | — | ✅ |
-| 11 | `th` | thai | 60M | MEDIO | Sonnet | ❌ |
-| 12 | `gu` | gujarati | 57M | MEDIO | Sonnet | ❌ |
-| 13 | `kn` | kannada | 56M | MEDIO | Sonnet | ❌ |
-| 14 | `yo` | yoruba | 45M | MEDIO | Sonnet | ❌ |
-| 15 | `tl` | tagalog | 45M | MEDIO | Sonnet | ❌ |
-| 16 | `my` | burmese | 43M | MEDIO | Sonnet | ❌ |
-| 17 | `uk` | ukrainian | 40M | BAJO | Haiku | ❌ |
-| 18 | `ps` | pashto | 40M | MEDIO | Sonnet | ❌ |
-| 19 | `pl` | polish | 40M | BAJO | Haiku | ❌ |
-| 20 | `ln` | lingala | 40M | ALTO | Sonnet+Opus | ❌ |
-| 21 | `ml` | malayalam | 38M | MEDIO | Sonnet | ❌ |
-| 22 | `om` | oromo | 37M | ALTO | Sonnet+Opus | ❌ |
-| 23 | `ms` | malay | 35M | MEDIO | Sonnet | ❌ |
-| 24 | `am` | amharic | 35M | MEDIO | Sonnet | ❌ |
-| 25 | `su` | sundanese | 32M | MEDIO | Sonnet | ❌ |
-| 26 | `ne` | nepali | 32M | MEDIO | Sonnet | ❌ |
-| 27 | `lo` | lao | 30M | MEDIO | Sonnet | ❌ |
-| 28 | `ku` | kurdish | 30M | MEDIO | Sonnet | ❌ |
-| 29 | `ig` | igbo | 30M | MEDIO | Sonnet | ❌ |
-| 30 | `az` | azerbaijani | 30M | MEDIO | Sonnet | ❌ |
-| 31 | `zu` | zulu | 28M | MEDIO | Sonnet | ❌ |
-| 32 | `nl` | dutch | 25M | BAJO | Haiku | ❌ |
-| 33 | `ff` | fula | 25M | ALTO | Sonnet+Opus | ❌ |
-| 34 | `ro` | romanian | 24M | BAJO | Haiku | ❌ |
-| 35 | `so` | somali | 22M | ALTO | Sonnet+Opus | ❌ |
-| 36 | `si` | sinhala | 17M | MEDIO | Sonnet | ❌ |
-| 37 | `km` | khmer | 17M | MEDIO | Sonnet | ❌ |
-| 38 | `af` | afrikaans | 17M | BAJO | Haiku | ❌ |
-| 39 | `bm` | bambara | 15M | ALTO | Sonnet+Opus | ❌ |
-| 40 | `el` | greek | 13M | MEDIO | Sonnet | ❌ |
-| 41 | `ny` | nyanja | 12M | ALTO | Sonnet+Opus | ❌ |
-| 42 | `ht` | haitian creole | 12M | MEDIO | Sonnet | ❌ |
-| 43 | `sn` | shona | 11M | ALTO | Sonnet+Opus | ❌ |
-| 44 | `cs` | czech | 11M | BAJO | Haiku | ❌ |
-| 45 | `wo` | wolof | 10M | ALTO | Sonnet+Opus | ❌ |
-| 46 | `sv` | swedish | 10M | BAJO | Haiku | ❌ |
-| 47 | `pt_eu` | portugues eu | 10M | BAJO | Haiku | ❌ |
-| 48 | `ca` | catalan | 10M | BAJO | Haiku | ❌ |
-| 49 | `be` | belarusian | 10M | BAJO | Haiku | ❌ |
-| 50 | `ti` | tigrinya | 9M | ALTO | Sonnet+Opus | ❌ |
-| 51 | `he` | hebrew | 9M | MEDIO | Sonnet | ❌ |
-| 52 | `xh` | xhosa | 8M | ALTO | Sonnet+Opus | ❌ |
-| 53 | `sr` | serbian | 8M | BAJO | Haiku | ❌ |
+| — | `th` | thai | 60M | MEDIO | Sonnet | ✅ |
+| — | `gu` | gujarati | 57M | MEDIO | Sonnet | ✅ |
+| — | `kn` | kannada | 56M | MEDIO | Sonnet | ✅ |
+| — | `yo` | yoruba | 45M | MEDIO | Sonnet | ✅ |
+| — | `tl` | tagalog | 45M | MEDIO | Sonnet | ⚠️ |
+| — | `my` | burmese | 43M | MEDIO | Sonnet | ✅ |
+| — | `uk` | ukrainian | 40M | BAJO | Haiku | ✅ |
+| — | `ps` | pashto | 40M | MEDIO | Sonnet | ✅ |
+| — | `pl` | polish | 40M | BAJO | Haiku | ✅ |
+| 2 | `ln` | lingala | 40M | ALTO | Sonnet+Opus | ❌ |
+| 3 | `ml` | malayalam | 38M | MEDIO | Sonnet | ❌ |
+| 4 | `om` | oromo | 37M | ALTO | Sonnet+Opus | ❌ |
+| 5 | `ms` | malay | 35M | MEDIO | Sonnet | ❌ |
+| 6 | `am` | amharic | 35M | MEDIO | Sonnet | ❌ |
+| 7 | `su` | sundanese | 32M | MEDIO | Sonnet | ❌ |
+| 8 | `ne` | nepali | 32M | MEDIO | Sonnet | ❌ |
+| 9 | `lo` | lao | 30M | MEDIO | Sonnet | ❌ |
+| 10 | `ku` | kurdish | 30M | MEDIO | Sonnet | ❌ |
+| 11 | `ig` | igbo | 30M | MEDIO | Sonnet | ❌ |
+| 12 | `az` | azerbaijani | 30M | MEDIO | Sonnet | ❌ |
+| 13 | `zu` | zulu | 28M | MEDIO | Sonnet | ❌ |
+| 14 | `nl` | dutch | 25M | BAJO | Haiku | ❌ |
+| 15 | `ff` | fula | 25M | ALTO | Sonnet+Opus | ❌ |
+| 16 | `ro` | romanian | 24M | BAJO | Haiku | ❌ |
+| 17 | `so` | somali | 22M | ALTO | Sonnet+Opus | ❌ |
+| 18 | `si` | sinhala | 17M | MEDIO | Sonnet | ❌ |
+| 19 | `km` | khmer | 17M | MEDIO | Sonnet | ❌ |
+| 20 | `af` | afrikaans | 17M | BAJO | Haiku | ❌ |
+| 21 | `bm` | bambara | 15M | ALTO | Sonnet+Opus | ❌ |
+| 22 | `el` | greek | 13M | MEDIO | Sonnet | ❌ |
+| 23 | `ny` | nyanja | 12M | ALTO | Sonnet+Opus | ❌ |
+| 24 | `ht` | haitian creole | 12M | MEDIO | Sonnet | ❌ |
+| 25 | `sn` | shona | 11M | ALTO | Sonnet+Opus | ❌ |
+| 26 | `cs` | czech | 11M | BAJO | Haiku | ❌ |
+| 27 | `wo` | wolof | 10M | ALTO | Sonnet+Opus | ❌ |
+| 28 | `sv` | swedish | 10M | BAJO | Haiku | ❌ |
+| 29 | `pt_eu` | portugues eu | 10M | BAJO | Haiku | ❌ |
+| 30 | `ca` | catalan | 10M | BAJO | Haiku | ❌ |
+| 31 | `be` | belarusian | 10M | BAJO | Haiku | ❌ |
+| 32 | `ti` | tigrinya | 9M | ALTO | Sonnet+Opus | ❌ |
+| 33 | `he` | hebrew | 9M | MEDIO | Sonnet | ❌ |
+| 34 | `xh` | xhosa | 8M | ALTO | Sonnet+Opus | ❌ |
+| 35 | `sr` | serbian | 8M | BAJO | Haiku | ❌ |
 | — | `qu` | quechua | 8M | ALTO | — | ✅ |
-| 54 | `bg` | bulgarian | 8M | BAJO | Haiku | ❌ |
-| 55 | `sq` | albanian | 6M | BAJO | Haiku | ❌ |
-| 56 | `myn` | maya | 6M | ALTO | Sonnet+Opus | ❌ |
-| 57 | `hy` | armenian | 6M | MEDIO | Sonnet | ❌ |
-| 58 | `hr` | croatian | 6M | BAJO | Haiku | ❌ |
-| 59 | `gn` | guarani | 6M | ALTO | Sonnet+Opus | ❌ |
-| 60 | `da` | danish | 6M | BAJO | Haiku | ❌ |
-| 61 | `tn` | setswana | 5M | ALTO | Sonnet+Opus | ❌ |
-| 62 | `sk` | slovak | 5M | BAJO | Haiku | ❌ |
-| 63 | `no` | norwegian | 5M | BAJO | Haiku | ❌ |
-| 64 | `lg` | luganda | 5M | ALTO | Sonnet+Opus | ❌ |
-| 65 | `fi` | finnish | 5M | BAJO | Haiku | ❌ |
-| 66 | `ka` | georgian | 4M | MEDIO | Sonnet | ❌ |
-| 67 | `lt` | lithuanian | 3M | BAJO | Haiku | ❌ |
-| 68 | `jam` | jamaican patois | 3M | ALTO | Sonnet+Opus | ❌ |
-| 69 | `sl` | slovenian | 2.5M | BAJO | Haiku | ❌ |
-| 70 | `gl` | galician | 2.4M | BAJO | Haiku | ❌ |
-| 71 | `mk` | macedonian | 2M | BAJO | Haiku | ❌ |
-| 72 | `lv` | latvian | 2M | BAJO | Haiku | ❌ |
-| 73 | `eo` | esperanto | 2M | MEDIO | Sonnet | ❌ |
-| 74 | `ay` | aymara | 2M | ALTO | Sonnet+Opus | ❌ |
-| 75 | `nah` | nahuatl | 1.7M | ALTO | Sonnet+Opus | ❌ |
-| 76 | `et` | estonian | 1.1M | BAJO | Haiku | ❌ |
-| 77 | `quc` | kiche | 1M | ALTO | Sonnet+Opus | ❌ |
-| 78 | `eu` | basque | 750k | BAJO | Haiku | ❌ |
-| 79 | `way` | wayuu | 400k | ALTO | Sonnet+Opus | ❌ |
-| 80 | `is` | icelandic | 350k | BAJO | Haiku | ❌ |
-| 81 | `arn` | mapuche | 250k | ALTO | Sonnet+Opus | ❌ |
-| 82 | `nv` | navajo | 170k | ALTO | Sonnet+Opus | ❌ |
-| 83 | `emb` | embera | 100k | ALTO | Sonnet+Opus | ❌ |
-| 84 | `cr_syl` | cree syl | 100k | ALTO | Sonnet+Opus | ❌ |
-| 85 | `yno` | yanomami | 35k | ALTO | Sonnet+Opus | ❌ |
-| 86 | `chr` | cherokee | 2k | ALTO | Sonnet+Opus | ❌ |
-| 87 | `tp` | toki pona | 1k | ALTO | Sonnet+Opus | ❌ |
-| 88 | `tlh_iq` | klingon piqad | 1k | ALTO | Sonnet+Opus | ❌ |
-| 89 | `tlh` | klingon | 1k | ALTO | Sonnet+Opus | ❌ |
-| 90 | `jbo` | lojban | 1k | ALTO | Sonnet+Opus | ❌ |
-| 91 | `io` | ido | 1k | ALTO | Sonnet+Opus | ❌ |
-| 92 | `ia` | interlingua | 1k | ALTO | Sonnet+Opus | ❌ |
+| 36 | `bg` | bulgarian | 8M | BAJO | Haiku | ❌ |
+| 37 | `sq` | albanian | 6M | BAJO | Haiku | ❌ |
+| 38 | `myn` | maya | 6M | ALTO | Sonnet+Opus | ❌ |
+| 39 | `hy` | armenian | 6M | MEDIO | Sonnet | ❌ |
+| 40 | `hr` | croatian | 6M | BAJO | Haiku | ❌ |
+| 41 | `gn` | guarani | 6M | ALTO | Sonnet+Opus | ❌ |
+| 42 | `da` | danish | 6M | BAJO | Haiku | ❌ |
+| 43 | `tn` | setswana | 5M | ALTO | Sonnet+Opus | ❌ |
+| 44 | `sk` | slovak | 5M | BAJO | Haiku | ❌ |
+| 45 | `no` | norwegian | 5M | BAJO | Haiku | ❌ |
+| 46 | `lg` | luganda | 5M | ALTO | Sonnet+Opus | ❌ |
+| 47 | `fi` | finnish | 5M | BAJO | Haiku | ❌ |
+| 48 | `ka` | georgian | 4M | MEDIO | Sonnet | ❌ |
+| 49 | `lt` | lithuanian | 3M | BAJO | Haiku | ❌ |
+| 50 | `jam` | jamaican patois | 3M | ALTO | Sonnet+Opus | ❌ |
+| 51 | `sl` | slovenian | 2.5M | BAJO | Haiku | ❌ |
+| 52 | `gl` | galician | 2.4M | BAJO | Haiku | ❌ |
+| 53 | `mk` | macedonian | 2M | BAJO | Haiku | ❌ |
+| 54 | `lv` | latvian | 2M | BAJO | Haiku | ❌ |
+| 55 | `eo` | esperanto | 2M | MEDIO | Sonnet | ❌ |
+| 56 | `ay` | aymara | 2M | ALTO | Sonnet+Opus | ❌ |
+| 57 | `nah` | nahuatl | 1.7M | ALTO | Sonnet+Opus | ❌ |
+| 58 | `et` | estonian | 1.1M | BAJO | Haiku | ❌ |
+| 59 | `quc` | kiche | 1M | ALTO | Sonnet+Opus | ❌ |
+| 60 | `eu` | basque | 750k | BAJO | Haiku | ❌ |
+| 61 | `way` | wayuu | 400k | ALTO | Sonnet+Opus | ❌ |
+| 62 | `is` | icelandic | 350k | BAJO | Haiku | ❌ |
+| 63 | `arn` | mapuche | 250k | ALTO | Sonnet+Opus | ❌ |
+| 64 | `nv` | navajo | 170k | ALTO | Sonnet+Opus | ❌ |
+| 65 | `emb` | embera | 100k | ALTO | Sonnet+Opus | ❌ |
+| 66 | `cr_syl` | cree syl | 100k | ALTO | Sonnet+Opus | ❌ |
+| 67 | `yno` | yanomami | 35k | ALTO | Sonnet+Opus | ❌ |
+| 68 | `chr` | cherokee | 2k | ALTO | Sonnet+Opus | ❌ |
+| 69 | `tp` | toki pona | 1k | ALTO | Sonnet+Opus | ❌ |
+| 70 | `tlh_iq` | klingon piqad | 1k | ALTO | Sonnet+Opus | ❌ |
+| 71 | `tlh` | klingon | 1k | ALTO | Sonnet+Opus | ❌ |
+| 72 | `jbo` | lojban | 1k | ALTO | Sonnet+Opus | ❌ |
+| 73 | `io` | ido | 1k | ALTO | Sonnet+Opus | ❌ |
+| 74 | `ia` | interlingua | 1k | ALTO | Sonnet+Opus | ❌ |
 
-**Pendientes:** 92 · **Completados:** 17 (en, es, it, qu, zh, hi, ar, fr, bn, pt, ru, ur, sw, id, de, pa, ja) · **Referencias:** en, es
+**Pendientes:** 74 · **Completados:** 34 (en, es, it, qu, zh, hi, ar, fr, bn, pt, ru, ur, sw, id, de, pa, ja, te, tr, vi, ta, mr, ko, jv, ha, fa, th, gu, kn, yo, my, uk, ps, pl) · **Parciales:** 1 (tl) · **Referencias:** en, es
+
+> **`tl` va con ⚠️ y aun así se publica.** Pasa los seis gates y sus 74 bloques corren,
+> pero **22 celdas de prosa de las tablas siguen en inglés** — `return / output param`,
+> `working-copy param`, `navigation index`, `flat extraction`, `blocking keypress`,
+> `hot definition`… La línea base de los demás idiomas es 0–4 celdas, casi todas palabras
+> que se escriben igual (`Symbol`, `variable`, `pipe`), así que 22 no es el préstamo
+> normal del taglish: es tabla a medio traducir. Se publica porque el manual no dice nada
+> falso y esconderlo deja al lector tagalo sin nada; el ⚠️ es para que no se promocione a
+> producción hasta que esas celdas estén en tagalo.
 
 > Ningún ✅ se hereda de v005: el manual se reescribió para v0.0.9 y las 29 secciones
 > no son las 24 anteriores. Cada traducción se regenera contra `v009/manual_en.md`.

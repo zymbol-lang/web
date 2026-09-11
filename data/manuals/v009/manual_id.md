@@ -80,7 +80,7 @@ Artinya: *«pernyataan ini tidak melakukan apa pun: 'hitungan' dibaca dan dibuan
 | Bilangan bulat | `42`, `-7` | `###` | Bilangan bulat aman: ±(2⁵³ − 1) |
 | Bilangan pecahan | `3.14`, `1.5e10` | `##.` | Ganda IEEE-754 |
 | String | `"teks"` | `##"` | Interpolasi: `"Halo {nama}"` |
-| Karakter | `'A'` | `##'` | Satu grafem Unicode |
+| Karakter | `'A'` | `##'` | Satu titik kode Unicode |
 | Boolean | `#1`, `#0` | `##?` | BUKAN numerik — `#1 ≠ 1` |
 | Larik | `[1, 2, 3]` | `##]` | Satu tipe, diperiksa |
 | Campuran dideklarasikan | `#[1, "dua"]` | `##[` | Tipe sama dengan `[…]`, tidak diperiksa |
@@ -238,7 +238,7 @@ panjang = s$#                  // 10
 sub = s$[1..4]             // "Halo"
 ada = s$? "dunia"          // #1
 bagian = "a,b,c,d"$/ ','    // [a, b, c, d]
-ganti = s$~~["o":"0"]        // "H0l0 dun10"
+ganti = s$~~["o":"0"]        // "Hal0 dunia"
 garis = "─" $* 20
 ```
 
@@ -726,7 +726,7 @@ Modul asli, diimpor seperti yang lain:
 
 | Modul | Fungsi |
 |-------|--------|
-| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan` · `PI` `E` |
+| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan asin acos atan atan2 sinh cosh tanh sigmoid` · `PI` `E` |
 | `std/random` | `entero rango peso_f64` |
 | `std/json` | `decode decode_map encode` |
 | `std/io` | `read write append exists delete list mkdir` |
@@ -757,7 +757,7 @@ hari = T::of(2026, 1, 31)
 >> T::format(T::add(hari, 1, "month"), "%Y-%m-%d") ¶ // → 2026-02-28
 ```
 
-> `std/term` mengukur **kolom tampilan**, bukan karakter: CJK dan sebagian besar emoji adalah 2 kolom, jadi tata tabel dengan `t::lebar`, jangan pernah `$#`.
+> `std/term` mengukur **kolom tampilan**, bukan karakter: CJK dan sebagian besar emoji adalah 2 kolom, jadi tata tabel dengan `t::width`, jangan pernah `$#`.
 > Di `std/time` sebuah instan adalah milidetik sejak zaman. Di bawah satu hari adalah durasi, dari satu hari ke atas adalah kalender — jadi sebulan jatuh pada hari yang sama dalam bulan, dijepit. `selisih(a, b)` adalah `a - b`, jadi instan yang lebih dulu terlebih dahulu memberikan jawaban negatif.
 
 ---

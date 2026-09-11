@@ -73,19 +73,19 @@ warning: this statement does nothing: 'conteggio' is read and discarded
 
 ## Tipi di Dati
 
-| Tipo | Letterale | `#?` tag | Note |
+| Tipo | Letterale | Etichetta `#?` | Note |
 |------|---------|----------|-------|
 | Int | `42`, `-7` | `###` | Intero sicuro: ±(2⁵³ − 1) |
 | Float | `3.14`, `1.5e10` | `##.` | IEEE-754 double |
 | String | `"testo"` | `##"` | Interpolazione: `"Ciao {nome}"` |
-| Char | `'A'` | `##'` | Un grapheme Unicode |
+| Char | `'A'` | `##'` | Un punto di codice Unicode |
 | Bool | `#1`, `#0` | `##?` | NON numerico — `#1 ≠ 1` |
 | Array | `[1, 2, 3]` | `##]` | Un tipo, verificato |
 | Dichiarato mix | `#[1, "due"]` | `##[` | Stesso tipo di `[…]`, non verificato |
 | Tupla | `(a, b)` | `##)` | Posizionale, immutabile |
 | Dizionario | `#(x: 1, y: 2)` | `##(` | Chiave, mutabile |
-| Funzione | riferimento funzione nominata | `##()` | First-class; display `<funct/N>` |
-| Lambda | `x -> x * 2` | `##->` | First-class; display `<lambd/N>` |
+| Funzione | riferimento funzione nominata | `##()` | Di prima classe; mostra `<funct/N>` |
+| Lambda | `x -> x * 2` | `##->` | Di prima classe; mostra `<lambd/N>` |
 | Unit | `##_` | `##_` | Assenza — non c'è null |
 
 ```zymbol
@@ -233,11 +233,11 @@ desc = "Ciao {nome}, hai {n}"
 
 ```zymbol
 s = "Ciao Mondo"
-len = s$#                  // 11
-sub = s$[1..5]             // "Ciao"
+len = s$#                  // 10
+sub = s$[1..4]             // "Ciao"
 has = s$? "Mondo"          // #1
 parts = "a,b,c,d"$/ ','    // [a, b, c, d]
-rep = s$~~["l":"L"]        // "CiaoL MondoL"
+rep = s$~~["o":"0"]        // "Cia0 M0nd0"
 line = "─" $* 20
 ```
 
@@ -729,7 +729,7 @@ Moduli nativi, importati come qualsiasi altro:
 
 | Modulo | Funzioni |
 |--------|----------|
-| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan` · `PI` `E` |
+| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan asin acos atan atan2 sinh cosh tanh sigmoid` · `PI` `E` |
 | `std/random` | `entero rango peso_f64` |
 | `std/json` | `decode decode_map encode` |
 | `std/io` | `read write append exists delete list mkdir` |
@@ -929,12 +929,12 @@ Non l'intero inventario funziona in questo modo, e dirlo è meglio che fingere. 
 |--------|-----------|--------|-----------|
 | `=` | variabile | `$#` | lunghezza |
 | `:=` | costante | `$+` | aggiungi |
-| `>>` | output | `$+[i]` | inserisci in indice (basato su 1) |
-| `<<` | input | `$-` | rimuovi primo per valore |
-| `¶` / `\\` | newline | `$--` | rimuovi tutto per valore |
+| `>>` | uscita | `$+[i]` | inserisci in indice (basato su 1) |
+| `<<` | ingresso | `$-` | rimuovi primo per valore |
+| `¶` / `\\` | a capo | `$--` | rimuovi tutto per valore |
 | `?` | if | `$-[i]` | rimuovi in indice (basato su 1) |
-| `_?` | else-if | `$-[i..j]` | rimuovi intervallo (basato su 1) |
-| `_` | else / wildcard | `$?` | contiene |
+| `_?` | altrimenti-se | `$-[i..j]` | rimuovi intervallo (basato su 1) |
+| `_` | altrimenti / jolly | `$?` | contiene |
 | `??` | corrispondenza | `$??` | trova tutti gli indici (basato su 1) |
 | `\|\|` | or-pattern in un'uscita di corrispondenza | `$[s..e]` | slice (basato su 1) |
 | `@` | ciclo | `$>` | mappa |

@@ -14,6 +14,7 @@ f="$D/manual_$code.md"
 if [ "${2:-}" = "--fix" ]; then
   python3 "$D/fix_api_names.py" "$f"
   python3 "$D/fix_claims.py"    "$f"
+  python3 "$D/fix_comments.py"  "$f"
   echo
 fi
 
@@ -23,3 +24,4 @@ printf 'B  sintaxis    '; python3 "$D/gate_b.py"        "$f" 2>&1 | tail -1 | se
 printf 'C  salidas     '; python3 "$D/verify_claims.py" "$f" 2>&1 | tail -1 | sed 's/.*md: //'
 printf 'D  residuos    '; python3 "$D/gate_d.py"        "$f" 2>&1 | tail -1 | sed 's/.*md: //'
 printf 'E  módulos     '; python3 "$D/gate_e.py"        "$f" 2>&1 | tail -1 | sed 's/.*md: //'
+printf 'F  comentarios '; python3 "$D/gate_f.py"        "$f" 2>&1 | tail -1 | sed 's/.*md: //'

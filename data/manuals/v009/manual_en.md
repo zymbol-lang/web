@@ -8,7 +8,7 @@
 
 # Zymbol-Lang Manual
 
-> **Revisado para v0.0.9 — 2026-09-07**
+> **Revised for v0.0.9 — 2026-09-07**
 
 **Zymbol-Lang** is a symbolic programming language. No words in its grammar — every construct is a mark. Works identically in any human language.
 
@@ -78,7 +78,7 @@ warning: this statement does nothing: 'count' is read and discarded
 | Int | `42`, `-7` | `###` | Safe integer: ±(2⁵³ − 1) |
 | Float | `3.14`, `1.5e10` | `##.` | IEEE-754 double |
 | String | `"text"` | `##"` | Interpolation: `"Hello {name}"` |
-| Char | `'A'` | `##'` | One Unicode grapheme |
+| Char | `'A'` | `##'` | One Unicode code point |
 | Bool | `#1`, `#0` | `##?` | NOT numeric — `#1 ≠ 1` |
 | Array | `[1, 2, 3]` | `##]` | One type, checked |
 | Declared mix | `#[1, "two"]` | `##[` | Same type as `[…]`, not checked |
@@ -761,7 +761,7 @@ Native modules, imported like any other:
 
 | Module | Functions |
 |--------|-----------|
-| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan` · `PI` `E` |
+| `std/math` | `sqrt exp ln log pow abs ceil floor round min max sin cos tan asin acos atan atan2 sinh cosh tanh sigmoid` · `PI` `E` |
 | `std/random` | `entero rango peso_f64` |
 | `std/json` | `decode decode_map encode` |
 | `std/io` | `read write append exists delete list mkdir` |
