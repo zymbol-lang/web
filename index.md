@@ -198,8 +198,9 @@ only the top half is ever escaped. Run it in the browser:
 Same marks. The names are whatever the author thinks in. The HTML page shows a
 capture of each program running.
 
-The page shows two frames of each: the opening screen where the game is set
-up, and the game itself in progress.
+The page shows two frames each of three of them — 囲碁, Serpiente and Hov veS:
+the opening screen where the game is set up, and the game itself in progress.
+Hov veS draws its menus and HUD in pIqaD, which is not a human script at all.
 
 | Program | Written in | Play it |
 | --- | --- | --- |
@@ -217,11 +218,10 @@ Below the sections above, the page renders the compact **v0.0.9** manual in the
 reader's own language, with every `zymbol` block coloured by the site's
 highlighter. It is fetched from `/data/manuals/v009/manual_<code>.md`.
 
-**It is written in four languages so far** — English, Spanish, Italian and
-Quechua. For every other language the section and its nav item are **not shown at
-all**: no heading, no empty box, no English text under a translated title. With
-four written, a fallback would tell a reader their language was done when it is
-not; absent is honest where wrong is not. (The older 110-language manual, last
+**It is written in 35 languages so far.** For every other language the section and
+its nav item are **not shown at all**: no heading, no empty box, no English text
+under a translated title. A fallback would tell a reader their language was done
+when it is not; absent is honest where wrong is not. (The older 110-language manual, last
 revised for v0.0.5, is still published and still served by
 [/overview.md](overview.md) — that page is archived and its manual is of its time.)
 

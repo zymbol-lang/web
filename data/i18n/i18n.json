@@ -226,7 +226,7 @@
           "joinLead": "Agglutination, in the plain linguistic sense: one mark, one meaning, and the meanings stack. An operator is <em>spelled</em>, not coined.",
           "joinFoot": "Five releases. <b>One</b> new mark. Everything else was spelled from the ones already here.",
           "readFoot": "Not one word in any of it. The colours are the program's own: it picks an ANSI-256 index per escape step and writes each cell with <code>&gt;&gt;~</code> on the canvas <code>&gt;&gt;|</code> opens. The tree-walker and the register VM draw it identically, cell for cell.",
-          "builtFoot": "Both are captures of the running program. Not one identifier in either of them is an English word — and nothing in the grammar had to change for that."
+          "builtFoot": "Every one of these is a capture of the running program. Not one identifier in any of them is an English word — one is not in a human language at all — and nothing in the grammar had to change for that."
         }
       }
     },
@@ -443,7 +443,7 @@
           "joinLead": "Aglutinación, en el sentido lingüístico llano: una marca, un significado, y los significados se apilan. Un operador se <em>deletrea</em>, no se acuña.",
           "joinFoot": "Cinco versiones. <b>Una</b> marca nueva. Todo lo demás se deletreó con las que ya estaban aquí.",
           "readFoot": "Ni una palabra en nada de esto. Los colores son del propio programa: elige un índice ANSI-256 por paso de escape y escribe cada celda con <code>&gt;&gt;~</code> sobre el lienzo que abre <code>&gt;&gt;|</code>. El tree-walker y la VM de registros lo dibujan idéntico, celda por celda.",
-          "builtFoot": "Las dos son capturas del programa en marcha. Ni un identificador de ninguna de ellas es una palabra inglesa — y nada en la gramática tuvo que cambiar para eso."
+          "builtFoot": "Todas son capturas del programa en marcha. Ni un identificador de ninguna de ellas es una palabra inglesa — una no es siquiera de una lengua humana — y nada en la gramática tuvo que cambiar para eso."
         }
       }
     },

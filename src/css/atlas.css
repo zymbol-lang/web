@@ -36,12 +36,14 @@ body.atlas {
    *
    * So the frames get a stack whose first face has a '0' — then `ch` is the same
    * measure that draws the text, whichever face wins, including every fallback.
-   * They can spare pIqaD: the four captures are Go in Japanese, Serpiente and
-   * Klingon Galaxy in Spanish and the Mandelbrot, and between them they contain
-   * zero U+F8D0-U+F8FF codepoints. The pIqaD on this page lives in the hero, the
-   * sample program and the play buttons, which keep --mono. */
-  --term-mono: 'JetBrains Mono', 'DejaVu Sans Mono', 'Liberation Mono', Menlo,
-               Consolas, 'Courier New', monospace;
+   * 'ZymbolPIqaD' is still in the list, and now it matters: Hov veS draws its
+   * menus and HUD in Klingon script, 103 codepoints on the title screen alone. It
+   * sits SECOND, which is the whole point — the first face decides `ch`, every
+   * face after it only answers for the characters the ones before it lack, and
+   * JetBrains Mono has no U+F8D0-U+F8FF. First in the list it broke the columns;
+   * second it draws the Klingon and touches nothing else. */
+  --term-mono: 'JetBrains Mono', 'ZymbolPIqaD', 'DejaVu Sans Mono',
+               'Liberation Mono', Menlo, Consolas, 'Courier New', monospace;
   /* No coding ligatures: -> must stay two characters on a page about characters. */
   font-variant-ligatures: none;
   font-feature-settings: "liga" 0, "clig" 0, "calt" 0, "dlig" 0;
@@ -491,16 +493,23 @@ pre.term .c8   { color: #7d7d7d; }
 pre.term .c9   { color: #ff5c57; }
 pre.term .c10  { color: #4ee87a; }
 pre.term .c11  { color: #f3f99d; }
+pre.term .c14  { color: #00ffff; }
 pre.term .c15  { color: #f0f0f0; }
+pre.term .c25  { color: #005faf; }
 pre.term .c28  { color: #008700; }
 pre.term .c34  { color: #00af00; }
 pre.term .c40  { color: #00d700; }
 pre.term .c46  { color: #00ff00; }
+pre.term .c51  { color: #00ffff; }
 pre.term .c82  { color: #5fff00; }
 pre.term .c118 { color: #87ff00; }
 pre.term .c137 { color: #af875f; }
 pre.term .c154 { color: #afff00; }
 pre.term .c191 { color: #d7ff5f; }
+pre.term .c196 { color: #ff0000; }
+pre.term .c208 { color: #ff8700; }
+pre.term .c214 { color: #ffaf00; }
+pre.term .c220 { color: #ffd700; }
 pre.term .c201 { color: #ff00ff; }
 pre.term .c231 { color: #ffffff; }
 pre.term .c240 { color: #585858; }
