@@ -5,7 +5,8 @@
     "coined": "term → the concept it was made for. They are also listed in the header comment of the language's own examples/graphics/mandelbrot/<id>.zy, which the page does not display.",
     "not_a_score": "A short list does not mean the prose is right, only that its nouns are attested. Nothing here has been read by a speaker.",
     "attested": "The terms taken from the language as it is written, not made here. `coined` against `attested` is the ratio that matters: where coinages outnumber attested terms, what is on the page is a draft with the shape of the language and mostly invented nouns, and a speaker is not reviewing it — they are writing it.",
-    "tags": "Where an entry's BCP-47 code stands in for a language the site names generically, it says so in the note. An approximate tag still names the right language; the raw id is not a language tag at all."
+    "tags": "Where an entry's BCP-47 code stands in for a language the site names generically, it says so in the note. An approximate tag still names the right language; the raw id is not a language tag at all.",
+    "builtKlingon": "The Hov veS caption (html.builtKlingon) adds exactly one new word to each language: the name of the Klingon language. It was not coined — it is adapted the way that same block already adapts Japanese and Spanish for built.go and built.snake (Kijapani → Kiklingoni, ጃፓንኛ → ክሊንጎንኛ, af-Jabbaan → af-Klingon, japonés → klingon). `pIqaD` and `Star Trek` are proper nouns and are left in Latin in all 110, including the scripts that transliterate everything else. The four languages that had to do more than inflect a borrowing are listed below with the rest of their coinages."
   },
   "languages": {
     "english": {
@@ -208,7 +209,7 @@
         "ᎤᏔᎾ",
         "ᎪᏪᎳ"
       ],
-      "note": "Eight of about fifteen. Attested: ᎠᏰᏟ (middle), ᎠᎦᏛᏗ (mirror), ᎠᏰᎸᏗ (sign), ᎦᏅᎯᏓ (long), ᎤᏔᎾ (big), ᎪᏪᎳ (write). This one needs a speaker more than any other on the list."
+      "note": "Eight of about fifteen. Attested: ᎠᏰᏟ (middle), ᎠᎦᏛᏗ (mirror), ᎠᏰᎸᏗ (sign), ᎦᏅᎯᏓ (long), ᎤᏔᎾ (big), ᎪᏪᎳ (write). This one needs a speaker more than any other on the list. For html.builtKlingon the name Klingon is written into the syllabary as ᎧᎵᏂᎪᏂ, the way this block already writes ᏣᏩᏂᏏ for Japanese; a speaker should confirm the spelling."
     },
     "cree_syl": {
       "coined": {
@@ -226,7 +227,7 @@
         "ᐱᒥᐸᐦᑖᐤ",
         "ᒪᓯᓇᐦᐃᑲᐣ"
       ],
-      "note": "Plains Cree in syllabics. Seven of about fifteen. Attested: ᑕᐢᑕᐋᐧᔨᕽ (middle), ᐋᐧᐸᒧᐣ (mirror), ᐱᒥᐸᐦᑖᐤ (run), ᒪᓯᓇᐦᐃᑲᐣ (write). Needs a speaker, and the syllabics need checking character by character."
+      "note": "Plains Cree in syllabics. Seven of about fifteen. Attested: ᑕᐢᑕᐋᐧᔨᕽ (middle), ᐋᐧᐸᒧᐣ (mirror), ᐱᒥᐸᐦᑖᐤ (run), ᒪᓯᓇᐦᐃᑲᐣ (write). Needs a speaker, and the syllabics need checking character by character. For html.builtKlingon the name Klingon is written into syllabics as ᐦᒐᓕᐣᑳᐣ, following ᒐᐹᓂᐢ for Japanese; a speaker should confirm the spelling."
     },
     "wayuu": {
       "attested": [
@@ -758,7 +759,7 @@
         "clani_pixra"
       ],
       "coined": {},
-      "note": "The core is attested gismu: salpo slope, skari colour, cliva to leave, minra mirror, midju middle, stapa step, batke key, sinxa sign, clani long, ganra wide. FIVE THINGS A SPEAKER SHOULD CHECK, none of them invented words. roskari is `ro skari` (all colours) written closed up, because an identifier cannot hold a space, so the single tint can stay skari. pinta (horizontal) and sraji (vertical) are used as the counts of rows and columns — a semantic extension of two gismu, not a new one. ganra_pixra and clani_pixra join two gismu with an underscore for the same spacing reason."
+      "note": "The core is attested gismu: salpo slope, skari colour, cliva to leave, minra mirror, midju middle, stapa step, batke key, sinxa sign, clani long, ganra wide. FIVE THINGS A SPEAKER SHOULD CHECK, none of them invented words. roskari is `ro skari` (all colours) written closed up, because an identifier cannot hold a space, so the single tint can stay skari. pinta (horizontal) and sraji (vertical) are used as the counts of rows and columns — a semantic extension of two gismu, not a new one. ganra_pixra and clani_pixra join two gismu with an underscore for the same spacing reason. For html.builtKlingon the name Klingon is lojbanized as la .klingon., beside la .ponjon. and la .spanskon. already in the block; a speaker should confirm the form."
     },
     "toki_pona": {
       "attested": [
@@ -771,7 +772,7 @@
         "palisa"
       ],
       "coined": {},
-      "note": "toki pona has about 120 words and no geometry vocabulary, so almost every name here is a compound of ordinary words written closed up — the language's normal way of saying a new thing, and an identifier cannot hold the space. sitelenMute many-symbols, kuleMute many-colours, pokaLipu side-of-the-sheet, suliLipu height-of-the-sheet, supaLukin looking-surface for the mirror, palisa a long rigid thing for a column, noka a foot used for a step. Nothing was invented; every part is in the word list. A speaker should still check that each compound reads the way it is meant to."
+      "note": "toki pona has about 120 words and no geometry vocabulary, so almost every name here is a compound of ordinary words written closed up — the language's normal way of saying a new thing, and an identifier cannot hold the space. sitelenMute many-symbols, kuleMute many-colours, pokaLipu side-of-the-sheet, suliLipu height-of-the-sheet, supaLukin looking-surface for the mirror, palisa a long rigid thing for a column, noka a foot used for a step. Nothing was invented; every part is in the word list. A speaker should still check that each compound reads the way it is meant to. For html.builtKlingon the name Klingon is adapted to toki pona phonotactics as toki Kinkon, beside toki Epanja for Spanish; a speaker should confirm."
     },
     "emoji": {
       "attested": [],

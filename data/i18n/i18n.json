@@ -226,7 +226,8 @@
           "joinLead": "Agglutination, in the plain linguistic sense: one mark, one meaning, and the meanings stack. An operator is <em>spelled</em>, not coined.",
           "joinFoot": "Five releases. <b>One</b> new mark. Everything else was spelled from the ones already here.",
           "readFoot": "Not one word in any of it. The colours are the program's own: it picks an ANSI-256 index per escape step and writes each cell with <code>&gt;&gt;~</code> on the canvas <code>&gt;&gt;|</code> opens. The tree-walker and the register VM draw it identically, cell for cell.",
-          "builtFoot": "Every one of these is a capture of the running program. Not one identifier in any of them is an English word — one is not in a human language at all — and nothing in the grammar had to change for that."
+          "builtFoot": "Every one of these is a capture of the running program. Not one identifier in any of them is an English word — one is not in a human language at all — and nothing in the grammar had to change for that.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — written in Klingon and drawn in <a href=\"piqad-reference.html\">pIqaD</a>, a language invented for <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Difficulty and language are chosen on the first screen; the second is the first wave, mid-flight."
         }
       }
     },
@@ -443,7 +444,8 @@
           "joinLead": "Aglutinación, en el sentido lingüístico llano: una marca, un significado, y los significados se apilan. Un operador se <em>deletrea</em>, no se acuña.",
           "joinFoot": "Cinco versiones. <b>Una</b> marca nueva. Todo lo demás se deletreó con las que ya estaban aquí.",
           "readFoot": "Ni una palabra en nada de esto. Los colores son del propio programa: elige un índice ANSI-256 por paso de escape y escribe cada celda con <code>&gt;&gt;~</code> sobre el lienzo que abre <code>&gt;&gt;|</code>. El tree-walker y la VM de registros lo dibujan idéntico, celda por celda.",
-          "builtFoot": "Todas son capturas del programa en marcha. Ni un identificador de ninguna de ellas es una palabra inglesa — una no es siquiera de una lengua humana — y nada en la gramática tuvo que cambiar para eso."
+          "builtFoot": "Todas son capturas del programa en marcha. Ni un identificador de ninguna de ellas es una palabra inglesa — una no es siquiera de una lengua humana — y nada en la gramática tuvo que cambiar para eso.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — escrito en klingon y dibujado en <a href=\"piqad-reference.html\">pIqaD</a>, una lengua inventada para <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. La dificultad y el idioma se eligen en la primera pantalla; la segunda es la primera oleada, en pleno vuelo."
         }
       }
     },
@@ -660,7 +662,8 @@
           "joinLead": "Aglutinação, no sentido linguístico simples: uma marca, um significado, e os significados se empilham. Um operador é <em>soletrado</em>, não cunhado.",
           "joinFoot": "Cinco versões. <b>Uma</b> marca nova. Todo o resto foi soletrado com as que já estavam aqui.",
           "readFoot": "Nem uma palavra em nada disso. As cores são do próprio programa: ele escolhe um índice ANSI-256 por passo de escape e escreve cada célula com <code>&gt;&gt;~</code> na tela que <code>&gt;&gt;|</code> abre. O tree-walker e a VM de registradores desenham igual, célula por célula.",
-          "builtFoot": "As duas são capturas do programa rodando. Nem um identificador em qualquer delas é uma palavra inglesa — e nada na gramática precisou mudar para isso."
+          "builtFoot": "Todas são capturas do programa rodando. Nem um identificador em qualquer delas é uma palavra inglesa — uma nem sequer é de uma língua humana — e nada na gramática precisou mudar para isso.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — escrito em klingon e desenhado em <a href=\"piqad-reference.html\">pIqaD</a>, uma língua inventada para <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. A dificuldade e o idioma são escolhidos na primeira tela; a segunda é a primeira leva, em pleno voo."
         }
       }
     },
@@ -882,7 +885,8 @@
           "joinLead": "Agglutination, au sens linguistique ordinaire : une marque, un sens, et les sens s’empilent. Un opérateur s’<em>épelle</em>, il ne se forge pas.",
           "joinFoot": "Cinq versions. <b>Une</b> marque nouvelle. Tout le reste s’est épelé avec celles qui étaient déjà là.",
           "readFoot": "Pas un mot dans tout cela. Les couleurs sont celles du programme : il choisit un indice ANSI-256 par pas d’échappement et écrit chaque cellule avec <code>&gt;&gt;~</code> sur le canevas qu’ouvre <code>&gt;&gt;|</code>. Le tree-walker et la VM à registres le dessinent à l’identique, cellule par cellule.",
-          "builtFoot": "Les deux sont des captures du programme en marche. Pas un identificateur dans l’une ou l’autre n’est un mot anglais — et rien dans la grammaire n’a eu à changer pour cela."
+          "builtFoot": "Toutes sont des captures du programme en marche. Pas un identificateur dans aucune d’elles n’est un mot anglais — l’une n’est même pas d’une langue humaine — et rien dans la grammaire n’a eu à changer pour cela.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — écrit en klingon et tracé en <a href=\"piqad-reference.html\">pIqaD</a>, une langue inventée pour <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. La difficulté et la langue se choisissent au premier écran ; le second est la première vague, en plein vol."
         }
       }
     },
@@ -1099,7 +1103,8 @@
           "joinLead": "Agglutination im schlichten sprachwissenschaftlichen Sinn: ein Zeichen, eine Bedeutung, und die Bedeutungen stapeln sich. Ein Operator wird <em>buchstabiert</em>, nicht geprägt.",
           "joinFoot": "Fünf Ausgaben. <b>Ein</b> neues Zeichen. Alles Übrige wurde aus denen buchstabiert, die schon da waren.",
           "readFoot": "Kein einziges Wort darin. Die Farben gehören dem Programm: es wählt je Fluchtschritt einen ANSI-256-Index und schreibt jede Zelle mit <code>&gt;&gt;~</code> auf die Leinwand, die <code>&gt;&gt;|</code> öffnet. Der Tree-Walker und die Register-VM zeichnen es gleich, Zelle für Zelle.",
-          "builtFoot": "Beides sind Aufnahmen des laufenden Programms. Kein einziger Bezeichner darin ist ein englisches Wort — und nichts in der Grammatik musste sich dafür ändern."
+          "builtFoot": "Alle sind Aufnahmen des laufenden Programms. Kein einziger Bezeichner darin ist ein englisches Wort — einer ist nicht einmal aus einer menschlichen Sprache — und nichts in der Grammatik musste sich dafür ändern.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — auf Klingonisch geschrieben und in <a href=\"piqad-reference.html\">pIqaD</a> gezeichnet, einer für <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> erfundenen Sprache. Schwierigkeit und Sprache werden auf dem ersten Schirm gewählt; der zweite ist die erste Welle, mitten im Flug."
         }
       }
     },
@@ -1316,7 +1321,8 @@
           "joinLead": "Agglutinazione, nel senso linguistico piano: un segno, un significato, e i significati si impilano. Un operatore si <em>compita</em>, non si conia.",
           "joinFoot": "Cinque versioni. <b>Un</b> segno nuovo. Tutto il resto è stato compitato con quelli che c'erano già.",
           "readFoot": "Non una parola in tutto ciò. Le tinte sono del programma stesso: sceglie un indice ANSI-256 per ogni passo di fuga e scrive ogni cella con <code>&gt;&gt;~</code> sulla tela che <code>&gt;&gt;|</code> apre. Il tree-walker e la VM a registri lo disegnano identico, cella per cella.",
-          "builtFoot": "Sono entrambe catture del programma in esecuzione. Non un identificatore in nessuna delle due è una parola inglese — e nulla nella grammatica ha dovuto cambiare per questo."
+          "builtFoot": "Sono tutte catture del programma in esecuzione. Non un identificatore in nessuna di esse è una parola inglese — una non è nemmeno di una lingua umana — e nulla nella grammatica ha dovuto cambiare per questo.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — scritto in klingon e disegnato in <a href=\"piqad-reference.html\">pIqaD</a>, una lingua inventata per <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. La difficoltà e la lingua si scelgono nella prima schermata; la seconda è la prima ondata, in pieno volo."
         }
       }
     },
@@ -1533,7 +1539,8 @@
           "joinLead": "Agglutinatie, in de gewone taalkundige zin: één teken, één betekenis, en de betekenissen stapelen. Een operator wordt <em>gespeld</em>, niet gemunt.",
           "joinFoot": "Vijf uitgaven. <b>Eén</b> nieuw teken. Al het overige werd gespeld met wat er al was.",
           "readFoot": "Geen enkel woord erin. De tinten zijn van het programma zelf: het kiest per ontsnappingsstap een ANSI-256-index en schrijft elke cel met <code>&gt;&gt;~</code> op het canvas dat <code>&gt;&gt;|</code> opent. De tree-walker en de register-VM tekenen het identiek, cel voor cel.",
-          "builtFoot": "Beide zijn opnamen van het draaiende programma. Geen enkele naam in een van beide is een Engels woord — en niets in de grammatica hoefde daarvoor te veranderen."
+          "builtFoot": "Het zijn allemaal opnamen van het draaiende programma. Geen enkele naam erin is een Engels woord — een ervan is niet eens uit een menselijke taal — en niets in de grammatica hoefde daarvoor te veranderen.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — in het Klingon geschreven en in <a href=\"piqad-reference.html\">pIqaD</a> getekend, een taal die voor <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> is verzonnen. Moeilijkheid en taal worden op het eerste scherm gekozen; het tweede is de eerste golf, midden in de vlucht."
         }
       }
     },
@@ -1750,7 +1757,8 @@
           "joinLead": "Aglutynacja w zwykłym językoznawczym sensie: jeden znak, jedno znaczenie, i znaczenia się nakładają. Operator się <em>składa</em>, nie ukuwa.",
           "joinFoot": "Pięć wydań. <b>Jeden</b> nowy znak. Cała reszta została złożona z tych, które już tu były.",
           "readFoot": "Ani jednego słowa w całości. Barwy należą do samego programu: wybiera indeks ANSI-256 na każdy krok ucieczki i pisze każdą komórkę przez <code>&gt;&gt;~</code> na płótnie, które otwiera <code>&gt;&gt;|</code>. Tree-walker i maszyna rejestrowa rysują to identycznie, komórka po komórce.",
-          "builtFoot": "Oba to zrzuty działającego programu. Ani jedna nazwa w żadnym z nich nie jest angielskim słowem — i nic w gramatyce nie musiało się dla tego zmienić."
+          "builtFoot": "Wszystkie to zrzuty działającego programu. Ani jedna nazwa w żadnym z nich nie jest angielskim słowem — jedna nie jest nawet z ludzkiego języka — i nic w gramatyce nie musiało się dla tego zmienić.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — napisane po klingońsku i zapisane pismem <a href=\"piqad-reference.html\">pIqaD</a>, językiem wymyślonym na potrzeby <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Trudność i język wybiera się na pierwszym ekranie; drugi to pierwsza fala, w locie."
         }
       }
     },
@@ -1967,7 +1975,8 @@
           "joinLead": "Агглютинация в простом языковедческом смысле: один знак, одно значение, и значения складываются. Оператор <em>пишется по знакам</em>, а не выдумывается.",
           "joinFoot": "Пять выпусков. <b>Один</b> новый знак. Всё остальное сложено из тех, что уже были.",
           "readFoot": "Ни одного слова во всём этом. Цвета принадлежат самой программе: она выбирает индекс ANSI-256 на каждый шаг убегания и пишет каждую клетку через <code>&gt;&gt;~</code> на холсте, который открывает <code>&gt;&gt;|</code>. Обходчик дерева и регистровая ВМ рисуют это одинаково, клетка за клеткой.",
-          "builtFoot": "Оба — снимки работающей программы. Ни одно имя ни в одном из них не является английским словом — и ничему в грамматике не пришлось для этого меняться."
+          "builtFoot": "Все они — снимки работающей программы. Ни одно имя ни в одном из них не является английским словом — одно и вовсе не из человеческого языка — и ничему в грамматике не пришлось для этого меняться.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — написано по-клингонски и начертано письмом <a href=\"piqad-reference.html\">pIqaD</a>, языком, придуманным для <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Сложность и язык выбираются на первом экране; второй — первая волна, в полёте."
         }
       }
     },
@@ -2184,7 +2193,8 @@
           "joinLead": "Аглютинація в простому мовознавчому сенсі: один знак, одне значення, і значення складаються. Оператор <em>пишеться по знаках</em>, а не вигадується.",
           "joinFoot": "П'ять випусків. <b>Один</b> новий знак. Усе інше складено з тих, що вже були.",
           "readFoot": "Жодного слова в усьому цьому. Кольори належать самій програмі: вона обирає індекс ANSI-256 на кожен крок утечі й пише кожну клітинку через <code>&gt;&gt;~</code> на полотні, яке відкриває <code>&gt;&gt;|</code>. Обхідник дерева й реєстрова ВМ малюють це однаково, клітинка за клітинкою.",
-          "builtFoot": "Обидва — знімки програми, що працює. Жодне ім'я в жодному з них не є англійським словом — і нічому в граматиці не довелося для цього змінюватись."
+          "builtFoot": "Усі вони — знімки програми, що працює. Жодне ім'я в жодному з них не є англійським словом — одне навіть не з людської мови — і нічому в граматиці не довелося для цього змінюватись.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — написано клінгонською й накреслено письмом <a href=\"piqad-reference.html\">pIqaD</a>, мовою, вигаданою для <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Складність і мову обирають на першому екрані; другий — перша хвиля, у польоті."
         }
       }
     },
@@ -2401,7 +2411,8 @@
           "joinLead": "Аглутинация в обикновения езиковедски смисъл: един знак, едно значение, и значенията се трупат. Операторът се <em>сричкува</em>, не се измисля.",
           "joinFoot": "Пет издания. <b>Един</b> нов знак. Всичко останало е сричкувано от онези, които вече бяха тук.",
           "readFoot": "Нито една дума във всичко това. Цветовете са на самата програма: тя избира индекс ANSI-256 за всяка стъпка на бягство и пише всяка клетка чрез <code>&gt;&gt;~</code> върху платното, което отваря <code>&gt;&gt;|</code>. Обхождачът на дървото и регистровата ВМ го чертаят еднакво, клетка по клетка.",
-          "builtFoot": "И двете са снимки на програмата, докато работи. Нито едно име в никоя от тях не е английска дума — и нищо в граматиката не е трябвало да се промени за това."
+          "builtFoot": "Всички са снимки на програмата, докато работи. Нито едно име в никоя от тях не е английска дума — едно дори не е от човешки език — и нищо в граматиката не е трябвало да се промени за това.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — писано на клингонски и изписано с <a href=\"piqad-reference.html\">pIqaD</a>, език, измислен за <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Трудността и езикът се избират на първия екран; вторият е първата вълна, в полет."
         }
       }
     },
@@ -2618,7 +2629,8 @@
           "joinLead": "Aglutinacija u običnom jezikoslovnom smislu: jedan znak, jedno značenje, i značenja se slažu jedno na drugo. Operator se <em>sriče</em>, ne kuje se.",
           "joinFoot": "Pet izdanja. <b>Jedan</b> nov znak. Sve ostalo sričano je iz onih koji su već bili tu.",
           "readFoot": "Ni jedne riječi u svemu tome. Boje su programove vlastite: bira indeks ANSI-256 po svakom koraku bijega i piše svaku ćeliju preko <code>&gt;&gt;~</code> na platnu koje otvara <code>&gt;&gt;|</code>. Prolaznik stabla i registarski VM crtaju to jednako, ćeliju po ćeliju.",
-          "builtFoot": "Oboje su snimke programa dok radi. Ni jedno ime ni u jednom od njih nije engleska riječ — i ništa se u gramatici zbog toga nije trebalo mijenjati."
+          "builtFoot": "Sve su snimke programa dok radi. Ni jedno ime ni u jednom od njih nije engleska riječ — jedno nije ni iz ljudskog jezika — i ništa se u gramatici zbog toga nije trebalo mijenjati.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — pisan na klingonskom i ispisan pismom <a href=\"piqad-reference.html\">pIqaD</a>, jezikom izmišljenim za <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Težina i jezik biraju se na prvom zaslonu; drugi je prvi val, u letu."
         }
       }
     },
@@ -2835,7 +2847,8 @@
           "joinLead": "Aglutinace v prostém jazykovědném smyslu: jeden znak, jeden význam, a významy se vrství. Operátor se <em>hláskuje</em>, neražení se nekoná.",
           "joinFoot": "Pět vydání. <b>Jeden</b> nový znak. Všechno ostatní bylo vyhláskováno z těch, které tu už byly.",
           "readFoot": "Ani jedno slovo v tom celém. Barvy patří samotnému programu: vybírá index ANSI-256 na každý krok úniku a píše každou buňku přes <code>&gt;&gt;~</code> na plátno, které otevírá <code>&gt;&gt;|</code>. Průchodce stromem a registrový VM to kreslí stejně, buňku po buňce.",
-          "builtFoot": "Obojí jsou snímky běžícího programu. Ani jedno jméno v žádném z nich není anglické slovo — a nic v gramatice se kvůli tomu nemuselo měnit."
+          "builtFoot": "Všechny jsou snímky běžícího programu. Ani jedno jméno v žádném z nich není anglické slovo — jedno není ani z lidského jazyka — a nic v gramatice se kvůli tomu nemuselo měnit.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — napsané klingonsky a vysázené písmem <a href=\"piqad-reference.html\">pIqaD</a>, jazykem vymyšleným pro <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Obtížnost a jazyk se volí na první obrazovce; druhá je první vlna, uprostřed letu."
         }
       }
     },
@@ -3052,7 +3065,8 @@
           "joinLead": "Aglutinácia v obyčajnom jazykovednom zmysle: jeden znak, jeden význam, a významy sa vrstvia. Operátor sa <em>hláskuje</em>, nerazí sa.",
           "joinFoot": "Päť vydaní. <b>Jeden</b> nový znak. Všetko ostatné bolo vyhláskované z tých, ktoré tu už boli.",
           "readFoot": "Ani jedno slovo v tom celom. Farby patria samotnému programu: vyberá index ANSI-256 na každý krok úniku a píše každú bunku cez <code>&gt;&gt;~</code> na plátno, ktoré otvára <code>&gt;&gt;|</code>. Prechádzač stromu a registrový VM to kreslia rovnako, bunku po bunke.",
-          "builtFoot": "Oboje sú snímky bežiaceho programu. Ani jedno meno v žiadnom z nich nie je anglické slovo — a nič v gramatike sa preto nemuselo meniť."
+          "builtFoot": "Všetky sú snímky bežiaceho programu. Ani jedno meno v žiadnom z nich nie je anglické slovo — jedno nie je ani z ľudského jazyka — a nič v gramatike sa preto nemuselo meniť.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — napísané po klingonsky a vysádzané písmom <a href=\"piqad-reference.html\">pIqaD</a>, jazykom vymysleným pre <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Obťažnosť a jazyk sa volia na prvej obrazovke; druhá je prvá vlna, uprostred letu."
         }
       }
     },
@@ -3269,7 +3283,8 @@
           "joinLead": "Aglutinare, în sensul lingvistic simplu: un semn, un înțeles, și înțelesurile se suprapun. Un operator se <em>silabisește</em>, nu se inventează.",
           "joinFoot": "Cinci versiuni. <b>Un</b> semn nou. Tot restul a fost silabisit din cele care erau deja aici.",
           "readFoot": "Niciun cuvânt în tot acest lucru. Nuanțele sunt ale programului însuși: alege un indice ANSI-256 pentru fiecare pas de evadare și scrie fiecare celulă cu <code>&gt;&gt;~</code> pe pânza pe care o deschide <code>&gt;&gt;|</code>. Parcurgătorul de arbore și mașina cu registre îl desenează la fel, celulă cu celulă.",
-          "builtFoot": "Amândouă sunt capturi ale programului în funcțiune. Niciun nume din vreuna dintre ele nu e un cuvânt englezesc — și nimic din gramatică n-a trebuit să se schimbe pentru asta."
+          "builtFoot": "Toate sunt capturi ale programului în funcțiune. Niciun nume din vreuna dintre ele nu e un cuvânt englezesc — unul nici măcar nu e dintr-o limbă omenească — și nimic din gramatică n-a trebuit să se schimbe pentru asta.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — scris în klingoniană și desenat în <a href=\"piqad-reference.html\">pIqaD</a>, o limbă inventată pentru <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Dificultatea și limba se aleg pe primul ecran; al doilea e primul val, în plin zbor."
         }
       }
     },
@@ -3574,7 +3589,8 @@
           "joinLead": "Agglutinaatio tavallisessa kielitieteellisessä mielessä: yksi merkki, yksi merkitys, ja merkitykset kasautuvat. Operaattori <em>tavataan</em>, sitä ei keksitä.",
           "joinFoot": "Viisi julkaisua. <b>Yksi</b> uusi merkki. Kaikki muu tavattiin niistä, jotka olivat jo täällä.",
           "readFoot": "Ei ainuttakaan sanaa koko tuossa. Sävyt ovat ohjelman omia: se valitsee ANSI-256-indeksin kutakin pakoaskelta kohti ja kirjoittaa jokaisen ruudun merkillä <code>&gt;&gt;~</code> kankaalle, jonka <code>&gt;&gt;|</code> avaa. Puukävelijä ja rekisterikone piirtävät sen samoin, ruutu ruudulta.",
-          "builtFoot": "Molemmat ovat otoksia ohjelmasta sen käydessä. Yksikään nimi kummassakaan ei ole englannin sana — eikä mikään kieliopissa tarvinnut muuttua sitä varten."
+          "builtFoot": "Kaikki ovat otoksia ohjelmasta sen käydessä. Yksikään nimi missään niistä ei ole englannin sana — yksi ei ole edes ihmiskielestä — eikä mikään kieliopissa tarvinnut muuttua sitä varten.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — kirjoitettu klingoniksi ja piirretty <a href=\"piqad-reference.html\">pIqaD</a>-kirjoituksella, kielellä joka keksittiin <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>iä varten. Vaikeus ja kieli valitaan ensimmäisellä ruudulla; toinen on ensimmäinen aalto, kesken lennon."
         }
       }
     },
@@ -3791,7 +3807,8 @@
           "joinLead": "Aglutinatsioon tavalises keeleteaduslikus mõttes: üks märk, üks tähendus, ja tähendused ladestuvad. Tehe <em>veeritakse</em>, seda ei mündita.",
           "joinFoot": "Viis väljalaset. <b>Üks</b> uus märk. Kõik ülejäänu veeriti neist, mis juba olid siin.",
           "readFoot": "Mitte ühtegi sõna kogu selles. Toonid on programmi enda omad: see valib ANSI-256 indeksi iga põgenemissammu kohta ja kirjutab iga ruudu märgiga <code>&gt;&gt;~</code> lõuendile, mille <code>&gt;&gt;|</code> avab. Puukäija ja registrimasin joonistavad selle ühtmoodi, ruut ruudu haaval.",
-          "builtFoot": "Mõlemad on ülesvõtted töötavast programmist. Mitte ükski nimi kummaski neist pole ingliskeelne sõna — ja miski grammatikas ei pidanud selleks muutuma."
+          "builtFoot": "Kõik on ülesvõtted töötavast programmist. Mitte ükski nimi üheski neist pole ingliskeelne sõna — üks pole isegi inimkeelest — ja miski grammatikas ei pidanud selleks muutuma.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — kirjutatud klingoni keeles ja joonistatud kirjas <a href=\"piqad-reference.html\">pIqaD</a>, keeles, mis mõeldi välja <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>i jaoks. Raskusaste ja keel valitakse esimesel ekraanil; teine on esimene laine, keset lendu."
         }
       }
     },
@@ -4008,7 +4025,8 @@
           "joinLead": "Aglutinācija parastā valodnieciskā nozīmē: viena zīme, viena nozīme, un nozīmes krājas. Operators tiek <em>burtots</em>, nevis kalts.",
           "joinFoot": "Pieci laidieni. <b>Viena</b> jauna zīme. Viss pārējais tika izburtots no tām, kas jau bija šeit.",
           "readFoot": "Neviena vārda visā tajā. Toņi ir pašas programmas: tā izvēlas ANSI-256 indeksu katram bēgšanas solim un raksta katru šūnu ar <code>&gt;&gt;~</code> uz audekla, ko atver <code>&gt;&gt;|</code>. Koka staigātājs un reģistru mašīna to zīmē vienādi, šūnu pa šūnai.",
-          "builtFoot": "Abi ir uzņēmumi programmai darbībā. Neviens vārds nevienā no tiem nav angļu vārds — un nekam gramatikā tāpēc nebija jāmainās."
+          "builtFoot": "Visi ir uzņēmumi programmai darbībā. Neviens vārds nevienā no tiem nav angļu vārds — viens nav pat no cilvēku valodas — un nekam gramatikā tāpēc nebija jāmainās.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — rakstīts klingonu valodā un attēlots rakstībā <a href=\"piqad-reference.html\">pIqaD</a>, valodā, kas izdomāta <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> vajadzībām. Grūtību un valodu izvēlas pirmajā ekrānā; otrais ir pirmais vilnis, lidojuma vidū."
         }
       }
     },
@@ -4225,7 +4243,8 @@
           "joinLead": "Agliutinacija paprasta kalbotyros prasme: vienas ženklas, viena reikšmė, ir reikšmės kraunasi. Operatorius <em>rašomas raidėmis</em>, jis nekalamas.",
           "joinFoot": "Penki leidimai. <b>Vienas</b> naujas ženklas. Visa kita buvo surašyta iš tų, kurie jau buvo čia.",
           "readFoot": "Nė vieno žodžio visame tame. Atspalviai yra pačios programos: ji renka ANSI-256 indeksą kiekvienam pabėgimo žingsniui ir rašo kiekvieną langelį per <code>&gt;&gt;~</code> ant drobės, kurią atveria <code>&gt;&gt;|</code>. Medžio vaikščiotojas ir registrų mašina piešia tai vienodai, langelis po langelio.",
-          "builtFoot": "Abu yra veikiančios programos nuotraukos. Nė vienas vardas nė viename iš jų nėra angliškas žodis — ir niekam gramatikoje dėl to nereikėjo keistis."
+          "builtFoot": "Visos yra veikiančios programos nuotraukos. Nė vienas vardas nė vienoje iš jų nėra angliškas žodis — vienas net ne iš žmonių kalbos — ir niekam gramatikoje dėl to nereikėjo keistis.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — parašyta klingonų kalba ir išrašyta <a href=\"piqad-reference.html\">pIqaD</a> raštu, kalba, sugalvota <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> reikmėms. Sudėtingumas ir kalba pasirenkami pirmame ekrane; antrasis yra pirmoji banga, skrydžio viduryje."
         }
       }
     },
@@ -4442,7 +4461,8 @@
           "joinLead": "Agglutinasjon i vanlig språkvitenskapelig forstand: ett tegn, én betydning, og betydningene stables. En operator <em>staves</em>, den myntes ikke.",
           "joinFoot": "Fem utgaver. <b>Ett</b> nytt tegn. Alt det andre ble stavet fram av dem som alt var her.",
           "readFoot": "Ikke ett eneste ord i det hele. Tonene er programmets egne: det velger en ANSI-256-indeks per fluktsteg og skriver hver rute med <code>&gt;&gt;~</code> på lerretet som <code>&gt;&gt;|</code> åpner. Trevandreren og registermaskinen tegner det likt, rute for rute.",
-          "builtFoot": "Begge er opptak av programmet mens det kjører. Ikke ett navn i noen av dem er et engelsk ord — og ingenting i grammatikken måtte endres for det."
+          "builtFoot": "Alle er opptak av programmet mens det kjører. Ikke ett navn i noen av dem er et engelsk ord — ett er ikke engang fra et menneskespråk — og ingenting i grammatikken måtte endres for det.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — skrevet på klingon og tegnet med <a href=\"piqad-reference.html\">pIqaD</a>, et språk som ble funnet opp for <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Vanskelighetsgrad og språk velges på den første skjermen; den andre er den første bølgen, midt i flukten."
         }
       }
     },
@@ -4659,7 +4679,8 @@
           "joinLead": "Agglutination i almindelig sprogvidenskabelig forstand: ét tegn, én betydning, og betydningerne stables. En operator <em>staves</em>, den præges ikke.",
           "joinFoot": "Fem udgaver. <b>Ét</b> nyt tegn. Alt det øvrige blev stavet frem af dem, der allerede var her.",
           "readFoot": "Ikke ét eneste ord i det hele. Tonerne er programmets egne: det vælger et ANSI-256-indeks pr. flugttrin og skriver hver celle med <code>&gt;&gt;~</code> på lærredet, som <code>&gt;&gt;|</code> åbner. Trævandreren og registermaskinen tegner det ens, celle for celle.",
-          "builtFoot": "Begge er optagelser af programmet, mens det kører. Ikke ét navn i nogen af dem er et engelsk ord — og intet i grammatikken skulle ændres for det."
+          "builtFoot": "Alle er optagelser af programmet, mens det kører. Ikke ét navn i nogen af dem er et engelsk ord — ét er ikke engang fra et menneskesprog — og intet i grammatikken skulle ændres for det.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — skrevet på klingon og tegnet med <a href=\"piqad-reference.html\">pIqaD</a>, et sprog der blev opfundet til <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Sværhedsgrad og sprog vælges på den første skærm; den anden er den første bølge, midt i flugten."
         }
       }
     },
@@ -4876,7 +4897,8 @@
           "joinLead": "Agglutination i vanlig språkvetenskaplig mening: ett tecken, en betydelse, och betydelserna staplas. En operator <em>stavas</em>, den myntas inte.",
           "joinFoot": "Fem utgåvor. <b>Ett</b> nytt tecken. Allt annat stavades fram ur dem som redan fanns.",
           "readFoot": "Inte ett enda ord i alltihop. Tonerna är programmets egna: det väljer ett ANSI-256-index per flyktsteg och skriver varje ruta med <code>&gt;&gt;~</code> på duken som <code>&gt;&gt;|</code> öppnar. Trädvandraren och registermaskinen ritar det likadant, ruta för ruta.",
-          "builtFoot": "Båda är tagningar av programmet medan det kör. Inte ett enda namn i någon av dem är ett engelskt ord — och ingenting i grammatiken behövde ändras för det."
+          "builtFoot": "Alla är tagningar av programmet medan det kör. Inte ett enda namn i någon av dem är ett engelskt ord — ett är inte ens från ett mänskligt språk — och ingenting i grammatiken behövde ändras för det.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — skrivet på klingonska och tecknat med <a href=\"piqad-reference.html\">pIqaD</a>, ett språk som uppfanns för <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Svårighetsgrad och språk väljs på den första skärmen; den andra är den första vågen, mitt i flykten."
         }
       }
     },
@@ -5093,7 +5115,8 @@
           "joinLead": "Samskeyting í venjulegri málfræðilegri merkingu: eitt tákn, ein merking, og merkingarnar hlaðast. Virki er <em>stafaður</em>, ekki myntaður.",
           "joinFoot": "Fimm útgáfur. <b>Eitt</b> nýtt tákn. Allt hitt var stafað úr þeim sem þegar voru hér.",
           "readFoot": "Ekki eitt einasta orð í þessu öllu. Litirnir eru forritsins eigin: það velur ANSI-256 vísi á hvert flóttaskref og skrifar hvern reit með <code>&gt;&gt;~</code> á strigann sem <code>&gt;&gt;|</code> opnar. Trjágangarinn og gisti-vélin teikna það eins, reit fyrir reit.",
-          "builtFoot": "Bæði eru upptökur af forritinu í gangi. Ekki eitt nafn í hvorugu þeirra er enskt orð — og ekkert í málfræðinni þurfti að breytast fyrir það."
+          "builtFoot": "Öll eru upptökur af forritinu í gangi. Ekki eitt nafn í neinu þeirra er enskt orð — eitt er ekki einu sinni úr mannlegu máli — og ekkert í málfræðinni þurfti að breytast fyrir það.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — skrifað á klingonsku og dregið með <a href=\"piqad-reference.html\">pIqaD</a>, tungumáli sem var fundið upp fyrir <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Erfiðleikastig og tungumál eru valin á fyrsta skjánum; sá annar er fyrsta bylgjan, á miðju flugi."
         }
       }
     },
@@ -5310,7 +5333,8 @@
           "joinLead": "Συγκόλληση, με το απλό γλωσσολογικό νόημα: ένα σημάδι, ένα νόημα, και τα νοήματα στοιβάζονται. Ένας τελεστής <em>συλλαβίζεται</em>, δεν επινοείται.",
           "joinFoot": "Πέντε εκδόσεις. <b>Ένα</b> νέο σημάδι. Όλα τα υπόλοιπα συλλαβίστηκαν από αυτά που ήταν κιόλας εδώ.",
           "readFoot": "Ούτε μια λέξη σε όλο αυτό. Τα χρώματα είναι του ίδιου του προγράμματος: διαλέγει έναν δείκτη ANSI-256 σε κάθε βήμα διαφυγής και γράφει κάθε κελί με <code>&gt;&gt;~</code> πάνω στον καμβά που ανοίγει το <code>&gt;&gt;|</code>. Ο διαβάτης του δέντρου και η μηχανή καταχωρητών το σχεδιάζουν πανομοιότυπα, κελί προς κελί.",
-          "builtFoot": "Και τα δύο είναι λήψεις του προγράμματος καθώς τρέχει. Ούτε ένα όνομα σε κανένα από τα δύο δεν είναι αγγλική λέξη — και τίποτα στη γραμματική δεν χρειάστηκε να αλλάξει γι' αυτό."
+          "builtFoot": "Όλες είναι λήψεις του προγράμματος καθώς τρέχει. Ούτε ένα όνομα σε καμία από αυτές δεν είναι αγγλική λέξη — μία δεν είναι καν από ανθρώπινη γλώσσα — και τίποτα στη γραμματική δεν χρειάστηκε να αλλάξει γι' αυτό.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — γραμμένο στα κλίνγκον και σχεδιασμένο με <a href=\"piqad-reference.html\">pIqaD</a>, μια γλώσσα φτιαγμένη για το <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Η δυσκολία και η γλώσσα διαλέγονται στην πρώτη οθόνη· η δεύτερη είναι το πρώτο κύμα, εν πτήσει."
         }
       }
     },
@@ -5527,7 +5551,8 @@
           "joinLead": "Аглутинација у обичном језичком смислу: један знак, једно значење, и значења се слажу једно на друго. Оператор се <em>слови</em>, не кује се.",
           "joinFoot": "Пет издања. <b>Један</b> нов знак. Све остало сложено је из оних који су већ били ту.",
           "readFoot": "Ни једне речи у свему томе. Боје су програмове сопствене: бира индекс ANSI-256 по сваком кораку бекства и пише сваку ћелију преко <code>&gt;&gt;~</code> на платну које отвара <code>&gt;&gt;|</code>. Пролазник стабла и регистарски VM цртају то једнако, ћелију по ћелију.",
-          "builtFoot": "Обоје су снимци програма док ради. Ни једно име ни у једном од њих није енглеска реч — и ништа у граматици због тога није морало да се мења."
+          "builtFoot": "Све су снимци програма док ради. Ни једно име ни у једном од њих није енглеска реч — једно није ни из људског језика — и ништа у граматици због тога није морало да се мења.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — писан на клингонском и исписан писмом <a href=\"piqad-reference.html\">pIqaD</a>, језиком измишљеним за <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Тежина и језик бирају се на првом екрану; други је први талас, у лету."
         }
       }
     },
@@ -5749,7 +5774,8 @@
           "joinLead": "الالتصاق، بمعناه اللغوي البسيط: علامة واحدة، معنى واحد، والمعاني تتراكم. فالعامل <em>يُتهجّى</em> ولا يُخترع.",
           "joinFoot": "خمسة إصدارات. علامة جديدة <b>واحدة</b>. وكل ما عداها تُهجّي مما كان هنا أصلًا.",
           "readFoot": "ليس في ذلك كله كلمة واحدة. والألوان ملك البرنامج نفسه: يختار فهرس ANSI-256 لكل خطوة هروب ويكتب كل مربع بـ<code>&gt;&gt;~</code> على اللوحة التي فتحها <code>&gt;&gt;|</code>. وسائر الشجرة وآلة السجلات يرسمانه بالطريقة نفسها، مربعًا مربعًا.",
-          "builtFoot": "كلتاهما صورتان لبرنامجين يعملان. وليس في أي منهما اسم واحد هو كلمة إنجليزية — ولم يكن في النحو ما ينبغي أن يتغيّر لأجل ذلك."
+          "builtFoot": "كلّها صور لبرامج تعمل. وليس في أي منها اسم واحد هو كلمة إنجليزية — بل إن أحدها ليس من لغة بشرية أصلًا — ولم يكن في النحو ما ينبغي أن يتغيّر لأجل ذلك.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — مكتوبة بالكلينغونية ومرسومة بخط <a href=\"piqad-reference.html\">pIqaD</a>، لغة اخترعت من أجل <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. الصعوبة واللغة تُختاران في الشاشة الأولى؛ والثانية هي الموجة الأولى، في وسط التحليق."
         }
       }
     },
@@ -5966,7 +5992,8 @@
           "joinLead": "הידבקות, במובן הבלשני הפשוט: סימן אחד, משמעות אחת, והמשמעויות נערמות. אופרטור <em>נכתב באותיותיו</em>, אינו מומצא.",
           "joinFoot": "חמש מהדורות. סימן חדש <b>אחד</b>. כל השאר נכתבו מתוך מה שכבר היה כאן.",
           "readFoot": "אין בכל זה אף מילה אחת. הצבעים שייכים לתוכנית עצמה: היא בוחרת אינדקס ANSI-256 לכל צעד בריחה וכותבת כל תא ב־<code>&gt;&gt;~</code> על הבד ש־<code>&gt;&gt;|</code> פתח. הולך העץ ומכונת האוגרים מציירים אותו באותו אופן, תא אחר תא.",
-          "builtFoot": "שתיהן תצלומים של תוכניות פועלות. אין באף אחת מהן שם אחד שהוא מילה אנגלית — ולא היה בדקדוק דבר שהיה צריך להשתנות לשם כך."
+          "builtFoot": "כולן תצלומים של תוכניות פועלות. אין באף אחת מהן שם אחד שהוא מילה אנגלית — אחת אינה אפילו משפה אנושית — ולא היה בדקדוק דבר שהיה צריך להשתנות לשם כך.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — כתובה בקלינגונית ומצוירת בכתב <a href=\"piqad-reference.html\">pIqaD</a>, שפה שהומצאה עבור <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. הרמה והשפה נבחרות במסך הראשון; השני הוא הגל הראשון, באמצע התעופה."
         }
       }
     },
@@ -6183,7 +6210,8 @@
           "joinLead": "چسبندگی، به معنای سادهٔ زبان‌شناختی‌اش: یک نشانه، یک معنا، و معناها روی هم می‌نشینند. عملگر <em>هجی می‌شود</em>، ابداع نمی‌شود.",
           "joinFoot": "پنج انتشار. <b>یک</b> نشانهٔ تازه. باقی همه از آنچه پیش‌تر اینجا بود هجی شده‌اند.",
           "readFoot": "در تمام آن حتی یک واژه نیست. رنگ‌ها از آنِ خودِ برنامه است: برای هر گامِ گریز یک نمایهٔ ANSI-256 برمی‌گزیند و هر خانه را با <code>&gt;&gt;~</code> روی بومی می‌نویسد که <code>&gt;&gt;|</code> گشوده است. پیمایندهٔ درخت و ماشین ثبات آن را یکسان می‌کشند، خانه به خانه.",
-          "builtFoot": "هر دو عکسِ برنامه‌هایی در حال اجرا هستند. در هیچ‌یک حتی یک نام واژهٔ انگلیسی نیست — و برای این کار هیچ چیزی در دستور زبان نبود که باید تغییر می‌کرد."
+          "builtFoot": "همه عکسِ برنامه‌هایی در حال اجرا هستند. در هیچ‌یک حتی یک نام واژهٔ انگلیسی نیست — یکی حتی از زبان انسانی هم نیست — و برای این کار هیچ چیزی در دستور زبان نبود که باید تغییر می‌کرد.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — به کلینگونی نوشته شده و با خط <a href=\"piqad-reference.html\">pIqaD</a> کشیده شده، زبانی که برای <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> ساخته شد. سختی و زبان در صفحهٔ نخست انتخاب می‌شود؛ دومی موج نخست است، در میانهٔ پرواز."
         }
       }
     },
@@ -6400,7 +6428,8 @@
           "joinLead": "جڑنا، لسانیات کے سادہ مفہوم میں: ایک نشان، ایک مطلب، اور مطلب ایک دوسرے پر چڑھتے جاتے ہیں۔ عامل <em>ہجے کیا جاتا ہے</em>، ایجاد نہیں کیا جاتا۔",
           "joinFoot": "پانچ اجرا۔ <b>ایک</b> نیا نشان۔ باقی سب یہاں پہلے سے موجود چیزوں سے ہجے کیے گئے۔",
           "readFoot": "اس سب میں ایک لفظ بھی نہیں۔ رنگ خود پروگرام کے ہیں: ہر فرار قدم کے لیے ANSI-256 کا اشاریہ چنتا ہے اور ہر خانہ <code>&gt;&gt;~</code> سے اُس کینوس پر لکھتا ہے جو <code>&gt;&gt;|</code> نے کھولا۔ درخت پر چلنے والا اور رجسٹر مشین دونوں اسے ایک ہی طرح بناتے ہیں، خانہ بہ خانہ۔",
-          "builtFoot": "دونوں چلتے ہوئے پروگراموں کی تصویریں ہیں۔ ان دونوں میں کوئی ایک نام بھی انگریزی لفظ نہیں — اور اس کے لیے قواعد میں کچھ بھی بدلنا نہیں پڑا۔"
+          "builtFoot": "سب چلتے ہوئے پروگراموں کی تصویریں ہیں۔ ان میں کوئی ایک نام بھی انگریزی لفظ نہیں — ایک تو انسانی زبان کا بھی نہیں — اور اس کے لیے قواعد میں کچھ بھی بدلنا نہیں پڑا۔",
+          "builtKlingon": "Hov veS : Klingon Galaxy — کلنگون میں لکھی گئی اور <a href=\"piqad-reference.html\">pIqaD</a> رسم الخط میں کھینچی گئی، ایک زبان جو <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> کے لیے ایجاد ہوئی۔ مشکل اور زبان پہلی اسکرین پر چنے جاتے ہیں؛ دوسری پہلی لہر ہے، پرواز کے بیچ میں۔"
         }
       }
     },
@@ -6617,7 +6646,8 @@
           "joinLead": "जुड़ाव, भाषाविज्ञान के सीधे अर्थ में: एक चिह्न, एक अर्थ, और अर्थ ऊपर चढ़ते जाते हैं। एक संकारक <em>वर्तनी से बनता है</em>, गढ़ा नहीं जाता।",
           "joinFoot": "पाँच संस्करण। <b>एक</b> नया चिह्न। बाकी सब उन्हीं से लिखा गया जो पहले से यहाँ थे।",
           "readFoot": "इस सब में एक भी शब्द नहीं। रंग स्वयं कार्यक्रम के अपने हैं: हर पलायन-चरण के लिए एक ANSI-256 सूचकांक चुनता है और हर खाना <code>&gt;&gt;~</code> से उस पटल पर लिखता है जिसे <code>&gt;&gt;|</code> खोलता है। वृक्ष पर चलने वाला और रजिस्टर VM उसे एक-सा बनाते हैं, खाने दर खाने।",
-          "builtFoot": "दोनों चलते हुए कार्यक्रम के चित्र हैं। इनमें से किसी में भी कोई नाम अंग्रेज़ी शब्द नहीं है — और इसके लिए व्याकरण में कुछ भी बदलना नहीं पड़ा।"
+          "builtFoot": "सभी चलते हुए कार्यक्रम के चित्र हैं। इनमें से किसी में भी कोई नाम अंग्रेज़ी शब्द नहीं है — एक तो मानवीय भाषा का भी नहीं — और इसके लिए व्याकरण में कुछ भी बदलना नहीं पड़ा।",
+          "builtKlingon": "Hov veS : Klingon Galaxy — क्लिंगन में लिखा गया और <a href=\"piqad-reference.html\">pIqaD</a> लिपि में खींचा गया, वह भाषा जो <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> के लिए गढ़ी गई। कठिनाई और भाषा पहले परदे पर चुने जाते हैं; दूसरा पहली लहर है, उड़ान के बीच में।"
         }
       }
     },
@@ -6834,7 +6864,8 @@
           "joinLead": "জোড়, ভাষাবিজ্ঞানের সরল অর্থে: একটি চিহ্ন, একটি অর্থ, আর অর্থগুলি স্তূপ হয়। একটি প্রক্রিয়ক <em>বানান করা</em> হয়, গড়া হয় না।",
           "joinFoot": "পাঁচটি সংস্করণ। <b>একটি</b> নতুন চিহ্ন। বাকি সব বানান করা হয়েছে যেগুলি আগেই এখানে ছিল সেগুলি দিয়ে।",
           "readFoot": "এর কোথাও একটি শব্দও নেই। রং প্রোগ্রামেরই নিজের: প্রতি পলায়ন-ধাপে একটি ANSI-256 সূচক বাছে আর প্রতিটি ঘর <code>&gt;&gt;~</code> দিয়ে সেই পটে লেখে যা <code>&gt;&gt;|</code> খোলে। বৃক্ষ-পরিক্রমা আর রেজিস্টার VM একইভাবে আঁকে, ঘরের পর ঘর।",
-          "builtFoot": "দুটিই চলন্ত প্রোগ্রামের ছবি। কোনোটিতেই একটি নামও ইংরেজি শব্দ নয় — আর তার জন্য ব্যাকরণে কিছুই বদলাতে হয়নি।"
+          "builtFoot": "সবগুলিই চলন্ত প্রোগ্রামের ছবি। কোনোটিতেই একটি নামও ইংরেজি শব্দ নয় — একটি তো মানুষের ভাষারই নয় — আর তার জন্য ব্যাকরণে কিছুই বদলাতে হয়নি।",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ক্লিঙ্গন ভাষায় লেখা আর <a href=\"piqad-reference.html\">pIqaD</a> লিপিতে আঁকা, যে ভাষা <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>-এর জন্য বানানো হয়েছিল। কাঠিন্য আর ভাষা প্রথম পর্দায় বাছা হয়; দ্বিতীয়টি প্রথম ঢেউ, ওড়ার মাঝখানে।"
         }
       }
     },
@@ -7051,7 +7082,8 @@
           "joinLead": "जोड, भाषाशास्त्राच्या साध्या अर्थाने: एक खूण, एक अर्थ, आणि अर्थ एकावर एक रचले जातात. क्रियक <em>अक्षरशः लिहिला</em> जातो, घडवला जात नाही.",
           "joinFoot": "पाच आवृत्त्या. <b>एक</b> नवी खूण. बाकी सगळे आधीच इथे असलेल्यांनी लिहिले गेले.",
           "readFoot": "यात एकही शब्द नाही. रंग कार्यक्रमाचेच स्वतःचे: प्रत्येक पलायन-पावलासाठी एक ANSI-256 निर्देशांक निवडतो आणि <code>&gt;&gt;|</code> उघडणाऱ्या पटलावर प्रत्येक खण <code>&gt;&gt;~</code> ने लिहितो. वृक्षावरून चालणारा आणि नोंदवही-VM तो सारखाच काढतात, खणामागून खण.",
-          "builtFoot": "दोन्ही चालू कार्यक्रमाची छायाचित्रे आहेत. दोहोंपैकी एकाही नावात इंग्रजी शब्द नाही — आणि त्यासाठी व्याकरणात काहीही बदलावे लागले नाही."
+          "builtFoot": "सर्व चालू कार्यक्रमाची छायाचित्रे आहेत. त्यांपैकी एकाही नावात इंग्रजी शब्द नाही — एक तर माणसाच्या भाषेतलाही नाही — आणि त्यासाठी व्याकरणात काहीही बदलावे लागले नाही.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — क्लिंगनमध्ये लिहिलेला आणि <a href=\"piqad-reference.html\">pIqaD</a> लिपीत काढलेला, <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> साठी घडवलेली भाषा. अवघडपणा आणि भाषा पहिल्या पडद्यावर निवडतात; दुसरा पहिली लाट, उड्डाणाच्या मध्यात."
         }
       }
     },
@@ -7268,7 +7300,8 @@
           "joinLead": "ਜੋੜ, ਬੋਲੀ-ਵਿਗਿਆਨ ਦੇ ਸਿੱਧੇ ਅਰਥ ਵਿੱਚ: ਇੱਕ ਨਿਸ਼ਾਨ, ਇੱਕ ਅਰਥ, ਤੇ ਅਰਥ ਉੱਤੇ ਚੜ੍ਹਦੇ ਜਾਂਦੇ ਹਨ। ਕਾਰਕ <em>ਅੱਖਰ ਜੋੜ ਕੇ ਬਣਦਾ</em> ਹੈ, ਘੜਿਆ ਨਹੀਂ ਜਾਂਦਾ।",
           "joinFoot": "ਪੰਜ ਰਿਲੀਜ਼। <b>ਇੱਕ</b> ਨਵਾਂ ਨਿਸ਼ਾਨ। ਬਾਕੀ ਸਭ ਉਨ੍ਹਾਂ ਤੋਂ ਜੋੜਿਆ ਗਿਆ ਜੋ ਪਹਿਲਾਂ ਹੀ ਇੱਥੇ ਸਨ।",
           "readFoot": "ਇਸ ਸਾਰੇ ਵਿੱਚ ਇੱਕ ਵੀ ਸ਼ਬਦ ਨਹੀਂ। ਰੰਗ ਪ੍ਰੋਗਰਾਮ ਦੇ ਆਪਣੇ: ਹਰ ਭੱਜਣ-ਕਦਮ ਲਈ ਇੱਕ ANSI-256 ਸੂਚਕ ਚੁਣਦਾ ਹੈ ਤੇ <code>&gt;&gt;|</code> ਖੋਲ੍ਹਦੇ ਪਟ ਉੱਤੇ ਹਰ ਖਾਨਾ <code>&gt;&gt;~</code> ਨਾਲ ਲਿਖਦਾ ਹੈ। ਰੁੱਖ ਉੱਤੇ ਤੁਰਨ ਵਾਲਾ ਤੇ ਰਜਿਸਟਰ VM ਉਸ ਨੂੰ ਇੱਕੋ ਜਿਹਾ ਵਾਹੁੰਦੇ ਹਨ, ਖਾਨੇ ਦਰ ਖਾਨਾ।",
-          "builtFoot": "ਦੋਵੇਂ ਚੱਲਦੇ ਪ੍ਰੋਗਰਾਮ ਦੀਆਂ ਤਸਵੀਰਾਂ ਹਨ। ਦੋਹਾਂ ਵਿੱਚੋਂ ਕਿਸੇ ਵਿੱਚ ਵੀ ਕੋਈ ਨਾਂ ਅੰਗਰੇਜ਼ੀ ਸ਼ਬਦ ਨਹੀਂ — ਤੇ ਇਸ ਲਈ ਵਿਆਕਰਨ ਵਿੱਚ ਕੁਝ ਵੀ ਬਦਲਣਾ ਨਹੀਂ ਪਿਆ।"
+          "builtFoot": "ਸਾਰੀਆਂ ਚੱਲਦੇ ਪ੍ਰੋਗਰਾਮ ਦੀਆਂ ਤਸਵੀਰਾਂ ਹਨ। ਇਹਨਾਂ ਵਿੱਚੋਂ ਕਿਸੇ ਵਿੱਚ ਵੀ ਕੋਈ ਨਾਂ ਅੰਗਰੇਜ਼ੀ ਸ਼ਬਦ ਨਹੀਂ — ਇੱਕ ਤਾਂ ਮਨੁੱਖੀ ਬੋਲੀ ਦਾ ਵੀ ਨਹੀਂ — ਤੇ ਇਸ ਲਈ ਵਿਆਕਰਨ ਵਿੱਚ ਕੁਝ ਵੀ ਬਦਲਣਾ ਨਹੀਂ ਪਿਆ।",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ਕਲਿੰਗਨ ਵਿੱਚ ਲਿਖਿਆ ਤੇ <a href=\"piqad-reference.html\">pIqaD</a> ਲਿਪੀ ਵਿੱਚ ਵਾਹਿਆ, ਉਹ ਬੋਲੀ ਜੋ <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> ਲਈ ਘੜੀ ਗਈ। ਔਖ ਤੇ ਬੋਲੀ ਪਹਿਲੇ ਪਰਦੇ ਉੱਤੇ ਚੁਣੀਦੇ ਹਨ; ਦੂਜਾ ਪਹਿਲੀ ਲਹਿਰ, ਉਡਾਣ ਦੇ ਵਿਚਕਾਰ।"
         }
       }
     },
@@ -7485,7 +7518,8 @@
           "joinLead": "黏合，取语言学里平实的意思：一个记号，一个意思，意思往上叠。一个运算符是<em>拼出来</em>的，不是造出来的。",
           "joinFoot": "五个版本。新记号<b>一个</b>。其余全是用已经在这里的那些拼出来的。",
           "readFoot": "这里头一个词也没有。颜色是程序自己挑的：每一步逃逸挑一个 ANSI-256 的号，再用 <code>&gt;&gt;~</code> 把每一格写到 <code>&gt;&gt;|</code> 打开的画布上。走树的实现和寄存器虚拟机画出来一模一样，一格接一格。",
-          "builtFoot": "两张都是程序跑着时的截取。里头没有一个标识符是英文词 — 而文法为此一点也没有改。"
+          "builtFoot": "每一张都是程序跑着时的截取。里头没有一个标识符是英文词 — 有一个根本不是人类的语言 — 而文法为此一点也没有改。",
+          "builtKlingon": "Hov veS : Klingon Galaxy — 用克林贡语写的，以 <a href=\"piqad-reference.html\">pIqaD</a> 书写，为 <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> 造出来的语言。难度和语言在第一屏选定；第二屏是第一波，正在飞行之中。"
         }
       }
     },
@@ -7702,7 +7736,8 @@
           "joinLead": "膠着 — 言語学の平たい意味で。記号が一つ、意味が一つ、そして意味が積み重なる。演算子は<em>綴られる</em>のであって、造られるのではない。",
           "joinFoot": "五回の公開。新しい記号は<b>一つ</b>。ほかはすべて、すでにあった記号から綴られた。",
           "readFoot": "そのどこにも言葉は一つもない。色はプログラム自身のものだ。発散の段ごとに ANSI-256 の番号を選び、<code>&gt;&gt;|</code> が開いた画布の上に <code>&gt;&gt;~</code> で一升ずつ書く。木を歩く実装とレジスタ VM は、升ごとに同じものを描く。",
-          "builtFoot": "どちらも走っているプログラムの写しだ。そのどちらにも英語の識別子は一つもない — そしてそのために文法を変える必要はなかった。"
+          "builtFoot": "どれも走っているプログラムの写しだ。そのどれにも英語の識別子は一つもない — 一つは人間の言語ですらない — そしてそのために文法を変える必要はなかった。",
+          "builtKlingon": "Hov veS : Klingon Galaxy — クリンゴン語で書かれ、<a href=\"piqad-reference.html\">pIqaD</a> で描かれている。<a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> のために作られた言語。難度と言語は最初の画面で選ぶ。二枚目は第一波、飛行の途中。"
         }
       }
     },
@@ -7919,7 +7954,8 @@
           "joinLead": "교착, 언어학의 수수한 뜻으로: 기호 하나, 뜻 하나, 그리고 뜻이 쌓인다. 연산자는 <em>철자된다</em>, 지어지지 않는다.",
           "joinFoot": "다섯 번의 배포. 새 기호는 <b>하나</b>. 나머지는 모두 이미 있던 것들로 철자되었다.",
           "readFoot": "그 안에 낱말은 하나도 없다. 색은 프로그램 자신의 것이다: 발산의 단계마다 ANSI-256 의 번호를 고르고, <code>&gt;&gt;|</code> 가 여는 화폭 위에 <code>&gt;&gt;~</code> 로 한 칸씩 쓴다. 나무를 걷는 구현과 레지스터 VM 은 칸마다 똑같이 그린다.",
-          "builtFoot": "둘 다 돌아가는 프로그램을 담은 것이다. 둘 중 어느 것에도 영어 낱말인 이름은 하나도 없다 — 그리고 그 때문에 문법이 바뀔 일은 없었다."
+          "builtFoot": "모두 돌아가는 프로그램을 담은 것이다. 어느 것에도 영어 낱말인 이름은 하나도 없다 — 하나는 사람의 말조차 아니다 — 그리고 그 때문에 문법이 바뀔 일은 없었다.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — 클링온어로 쓰였고 <a href=\"piqad-reference.html\">pIqaD</a> 문자로 그렸다. <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>을 위해 만들어진 언어다. 난이도와 언어는 첫 화면에서 고른다; 둘째는 첫 물결, 비행 중이다."
         }
       }
     },
@@ -8136,7 +8172,8 @@
           "joinLead": "Aglutinasi, dalam arti kebahasaan yang bersahaja: satu tanda, satu makna, dan makna bertumpuk. Sebuah operator <em>dieja</em>, bukan diciptakan.",
           "joinFoot": "Lima rilis. <b>Satu</b> tanda baru. Semua sisanya dieja dari yang sudah ada di sini.",
           "readFoot": "Tak satu kata pun di dalam semuanya. Ronanya milik program itu sendiri: ia memilih satu indeks ANSI-256 per langkah pelolosan dan menulis tiap sel dengan <code>&gt;&gt;~</code> di atas kanvas yang dibuka <code>&gt;&gt;|</code>. Penjelajah pohon dan mesin maya register menggambarnya sama persis, sel demi sel.",
-          "builtFoot": "Keduanya adalah rekaman program saat berjalan. Tak satu nama pun di antara keduanya merupakan kata Inggris — dan tak ada apa pun dalam tata bahasa yang harus berubah untuk itu."
+          "builtFoot": "Semuanya adalah rekaman program saat berjalan. Tak satu nama pun di dalamnya merupakan kata Inggris — satu bahkan bukan bahasa manusia — dan tak ada apa pun dalam tata bahasa yang harus berubah untuk itu.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ditulis dalam bahasa Klingon dan digambar dengan aksara <a href=\"piqad-reference.html\">pIqaD</a>, bahasa yang dikarang untuk <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Kesulitan dan bahasa dipilih di layar pertama; yang kedua adalah gelombang pertama, di tengah terbang."
         }
       }
     },
@@ -8353,7 +8390,8 @@
           "joinLead": "Chắp dính, theo nghĩa ngôn ngữ học giản dị: một dấu hiệu, một nghĩa, và các nghĩa chồng lên nhau. Một toán tử được <em>đánh vần</em>, không được đúc ra.",
           "joinFoot": "Năm lần phát hành. <b>Một</b> dấu hiệu mới. Tất cả phần còn lại được đánh vần từ những cái đã có sẵn ở đây.",
           "readFoot": "Không một từ nào trong tất cả cái đó. Màu là của chính chương trình: nó chọn một chỉ số ANSI-256 cho mỗi bước thoát và viết từng ô bằng <code>&gt;&gt;~</code> trên khung vẽ mà <code>&gt;&gt;|</code> mở ra. Bộ duyệt cây và máy ảo thanh ghi vẽ y hệt nhau, từng ô một.",
-          "builtFoot": "Cả hai đều là ảnh chụp chương trình đang chạy. Không một cái tên nào trong cả hai là một từ tiếng Anh — và không có gì trong ngữ pháp phải đổi vì điều đó."
+          "builtFoot": "Tất cả đều là ảnh chụp chương trình đang chạy. Không một cái tên nào trong đó là một từ tiếng Anh — một thứ còn chẳng phải tiếng của người — và không có gì trong ngữ pháp phải đổi vì điều đó.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — viết bằng tiếng Klingon và vẽ bằng chữ <a href=\"piqad-reference.html\">pIqaD</a>, một thứ tiếng được bịa ra cho <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Độ khó và ngôn ngữ chọn ở màn đầu; màn thứ hai là đợt đầu tiên, giữa chuyến bay."
         }
       }
     },
@@ -8570,7 +8608,8 @@
           "joinLead": "การประกอบคำ ในความหมายทางภาษาศาสตร์อย่างเรียบง่าย: เครื่องหมายหนึ่ง ความหมายหนึ่ง และความหมายซ้อนกันขึ้นไป ตัวดำเนินการถูก<em>สะกด</em> ไม่ใช่ถูกบัญญัติ",
           "joinFoot": "ห้าครั้งที่ออก เครื่องหมายใหม่<b>หนึ่งอัน</b> ที่เหลือทั้งหมดสะกดขึ้นจากอันที่มีอยู่แล้ว",
           "readFoot": "ไม่มีคำสักคำในทั้งหมดนั้น สีเป็นของโปรแกรมเอง: มันเลือกดัชนี ANSI-256 หนึ่งค่าต่อขั้นของการหนี แล้วเขียนแต่ละช่องด้วย <code>&gt;&gt;~</code> ลงบนผืนผ้าที่ <code>&gt;&gt;|</code> เปิดไว้ ตัวเดินต้นไม้กับเครื่องเสมือนแบบรีจิสเตอร์วาดมันเหมือนกัน ช่องต่อช่อง",
-          "builtFoot": "ทั้งสองเป็นภาพจับของโปรแกรมขณะทำงาน ไม่มีชื่อใดในทั้งสองที่เป็นคำภาษาอังกฤษ — และไม่มีสิ่งใดในไวยากรณ์ที่ต้องเปลี่ยนเพื่อการนั้น"
+          "builtFoot": "ทั้งหมดเป็นภาพจับของโปรแกรมขณะทำงาน ไม่มีชื่อใดที่เป็นคำภาษาอังกฤษ — อันหนึ่งไม่ใช่ภาษามนุษย์ด้วยซ้ำ — และไม่มีสิ่งใดในไวยากรณ์ที่ต้องเปลี่ยนเพื่อการนั้น",
+          "builtKlingon": "Hov veS : Klingon Galaxy — เขียนเป็นภาษาคลิงงอนและวาดด้วยอักษร <a href=\"piqad-reference.html\">pIqaD</a> ภาษาที่ถูกประดิษฐ์ขึ้นเพื่อ <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> ความยากและภาษาเลือกที่จอแรก; จอที่สองคือคลื่นแรก กลางการบิน"
         }
       }
     },
@@ -8787,7 +8826,8 @@
           "joinLead": "Aglutinasyon, sa payak na kahulugang pangwika: isang tanda, isang kahulugan, at nagpapatong-patong ang mga kahulugan. Ang isang pantukoy ay <em>binabaybay</em>, hindi nililikha.",
           "joinFoot": "Limang paglabas. <b>Isang</b> bagong tanda. Ang lahat ng iba ay binaybay mula sa mga naririto na.",
           "readFoot": "Walang kahit isang salita sa lahat ng iyon. Ang mga kulay ay sa palatuntunan mismo: pumipili ito ng isang tuntunin ng ANSI-256 sa bawat hakbang ng pagtakas at isinusulat ang bawat kahon sa pamamagitan ng <code>&gt;&gt;~</code> sa kanbas na binubuksan ng <code>&gt;&gt;|</code>. Pareho itong iginuguhit ng maglalakad sa puno at ng makinang pantala, kahon bawat kahon.",
-          "builtFoot": "Pareho silang kuha ng palatuntunang tumatakbo. Wala kahit isang pangalan sa alinman sa kanila ang salitang Ingles — at walang anuman sa balarila ang kailangang magbago para roon."
+          "builtFoot": "Pawang kuha silang lahat ng palatuntunang tumatakbo. Wala kahit isang pangalan sa alinman sa kanila ang salitang Ingles — ang isa ay hindi man lang wika ng tao — at walang anuman sa balarila ang kailangang magbago para roon.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — sinulat sa Klingon at iginuhit sa <a href=\"piqad-reference.html\">pIqaD</a>, isang wikang inimbento para sa <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Ang hirap at ang wika ay pinipili sa unang tabing; ang ikalawa ay ang unang alon, nasa gitna ng paglipad."
         }
       }
     },
@@ -9004,7 +9044,8 @@
           "joinLead": "Kushikamana, kwa maana rahisi ya kiisimu: alama moja, maana moja, na maana hujengana. Kiendeshi <em>huandikwa herufi kwa herufi</em>, hakivumbuliwi.",
           "joinFoot": "Matoleo matano. Alama mpya <b>moja</b>. Vingine vyote viliandikwa kutoka kwa vilivyokuwepo hapa.",
           "readFoot": "Hakuna neno hata moja katika yote hayo. Rangi ni za programu yenyewe: huchagua faharasa ya ANSI-256 kwa kila hatua ya kutoroka na huandika kila kisanduku kwa <code>&gt;&gt;~</code> juu ya turubai ambayo <code>&gt;&gt;|</code> ilifungua. Mtembezi wa mti na mashine ya rejista huichora vilevile, kisanduku kwa kisanduku.",
-          "builtFoot": "Zote mbili ni picha za programu zinazoendesha. Hakuna jina hata moja katika zote mbili ambalo ni neno la Kiingereza — na hakuna kitu katika sarufi kilichopaswa kubadilika kwa hilo."
+          "builtFoot": "Zote ni picha za programu zinazoendesha. Hakuna jina hata moja katika zote ambalo ni neno la Kiingereza — na hakuna kitu katika sarufi kilichopaswa kubadilika kwa hilo.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — imeandikwa kwa Kiklingoni na kuchorwa kwa hati ya <a href=\"piqad-reference.html\">pIqaD</a>, lugha iliyobuniwa kwa ajili ya <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Ugumu na lugha huchaguliwa katika skrini ya kwanza; ya pili ni wimbi la kwanza, katikati ya kuruka."
         }
       }
     },
@@ -9221,7 +9262,8 @@
           "joinLead": "Manne wa juna, a ma'anar harshe mai sauƙi: alama ɗaya, ma'ana ɗaya, kuma ma'anonin suna hawa juna. Ana <em>haɗa haruffan</em> kayan aiki, ba a ƙirƙira shi ba.",
           "joinFoot": "Fitarwa biyar. Sabuwar alama <b>ɗaya</b>. Duk sauran an haɗa haruffansu daga abin da ya riga ya kasance a nan.",
           "readFoot": "Babu ko kalma ɗaya cikin duk wannan. Launukan mallakar shirin ne kansa: yana zaɓar fihirisar ANSI-256 domin kowane matakin tsere kuma yana rubuta kowane akwati da <code>&gt;&gt;~</code> a kan zanen da <code>&gt;&gt;|</code> ya buɗe. Mai tafiya a bishiya da injin rajista suna zana shi haka nan, akwati bayan akwati.",
-          "builtFoot": "Dukansu hotunan shirye-shirye ne masu gudana. Babu ko suna ɗaya cikin kowanne da yake kalmar Turanci — kuma babu abin da ya kamata ya canza a nahawu domin hakan."
+          "builtFoot": "Dukansu hotunan shirye-shirye ne masu gudana. Babu ko suna ɗaya cikin kowanne da yake kalmar Turanci — kuma babu abin da ya kamata ya canza a nahawu domin hakan.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — an rubuta da Klingon kuma an zana da rubutun <a href=\"piqad-reference.html\">pIqaD</a>, harshe da aka ƙirƙira domin <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Wahala da harshe ana zaɓar su a allo na farko; na biyu shi ne raƙumin farko, tsakiyar tashi."
         }
       }
     },
@@ -9438,7 +9480,8 @@
           "joinLead": "Ìlẹ̀pọ̀, ní ìtumọ̀ èdè-ìmọ̀ tí ó rọrùn: àmì kan, ìtumọ̀ kan, àwọn ìtumọ̀ sì ń kó ara wọn lé ara wọn. A <em>ń ta lẹ́tà</em> òǹṣisẹ́ kan, a kì í dá a.",
           "joinFoot": "Ìtújáde márùn-ún. Àmì tuntun <b>kan</b>. Gbogbo ìyókù ni a ta lẹ́tà rẹ̀ láti ara ohun tí ó ti wà níbí.",
           "readFoot": "Kò sí ọ̀rọ̀ kan nínú gbogbo ìyẹn. Àwọn àwọ̀ jẹ́ ti ètò náà fúnra rẹ̀: ó ń yan atọ́ka ANSI-256 fún ìgbésẹ̀ ìsálọ kọ̀ọ̀kan, ó sì ń kọ àpótí kọ̀ọ̀kan pẹ̀lú <code>&gt;&gt;~</code> sórí kànfáàsì tí <code>&gt;&gt;|</code> ṣí. Arìnrìn-àjò igi àti ẹ̀rọ ìforúkọsílẹ̀ ń yà á bákan náà, àpótí kan lẹ́yìn òmíràn.",
-          "builtFoot": "Méjèèjì jẹ́ àwòrán ètò tí ń ṣiṣẹ́. Kò sí orúkọ kan nínú èyíkéyìí wọn tí ó jẹ́ ọ̀rọ̀ Gẹ̀ẹ́sì — kò sì sí ohunkóhun nínú gírámà tí ó ní láti yípadà fún ìyẹn."
+          "builtFoot": "Gbogbo wọn jẹ́ àwòrán ètò tí ń ṣiṣẹ́. Kò sí orúkọ kan nínú èyíkéyìí wọn tí ó jẹ́ ọ̀rọ̀ Gẹ̀ẹ́sì — kò sì sí ohunkóhun nínú gírámà tí ó ní láti yípadà fún ìyẹn.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — a kọ ọ́ ní èdè Klingon a sì yà á ní àmì <a href=\"piqad-reference.html\">pIqaD</a>, èdè tí a ṣẹ̀dá fún <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Ìṣòro àti èdè ni a yàn ní ojú ìwòye àkọ́kọ́; èkejì ni ìgbì àkọ́kọ́, láàárín ìfò."
         }
       }
     },
@@ -9655,7 +9698,8 @@
           "joinLead": "መያያዝ፣ በቀላሉ በቋንቋ ጥናት ትርጉሙ፦ አንድ ምልክት፣ አንድ ትርጉም፣ ትርጉሞቹም ይደራረባሉ። አንድ አንቀሳቃሽ <em>ይፈለፈላል</em> እንጂ አይፈጠርም።",
           "joinFoot": "አምስት ልቀቶች። <b>አንድ</b> አዲስ ምልክት። ሌሎቹ ሁሉ እዚህ ካሉት ተፈልፍለዋል።",
           "readFoot": "በዚያ ሁሉ ውስጥ አንድም ቃል የለም። ቀለሞቹ የፕሮግራሙ ራሱ ናቸው፦ ለእያንዳንዱ የማምለጫ እርምጃ የANSI-256 ማውጫ ይመርጣል፣ <code>&gt;&gt;|</code> በከፈተው ሸራ ላይ እያንዳንዱን ሳጥን በ<code>&gt;&gt;~</code> ይጽፋል። የዛፉ ተጓዥና የመዝገብ ማሽኑ ሳጥን በሳጥን በተመሳሳይ ይስሉታል።",
-          "builtFoot": "ሁለቱም የሚሠሩ ፕሮግራሞች ፎቶዎች ናቸው። በሁለቱም ውስጥ አንድም ስም የእንግሊዝኛ ቃል አይደለም — ለዚያም በሰዋስው ውስጥ የተለወጠ ምንም የለም።"
+          "builtFoot": "ሁሉም የሚሠሩ ፕሮግራሞች ፎቶዎች ናቸው። በሁሉም ውስጥ አንድም ስም የእንግሊዝኛ ቃል አይደለም — ለዚያም በሰዋስው ውስጥ የተለወጠ ምንም የለም።",
+          "builtKlingon": "Hov veS : Klingon Galaxy — በክሊንጎንኛ ተጽፎ በ<a href=\"piqad-reference.html\">pIqaD</a> ፊደል ተስሏል፤ ለ<a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> የተፈጠረ ቋንቋ ነው። አስቸጋሪነትና ቋንቋ በመጀመሪያው ስክሪን ይመረጣሉ፤ ሁለተኛው የመጀመሪያው ማዕበል ነው፣ በበረራ መካከል።"
         }
       }
     },
@@ -9872,7 +9916,8 @@
           "joinLead": "🔗 Joining, in the plain linguistic sense: one mark, one meaning, and the meanings stack. ✍️ An operator is spelled, not invented.",
           "joinFoot": "5️⃣ releases. <b>1️⃣</b> new mark. ✍️ All the rest were spelled out of what was already here.",
           "readFoot": "🚫 Not one word in any of that. 🎨 The colours belong to the program itself: it picks an ANSI-256 index for every escape step and writes each cell with <code>&gt;&gt;~</code> on the canvas <code>&gt;&gt;|</code> opens. 🌳 The tree-walker and 🖥 the register VM draw it the same, cell for cell.",
-          "builtFoot": "📸 Both are photographs of running programs. 🚫 Not one name in either is an English word — and nothing in the grammar had to change for that."
+          "builtFoot": "📸 All of them are photographs of running programs. 🚫 Not one name in any of them is an English word — 🖖 one is not even from a human language — and nothing in the grammar had to change for that.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — 🖖 written in Klingon and drawn in <a href=\"piqad-reference.html\">pIqaD</a>, a language invented for <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Difficulty and language are picked on the first screen; the second is the first wave, mid-flight."
         }
       }
     },
@@ -10089,7 +10134,8 @@
           "joinLead": "Yapışma, dilbilimin yalın anlamıyla: tek işaret, tek anlam, ve anlamlar üst üste binerler. Bir operatör <em>hecelenir</em>, icat edilmez.",
           "joinFoot": "Beş sürüm. <b>Bir</b> yeni işaret. Geri kalan her şey burada zaten olandan hecelendi.",
           "readFoot": "Bunların hiçbirinde tek bir kelime yok. Renkler programın kendisinin: her kaçış adımı için bir ANSI-256 dizini seçer ve her hücreyi <code>&gt;&gt;|</code> ile açılan tuvale <code>&gt;&gt;~</code> ile yazar. Ağaç yürüyücüsü ile yazmaç makinesi onu aynı biçimde, hücre hücre çizer.",
-          "builtFoot": "İkisi de çalışan programların fotoğrafı. İkisinde de tek bir ad İngilizce kelime değil — ve bunun için dilbilgisinde değişmesi gereken hiçbir şey olmadı."
+          "builtFoot": "Hepsi çalışan programların fotoğrafı. Hiçbirinde tek bir ad İngilizce kelime değil — biri insan dili bile değil — ve bunun için dilbilgisinde değişmesi gereken hiçbir şey olmadı.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — Klingonca yazılmış ve <a href=\"piqad-reference.html\">pIqaD</a> ile çizilmiş, <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> için uydurulmuş bir dil. Zorluk ve dil ilk ekranda seçiliyor; ikincisi ilk dalga, uçuşun ortasında."
         }
       }
     },
@@ -10396,7 +10442,8 @@
           "joinLead": "Aglutinação, no sentido linguístico simples: uma marca, um significado, e os significados empilham-se. Um operador é <em>soletrado</em>, não cunhado.",
           "joinFoot": "Cinco versões. <b>Uma</b> marca nova. Todo o resto foi soletrado com as que já cá estavam.",
           "readFoot": "Nem uma palavra em nada disto. As cores são do próprio programa: escolhe um índice ANSI-256 por passo de escape e escreve cada célula com <code>&gt;&gt;~</code> na tela que <code>&gt;&gt;|</code> abre. O tree-walker e a VM de registos desenham igual, célula a célula.",
-          "builtFoot": "As duas são capturas do programa a correr. Nem um identificador em qualquer delas é uma palavra inglesa — e nada na gramática teve de mudar para isso."
+          "builtFoot": "Todas são capturas do programa a correr. Nem um identificador em qualquer delas é uma palavra inglesa — uma nem sequer é de uma língua humana — e nada na gramática teve de mudar para isso.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — escrito em klingon e desenhado em <a href=\"piqad-reference.html\">pIqaD</a>, uma língua inventada para <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. A dificuldade e a língua escolhem-se no primeiro ecrã; o segundo é a primeira vaga, em pleno voo."
         }
       }
     },
@@ -10613,7 +10660,8 @@
           "joinLead": "ஒட்டுநிலை, மொழியியலின் எளிய பொருளில்: ஒரு குறி, ஒரு பொருள், பொருள்கள் அடுக்காகின்றன. ஒரு செயற்குறி <em>எழுத்துக்கூட்டப்படுகிறது</em>, புனையப்படுவதில்லை.",
           "joinFoot": "ஐந்து வெளியீடுகள். <b>ஒரு</b> புதிய குறி. மற்ற அனைத்தும் ஏற்கனவே இங்கிருந்தவற்றால் எழுத்துக்கூட்டப்பட்டன.",
           "readFoot": "இதில் ஒரு சொல்கூட இல்லை. நிறங்கள் நிரலுக்கே உரியவை: ஒவ்வொரு தப்பல் படிக்கும் ஒரு ANSI-256 சுட்டியைத் தேர்ந்து, <code>&gt;&gt;|</code> திறக்கும் திரையில் ஒவ்வொரு கட்டத்தையும் <code>&gt;&gt;~</code> கொண்டு எழுதுகிறது. மரம் நடப்பவனும் பதிவக VM-ம் அதை ஒரே மாதிரி வரைகின்றன, கட்டத்துக்குக் கட்டம்.",
-          "builtFoot": "இரண்டுமே இயங்கும் நிரலின் படங்கள். இரண்டிலும் ஒரு பெயர்கூட ஆங்கிலச் சொல் அல்ல — அதற்காக இலக்கணத்தில் எதுவும் மாற வேண்டியிருக்கவில்லை."
+          "builtFoot": "எல்லாமே இயங்கும் நிரலின் படங்கள். எதிலும் ஒரு பெயர்கூட ஆங்கிலச் சொல் அல்ல — ஒன்று மனித மொழியைச் சேர்ந்ததும் அல்ல — அதற்காக இலக்கணத்தில் எதுவும் மாற வேண்டியிருக்கவில்லை.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — கிளிங்கான் மொழியில் எழுதப்பட்டு <a href=\"piqad-reference.html\">pIqaD</a> எழுத்தில் வரையப்பட்டது, <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> க்காக உருவாக்கப்பட்ட மொழி. கடினத்தன்மையும் மொழியும் முதல் திரையில் தேர்ந்தெடுக்கப்படுகின்றன; இரண்டாவது முதல் அலை, பறப்பின் நடுவில்."
         }
       }
     },
@@ -10830,7 +10878,8 @@
           "joinLead": "Aglutinació, en el sentit lingüístic pla: un signe, un significat, i els significats s'apilen. Un operador s'<em>escriu lletra a lletra</em>, no s'encunya.",
           "joinFoot": "Cinc versions. <b>Un</b> signe nou. Tota la resta es va escriure amb els que ja hi eren.",
           "readFoot": "Ni una paraula en tot això. Els tons són del programa mateix: tria un índex ANSI-256 per cada pas de fuga i escriu cada cel·la amb <code>&gt;&gt;~</code> al llenç que obre <code>&gt;&gt;|</code>. El recorregut d'arbre i la màquina de registres ho dibuixen igual, cel·la a cel·la.",
-          "builtFoot": "Totes dues són captures del programa mentre s'executa. Ni un sol nom en cap de les dues no és una paraula anglesa — i res de la gramàtica no ha hagut de canviar per això."
+          "builtFoot": "Totes són captures del programa mentre s'executa. Ni un sol nom en cap d'elles no és una paraula anglesa — una no és ni tan sols d'una llengua humana — i res de la gramàtica no ha hagut de canviar per això.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — escrit en klingon i dibuixat en <a href=\"piqad-reference.html\">pIqaD</a>, una llengua inventada per a <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. La dificultat i la llengua es trien a la primera pantalla; la segona és la primera onada, en ple vol."
         }
       }
     },
@@ -11047,7 +11096,8 @@
           "joinLead": "Aglutinazioa, zentzu linguistiko soilean: marka bat, esanahi bat, eta esanahiak pilatzen dira. Operadore bat <em>letreiatu</em> egiten da, ez asmatu.",
           "joinFoot": "Bost argitalpen. <b>Marka berri bat</b>. Gainerako guztia hemen zeudenekin letreiatu zen.",
           "readFoot": "Hitz bakar bat ere ez horretan guztian. Koloreak programarenak berarenak dira: ihes-urrats bakoitzeko ANSI-256 indize bat hautatzen du eta gelaxka bakoitza <code>&gt;&gt;~</code> erabiliz idazten du <code>&gt;&gt;|</code>-k irekitzen duen oihalean. Zuhaitz-ibiltariak eta erregistro-makinak berdin marrazten dute, gelaxkaz gelaxka.",
-          "builtFoot": "Biak programa martxan dagoen bitartean hartutako irudiak dira. Bietako batean ere ez dago ingelesezko hitz bat den izenik — eta gramatikan ezer ez zen horretarako aldatu behar izan."
+          "builtFoot": "Denak programa martxan dagoen bitartean hartutako irudiak dira. Haietako batean ere ez dago ingelesezko hitz bat den izenik — bat ez da giza hizkuntzakoa ere — eta gramatikan ezer ez zen horretarako aldatu behar izan.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — klingoneraz idatzia eta <a href=\"piqad-reference.html\">pIqaD</a> idazkeraz marraztua, <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> egiteko asmatutako hizkuntza batean. Zailtasuna eta hizkuntza lehen pantailan aukeratzen dira; bigarrena lehen olatua da, hegaldi betean."
         }
       }
     },
@@ -11264,7 +11314,8 @@
           "joinLead": "అతుకు, భాషాశాస్త్రపు సరళ అర్థంలో: ఒక గుర్తు, ఒక అర్థం, అర్థాలు పేరుకుంటాయి. ఒక కారకం <em>అక్షరాల్లా కూర్చబడుతుంది</em>, కల్పించబడదు.",
           "joinFoot": "ఐదు విడుదలలు. <b>ఒక</b> కొత్త గుర్తు. మిగతావన్నీ అప్పటికే ఇక్కడ ఉన్నవాటితో కూర్చినవే.",
           "readFoot": "ఇందులో ఒక్క పదమూ లేదు. రంగులు కార్యక్రమానివే: ప్రతి తప్పించుక అడుగుకూ ఒక ANSI-256 సూచికను ఎంచి, <code>&gt;&gt;|</code> తెరిచే తెరపై ప్రతి గడినీ <code>&gt;&gt;~</code> తో రాస్తుంది. చెట్టు మీద నడిచేదీ, రిజిస్టర్ VM-మూ దాన్ని ఒకేలా గీస్తాయి, గడి తర్వాత గడి.",
-          "builtFoot": "రెండూ నడుస్తున్న కార్యక్రమపు చిత్రాలే. వాటిలో ఒక్క పేరూ ఆంగ్ల పదం కాదు — దాని కోసం వ్యాకరణంలో ఏదీ మారవలసి రాలేదు."
+          "builtFoot": "అన్నీ నడుస్తున్న కార్యక్రమపు చిత్రాలే. వాటిలో ఒక్క పేరూ ఆంగ్ల పదం కాదు — ఒకటి మానవ భాషదే కాదు — దాని కోసం వ్యాకరణంలో ఏదీ మారవలసి రాలేదు.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — క్లింగాన్‌లో రాసి <a href=\"piqad-reference.html\">pIqaD</a> లిపిలో గీసినది, <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> కోసం కల్పించిన భాష. కష్టతనం, భాష — మొదటి తెరలో ఎంచుకుంటారు; రెండోది మొదటి అల, ఎగిరే మధ్యలో."
         }
       }
     },
@@ -11481,7 +11532,8 @@
           "joinLead": "ಅಂಟುವಿಕೆ, ಭಾಷಾಶಾಸ್ತ್ರದ ಸರಳ ಅರ್ಥದಲ್ಲಿ: ಒಂದು ಗುರುತು, ಒಂದು ಅರ್ಥ, ಮತ್ತು ಅರ್ಥಗಳು ಪೇರಿಸಿಕೊಳ್ಳುತ್ತವೆ. ಕಾರಕವನ್ನು <em>ಅಕ್ಷರ ಜೋಡಿಸಿ ಬರೆಯಲಾಗುತ್ತದೆ</em>, ಕಟ್ಟಲಾಗುವುದಿಲ್ಲ.",
           "joinFoot": "ಐದು ಬಿಡುಗಡೆ. <b>ಒಂದು</b> ಹೊಸ ಗುರುತು. ಉಳಿದೆಲ್ಲವನ್ನೂ ಈಗಾಗಲೇ ಇಲ್ಲಿದ್ದವುಗಳಿಂದ ಜೋಡಿಸಲಾಯಿತು.",
           "readFoot": "ಇದೆಲ್ಲದರಲ್ಲಿ ಒಂದೇ ಒಂದು ಪದವಿಲ್ಲ. ಬಣ್ಣಗಳು ಕಾರ್ಯಕ್ರಮದ ಸ್ವಂತ: ಪ್ರತಿ ಪಲಾಯನ ಹೆಜ್ಜೆಗೆ ಒಂದು ANSI-256 ಸೂಚಿಯನ್ನು ಆರಿಸಿ, <code>&gt;&gt;|</code> ತೆರೆಯುವ ಪರದೆಯ ಮೇಲೆ ಪ್ರತಿ ಮನೆಯನ್ನೂ <code>&gt;&gt;~</code> ದಿಂದ ಬರೆಯುತ್ತದೆ. ಮರದ ಮೇಲೆ ನಡೆಯುವುದೂ ನೋಂದಣಿ VM-ಉ ಅದನ್ನು ಒಂದೇ ರೀತಿ ಬರೆಯುತ್ತವೆ, ಮನೆಯ ನಂತರ ಮನೆ.",
-          "builtFoot": "ಎರಡೂ ಓಡುತ್ತಿರುವ ಕಾರ್ಯಕ್ರಮದ ಚಿತ್ರಗಳು. ಎರಡರಲ್ಲೂ ಒಂದೇ ಒಂದು ಹೆಸರೂ ಇಂಗ್ಲಿಷ್ ಪದವಲ್ಲ — ಮತ್ತು ಅದಕ್ಕಾಗಿ ವ್ಯಾಕರಣದಲ್ಲಿ ಏನೂ ಬದಲಾಗಬೇಕಾಗಿರಲಿಲ್ಲ."
+          "builtFoot": "ಎಲ್ಲವೂ ಓಡುತ್ತಿರುವ ಕಾರ್ಯಕ್ರಮದ ಚಿತ್ರಗಳು. ಅವುಗಳಲ್ಲಿ ಒಂದೇ ಒಂದು ಹೆಸರೂ ಇಂಗ್ಲಿಷ್ ಪದವಲ್ಲ — ಒಂದು ಮನುಷ್ಯ ಭಾಷೆಯದೇ ಅಲ್ಲ — ಮತ್ತು ಅದಕ್ಕಾಗಿ ವ್ಯಾಕರಣದಲ್ಲಿ ಏನೂ ಬದಲಾಗಬೇಕಾಗಿರಲಿಲ್ಲ.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ಕ್ಲಿಂಗಾನ್‌ನಲ್ಲಿ ಬರೆದು <a href=\"piqad-reference.html\">pIqaD</a> ಲಿಪಿಯಲ್ಲಿ ಬಿಡಿಸಿದ್ದು, <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>ಗಾಗಿ ಕಟ್ಟಿದ ಭಾಷೆ. ಕಠಿಣತೆ ಮತ್ತು ಭಾಷೆ ಮೊದಲ ಪರದೆಯಲ್ಲಿ ಆರಿಸಲಾಗುತ್ತದೆ; ಎರಡನೆಯದು ಮೊದಲ ಅಲೆ, ಹಾರಾಟದ ನಡುವೆ."
         }
       }
     },
@@ -11698,7 +11750,8 @@
           "joinLead": "შეწებება, ენათმეცნიერების მარტივი გაგებით: ერთი ნიშანი, ერთი მნიშვნელობა, და მნიშვნელობები ერთმანეთს ეწყობა. ოპერატორი <em>იწერება ასოებით</em> და არ გამოიგონება.",
           "joinFoot": "ხუთი გამოშვება. <b>ერთი</b> ახალი ნიშანი. დანარჩენი ყველა იმისგან დაიწერა, რაც აქ უკვე იყო.",
           "readFoot": "მთელ ამაში ერთი სიტყვაც არ არის. ფერები თავად პროგრამისაა: ყოველი გაქცევის ნაბიჯისთვის ირჩევს ANSI-256 ინდექსს და ყოველ უჯრას წერს <code>&gt;&gt;~</code>-ით იმ ტილოზე, რომელიც <code>&gt;&gt;|</code>-მ გახსნა. ხის მოსიარულე და რეგისტრული მანქანა მას ერთნაირად ხატავენ, უჯრა-უჯრა.",
-          "builtFoot": "ორივე მომუშავე პროგრამის ფოტოა. არცერთში არცერთი სახელი არ არის ინგლისური სიტყვა — და ამისთვის გრამატიკაში არაფერი ყოფილა შესაცვლელი."
+          "builtFoot": "ყველა მომუშავე პროგრამის ფოტოა. არცერთში არცერთი სახელი არ არის ინგლისური სიტყვა — ერთი ადამიანურ ენასაც კი არ ეკუთვნის — და ამისთვის გრამატიკაში არაფერი ყოფილა შესაცვლელი.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — დაწერილია კლინგონურად და გამოსახულია <a href=\"piqad-reference.html\">pIqaD</a> დამწერლობით, ენით, რომელიც <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>-ისთვის გამოიგონეს. სირთულე და ენა პირველ ეკრანზე ირჩევა; მეორე პირველი ტალღაა, ფრენაში."
         }
       }
     },
@@ -12003,7 +12056,8 @@
           "joinLead": "Ukunamathelana, ngencazelo elula yolwazi lolimi: uphawu olulodwa, incazelo eyodwa, futhi izincazelo ziyakhelana. Isebenzi <em>siyapelwa</em>, asiqanjwa.",
           "joinFoot": "Ukukhishwa okuhlanu. Uphawu olusha <b>olulodwa</b>. Konke okunye kupelwe kulokho obesekukhona lapha.",
           "readFoot": "Alikho ngisho igama elilodwa kukho konke lokho. Imibala ingeyohlelo uqobo: likhetha inkomba ye-ANSI-256 kuso sonke isinyathelo sokubaleka futhi libhala lonke ibhokisi nge-<code>&gt;&gt;~</code> ekhanvasini elivulwe yi-<code>&gt;&gt;|</code>. Umhambi wesihlahla nomshini wamarejista bakudweba ngokufanayo, ibhokisi ngebhokisi.",
-          "builtFoot": "Kokubili yizithombe zezinhlelo ezisebenzayo. Alikho igama elilodwa kunoma yikuphi kwakho eliyigama lesiNgisi — futhi alikho ulutho ohlelweni lolimi obekufanele lushintshe ngenxa yalokho."
+          "builtFoot": "Konke yizithombe zezinhlelo ezisebenzayo. Alikho igama elilodwa kunoma yikuphi kwakho eliyigama lesiNgisi — futhi alikho ulutho ohlelweni lolimi obekufanele lushintshe ngenxa yalokho.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ibhalwe ngesiKlingon futhi idwetshwe ngombhalo we-<a href=\"piqad-reference.html\">pIqaD</a>, ulimi olwasungulelwa <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Ubunzima nolimi kukhethwa esikrinini sokuqala; esesibili ligagasi lokuqala, phakathi kokundiza."
         }
       }
     },
@@ -12220,7 +12274,8 @@
           "joinLead": "Կպչում, լեզվաբանության պարզ իմաստով՝ մեկ նշան, մեկ իմաստ, և իմաստները շարվում են իրար վրա։ Օպերատորը <em>տառ առ տառ գրվում է</em>, ոչ թե հորինվում։",
           "joinFoot": "Հինգ թողարկում։ <b>Մեկ</b> նոր նշան։ Մնացած բոլորը գրվել են այն ամենից, ինչ արդեն այստեղ էր։",
           "readFoot": "Այդ ամենի մեջ ոչ մի բառ չկա։ Գույները հենց ծրագրինն են. փախուստի ամեն քայլի համար ընտրում է ANSI-256 ցուցիչ և ամեն վանդակ գրում է <code>&gt;&gt;~</code>-ով այն կտավին, որը <code>&gt;&gt;|</code>-ն է բացել։ Ծառով քայլողն ու ռեգիստրային մեքենան այն նույն կերպ են գծում՝ վանդակ առ վանդակ։",
-          "builtFoot": "Երկուսն էլ աշխատող ծրագրերի լուսանկարներ են։ Ոչ մեկում ոչ մի անուն անգլերեն բառ չէ — և դրա համար քերականության մեջ ոչինչ չի փոխվել։"
+          "builtFoot": "Բոլորն էլ աշխատող ծրագրերի լուսանկարներ են։ Ոչ մեկում ոչ մի անուն անգլերեն բառ չէ — մեկը մարդկային լեզվից էլ չէ — և դրա համար քերականության մեջ ոչինչ չի փոխվել։",
+          "builtKlingon": "Hov veS : Klingon Galaxy — գրված է կլինգոներեն և գծված <a href=\"piqad-reference.html\">pIqaD</a> գրով, լեզվով, որ հորինվել է <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>-ի համար։ Դժվարությունն ու լեզուն ընտրվում են առաջին էկրանին. երկրորդը առաջին ալիքն է, թռիչքի մեջ։"
         }
       }
     },
@@ -12437,7 +12492,8 @@
           "joinLead": "Huñunakuy, rimay yachaypa niyninpi: huk unancha, huk niy, niykunataq huñunakunku. Huk unanchaqa <em>qillqasqa</em>, manam musuqmanta ruwasqachu.",
           "joinFoot": "Pichqa mirachiy. <b>Huk</b> musuq unancha. Wakintaq ñawpaqmanta kaqkunawan qillqasqa.",
           "readFoot": "Manam huk simillapas kaypi. Llimpikunaqa kikin programapa akllasqan: sapa ayqiy thaskiypaq huk ANSI-256 yupayta akllan, hinaspa sapa t'aqata <code>&gt;&gt;~</code>-wan qillqan chay pampapi <code>&gt;&gt;|</code> kichasqanpi. Tree-walker VM de registros ima kikillanta siq'inku, t'aqa t'aqa.",
-          "builtFoot": "Iskaynin puriq programapa hap'isqan. Manam huk sutillapas paykunapi inlis simichu — manataq rimay kamachiypi imapas tikranan karqanchu."
+          "builtFoot": "Llapan puriq programapa hap'isqan. Manam huk sutillapas paykunapi inlis simichu — manataq rimay kamachiypi imapas tikranan karqanchu.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — klingon simipi qillqasqa, <a href=\"piqad-reference.html\">pIqaD</a> qillqaywan siq'isqa, <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>paq ruwasqa simi. Sasachay, simi ima ñawpaq qawanapi akllakun; iskay kaqqa ñawpaq qhachwa, phawaypi."
         }
       }
     },
@@ -12654,7 +12710,8 @@
           "joinLead": "Aglutinación, no sentido lingüístico chan: un signo, un significado, e os significados apílanse. Un operador <em>deletréase</em>, non se acuña.",
           "joinFoot": "Cinco versións. <b>Un</b> signo novo. Todo o demais deletreouse cos que xa estaban aquí.",
           "readFoot": "Nin unha palabra en nada disto. Os tons son do propio programa: escolle un índice ANSI-256 por paso de escape e escribe cada cela con <code>&gt;&gt;~</code> sobre o lenzo que abre <code>&gt;&gt;|</code>. O percorredor de árbore e a VM de rexistros debúxano idéntico, cela a cela.",
-          "builtFoot": "As dúas son capturas do programa en marcha. Nin un identificador de ningunha delas é unha palabra inglesa — e nada na gramática tivo que cambiar para iso."
+          "builtFoot": "Todas son capturas do programa en marcha. Nin un identificador de ningunha delas é unha palabra inglesa — unha nin sequera é dunha lingua humana — e nada na gramática tivo que cambiar para iso.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — escrito en klingon e debuxado en <a href=\"piqad-reference.html\">pIqaD</a>, unha lingua inventada para <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. A dificultade e a lingua escóllense na primeira pantalla; a segunda é a primeira onda, en pleno voo."
         }
       }
     },
@@ -12871,7 +12928,8 @@
           "joinLead": "Aglutinacija v običajnem jezikoslovnem smislu: en znak, en pomen, in pomeni se nalagajo. Operator se <em>črkuje</em>, ne kuje se.",
           "joinFoot": "Pet izdaj. <b>En</b> nov znak. Vse ostalo je bilo črkovano iz tistih, ki so že bili tu.",
           "readFoot": "Niti ene besede v vsem tem. Barve so programove lastne: izbere indeks ANSI-256 za vsak korak pobega in piše vsako celico prek <code>&gt;&gt;~</code> na platno, ki ga odpre <code>&gt;&gt;|</code>. Prehodnik drevesa in registrski VM to narišeta enako, celico za celico.",
-          "builtFoot": "Oboje sta posnetka programa med delovanjem. Niti eno ime v nobenem od njiju ni angleška beseda — in nič v slovnici se zaradi tega ni moralo spremeniti."
+          "builtFoot": "Vsi so posnetki programa med delovanjem. Niti eno ime v nobenem od njih ni angleška beseda — eno ni niti iz človeškega jezika — in nič v slovnici se zaradi tega ni moralo spremeniti.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — napisan v klingonščini in izpisan s pisavo <a href=\"piqad-reference.html\">pIqaD</a>, jezikom, izmišljenim za <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Težavnost in jezik se izbereta na prvem zaslonu; drugi je prvi val, sredi leta."
         }
       }
     },
@@ -13088,7 +13146,8 @@
           "joinLead": "Aglutinim, në kuptimin e thjeshtë gjuhësor: një shenjë, një kuptim, dhe kuptimet grumbullohen. Një operator <em>shkronjëzohet</em>, nuk shpiket.",
           "joinFoot": "Pesë botime. <b>Një</b> shenjë e re. Gjithçka tjetër u shkronjëzua nga ato që ishin tashmë këtu.",
           "readFoot": "As një fjalë e vetme në gjithë atë. Ngjyrat janë të vetë programit: zgjedh një indeks ANSI-256 për çdo hap arratisjeje dhe shkruan çdo qelizë me <code>&gt;&gt;~</code> mbi kanavacën që hap <code>&gt;&gt;|</code>. Ecësi i pemës dhe makina me regjistra e vizatojnë njësoj, qelizë pas qelize.",
-          "builtFoot": "Të dyja janë pamje të programit ndërsa punon. As një emër i vetëm në asnjërën prej tyre nuk është fjalë angleze — dhe asgjë në gramatikë nuk pati nevojë të ndryshonte për këtë."
+          "builtFoot": "Të gjitha janë pamje të programit ndërsa punon. As një emër i vetëm në asnjërën prej tyre nuk është fjalë angleze — njëra nuk është as nga një gjuhë njerëzore — dhe asgjë në gramatikë nuk pati nevojë të ndryshonte për këtë.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — shkruar në klingonisht dhe vizatuar me <a href=\"piqad-reference.html\">pIqaD</a>, një gjuhë e shpikur për <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Vështirësia dhe gjuha zgjidhen në ekranin e parë; i dyti është vala e parë, në fluturim."
         }
       }
     },
@@ -13305,7 +13364,8 @@
           "joinLead": "Аглютынацыя ў простым мовазнаўчым сэнсе: адзін знак, адно значэнне, і значэнні складаюцца. Аператар <em>пішацца па знаках</em>, а не выдумляецца.",
           "joinFoot": "Пяць выпускаў. <b>Адзін</b> новы знак. Усё астатняе складзена з тых, што ўжо былі.",
           "readFoot": "Ніводнага слова ва ўсім гэтым. Колеры належаць самой праграме: яна выбірае індэкс ANSI-256 на кожны крок уцёкаў і піша кожную клетку праз <code>&gt;&gt;~</code> на палатне, якое адкрывае <code>&gt;&gt;|</code>. Абходчык дрэва і рэгістравая ВМ малююць гэта аднолькава, клетка за клеткай.",
-          "builtFoot": "Абодва — здымкі праграмы, што працуе. Ніводнае імя ні ў адным з іх не з'яўляецца англійскім словам — і нічому ў граматыцы не давялося дзеля гэтага мяняцца."
+          "builtFoot": "Усе яны — здымкі праграмы, што працуе. Ніводнае імя ні ў адным з іх не з'яўляецца англійскім словам — адно нават не з чалавечай мовы — і нічому ў граматыцы не давялося дзеля гэтага мяняцца.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — напісана па-клінгонску і накрэслена пісьмом <a href=\"piqad-reference.html\">pIqaD</a>, мовай, выдуманай для <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Складанасць і мову выбіраюць на першым экране; другі — першая хваля, у палёце."
         }
       }
     },
@@ -13522,7 +13582,8 @@
           "joinLead": "જોડાણ, ભાષાવિજ્ઞાનના સાદા અર્થમાં: એક નિશાની, એક અર્થ, અને અર્થો ખડકાય છે. કારક <em>જોડણીથી બને</em> છે, ઘડાતો નથી.",
           "joinFoot": "પાંચ આવૃત્તિ. <b>એક</b> નવી નિશાની. બાકી બધું પહેલેથી અહીં હતી તેમનાથી લખાયું.",
           "readFoot": "એ બધામાં એકે શબ્દ નથી. રંગ કાર્યક્રમના પોતાના: દરેક પલાયન-પગલા માટે એક ANSI-256 અનુક્રમ પસંદ કરે છે અને <code>&gt;&gt;|</code> ખોલે તે પટ પર દરેક ખાનું <code>&gt;&gt;~</code> થી લખે છે. વૃક્ષ પર ચાલનાર અને નોંધપોથી-VM તેને સરખું જ દોરે છે, ખાનું પછી ખાનું.",
-          "builtFoot": "બંને ચાલુ કાર્યક્રમની તસવીરો છે. બેમાંથી એકેમાં કોઈ નામ અંગ્રેજી શબ્દ નથી — અને તે માટે વ્યાકરણમાં કશું બદલવું પડ્યું નથી."
+          "builtFoot": "બધી ચાલુ કાર્યક્રમની તસવીરો છે. તેમાંથી કોઈમાં પણ કોઈ નામ અંગ્રેજી શબ્દ નથી — એક તો માણસની ભાષાનું પણ નથી — અને તે માટે વ્યાકરણમાં કશું બદલવું પડ્યું નથી.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ક્લિંગનમાં લખાયેલો અને <a href=\"piqad-reference.html\">pIqaD</a> લિપિમાં દોરાયેલો, <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> માટે ઘડાયેલી ભાષા. અઘરાપણું અને ભાષા પહેલા પડદે પસંદ થાય છે; બીજો પહેલી લહેર, ઉડાનની વચ્ચે."
         }
       }
     },
@@ -13739,7 +13800,8 @@
           "joinLead": "Aglutinasi, dalam erti kebahasaan yang bersahaja: satu tanda, satu makna, dan makna bertimbun. Satu pengendali <em>dieja</em>, bukan dicipta.",
           "joinFoot": "Lima keluaran. <b>Satu</b> tanda baharu. Selebihnya dieja daripada yang sudah ada di sini.",
           "readFoot": "Tiada satu kata pun dalam semuanya. Warnanya milik atur cara itu sendiri: ia memilih satu indeks ANSI-256 bagi setiap langkah terlepas dan menulis setiap sel dengan <code>&gt;&gt;~</code> pada kanvas yang dibuka oleh <code>&gt;&gt;|</code>. Perayau pokok dan mesin maya daftar melukisnya serupa, sel demi sel.",
-          "builtFoot": "Kedua-duanya rakaman atur cara semasa berjalan. Tiada satu nama pun dalam mana-mana daripadanya ialah kata Inggeris — dan tiada apa dalam tatabahasa perlu berubah untuk itu."
+          "builtFoot": "Semuanya rakaman atur cara semasa berjalan. Tiada satu nama pun di dalamnya ialah kata Inggeris — satu pun bukan bahasa manusia — dan tiada apa dalam tatabahasa perlu berubah untuk itu.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ditulis dalam bahasa Klingon dan dilukis dengan tulisan <a href=\"piqad-reference.html\">pIqaD</a>, bahasa yang direka untuk <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Kesukaran dan bahasa dipilih pada skrin pertama; yang kedua ialah gelombang pertama, di tengah penerbangan."
         }
       }
     },
@@ -13956,7 +14018,8 @@
           "joinLead": "ဆက်စပ်ကပ်ခြင်း၊ ဘာသာဗေဒ၏ ရိုးရှင်းသော အဓိပ္ပာယ်အရ — အမှတ်အသားတစ်ခု၊ အဓိပ္ပာယ်တစ်ခု၊ အဓိပ္ပာယ်များ ထပ်ဆင့်တက်သွားသည်။ အော်ပရေတာကို <em>စာလုံးပေါင်း၍ ရေး</em> ခြင်းဖြစ်ပြီး တီထွင်ခြင်း မဟုတ်။",
           "joinFoot": "ထုတ်ဝေမှု ငါးကြိမ်။ အမှတ်အသားအသစ် <b>တစ်ခု</b>။ ကျန်အားလုံးကို ဤနေရာတွင် ရှိနှင့်ပြီးသားများဖြင့် ပေါင်းရေးခဲ့သည်။",
           "readFoot": "ထိုအားလုံးထဲတွင် စကားလုံးတစ်လုံးမျှ မရှိ။ အရောင်များသည် ပရိုဂရမ်၏ ကိုယ်ပိုင် — ထွက်ပြေးခြေလှမ်းတိုင်းအတွက် ANSI-256 အညွှန်းတစ်ခုကို ရွေးပြီး <code>&gt;&gt;|</code> ဖွင့်ပေးသော ကန့်လန့်ကာပေါ်တွင် အကွက်တိုင်းကို <code>&gt;&gt;~</code> ဖြင့် ရေးသည်။ သစ်ပင်လျှောက်သူနှင့် မှတ်ပုံတင် VM သည် ယင်းကို အကွက်ချင်း တူညီစွာ ရေးဆွဲကြသည်။",
-          "builtFoot": "နှစ်ခုစလုံးသည် မောင်းနေဆဲ ပရိုဂရမ်၏ ဓာတ်ပုံများ ဖြစ်သည်။ ထိုနှစ်ခုထဲမှ မည်သည့်အမည်မျှ အင်္ဂလိပ်စကားလုံး မဟုတ် — ထိုအတွက် သဒ္ဒါတွင် ဘာမျှ ပြောင်းလဲရန် မလိုခဲ့ပါ။"
+          "builtFoot": "အားလုံးသည် မောင်းနေဆဲ ပရိုဂရမ်၏ ဓာတ်ပုံများ ဖြစ်သည်။ ၎င်းတို့ထဲမှ မည်သည့်အမည်မျှ အင်္ဂလိပ်စကားလုံး မဟုတ် — တစ်ခုမှာ လူ့ဘာသာစကားတောင် မဟုတ် — ထိုအတွက် သဒ္ဒါတွင် ဘာမျှ ပြောင်းလဲရန် မလိုခဲ့ပါ။",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ကလင်ဂွန်ဘာသာဖြင့် ရေးပြီး <a href=\"piqad-reference.html\">pIqaD</a> အက္ခရာဖြင့် ရေးဆွဲထားသည်။ <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> အတွက် တီထွင်ခဲ့သော ဘာသာစကား။ ခက်ခဲမှုနှင့် ဘာသာစကားကို ပထမဖန်သားပြင်တွင် ရွေးသည်၊ ဒုတိယမှာ ပထမလှိုင်း၊ ပျံသန်းလက်စ။"
         }
       }
     },
@@ -14173,7 +14236,8 @@
           "joinLead": "जोड, भाषाविज्ञानको सरल अर्थमा: एउटा चिन्ह, एउटा अर्थ, र अर्थहरू खप्टिन्छन्। कारक <em>अक्षर जोडेर लेखिन्छ</em>, गढिँदैन।",
           "joinFoot": "पाँच संस्करण। <b>एउटा</b> नयाँ चिन्ह। बाँकी सबै पहिल्यै यहाँ भएकाबाट जोडिएको।",
           "readFoot": "यो सबैमा एउटै शब्द छैन। रङ कार्यक्रमकै आफ्नै: हरेक भागाइ-पाइलाका लागि एउटा ANSI-256 सूचक छान्छ र <code>&gt;&gt;|</code> ले खोल्ने पर्दामा हरेक खोपी <code>&gt;&gt;~</code> ले लेख्छ। रूखमा हिँड्ने र रजिस्टर VM ले त्यो उस्तै कोर्छन्, खोपी पछि खोपी।",
-          "builtFoot": "दुवै चलिरहेको कार्यक्रमका तस्बिर हुन्। दुवैमध्ये कुनैमा पनि एउटा नाम अङ्ग्रेजी शब्द होइन — र त्यसका लागि व्याकरणमा केही बदल्नु परेन।"
+          "builtFoot": "सबै चलिरहेको कार्यक्रमका तस्बिर हुन्। तीमध्ये कुनैमा पनि एउटा नाम अङ्ग्रेजी शब्द होइन — एउटा त मानव भाषाको पनि होइन — र त्यसका लागि व्याकरणमा केही बदल्नु परेन।",
+          "builtKlingon": "Hov veS : Klingon Galaxy — क्लिंगनमा लेखिएको र <a href=\"piqad-reference.html\">pIqaD</a> लिपिमा कोरिएको, <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> का लागि बनाइएको भाषा। कठिनाइ र भाषा पहिलो पर्दामा छानिन्छ; दोस्रो पहिलो लहर, उडानको बीचमा।"
         }
       }
     },
@@ -14390,7 +14454,8 @@
           "joinLead": "Yapışma, dilçiliyin sadə mənasında: bir işarə, bir məna, və mənalar üst-üstə yığılır. Operator <em>hecalanır</em>, icad edilmir.",
           "joinFoot": "Beş buraxılış. <b>Bir</b> yeni işarə. Qalanların hamısı burada artıq olandan hecalandı.",
           "readFoot": "Bunların hamısında tək bir söz yoxdur. Rənglər proqramın özünündür: hər qaçış addımı üçün bir ANSI-256 indeksi seçir və hər xananı <code>&gt;&gt;|</code> ilə açılan kətana <code>&gt;&gt;~</code> ilə yazır. Ağac gəzdirici ilə registr maşını onu eyni cür, xana-xana çəkir.",
-          "builtFoot": "Hər ikisi işləyən proqramların şəklidir. Hər ikisində tək bir ad ingilis sözü deyil — və bunun üçün qrammatikada dəyişməli olan heç nə olmadı."
+          "builtFoot": "Hamısı işləyən proqramların şəklidir. Heç birində tək bir ad ingilis sözü deyil — biri hətta insan dili də deyil — və bunun üçün qrammatikada dəyişməli olan heç nə olmadı.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — Klinqon dilində yazılıb və <a href=\"piqad-reference.html\">pIqaD</a> ilə çəkilib, <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> üçün uydurulmuş bir dil. Çətinlik və dil ilk ekranda seçilir; ikincisi ilk dalğadır, uçuşun ortasında."
         }
       }
     },
@@ -14607,7 +14672,8 @@
           "joinLead": "Zeliqîn, bi wateya sade ya zimannasiyê: nîşanek, wateyek, û wate li ser hev diçin. Operatorek <em>tê tîpkirin</em>, nayê îcadkirin.",
           "joinFoot": "Pênc weşan. <b>Yek</b> nîşana nû. Hemû yên din ji tiştên ku berê li vir hebûn hatin tîpkirin.",
           "readFoot": "Di hemûyan de yek peyv jî tune ye. Reng yên bernameyê bi xwe ne: ji bo her gava revê nîşaneyeke ANSI-256 hildibijêre û her qutiyê bi <code>&gt;&gt;~</code> li ser kanvasa ku <code>&gt;&gt;|</code> vekiriye dinivîse. Meşyarê darê û makîneya qeydan wê bi heman awayî dikişînin, qutî bi qutî.",
-          "builtFoot": "Herdu jî wêneyên bernameyên xebitandinê ne. Di tu yekê de yek nav jî ne peyveke Îngilîzî ye — û ji bo wê tiştek di rêzimanê de tune bû ku diviya biguhere."
+          "builtFoot": "Hemû jî wêneyên bernameyên xebitandinê ne. Di tu yekê de yek nav jî ne peyveke Îngilîzî ye — yek ji zimanê mirovan jî nîne — û ji bo wê tiştek di rêzimanê de tune bû ku diviya biguhere.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — bi Klingonî hatiye nivîsandin û bi nivîsa <a href=\"piqad-reference.html\">pIqaD</a> hatiye xêzkirin, zimanek ku ji bo <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> hate afirandin. Zehmetî û ziman li ekrana yekem tên hilbijartin; ya duyem pêla yekem e, di nava firînê de."
         }
       }
     },
@@ -14824,7 +14890,8 @@
           "joinLead": "Ñembojoaju, ñe'ẽkuaa rape hesakãvape: peteĩ techaukaha, peteĩ he'ise, ha umi he'ise oñembohysýi. Peteĩ techaukaha <em>ojehai</em>, ndojejapói pyahúva.",
           "joinFoot": "Po jehai. <b>Peteĩ</b> techaukaha pyahu. Opa ambue ojehai umi oĩmava ndive.",
           "readFoot": "Ndaipóri peteĩ ñe'ẽ upépe. Umi sa'y ha'e pe tembiapo mba'eteéva: oiporavo peteĩ ANSI-256 papapy peteĩteĩ ñekañy pyrũme ha ohai peteĩteĩ koty <code>&gt;&gt;~</code> ndive pe ta'anga renda <code>&gt;&gt;|</code> oipe'áva ári. Pe tree-walker ha pe VM de registros ohai peteĩchagua, koty koty.",
-          "builtFoot": "Mokõivéva ha'e ta'anga pe tembiapo oikóvagui. Ndaipóri peteĩ téra mokõivévape ha'éva peteĩ ñe'ẽ inglés — ha mba'eve ñe'ẽtekuaápe ndoikói ambue upearã."
+          "builtFoot": "Maymáva ha'e ta'anga pe tembiapo oikóvagui. Ndaipóri peteĩ téra ha'éva peteĩ ñe'ẽ inglés — ha mba'eve ñe'ẽtekuaápe ndoikói ambue upearã.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ojehai klingon ñe'ẽme ha ojehaipyre <a href=\"piqad-reference.html\">pIqaD</a> kuatiañe'ẽme, peteĩ ñe'ẽ ojejapóva <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> peguarã. Ijetu'u ha ñe'ẽ oñemboguata ta'anga peteĩhápe; mokõiha ha'e yvytu peteĩha, oveve aja."
         }
       }
     },
@@ -15041,7 +15108,8 @@
           "joinLead": "Ịrapara, n'echiche asụsụ dị mfe: otu akara, otu pụtara, pụtara na-atụkwasị onwe ha. A na-<em>asụpe</em> ihe ọrụ, a naghị echepụta ya.",
           "joinFoot": "Mwepụta ise. Otu akara ọhụrụ <b>naanị</b>. A sụpere ndị ọzọ niile site n'ihe dị ebe a.",
           "readFoot": "Ọ dịghị otu okwu n'ihe ndị ahụ niile. Agba bụ nke mmemme ahụ n'onwe ya: ọ na-ahọrọ ndeksi ANSI-256 maka nzọụkwụ mgbapụ ọ bụla ma dee igbe ọ bụla site na <code>&gt;&gt;~</code> na kanvas nke <code>&gt;&gt;|</code> mepere. Onye na-eje ije n'osisi na igwe ndekọ na-ese ya otu ụzọ, igbe n'igbe.",
-          "builtFoot": "Ha abụọ bụ foto mmemme na-agba ọsọ. Ọ dịghị otu aha n'ime ha abụọ bụ okwu Bekee — ọ dịghịkwa ihe ọ bụla dị n'ụtọasụsụ nke kwesịrị ịgbanwe maka nke ahụ."
+          "builtFoot": "Ha niile bụ foto mmemme na-agba ọsọ. Ọ dịghị otu aha n'ime ha bụ okwu Bekee — ọ dịghịkwa ihe ọ bụla dị n'ụtọasụsụ nke kwesịrị ịgbanwe maka nke ahụ.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — e dere ya n'asụsụ Klingon ma sere ya n'edemede <a href=\"piqad-reference.html\">pIqaD</a>, asụsụ e chepụtara maka <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. A na-ahọrọ ihe isiike na asụsụ n'ihuenyo mbụ; nke abụọ bụ ebili mmiri mbụ, n'etiti ofufe."
         }
       }
     },
@@ -15258,7 +15326,8 @@
           "joinLead": "Aaneenhegting, in die eenvoudige taalkundige sin: een teken, een betekenis, en die betekenisse stapel. 'n Operator word <em>gespel</em>, nie uitgedink nie.",
           "joinFoot": "Vyf uitgawes. <b>Een</b> nuwe teken. Al die res is gespel uit wat reeds hier was.",
           "readFoot": "Nie een woord in dit alles nie. Die kleure behoort aan die program self: dit kies 'n ANSI-256-indeks vir elke ontsnappingstap en skryf elke blokkie met <code>&gt;&gt;~</code> op die doek wat <code>&gt;&gt;|</code> oopgemaak het. Die boomloper en die registermasjien teken dit eners, blokkie vir blokkie.",
-          "builtFoot": "Albei is foto's van lopende programme. Nie een naam in enigeen van hulle is 'n Engelse woord nie — en niks in die grammatika moes daarvoor verander nie."
+          "builtFoot": "Almal is foto's van lopende programme. Nie een naam in enigeen van hulle is 'n Engelse woord nie — een is nie eens uit 'n menslike taal nie — en niks in die grammatika moes daarvoor verander nie.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — in Klingon geskryf en in <a href=\"piqad-reference.html\">pIqaD</a> geteken, 'n taal wat vir <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> uitgedink is. Moeilikheid en taal word op die eerste skerm gekies; die tweede is die eerste golf, middel-in die vlug."
         }
       }
     },
@@ -15475,7 +15544,8 @@
           "joinLead": "Maxxandiku, ci tekki gu yomb gu xam-xamu làkk: benn màndarga, benn tekki, te tekki yi dañuy teddi ci seen kaw. Jëfandikukat bi ñu koy <em>bind ci araf</em>, duñu ko sos.",
           "joinFoot": "Juróomi génne. <b>Benn</b> màndarga bu bees. Yeneen yépp ñu leen bind ci araf jóge ci li fi nekkoon ba noppi.",
           "readFoot": "Amul benn baat ci loolu lépp. Melo yi programm bi la moom: dafay tànn benn indeks ANSI-256 ci bépp pas bu daw te dafay bind bépp kees ak <code>&gt;&gt;~</code> ci saraxu bi <code>&gt;&gt;|</code> ubbi. Doxkatu garab gi ak masinu tëraliin bi ñu ngi ko natt ci genn anam, kees ci kees.",
-          "builtFoot": "Ñoom ñaar ay nataali programm yu doxe lañu. Amul benn tur ci ñoom ñaar bu di baatu Anglais — te amul dara ci gramer bi bu waroon a soppiku ngir loolu."
+          "builtFoot": "Ñoom ñépp ay nataali programm yu doxe lañu. Amul benn tur ci ñoom bu di baatu Anglais — te amul dara ci gramer bi bu waroon a soppiku ngir loolu.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ñu ko bind ci Klingon te natt ko ci mbind <a href=\"piqad-reference.html\">pIqaD</a>, làkk wu ñu sos ngir <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Jafe-jafe ak làkk wi ñu ngi leen tànn ci ekraan bu njëkk bi; ñaareelu bi mooy duux bu njëkk bi, ci diggu naaw bi."
         }
       }
     },
@@ -15692,7 +15762,8 @@
           "joinLead": "Ukunamathelana, ngentsingiselo elula yenzululwazi yolwimi: uphawu olunye, intsingiselo enye, kwaye iintsingiselo ziyakhelana. Umsebenzi <em>uyapelwa</em>, awuqanjwa.",
           "joinFoot": "Ukukhutshwa okuhlanu. Uphawu olutsha <b>olunye</b>. Konke okunye kupelwe kokusele kukho apha.",
           "readFoot": "Akukho nalinye igama kuko konke oko. Imibala yeyenkqubo ngokwayo: ikhetha isalathiso se-ANSI-256 kwinyathelo ngalinye lokubaleka ize ibhale ibhokisi nganye nge-<code>&gt;&gt;~</code> kwikhanvasi evulwe yi-<code>&gt;&gt;|</code>. Umhambi womthi kunye nomatshini weerejista bakuzoba ngendlela efanayo, ibhokisi nganye.",
-          "builtFoot": "Zombini zizithombe zeenkqubo ezisebenzayo. Akukho nalinye igama kuzo zombini eligama lesiNgesi — kwaye akukho nto kwigrama ebekufuneka itshintshe ngenxa yoko."
+          "builtFoot": "Zonke zizithombe zeenkqubo ezisebenzayo. Akukho nalinye igama kuzo zonke eligama lesiNgesi — kwaye akukho nto kwigrama ebekufuneka itshintshe ngenxa yoko.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ibhalwe ngesiKlingon kwaye izotywe ngombhalo we-<a href=\"piqad-reference.html\">pIqaD</a>, ulwimi olwaqanjwa i-<a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Ubunzima nolwimi kukhethwa kwiskrini sokuqala; esesibini liliza lokuqala, phakathi kokubhabha."
         }
       }
     },
@@ -15909,7 +15980,8 @@
           "joinLead": "Аглутинација во обичната јазична смисла: еден знак, едно значење, и значењата се редат едно на друго. Операторот се <em>слогува</em>, не се кова.",
           "joinFoot": "Пет изданија. <b>Еден</b> нов знак. Сè останато е сложено од оние што веќе беа тука.",
           "readFoot": "Ниту еден збор во сето тоа. Боите се на самата програма: избира индекс ANSI-256 за секој чекор на бегство и пишува секоја ќелија преку <code>&gt;&gt;~</code> врз платното што го отвора <code>&gt;&gt;|</code>. Обиколувачот на дрвото и регистарската ВМ го цртаат тоа еднакво, ќелија по ќелија.",
-          "builtFoot": "И двете се снимки од програмата додека работи. Ниту едно име во ниту една од нив не е англиски збор — и ништо во граматиката не мораше да се смени за тоа."
+          "builtFoot": "Сите се снимки од програмата додека работи. Ниту едно име во ниту една од нив не е англиски збор — едно не е ни од човечки јазик — и ништо во граматиката не мораше да се смени за тоа.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — пишуван на клингонски и испишан со <a href=\"piqad-reference.html\">pIqaD</a>, јазик измислен за <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Тежината и јазикот се избираат на првиот екран; вториот е првиот бран, во лет."
         }
       }
     },
@@ -16126,7 +16198,8 @@
           "joinLead": "Nenepanōliztli, ipan in tlahtōlmatiliztli ineliz: cē machiyōtl, cē ineliz, īhuān in tlaneliztli mopepechoah. Cē tlahtōlnechicōlli <em>mopōhua</em>, ahmo mochīhua yancuic.",
           "joinFoot": "Mācuīlli tlaquīxtīliztli. <b>Cē</b> yancuic machiyōtl. Mochi occequi ōmopōuh ica in ye cateh.",
           "readFoot": "Ahmo cē tlahtōlli ipan mochi inōn. In tlapalli in tequitl īaxca: quipehpena cē ANSI-256 tlapōhualli ipan cehcen choloa tlamantli īhuān quihcuiloa cehcen caltōntli ica <code>&gt;&gt;~</code> ipan in tlahcuilolpan in <code>&gt;&gt;|</code> quitlapoa. In tree-walker īhuān in VM de registros zan no quihcuiloah, caltōntli caltōntli.",
-          "builtFoot": "Ōmextin cateh in tequitl in nemi īixiptla. Ahmo cē tōcāitl ipan cē ahnozo occē cē inglés tlahtōlli — īhuān ahtle ipan in tlahtōltecpanaliztli mopatlazquia ic inōn."
+          "builtFoot": "Mochtin cateh in tequitl in nemi īixiptla. Ahmo cē tōcāitl ipan cē ahnozo occē cē inglés tlahtōlli — īhuān ahtle ipan in tlahtōltecpanaliztli mopatlazquia ic inōn.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ipan klingon tlahtōlli tlahcuiloltīcah īhuān ipan <a href=\"piqad-reference.html\">pIqaD</a> tlahcuilōlli tlahtlācuilōlli, cē tlahtōlli in ōmochīuh <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> īpampa. In ohuihcāyōtl īhuān in tlahtōlli ipan in achto ixtli mopehpena; in ōmextin in achto ātoyātl, patlanihcāpan."
         }
       }
     },
@@ -16343,7 +16416,8 @@
           "joinLead": "Much'kinaj, ti' u chan naats'il u na'atil t'aan: junp'éel chíikul, junp'éel u k'áat u ya'al, yéetel le ba'ax ku ya'aliko'obo' ku múuch'ulo'ob. Junp'éel meyajil ku <em>ts'íibta'al</em>, ma' ku beeta'al túumbeni'.",
           "joinFoot": "Jo'op'éel jóok'sajil. <b>Junp'éel</b> túumben chíikul. Tuláakal u láak'o' ts'íibta'ab yéetel le ts'o'ok u yaantalo'ob waye'.",
           "readFoot": "Mix junp'éel t'aan ti' tuláakal le je'ela'. Le boonilo'obo' u ti'al le meyaj: ku yéeyik junp'éel ANSI-256 xookil ti' junjunp'éel púuts'ul xíimbal yéetel ku ts'íibtik junjunp'éel táabla yéetel <code>&gt;&gt;~</code> ti' le bo'oyil ku je'ik <code>&gt;&gt;|</code>. Le tree-walker yéetel le VM de registros ku ts'íibtiko'ob láayli'e', táabla ti' táabla.",
-          "builtFoot": "Ka'ap'éelo'ob leti'ob u oochelo'ob le meyaj táan u máano'. Mix junp'éel k'aaba' ti' junp'éel wa uláak'e' junp'éel t'aan inglési' — yéetel mix ba'al ti' le nuktalilo' k'a'abet u k'expajal utia'al le je'elo'."
+          "builtFoot": "Tuláakalo'ob leti'ob u oochelo'ob le meyaj táan u máano'. Mix junp'éel k'aaba' ti'ob junp'éel t'aan inglési' — yéetel mix ba'al ti' le nuktalilo' k'a'abet u k'expajal utia'al le je'elo'.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ts'íibta'an ich klingon yéetel bonbil ich <a href=\"piqad-reference.html\">pIqaD</a>, junp'éel t'aan beeta'ab utia'al <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Le talamilo' yéetel le t'aano' ku yéeya'al ti' le yáax bo'oyil; le ka'ap'éelo' le yáax búukil, chúumuk u xik'nal."
         }
       }
     },
@@ -16560,7 +16634,8 @@
           "joinLead": "Trawüluwün, ti kewün kimün ñi lif pikan mew: kiñe wirin, kiñe pikan, ka ti pikan trawüluwingün. Kiñe wirintuwe <em>wirintukungey</em>, dewmangelay we.",
           "joinFoot": "Kechu tripan. <b>Kiñe</b> we wirin. Kom kakelu ta wirintukungey ti ka mülelu mew.",
           "readFoot": "Kiñe dungu no rume tüfachi mew. Ti ad ta kisu ñi küdaw ñi ad: dulliy kiñe ANSI-256 rakin kiñeke montun trekan mew ka wirintukuy kiñeke pichi ruka <code>&gt;&gt;~</code> mew ti wirintuwe mew <code>&gt;&gt;|</code> nülakünulu. Ti tree-walker ka ti VM de registros kiñeke ad wirintukuyngu, pichi ruka pichi ruka.",
-          "builtFoot": "Epuñpüle ta ti küdaw amulelu ñi adentun. Kiñe üy no rume tüfachi epu mew inglés dungu ngelay — ka chem no rume ti dungun mew kaduamnuwi feymew."
+          "builtFoot": "Kom ta ti küdaw amulelu ñi adentun. Kiñe üy no rume tüfachi mew inglés dungu ngelay — ka chem no rume ti dungun mew kaduamnuwi feymew.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — klingon dungun mew wirintukungey ka <a href=\"piqad-reference.html\">pIqaD</a> wirin mew adkintukungey, kiñe dungun dewmangelu <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> mew. Ti kudawün ka ti kewün wüne pengelwe mew dulliy; ti epuñma wüne rüpü ko ngey, müpüwün rangiñ mew."
         }
       }
     },
@@ -16777,7 +16852,8 @@
           "joinLead": "Ałhąąh naaznil, saad bee'ééhózinígíí bik'ehgo: t'áálá'í bee'ak'e'elchíhí, t'áálá'í ályaa, dóó ályaaígíí ałhąąh naaznil. Bee'ak'e'elchíhí <em>ák'e'elchí</em>, doo ániid ályaa da.",
           "joinFoot": "Ashdla' ch'ínígeed. <b>T'ááłá'í</b> ániid bee'ak'e'elchíhí. T'áá ałtso náánáła' éí t'áá ałtso hólǫ́ǫ nít'éé' bee ák'e'elchí.",
           "readFoot": "T'áadoo saad da díí bii'. Bikédzo éí naanish bí bíni': ANSI-256 bee'ólta' t'áálá'í nináltsood bik'ehgo yiyíísts'ą́ą́' dóó t'áálá'í bii' <code>&gt;&gt;~</code> bee ák'e'elchí, naaltsoos bikáá' <code>&gt;&gt;|</code> ályaaígíí bikáá'. Tree-walker dóó VM de registros t'áá ałhąąh ák'e'elchí, bii' bii'.",
-          "builtFoot": "Naaki éí naanish naaghánígíí bi'oochił. T'áadoo bízhi' da Bilagáana bizaad — dóó bizaad biyi' t'áadoo náánáłt'éego da."
+          "builtFoot": "T'áá ałtso éí naanish naaghánígíí bi'oochił. T'áadoo bízhi' da Bilagáana bizaad — dóó bizaad biyi' t'áadoo náánáłt'éego da.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — Klingon bizaad bee ák'e'elchí dóó <a href=\"piqad-reference.html\">pIqaD</a> bee ák'e'elchí, <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> biniiyé saad áyiilaa. Nantł'ah dóó saad éí áłtsé naaltsoos bikáá' yikáá'; naaki góne' éí áłtsé niiłtłah, náánádááh biyi'."
         }
       }
     },
@@ -16994,7 +17070,8 @@
           "joinLead": "ᎠᏁᎳᏗᏍᏗ, ᎦᏬᏂᎯᏍᏗ ᎠᎦᏙᎥᎯᏍᏗ ᎤᏙᎯᏳᎯ: ᏌᏊ ᏗᏰᎸᏗ, ᏌᏊ ᎦᏛᎦ, ᎠᎴ ᎦᏛᎬᎢ ᎠᏁᎳᏗᏍᏗ. ᏗᎦᎸᏫᏍᏓᏁᏗ <em>ᎪᏪᎳ</em>, ᎥᏝ ᎢᏤ ᏯᏛᏁᎸ.",
           "joinFoot": "ᎯᏍᎩ ᎠᏄᎪᎢᏍᏗ. <b>ᏌᏊ</b> ᎢᏤ ᏗᏰᎸᏗ. ᏂᎦᏛ ᏐᎢ ᎿᏉ ᎠᏂᏙᎾᎥ ᎬᏔᏅ ᎪᏪᎳ.",
           "readFoot": "ᎥᏝ ᏌᏊ ᎧᏁᎬ ᎭᏫᎾᏗᏢ. ᎦᎪᏗ ᎠᏛᏁᎵᏍᎬ ᎤᏤᎵ: ANSI-256 ᎠᏎᏍᏗ ᏂᎦᏛ ᎦᎶᏒᏍᏗ ᎠᏑᏰᏍᎦ ᎠᎴ ᏂᎦᏛ ᎠᏓᏁᎸ <code>&gt;&gt;~</code> ᎬᏔᏅ ᎪᏪᎳ, ᎠᏓᏍᏓᏴᏗ <code>&gt;&gt;|</code> ᎬᏂᎦᎯᏓ ᎦᏚᎢ. Tree-walker ᎠᎴ VM de registros ᎾᏍᎩᏉ ᎪᏪᎳ, ᎠᏓᏁᎸ ᎠᏓᏁᎸ.",
-          "builtFoot": "ᏔᎵ ᎠᏛᏁᎵᏍᎬ ᎠᎵᏱᎵᏒ ᎤᏂᏍᏆᏂᎪᏛ. ᎥᏝ ᏌᏊ ᏚᏙᎥ ᎢᏂᎩᎵᏏ ᎧᏁᎬ ᏱᎩ — ᎠᎴ ᎦᏬᏂᎯᏍᏗ ᎭᏫᎾᏗᏢ ᎥᏝ ᎪᎱᏍᏗ ᏯᏓᏁᏟᏴᏍᏔᏅ."
+          "builtFoot": "ᏂᎦᏓ ᎠᏛᏁᎵᏍᎬ ᎠᎵᏱᎵᏒ ᎤᏂᏍᏆᏂᎪᏛ. ᎥᏝ ᏌᏊ ᏚᏙᎥ ᎢᏂᎩᎵᏏ ᎧᏁᎬ ᏱᎩ — ᎠᎴ ᎦᏬᏂᎯᏍᏗ ᎭᏫᎾᏗᏢ ᎥᏝ ᎪᎱᏍᏗ ᏯᏓᏁᏟᏴᏍᏔᏅ.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ᎧᎵᏂᎪᏂ ᎦᏬᏂᎯᏍᏗ ᎪᏪᎳ ᎠᎴ <a href=\"piqad-reference.html\">pIqaD</a> ᎦᏪᎶᏗ ᎠᏍᏆᏂᎪᏛ, ᎦᏬᏂᎯᏍᏗ <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> ᎠᏛᏁᎸ. ᎦᏂᎳᎩ ᎠᎴ ᎦᏬᏂᎯᏍᏗ ᎢᎬᏱ ᎠᏓᏍᏓᏴᏗ ᎠᏑᏰᏍᏗ; ᏔᎵᏁ ᎢᎬᏱ ᎠᎹᏱ, ᎠᏂᏃᎯᎵᏙᎲ."
         }
       }
     },
@@ -17299,7 +17376,8 @@
           "joinLead": "Mayachasiwi, aru yatxatäwin qhana amuyupana: mä unancha, mä amuyu, ukat amuyunakax tantachasipxi. Mä unanchaxa <em>qillqatawa</em>, janiw machaqat lurataki.",
           "joinFoot": "Phisqa mistuwi. <b>Maya</b> machaq unancha. Taqi yaqhaxa nayra utjirinakampi qillqata.",
           "readFoot": "Janiw mä arus akana utjkiti. Saminakaxa luräwipankiwa: sapa phatiña sarawitaki mä ANSI-256 jakhu ajlli ukat sapa tama <code>&gt;&gt;~</code> ukampi qillqi, <code>&gt;&gt;|</code> jistarat qillqaña patana. Tree-walker ukat VM de registros kikpa qillqapxi, tama tama.",
-          "builtFoot": "Panichas sarnaqir luräwin katuqatapawa. Janiw mä sutis ukanakana inlish arukiti — ukat arunchawina janiw kunas mayjt'añapakanti."
+          "builtFoot": "Taqpachas sarnaqir luräwin katuqatapawa. Janiw mä sutis ukanakana inlish arukiti — ukat arunchawina janiw kunas mayjt'añapakanti.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — klingon aruna qillqata, <a href=\"piqad-reference.html\">pIqaD</a> qillqampi uñacht'ayata, <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> laykuw lurata aru. Ch'amakipa ukat aru nayrïri uñnaqäwina ajlliwa; payïrixa nayrïri thaya, jalasina."
         }
       }
     },
@@ -17516,7 +17594,8 @@
           "joinLead": "Outkajawaa, tü anüiki eʼitaanakat sünain: wanee ayaawase, wanee süküjala, otta tü süküjalakalüirua outkajaasü. Wanee aainjala <em>ashajuushi</em>, nnojotsü aainjuushi jeketü.",
           "joinFoot": "Jarai ojuittaa. <b>Wanee</b> ayaawase jeketü. Süpüshua waneeirua ashajuushi tü eekat maʼaka.",
           "readFoot": "Nnojotsü wanee pütchi süpüshua sünain. Tü ayaakuaakat shia tü aʼyatawaakat sümaʼana: aneekünüsü wanee ANSI-256 ayatia waneʼewai awataa wanaa otta ashajünüsü waneʼewai mma <code>&gt;&gt;~</code> sümaa, tü ashajuushi <code>&gt;&gt;|</code> suʼttiakat saʼaka. Tree-walker otta VM de registros wanaawasü nashajüin, mma mmamüin.",
-          "builtFoot": "Piamashii shia tü aʼyatawaakat eeka aʼyataain süshaajala. Nnojotsü wanee anülia sünain inglés pütchi — otta nnojotsü kasa sünüikikat awanajaain tia süpüla."
+          "builtFoot": "Süpüshuaʼa shia tü aʼyatawaakat eeka aʼyataain süshaajala. Nnojotsü wanee anülia sünain inglés pütchi — otta nnojotsü kasa sünüikikat awanajaain tia süpüla.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ashajuushi klingon anüikimüin otta ashajuushi <a href=\"piqad-reference.html\">pIqaD</a> sümaa, wanee anüiki eküünüsü <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> süpüla. Tü kapüleekat otta anüiki aneekünüsü palajana; tü piamasükat tü palajatkat awataa, sünain apünaa."
         }
       }
     },
@@ -17733,7 +17812,8 @@
           "joinLead": "Ãbaa, bed'ea k'awada ide: ab'a kirak'a, ab'a jarada, ax̶ĩ jaradada ãbaa b'ʉa. Ab'a o b'ʉa <em>kirak'abaria</em>, ¬djiwidʉ oda.",
           "joinFoot": "Juesoma tʉbʉ. <b>Ab'a</b> kirak'a djiwidʉ. Jũma ai b'ʉda ume kirak'a.",
           "readFoot": "Ni ab'a bed'ea nau ide. Pak'uada o b'ʉ ẽbẽra: ab'a ANSI-256 numero edabaria ab'aʉ̃ wãbʉa mĩrũ, ax̶ĩ ab'aʉ̃ d'oma <code>&gt;&gt;~</code> ume kirak'abaria, kirak'a <code>&gt;&gt;|</code>ba ewabʉ ide. Tree-walker ax̶ĩ VM de registros ãbaa kirak'abaria, d'oma d'oma.",
-          "builtFoot": "Umeda bʉrʉ o b'ʉ ẽbẽra k'ĩrawa. Ni ab'a trʉ̃ maʉ̃ ide ¬bʉrʉ inglés bed'ea — ax̶ĩ bed'ea ume ni k'ãrẽ ¬jʉrʉsi maʉ̃ba."
+          "builtFoot": "Jõma bʉrʉ o b'ʉ ẽbẽra k'ĩrawa. Ni ab'a trʉ̃ maʉ̃ ide ¬bʉrʉ inglés bed'ea — ax̶ĩ bed'ea ume ni k'ãrẽ ¬jʉrʉsi maʉ̃ba.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — klingon bed'eaba kirak'a ax̶ĩ <a href=\"piqad-reference.html\">pIqaD</a> kirak'aba, bed'ea <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> itee o b'ʉa. K'ãrẽba ax̶ĩ bed'ea naãrãgua edabaria; umeda naãrã bʉ, nʉmʉ ume."
         }
       }
     },
@@ -17950,7 +18030,8 @@
           "joinLead": "Waroho, thë ãhã taai hami: mõrĩ mesi, mõrĩ thë kuaɨ, ai thëpë kuaɨ waroho. Mõrĩ thë kuo <em>thë mãyõ</em>, thë kuo tute mai.",
           "joinFoot": "Porakapɨ mõrĩ thë huu. <b>Mõrĩ</b> mesi tute. Jũma ai thëpë thë mãyõ hei kuo hami.",
           "readFoot": "Mõrĩ thë ãhã hei hami kua mai. Ũxipë thë kuo pëha: mõrĩ ANSI-256 thë hɨrama thë hɨpɨ mõrĩ mõrĩ waripo pei hami, ai mõrĩ mõrĩ thë <code>&gt;&gt;~</code> hami thë mãyõ, mesi <code>&gt;&gt;|</code> thë hetu hami. Tree-walker ai VM de registros thë mãyõ waneepia, thë hami thë hami.",
-          "builtFoot": "Porakapɨ thë kuo pëha thë taai. Mõrĩ thë ãhã hei hami inglés thë ãhã kuo mai — ai thë ãhã hami thë kuo mai waripo hwei."
+          "builtFoot": "Kõmi thë kuo pëha thë taai. Mõrĩ thë ãhã hei hami inglés thë ãhã kuo mai — ai thë ãhã hami thë kuo mai waripo hwei.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — klingon thëpë ãhã hami thë mãyõ, <a href=\"piqad-reference.html\">pIqaD</a> thë mãyõ hami, thë ãhã <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> hami thë kuo. Thë xoa ai thëpë ãhã thë xori hami thë hɨpɨ; porakapɨ thë hami thë pree, thë hura hami."
         }
       }
     },
@@ -18167,7 +18248,8 @@
           "joinLead": "Walitti maxxanuu, hiika afaanii salphaadhaan: mallattoo tokko, hiika tokko, hiikawwanis walitti tuulamu. Hojjetaan tokko <em>qubeedhaan barreeffama</em> malee hin uumamu.",
           "joinFoot": "Gadhiisuu shan. Mallattoo haaraa <b>tokko</b>. Kaan hundi waan asitti duraan jiru irraa qubeedhaan barreeffame.",
           "readFoot": "Sana hunda keessatti jechi tokko illee hin jiru. Halluuwwan kan sagantichaa mataa isaati: tarkaanfii baqannaa tokkoon tokkoon isaaniitiif iskoora ANSI-256 filata, saanduqa tokkoon tokkoon isaaniis <code>&gt;&gt;~</code>n waraqaa <code>&gt;&gt;|</code> bane irratti barreessa. Deemaan mukaa fi maashiniin galmee walfakkaatti kaasu, saanduqa saanduqaan.",
-          "builtFoot": "Lamaanuu suuraa sagantaawwan hojjetaa jiranii ti. Isaan lamaan keessaa maqaan tokko illee jecha Ingiliffaa miti — kanaafis caasluga keessatti wanti jijjiiramuu qabu hin turre."
+          "builtFoot": "Hundi isaanii suuraa sagantaawwan hojjetaa jiranii ti. Isaan keessaa maqaan tokko illee jecha Ingiliffaa miti — kanaafis caasluga keessatti wanti jijjiiramuu qabu hin turre.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — Afaan Klingoniin barreeffamee qubee <a href=\"piqad-reference.html\">pIqaD</a>n kaafame, afaan <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>f uumame. Ulfaatinnii fi afaan iskiriinii jalqabaa irratti filatamu; inni lammaffaan dambalii jalqabaa, gidduu balali'ii."
         }
       }
     },
@@ -18384,7 +18466,8 @@
           "joinLead": "Nɔrɔli, kanhakili kɔrɔ nɔgɔman na: taamasiɲɛn kelen, kɔrɔ kelen, kɔrɔw bɛ dan ɲɔgɔn kan. Baarakɛla dɔ bɛ <em>sɛbɛn ni sɛbɛnnifɛnw ye</em>, a tɛ dabɔ.",
           "joinFoot": "Bɔli duuru. Taamasiɲɛn kura <b>kelen</b>. Tɔ bɛɛ sɛbɛnna ni min tun bɛ yan ka ban.",
           "readFoot": "Kuma kelen tɛ o bɛɛ la. Kulɛriw ye porogaramu yɛrɛ ta ye: a bɛ ANSI-256 hakɛ sugandi boli sen kelen kelen bɛɛ kama, a bɛ kesu kelen kelen bɛɛ sɛbɛn ni <code>&gt;&gt;~</code> ye finiba kan min dayɛlɛla ni <code>&gt;&gt;|</code> ye. Jiri taamabaga ni sɛbɛnnifɛn masin bɛ a ja cogo kelen na, kesu ni kesu.",
-          "builtFoot": "U fila bɛɛ ye porogaramu bolilenw ja ye. Tɔgɔ kelen tɛ u fila si la min ye Angilɛkan kuma ye — ani foyi tun tɛ kanhakili la min tun ka kan ka yɛlɛma o kama."
+          "builtFoot": "U bɛɛ ye porogaramu bolilenw ja ye. Tɔgɔ kelen tɛ u si la min ye Angilɛkan kuma ye — ani foyi tun tɛ kanhakili la min tun ka kan ka yɛlɛma o kama.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — a sɛbɛnna Klingon kan na ani a jaa kɛra ni <a href=\"piqad-reference.html\">pIqaD</a> sɛbɛnni ye, kan min dabɔra <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> kama. Gɛlɛya ani kan bɛ sugandi ekran fɔlɔ kan; filanan ye jikuru fɔlɔ ye, pankurun cɛmancɛ la."
         }
       }
     },
@@ -18601,7 +18684,8 @@
           "joinLead": "Takkondiral, e maanaa newiiɗo mo ganndal ɗemɗe: maande wootere, maanaa gooto, maanaaji ɗii kadi ina ɗakkondira. Gollotooɗo ina <em>winndiree alkule</em>, ina waɗaaka keso.",
           "joinFoot": "Yaltingol jowi. Maande hesere <b>wootere</b>. Goɗɗi ɗii fof winndiraa alkule immorde e ko woɗɗunoo ɗoo.",
           "readFoot": "Hay konngol wootel alaa e ɗum fof. Nooneeji ɗii ko porogaraam oon jeyi: ina suɓoo tonngoode ANSI-256 wonande kala tappol dogdu, ina winnda kala kees e <code>&gt;&gt;~</code> e dow leeso ngo <code>&gt;&gt;|</code> udditi. Yahoowo leggal e masiŋ tonngirde ina natta ɗum no wootre, kees e kees.",
-          "builtFoot": "Ɗiɗi ɗii fof ko nate porogaraamuuji dogooji. Hay innde wootere alaa e maɓɓe nde woni konngol Engeleere — alaa kadi ko woni e sarɗi haala ko foti waylaade ngam ɗum."
+          "builtFoot": "Ɗii fof ko nate porogaraamuuji dogooji. Hay innde wootere alaa e maɓɓe nde woni konngol Engeleere — alaa kadi ko woni e sarɗi haala ko foti waylaade ngam ɗum.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ngal winndaa e Klingon e ngal natta e binndol <a href=\"piqad-reference.html\">pIqaD</a>, ɗemngal ngal sosaa ngam <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Satteende e ɗemngal ina cuɓee e ekraa aranal; ɗiɗaɓal ko mbuuwdi aranndi, hakkunde diwal."
         }
       }
     },
@@ -18818,7 +18902,8 @@
           "joinLead": "Kokangama, na ndimbola ya pete ya boyekoli ya monoko: elembo moko, ndimbola moko, mpe bandimbola emataka moko likoló ya mosusu. Mosaleli <em>ekomami na balɛtɛlɛ</em>, esalemi ya sika te.",
           "joinFoot": "Kobimisa mitano. Elembo ya sika <b>moko</b>. Nyonso mosusu ekomami na balɛtɛlɛ kobanda na oyo ezalaki awa.",
           "readFoot": "Ata liloba moko te na nyonso wana. Balangi ezali ya programɛ yango moko: eponaka indɛkisi ANSI-256 mpo na litambe nyonso ya kokima mpe ekomaka sanduku nyonso na <code>&gt;&gt;~</code> likoló ya elamba oyo <code>&gt;&gt;|</code> efungolaki. Motamboli ya nzete mpe masini ya bakomi bakomi yango ndenge moko, sanduku na sanduku.",
-          "builtFoot": "Nyonso mibale ezali bafoto ya baprogramɛ oyo ezali kosala. Ata nkómbó moko te kati na yango mibale ezali liloba ya Anglais — mpe eloko moko te na ebandeli ya monoko esengelaki kobongwana mpo na yango."
+          "builtFoot": "Nyonso ezali bafoto ya baprogramɛ oyo ezali kosala. Ata nkómbó moko te kati na yango ezali liloba ya Anglais — mpe eloko moko te na ebandeli ya monoko esengelaki kobongwana mpo na yango.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ekomami na Klingon mpe esalemi na makomi ya <a href=\"piqad-reference.html\">pIqaD</a>, monoko oyo esalemaki mpo na <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Bokasi mpe monoko eponami na ekran ya liboso; ya mibale ezali mbonge ya liboso, na kati ya mopepe."
         }
       }
     },
@@ -19035,7 +19120,8 @@
           "joinLead": "Isku dhegid, macnaha fudud ee cilmiga afafka: hal calaamad, hal macne, macnayaashuna way isdul saarmaan. Hawlwadeen waa la <em>higgaadiyaa</em>, lama hindiso.",
           "joinFoot": "Shan sii deyn. <b>Hal</b> calaamad oo cusub. Kuwa kale oo dhan waxaa laga higgaadiyay wixii halkan hore ugu jiray.",
           "readFoot": "Xitaa hal erey kuma jiro taas oo dhan. Midabbadu waa kuwa barnaamijka laftiisa: wuxuu doortaa tusmo ANSI-256 tallaabo kasta oo baxsad ah, sanduuq kastana wuxuu ku qoraa <code>&gt;&gt;~</code> shaandhadda uu <code>&gt;&gt;|</code> furay. Socodkii geedka iyo mishiinka diiwaanku si isku mid ah ayay u sawiraan, sanduuq sanduuq ka dib.",
-          "builtFoot": "Labaduba waa sawirro barnaamijyo socda. Midna magacyadooda kama mid aha erey Ingiriisi ah — waxbana kuma jirin naxwaha oo ay ahayd inay taas u beddesho."
+          "builtFoot": "Dhammaantood waa sawirro barnaamijyo socda. Midna magacyadooda kama mid aha erey Ingiriisi ah — waxbana kuma jirin naxwaha oo ay ahayd inay taas u beddesho.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — waxaa lagu qoray af-Klingon waxaana lagu sawiray far <a href=\"piqad-reference.html\">pIqaD</a>, luqad loo abuuray <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Adkaanta iyo afka waxaa lagu doortaa shaashadda koowaad; tan labaad waa mowjadda koowaad, badhtamaha duulista."
         }
       }
     },
@@ -19252,7 +19338,8 @@
           "joinLead": "ምጥባቕ፡ ብቐሊል ናይ ቋንቋ ትርጉም፦ ሓደ ምልክት፡ ሓደ ትርጉም፡ እቶም ትርጉማት ድማ ይደራረቡ። ሓደ ኦፐረይተር <em>ይፍለፈል</em> እምበር ኣይፍጠርን።",
           "joinFoot": "ሓሙሽተ ምውጻእ። <b>ሓደ</b> ሓድሽ ምልክት። እቶም ካልኦት ኩሎም ካብቲ ኣብዚ ዝነበረ ተፈልፊሎም።",
           "readFoot": "ኣብቲ ኩሉ ሓደ ቃል እኳ የለን። እቶም ሕብርታት ናይቲ መደብ ባዕሉ እዮም፦ ንነፍሲ ወከፍ ናይ ምህዳም ስጉምቲ ናይ ANSI-256 መርኣዪ ይመርጽ፡ ነፍሲ ወከፍ ሳጹን ድማ ብ<code>&gt;&gt;~</code> ኣብቲ <code>&gt;&gt;|</code> ዝኸፈቶ ሸራ ይጽሕፍ። እቲ ናይ ኦም ተጓዓዝን እቲ ናይ መዝገብ ማሽንን ብተመሳሳሊ ይስእልዎ፡ ሳጹን ብሳጹን።",
-          "builtFoot": "ክልቲኦም ናይ ዝሰርሑ መደባት ስእልታት እዮም። ኣብ ክልቲኦም ሓደ ስም እኳ ናይ እንግሊዘኛ ቃል ኣይኮነን — ነዚ ድማ ኣብ ሰዋስው ክቕየር ዘለዎ ዋላ ሓንቲ ኣይነበረን።"
+          "builtFoot": "ኵሎም ናይ ዝሰርሑ መደባት ስእልታት እዮም። ኣብ ኵሎም ሓደ ስም እኳ ናይ እንግሊዘኛ ቃል ኣይኮነን — ነዚ ድማ ኣብ ሰዋስው ክቕየር ዘለዎ ዋላ ሓንቲ ኣይነበረን።",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ብክሊንጎንኛ ተጻሒፉ ብፊደል <a href=\"piqad-reference.html\">pIqaD</a> ተሳኢሉ፤ ን<a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> እተፈጥረ ቋንቋ እዩ። ክብደትን ቋንቋን ኣብ ቀዳማይ መርኣዪ ይምረጹ፤ እቲ ካልኣይ እቲ ቀዳማይ ማዕበል እዩ፡ ኣብ ማእከል በረራ።"
         }
       }
     },
@@ -19469,7 +19556,8 @@
           "joinLead": "Kunamatirana, mupfungwa iri nyore yesainzi yemitauro: chiratidzo chimwe, revo imwe, uye revo dzinowedzerana. Mushandisi <em>unopedzwa nemavara</em>, hauvambwe.",
           "joinFoot": "Kuburitswa kushanu. Chiratidzo chitsva <b>chimwe</b>. Zvimwe zvose zvakapedzwa nemavara kubva pane zvakange zvatova pano.",
           "readFoot": "Hapana kana izwi rimwe muzvose izvozvo. Mavara ndeechirongwa pachacho: chinosarudza indekisi yeANSI-256 padanho rimwe nerimwe rekutiza uye chinonyora bhokisi rimwe nerimwe ne<code>&gt;&gt;~</code> pakenvasi yakavhurwa ne<code>&gt;&gt;|</code>. Mufambi wemuti nemuchina wemarejista vanozvidhirowa zvakafanana, bhokisi nebhokisi.",
-          "builtFoot": "Zvose zviri zviviri mifananidzo yezvirongwa zviri kumhanya. Hapana kana zita rimwe mune chero chimwe chazvo riri izwi reChirungu — uye hapana chaifanira kuchinja mugirama nekuda kweizvozvo."
+          "builtFoot": "Zvose mifananidzo yezvirongwa zviri kumhanya. Hapana kana zita rimwe mune chero chimwe chazvo riri izwi reChirungu — uye hapana chaifanira kuchinja mugirama nekuda kweizvozvo.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — yakanyorwa nechiKlingon uye yakadhirowewa nerunyoro rwe<a href=\"piqad-reference.html\">pIqaD</a>, mutauro wakagadzirwa we<a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Kuoma nemutauro zvinosarudzwa pachidzitsvo chekutanga; chechipiri ifungu rekutanga, pakati pekubhururuka."
         }
       }
     },
@@ -19686,7 +19774,8 @@
           "joinLead": "Algluiĝo, en la simpla lingvistika senco: unu signo, unu signifo, kaj la signifoj amasiĝas. Operatoro estas <em>literumata</em>, ne elpensita.",
           "joinFoot": "Kvin eldonoj. <b>Unu</b> nova signo. Ĉiuj ceteraj estis literumitaj el tio kio jam estis ĉi tie.",
           "readFoot": "Neniu sola vorto en ĉio tio. La koloroj apartenas al la programo mem: ĝi elektas ANSI-256-indekson por ĉiu eskapa paŝo kaj skribas ĉiun ĉelon per <code>&gt;&gt;~</code> sur la tolo kiun <code>&gt;&gt;|</code> malfermis. La arbopaŝanto kaj la registra maŝino desegnas ĝin same, ĉelon post ĉelo.",
-          "builtFoot": "Ambaŭ estas fotoj de rulantaj programoj. Neniu sola nomo en iu el ili estas angla vorto — kaj nenio en la gramatiko devis ŝanĝiĝi por tio."
+          "builtFoot": "Ĉiuj estas fotoj de rulantaj programoj. Neniu sola nomo en iu el ili estas angla vorto — unu eĉ ne estas el homa lingvo — kaj nenio en la gramatiko devis ŝanĝiĝi por tio.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — skribita en la klingona kaj desegnita per <a href=\"piqad-reference.html\">pIqaD</a>, lingvo elpensita por <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. La malfacileco kaj la lingvo estas elektataj en la unua ekrano; la dua estas la unua ondo, meze de la flugo."
         }
       }
     },
@@ -19903,7 +19992,8 @@
           "joinLead": "simpo'a .i lo sampu bangu smuni: pa sinxa .i pa smuni .i lo smuni cu punji lo drata gapru .i lo cikre cu se <em>lerfu</em> gi'e na se finti",
           "joinFoot": "mu tcena .i <b>pa</b> cnino sinxa .i ro drata cu se lerfu lo za'u pu zasti",
           "readFoot": "no valsi cu zasti ta .i lo skari cu se ponse lo samtcise'u ki'a .i ri cuxna lo ANSI-256 judri fi ro cliva stapa gi'e ciska ro kubli fo <code>&gt;&gt;~</code> lo pixra cukta poi <code>&gt;&gt;|</code> cu sturaji .i lo tricu cadzu .e lo vreji minji cu mintu pixra fi ri .i kubli kubli",
-          "builtFoot": "re da cu pixra lo ca'o pilno samtci .i no cmene poi ti cu valsi la .glibau. .i no da poi ke'a se bangu cu bilga lo nu galfi ki'u ta"
+          "builtFoot": "ro da cu pixra lo ca'o pilno samtci .i no cmene poi ti cu valsi la .glibau. .i no da poi ke'a se bangu cu bilga lo nu galfi ki'u ta",
+          "builtKlingon": "Hov veS : Klingon Galaxy — se ciska fo la .klingon. .i se ciska fi lo <a href=\"piqad-reference.html\">pIqaD</a> lerfu .i lo bangu cu se finti ki'u la <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> .i lo nandu .e lo bangu cu se cuxna fi lo pa pixra .i lo re pixra cu pa boxna ca lo nu vofli"
         }
       }
     },
@@ -20120,7 +20210,8 @@
           "joinLead": "wan, kepeken kon lili pi sona toki: sitelen wan, kon wan, kon li kama suli lon sewi pi kon ante. ilo pali li <em>kama tan sitelen</em>, li kama sin ala.",
           "joinFoot": "pana luka. sitelen sin <b>wan</b>. ale ante li kama tan ijo pi lon pini.",
           "readFoot": "ale ni la nimi wan li lon ala. kule li ijo pi ilo ona: ona li pana e nanpa ANSI-256 tawa noka ale pi weka, li sitelen e leko ale kepeken <code>&gt;&gt;~</code> lon supa pi <code>&gt;&gt;|</code>. ilo tu li sitelen sama, leko lon leko.",
-          "builtFoot": "tu ni li sitelen pi ilo pali. nimi wan li nimi Inli ala. ni la nasin toki li ante ala."
+          "builtFoot": "ni ale li sitelen pi ilo pali. nimi wan li nimi Inli ala. ni la nasin toki li ante ala.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — jan li sitelen e ona kepeken toki Kinkon, kepeken sitelen <a href=\"piqad-reference.html\">pIqaD</a>. jan li pali e toki ni tan <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. wawa pi musi ike en toki: ale li kama tan lipu open. lipu tu la kulupu nanpa wan li kama, lon insa pi tawa sewi."
         }
       }
     },
@@ -20337,7 +20428,8 @@
           "joinLead": "Glutinado, en la simpla linguistikala senco: un signo, un senco, e la senci acumulesas. Operatoro <em>literumesas</em>, ol ne inventesas.",
           "joinFoot": "Kin edituri. <b>Un</b> nova signo. Omna ceteri literumesis de to quo ja esis hike.",
           "readFoot": "Nula sola vorto en omno to. La kolori apartenas al programo ipsa: ol selektas ANSI-256-indexo por singla eskapo-pazo e skribas singla chelo per <code>&gt;&gt;~</code> sur la tolo quan <code>&gt;&gt;|</code> apertis. La arbo-marchanto e la registro-mashino desegnas ol same, chelo pos chelo.",
-          "builtFoot": "Amba esas fotografuri di kuranta programi. Nula sola nomo en irga de li esas Angliana vorto — e nulo en la gramatiko devis chanjar por to."
+          "builtFoot": "Omna esas fotografuri di kuranta programi. Nula sola nomo en irga de li esas Angliana vorto — un ne mem esas de homala linguo — e nulo en la gramatiko devis chanjar por to.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — skribita en la Klingonana e desegnita per <a href=\"piqad-reference.html\">pIqaD</a>, linguo inventita por <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. La desfacileso e la linguo selektesas en la unesma ekrano; la duesma esas la unesma ondo, meze di la flugo."
         }
       }
     },
@@ -20554,7 +20646,8 @@
           "joinLead": "Agglutination, in le senso linguistic simple: un signo, un senso, e le sensos se accumula. Un operator es <em>orthographiate</em>, non inventate.",
           "joinFoot": "Cinque publicationes. <b>Un</b> nove signo. Toto le resto ha essite orthographiate de lo que ja esseva hic.",
           "readFoot": "Nulle parola in toto illo. Le colores pertine al programma mesme: illo elige un indice ANSI-256 pro cata passo de escappata e scribe cata cella con <code>&gt;&gt;~</code> super le tela que <code>&gt;&gt;|</code> aperiva. Le camminator del arbore e le machina de registros lo designa del mesme maniera, cella per cella.",
-          "builtFoot": "Ambe es photos de programmas in execution. Nulle nomine in alcun de illos es un parola anglese — e nihil in le grammatica debeva cambiar pro illo."
+          "builtFoot": "Tote es photos de programmas in execution. Nulle nomine in alcun de illos es un parola anglese — un non es mesmo de un lingua human — e nihil in le grammatica debeva cambiar pro illo.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — scribite in klingon e designate con <a href=\"piqad-reference.html\">pIqaD</a>, un lingua inventate pro <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Le difficultate e le lingua se elige in le prime schermo; le secunde es le prime unda, in pleno volo."
         }
       }
     },
@@ -20771,7 +20864,8 @@
           "joinLead": "jeSmoHghach, Hol lut mIw ngeb: wa' Degh, wa' qech, 'ej qechmey nawlogh. cikre <em>ghItlhlu'</em>, chenmoHlu'be'.",
           "joinFoot": "vagh chargh. <b>wa'</b> Degh chu'. latlh Hoch naDev tu'lu'bogh Dochvo' ghItlhlu'pu'.",
           "readFoot": "Hochvam pagh mu' tu'lu'. rItlhmey ghajbogh De'wI' mIw'e': Hoch nargh qam ANSI-256 mI' wIv 'ej <code>&gt;&gt;|</code> poSmoHbogh HaStaDaq <code>&gt;&gt;~</code> lo'taHvIS Hoch Sep qon. Sor yIt 'ej ghItlh jan HaSta rap qon, Sep Sep.",
-          "builtFoot": "cha' De'wI' mIw vIHtaHbogh mIllogh chaH. chaHDaq pagh pong DIvI' Hol mu' 'oH — 'ej lurDechDaq pagh choH."
+          "builtFoot": "wej De'wI' mIw vIHtaHbogh mIllogh chaH. chaHDaq pagh pong DIvI' Hol mu' 'oH — 'ej lurDechDaq pagh choH.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — tlhIngan Hol qon, <a href=\"piqad-reference.html\">pIqaD</a> qonta'. <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>vaD chenmoHta'bogh Hol 'oH. QatlhtaHghach Hol je wa'DIch HaStaDaq wIv. cha'DIch wa'DIch ghoS, puvtaHvIS."
         }
       }
     },
@@ -21428,7 +21522,8 @@
           "joinLead": ",    :  ,  ,   . cikre <em></em>, .",
           "joinFoot": " . <b></b>  .      .",
           "readFoot": "   .    :    ANSI-256    <code>&gt;&gt;|</code>   <code>&gt;&gt;~</code>    .        ,  .",
-          "builtFoot": "     .        —    ."
+          "builtFoot": "     .        —    .",
+          "builtKlingon": "Hov veS : Klingon Galaxy —   , <a href=\"piqad-reference.html\">pIqaD</a> . <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>   .      .   , ."
         }
       }
     },
@@ -21645,7 +21740,8 @@
           "joinLead": "ᐊᓯᐦᑖᐏᐣ, ᐅᐱᑭᐢᑵᐏᐣ ᐅᑭᐢᑫᔨᐦᑕᒧᐏᐣ ᐊᓴ: ᐯᔭᐠ ᒪᓯᓇᐦᐃᑲᓂᐢ, ᐯᔭᐠ ᐃᑗᒪᑲᐣ, ᒥᓇ ᐃᑗᒪᑲᓇ ᐊᓯᐦᑖᐊᐧᐠ. ᐊᑑᐢᑫᐏᐣ <em>ᒪᓯᓇᐦᐃᑳᑌᐤ</em>, ᓇᒨᔭ ᐅᔒᐦᐋᐤ.",
           "joinFoot": "ᓂᔮᓇᐣ ᐘᔭᐏᑎᒧᐏᐣ. <b>ᐯᔭᐠ</b> ᐅᐢᑭ ᒪᓯᓇᐦᐃᑲᓂᐢ. ᑳᑭᓇ ᑯᑕᑲ ᐊᔭᐋᐧᐠ ᐅᐦᒋ ᒪᓯᓇᐦᐃᑳᑌᐘ.",
           "readFoot": "ᓇᒨᔭ ᐯᔭᐠ ᐏᔦᐏᐣ ᐆᑕ. ᓇᐦᐄᔭᐏᓇ ᐊᑑᐢᑫᐏᐣ ᐅᑎᐸᐦᐃᑫᐏᓂᐘᐤ: ANSI-256 ᐊᑭᐦᑖᓱᐣ ᐯᔭᑿᐣ ᐱᒥᐸᐦᑖᐏᓂᕽ ᐅᑎᓇᒼ ᒥᓇ ᐯᔭᑿᐣ ᒥᐢᑭᓂᐢ <code>&gt;&gt;~</code> ᐅᐦᒋ ᒪᓯᓇᐦᐊᒼ, ᒪᓯᓇᐦᐃᑲᐣ ᐋᐧᐢᑲᐦᐃᑲᓂᕽ <code>&gt;&gt;|</code> ᑳ ᔮᐦᑲᐦᐊᐦᐠ. Tree-walker ᒥᓇ VM de registros ᑖᐱᐢᑰᐨ ᒪᓯᓇᐦᐊᒷᐠ, ᒥᐢᑭᓂᐢ ᒥᐢᑭᓂᐢ.",
-          "builtFoot": "ᓃᓱ ᐊᑑᐢᑫᐏᐣ ᐁ ᐊᑑᐢᑫᒪᑲᐦᐠ ᐅᒪᓯᓇᐦᐃᑫᐏᓂᐘᐤ. ᓇᒨᔭ ᐯᔭᐠ ᐏᔦᐏᐣ ᐋᑭᓚᔒᒧᐏᐣ — ᒥᓇ ᐅᐱᑭᐢᑵᐏᐣ ᐊᓴ ᓇᒨᔭ ᑮᑿᔾ ᑮ ᒣᐢᑲᑑ."
+          "builtFoot": "ᑲᐦᑭᔭᐤ ᐊᑑᐢᑫᐏᐣ ᐁ ᐊᑑᐢᑫᒪᑲᐦᐠ ᐅᒪᓯᓇᐦᐃᑫᐏᓂᐘᐤ. ᓇᒨᔭ ᐯᔭᐠ ᐏᔦᐏᐣ ᐋᑭᓚᔒᒧᐏᐣ — ᒥᓇ ᐅᐱᑭᐢᑵᐏᐣ ᐊᓴ ᓇᒨᔭ ᑮᑿᔾ ᑮ ᒣᐢᑲᑑ.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ᐦᒐᓕᐣᑳᐣ ᐊᓴ ᒪᓯᓇᐦᐊᒼ ᒥᓇ <a href=\"piqad-reference.html\">pIqaD</a> ᐅᒪᓯᓇᐦᐃᑫᐏᐣ, ᐅᐱᑭᐢᑵᐏᐣ <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> ᐅᒋ ᐅᓯᐦᑖᐤ. ᐁ ᐊᔭᐦᑯᐢᐠ ᒥᓇ ᐅᐱᑭᐢᑵᐏᐣ ᓂᑳᓂ ᐋᐧᐢᑲᐦᐃᑲᓂᕽ ᐅᑎᓇᒷᐠ; ᓃᓱ ᐋᐧᐢᑲᐦᐃᑲᐣ ᓂᑳᓂ ᒪᒥᐦᒋᐏᐣ, ᐁ ᐱᒧᐦᑌᐟ."
         }
       }
     },
@@ -21862,7 +21958,8 @@
           "joinLead": "Aglitinasyon, nan sans lengwistik senp la : yon mak, yon sans, epi sans yo anpile. Yon operatè <em>eple</em>, li pa envante.",
           "joinFoot": "Senk vèsyon. <b>Yon</b> sèl mak nouvo. Tout rès la te eple ak sa ki te deja la.",
           "readFoot": "Pa gen yon sèl mo nan tout sa a. Koulè yo se pwogram nan menm ki chwazi yo : li pran yon endèks ANSI-256 pou chak pa chape epi li ekri chak selil ak <code>&gt;&gt;~</code> sou kanva <code>&gt;&gt;|</code> louvri a. Tree-walker la ak VM rejis la desine l menm jan, selil pa selil.",
-          "builtFoot": "Tou de se foto pwogram nan ap mache. Pa gen yon sèl idantifyan nan youn ni nan lòt ki se yon mo anglè — epi anyen nan gramè a pa t bezwen chanje pou sa."
+          "builtFoot": "Yo tout se foto pwogram nan ap mache. Pa gen yon sèl idantifyan nan okenn ladan yo ki se yon mo anglè — youn pa menm nan yon lang moun — epi anyen nan gramè a pa t bezwen chanje pou sa.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ekri an klingon epi trase an <a href=\"piqad-reference.html\">pIqaD</a>, yon lang yo envante pou <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Difikilte a ak lang lan chwazi nan premye ekran an; dezyèm nan se premye vag la, nan mitan vòl la."
         }
       }
     },
@@ -22079,7 +22176,8 @@
           "joinLead": "Aglutineshan, iina di plien lingwistik sens: wan maak, wan miinin, an di miinin dem stak. Wan opereta get <em>spel</em>, it no get main op.",
           "joinFoot": "Faiv riliis. <b>Wan</b> nyuu maak. Evriting els get spel outa di wan dem wa did aredi ya.",
           "readFoot": "No wan wod iina non a it. Di kola a di program uona: it pik wan ANSI-256 indeks fi ich eskiep step an rait ich sel wid <code>&gt;&gt;~</code> pan di kanvas wa <code>&gt;&gt;|</code> uop. Di tree-walker an di rejista VM jraa it di siem wie, sel fi sel.",
-          "builtFoot": "Aal tuu a kyapcha a di program a ron. No wan identifaya iina non a dem a wan Ingglish wod — an notn iina di gramma did afi chienj fi dat."
+          "builtFoot": "Aal a dem a kyapcha a di program a ron. No wan identifaya iina non a dem a wan Ingglish wod — wan no iiven a no human langwij — an notn iina di gramma did afi chienj fi dat.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — rait iina Klingon an drua iina <a href=\"piqad-reference.html\">pIqaD</a>, wan langwij we dem mek fi <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Di difikolti an di langwij pik pan di fos skriin; di sekan a di fos wiev, mid-flait."
         }
       }
     },
@@ -22296,7 +22394,8 @@
           "joinLead": "Aglutinasi, ing teges basa sing prasaja: siji tandha, siji teges, lan tegesé numpuk. Siji operator <em>diéja</em>, dudu digawé anyar.",
           "joinFoot": "Limang wetonan. <b>Siji</b> tandha anyar. Kabèh liyané diéja saka sing wis ana ing kéné.",
           "readFoot": "Ora ana siji tembung waé ing kabèh kuwi. Wernané duwèké program dhéwé: milih siji indeks ANSI-256 saben jangkah oncat lan nulis saben kothak nganggo <code>&gt;&gt;~</code> ing kanvas sing dibukak <code>&gt;&gt;|</code>. Sing mlaku ing wit lan mesin registri padha nggambar kaya kuwi, kothak sabendina kothak.",
-          "builtFoot": "Loro-loroné jupukan program nalika lumaku. Ora ana siji jeneng waé ing salah sijiné sing dadi tembung Inggris — lan ora ana apa-apa ing tata basa sing kudu owah kanggo kuwi."
+          "builtFoot": "Kabèh jupukan program nalika lumaku. Ora ana siji jeneng waé sing dadi tembung Inggris — siji malah dudu basa manungsa — lan ora ana apa-apa ing tata basa sing kudu owah kanggo kuwi.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ditulis nganggo basa Klingon lan digambar nganggo aksara <a href=\"piqad-reference.html\">pIqaD</a>, basa sing digawe kanggo <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Angel lan basa dipilih ing layar kapisan; sing kapindho ombak kapisan, ing tengahing mabur."
         }
       }
     },
@@ -22513,7 +22612,8 @@
           "joinLead": "ការភ្ជាប់ ក្នុងន័យភាសាវិទ្យាដ៏សាមញ្ញ៖ សញ្ញាមួយ ន័យមួយ ហើយន័យត្រួតគ្នា។ ប្រមាណករមួយត្រូវបាន <em>ប្រកប</em> មិនមែនត្រូវបានបង្កើតថ្មីទេ។",
           "joinFoot": "ការចេញផ្សាយប្រាំដង។ សញ្ញាថ្មី <b>មួយ</b>។ ឯទៀតទាំងអស់ត្រូវបានប្រកបចេញពីអ្វីដែលមានស្រាប់នៅទីនេះ។",
           "readFoot": "គ្មានពាក្យណាមួយក្នុងទាំងអស់នោះទេ។ ពណ៌ជារបស់កម្មវិធីខ្លួនឯង៖ វាជ្រើសសន្ទស្សន៍ ANSI-256 មួយសម្រាប់ជំហានរត់គេចនីមួយៗ ហើយសរសេរប្រអប់នីមួយៗដោយ <code>&gt;&gt;~</code> លើផ្ទាំងដែល <code>&gt;&gt;|</code> បានបើក។ អ្នកដើរលើមែកធាង និងម៉ាស៊ីនឡជីស្ត្រ គូរវាដូចគ្នា ប្រអប់មួយម្ដងៗ។",
-          "builtFoot": "ទាំងពីរជារូបភាពថតកម្មវិធីកំពុងដំណើរការ។ គ្មានឈ្មោះណាមួយក្នុងទាំងពីរជាពាក្យអង់គ្លេសទេ — ហើយគ្មានអ្វីក្នុងវេយ្យាករណ៍ត្រូវប្ដូរសម្រាប់រឿងនោះឡើយ។"
+          "builtFoot": "ទាំងអស់ជារូបភាពថតកម្មវិធីកំពុងដំណើរការ។ គ្មានឈ្មោះណាមួយជាពាក្យអង់គ្លេសទេ — មួយក្នុងនោះមិនមែនជាភាសាមនុស្សផង — ហើយគ្មានអ្វីក្នុងវេយ្យាករណ៍ត្រូវប្ដូរសម្រាប់រឿងនោះឡើយ។",
+          "builtKlingon": "Hov veS : Klingon Galaxy — សរសេរជាភាសាក្លីងហ្គន និងគូរដោយអក្សរ <a href=\"piqad-reference.html\">pIqaD</a> ជាភាសាដែលបង្កើតឡើងសម្រាប់ <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>។ កម្រិតពិបាក និងភាសា ជ្រើសនៅអេក្រង់ទីមួយ; ទីពីរជារលកទីមួយ កណ្ដាលការហោះ។"
         }
       }
     },
@@ -22730,7 +22830,8 @@
           "joinLead": "Okugattika, mu makulu amangu ag'okunoonyereza ku nnimi: akabonero kamu, amakulu gamu, era amakulu gattikwa. Omukozi <em>awandiikibwa n'ennukuta</em>, tayiiyibwa.",
           "joinFoot": "Okufulumya kutaano. Akabonero akapya <b>kamu</b>. Obulala bwonna bwawandiikibwa n'ennukuta okuva ku ebyo ebyali biriwo dda.",
           "readFoot": "Tewali n'ekigambo kimu mu ebyo byonna. Amabala ga pulogulaamu yennyini: eronda endagiriro ya ANSI-256 ku buli mutendera gw'okudduka era ewandiika buli kasanduuko ne <code>&gt;&gt;~</code> ku kitambaala <code>&gt;&gt;|</code> kye kyabikkula. Omutambuze w'omuti n'ekyuma ky'ebiwandiiko babisiiga mu ngeri y'emu, kasanduuko ku kasanduuko.",
-          "builtFoot": "Byombi bifaananyi bya pulogulaamu ezitambula. Tewali linnya n'erimu mu byombi eriri kigambo kya Lungereza — era tewali kintu mu nnimi ekyali kyetaaga okukyuka olw'ekyo."
+          "builtFoot": "Byonna bifaananyi bya pulogulaamu ezitambula. Tewali linnya n'erimu mu byonna eriri kigambo kya Lungereza — era tewali kintu mu nnimi ekyali kyetaaga okukyuka olw'ekyo.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — kyawandiikibwa mu Luklingon era kyakubibwa mu nnukuta za <a href=\"piqad-reference.html\">pIqaD</a>, olulimi olwayiiyibwa olwa <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Obuzibu n'olulimi bironda ku ssikirini esooka; ey'okubiri jjembe erisooka, wakati mu kubuuka."
         }
       }
     },
@@ -22947,7 +23048,8 @@
           "joinLead": "ການຕິດກັນ ໃນຄວາມໝາຍທາງພາສາສາດແບບງ່າຍໆ: ເຄື່ອງໝາຍໜຶ່ງ ຄວາມໝາຍໜຶ່ງ ແລະ ຄວາມໝາຍຊ້ອນກັນ. ຕົວດຳເນີນການໜຶ່ງຖືກ <em>ສະກົດ</em> ບໍ່ແມ່ນຖືກປະດິດຂຶ້ນໃໝ່.",
           "joinFoot": "ຫ້າຄັ້ງທີ່ອອກເຜີຍແຜ່. ເຄື່ອງໝາຍໃໝ່ <b>ໜຶ່ງ</b> ອັນ. ອັນອື່ນທັງໝົດຖືກສະກົດຈາກສິ່ງທີ່ມີຢູ່ແລ້ວທີ່ນີ້.",
           "readFoot": "ບໍ່ມີຄຳໃດເລີຍໃນທັງໝົດນັ້ນ. ສີເປັນຂອງໂປຣແກຣມເອງ: ມັນເລືອກດັດຊະນີ ANSI-256 ໜຶ່ງອັນສຳລັບແຕ່ລະບາດກ້າວທີ່ໜີ ແລະ ຂຽນແຕ່ລະຊ່ອງດ້ວຍ <code>&gt;&gt;~</code> ເທິງຜ້າແຕ້ມທີ່ <code>&gt;&gt;|</code> ເປີດໃຫ້. ຜູ້ຍ່າງເທິງຕົ້ນໄມ້ ແລະ ເຄື່ອງຈັກທະບຽນ ແຕ້ມມັນຄືກັນ ຊ່ອງຕໍ່ຊ່ອງ.",
-          "builtFoot": "ທັງສອງແມ່ນພາບຖ່າຍຂອງໂປຣແກຣມທີ່ກຳລັງແລ່ນ. ບໍ່ມີຊື່ໃດໃນສອງອັນນັ້ນທີ່ເປັນຄຳອັງກິດ — ແລະ ບໍ່ມີຫຍັງໃນໄວຍາກອນທີ່ຕ້ອງປ່ຽນສຳລັບສິ່ງນັ້ນ."
+          "builtFoot": "ທັງໝົດແມ່ນພາບຖ່າຍຂອງໂປຣແກຣມທີ່ກຳລັງແລ່ນ. ບໍ່ມີຊື່ໃດທີ່ເປັນຄຳອັງກິດ — ອັນໜຶ່ງບໍ່ແມ່ນພາສາມະນຸດຊ້ຳ — ແລະ ບໍ່ມີຫຍັງໃນໄວຍາກອນທີ່ຕ້ອງປ່ຽນສຳລັບສິ່ງນັ້ນ.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ຂຽນເປັນພາສາຄລິງກອນ ແລະ ແຕ້ມດ້ວຍອັກສອນ <a href=\"piqad-reference.html\">pIqaD</a> ພາສາທີ່ຖືກສ້າງຂຶ້ນສຳລັບ <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. ຄວາມຍາກ ແລະ ພາສາ ເລືອກໃນຈໍທຳອິດ; ຈໍທີສອງແມ່ນຄື້ນທຳອິດ ກາງການບິນ."
         }
       }
     },
@@ -23164,7 +23266,8 @@
           "joinLead": "Kumatirana, m'tanthauzo losavuta la sayansi ya zinenero: chizindikiro chimodzi, tanthauzo limodzi, ndipo matanthauzo amawunjikana. Chogwirira ntchito <em>chimalembedwa ndi zilembo</em>, sichimapangidwa chatsopano.",
           "joinFoot": "Kutulutsa kasanu. Chizindikiro chatsopano <b>chimodzi</b>. Zina zonse zinalembedwa ndi zilembo kuchokera pa zomwe zinalipo kale pano.",
           "readFoot": "Palibe ngakhale mawu amodzi mu zonsezo. Mitundu ndi ya pulogalamu yokha: imasankha mndandanda wa ANSI-256 pa gawo lililonse la kuthawa ndipo imalemba bokosi lililonse ndi <code>&gt;&gt;~</code> pa chinsalu chomwe <code>&gt;&gt;|</code> chinatsegula. Woyenda pa mtengo ndi makina a zolembera amazijambula chimodzimodzi, bokosi ndi bokosi.",
-          "builtFoot": "Zonse ziwiri ndi zithunzi za mapulogalamu omwe akuyenda. Palibe ngakhale dzina limodzi mwa iwo lomwe ndi mawu a Chingerezi — ndipo palibe chomwe chinayenera kusintha mu galamala chifukwa cha zimenezo."
+          "builtFoot": "Zonse ndi zithunzi za mapulogalamu omwe akuyenda. Palibe ngakhale dzina limodzi mwa iwo lomwe ndi mawu a Chingerezi — ndipo palibe chomwe chinayenera kusintha mu galamala chifukwa cha zimenezo.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — yalembedwa m'Chiklingon ndipo yajambulidwa m'malembo a <a href=\"piqad-reference.html\">pIqaD</a>, chinenero chopangidwa cha <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Kuvuta ndi chinenero zimasankhidwa pa skrini yoyamba; yachiwiri ndi mafunde oyamba, pakati pa kuuluka."
         }
       }
     },
@@ -23381,7 +23484,8 @@
           "joinLead": "Jɔinin, fo di simpul langwej-sayns minin: wan sain, wan minin, an di minin dem de stak. Dem de <em>spel</em> wan opereta, dem nɔ de invent am.",
           "joinFoot": "Faiv rilis. <b>Wan</b> nyu sain. Dem spel ɔl di ɔda wan frɔm wetin bin dey hia.",
           "readFoot": "Nɔ wan wɔd dey insaid ɔl dat. Di kala dem na di program yon: e de pik wan ANSI-256 indeks fo evri ranawe step an e de rait evri boks wit <code>&gt;&gt;~</code> fo di kanvas we <code>&gt;&gt;|</code> opun. Di tri woka an di rejista mashin de drɔ am sem sem, boks bai boks.",
-          "builtFoot": "Di tu na foto of program we de ron. Nɔ wan neim insaid dem tu bi Inglish wɔd — an notin insaid di grama bin nid fo chenj fo dat."
+          "builtFoot": "Ol of dem na foto of program we de ron. Nɔ wan neim insaid dem bi Inglish wɔd — wan nɔ ivin bi human langwej — an notin insaid di grama bin nid fo chenj fo dat.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — dem rait am fo Klingon an dem draw am fo <a href=\"piqad-reference.html\">pIqaD</a> skript, na langwej we dem mek fo <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Difikolti an langwej dem de pik fo di fest skrin; di sekɔn na di fest wev, fo midul of di flait."
         }
       }
     },
@@ -23598,7 +23702,8 @@
           "joinLead": "نښلېدل، د ژبپوهنې په ساده معنا: یوه نښه، یوه معنا، او معناوې پر یو بل جوړېږي. عملګر <em>هجا کیږي</em>، نه جوړیږي.",
           "joinFoot": "پنځه خپرونې. <b>یوه</b> نوې نښه. نور ټول له هغه څه هجا شوي چې دلته یې مخکې شتون درلود.",
           "readFoot": "په هغو ټولو کې یو ټکی هم نشته. رنګونه د پروګرام پخپله دي: د تېښتې هر ګام لپاره د ANSI-256 یوه ونډه ټاکي او هره خانه په <code>&gt;&gt;~</code> سره پر هغه پرده لیکي چې <code>&gt;&gt;|</code> پرانیستې. د ونې چلېدونکی او د راجستر ماشین یې په یوه ډول انځوروي، خانه په خانه.",
-          "builtFoot": "دواړه د روانو پروګرامونو انځورونه دي. په هېڅ یوه کې یو نوم هم د انګلیسي ټکی نه دی — او د دې لپاره په ګرامر کې هیڅ شی نه و چې باید بدل شوی وای."
+          "builtFoot": "ټول د روانو پروګرامونو انځورونه دي. په هېڅ یوه کې یو نوم هم د انګلیسي ټکی نه دی — یو خو د انساني ژبې هم نه دی — او د دې لپاره په ګرامر کې هیڅ شی نه و چې باید بدل شوی وای.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — په کلنګون لیکل شوې او په <a href=\"piqad-reference.html\">pIqaD</a> لیکدود کې انځور شوې، هغه ژبه چې د <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> لپاره جوړه شوه. سختي او ژبه په لومړۍ پرده کې ټاکل کیږي؛ دویمه لومړۍ څپه ده، د الوتنې په منځ کې."
         }
       }
     },
@@ -23815,7 +23920,8 @@
           "joinLead": "Kimulixik, pa ri suk'ulaj usik'ixik ri retamab'al ch'ab'al: jun retal, jun kel ub'ixik, xuquje' ri kel ub'ixik keb'oq'otaj kib'. Jun chak <em>katz'ib'axik</em>, man kab'anataj ta k'ak'.",
           "joinFoot": "Job' elesanik. <b>Jun</b> k'ak' retal. Ronojel chik xtz'ib'ax ruk' ri e k'o chik waral.",
           "readFoot": "Maj jun tzij chupam ronojel wa'. Ri b'onil are' ke ri chak: kucha' jun ANSI-256 ajilab'al pa jujun b'inem re animanem xuquje' kutz'ib'aj jujun tikoj ruk' <code>&gt;&gt;~</code> puwi' ri tz'ib'anem uwäch ri kujaq <code>&gt;&gt;|</code>. Ri tree-walker xuquje' ri VM re registro junam kekitz'ib'aj, tikoj che tikoj.",
-          "builtFoot": "Kikeb'ichal e wachib'al re ri chak tajin kachakunik. Maj jun b'i'aj chike are' jun tzij inglés — xuquje' maj jasach chupam ri unuk'ulem xjalataj rumal ri'."
+          "builtFoot": "Konojel e wachib'al re ri chak tajin kachakunik. Maj jun b'i'aj chike are' jun tzij inglés — xuquje' maj jasach chupam ri unuk'ulem xjalataj rumal ri'.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — tz'ib'atal pa klingon xuquje' b'anom pa ri <a href=\"piqad-reference.html\">pIqaD</a> tz'ib'anik, jun ch'ab'al ri xb'an che rech ri <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Ri k'ayewalil xuquje' ri ch'ab'al kecha'ik pa ri nab'e ilb'al; ri ukab' are' ri nab'e uwokaj, pa ri urapapem."
         }
       }
     },
@@ -24032,7 +24138,8 @@
           "joinLead": "Aglutinasi, dina harti basa nu basajan: hiji tanda, hiji harti, jeung hartina numpuk. Hiji operator <em>diéja</em>, lain dijieun anyar.",
           "joinFoot": "Lima kaluaran. <b>Hiji</b> tanda anyar. Sakabéh nu séjén diéja tina nu geus aya di dieu.",
           "readFoot": "Teu aya hiji kecap ogé dina sakabéh éta. Warnana milik program sorangan: milih hiji indéks ANSI-256 pikeun unggal léngkah kabur jeung nulis unggal kotak ku <code>&gt;&gt;~</code> dina kanvas nu dibuka ku <code>&gt;&gt;|</code>. Nu leumpang dina tangkal jeung mesin registri ngagambarna sarua, kotak-kotak.",
-          "builtFoot": "Duanana potrét program nu keur lumangsung. Teu aya hiji ngaran ogé dina duanana nu mangrupa kecap Inggris — jeung teu aya nanaon dina tata basa nu kudu robah pikeun éta."
+          "builtFoot": "Kabéh potrét program nu keur lumangsung. Teu aya hiji ngaran ogé nu mangrupa kecap Inggris — hiji mah lain basa manusa — jeung teu aya nanaon dina tata basa nu kudu robah pikeun éta.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ditulis dina basa Klingon jeung digambar ku aksara <a href=\"piqad-reference.html\">pIqaD</a>, basa nu dijieun pikeun <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Hesena jeung basa dipilih dina layar kahiji; nu kadua ombak kahiji, satengahing hiber."
         }
       }
     },
@@ -24249,7 +24356,8 @@
           "joinLead": "Go kgomarelana, ka bokao jo bo motlhofo jwa thutapuo: letshwao le le lengwe, bokao bo le bongwe, mme dikao di a tlhatlaganya. Modiri o a <em>peleta</em>, ga o tlhamiwe.",
           "joinFoot": "Dikgatiso tse tlhano. Letshwao le lesha <b>le le lengwe</b>. Tse dingwe tsotlhe di peletilwe go tswa mo go tse di neng di setse di le fano.",
           "readFoot": "Ga go na le e leng lefoko le le lengwe mo go tsotlhe tseo. Mebala ke ya lenaneo ka bolone: le tlhopha tshupetso ya ANSI-256 mo kgatong nngwe le nngwe ya go tshaba mme le kwala lebokose lengwe le lengwe ka <code>&gt;&gt;~</code> mo leseleng le <code>&gt;&gt;|</code> le le bulileng. Motsamai wa setlhare le motšhine wa direkoto ba le thala ka tsela e e tshwanang, lebokose ka lebokose.",
-          "builtFoot": "Ka bobedi ke ditshwantsho tsa mananeo a a tsamayang. Ga go na leina le le lengwe mo go ope wa one le e leng lefoko la Sekgoa — mme ga go na sepe mo popegopuong se se neng se tshwanetse go fetoga ka ntlha ya seo."
+          "builtFoot": "Tsotlhe ke ditshwantsho tsa mananeo a a tsamayang. Ga go na leina le le lengwe mo go ope wa one le e leng lefoko la Sekgoa — mme ga go na sepe mo popegopuong se se neng se tshwanetse go fetoga ka ntlha ya seo.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — e kwadilwe ka Seklingon mme e thadilwe ka mokwalo wa <a href=\"piqad-reference.html\">pIqaD</a>, puo e e tlhamilweng ya <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>. Bothata le puo di tlhophiwa mo sekirining sa ntlha; sa bobedi ke lelwapa la ntlha, mo gare ga go fofa."
         }
       }
     },
@@ -24466,7 +24574,8 @@
           "joinLead": "ചേർച്ച, ഭാഷാശാസ്ത്രത്തിന്റെ ലളിതമായ അർത്ഥത്തിൽ: ഒരു അടയാളം, ഒരു അർത്ഥം, അർത്ഥങ്ങൾ അടുക്കിവരുന്നു. ഒരു കാരകം <em>അക്ഷരം കൂട്ടി എഴുതപ്പെടുന്നു</em>, പണിതെടുക്കപ്പെടുന്നില്ല.",
           "joinFoot": "അഞ്ചു പതിപ്പ്. <b>ഒരു</b> പുതിയ അടയാളം. ബാക്കിയെല്ലാം ഇവിടെ ഉണ്ടായിരുന്നവകൊണ്ട് എഴുതപ്പെട്ടു.",
           "readFoot": "ഇതിലൊന്നിലും ഒരു വാക്കുപോലുമില്ല. നിറങ്ങൾ പരിപാടിയുടെ സ്വന്തം: ഓരോ രക്ഷപ്പെടൽ ചുവടിനും ഒരു ANSI-256 സൂചിക തിരഞ്ഞെടുത്ത്, <code>&gt;&gt;|</code> തുറക്കുന്ന തിരശ്ശീലയിൽ ഓരോ കളവും <code>&gt;&gt;~</code> കൊണ്ട് എഴുതുന്നു. മരത്തിൽ നടക്കുന്നതും രജിസ്റ്റർ VM-ഉം അത് ഒരുപോലെ വരയ്ക്കുന്നു, കളം കളമായി.",
-          "builtFoot": "രണ്ടും ഓടുന്ന പരിപാടിയുടെ ചിത്രങ്ങളാണ്. രണ്ടിലും ഒരു പേരുപോലും ഇംഗ്ലീഷ് വാക്കല്ല — അതിനായി വ്യാകരണത്തിൽ ഒന്നും മാറേണ്ടിവന്നില്ല."
+          "builtFoot": "എല്ലാം ഓടുന്ന പരിപാടിയുടെ ചിത്രങ്ങളാണ്. അവയിലൊന്നിലും ഒരു പേരുപോലും ഇംഗ്ലീഷ് വാക്കല്ല — ഒന്ന് മനുഷ്യഭാഷയിൽ നിന്നുപോലുമല്ല — അതിനായി വ്യാകരണത്തിൽ ഒന്നും മാറേണ്ടിവന്നില്ല.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ക്ലിംഗൺ ഭാഷയിൽ എഴുതി <a href=\"piqad-reference.html\">pIqaD</a> ലിപിയിൽ വരച്ചത്, <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a>-നു വേണ്ടി ഉണ്ടാക്കിയ ഭാഷ. ബുദ്ധിമുട്ടും ഭാഷയും ആദ്യ തിരശ്ശീലയിൽ തിരഞ്ഞെടുക്കുന്നു; രണ്ടാമത്തേത് ആദ്യ തിര, പറക്കലിന്റെ നടുവിൽ."
         }
       }
     },
@@ -24683,7 +24792,8 @@
           "joinLead": "බැඳීම, සරල භාෂාවේදී අර්ථයෙන්: එක් ලකුණක්, එක් අර්ථයක්, අර්ථ එකිනෙක මත ගොඩනැඟේ. ක්‍රියාකාරකයක් <em>අකුරු කැරෙයි</em>, අලුතින් නිපදවෙන්නේ නැත.",
           "joinFoot": "නිකුතු පහක්. නව ලකුණු <b>එකක්</b>. සෙසු සියල්ල මෙහි දැනටමත් තිබූ දෙයින් අකුරු කරන ලදී.",
           "readFoot": "ඒ සියල්ලේ එක වචනයක්වත් නැත. වර්ණ වැඩසටහනටම අයිතිය: එය සෑම පලායාමේ පියවරකට ම ANSI-256 දර්ශකයක් තෝරා, <code>&gt;&gt;|</code> විවෘත කළ තිරය මත <code>&gt;&gt;~</code> මගින් සෑම කොටුවක්ම ලියයි. ගස මත ඇවිදින්නා සහ ලේඛන යන්ත්‍රය එය කොටුවෙන් කොටුව එකසේ අඳියි.",
-          "builtFoot": "දෙකම ධාවනය වන වැඩසටහන්වල ඡායාරූප ය. ඒ දෙකේම කිසිදු නමක් ඉංග්‍රීසි වචනයක් නොවේ — ඒ සඳහා ව්‍යාකරණයේ කිසිවක් වෙනස් කිරීමට සිදු වූයේ නැත."
+          "builtFoot": "සියල්ලම ධාවනය වන වැඩසටහන්වල ඡායාරූප ය. ඒ කිසිවක කිසිදු නමක් ඉංග්‍රීසි වචනයක් නොවේ — එකක් මිනිස් බසකින්වත් නොවේ — ඒ සඳහා ව්‍යාකරණයේ කිසිවක් වෙනස් කිරීමට සිදු වූයේ නැත.",
+          "builtKlingon": "Hov veS : Klingon Galaxy — ක්ලින්ගන් බසින් ලියා <a href=\"piqad-reference.html\">pIqaD</a> අකුරින් ඇඳ ඇත, <a href=\"https://www.startrek.com\" rel=\"noopener\">Star Trek</a> සඳහා තැනූ බසකි. දුෂ්කරත්වය සහ භාෂාව පළමු තිරයේ තෝරයි; දෙවැන්න පළමු රැල්ල, පියාසර මැද."
         }
       }
     }

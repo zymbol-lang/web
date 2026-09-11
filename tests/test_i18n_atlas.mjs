@@ -140,6 +140,9 @@ for (const [id, e] of aliased) {
 }
 check('at least one language beyond the base', translated.length > 1, translated.join(', '));
 
+// The only two links that live inside a translated string, both in html.builtKlingon.
+const LINKS_IN_PROSE = ['href="piqad-reference.html"', 'href="https://www.startrek.com"'];
+
 for (const id of translated) {
   const loc = flatten(i18n[id].atlas);
 
@@ -153,6 +156,15 @@ for (const id of translated) {
 
   const empty = Object.keys(loc).filter(k => typeof loc[k] !== 'string' || loc[k].trim() === '');
   check(`${id} has no blank string`, empty.length === 0, empty.slice(0, 5).join(', '));
+
+  // A translated sentence that carries a link carries a URL through 110 retypings, and a
+  // retyped href is a broken link nobody finds until a reader clicks it. The words around
+  // them are the translation; the two addresses are not, and they are compared literally.
+  const kl = loc['html.builtKlingon'] ?? '';
+  for (const href of LINKS_IN_PROSE) {
+    check(`${id} keeps the ${href.split('/').pop() || href} link intact`, kl.includes(href),
+          kl.slice(0, 100));
+  }
 
   const isKey = Object.keys(loc).filter(k => loc[k] === k);
   check(`${id} has no key left as its own translation`, isKey.length === 0, isKey.slice(0, 5).join(', '));

@@ -196,13 +196,22 @@ function measure() {
     // survive the swap, or the argument they make comes out as flat prose.
     const foot = d.querySelector('[data-i18n-html="html.marksFoot1"]');
     ok('inline markup survives the swap', /<b>/.test(foot.innerHTML) && /<code>/.test(foot.innerHTML));
-    // A link inside a translated sentence was checked here too, on `html.joinFoot`, which
-    // ended in one to index2.html. index2 was a first draft and was deleted; the clause that
-    // linked to it was cut from all 110 translations, and no string in the catalogue carries
-    // an <a> any more. The check is kept in words rather than code because the property is
-    // still real: put a link back inside a translated sentence and it needs testing again.
-    ok('no translated string smuggles in a link',
-       ![...d.querySelectorAll('[data-i18n-html]')].some(el => /<a[\s>]/i.test(el.innerHTML)));
+    // A link inside a translated sentence is back, and so is the check it needs. It was
+    // cut once before: `html.joinFoot` ended in a link to index2.html, index2 was a first
+    // draft and was deleted, and the clause had to come out of 110 translations. The note
+    // left here said that putting a link back would need testing again — this is that test.
+    // Hov veS's caption carries two: the pIqaD reference on this site and Star Trek off it.
+    const kl = d.querySelector('[data-i18n-html="html.builtKlingon"]');
+    ok('the links inside a translated sentence survive the swap',
+       Boolean(kl && kl.querySelector('a[href="piqad-reference.html"]')
+                  && kl.querySelector('a[href^="https://www.startrek.com"]')),
+       kl ? kl.innerHTML.slice(0, 120) : '(missing)');
+    // Translating a sentence is retyping it, and a retyped href is a broken href that
+    // nobody sees until a reader clicks. Every language, not just the one on screen, is
+    // checked by tests/test_i18n_atlas.mjs.
+    ok('and the off-site one says where it goes',
+       kl && kl.querySelector('a[href^="https://"]').rel === 'noopener',
+       kl ? String(kl.querySelector('a[href^="https://"]').rel) : '(missing)');
     ok('no key is rendered after the swap',
        !/>(?:meta|ui|nav|dl|glyph|hero|marks|mark|join|read|built|footer|html)\.[a-zA-Z0-9.]+</.test(d.body.innerHTML));
     ok('the choice is stored where the rest of the site reads it',

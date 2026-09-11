@@ -578,7 +578,11 @@ pre.term i.w2 { width: 2ch; }
 }
 .build figcaption b { font-size: 1.05rem; color: var(--white); font-weight: 600; }
 .build figcaption span { font-size: 0.86rem; color: var(--mid); flex: 1 1 12ch; }
-.build figcaption a {
+/* The play button — and only it. `figcaption a` used to catch every link in the
+   caption, so the two links inside Hov veS's sentence came out as pill-shaped buttons
+   sitting in the middle of a paragraph. The button is the caption's direct child; a
+   link inside the sentence is not. */
+.build figcaption > a {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -594,7 +598,17 @@ pre.term i.w2 { width: 2ch; }
   white-space: nowrap;
   transition: background 0.18s;
 }
-.build figcaption a:hover { background: var(--green-dim); }
+.build figcaption > a:hover { background: var(--green-dim); }
+/* A link inside the description reads as a link: the caption's own colour, underlined
+   where a word is doing more than being read. */
+.build figcaption span a {
+  color: var(--white);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  text-decoration-color: var(--green-mid);
+  text-decoration-thickness: 1px;
+}
+.build figcaption span a:hover { text-decoration-color: var(--green); }
 
 /* ─── entrance: the joins assemble as they come into view ─────────────────── */
 
@@ -672,7 +686,7 @@ pre.term i.w2 { width: 2ch; }
      that will not wrap, and reads as a caption for the pill rather than for the game. */
   .build figcaption { padding-top: 0.8rem; row-gap: 0.5rem; }
   .build figcaption b { flex: 0 0 auto; }
-  .build figcaption a { min-height: 2.6rem; padding: 0.2rem 1.1rem; margin-inline-start: auto; }
+  .build figcaption > a { min-height: 2.6rem; padding: 0.2rem 1.1rem; margin-inline-start: auto; }
   .build figcaption span { flex: 1 1 100%; order: 3; }
   #read .hero-cta { justify-content: center; }
 

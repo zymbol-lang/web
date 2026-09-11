@@ -200,7 +200,9 @@ capture of each program running.
 
 The page shows two frames each of three of them — 囲碁, Serpiente and Hov veS:
 the opening screen where the game is set up, and the game itself in progress.
-Hov veS draws its menus and HUD in pIqaD, which is not a human script at all.
+Hov veS is written in Klingon and drawn in [pIqaD](piqad-reference.md), a
+language invented for [Star Trek](https://www.startrek.com) — not a human
+language at all, and nothing in the grammar knows the difference.
 
 | Program | Written in | Play it |
 | --- | --- | --- |
