@@ -495,6 +495,8 @@ pre.term .c10  { color: #4ee87a; }
 pre.term .c11  { color: #f3f99d; }
 pre.term .c14  { color: #00ffff; }
 pre.term .c15  { color: #f0f0f0; }
+pre.term .c20  { color: #0000d7; }
+pre.term .c21  { color: #0000ff; }
 pre.term .c25  { color: #005faf; }
 pre.term .c28  { color: #008700; }
 pre.term .c34  { color: #00af00; }
@@ -530,14 +532,21 @@ pre.term .c255 { color: #eeeeee; }
   display: flex;
   justify-content: center;
 }
-/* The two frames of one game sit side by side — the screen that sets it up and
-   the game itself — so a tall snake field does not leave a hole under the Go board. */
+/* The frames of one game sit side by side — the screens that set it up and the game
+   itself — so a tall snake field does not leave a hole under the Go board. However many
+   there are: Hov veS has three, and a fixed two-column grid dropped the third onto a row
+   of its own, where it stretched and read as a second figure. */
 .shots {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, auto));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, auto);
   gap: 0.7rem;
   justify-content: start;
-  align-items: stretch;
+  /* Each frame is as tall as the screen it photographed. Stretching them to a common
+     height left the Klingon language menu — twelve rows — floating in 167px of empty
+     card beside a twenty-one-row game field. A capture is a thing with borders; the
+     card is those borders. */
+  align-items: start;
 }
 pre.term {
   /* Its own stack, not --mono: see --term-mono. A terminal capture is the one

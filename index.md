@@ -198,11 +198,12 @@ only the top half is ever escaped. Run it in the browser:
 Same marks. The names are whatever the author thinks in. The HTML page shows a
 capture of each program running.
 
-The page shows two frames each of three of them — 囲碁, Serpiente and Hov veS:
-the opening screen where the game is set up, and the game itself in progress.
-Hov veS is written in Klingon and drawn in [pIqaD](piqad-reference.md), a
-language invented for [Star Trek](https://www.startrek.com) — not a human
-language at all, and nothing in the grammar knows the difference.
+The page shows frames of three of them — 囲碁, Serpiente and Hov veS: the screens
+where the game is set up, and the game itself in progress. Hov veS gets three,
+because it has three: the language menu, the difficulty menu, and the first wave.
+It is written in Klingon and drawn in [pIqaD](piqad-reference.md), a language
+invented for [Star Trek](https://www.startrek.com) — not a human language at all,
+and nothing in the grammar knows the difference.
 
 | Program | Written in | Play it |
 | --- | --- | --- |

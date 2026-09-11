@@ -209,9 +209,13 @@ function measure() {
     // Translating a sentence is retyping it, and a retyped href is a broken href that
     // nobody sees until a reader clicks. Every language, not just the one on screen, is
     // checked by tests/test_i18n_atlas.mjs.
-    ok('and the off-site one says where it goes',
-       kl && kl.querySelector('a[href^="https://"]').rel === 'noopener',
-       kl ? String(kl.querySelector('a[href^="https://"]').rel) : '(missing)');
+    // Off the site: a new tab, and noopener with it. The reader is mid-page, three
+    // screenshots into an argument; taking the page away from them to show a film
+    // studio is not what the link is for.
+    const off = kl && kl.querySelector('a[href^="https://"]');
+    ok('and the off-site one opens away from the page, with noopener',
+       Boolean(off && off.target === '_blank' && off.rel === 'noopener'),
+       off ? `target=${off.target || '(none)'} rel=${off.rel || '(none)'}` : '(missing)');
     ok('no key is rendered after the swap',
        !/>(?:meta|ui|nav|dl|glyph|hero|marks|mark|join|read|built|footer|html)\.[a-zA-Z0-9.]+</.test(d.body.innerHTML));
     ok('the choice is stored where the rest of the site reads it',
@@ -256,7 +260,7 @@ function measure() {
     // They are photographs of the running programs; a translation that touched them
     // would be a redrawing of the thing being shown.
     ok('the captures are untouched by the translation',
-       d.querySelectorAll('pre.term').length === 6 &&
+       d.querySelectorAll('pre.term').length === 7 &&
        d.querySelector('.build b').textContent === '囲碁');
 
     // ─── right to left ──────────────────────────────────────────────────────
