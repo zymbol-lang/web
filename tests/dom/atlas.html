@@ -154,6 +154,18 @@ function measure() {
   for (const term of d.querySelectorAll('pre.term')) {
     ok('a capture stays legible', parseFloat(cs(term).fontSize) >= 7.5, cs(term).fontSize);
   }
+  // On a phone the frames of one game go one under the other. They are laid out with
+  // `grid-auto-flow: column` on the desktop, so a figure can have three of them and not
+  // just two — and that flow ignores the `grid-template-columns` the phone rule sets,
+  // which is how three captures ended up in a row running off the side of a 360px screen.
+  for (const shots of d.querySelectorAll('.shots')) {
+    const tops = new Set([...shots.querySelectorAll('.shot')]
+                         .map(el => Math.round(el.getBoundingClientRect().top)));
+    ok('a phone stacks the frames of a game',
+       tops.size === shots.querySelectorAll('.shot').length,
+       `${shots.querySelectorAll('.shot').length} captures on ${tops.size} row(s)`);
+  }
+
   // Whatever ends up scrolling has to say so.
   const wide = [...d.querySelectorAll('.scroller')].filter(el => el.scrollWidth - el.clientWidth > 4);
   ok('every block that scrolls is marked as one', wide.every(el => el.classList.contains('is-wide')),

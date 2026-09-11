@@ -689,7 +689,11 @@ pre.term i.w2 { width: 2ch; }
   .jn .gloss { margin-inline-start: 0; width: 100%; text-align: start; padding-top: 0.4rem; }
 
   pre.zy { padding: 1rem 0.9rem; --pad: 1.8rem; }
-  .shots { grid-template-columns: minmax(0, 1fr); }
+  /* One under the other on a phone. `grid-auto-flow: column` above is what lets a
+     figure have three frames instead of two, and it ignores an explicit
+     `grid-template-columns` — items keep creating implicit columns — so the flow has
+     to be put back to rows here or the row simply runs off the side of the screen. */
+  .shots { grid-auto-flow: row; grid-template-columns: minmax(0, 1fr); }
   /* Title and ▶ play share the first line, the description takes the second. Side by
      side on a phone the description is squeezed into a 12-character column beside a pill
      that will not wrap, and reads as a caption for the pill rather than for the game. */
