@@ -221,7 +221,7 @@ Below the sections above, the page renders the compact **v0.0.9** manual in the
 reader's own language, with every `zymbol` block coloured by the site's
 highlighter. It is fetched from `/data/manuals/v009/manual_<code>.md`.
 
-**It is written in 35 languages so far.** For every other language the section and
+**It is written in 50 languages so far.** For every other language the section and
 its nav item are **not shown at all**: no heading, no empty box, no English text
 under a translated title. A fallback would tell a reader their language was done
 when it is not; absent is honest where wrong is not. (The older 110-language manual, last

@@ -240,81 +240,96 @@ traducir limpio (391k tokens frente a 205k), porque el verificador tiene primero
 | — | `ps` | pashto | 40M | MEDIO | Sonnet | ✅ |
 | — | `pl` | polish | 40M | BAJO | Haiku | ✅ |
 | 2 | `ln` | lingala | 40M | ALTO | Sonnet+Opus | ❌ |
-| 3 | `ml` | malayalam | 38M | MEDIO | Sonnet | ❌ |
-| 4 | `om` | oromo | 37M | ALTO | Sonnet+Opus | ❌ |
-| 5 | `ms` | malay | 35M | MEDIO | Sonnet | ❌ |
-| 6 | `am` | amharic | 35M | MEDIO | Sonnet | ❌ |
-| 7 | `su` | sundanese | 32M | MEDIO | Sonnet | ❌ |
-| 8 | `ne` | nepali | 32M | MEDIO | Sonnet | ❌ |
-| 9 | `lo` | lao | 30M | MEDIO | Sonnet | ❌ |
-| 10 | `ku` | kurdish | 30M | MEDIO | Sonnet | ❌ |
-| 11 | `ig` | igbo | 30M | MEDIO | Sonnet | ❌ |
-| 12 | `az` | azerbaijani | 30M | MEDIO | Sonnet | ❌ |
-| 13 | `zu` | zulu | 28M | MEDIO | Sonnet | ❌ |
-| 14 | `nl` | dutch | 25M | BAJO | Haiku | ❌ |
-| 15 | `ff` | fula | 25M | ALTO | Sonnet+Opus | ❌ |
-| 16 | `ro` | romanian | 24M | BAJO | Haiku | ❌ |
-| 17 | `so` | somali | 22M | ALTO | Sonnet+Opus | ❌ |
-| 18 | `si` | sinhala | 17M | MEDIO | Sonnet | ❌ |
-| 19 | `km` | khmer | 17M | MEDIO | Sonnet | ❌ |
-| 20 | `af` | afrikaans | 17M | BAJO | Haiku | ❌ |
-| 21 | `bm` | bambara | 15M | ALTO | Sonnet+Opus | ❌ |
-| 22 | `el` | greek | 13M | MEDIO | Sonnet | ❌ |
-| 23 | `ny` | nyanja | 12M | ALTO | Sonnet+Opus | ❌ |
-| 24 | `ht` | haitian creole | 12M | MEDIO | Sonnet | ❌ |
-| 25 | `sn` | shona | 11M | ALTO | Sonnet+Opus | ❌ |
-| 26 | `cs` | czech | 11M | BAJO | Haiku | ❌ |
-| 27 | `wo` | wolof | 10M | ALTO | Sonnet+Opus | ❌ |
-| 28 | `sv` | swedish | 10M | BAJO | Haiku | ❌ |
-| 29 | `pt_eu` | portugues eu | 10M | BAJO | Haiku | ❌ |
-| 30 | `ca` | catalan | 10M | BAJO | Haiku | ❌ |
-| 31 | `be` | belarusian | 10M | BAJO | Haiku | ❌ |
-| 32 | `ti` | tigrinya | 9M | ALTO | Sonnet+Opus | ❌ |
-| 33 | `he` | hebrew | 9M | MEDIO | Sonnet | ❌ |
-| 34 | `xh` | xhosa | 8M | ALTO | Sonnet+Opus | ❌ |
-| 35 | `sr` | serbian | 8M | BAJO | Haiku | ❌ |
+| — | `ml` | malayalam | 38M | MEDIO | Sonnet | ✅ |
+| 3 | `om` | oromo | 37M | ALTO | Sonnet+Opus | ❌ |
+| — | `ms` | malay | 35M | MEDIO | Sonnet | ✅ |
+| — | `am` | amharic | 35M | MEDIO | Sonnet | ⚠️ |
+| — | `su` | sundanese | 32M | MEDIO | Sonnet | ✅ |
+| — | `ne` | nepali | 32M | MEDIO | Sonnet | ✅ |
+| — | `lo` | lao | 30M | MEDIO | Sonnet | ✅ |
+| — | `ku` | kurdish | 30M | MEDIO | Sonnet | ✅ |
+| — | `ig` | igbo | 30M | MEDIO | Sonnet | ✅ |
+| — | `az` | azerbaijani | 30M | MEDIO | Sonnet | ✅ |
+| 4 | `zu` | zulu | 28M | MEDIO | Sonnet | ❌ |
+| — | `nl` | dutch | 25M | BAJO | Haiku | ✅ |
+| 5 | `ff` | fula | 25M | ALTO | Sonnet+Opus | ❌ |
+| — | `ro` | romanian | 24M | BAJO | Haiku | ✅ |
+| 6 | `so` | somali | 22M | ALTO | Sonnet+Opus | ❌ |
+| — | `si` | sinhala | 17M | MEDIO | Sonnet | ✅ |
+| — | `km` | khmer | 17M | MEDIO | Sonnet | ✅ |
+| — | `af` | afrikaans | 17M | BAJO | Haiku | ✅ |
+| 7 | `bm` | bambara | 15M | ALTO | Sonnet+Opus | ❌ |
+| — | `el` | greek | 13M | MEDIO | Sonnet | ✅ |
+| 8 | `ny` | nyanja | 12M | ALTO | Sonnet+Opus | ❌ |
+| 9 | `ht` | haitian creole | 12M | MEDIO | Sonnet | ❌ |
+| 10 | `sn` | shona | 11M | ALTO | Sonnet+Opus | ❌ |
+| — | `cs` | czech | 11M | BAJO | Haiku | ✅ |
+| 11 | `wo` | wolof | 10M | ALTO | Sonnet+Opus | ❌ |
+| 12 | `sv` | swedish | 10M | BAJO | Haiku | ❌ |
+| 13 | `pt_eu` | portugues eu | 10M | BAJO | Haiku | ❌ |
+| 14 | `ca` | catalan | 10M | BAJO | Haiku | ❌ |
+| 15 | `be` | belarusian | 10M | BAJO | Haiku | ❌ |
+| 16 | `ti` | tigrinya | 9M | ALTO | Sonnet+Opus | ❌ |
+| 17 | `he` | hebrew | 9M | MEDIO | Sonnet | ❌ |
+| 18 | `xh` | xhosa | 8M | ALTO | Sonnet+Opus | ❌ |
+| 19 | `sr` | serbian | 8M | BAJO | Haiku | ❌ |
 | — | `qu` | quechua | 8M | ALTO | — | ✅ |
-| 36 | `bg` | bulgarian | 8M | BAJO | Haiku | ❌ |
-| 37 | `sq` | albanian | 6M | BAJO | Haiku | ❌ |
-| 38 | `myn` | maya | 6M | ALTO | Sonnet+Opus | ❌ |
-| 39 | `hy` | armenian | 6M | MEDIO | Sonnet | ❌ |
-| 40 | `hr` | croatian | 6M | BAJO | Haiku | ❌ |
-| 41 | `gn` | guarani | 6M | ALTO | Sonnet+Opus | ❌ |
-| 42 | `da` | danish | 6M | BAJO | Haiku | ❌ |
-| 43 | `tn` | setswana | 5M | ALTO | Sonnet+Opus | ❌ |
-| 44 | `sk` | slovak | 5M | BAJO | Haiku | ❌ |
-| 45 | `no` | norwegian | 5M | BAJO | Haiku | ❌ |
-| 46 | `lg` | luganda | 5M | ALTO | Sonnet+Opus | ❌ |
-| 47 | `fi` | finnish | 5M | BAJO | Haiku | ❌ |
-| 48 | `ka` | georgian | 4M | MEDIO | Sonnet | ❌ |
-| 49 | `lt` | lithuanian | 3M | BAJO | Haiku | ❌ |
-| 50 | `jam` | jamaican patois | 3M | ALTO | Sonnet+Opus | ❌ |
-| 51 | `sl` | slovenian | 2.5M | BAJO | Haiku | ❌ |
-| 52 | `gl` | galician | 2.4M | BAJO | Haiku | ❌ |
-| 53 | `mk` | macedonian | 2M | BAJO | Haiku | ❌ |
-| 54 | `lv` | latvian | 2M | BAJO | Haiku | ❌ |
-| 55 | `eo` | esperanto | 2M | MEDIO | Sonnet | ❌ |
-| 56 | `ay` | aymara | 2M | ALTO | Sonnet+Opus | ❌ |
-| 57 | `nah` | nahuatl | 1.7M | ALTO | Sonnet+Opus | ❌ |
-| 58 | `et` | estonian | 1.1M | BAJO | Haiku | ❌ |
-| 59 | `quc` | kiche | 1M | ALTO | Sonnet+Opus | ❌ |
-| 60 | `eu` | basque | 750k | BAJO | Haiku | ❌ |
-| 61 | `way` | wayuu | 400k | ALTO | Sonnet+Opus | ❌ |
-| 62 | `is` | icelandic | 350k | BAJO | Haiku | ❌ |
-| 63 | `arn` | mapuche | 250k | ALTO | Sonnet+Opus | ❌ |
-| 64 | `nv` | navajo | 170k | ALTO | Sonnet+Opus | ❌ |
-| 65 | `emb` | embera | 100k | ALTO | Sonnet+Opus | ❌ |
-| 66 | `cr_syl` | cree syl | 100k | ALTO | Sonnet+Opus | ❌ |
-| 67 | `yno` | yanomami | 35k | ALTO | Sonnet+Opus | ❌ |
-| 68 | `chr` | cherokee | 2k | ALTO | Sonnet+Opus | ❌ |
-| 69 | `tp` | toki pona | 1k | ALTO | Sonnet+Opus | ❌ |
-| 70 | `tlh_iq` | klingon piqad | 1k | ALTO | Sonnet+Opus | ❌ |
-| 71 | `tlh` | klingon | 1k | ALTO | Sonnet+Opus | ❌ |
-| 72 | `jbo` | lojban | 1k | ALTO | Sonnet+Opus | ❌ |
-| 73 | `io` | ido | 1k | ALTO | Sonnet+Opus | ❌ |
-| 74 | `ia` | interlingua | 1k | ALTO | Sonnet+Opus | ❌ |
+| 20 | `bg` | bulgarian | 8M | BAJO | Haiku | ❌ |
+| 21 | `sq` | albanian | 6M | BAJO | Haiku | ❌ |
+| 22 | `myn` | maya | 6M | ALTO | Sonnet+Opus | ❌ |
+| 23 | `hy` | armenian | 6M | MEDIO | Sonnet | ❌ |
+| 24 | `hr` | croatian | 6M | BAJO | Haiku | ❌ |
+| 25 | `gn` | guarani | 6M | ALTO | Sonnet+Opus | ❌ |
+| 26 | `da` | danish | 6M | BAJO | Haiku | ❌ |
+| 27 | `tn` | setswana | 5M | ALTO | Sonnet+Opus | ❌ |
+| 28 | `sk` | slovak | 5M | BAJO | Haiku | ❌ |
+| 29 | `no` | norwegian | 5M | BAJO | Haiku | ❌ |
+| 30 | `lg` | luganda | 5M | ALTO | Sonnet+Opus | ❌ |
+| 31 | `fi` | finnish | 5M | BAJO | Haiku | ❌ |
+| 32 | `ka` | georgian | 4M | MEDIO | Sonnet | ❌ |
+| 33 | `lt` | lithuanian | 3M | BAJO | Haiku | ❌ |
+| 34 | `jam` | jamaican patois | 3M | ALTO | Sonnet+Opus | ❌ |
+| 35 | `sl` | slovenian | 2.5M | BAJO | Haiku | ❌ |
+| 36 | `gl` | galician | 2.4M | BAJO | Haiku | ❌ |
+| 37 | `mk` | macedonian | 2M | BAJO | Haiku | ❌ |
+| 38 | `lv` | latvian | 2M | BAJO | Haiku | ❌ |
+| 39 | `eo` | esperanto | 2M | MEDIO | Sonnet | ❌ |
+| 40 | `ay` | aymara | 2M | ALTO | Sonnet+Opus | ❌ |
+| 41 | `nah` | nahuatl | 1.7M | ALTO | Sonnet+Opus | ❌ |
+| 42 | `et` | estonian | 1.1M | BAJO | Haiku | ❌ |
+| 43 | `quc` | kiche | 1M | ALTO | Sonnet+Opus | ❌ |
+| 44 | `eu` | basque | 750k | BAJO | Haiku | ❌ |
+| 45 | `way` | wayuu | 400k | ALTO | Sonnet+Opus | ❌ |
+| 46 | `is` | icelandic | 350k | BAJO | Haiku | ❌ |
+| 47 | `arn` | mapuche | 250k | ALTO | Sonnet+Opus | ❌ |
+| 48 | `nv` | navajo | 170k | ALTO | Sonnet+Opus | ❌ |
+| 49 | `emb` | embera | 100k | ALTO | Sonnet+Opus | ❌ |
+| 50 | `cr_syl` | cree syl | 100k | ALTO | Sonnet+Opus | ❌ |
+| 51 | `yno` | yanomami | 35k | ALTO | Sonnet+Opus | ❌ |
+| 52 | `chr` | cherokee | 2k | ALTO | Sonnet+Opus | ❌ |
+| 53 | `tp` | toki pona | 1k | ALTO | Sonnet+Opus | ❌ |
+| 54 | `tlh_iq` | klingon piqad | 1k | ALTO | Sonnet+Opus | ❌ |
+| 55 | `tlh` | klingon | 1k | ALTO | Sonnet+Opus | ❌ |
+| 56 | `jbo` | lojban | 1k | ALTO | Sonnet+Opus | ❌ |
+| 57 | `io` | ido | 1k | ALTO | Sonnet+Opus | ❌ |
+| 58 | `ia` | interlingua | 1k | ALTO | Sonnet+Opus | ❌ |
 
-**Pendientes:** 74 · **Completados:** 34 (en, es, it, qu, zh, hi, ar, fr, bn, pt, ru, ur, sw, id, de, pa, ja, te, tr, vi, ta, mr, ko, jv, ha, fa, th, gu, kn, yo, my, uk, ps, pl) · **Parciales:** 1 (tl) · **Referencias:** en, es
+**Pendientes:** 58 · **Completados:** 49 (en, es, it, qu, zh, hi, ar, fr, bn, pt, ru, ur, sw, id, de, pa, ja, te, tr, vi, ta, mr, ko, jv, ha, fa, th, gu, kn, yo, my, uk, ps, pl, af, az, cs, el, ig, km, ku, lo, ml, ms, ne, nl, ro, si, su) · **Parciales:** 2 (tl, am) · **Referencias:** en, es
+
+> **`am` (amárico) va con ⚠️ y NO se publica: es `manual_am_borrador.md`.** Escribe los
+> literales en **cifras etíopes** —`፲` por 10, `፵፪` por 42, `፫፻` por 300— y Zymbol no
+> puede leerlas. Las 69 escrituras que conoce son **bloques decimales de diez puntos de
+> código contiguos**; el sistema etíope no es posicional, no tiene cero y reparte signos
+> por unidades, decenas, centenas y decenas de millar. Resultado medido: **58 de 69
+> bloques no compilan** (`undefined variable '፲'`), 30 afirmaciones falsas y ni un
+> comentario comprobable. No es una errata que arreglar sino una regla que no se supo:
+> se retraduce con los literales en ASCII.
+>
+> **La regla, para que no se repita** — y va a repetirse, porque el **tigriña** está en
+> la cola y escribe la misma escritura: si la lengua no tiene uno de los 69 bloques, los
+> literales van en ASCII. Tenerla escritura propia no basta; tiene que ser decimal y
+> contigua. La lista está en `interpreter/crates/zymbol-lexer/src/digit_blocks.rs`, y
+> `gate_f.py` lleva una copia embebida de las 69 bases.
 
 > **`tl` va con ⚠️ y aun así se publica.** Pasa los seis gates y sus 74 bloques corren,
 > pero **22 celdas de prosa de las tablas siguen en inglés** — `return / output param`,
