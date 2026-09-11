@@ -202,68 +202,96 @@ la posición solo decide el turno.
 traducir limpio (391k tokens frente a 205k), porque el verificador tiene primero que
 *desaprender* un mapeo erróneo antes de reemplazarlo.
 
+### Quién tradujo de verdad: la tabla de arriba es la regla, no el historial
+
+**La columna «Modelo» de las filas ✅ y ⚠️ dice qué modelo hizo ese fichero; en las ❌
+sigue siendo el plan.** Y lo que dice hoy es que **47 de los 51 los tradujo DeepSeek**, no
+Haiku ni Sonnet. Los cuatro que no:
+
+| | Modelo | Qué es |
+|---|---|---|
+| `en`, `es` | **Opus** | escritos por el proyecto; son las referencias contra las que se mide todo lo demás |
+| `it` | **Haiku** | la prueba controlada de riesgo BAJO: cuatro gates verdes, prosa completa |
+| `qu` | **Sonnet** | la prueba controlada de riesgo ALTO |
+| `qu_borrador` | **Haiku** | el quechua que pasó los cuatro gates **sin ser quechua**; se conserva como prueba, no se publica |
+
+**El circuito real, entonces, es de tres eslabones y ninguno es opcional:** DeepSeek
+traduce, **los seis gates verifican y reparan** —restauran los nombres de `std/`,
+recalculan las anotaciones desde la ejecución y los comentarios de valor, y niegan la
+estructura que no cuadra— y **Claude (Opus) revisa** lo que ningún gate puede ver: si las
+palabras son reales, si un identificador lleva un espacio, si el ejemplo de «cualquier
+escritura» le enseña al lector la suya, y si la lengua tiene siquiera un bloque decimal
+entre los 69.
+
+Que el traductor sea otro modelo **no cambia ninguna medida de esta página**: los tres
+fallos sistemáticos —nombres de `std/` traducidos, cifras propias donde la salida es
+ASCII, y el identificador con un espacio— salieron igual con Haiku, con Sonnet y con
+DeepSeek. Son del oficio, no del modelo. La tabla de riesgo de arriba sigue valiendo para
+lo que traduzca Claude, y la medición de italiano y quechua sigue siendo la única
+comparación controlada que hay.
+
 | # | Código | Idioma | Hablantes | Riesgo | Modelo | Estado |
 |--:|--------|--------|----------:|--------|--------|--------|
-| — | `en` | english | 1500M | BAJO | — | ✅ |
+| — | `en` | english | 1500M | BAJO | Opus | ✅ |
 | — | `zh` | mandarin | 1100M | MEDIO | DeepSeek | ✅ |
 | — | `hi` | hindi | 600M | MEDIO | DeepSeek | ✅ |
-| — | `es` | spanish | 600M | BAJO | — | ✅ |
+| — | `es` | spanish | 600M | BAJO | Opus | ✅ |
 | — | `ar` | arabic | 400M | MEDIO | DeepSeek | ✅ |
 | — | `fr` | french | 310M | BAJO | DeepSeek | ✅ |
 | — | `bn` | bengali | 270M | MEDIO | DeepSeek | ✅ |
 | — | `pt` | portuguese | 260M | BAJO | DeepSeek | ✅ |
 | — | `ru` | russian | 255M | BAJO | DeepSeek | ✅ |
 | — | `ur` | urdu | 230M | MEDIO | DeepSeek | ✅ |
-| — | `sw` | swahili | 200M | MEDIO | Sonnet | ✅ |
-| — | `id` | indonesian | 200M | MEDIO | Sonnet | ✅ |
-| — | `de` | german | 135M | BAJO | Haiku | ✅ |
-| — | `pa` | punjabi | 125M | MEDIO | Sonnet | ✅ |
-| — | `ja` | japanese | 125M | MEDIO | Sonnet | ✅ |
+| — | `sw` | swahili | 200M | MEDIO | DeepSeek | ✅ |
+| — | `id` | indonesian | 200M | MEDIO | DeepSeek | ✅ |
+| — | `de` | german | 135M | BAJO | DeepSeek | ✅ |
+| — | `pa` | punjabi | 125M | MEDIO | DeepSeek | ✅ |
+| — | `ja` | japanese | 125M | MEDIO | DeepSeek | ✅ |
 | 1 | `pcm` | nigerian pidgin | 120M | ALTO | Sonnet+Opus | ❌ |
-| — | `te` | telugu | 95M | MEDIO | Sonnet | ✅ |
-| — | `tr` | turkish | 90M | MEDIO | Sonnet | ✅ |
-| — | `vi` | vietnamese | 85M | MEDIO | Sonnet | ✅ |
-| — | `ta` | tamil | 85M | MEDIO | Sonnet | ✅ |
-| — | `mr` | marathi | 83M | MEDIO | Sonnet | ✅ |
-| — | `ko` | korean | 82M | MEDIO | Sonnet | ✅ |
-| — | `jv` | javanese | 82M | MEDIO | Sonnet | ✅ |
-| — | `ha` | hausa | 80M | MEDIO | Sonnet | ✅ |
-| — | `fa` | persian | 70M | MEDIO | Sonnet | ✅ |
-| — | `it` | italian | 65M | BAJO | — | ✅ |
-| — | `th` | thai | 60M | MEDIO | Sonnet | ✅ |
-| — | `gu` | gujarati | 57M | MEDIO | Sonnet | ✅ |
-| — | `kn` | kannada | 56M | MEDIO | Sonnet | ✅ |
-| — | `yo` | yoruba | 45M | MEDIO | Sonnet | ✅ |
-| — | `tl` | tagalog | 45M | MEDIO | Sonnet | ⚠️ |
-| — | `my` | burmese | 43M | MEDIO | Sonnet | ✅ |
-| — | `uk` | ukrainian | 40M | BAJO | Haiku | ✅ |
-| — | `ps` | pashto | 40M | MEDIO | Sonnet | ✅ |
-| — | `pl` | polish | 40M | BAJO | Haiku | ✅ |
+| — | `te` | telugu | 95M | MEDIO | DeepSeek | ✅ |
+| — | `tr` | turkish | 90M | MEDIO | DeepSeek | ✅ |
+| — | `vi` | vietnamese | 85M | MEDIO | DeepSeek | ✅ |
+| — | `ta` | tamil | 85M | MEDIO | DeepSeek | ✅ |
+| — | `mr` | marathi | 83M | MEDIO | DeepSeek | ✅ |
+| — | `ko` | korean | 82M | MEDIO | DeepSeek | ✅ |
+| — | `jv` | javanese | 82M | MEDIO | DeepSeek | ✅ |
+| — | `ha` | hausa | 80M | MEDIO | DeepSeek | ✅ |
+| — | `fa` | persian | 70M | MEDIO | DeepSeek | ✅ |
+| — | `it` | italian | 65M | BAJO | Haiku | ✅ |
+| — | `th` | thai | 60M | MEDIO | DeepSeek | ✅ |
+| — | `gu` | gujarati | 57M | MEDIO | DeepSeek | ✅ |
+| — | `kn` | kannada | 56M | MEDIO | DeepSeek | ✅ |
+| — | `yo` | yoruba | 45M | MEDIO | DeepSeek | ✅ |
+| — | `tl` | tagalog | 45M | MEDIO | DeepSeek | ⚠️ |
+| — | `my` | burmese | 43M | MEDIO | DeepSeek | ✅ |
+| — | `uk` | ukrainian | 40M | BAJO | DeepSeek | ✅ |
+| — | `ps` | pashto | 40M | MEDIO | DeepSeek | ✅ |
+| — | `pl` | polish | 40M | BAJO | DeepSeek | ✅ |
 | 2 | `ln` | lingala | 40M | ALTO | Sonnet+Opus | ❌ |
-| — | `ml` | malayalam | 38M | MEDIO | Sonnet | ✅ |
+| — | `ml` | malayalam | 38M | MEDIO | DeepSeek | ✅ |
 | 3 | `om` | oromo | 37M | ALTO | Sonnet+Opus | ❌ |
-| — | `ms` | malay | 35M | MEDIO | Sonnet | ✅ |
-| — | `am` | amharic | 35M | MEDIO | Sonnet | ⚠️ |
-| — | `su` | sundanese | 32M | MEDIO | Sonnet | ✅ |
-| — | `ne` | nepali | 32M | MEDIO | Sonnet | ✅ |
-| — | `lo` | lao | 30M | MEDIO | Sonnet | ✅ |
-| — | `ku` | kurdish | 30M | MEDIO | Sonnet | ✅ |
-| — | `ig` | igbo | 30M | MEDIO | Sonnet | ✅ |
-| — | `az` | azerbaijani | 30M | MEDIO | Sonnet | ✅ |
+| — | `ms` | malay | 35M | MEDIO | DeepSeek | ✅ |
+| — | `am` | amharic | 35M | MEDIO | DeepSeek | ⚠️ |
+| — | `su` | sundanese | 32M | MEDIO | DeepSeek | ✅ |
+| — | `ne` | nepali | 32M | MEDIO | DeepSeek | ✅ |
+| — | `lo` | lao | 30M | MEDIO | DeepSeek | ✅ |
+| — | `ku` | kurdish | 30M | MEDIO | DeepSeek | ✅ |
+| — | `ig` | igbo | 30M | MEDIO | DeepSeek | ✅ |
+| — | `az` | azerbaijani | 30M | MEDIO | DeepSeek | ✅ |
 | 4 | `zu` | zulu | 28M | MEDIO | Sonnet | ❌ |
-| — | `nl` | dutch | 25M | BAJO | Haiku | ✅ |
+| — | `nl` | dutch | 25M | BAJO | DeepSeek | ✅ |
 | 5 | `ff` | fula | 25M | ALTO | Sonnet+Opus | ❌ |
-| — | `ro` | romanian | 24M | BAJO | Haiku | ✅ |
+| — | `ro` | romanian | 24M | BAJO | DeepSeek | ✅ |
 | 6 | `so` | somali | 22M | ALTO | Sonnet+Opus | ❌ |
-| — | `si` | sinhala | 17M | MEDIO | Sonnet | ✅ |
-| — | `km` | khmer | 17M | MEDIO | Sonnet | ✅ |
-| — | `af` | afrikaans | 17M | BAJO | Haiku | ✅ |
+| — | `si` | sinhala | 17M | MEDIO | DeepSeek | ✅ |
+| — | `km` | khmer | 17M | MEDIO | DeepSeek | ✅ |
+| — | `af` | afrikaans | 17M | BAJO | DeepSeek | ✅ |
 | 7 | `bm` | bambara | 15M | ALTO | Sonnet+Opus | ❌ |
-| — | `el` | greek | 13M | MEDIO | Sonnet | ✅ |
+| — | `el` | greek | 13M | MEDIO | DeepSeek | ✅ |
 | 8 | `ny` | nyanja | 12M | ALTO | Sonnet+Opus | ❌ |
 | 9 | `ht` | haitian creole | 12M | MEDIO | Sonnet | ❌ |
 | 10 | `sn` | shona | 11M | ALTO | Sonnet+Opus | ❌ |
-| — | `cs` | czech | 11M | BAJO | Haiku | ✅ |
+| — | `cs` | czech | 11M | BAJO | DeepSeek | ✅ |
 | 11 | `wo` | wolof | 10M | ALTO | Sonnet+Opus | ❌ |
 | 12 | `sv` | swedish | 10M | BAJO | Haiku | ❌ |
 | 13 | `pt_eu` | portugues eu | 10M | BAJO | Haiku | ❌ |
@@ -273,7 +301,7 @@ traducir limpio (391k tokens frente a 205k), porque el verificador tiene primero
 | 17 | `he` | hebrew | 9M | MEDIO | Sonnet | ❌ |
 | 18 | `xh` | xhosa | 8M | ALTO | Sonnet+Opus | ❌ |
 | 19 | `sr` | serbian | 8M | BAJO | Haiku | ❌ |
-| — | `qu` | quechua | 8M | ALTO | — | ✅ |
+| — | `qu` | quechua | 8M | ALTO | Sonnet | ✅ |
 | 20 | `bg` | bulgarian | 8M | BAJO | Haiku | ❌ |
 | 21 | `sq` | albanian | 6M | BAJO | Haiku | ❌ |
 | 22 | `myn` | maya | 6M | ALTO | Sonnet+Opus | ❌ |
