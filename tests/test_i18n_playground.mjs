@@ -11,7 +11,7 @@
 // answers every key the base catalogue asks.
 //
 // It follows the shape the project publishes for Zymbol applications in
-// interpreter/USERAPPI18N.md §10: walk catalogue × locales, and make "translation == key"
+// zymbol-design/USERAPPI18N.md §10: walk catalogue × locales, and make "translation == key"
 // mean "never translated" by giving every key a domain prefix.
 //
 // It also guards two derivations that no browser will ever complain about:
