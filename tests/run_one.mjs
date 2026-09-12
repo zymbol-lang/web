@@ -85,6 +85,16 @@ const abs = resolve(file);
 // string meant every nested import resolved against the entry file, so the
 // `<# ./module` inside i18n/matematicas/中文.zy looked for i18n/module.zy and
 // was reported as "module not found".
+// The name a diagnostic quotes, spelled exactly as the Rust engines spell it:
+// relative to the working directory when the file is under it, absolute
+// otherwise. Node's `relative()` alone would answer `../../x.zy` for a file
+// outside the tree, where `Path::strip_prefix` fails and Rust keeps the
+// absolute path — and `zyq consensus` compares the text.
+const displayPath = (full) => {
+  const rel = relative(process.cwd(), full);
+  return (rel && !rel.startsWith('..')) ? rel : full;
+};
+
 const makeResolver = (baseDir) => (spec) => {
   const candidate = spec.endsWith('.zy') ? spec : `${spec}.zy`;
   const full = resolve(baseDir, candidate);
@@ -92,7 +102,7 @@ const makeResolver = (baseDir) => (spec) => {
     const src = readFileSync(full, 'utf8');
     // displayPath is what diagnostics quote: relative, like the CLI's.
     return { src, resolver: makeResolver(dirname(full)), resolvedPath: full,
-             displayPath: relative(process.cwd(), full) };
+             displayPath: displayPath(full) };
   } catch { return null; }
 };
 const resolver = makeResolver(dirname(abs));
@@ -227,7 +237,7 @@ try {
   // now, exactly as it is under `zymbol run`.
   const limits = { maxSteps: Infinity, maxBytes: Infinity, maxInfiniteIter: Infinity };
   // eslint-disable-next-line no-unused-vars -- assigned below, read at the foot
-  const result = await runZymbol(source, inputFn, onOutput, resolver, abs, ansiTui, [], { onError, skipModuleNames: true, ...limits });
+  const result = await runZymbol(source, inputFn, onOutput, resolver, abs, ansiTui, [], { onError, skipModuleNames: true, displayPath: displayPath(abs), ...limits });
   if (result && result.failed) {
     failed = true;
     message = result.message ?? 'engine reported failure';

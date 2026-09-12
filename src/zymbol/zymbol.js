@@ -1170,7 +1170,18 @@ export class Parser {
     return { type: 'Import', path, alias, line };
   }
 
+  // Every statement node carries the line it starts on, stamped here rather
+  // than at each of the ~60 `return { type: ... }` below. A runtime error is
+  // reported at the statement that raised it, and the alternative was passing a
+  // line into all 101 `throw new ZyError` sites — of which 7 did it.
   parseStmt() {
+    const line = this.peek()?.line ?? null;
+    const s = this._parseStmt();
+    if (s && s.zyLine == null) s.zyLine = line;
+    return s;
+  }
+
+  _parseStmt() {
     const t = this.peek();
 
     if (t.type === 'SET_NUMERAL_MODE') { this.adv(); return { type: 'SetNumeralMode', base: t.value }; }
@@ -3323,6 +3334,51 @@ class Checker {
   }
 
   /**
+   * The COLLECTION SHAPE of a value as a type symbol — `##]`, `##)` or `##(` —
+   * or `null` when this pass cannot decide it.
+   *
+   * A literal decides it in place; a variable decides it when its last
+   * assignment was one (recorded by `noteLiteralType`). Nothing else: a
+   * parameter, an element of a collection and the result of a call are all
+   * `null` here, and saying nothing is always allowed.
+   *
+   * The Rust analyser decides two more, because it has a type system and this
+   * pass does not: the return of a function declared in the same file, and an
+   * element of an array literal (`a = [(1,2)]` then `[x, y] = a[1]`). Both
+   * engines say the same thing where both decide; where only Rust decides,
+   * `zymbol check` warns and the playground does not. Neither refuses the
+   * program, so the two still RUN every program identically — which is the
+   * property the three engines are held to.
+   */
+  shapeOf(e) {
+    if (!e) return null;
+    if (e.type === 'Array') return '##]';
+    if (e.type === 'Tuple') return e.keys ? '##(' : '##)';
+    if (e.type === 'Ident') return this.peekVar(e.name)?.shape ?? null;
+    return null;
+  }
+
+  /**
+   * `[a, b] = (1, 2)` — the pattern is typed (REFERENCE.md L32) and this one
+   * fails at run time. Warned rather than refused: the failure is catchable
+   * with `!?`, and this pass knows the shape of a value in only some of the
+   * places one comes from.
+   *
+   * Same wording as `type_check.rs`, down to the type symbol — the two engines
+   * are compared on the text of what they say.
+   */
+  warnDestructShape(stmt, want, accepts) {
+    const got = this.shapeOf(stmt.value);
+    if (!got) return;
+    const OK = { "array '[ … ]'": '##]', "tuple '( … )'": '##)', "dictionary '#( … )'": '##(' };
+    if (OK[want] === got) return;
+    const PATTERN = { '##]': '[ … ]', '##)': '( … )', '##(': '#( … )' };
+    this.warn('W_DESTRUCT_SHAPE',
+      `${want} pattern requires ${accepts}, got ${got}`, stmt.zyLine ?? stmt.line ?? null, null,
+      `unpack ${got} with ${PATTERN[got]} — the pattern is typed, and this one fails at run time`);
+  }
+
+  /**
    * `-"a"` and `!7` — the unary counterpart of `warnBinaryOperandType`, with
    * the wording `type_check.rs` uses: `unary - on non-numeric type: String`,
    * `logical not on non-boolean type: Int`.
@@ -3417,6 +3473,13 @@ class Checker {
   noteLiteralType(name, value, line) {
     const OF = { int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool' };
     const t = value?.type === 'Literal' ? (OF[value.kind] ?? null) : null;
+    // The collection shape travels with the record, so `t = (1, 2)` on one line
+    // and `[a, b] = t` on the next is decided here rather than at run time. A
+    // reassignment to something whose shape is not known clears it — after two
+    // assignments this pass does not know which one ran.
+    const shape = value?.type === 'Array' ? '##]'
+                : value?.type === 'Tuple' ? (value.keys ? '##(' : '##)')
+                : null;
     for (let i = this.stack.length - 1; i >= 0; i--) {
       const info = this.stack[i].vars.get(name);
       if (!info) {
@@ -3439,6 +3502,7 @@ class Checker {
       info.elemKind = (value?.type === 'Array' && !value.declaredMixed)
         ? this.arrayElemKind(value)
         : null;
+      info.shape = shape;
       return;
     }
   }
@@ -4050,6 +4114,9 @@ class Checker {
       case 'ArrayDestruct':
       case 'NamedDestruct': {
         this.checkExpr(stmt.value);
+        if (stmt.type === 'ArrayDestruct')      this.warnDestructShape(stmt, "array '[ … ]'", 'an array');
+        else if (stmt.type === 'TupleDestruct') this.warnDestructShape(stmt, "tuple '( … )'", 'a tuple');
+        else                                    this.warnDestructShape(stmt, "dictionary '#( … )'", 'a dictionary');
         for (const t of (stmt.targets ?? [])) {
           if (t.name && t.name !== '_') {
             // L14 (mirrors type_check.rs): destructuring into a `:=` constant
@@ -5678,6 +5745,11 @@ export class Interpreter {
     this.lastYield       = performance.now();
     this.numeralMode     = 0x0030;
     this.moduleResolver  = moduleResolver;
+    // The file whose statements this interpreter runs. Set by `run` for the
+    // entry file and by `loadModule` for a module, and stamped onto every
+    // function defined here — a module's function runs on the caller's
+    // interpreter, so the function has to carry its own file.
+    this.srcFile = null;
     this.moduleCache     = new Map();
     // Import aliases, kept out of the variable environment on purpose: `alias::fn(…)` must
     // keep resolving even when a plain variable later takes the same name. Mirrors the
@@ -5745,6 +5817,9 @@ export class Interpreter {
     }
 
     const modInterp = new Interpreter(this.outputFn, this.inputFn, childRes);
+    // Named as the Rust engines name it: the path as written, so a golden
+    // recorded from one engine matches the others.
+    modInterp.srcFile        = (typeof result === 'object' && result.displayPath) || cacheKey;
     modInterp.moduleCache    = this.moduleCache;
     modInterp.loadingModules = this.loadingModules;
     modInterp.vfs            = this.vfs; // share one virtual filesystem per run
@@ -5814,6 +5889,7 @@ export class Interpreter {
   }
 
   async run(program, filePath = null) {
+    if (this.srcFile == null) this.srcFile = filePath;
     const env = new Env();
     this.globalEnv = env;
     if (program.body.length >= 1 && program.body[0].type === 'ModuleBlock') {
@@ -5847,7 +5923,7 @@ export class Interpreter {
     // appears when the block runs.
     for (const stmt of program.body) {
       if (stmt.type === 'FuncDecl')
-        env.def(stmt.name, { type: 'func', name: stmt.name, params: stmt.params, body: stmt.body, fnId: nextFnId(), moduleAliases: this.moduleAliases, homeEnv: this.globalEnv });
+        env.def(stmt.name, { type: 'func', name: stmt.name, params: stmt.params, body: stmt.body, fnId: nextFnId(), moduleAliases: this.moduleAliases, homeEnv: this.globalEnv, srcFile: this.srcFile });
     }
     // GAP-ZYB-006: a `<~` that reaches the top level ends the program, and its
     // value is the exit status. This engine already stopped here — the value
@@ -5885,6 +5961,20 @@ export class Interpreter {
   }
 
   async exec(stmt, env) {
+    try {
+      return await this._exec(stmt, env);
+    } catch (e) {
+      // The innermost statement that knows the line wins: an error already
+      // carrying one travels out untouched. Control-flow signals (ZyReturn,
+      // ZyBreak, ZyErrorPropagate) are not errors and are never touched.
+      if (e instanceof ZyError && e.zyLine == null && stmt.zyLine != null) {
+        e.zyLine = stmt.zyLine;
+      }
+      throw e;
+    }
+  }
+
+  async _exec(stmt, env) {
     this.tick();
 
     switch (stmt.type) {
@@ -5977,7 +6067,7 @@ export class Interpreter {
       }
 
       case 'FuncDecl': {
-        env.def(stmt.name, { type: 'func', name: stmt.name, params: stmt.params, body: stmt.body, fnId: nextFnId(), moduleAliases: this.moduleAliases, homeEnv: this.globalEnv });
+        env.def(stmt.name, { type: 'func', name: stmt.name, params: stmt.params, body: stmt.body, fnId: nextFnId(), moduleAliases: this.moduleAliases, homeEnv: this.globalEnv, srcFile: this.srcFile });
         return;
       }
 
@@ -6649,7 +6739,7 @@ export class Interpreter {
           ? expr.body.stmts
           : [{ type: 'Return', value: expr.body.value }];
         return {
-          type: 'func', name: '<lambda>', params, body, fnId: nextFnId(), moduleAliases: this.moduleAliases, homeEnv: this.globalEnv,
+          type: 'func', name: '<lambda>', params, body, fnId: nextFnId(), moduleAliases: this.moduleAliases, homeEnv: this.globalEnv, srcFile: this.srcFile,
           // A SNAPSHOT of what the body reads from outside, not the scope
           // itself. `closureEnv: env` held a live reference, so the lambda read
           // whatever the variable held later and wrote back out through it —
@@ -7661,6 +7751,12 @@ export class Interpreter {
     try {
       sig = await this.execBlock(fn.body, funcEnv);
     } catch (e) {
+      // The file the function was WRITTEN in, not the caller's — a module's
+      // functions run on the caller's interpreter, so `this.srcFile` here is
+      // the wrong file. Already-named errors travel out untouched.
+      if (e instanceof ZyError && e.zyFile == null && fn.srcFile != null) {
+        e.zyFile = fn.srcFile;
+      }
       // $!! (ZyErrorPropagate) exits the function and returns the error value to the caller
       if (e instanceof ZyErrorPropagate) return e.errVal;
       // <~ inside a match arm, when the match is evaluated as a sub-expression
@@ -8446,7 +8542,18 @@ export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, f
     // the CLI reported success for a program the engine had refused, and
     // `zyq reject` read that as the form being accepted.
     const message = e instanceof ZyStaticError ? e.message : (e.message ?? String(e));
+    // The entry file is this interpreter's own; an error out of a module is
+    // already named. Spelled exactly as the Rust engines spell it — `zyq
+    // consensus` compares the text, so a difference here is a divergence.
     onError(`Runtime error: ${message}`);
+    // Where it happened, on its own line, as the Rust engines print it — two
+    // separate writes there, two here, so the message template is the one it
+    // always was and the location is its own. `opts.displayPath` is the entry
+    // file as a reader would type it; a host that does not supply one (the
+    // playground, where the name IS short) falls back to the path it gave.
+    const file = (e && e.zyFile) ?? opts.displayPath ?? filePath;
+    const line = e && e.zyLine;
+    if (file && line) onError(`\n  --> ${file}:${line}`);
     return { failed: true, message };
   }
   // GAP-ZYB-006: the exit status a top-level `<~ n` asked for, so a caller that
