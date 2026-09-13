@@ -6016,7 +6016,17 @@ export class Interpreter {
         }
       } else {
         // own export (with optional rename)
-        if (modEnv.vars.has(p.internal)) exports.set(p.exported, modEnv.vars.get(p.internal));
+        //
+        // MEM-4 (GLB-009): only a CONSTANT or a FUNCTION leaves. A module's
+        // variables are its state, carried by its own functions, and the fence
+        // that keeps that from being a global variable is that the state cannot
+        // be exported. This used to hand out whatever the name held, so
+        // `#> { n }` with `n = 0` made the state readable from outside while
+        // `zymbol check` reported E005 and the tree-walker refused it.
+        const val = modEnv.vars.get(p.internal);
+        const exportable = val !== undefined
+          && (val.type === 'func' || modEnv.consts.has(p.internal));
+        if (exportable) exports.set(p.exported, val);
       }
     }
 
@@ -6932,7 +6942,18 @@ export class Interpreter {
         if (obj.type === 'module') {
           if (!obj.exports.has(expr.field)) {
             const modAlias = aliasName ?? 'module';
-            throw new ZyError(`module '${modAlias}' does not export function '${expr.field}'`);
+            // `.` reads a CONSTANT (`::` calls a function), so the wording is
+            // the Rust engines' one for that half — and it lists what the module
+            // does have, which is what turns the error into a correction. Saying
+            // "does not export function" for `E.n` named the wrong thing, and
+            // after GLB-009 that message is what a reader gets when they try to
+            // reach a module's state from outside.
+            const have = [...obj.exports.entries()]
+              .filter(([, v]) => v?.type !== 'func')
+              .map(([k]) => k).sort();
+            throw new ZyError(
+              `Module '${modAlias}' has no constant '${expr.field}'. ` +
+              `Available constants: ${have.length ? have.join(', ') : 'none'}`);
           }
           return obj.exports.get(expr.field);
         }
