@@ -3277,8 +3277,13 @@ class Checker {
     }
   }
 
-  push(funcBoundary = false, moduleScope = false, isLoop = false) {
-    this.stack.push({ vars: new Map(), funcBoundary, moduleScope, isLoop });
+  push(funcBoundary = false, moduleScope = false, isLoop = false,
+       strong = null) {
+    // `strong` is MEM-2's boundary and is NOT funcBoundary: that one already
+    // means something else here (it is what lets `_name` be read across a call
+    // frame). 'function' or 'lambda' when this frame opens a strong
+    // environment, null otherwise.
+    this.stack.push({ vars: new Map(), funcBoundary, moduleScope, isLoop, strong });
   }
 
   pop() {
@@ -3293,9 +3298,13 @@ class Checker {
     }
   }
 
-  define(name, line, isConst = false) {
+  define(name, line, isConst = false, isFn = false, isAlias = false) {
     if (this.stack.length === 0 || !name) return;
-    this.stack[this.stack.length - 1].vars.set(name, { line, isConst, used: false });
+    // `isFn` because functions share this map with variables here, and MEM-2 is
+    // about VARIABLES: calling a function defined in the file is not reaching
+    // out of scope, it is what a file of functions is for. The Rust analyser
+    // keeps the two in separate tables and never had to say so.
+    this.stack[this.stack.length - 1].vars.set(name, { line, isConst, used: false, isFn, isAlias });
   }
 
   /**
@@ -3600,8 +3609,30 @@ class Checker {
 
   defineOrKeep(name, line, isConst = false) {
     if (this.stack.length === 0 || !name) return;
-    if (this.has(name)) return;
+    if (this.has(name) && !this.onlyVisibleAcrossStrong(name)) return;
     this.define(name, line, isConst);
+  }
+
+  /**
+   * Is this name visible ONLY on the other side of a strong environment?
+   *
+   * `defineOrKeep` leaves a visible name alone because a block does not create
+   * scope (`DI-10`), so `@ 3 { c = c + 1 }` must not shadow the `c` outside it.
+   * That is right for a block and wrong across a function boundary: under MEM-2
+   * a write inside a function makes a LOCAL and never reaches out, so assigning
+   * there introduces a name rather than touching the outer one.
+   *
+   * Without this, a file with `s = ""` at the top and `s = ""` inside a function
+   * never gave the function its own `s`, and the next read of it was reported as
+   * reaching out of scope — which is how corpus/bugs/bug_vm_string_append.zy
+   * found this.
+   */
+  onlyVisibleAcrossStrong(name) {
+    for (let k = this.stack.length - 1; k >= 0; k--) {
+      if (this.stack[k].vars.has(name)) return false;   // found on this side
+      if (this.stack[k].strong) return true;            // crossed out first
+    }
+    return false;
   }
 
   // Mirror Env.hotDef: walk to nearest funcBoundary or root, define there
@@ -3629,7 +3660,10 @@ class Checker {
     } else {
       while (i > 0 && !this.stack[i].funcBoundary) i--;
     }
-    this.stack[i].vars.set(name, { line, isConst: false, used: false });
+    // `isHot`: the marker's whole purpose is to place the name at a boundary
+    // and read it from inside, so reaching it is not a MEM-2 crossing. The Rust
+    // analyser sidesteps this earlier — `ident.hot` never reaches the check.
+    this.stack[i].vars.set(name, { line, isConst: false, used: false, isHot: true });
   }
 
   /** Is this name in scope? Unlike lookup(), it does not mark it used. */
@@ -3692,6 +3726,50 @@ class Checker {
     if (this.lifetimeWarned.has(name)) return;
     this.lifetimeWarned.add(name);
     this.warn('W_LIFETIME', `ambiguous lifetime for '${name}'`, stmt.line, { name });
+  }
+
+  /**
+   * MEM-2 of zymbol-design/PREMISES.md — a variable is visible only inside its
+   * own scope, and a function body is a different scope. Ported from
+   * crates/zymbol-semantic/src/type_check.rs `check_reach_out_of_scope`.
+   *
+   * Error for a named function, warning for a lambda, decided 2026-09-13 with
+   * the measurement in hand: across 1251 files the named function accounted for
+   * four hits and all four were corpus files testing this very rule, while the
+   * lambda accounted for 68 of code that is written and taught.
+   *
+   * `i` is the frame the name was found in. Crossing into it from a strong
+   * environment is the violation; a constant (MEM-1) and a module's own state
+   * (MEM-4) are not crossings at all.
+   */
+  checkReachOutOfScope(name, usageLine) {
+    let i = -1;
+    for (let k = this.stack.length - 1; k >= 0; k--) {
+      if (this.stack[k].vars.has(name)) { i = k; break; }
+    }
+    if (i < 0) return;
+    const frame = this.stack[i];
+    if (frame.moduleScope) return;                 // MEM-4: the module's state
+    const rec = frame.vars.get(name);
+    if (rec?.isConst) return;                      // MEM-1: constants are global
+    if (rec?.isFn) return;                         // a function, not a variable
+    if (rec?.isAlias) return;                      // a module alias, not a variable
+    if (rec?.isHot) return;                        // `°name` lives at a boundary by design
+    // The innermost strong environment between the use and the definition.
+    let strong = null;
+    for (let k = this.stack.length - 1; k > i; k--) {
+      if (this.stack[k].strong) { strong = this.stack[k].strong; break; }
+    }
+    if (!strong) return;
+    if (strong === 'lambda') {
+      this.warn('E_SCOPE', `'${name}' is read from outside this lambda`, usageLine,
+        { name },
+        `a lambda is a self-contained space: pass '${name}' as a parameter rather than capturing it. Still a warning while the rule for lambdas is decided — for a named function it is an error`);
+    } else {
+      this.error('E_SCOPE', `'${name}' is read from outside this function`, usageLine,
+        { name },
+        `a function is a self-contained space: a value crosses into it as a parameter, never by being in view — pass '${name}' as one`);
+    }
   }
 
   lookup(name, usageLine) {
@@ -3804,7 +3882,7 @@ class Checker {
     this.checkNameCollisions(this.ast.body);
     this.push(false);
     for (const stmt of this.ast.body) {
-      if (stmt.type === 'FuncDecl') this.define(stmt.name, stmt.line);
+      if (stmt.type === 'FuncDecl') this.define(stmt.name, stmt.line, false, true);
     }
     for (const stmt of this.ast.body) this.checkStmt(stmt);
     // GAP-ZYB-006: a `<~` at the top level ends the program, and its value is
@@ -3951,7 +4029,10 @@ class Checker {
       }
 
       case 'Import': {
-        if (stmt.alias) this.define(stmt.alias, stmt.line, false);
+        // A module alias is not a variable — the Rust analyser keeps aliases in
+        // their own set, so MEM-2 never sees one. `m::f()` inside a function is
+        // not reaching out of scope.
+        if (stmt.alias) this.define(stmt.alias, stmt.line, false, false, true);
         return;
       }
 
@@ -4139,7 +4220,11 @@ class Checker {
       }
 
       case 'FuncDecl': {
-        this.push(false); // named fns can access outer scope (module aliases, globals)
+        // MEM-2: a named function is a strong environment. It still reaches
+        // module aliases and functions — those are not variables — but not the
+        // file's variables. The comment here used to read 'named fns can access
+        // outer scope', which was the rule between 2026-08-24 and 2026-09-13.
+        this.push(false, false, false, 'function');
         this.funcDepth++;
         // A function body is a loop-context boundary: the caller's loops are
         // not in scope, so `f() { @! }` is an error even when every call site
@@ -4283,6 +4368,12 @@ class Checker {
         }
         const info = this.lookup(expr.name, expr.line);
         if (!info) this.error('E_VAR', `undefined variable '${expr.name}'`, expr.line, { name: expr.name }, Checker.HELP_UNDEFINED);
+        // MEM-2, at the same place the Rust analyser checks it: reading an
+        // identifier. Not in `lookup`, which assignments also go through —
+        // writing inside a function makes a local and never reaches out, so it
+        // is not a crossing. Putting it there reported every `x = 1` written in
+        // a function whose name also existed in the file.
+        else this.checkReachOutOfScope(expr.name, expr.line);
         return;
       }
 
@@ -4363,8 +4454,11 @@ class Checker {
       }
 
       case 'Lambda': {
-        // Lambdas are closures — use funcBoundary=false so outer vars remain accessible
-        this.push(false);
+        // MEM-6 makes a lambda a strong environment too, but reaching out of
+        // one is still a WARNING while that half is decided: the capture is
+        // idiomatic and taught (web/examples/lambdas/closure.zy is one of 68
+        // sites measured on 2026-09-13, against four for named functions).
+        this.push(false, false, false, 'lambda');
         this.funcDepth++;
         // Loop context does not close over, though: a `@!` in a lambda body
         // cannot break the loop the lambda was written inside, so the stack is
