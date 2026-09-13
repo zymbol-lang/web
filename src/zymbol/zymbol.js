@@ -3147,6 +3147,70 @@ class Checker {
    * dropped rather than checked — `f = (x) -> x` after `f(a, b) { }` means a
    * call to `f` is no longer known to reach the declaration.
    */
+  /**
+   * MEM-7 of zymbol-design/PREMISES.md — one name, one thing, inside one strong
+   * environment. A module, a named function and a lambda are strong; every block
+   * is light. Between strong environments the same name is free, which is the
+   * half that makes the rule sustainable: four imported modules that could not
+   * reuse a name would not be. So this walks the file's own level and does not
+   * descend — a parameter reusing a file-level name is two environments, not a
+   * collision.
+   *
+   * Ported from crates/zymbol-semantic/src/type_check.rs `check_name_collisions`.
+   * `f(a, a)` is why these are errors: called as `f(1, 2)` it answered 2 here and
+   * in the tree-walker and 1 in the VM, so the program's value depended on which
+   * engine ran it.
+   */
+  checkNameCollisions(stmts) {
+    if (!Array.isArray(stmts)) return;
+    const functions = new Map();     // name -> line
+    const fileVars = new Map();      // name -> line
+
+    for (const s of stmts) {
+      if (!s) continue;
+      if (s.type === 'FuncDecl') {
+        if (functions.has(s.name)) {
+          this.error('E_NAME', `'${s.name}' is defined twice in this file`, s.line,
+            { name: s.name },
+            `inside one strong environment a name designates one thing (first defined at line ${functions.get(s.name)}) — rename one, or delete the definition this one replaces`);
+        } else {
+          functions.set(s.name, s.line);
+        }
+        const seen = new Map();
+        for (const param of (s.params ?? [])) {
+          const pn = param.name ?? param;
+          if (pn === s.name) {
+            this.error('E_NAME',
+              `parameter '${pn}' has the same name as the function it belongs to`,
+              s.line, { name: pn },
+              'a function and its parameters share one strong environment, so inside the body the name would designate two things');
+          }
+          if (seen.has(pn)) {
+            this.error('E_NAME',
+              `'${pn}' is declared twice in the parameters of '${s.name}'`,
+              s.line, { name: pn },
+              `which argument the name refers to is undefined (first declared at line ${seen.get(pn)}) — the three engines answered differently, so the program's value depended on which one ran it`);
+          } else {
+            seen.set(pn, s.line);
+          }
+        }
+      } else if (s.type === 'VarAssign' && s.name && !fileVars.has(s.name)) {
+        fileVars.set(s.name, s.line);
+      }
+    }
+
+    // A variable and a function under one name. They live in separate tables and
+    // never meet, so both work and a reader cannot tell which a bare name is.
+    for (const [name, fnLine] of functions) {
+      if (!fileVars.has(name)) continue;
+      const varLine = fileVars.get(name);
+      const first = Math.min(varLine, fnLine), second = Math.max(varLine, fnLine);
+      this.error('E_NAME', `'${name}' is both a variable and a function in this file`,
+        second, { name },
+        `a file is one strong environment and a name designates one thing in it (the other is at line ${first}) — they do not collide today only because they are looked up in different tables`);
+    }
+  }
+
   collectArities(stmts) {
     if (!Array.isArray(stmts)) return;
     for (const s of stmts) {
@@ -3737,6 +3801,7 @@ class Checker {
 
   check() {
     this.collectArities(this.ast.body);
+    this.checkNameCollisions(this.ast.body);
     this.push(false);
     for (const stmt of this.ast.body) {
       if (stmt.type === 'FuncDecl') this.define(stmt.name, stmt.line);
