@@ -4454,11 +4454,12 @@ class Checker {
       }
 
       case 'Lambda': {
-        // MEM-6 makes a lambda a strong environment too, but reaching out of
-        // one is still a WARNING while that half is decided: the capture is
-        // idiomatic and taught (web/examples/lambdas/closure.zy is one of 68
-        // sites measured on 2026-09-13, against four for named functions).
-        this.push(false, false, false, 'lambda');
+        // MEM-6, 2026-09-13: a lambda is a LIGHT environment and opens no
+        // boundary of its own, so the isolation is inherited instead of
+        // excepted — at file level it reads the file because it IS that scope,
+        // and inside a function it reads that function, which cannot read the
+        // file. Nothing is global to it at any depth.
+        this.push(false);
         this.funcDepth++;
         // Loop context does not close over, though: a `@!` in a lambda body
         // cannot break the loop the lambda was written inside, so the stack is
