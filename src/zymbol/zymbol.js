@@ -6974,12 +6974,17 @@ export class Interpreter {
         if (obj.type === 'module') {
           if (!obj.exports.has(expr.field)) {
             const modAlias = aliasName ?? 'module';
-            // `.` reads a CONSTANT (`::` calls a function), so the wording is
-            // the Rust engines' one for that half — and it lists what the module
-            // does have, which is what turns the error into a correction. Saying
-            // "does not export function" for `E.n` named the wrong thing, and
-            // after GLB-009 that message is what a reader gets when they try to
-            // reach a module's state from outside.
+            // Which of the two spellings was used decides the wording, because
+            // they ask for different things: `::` calls a FUNCTION and `.` reads
+            // a CONSTANT. Both engines in Rust word them apart and so does this
+            // one; getting it wrong sends the reader looking for the wrong kind
+            // of name. `.` also lists what the module does have, which is what
+            // turns the error into a correction — and after GLB-009 that is the
+            // message someone gets when they try to reach a module's state.
+            if (expr.scoped) {
+              throw new ZyError(
+                `module '${modAlias}' does not export function '${expr.field}'`);
+            }
             const have = [...obj.exports.entries()]
               .filter(([, v]) => v?.type !== 'func')
               .map(([k]) => k).sort();
