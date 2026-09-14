@@ -1218,7 +1218,11 @@ export class Parser {
     if (t.type === 'OUTPUT')   return this.parseOutput();
     if (t.type === 'INPUT')    return this.parseInput();
     if (t.type === 'RETURN')   return this.parseReturn();
-    if (t.type === 'BREAK')    { this.adv(); const bl = this.check('IDENT') ? this.adv().value : null; return { type: 'Break',    label: bl }; }
+    // SYM-8: modality goes last, so a label never follows the `!`. Taking an
+    // IDENT here accepted `@!outer` and ran it as if it were `@:outer!` — the
+    // form the premise exists to refuse — while both Rust engines rejected it.
+    // The labelled break is AT_BREAK, two lines down (ZYJS-015).
+    if (t.type === 'BREAK')    { this.adv(); return { type: 'Break',    label: null }; }
     if (t.type === 'CONTINUE') { this.adv(); const cl = this.check('IDENT') ? this.adv().value : null; return { type: 'Continue', label: cl }; }
     if (t.type === 'AT_BREAK') { const lbl = this.adv().value; return { type: 'Break',    label: lbl }; }
     if (t.type === 'AT_CONT')  { const lbl = this.adv().value; return { type: 'Continue', label: lbl }; }
