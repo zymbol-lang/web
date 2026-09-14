@@ -368,6 +368,24 @@ class ZyError extends Error {
     this.zyLine = line;
   }
 }
+/** The `##` family of an error that carries only a message.
+ *
+ * The rule both Rust engines share (`zymbol_common::errkind`), word for word and
+ * in the same order: a filter `:! ##Type` is part of the language, so the same
+ * failure has to land in the same family everywhere. A native called with the
+ * wrong type raised a plain message, and it was ##Type in the tree-walker and
+ * ##_ here and in the VM (GLB-010).
+ */
+function errorKindOfMessage(message) {
+  const m = String(message ?? '').toLowerCase();
+  if (m.includes('overflow') || m.includes('out of range')) return '##Range';
+  if (m.includes('no key')) return '##Key';
+  if (m.includes('index') || m.includes('out of bounds')) return '##Index';
+  if (m.includes('type')) return '##Type';
+  if (m.includes('division') || m.includes('divide by zero') || m.includes('modulo')) return '##Div';
+  if (m.includes('parse')) return '##Parse';
+  return '##_';
+}
 class ZyRuntimeError extends ZyError {
   constructor(msg, errType = '##_', line) {
     super(msg, line);
@@ -4568,6 +4586,17 @@ class Checker {
         this.checkExpr(expr.obj);
         if (expr.arg)  this.checkExpr(expr.arg);
         if (expr.arg2) this.checkExpr(expr.arg2);
+        // ZYJS-018: the parser puts operands in more places than `arg`, and a
+        // field not visited here is a use nobody counts — `a$[n..2]` and
+        // `"" $++ m` both warned `unused variable`. Every field the parser
+        // builds a CollectionOp with is listed, so one added later has a line
+        // to be added to.
+        for (const sub of [expr.index, expr.start, expr.count, expr.init,
+                           expr.from, expr.to,
+                           expr.range?.from, expr.range?.to, expr.range?.count,
+                           ...(expr.items ?? [])]) {
+          if (sub) this.checkExpr(sub);
+        }
         // Putting something INTO a `[…]` keeps it homogeneous (decision 15),
         // and that is the whole edit family, not one member of it (L46).
         // Until v0.0.9 only the literal and `$+` were checked — in every engine
@@ -6468,7 +6497,11 @@ export class Interpreter {
           result = await this.execBlock(stmt.tryBody, new Env(env));
         } catch (err) {
           if (err instanceof ZyErrorPropagate) throw err; // $!! propagates through try/catch
-          const errType = err.errType ?? '##_';
+          // An error raised with a kind keeps it; one that carries only a message
+          // is read by the words, as the Rust engines read it.
+          const errType = (err.errType && err.errType !== '##_')
+            ? err.errType
+            : errorKindOfMessage(err.message ?? String(err));
           const matched = stmt.catches.find(
             c => !c.errType || c.errType === errType || c.errType === '##_'
           );
@@ -6547,6 +6580,10 @@ export class Interpreter {
           this.tick();
           const sig = await this.execBlock(loop.body, new Env(outer));
           if (brk(sig)) break;
+          // ZYJS-017: this was the one loop kind that never took its own `@>`,
+          // so the signal went up until nothing took it and the program ended
+          // with status 0 and the rest of it unrun.
+          if (cnt(sig)) { await this.maybeYield(); continue; }
           if (sig instanceof ZyReturn) return sig;
           if (sig instanceof ZyBreak || sig instanceof ZyContinue) return sig;
           await this.maybeYield();
@@ -6642,6 +6679,22 @@ export class Interpreter {
     }
   }
 
+  /** Evaluate `nodes` left to right, one at a time.
+   *
+   * ZYJS-016: every one of these sites used to be
+   * `await Promise.all(nodes.map(n => this.eval(n, env)))`, which does not
+   * evaluate in order — it STARTS every evaluation, and each runs to its first
+   * `await` before the next one gets a turn. The values came out right and the
+   * effects did not: `[p(1), p(2)]` with a `p` that prints twice printed
+   * `12a a 12b b`, where the other two engines print `1a 1b 2a 2b`. The engine
+   * runs on one thread, so there was no parallelism to lose.
+   */
+  async evalInOrder(nodes, env) {
+    const out = [];
+    for (const n of nodes) out.push(await this.eval(n, env));
+    return out;
+  }
+
   async eval(expr, env) {
     this.tick();
 
@@ -6720,10 +6773,10 @@ export class Interpreter {
       }
 
       case 'Array':
-        return mkArr(await Promise.all(expr.items.map(i => this.eval(i, env))));
+        return mkArr(await this.evalInOrder(expr.items, env));
 
       case 'Tuple': {
-        const items = await Promise.all(expr.items.map(i => this.eval(i, env)));
+        const items = await this.evalInOrder(expr.items, env);
         return { type: 'tuple', v: items, keys: expr.keys ?? null };
       }
 
@@ -6763,7 +6816,7 @@ export class Interpreter {
         return mkStr(vals.map(v => this.displayOutput(v)).join(''));
       }
       case 'CommaJoin': {
-        const vals = await Promise.all(expr.items.map(i => this.eval(i, env)));
+        const vals = await this.evalInOrder(expr.items, env);
         return mkStr(vals.map(v => this.displayOutput(v)).join(''));
       }
 
@@ -6816,7 +6869,7 @@ export class Interpreter {
         const fn = env.get(expr.callee);
         if (!fn || fn.type !== 'func')
           throw new ZyError(`'${expr.callee}' is not a function`);
-        const args = await Promise.all(expr.args.map(a => this.eval(a, env)));
+        const args = await this.evalInOrder(expr.args, env);
         return await this.callFunc(fn, args, this.buildOutWriteback(fn, expr, env));
       }
 
@@ -6824,7 +6877,7 @@ export class Interpreter {
         const fn = await this.eval(expr.callee, env);
         if (!fn || fn.type !== 'func')
           throw new ZyError(`Expression is not a function`);
-        const args = await Promise.all(expr.args.map(a => this.eval(a, env)));
+        const args = await this.evalInOrder(expr.args, env);
         // Output parameters must be written back here too, not just in 'Call'. A module
         // call `alias::f(x)` parses as Ident(alias) → FieldAccess → CallExpr (the callee
         // is not a bare Ident), so every cross-module call landed in this branch and
@@ -7677,7 +7730,8 @@ export class Interpreter {
       case '$>': {
         const fn = await this.evalCallable(expr.arg, env);
         const items = colItems();
-        const mapped = await Promise.all(items.map(el => this.callFunc(fn,[el])));
+        const mapped = [];
+        for (const el of items) mapped.push(await this.callFunc(fn, [el]));
         return fromStr(mapped);
       }
       case '$|': {
@@ -7736,7 +7790,7 @@ export class Interpreter {
       }
 
       case '$++': {
-        const evalItems = await Promise.all(expr.items.map(i => this.eval(i, env)));
+        const evalItems = await this.evalInOrder(expr.items, env);
         if (col.type === 'str') {
           // displayOutput: $++ builds display text, so it follows the numeral mode.
           let result = col.v;
