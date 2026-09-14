@@ -2854,7 +2854,16 @@ class Env {
 
   get(name) {
     if (this.vars.has(name)) return this.vars.get(name);
-    if (!this.parent) throw new ZyError(`'${name}' is undefined — did you mean '${name}°' (hot definition)?`);
+    if (!this.parent) {
+      // GLB-008: the wording of both Rust engines, verbatim — `zyq consensus`
+      // compares text, and more to the point a reader who wrote `\` needs to be
+      // told that is what happened rather than sent to look for a definition.
+      if (this.wasDestroyed(name)) {
+        throw new ZyError(
+          `use after destruction: variable '${name}' was destroyed after its last use`);
+      }
+      throw new ZyError(`'${name}' is undefined — did you mean '${name}°' (hot definition)?`);
+    }
     if (this.funcBoundary) {
       const v = this.parent._getFuncOnly(name);
       if (v !== undefined) return v;
@@ -2912,6 +2921,9 @@ class Env {
   def(name, value, isConst = false) {
     this.vars.set(name, value);
     if (isConst) this.consts.add(name);
+    // `\` ends a life; it does not burn the name. Assigning revives it, so the
+    // destroyed mark is cleared here and in every parent that holds it.
+    for (let e = this; e; e = e.parent) e.destroyed?.delete(name);
   }
 
   hotDef(name, value) {
@@ -2929,10 +2941,24 @@ class Env {
     if (this.vars.has(name)) {
       this.vars.delete(name);
       this.consts.delete(name);
+      // Remembered so a later read can say WHAT happened. Without this the
+      // message was `'x' is undefined — did you mean 'x°'`, which sends the
+      // reader to look for a definition that was there and suggests a hot
+      // definition, a loop-scope mechanism that has nothing to do with it.
+      // Assigning the name again revives it (`destroyed.delete` in `def`), so
+      // this records a state, not a tombstone.
+      this.destroyed ??= new Set();
+      this.destroyed.add(name);
       return true;
     }
     if (this.parent) return this.parent.destroy(name);
     return false;
+  }
+
+  /** Was this name destroyed by `\` and not assigned since? */
+  wasDestroyed(name) {
+    if (this.destroyed?.has(name)) return true;
+    return this.parent ? this.parent.wasDestroyed(name) : false;
   }
 }
 
@@ -4017,13 +4043,15 @@ class Checker {
         if (stmt.name) {
           const info = this.lookup(stmt.name, stmt.line);
           if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line, { name: stmt.name }, Checker.HELP_UNDEFINED);
-          else {
-            for (let i = this.stack.length - 1; i >= 0; i--) {
-              if (this.stack[i].vars.has(stmt.name)) {
-                this.stack[i].vars.delete(stmt.name); break;
-              }
-            }
-          }
+          // GLB-008: the name is NOT removed here. Deleting it made every later
+          // use an `undefined variable`, which refuses correct programs — a `\`
+          // inside a branch that never runs destroys nothing, and this pass
+          // cannot tell a destruction that HAPPENED from one that was merely
+          // written down. `? #0 { \ x }` then `>> x` prints 1 in both Rust
+          // engines and was refused here.
+          //
+          // So the use-after-destruction check is where the Rust engines have
+          // it: at run time, in Env, which knows what actually ran.
         }
         return;
       }
