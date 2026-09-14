@@ -3791,15 +3791,9 @@ class Checker {
       if (this.stack[k].strong) { strong = this.stack[k].strong; break; }
     }
     if (!strong) return;
-    if (strong === 'lambda') {
-      this.warn('E_SCOPE', `'${name}' is read from outside this lambda`, usageLine,
-        { name },
-        `a lambda is a self-contained space: pass '${name}' as a parameter rather than capturing it. Still a warning while the rule for lambdas is decided — for a named function it is an error`);
-    } else {
-      this.error('E_SCOPE', `'${name}' is read from outside this function`, usageLine,
-        { name },
-        `a function is a self-contained space: a value crosses into it as a parameter, never by being in view — pass '${name}' as one`);
-    }
+    this.error('E_SCOPE', `'${name}' is read from outside this function`, usageLine,
+      { name },
+      `a function is a self-contained space: a value crosses into it as a parameter, never by being in view — pass '${name}' as one`);
   }
 
   lookup(name, usageLine) {
@@ -4490,7 +4484,8 @@ class Checker {
         // boundary of its own, so the isolation is inherited instead of
         // excepted — at file level it reads the file because it IS that scope,
         // and inside a function it reads that function, which cannot read the
-        // file. Nothing is global to it at any depth.
+        // file. Nothing is global to it at any depth, and nothing here has to
+        // say so: not pushing a boundary IS the rule.
         this.push(false);
         this.funcDepth++;
         // Loop context does not close over, though: a `@!` in a lambda body
