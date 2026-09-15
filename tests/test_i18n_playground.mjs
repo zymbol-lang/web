@@ -212,6 +212,35 @@ for (const page of ['index.html', 'overview.html']) {
   diff(LANG_BCP47, inlineBcp47, 'detect.js LANG_BCP47', `${page} BCP47`);
 }
 
+// ─── every diagnostic the engine emits reaches the panel as words ──────────────
+//
+// The Problems panel renders `chk.<code>`, and a code with no entry used to be
+// shown as the key itself — `chk.W_NO_EFFECT` — for 19 of the checker's 28
+// codes (ZYJS-023). It now falls back to the engine's English message, so every
+// code needs an entry OR a place in this list, with the reason a template does
+// not fit: each of these emits several different sentences under one code.
+section('checker codes vs the catalogue');
+{
+  const ENGINE_WORDS = {
+    E_ARRAY_MIX:      'three sentences (element mix, append, write), none with params',
+    E_NAME:           'four sentences, each with its own help naming a line',
+    W_NO_EFFECT:      'a name read and discarded, or a consulting $ operator',
+    W_UNARY_TYPE:     'unary +/- and logical not are worded apart',
+    W_DESTRUCT_SHAPE: 'the pattern, what it accepts and what it got, no params',
+    W_MIX_UNNEEDED:   'names the element type in the sentence, no params',
+  };
+  const engineSrc = readFileSync(join(WEB_DIR, 'src/zymbol/zymbol.js'), 'utf8');
+  const emitted = new Set([...engineSrc.matchAll(/this\.(?:warn|error)\('([A-Z0-9_]+)'/g)].map(m => m[1]));
+  for (const code of emitted) {
+    check(`checker code ${code} has a catalogue entry or a declared reason`,
+      (`chk.${code}` in base) || code in ENGINE_WORDS);
+  }
+  for (const code of Object.keys(ENGINE_WORDS)) {
+    check(`ENGINE_WORDS lists ${code}, which the checker still emits`, emitted.has(code));
+    check(`ENGINE_WORDS lists ${code}, which now has an entry — take it off the list`, !(`chk.${code}` in base));
+  }
+}
+
 // ─── report ──────────────────────────────────────────────────────────────────
 console.log('');
 console.log(failures === 0
