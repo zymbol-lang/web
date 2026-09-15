@@ -4684,7 +4684,13 @@ class Checker {
         this.loopLabels = [];
         for (const p of (stmt.params ?? [])) {
           const pname = typeof p === 'string' ? p : p.name;
-          if (pname) this.define(pname, stmt.line, false);
+          if (pname) {
+            this.define(pname, stmt.line, false);
+            // A signature may fix a parameter an implementation does not use;
+            // neither Rust analyser warns, and the author decided none does
+            // (2026-09-15), as for a lambda's.
+            this.stack[this.stack.length - 1].vars.get(pname).isParam = true;
+          }
         }
         this.checkBlock(stmt.body);
         this.loopLabels = outerLoops;
