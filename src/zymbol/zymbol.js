@@ -7470,7 +7470,11 @@ export class Interpreter {
         pipeEnv.def('_', val);
         const result = await this.eval(expr.rhs, pipeEnv);
         if (result && result.type === 'func') return await this.callFunc(result, [val]);
-        return result;
+        // A call written in place — `f(_, 1)` — has already run with the value
+        // and this is its result. Anything else had to be a function: `5 |> v`
+        // with `v = 5` answered 5 (GLB-015 B).
+        if (expr.rhs?.type === 'Call' || expr.rhs?.type === 'CallExpr') return result;
+        throw new ZyError('pipe operator requires a callable function or lambda');
       }
 
       case 'FieldAccess': {
@@ -8259,8 +8263,15 @@ export class Interpreter {
         return fromStr(kept);
       }
       case '$<': {
-        const fn = await this.evalCallable(expr.arg, env);
+        // The tree-walker's order — initial value, then the lambda — and its
+        // arity rule: a fold takes (accumulator, element). A one-parameter
+        // lambda was called anyway and answered the initial value (GLB-015 A,
+        // decided an arity error, not a collection edge).
         let acc = await this.eval(expr.init, env);
+        const fn = await this.evalCallable(expr.arg, env);
+        if (!fn.native && Array.isArray(fn.params) && fn.params.length !== 2) {
+          throw new ZyError(`reduce lambda requires 2 parameters (accumulator, element), got ${fn.params.length}`);
+        }
         for (const el of colItems()) acc = await this.callFunc(fn,[acc,el]);
         return acc;
       }
