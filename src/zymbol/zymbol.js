@@ -4590,6 +4590,10 @@ class Checker {
       case 'Noop':
       case 'ExportDecl':
       case 'Sleep':
+        // Its operand is read like any expression — the `v` of `@~ v` was
+        // reported unused (GLB-014 E, family ZYJS-018).
+        this.checkExpr(stmt.duration);
+        return;
       case 'ClearScreen':
         return;
 
@@ -6739,7 +6743,13 @@ export class Interpreter {
         return;
 
       case 'Sleep': {
-        const ms = (await this.eval(stmt.duration, env)).v;
+        // A duration is a whole, non-negative number of milliseconds, as the
+        // tree-walker requires; `@~ "x"` and `@~ -1` used to sleep for nothing
+        // (GLB-014 E).
+        const dur = await this.eval(stmt.duration, env);
+        if (dur.type !== 'int') throw new ZyError(`@~ requires integer milliseconds, got ${typeSymbol(dur)}`, stmt.line);
+        if (dur.v < 0) throw new ZyError(`@~ requires non-negative duration, got ${dur.v}`, stmt.line);
+        const ms = dur.v;
         await new Promise(r => {
           const id = setTimeout(r, Math.max(0, Math.trunc(ms)));
           if (this.tui) this.tui._sleepCancel = () => { clearTimeout(id); r(); };
@@ -7039,12 +7049,24 @@ export class Interpreter {
     }
 
     if (loop.kind === 'range') {
-      const from = (await this.eval(loop.from, env)).v;
-      const to   = (await this.eval(loop.to,   env)).v;
-      let step = loop.step ? (await this.eval(loop.step, env)).v : (from <= to ? 1 : -1);
-      if (loop.step && from > to && step > 0) step = -step;
-      if (loop.step && from < to && step < 0) step = -step;
-      if (step === 0) throw new ZyError('Loop step cannot be zero');
+      // The tree-walker's checks, in its order: start and end evaluated, then
+      // the step, then the bounds. Decimals are a ##Type (the author, 2026-09-15)
+      // and a step is positive — its sign never came from the program here:
+      // `-1` was turned round and ran forwards, and `1.5` counted in Floats
+      // (GLB-014 B, H).
+      const fromV = await this.eval(loop.from, env);
+      const toV   = await this.eval(loop.to,   env);
+      const stepV = loop.step ? await this.eval(loop.step, env) : null;
+      if (stepV) {
+        if (stepV.type !== 'int') throw new ZyError(`step must be an integer, got ${typeIdent(stepV)}`, loop.line);
+        if (stepV.v <= 0) throw new ZyError(`step must be positive, got ${stepV.v}`, loop.line);
+      }
+      if (fromV.type !== 'int' || toV.type !== 'int') {
+        throw new ZyError(`range bounds must be integers, got ${typeIdent(fromV)} and ${typeIdent(toV)}`, loop.line);
+      }
+      const from = fromV.v, to = toV.v;
+      const magnitude = stepV ? stepV.v : 1;
+      const step = from <= to ? magnitude : -magnitude;
       // The iterator does not shadow a name that already exists outside: the loop
       // writes to it, and it keeps the last value assigned — including when the
       // loop ends early through `@!` (REFERENCE.md L24, settled for the Rust
@@ -7086,7 +7108,7 @@ export class Interpreter {
       else if (isDict(it))
         items = it.keys.map(k => mkStr(k));
       else if (it.type === 'tuple') items = it.v;
-      else throw new ZyError(`Cannot iterate over ${it.type}`);
+      else throw new ZyError(`can only iterate over ranges, arrays, strings, tuples and dictionaries, got ${typeIdent(it)}`, loop.line);
 
       // Same rule as the range loop above: a pre-existing name keeps the last
       // element the loop bound to it.
@@ -8267,9 +8289,16 @@ export class Interpreter {
         return false;
       }
       case 'range': {
-        const from = (await this.eval(pattern.from, env)).v;
-        const to   = (await this.eval(pattern.to,   env)).v;
-        return val.v >= from && val.v <= to;
+        const fromV = await this.eval(pattern.from, env);
+        const toV   = await this.eval(pattern.to,   env);
+        // Ints against an Int, Chars against a Char, as match_stmt.rs requires.
+        // A String used to be compared with the numbers and fall to `_`
+        // (GLB-014 F).
+        const kind = val.type;
+        if (!((kind === 'int' || kind === 'char') && fromV.type === kind && toV.type === kind)) {
+          throw new ZyError('range pattern type mismatch', pattern.line ?? null);
+        }
+        return val.v >= fromV.v && val.v <= toV.v;
       }
       case 'comparison': {
         const pv = (await this.eval(pattern.value, env)).v;
