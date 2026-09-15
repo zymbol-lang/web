@@ -444,12 +444,21 @@ export class Lexer {
         while (this.pos < this.src.length && this.ch() !== '\n') this.consume();
         continue;
       }
-      // block comment /* ... */
+      // block comment /* ... */ — they NEST, as in the Rust lexer, and one
+      // left open is an error. It used to end at the first `*/` and swallow an
+      // unclosed one to the end of the file: `/* abierto` ran as an empty
+      // program, exit 0 (ZYJS-020).
       if (this.ch() === '/' && this.ch(1) === '*') {
+        const commentLine = this.line;
         this.consume(); this.consume();
-        while (this.pos < this.src.length) {
-          if (this.ch() === '*' && this.ch(1) === '/') { this.consume(); this.consume(); break; }
-          this.consume();
+        let depth = 1;
+        while (this.pos < this.src.length && depth > 0) {
+          if (this.ch() === '/' && this.ch(1) === '*') { this.consume(); this.consume(); depth++; }
+          else if (this.ch() === '*' && this.ch(1) === '/') { this.consume(); this.consume(); depth--; }
+          else this.consume();
+        }
+        if (depth > 0) {
+          throw new ZyStaticError('Unterminated multi-line comment', commentLine, 'add */ to close the comment');
         }
         continue;
       }
@@ -467,6 +476,14 @@ export class Lexer {
               this.consume(); this.consume(); this.consume(); this.consume();
               tok('SET_NUMERAL_MODE', base); continue;
             }
+          }
+          if (dv1 > 1) {
+            // `#2` used to vanish without a sound, and the parser then met the
+            // next token with nothing before it (ZYJS-020).
+            throw new ZyStaticError(
+              `invalid boolean literal: digit ${c1} is not valid after '#'`,
+              this.line,
+              "use '#0' (or its Unicode equivalent) for false, '#1' for true");
           }
           this.consume(); this.consume();
           if (dv1 === 0) { tok('BOOL', false); continue; }
@@ -768,6 +785,14 @@ export class Lexer {
       }
       if (single[c]) { this.consume(); tok(single[c], c); continue; }
 
+      // A lone `&` is refused, as the Rust lexer refuses it; it used to vanish,
+      // and `1 & 2` printed `12` (ZYJS-020). It is the only operator character
+      // Rust has no token for. The rest still fall through and vanish — `~`
+      // among them, which the parameter mark `a~` quietly relies on here while
+      // Rust lexes it as a token (ZYJS-020 § what still vanishes).
+      if (c === '&') {
+        throw new ZyStaticError(`unexpected character: '${c}'`, this.line);
+      }
       this.consume();
     }
 
@@ -791,7 +816,7 @@ export class Lexer {
         let hex = '';
         while (/[0-9a-fA-F]/.test(this.ch())) hex += this.consume();
         if (!hex) throw new ZyStaticError(`expected ${'hexadecimal'} digits after base prefix`, this.line);
-        toks.push({ type: 'CHAR', value: String.fromCodePoint(parseInt(hex, 16)), line: this.line }); return;
+        toks.push({ type: 'CHAR', value: this.codePointChar(hex, 16, 'hexadecimal'), line: this.line }); return;
       }
       if (next === 'b' || next === 'B') {
         if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 2 }, line: this.line }); return; }
@@ -799,7 +824,7 @@ export class Lexer {
         let bin = '';
         while (this.ch() === '0' || this.ch() === '1') bin += this.consume();
         if (!bin) throw new ZyStaticError(`expected ${'binary'} digits after base prefix`, this.line);
-        toks.push({ type: 'CHAR', value: String.fromCodePoint(parseInt(bin, 2)), line: this.line }); return;
+        toks.push({ type: 'CHAR', value: this.codePointChar(bin, 2, 'binary'), line: this.line }); return;
       }
       if (next === 'o' || next === 'O') {
         if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 8 }, line: this.line }); return; }
@@ -807,7 +832,7 @@ export class Lexer {
         let oct = '';
         while (/[0-7]/.test(this.ch())) oct += this.consume();
         if (!oct) throw new ZyStaticError(`expected ${'octal'} digits after base prefix`, this.line);
-        toks.push({ type: 'CHAR', value: String.fromCodePoint(parseInt(oct, 8)), line: this.line }); return;
+        toks.push({ type: 'CHAR', value: this.codePointChar(oct, 8, 'octal'), line: this.line }); return;
       }
       if (next === 'd' || next === 'D') {
         if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 10 }, line: this.line }); return; }
@@ -815,7 +840,7 @@ export class Lexer {
         let dec = '';
         while (/[0-9]/.test(this.ch())) dec += this.consume();
         if (!dec) throw new ZyStaticError(`expected ${'decimal'} digits after base prefix`, this.line);
-        toks.push({ type: 'CHAR', value: String.fromCodePoint(parseInt(dec, 10)), line: this.line }); return;
+        toks.push({ type: 'CHAR', value: this.codePointChar(dec, 10, 'decimal'), line: this.line }); return;
       }
     }
     let value = 0;
@@ -826,10 +851,15 @@ export class Lexer {
     // Rust engines read, and what `>>` then prints.
     let intText = '';
     let activeBlock = ASCII_BASE;
+    const MIXED_SCRIPTS = () => new ZyStaticError(
+      'mixed digit scripts in numeric literal', this.line,
+      'all digits in a literal must belong to the same numeral system (e.g. all ASCII or all Devanagari)');
     while (this.pos < this.src.length) {
       const dv = digitValue(this.ch());
       if (dv < 0) break;
       if (intText === '') activeBlock = digitBlockBase(this.ch());
+      // One literal, one script: `1٢` used to read as 12 (ZYJS-020).
+      else if (digitBlockBase(this.ch()) !== activeBlock) throw MIXED_SCRIPTS();
       value = value * 10 + dv;
       intText += String(dv);
       this.consume();
@@ -844,17 +874,18 @@ export class Lexer {
       while (this.pos < this.src.length) {
         const dv = digitValue(this.ch());
         if (dv < 0) break;
+        if (intText !== '' && digitBlockBase(this.ch()) !== activeBlock) throw MIXED_SCRIPTS();
         fracText += String(dv);
         this.consume();
       }
-      const sci = this.readExponentSuffix();
+      const sci = this.readExponentSuffix(`${intText}.${fracText}`);
       const f = parseFloat(`${intText || '0'}.${fracText || '0'}${sci}`);
       toks.push({ type: 'FLOAT', value: f, line: this.line });
     } else {
       // `1e10` with no decimal point is a Float too, exactly as the Rust engines
       // read it (`1e10#?` is `##.`). This case used to fall through to the integer
       // branch, and `e10` was then lexed as an identifier — "undefined variable 'e10'".
-      const sci = this.readExponentSuffix();
+      const sci = this.readExponentSuffix(intText);
       if (sci) {
         toks.push({ type: 'FLOAT', value: parseFloat(value + sci), line: this.line });
         return;
@@ -872,15 +903,38 @@ export class Lexer {
     }
   }
 
+  // The character a base literal names. A surrogate (`0xD800`) or a value past
+  // U+10FFFF is not one, and both Rust engines refuse it; this used to hand
+  // `String.fromCodePoint` whatever it got, and printed `�` (ZYJS-020).
+  codePointChar(digits, radix, baseName) {
+    const code = parseInt(digits, radix);
+    if (code > 0xFFFFFFFF) {
+      throw new ZyStaticError(`invalid ${baseName} literal: ${digits}`, this.line);
+    }
+    if (code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) {
+      throw new ZyStaticError(
+        `invalid Unicode code point: 0x${code.toString(16).toUpperCase()} (${baseName} ${digits})`,
+        this.line);
+    }
+    return String.fromCodePoint(code);
+  }
+
   // The `e[+-]?digits` tail of a numeric literal, or '' when there is none.
   //
   // Requires at least one digit after the `e`, so `1 e|x|` — the data operator —
   // keeps its meaning and only a real exponent is consumed.
-  readExponentSuffix() {
+  readExponentSuffix(numberText) {
     if (this.ch() !== 'e' && this.ch() !== 'E') return '';
     let k = 1;
     if (this.ch(k) === '+' || this.ch(k) === '-') k++;
-    if (!/[0-9]/.test(this.ch(k) ?? '')) return '';
+    if (!/[0-9]/.test(this.ch(k) ?? '')) {
+      // An `e` right against the digits opens an exponent in both Rust
+      // engines, digits or not, and `1.0e+` is refused there. Here the `e`
+      // used to be left for the next token (ZYJS-020).
+      throw new ZyStaticError(
+        `invalid float literal: '${numberText}${Array.from({ length: k }, (_, i) => this.ch(i)).join('')}'`,
+        this.line);
+    }
     let sci = this.consume();
     if (this.ch() === '+' || this.ch() === '-') sci += this.consume();
     while (/[0-9]/.test(this.ch())) sci += this.consume();
@@ -909,7 +963,12 @@ export class Lexer {
         if (cur) { parts.push({ t: 'lit', v: cur }); cur = ''; }
         this.consume();
         let depth = 1, inner = '';
-        while (this.pos < this.src.length && depth > 0) {
+        while (depth > 0) {
+          // The closing quote or the end of the file before the `}`: the
+          // interpolation never closed, as the Rust lexer says (ZYJS-020).
+          if (this.pos >= this.src.length || this.ch() === '"') {
+            throw new ZyStaticError('unterminated string interpolation', startLine, 'close the interpolation with }');
+          }
           const ch = this.consume();
           if      (ch === '{') { depth++; inner += ch; }
           else if (ch === '}') { depth--; if (depth > 0) inner += ch; }
@@ -930,11 +989,14 @@ export class Lexer {
             startLine,
             `provide a variable name: {varname}`);
         }
-        if (!/^[^\s{}\[\]().,;:"'`!?@#$|&~\\+\-*/%^<>=]+$/.test(inner)) {
-          throw new ZyError(
-            `invalid character in string interpolation\n` +
-            `= help: interpolation must be {identifier} — use \\{ for a literal brace`,
-            startLine);
+        // An identifier, by the rule the checker and `readIdent` use: never a
+        // digit first. The old test only excluded operators, so `"a{1}"`
+        // passed and printed `a1` (ZYJS-020).
+        if (!/^[\p{L}\p{M}\p{So}\p{Co}_][\p{L}\p{M}\p{N}\p{So}\p{Co}_\u200c\u200d]*$/u.test(inner)) {
+          throw new ZyStaticError(
+            'invalid character in string interpolation',
+            startLine,
+            'interpolation must be {identifier} — use \\{ for a literal brace');
         }
         parts.push({ t: 'expr', v: inner });
       } else if (this.ch() === '}') {
@@ -945,11 +1007,10 @@ export class Lexer {
         // printed happily while the same JSON with neither escape was refused.
         // Two spellings of one string, one accepted and one not, with nothing to
         // say why.
-        throw new ZyError(
-          `unmatched '}' in string\n` +
-          `= help: the escape is symmetric — write \\} for a literal brace, ` +
-          `as \\{ is for the opening one`,
-          this.line);
+        throw new ZyStaticError(
+          `unmatched '}' in string`,
+          this.line,
+          `the escape is symmetric — write \\} for a literal brace, as \\{ is for the opening one`);
       } else {
         cur += this.consume();
       }
@@ -962,9 +1023,17 @@ export class Lexer {
   readChar(toks) {
     this.consume();
     let ch = '';
+    // A quote with nothing after it, or a backslash with nothing after it:
+    // `c = '` at the end of the file only warned about `c` (ZYJS-020).
+    if (this.pos >= this.src.length) throw new ZyStaticError('unterminated char literal', this.line);
     if (this.ch() === '\\') {
       this.consume();
+      if (this.pos >= this.src.length) throw new ZyStaticError('unterminated char literal', this.line);
       const e = this.consume();
+      if (!['n', 't', 'r', "'", '\\', '0'].includes(e)) {
+        // The Rust table and nothing else: `'\q'` used to be the letter q.
+        throw new ZyStaticError(`invalid escape sequence: '\\${e}'`, this.line);
+      }
       // Escape table mirrors Lexer::lex_char in zymbol-lexer/src/literals.rs. This used to
       // take the character after the backslash verbatim, so '\n' lexed as the letter "n" —
       // a pattern like `'\n' => …` then silently never matched a real newline (and did match
@@ -979,7 +1048,10 @@ export class Lexer {
     } else {
       ch = this.consume();
     }
-    if (this.ch() === "'") this.consume();
+    // One character and its closing quote. `'ab'` used to close nothing and
+    // leave `b'` to be read as a name.
+    if (this.ch() !== "'") throw new ZyStaticError("expected closing ' for char literal", this.line);
+    this.consume();
     toks.push({ type: 'CHAR', value: ch, line: this.line });
   }
 
