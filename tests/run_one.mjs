@@ -194,7 +194,13 @@ const onOutput = s => { out += s; };
 const ansiTui = {
   active: false,
   aborted: false,
-  enter() {}, leave() {},
+  // `>>|` takes over a terminal. Through a pipe there is none, and the CLI
+  // fails there (crossterm cannot enable raw mode); so does this context, or a
+  // TUI block would run here as plain code where the CLI refuses it (GLB-018 C).
+  enter() {
+    if (!process.stdin.isTTY || !process.stdout.isTTY) throw new Error('not a terminal');
+  },
+  leave() {},
   clear() { out += '\x1b[2J\x1b[1;1H'; },
   printAt(row, col, text, bks, fg, bg) {
     let style = '';

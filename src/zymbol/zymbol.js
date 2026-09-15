@@ -4488,6 +4488,9 @@ class Checker {
           }
         }
         for (const item of (stmt.items ?? [])) this.checkExpr(item);
+        // The position slots are read too — the `v` of `>>~ (v, 1)` was
+        // reported unused (GLB-018 B, family ZYJS-018).
+        for (const slot of (stmt.slots ?? [])) if (slot) this.checkExpr(slot);
         return;
       }
 
@@ -6783,13 +6786,21 @@ export class Interpreter {
       case 'OutputPos': {
         const { slots, items } = stmt;
         let row = null, col = null, bks = 0, fg = null, bg = null;
-        if (slots.length === 1 && slots[0]?.type === 'Ident') {
-          const tv = await this.eval(slots[0], env);
+        const lone = slots.length === 1 && slots[0]?.type === 'Ident' ? await this.eval(slots[0], env) : null;
+        if (lone?.type === 'tuple') {
+          const tv = lone;
           const get = i => tv.v?.[i]?.v ?? null;
           row = get(0); col = get(1); bks = get(2) ?? 0; fg = get(3); bg = get(4);
         } else {
+          // A written slot is an Int, checked as soon as it is evaluated, as
+          // io.rs does; only a lone slot may carry the dense tuple. `("a", 1)`
+          // used to print `x1` here (GLB-018 B).
           const vals = [];
-          for (const s of slots) vals.push(s ? await this.eval(s, env) : null);
+          for (const s of slots) {
+            const v = s ? (lone && s === slots[0] ? lone : await this.eval(s, env)) : null;
+            if (v != null && v.type !== 'int') throw new ZyError(`>>~ slot expects Int, got ${this.display(v)}`, stmt.line);
+            vals.push(v);
+          }
           if (vals[0] != null) row = vals[0].v;
           if (vals[1] != null) col = vals[1].v;
           if (vals[2] != null) bks = vals[2].v;
@@ -6805,7 +6816,14 @@ export class Interpreter {
       }
 
       case 'TuiBlock': {
-        if (!this.tui) return await this.execBlock(stmt.body, new Env(env));
+        // With no screen to take over there is no alternate screen, and both
+        // Rust engines stop there (LLM.md: `>>|` errors without a tty). This
+        // used to run the block as if it were plain code (GLB-018 C). The
+        // playground always provides one.
+        if (!this.tui) {
+          const why = 'no terminal';
+          throw new ZyError(`failed to enable raw mode: ${why}`, stmt.line);
+        }
         // A TUI program is interactive and legitimately long-running, so the block is
         // exempt from the execution limits. Raising the ceilings is not enough: `steps`
         // and `outputBytes` are monotonic counters for the whole program, so work done
@@ -6822,7 +6840,14 @@ export class Interpreter {
         this.maxSteps        = Infinity;
         this.maxBytes        = Infinity;
         this.maxInfiniteIter = Infinity;
-        this.tui.enter();
+        // A context that cannot take the screen says so from `enter()`, the way
+        // crossterm fails without a tty; it reaches the program as the Rust
+        // engines' runtime error instead of an internal one (GLB-018 C).
+        try { this.tui.enter(); }
+        catch (e) {
+          this.maxSteps = savedMax; this.maxBytes = savedByte; this.maxInfiniteIter = savedIter;
+          throw new ZyError(`failed to enable raw mode: ${e?.message ?? e}`, stmt.line);
+        }
         try {
           await this.execBlock(stmt.body, new Env(env));
         } finally {
