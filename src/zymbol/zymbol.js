@@ -6313,6 +6313,13 @@ function collectIdentNames(node, out) {
   // the scope exactly like any other — it is how `compose(f, g) { <~ x -> f(g(x)) }`
   // reaches its own parameters from inside the lambda it returns.
   if (node.type === 'Call' && typeof node.callee === 'string') out.add(node.callee);
+  // A name read inside a string — the `{log}` of `"{log}{s}"` — is a string
+  // PART, not an Ident node, and the walk passed over it. A lambda then did not
+  // capture it, `{log}` could not resolve at the call, and the evaluation of the
+  // interpolation fell back to the literal text: `log` held "{log}A" here and "A"
+  // in both Rust engines, invisibly, since the program never printed it
+  // (found with GLB-025, step 2.15).
+  if (node.t === 'expr' && typeof node.v === 'string') out.add(node.v.trim());
   for (const k of Object.keys(node)) {
     if (k === 'type' || k === 'line') continue;
     collectIdentNames(node[k], out);
@@ -8631,7 +8638,11 @@ export class Interpreter {
           const expr = new Parser(toks).parseExpr();
           // displayOutput: "{n}" renders in the active numeral script.
           s += this.displayOutput(await this.eval(expr, env));
-        } catch {
+        } catch (e) {
+          // A destroyed name is refused as `x` alone is — the catch used to
+          // swallow that too and leave `{x}` in the text (GLB-025). Inside a
+          // function the identifier's refusal is the "undefined" one, so both.
+          if (/^use after destruction|is undefined — did you mean/.test(String(e?.message ?? ''))) throw e;
           s += `{${part.v}}`;
         }
       }
