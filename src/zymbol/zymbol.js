@@ -1835,6 +1835,7 @@ export class Parser {
   }
 
   parseMatchExpr() {
+    const line = this.peek().line;
     this.adv();
     const expr = this.parseExpr();
     this.eat('LBRACE', "expected '{' after match expression", 'match syntax: ?? expr { pattern => value }');
@@ -1843,7 +1844,7 @@ export class Parser {
       arms.push(this.parseMatchArm());
     }
     this.eat('RBRACE', "expected '}' to close match expression", 'match expression must be enclosed in braces');
-    return { type: 'Match', expr, arms };
+    return { type: 'Match', expr, arms, line };
   }
 
   parseMatchArm() {
@@ -4742,6 +4743,13 @@ class Checker {
         // `$` builds a value, so a statement that is only one throws it away.
         // The operator is pure, so this holds even with a call inside it — the
         // call's effect still happens and the `$#` around it is still pointless.
+        // A `??` alone on a line whose arms give values throws them away — the
+        // warning the Rust analyzer gives (GLB-016).
+        if (expr?.type === 'Match' && (expr.arms ?? []).some(a => a.body?.type === 'expr')) {
+          this.warn('W_UNUSED_MATCH', 'match expression returns values but result is unused',
+            expr.line ?? stmt.line, null,
+            'assign it — `r = ?? v { … }` — or give each arm a block: `pattern => { … }`');
+        }
         if (expr?.type === 'CollectionOp' && Parser.CONSULT_OPS.has(expr.op)) {
           this.warn('W_NO_EFFECT',
             `this statement does nothing: \`${expr.op}\` builds a value and it is discarded`,
@@ -7563,7 +7571,9 @@ export class Interpreter {
 
       case 'Match': {
         const arm = await this.selectMatchArm(expr, env);
-        if (!arm) return mkUnit();
+        // No arm matched: that aborts, as in both Rust engines and as LLM.md
+        // says. A `##_` nobody computed used to flow on (GLB-016).
+        if (!arm) throw new ZyError('no pattern matched in match expression', expr.line);
         if (arm.body.type === 'block') {
           const sig = await this.execBlock(arm.body.stmts, new Env(env));
           if (sig === undefined) return mkUnit();

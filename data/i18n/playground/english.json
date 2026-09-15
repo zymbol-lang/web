@@ -35,6 +35,8 @@
     "E_SCOPE": "cannot access underscore variable '{name}' from inner scope",
     "E013": "executable statement not allowed in module body",
     "W_UNUSED": "unused variable '{name}'",
+    "W_UNUSED_MATCH": "match expression returns values but result is unused",
+    "W_UNUSED_MATCH_help": "assign it — `r = ?? v { … }` — or give each arm a block: `pattern => { … }`",
     "W_LIFETIME": "ambiguous lifetime for '{name}'",
     "W_LIFETIME_note": "variable is modified inside a loop",
     "W_LIFETIME_help": "consider using explicit lifetime annotation"

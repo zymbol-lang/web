@@ -34,6 +34,8 @@
     "E_SCOPE": "no se puede acceder a la variable de guion bajo '{name}' desde un ámbito interior",
     "E013": "no se permiten sentencias ejecutables en el cuerpo de un módulo",
     "W_UNUSED": "variable sin usar: '{name}'",
+    "W_UNUSED_MATCH": "el ?? da valores y el resultado no se usa",
+    "W_UNUSED_MATCH_help": "asígnalo — `r = ?? v { … }` — o da a cada brazo un bloque: `patrón => { … }`",
     "W_LIFETIME": "tiempo de vida ambiguo para '{name}'",
     "W_LIFETIME_note": "la variable se modifica dentro de un bucle",
     "W_LIFETIME_help": "considera anotar el fin de vida explícitamente"
