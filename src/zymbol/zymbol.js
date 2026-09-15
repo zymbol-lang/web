@@ -3733,7 +3733,11 @@ class Checker {
   pop() {
     const frame = this.stack.pop();
     for (const [name, info] of frame.vars) {
-      if (!info.used && !name.startsWith('_') && !info.isConst) {
+      // Neither Rust analyser warns about a module alias nobody used or a
+      // lambda parameter the lambda ignores — a lambda takes what the operation
+      // hands it (decided 2026-09-15). This one did, and a module alias was
+      // called a "variable" as well.
+      if (!info.used && !name.startsWith('_') && !info.isConst && !info.isAlias && !info.isParam) {
         this.warn('W_UNUSED',
           `unused variable '${name}'\n` +
           `= help: consider removing this variable or prefixing with '_' if intentionally unused`,
@@ -4923,7 +4927,10 @@ class Checker {
         this.loopLabels = [];
         for (const p of (expr.params ?? [])) {
           const pname = typeof p === 'string' ? p : p.name;
-          if (pname) this.define(pname, expr.line, false);
+          if (pname) {
+            this.define(pname, expr.line, false);
+            this.stack[this.stack.length - 1].vars.get(pname).isParam = true;
+          }
         }
         const body = expr.body;
         if (Array.isArray(body))         this.checkBlock(body);
@@ -8272,7 +8279,10 @@ export class Interpreter {
         for (let i = 1; i < items.length; i++) {
           for (let j = i; j > 0; j--) {
             const less = await this.callFunc(cmpFn, [items[j-1], items[j]]);
-            if (!this.truthy(less)) { const tmp = items[j-1]; items[j-1] = items[j]; items[j] = tmp; }
+            // A comparator answers a Bool; truthiness stood in for one here and
+            // `a - b` sorted (GLB-024, decided a ##Type).
+            if (less.type !== 'bool') throw new ZyError(`sort comparator must return a Bool, got ${typeIdent(less)}`);
+            if (!less.v) { const tmp = items[j-1]; items[j-1] = items[j]; items[j] = tmp; }
             else break;
           }
         }
