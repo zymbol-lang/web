@@ -6255,7 +6255,8 @@ function buildStdlibModule(name, vfs = null) {
     exports.set('width', { type: 'func', name: 'width', native: true, call: args => {
       const v = args[0];
       if (v?.type === 'str' || v?.type === 'char') return mkInt(displayWidth(v.v));
-      throw new ZyError('term::width: expected a String or Char');
+      // The type it got, as both Rust engines say it (ZYJS-019).
+      throw new ZyError(`term::width: expected a String or Char, got ${v ? typeSymbol(v) : '##_'}`);
     }});
     exports.set('pad_left', { type: 'func', name: 'pad_left', native: true, call: args => {
       if (args[0]?.type !== 'str' || args[1]?.type !== 'int') throw new ZyError('term::pad_left: expected (String, ###)');
