@@ -560,6 +560,11 @@ export class Lexer {
             }
           } else if (c1 === ',') {
             const c2 = this.ch(2);
+            if (c2 !== '|' && c2 !== '.' && c2 !== '!') {
+              const prefix = '#,';
+              throw new ZyStaticError(`expected '|' after format operator '${prefix}'`, this.line,
+                `format expression syntax: ${prefix}|expr| or ${prefix}.N|expr|`);
+            }
             if (c2 === '|') { kind = 'comma'; advance = 3; }
             else if (c2 === '.') {
               const { d, i } = readDigits(3);
@@ -1145,9 +1150,17 @@ export class Parser {
   }
   check(type) { return this.peek().type === type; }
   match(...types) { return types.includes(this.peek().type) ? this.adv() : null; }
-  eat(type, msg) {
-    if (!this.check(type))
-      throw new ZyError(msg ?? `Expected ${type}, got '${this.peek().value ?? this.peek().type}'`, this.peek().line);
+  // `msg` and `help` are the Rust parser's words for this spot, when the call
+  // site has them. The fallback names this engine's token, and a STR token's
+  // value is its parts array — which is how `[object Object]` reached readers
+  // (ZYJS-021).
+  eat(type, msg, help = null) {
+    if (!this.check(type)) {
+      if (msg) throw new ZyStaticError(msg, this.peek().line, help);
+      const v = this.peek().value;
+      const shown = (v !== null && typeof v === 'object') ? 'string' : (v ?? this.peek().type);
+      throw new ZyError(`Expected ${type}, got '${shown}'`, this.peek().line);
+    }
     return this.adv();
   }
 
@@ -1229,7 +1242,7 @@ export class Parser {
   }
 
   parseBlock() {
-    this.eat('LBRACE');
+    this.eat('LBRACE', "expected '{' to start block", 'blocks must be enclosed in braces');
     const stmts = this.parseStmtList();
     this.eat('RBRACE');
     // A function is free in a script or part of a module — never of a block.
@@ -1378,7 +1391,7 @@ export class Parser {
     if (t.type === 'AT_BREAK') { const lbl = this.adv().value; return { type: 'Break',    label: lbl }; }
     if (t.type === 'AT_CONT')  { const lbl = this.adv().value; return { type: 'Continue', label: lbl }; }
     if (t.type === 'ATSLEEP')    { this.adv(); return { type: 'Sleep', duration: this.parseExpr() }; }
-    if (t.type === 'CLI_ARGS')    { this.adv(); return { type: 'CliArgs', variable: this.eat('IDENT').value }; }
+    if (t.type === 'CLI_ARGS')    { this.adv(); return { type: 'CliArgs', variable: this.eat('IDENT', 'expected variable name after ><', 'CLI args capture syntax: ><variable_name').value }; }
     if (t.type === 'OUTPUT_CLEAR') { this.adv(); return { type: 'ClearScreen' }; }
     if (t.type === 'OUTPUT_GATE')  return this.parseTuiBlock();
     if (t.type === 'OUTPUT_POS')   return this.parseOutputPos();
@@ -1536,7 +1549,8 @@ export class Parser {
     if (!cast && this.check('DATA_OP') && this.peek().value?.kind === 'eval') {
       this.adv(); typed = true;
     }
-    const varTok = this.eat('IDENT');
+    const varTok = this.eat('IDENT', 'expected variable name in input statement',
+      'input syntax: << var  |  << #|var|  |  << "prompt" var  |  << ##.(5,2) "prompt" var');
     if (typed && !this.match('VBAR')) {
       // `<< #|n` with no closing bar was accepted and sat waiting for input
       // (ZYJS-021); both Rust parsers refuse it before anything runs.
@@ -1578,17 +1592,22 @@ export class Parser {
   parseOptOneUintArg() {
     if (!this.check('LPAREN')) return null;
     this.adv();
-    const n = this.eat('NUM').value;
-    this.eat('RPAREN');
+    const n = this.eatSizeArg();
+    this.eat('RPAREN', "expected ')' to close the size argument list");
     return n;
+  }
+
+  eatSizeArg() {
+    return this.eat('NUM', 'expected a non-negative integer size argument',
+      'input typespec sizes are non-negative integers, e.g. ##.(5,2) or ###(4)').value;
   }
 
   parseTwoUintArgs() {
     this.eat('LPAREN');
-    const a = this.eat('NUM').value;
-    this.eat('COMMA');
-    const b = this.eat('NUM').value;
-    this.eat('RPAREN');
+    const a = this.eatSizeArg();
+    this.eat('COMMA', "expected ',' between the two size arguments", 'decimal typespec syntax: ##.(total, decimals)');
+    const b = this.eatSizeArg();
+    this.eat('RPAREN', "expected ')' to close the size argument list");
     return [a, b];
   }
 
@@ -1617,6 +1636,11 @@ export class Parser {
       // `##_` is its own token since it became the Unit literal, so the
       // wildcard is matched before the `##Kind` identifier path.
       if (this.check('UNIT')) { this.adv(); }
+      // `:! #Div` — one `#`. No help yet: the Rust one lists three kinds of the
+      // eleven (GLB-022), and step 3.2 fixes both.
+      if (this.check('HASH')) {
+        throw new ZyStaticError("expected '##' for error type (missing second #)", this.peek().line);
+      }
       // `:! ## { }` — the mark with no kind after it. It was taken as a filter
       // named `##` that never matched, so the error went uncaught (ZYJS-021).
       // No help yet: the Rust one lists seven of the eleven kinds (GLB-022),
@@ -1738,12 +1762,12 @@ export class Parser {
         const line = this.peek().line;
         this.adv();
         this.rejectSecondRest(targets, line);
-        targets.push({ name: this.eat('IDENT').value, rest: true });
+        targets.push({ name: this.eat('IDENT', "expected identifier after '*' in destructure").value, rest: true });
       } else if (this.check('ELSE')) {
         this.adv();
         targets.push({ name: '_', rest: false });
       } else {
-        targets.push({ name: this.eat('IDENT').value, rest: false });
+        targets.push({ name: this.eat('IDENT', "expected identifier, '*rest', or '_' in array destructure").value, rest: false });
       }
       this.match('COMMA');
     }
@@ -1760,8 +1784,8 @@ export class Parser {
       const targets = [];
       while (!this.check('RPAREN') && !this.check('EOF')) {
         const field = this.eat('IDENT').value;
-        this.eat('COLON');
-        const name  = this.eat('IDENT').value;
+        this.eat('COLON', "expected ':' after field name in named tuple destructure");
+        const name  = this.eat('IDENT', "expected variable name after ':' in named tuple destructure").value;
         targets.push({ field, name });
         this.match('COMMA');
       }
@@ -1775,7 +1799,7 @@ export class Parser {
           const line = this.peek().line;
           this.adv();
           this.rejectSecondRest(targets, line);
-          targets.push({ name: this.eat('IDENT').value, rest: true });
+          targets.push({ name: this.eat('IDENT', "expected identifier after '*' in destructure").value, rest: true });
         } else if (this.check('ELSE')) {
           // `_` discards a position — decision 23. It already worked in the
           // ARRAY pattern and was an error here, which is an inconsistency
@@ -1783,7 +1807,7 @@ export class Parser {
           this.adv();
           targets.push({ name: '_', rest: false });
         } else {
-          targets.push({ name: this.eat('IDENT').value, rest: false });
+          targets.push({ name: this.eat('IDENT', 'unexpected token in tuple destructure pattern').value, rest: false });
         }
         this.match('COMMA');
       }
@@ -1813,12 +1837,12 @@ export class Parser {
   parseMatchExpr() {
     this.adv();
     const expr = this.parseExpr();
-    this.eat('LBRACE');
+    this.eat('LBRACE', "expected '{' after match expression", 'match syntax: ?? expr { pattern => value }');
     const arms = [];
     while (!this.check('RBRACE') && !this.check('EOF')) {
       arms.push(this.parseMatchArm());
     }
-    this.eat('RBRACE');
+    this.eat('RBRACE', "expected '}' to close match expression", 'match expression must be enclosed in braces');
     return { type: 'Match', expr, arms };
   }
 
@@ -2005,7 +2029,7 @@ export class Parser {
     this.eat('LPAREN');
     const params = [];
     while (!this.check('RPAREN') && !this.check('EOF')) {
-      const pname = this.eat('IDENT').value;
+      const pname = this.eat('IDENT', 'expected parameter name', 'parameters must be identifiers').value;
       let isOut = false;
       if (this.match('RETURN')) isOut = true;
       params.push({ name: pname, isOut });
@@ -2064,7 +2088,7 @@ export class Parser {
         this.adv();
         idx = { type: 'BinOp', op: '>', left: idx, right: this.parseAdditive() };
       }
-      this.eat('RBRACKET');
+      this.eat('RBRACKET', "expected ']' after index expression");
       // A hot name opening a statement with `[` is read as an assignment by
       // both Rust parsers, and nothing but `=` may follow — which then is the
       // withdrawn indexed assignment below. `x°[1] 5` and `x°[1]$~ 5` ran here
@@ -2152,7 +2176,16 @@ export class Parser {
     }
 
     let left = { type: 'Ident', name, hot, line: tok0.line };
-    return this.editStmtOrExpr(this.parsePostfixRest(left), line);
+    const stmtExpr = this.parsePostfixRest(left);
+    // A statement that opens with a call is that call and nothing more, as
+    // `parse_function_call_statement` requires. `f(1) + 2` used to end at the
+    // `)` and leave `+ 2` for a statement of its own (ZYJS-021).
+    const BINARY = ['PLUS', 'MINUS', 'TIMES', 'DIV', 'MOD', 'POW', 'EQ', 'NEQ', 'LT', 'GT', 'LTE', 'GTE', 'AND', 'OR'];
+    if ((stmtExpr?.type === 'Call' || stmtExpr?.type === 'CallExpr')
+        && BINARY.includes(this.peek().type) && this.peek().line === this.prevEndLine()) {
+      throw new ZyStaticError('expected function call', line, 'only function calls can be used as statements');
+    }
+    return this.editStmtOrExpr(stmtExpr, line);
   }
 
   // The editing half of the `$` family. The consulting half — `$#`, `$?`, `$[..]`,
@@ -2225,6 +2258,9 @@ export class Parser {
     // was reported as a path problem it does not have.
     const NO_NAME = 'this edits whatever the call returned, and nothing holds it — assign the result first, or edit a named collection';
     const NO_NAME_HEAD = 'modifying requires a destination with a name';
+    // An edit of an edit — `x$+ 1 $+ 2` — has an expression for a receiver,
+    // not a call: `classify_edit` answers it with its own NO_NAME text.
+    const EXPR_NO_NAME = 'this edits what the expression produced, and nothing holds it — assign the result to a name first';
     const flatten = (e) => {
       const steps = [];
       const go = (n) => {
@@ -2249,7 +2285,8 @@ export class Parser {
           steps.push({ kind: 'index', key: n.field });
           return root;
         }
-        return { err: NO_NAME };
+        if (n.type === 'Call' || n.type === 'CallExpr') return { err: NO_NAME };
+        return { err: EXPR_NO_NAME };
       };
       const r = go(e);
       return typeof r === 'string' ? { root: r, steps } : r;
@@ -2268,9 +2305,9 @@ export class Parser {
       const f = flatten(expr.obj);
       // Decision 20: an edit with nowhere to write is refused, rather than run
       // for a result nothing holds.
-      if (f.err) throw new ZyError(
-        `${f.err === NO_NAME ? NO_NAME_HEAD : 'this edit has nothing to write into'}\n= help: ${f.err}`,
-        line);
+      if (f.err) {
+        throw new ZyStaticError(f.err === NO_NAME ? NO_NAME_HEAD : 'this edit has nothing to write into', line, f.err);
+      }
       if (f.steps.length === 0) return { type: 'InPlaceEdit', name: f.root, expr, line };
 
       // The receiver is inside the name. `$~` carries its own final step, so it
@@ -2389,7 +2426,10 @@ export class Parser {
   parsePipe() {
     let left = this.parseOr();
     while (this.match('PIPE')) {
-      const rhs = this.parseOr();
+      const saved = this.inPipeTarget;
+      this.inPipeTarget = true;
+      let rhs;
+      try { rhs = this.parseOr(); } finally { this.inPipeTarget = saved; }
       left = { type: 'Pipe', value: left, rhs };
     }
     return left;
@@ -2490,7 +2530,7 @@ export class Parser {
     while (true) {
       if (this.check('LBRACKET') && sameLine()) {
         this.rejectChainedIndex(left, this.peek().line);
-        this.adv(); const spec = this.parseNavContent(); this.eat('RBRACKET');
+        this.adv(); const spec = this.parseNavContent(); this.closeNav(spec);
         left = { type: 'NavIndex', obj: left, spec };
       } else if (this.check('DOT') || this.check('SCOPE')) {
         // Record which operator produced this node. `::` and `.` build the same shape but
@@ -2499,13 +2539,13 @@ export class Parser {
         // distinction, so a local variable sharing a module alias's name shadowed the
         // module and any `alias::fn(...)` after it failed — see eval's FieldAccess case.
         const scoped = this.check('SCOPE');
-        this.adv(); const field = this.eat('IDENT').value;
+        this.adv(); const field = this.eatMemberName(scoped);
         left = { type: 'FieldAccess', obj: left, field, scoped };
       } else if (this.check('LPAREN') && sameLine() && left.type === 'Ident') {
-        this.adv(); const args = this.parseArgList(); this.eat('RPAREN');
+        this.adv(); const args = this.parseArgList(); this.closeCallArgs(left);
         left = { type: 'Call', callee: left.name, args, line: left.line ?? this.peek()?.line ?? null };
       } else if (this.check('LPAREN') && sameLine() && left.type !== 'Ident') {
-        this.adv(); const args = this.parseArgList(); this.eat('RPAREN');
+        this.adv(); const args = this.parseArgList(); this.closeCallArgs(left);
         left = { type: 'CallExpr', callee: left, args, line: left.line ?? this.peek()?.line ?? null };
       } else break;
     }
@@ -2530,7 +2570,7 @@ export class Parser {
         this.rejectChainedIndex(left, this.peek().line);
         this.adv();
         const spec = this.parseNavContent();
-        this.eat('RBRACKET');
+        this.closeNav(spec);
         if ((spec.kind === 'simple' || spec.kind === 'path') && this.check('DUPDATE')) {
           this.adv();
           // See BUG-ZYB-002 above: the value is a full expression.
@@ -2549,7 +2589,7 @@ export class Parser {
       } else if (this.check('DOT') || this.check('SCOPE')) {
         const scoped = this.check('SCOPE');
         this.adv();
-        const field = this.eat('IDENT').value;
+        const field = this.eatMemberName(scoped);
         // `alias::fn` is only ever called. Both Rust parsers want the `(`; here
         // `m::sqrt 4` read the function as a value and printed `<funct/0>4`
         // (ZYJS-021).
@@ -2574,13 +2614,13 @@ export class Parser {
       } else if (this.check('LPAREN') && sameLine() && left.type === 'Ident') {
         this.adv();
         const args = this.parseArgList();
-        this.eat('RPAREN');
+        this.closeCallArgs(left);
         left = { type: 'Call', callee: left.name, args, line: left.line ?? this.peek()?.line ?? null };
 
       } else if (this.check('LPAREN') && sameLine() && left.type !== 'Ident' && left.type !== 'Literal') {
         this.adv();
         const args = this.parseArgList();
-        this.eat('RPAREN');
+        this.closeCallArgs(left);
         left = { type: 'CallExpr', callee: left, args, line: left.line ?? this.peek()?.line ?? null };
 
       } else if (COL_TOKENS.has(this.peek().type)) {
@@ -2590,6 +2630,11 @@ export class Parser {
         this.adv();
         left = { type: 'TypeMetadata', obj: left };
 
+      } else if (this.check('DUPDATE') && !['NavIndex', 'FieldAccess'].includes(left?.type)) {
+        // An index or a key is built into an edit above; anything else has no
+        // place to write, and `5$~ 9` said "expected expression" (ZYJS-021).
+        throw new ZyStaticError('collection update ($~) requires a place to write', this.peek().line,
+          'use: arr[i]$~ value, arr[i>j]$~ value, or d.key$~ value');
       } else {
         break;
       }
@@ -2598,6 +2643,19 @@ export class Parser {
   }
 
   // ─── Navigation index parsing ─────────────────────────────────────────────
+
+  // The `]` that closes an index, in the Rust words for what it closes.
+  closeNav(spec) {
+    if (spec?.kind === 'flat') return this.eat('RBRACKET', "expected ']' after flat extraction");
+    if (spec?.kind === 'structured') {
+      return this.eat('RBRACKET', "expected ']' to close structured extraction",
+        'structured extraction: arr[[row>col] ; [row>col]]');
+    }
+    if (this.inPipeTarget) {
+      return this.eat('RBRACKET', "expected ']' after index", 'array indexing must use brackets: arr[index]');
+    }
+    return this.eat('RBRACKET', "expected ']' after index", 'array indexing must use brackets: arr[index] or arr[i>j]');
+  }
 
   // Called after consuming '['. Returns a spec object for NavIndex.
   parseNavContent() {
@@ -2725,7 +2783,7 @@ export class Parser {
         while (this.match('GT')) path.push(this.parseNavAtom());
         paths.push(path);
       } while (this.match('COMMA'));
-      this.eat('RBRACKET');
+      this.eat('RBRACKET', "expected ']' to close extraction group", 'each group must be wrapped: [path] or [path1, path2]');
       groups.push({ paths });
     } while (this.match('SEMI'));
     return { kind: 'structured', groups };
@@ -2743,7 +2801,8 @@ export class Parser {
       case 'DAPPEND_AT': {
         // `$+[i] val` — the '[' was glued to the '$+', so this is the insert.
         this.eat('LBRACKET');
-        const idx = this.parseExpr(); this.eat('RBRACKET');
+        const idx = this.parseExpr();
+        this.eat('RBRACKET', "expected ']' after index in $+[index]", 'insert syntax: collection$+[index] element');
         return { type: 'CollectionOp', op: '$+[i]', obj: left, index: idx, arg: this.parseUnary(true) };
       }
 
@@ -2752,6 +2811,12 @@ export class Parser {
         return { type: 'CollectionOp', op: '$+', obj: left, arg: this.parseUnary(true) };
 
       case 'DREMOVEALL':
+        // `$--[position:count]` was removed in v0.0.2, and both Rust parsers
+        // still name it — a bracket here reads as that form, not as a value.
+        if (this.check('LBRACKET')) {
+          throw new ZyStaticError('$--[position:count] is retired — use $-[start..end] instead', this.peek().line,
+            'v0.0.2: s$--[0:6] → s$-[0..6]');
+        }
         return { type: 'CollectionOp', op: '$--', obj: left, arg: this.parseUnary() };
 
       case 'DREMOVE':
@@ -2759,22 +2824,25 @@ export class Parser {
           this.adv();
           // Open-start: $-[..N]
           if (this.match('RANGE')) {
-            const to = this.parseExpr(); this.eat('RBRACKET');
+            const to = this.parseExpr();
+            this.eat('RBRACKET', "expected ']' after range", 'range syntax: $-[..end] or $-[..]');
             return { type: 'CollectionOp', op: '$-[i..j]', obj: left, range: { from: null, to } };
           }
           const from = this.parseExpr();
           if (this.match('RANGE')) {
             // Open-end: $-[N..]  or  $-[N..M]
             const toNode = (!this.check('RBRACKET')) ? this.parseExpr() : null;
-            this.eat('RBRACKET');
+            this.eat('RBRACKET', "expected ']' after range", 'range syntax: $-[start..end] or $-[start..]');
             return { type: 'CollectionOp', op: '$-[i..j]', obj: left, range: { from, to: toNode } };
           }
           if (this.match('COLON')) {
             // Count-based: $-[start:count]
-            const count = this.parseExpr(); this.eat('RBRACKET');
+            const count = this.parseExpr();
+            this.eat('RBRACKET', "expected ']' after count", 'count-based range syntax: $-[start:count]');
             return { type: 'CollectionOp', op: '$-[i:n]', obj: left, start: from, count };
           }
-          this.eat('RBRACKET');
+          this.eat('RBRACKET', "expected ']', '..', or ':' after index",
+            'remove syntax: $-[index], $-[start..end], or $-[start:count]');
           return { type: 'CollectionOp', op: '$-[i]', obj: left, index: from };
         }
         return { type: 'CollectionOp', op: '$-', obj: left, arg: this.parseUnary() };
@@ -2802,6 +2870,21 @@ export class Parser {
         // An opening paren is a lambda being written, so what is missing is its
         // arrow — `a$^ (v)` parsed here and failed at run time (ZYJS-021).
         if (!this.isLambdaStart()) {
+          // An arrow inside the parens means the lambda is there and one of its
+          // parameters is not a name (`(1, 2 -> #1)`); no arrow means the arrow
+          // itself is what is missing.
+          let depth = 0, arrow = false;
+          for (let i = 0; this.pos + i < this.toks.length; i++) {
+            const tk = this.toks[this.pos + i].type;
+            if (tk === 'LPAREN') depth++;
+            else if (tk === 'RPAREN' && --depth === 0) break;
+            else if (tk === 'ARROW' && depth === 1) { arrow = true; break; }
+            else if (tk === 'EOF') break;
+          }
+          if (arrow) {
+            throw new ZyStaticError('expected parameter name in lambda', this.peek().line,
+              'lambda parameters must be identifiers: (a, b) -> expr');
+          }
           throw new ZyStaticError("expected '->' in lambda expression", this.peek().line,
             'lambda syntax: x -> expr or (a, b) -> expr');
         }
@@ -2812,8 +2895,10 @@ export class Parser {
 
       case 'DREDUCE':
         this.eat('LPAREN');
-        { const init = this.parseExpr(); this.eat('COMMA');
-          const fn   = this.parseExpr(); this.eat('RPAREN');
+        { const init = this.parseExpr();
+          this.eat('COMMA', "expected ',' after initial value", 'reduce syntax: collection$< (initial, lambda)');
+          const fn   = this.parseExpr();
+          this.eat('RPAREN', "expected ')' after lambda", 'reduce syntax: collection$< (initial, lambda)');
           return { type: 'CollectionOp', op: '$<', obj: left, init, arg: fn }; }
 
       case 'DSLICE':
@@ -2822,11 +2907,13 @@ export class Parser {
         { const from = this.check('RANGE') ? null : this.parseExpr();
           if (this.match('RANGE')) {
             const to = this.check('RBRACKET') ? null : this.parseExpr();
-            this.eat('RBRACKET');
+            this.eat('RBRACKET', "expected ']' after slice range");
             return { type: 'CollectionOp', op: '$[i..j]', obj: left, range: { from, to } };
           }
-          this.eat('COLON');
-          const count = this.parseExpr(); this.eat('RBRACKET');
+          this.eat('COLON', "expected '..', or ':' in slice",
+            'slice syntax: $[start..end], $[..end], $[start..], or $[start:count]');
+          const count = this.parseExpr();
+          this.eat('RBRACKET', "expected ']' after count", 'count-based slice syntax: $[start:count]');
           return { type: 'CollectionOp', op: '$[i:n]', obj: left, range: { from, count } }; }
 
       case 'DERROR':
@@ -2836,11 +2923,13 @@ export class Parser {
         return { type: 'CollectionOp', op: '$!!', obj: left };
 
       case 'DREPLACE':
-        this.eat('LBRACKET');
-        { const from = this.parseExpr(); this.eat('COLON');
+        this.eat('LBRACKET', "expected '[' after $~~",
+          'syntax: string$~~[pattern:replacement] or string$~~[pattern:replacement:count]');
+        { const from = this.parseExpr();
+          this.eat('COLON', "expected ':' after pattern", 'syntax: string$~~[pattern:replacement:count?]');
           const to   = this.parseExpr();
           const count = this.match('COLON') ? this.parseExpr() : null;
-          this.eat('RBRACKET');
+          this.eat('RBRACKET', "expected ']' after replacement or count", 'syntax: string$~~[pattern:replacement:count?]');
           return { type: 'CollectionOp', op: '$~~', obj: left, from, to, count }; }
 
       case 'DSPLIT':
@@ -2879,12 +2968,15 @@ export class Parser {
 
   parseKeyInput(blocking) {
     this.adv(); // consume <<| or <<|?
-    const v = this.eat('IDENT');
+    const v = this.eat('IDENT', 'expected variable name after key input operator', 'syntax: <<| var');
     return { type: 'KeyInput', variable: v.value, blocking };
   }
 
   parseTuiBlock() {
     this.adv(); // consume >>|
+    if (!this.check('LBRACE')) {
+      throw new ZyStaticError("expected '{' after >>|", this.peek().line, 'TUI block syntax: >>| { statements }');
+    }
     const body = this.parseBlock();
     return { type: 'TuiBlock', body };
   }
@@ -2902,7 +2994,7 @@ export class Parser {
       }
       this.eat('RPAREN');
     } else {
-      const name = this.eat('IDENT').value;
+      const name = this.eat('IDENT', "expected '(' or variable after >>~", 'syntax: >>~ (fila, col [, BKS [, fg [, bg]]]) > items').value;
       slots = [{ type: 'Ident', name, hot: false }]; // sentinel: variable mode
     }
     this.eat('GT'); // consume >
@@ -2918,13 +3010,40 @@ export class Parser {
   // as `outArgs` — the call-site output mark (REFERENCE.md L36). Carried beside
   // the list rather than wrapping each argument, so every existing reader of
   // `args` keeps working unchanged.
+  // The name after `.` or `::`, with the Rust words when it is missing.
+  eatMemberName(scoped) {
+    return scoped
+      ? this.eat('IDENT', "expected function name after '::'").value
+      : this.eat('IDENT', "expected field name after '.'", 'member access requires a field name: object.field').value;
+  }
+
+  // Rust says it differently for each callee: a name, a module function, any
+  // other expression, a parenthesised one, or the target of `|>`.
+  closeCallArgs(callee) {
+    if (this.inPipeTarget) {
+      return this.eat('RPAREN', "expected ')' after pipe arguments", 'pipe syntax: value |> func(_)');
+    }
+    if (callee?.paren) return this.eat('RPAREN', "expected ')' after arguments");
+    if (callee?.type === 'Ident') {
+      return this.eat('RPAREN', "expected ')' after function arguments", 'function call syntax: name(arg1, arg2, ...)');
+    }
+    if (callee?.type === 'FieldAccess' && callee.scoped) {
+      return this.eat('RPAREN', "expected ')' after function arguments",
+        'module function call syntax: module::function(arg1, arg2, ...)');
+    }
+    return this.eat('RPAREN', "expected ')' after function arguments", 'function call syntax: expr(arg1, arg2, ...)');
+  }
+
   parseArgList() {
     const args = [];
     const outArgs = [];
     while (!this.check('RPAREN') && !this.check('EOF')) {
       args.push(this.parseExprJuxt());
       if (this.check('RETURN')) { this.adv(); outArgs.push(args.length - 1); }
-      this.match('COMMA');
+      // An argument not followed by a comma is the last one, as in Rust; the
+      // caller then asks for the `)`. Reading on turned `f(1 ¶` into
+      // "expected expression, found PILCROW" (ZYJS-021).
+      if (!this.match('COMMA')) break;
     }
     args.outArgs = outArgs;
     return args;
@@ -3000,9 +3119,9 @@ export class Parser {
       const line = t.line;
       while (!this.check('RBRACKET') && !this.check('EOF')) {
         items.push(this.parseExprJuxt());
-        this.match('COMMA');
+        if (!this.match('COMMA')) break;
       }
-      this.eat('RBRACKET');
+      this.eat('RBRACKET', "expected ']' to close array literal", 'array literals must be enclosed in brackets');
       return { type: 'Array', items, line };
     }
 
@@ -3020,10 +3139,12 @@ export class Parser {
         return { type: 'Tuple', items, keys, line };
       }
       for (;;) {
-        if (!((this.check('IDENT') || this.check('STR')) && this.peek(1).type === 'COLON')) {
-          throw new ZyStaticError(
-            'expected a key in the dictionary: #(nombre: valor) or #("con.puntos": valor)',
-            this.peek().line);
+        if (!(this.check('IDENT') || this.check('STR'))) {
+          throw new ZyStaticError('expected a key in the dictionary', this.peek().line,
+            'a key is a name or a string: #(nombre: valor) or #("gasto.alimentación": valor)');
+        }
+        if (this.peek(1).type !== 'COLON') {
+          throw new ZyStaticError("expected ':' after the key", this.peek(1).line ?? this.peek().line);
         }
         const keyTok = this.adv();
         if (keyTok.type === 'IDENT') {
@@ -3045,7 +3166,7 @@ export class Parser {
         if (!this.match('COMMA')) break;
         if (this.check('RPAREN')) break;   // trailing comma
       }
-      this.eat('RPAREN');
+      this.eat('RPAREN', "expected ')' to close the dictionary", 'a dictionary is written #(key: value, key2: value2)');
       return { type: 'Tuple', items, keys, line };
     }
 
@@ -3080,18 +3201,34 @@ export class Parser {
           items.push(this.parseExprJuxt());
           keys.push(key);
         }
-        this.eat('RPAREN');
+        this.eat('RPAREN', "expected ')' to close tuple", 'tuples must be enclosed in parentheses: (expr, expr, ...)');
         const named = keys.some(k => k !== null);
         return { type: 'Tuple', items, keys: named ? keys : null };
       }
-      this.eat('RPAREN');
+      if (this.inPipeTarget) this.eat('RPAREN', "expected ')' after expression");
+      else this.eat('RPAREN', "expected ')' to close grouped expression",
+        'grouped expressions must be enclosed in parentheses: (expr)');
+      // Only for the wording of a call on it: `(f)(1` and `f(1` are told
+      // apart by the Rust parser, and the node alone cannot say which it was.
+      if (firstVal && typeof firstVal === 'object') firstVal.paren = true;
       return firstVal;
     }
 
     if (t.type === 'DATA_OP') {
       this.adv();
       const arg = this.parseExpr();
-      this.eat('VBAR');
+      // The operator as written, as the Rust parser fills its templates.
+      const fmtPrefix = '#,';
+      const baseOpPrefix = '0' + ({ 16: 'x', 2: 'b', 8: 'o', 10: 'd' }[t.value.prec] ?? 'x');
+      const CLOSE = {
+        base_conv: ["expected '|' to close base conversion expression", `base conversion syntax: ${baseOpPrefix}|expr|`],
+        comma:     ["expected '|' to close format expression", `format expression syntax: ${fmtPrefix}|expr|`],
+        eval:      ["expected '|' to close numeric evaluation", 'numeric evaluation syntax: #|expr|'],
+        round:     ["expected '|' to close round expression", 'round expression syntax: #.N|expr|'],
+        trunc:     ["expected '|' to close truncate expression", 'truncate expression syntax: #!N|expr|'],
+      }[t.value.kind];
+      if (CLOSE) this.eat('VBAR', CLOSE[0], CLOSE[1]);
+      else this.eat('VBAR');
       // GAP-ZYB-001: a count written as a name is kept as an expression and
       // evaluated when the program runs; a written count stays a number.
       const precExpr = t.value.dynPrec
