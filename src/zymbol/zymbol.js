@@ -1230,6 +1230,13 @@ export class Parser {
     this.eat('LBRACE');
     const body = this.parseStmtList();
     this.eat('RBRACE');
+    // One `#>` per module, as `parse_module_block` requires: a second one used
+    // to load, and the two lists merged (ZYJS-022).
+    const exportDecls = body.filter(s => s?.type === 'ExportDecl');
+    if (exportDecls.length > 1) {
+      throw new ZyStaticError('duplicate export block in module', exportDecls[1].line,
+        'a module may only have one #> export block');
+    }
     return { type: 'ModuleBlock', name, body, line };
   }
 
@@ -1282,27 +1289,48 @@ export class Parser {
       const exportLine = t.line ?? null;
       this.adv();
       const names = []; // { kind:'own'|'reexport', internal, alias?, member?, exported }
-      if (this.check('LBRACE')) {
-        this.adv();
-        while (!this.check('RBRACE') && !this.check('EOF')) {
-          if (this.check('IDENT')) {
-            const first = this.adv().value;
-            if (this.check('SCOPE') || this.check('DOT')) {
-              // Re-export: alias::member or alias.member
-              this.adv();
-              const member = this.check('IDENT') ? this.adv().value : first;
-              const exported = this.check('FAT_ARROW') ? (this.adv(), this.check('IDENT') ? this.adv().value : member) : member;
-              names.push({ kind: 'reexport', alias: first, member, exported });
-            } else {
-              const exported = this.check('FAT_ARROW') ? (this.adv(), this.check('IDENT') ? this.adv().value : first) : first;
-              names.push({ kind: 'own', internal: first, exported });
-            }
-          } else {
-            this.adv();
-          }
+      // The grammar and the refusals of `parse_export_block` in
+      // zymbol-parser/src/modules.rs, item by item. This loop used to skip any
+      // token it did not expect and fill a missing name with a default, so
+      // `#> { 5 }`, `#> { mat. }`, `#> { f => }` and the pre-v0.0.6 `:` rename
+      // loaded without a word (ZYJS-022).
+      const refuse = (msg, tok, help = null) => {
+        throw new ZyStaticError(msg, tok?.line ?? exportLine, help);
+      };
+      const nameAfter = (msg) => {
+        const tok = this.peek();
+        if (tok.type !== 'IDENT') refuse(msg, tok);
+        return this.adv().value;
+      };
+      if (!this.check('LBRACE')) refuse("expected '{' after '#>'", this.peek());
+      this.adv();
+      while (!this.check('RBRACE') && !this.check('EOF')) {
+        const firstTok = this.peek();
+        if (firstTok.type === 'LTE' || firstTok.type === 'COLON') {
+          refuse('legacy export rename separator', firstTok,
+            "the rename separator is '=>': #> { alias::fn => new_name }");
         }
-        this.match('RBRACE');
+        if (firstTok.type !== 'IDENT') {
+          refuse('expected identifier in export item', firstTok,
+            'export syntax: #> { own_fn, alias::fn => new_name, alias.CONST => NEW }');
+        }
+        const first = this.adv().value;
+        if (this.check('SCOPE') || this.check('DOT')) {
+          // Re-export: alias::function or alias.CONSTANT
+          const viaScope = this.adv().type === 'SCOPE';
+          const member = nameAfter(viaScope ? "expected function name after '::'" : "expected constant name after '.'");
+          let exported = member;
+          if (this.check('FAT_ARROW')) { this.adv(); exported = nameAfter("expected new name after '=>'"); }
+          names.push({ kind: 'reexport', alias: first, member, exported });
+        } else {
+          let exported = first;
+          if (this.check('FAT_ARROW')) { this.adv(); exported = nameAfter("expected public name after '=>'"); }
+          names.push({ kind: 'own', internal: first, exported });
+        }
+        if (this.check('COMMA') || this.check('SEMI')) this.adv();
       }
+      if (!this.check('RBRACE')) refuse("expected '}' to close export block", this.peek());
+      this.adv();
       return { type: 'ExportDecl', names, line: exportLine };
     }
     if (t.type === 'OUTPUT')   return this.parseOutput();
@@ -6094,8 +6122,29 @@ export class Interpreter {
     const src      = typeof result === 'string' ? result : result.src;
     const childRes = typeof result === 'string' ? this.moduleResolver : result.resolver;
 
-    const tokens = new Lexer(src).tokenize();
-    const ast    = new Parser(tokens).parse();
+    // A module that does not read is reported as the Rust engines report it:
+    // `failed to parse module: 1 parse error(s) in '<file>'` and the error
+    // under it with its line. The parser's own error used to surface bare, as
+    // if it were the entry file's (ZYJS-022, GLB-017 D). This engine stops at
+    // the first error, so the count is always 1.
+    const whereOf = () => (typeof result === 'object' && result.displayPath) || cacheKey;
+    // The same three pieces as modules.rs builds, so the message inventory
+    // pairs them with their Rust twins: the prefix, the count line, the detail.
+    const moduleReadError = (e, stage) => {
+      if (!(e instanceof ZyStaticError || e instanceof ZyError)) return e;
+      const count = 1;
+      let detail = `  ${whereOf()}:${e.zyLine ?? 0}:0: ${e.message}`;
+      if (e.zyHelp) detail += `\n    help: ${e.zyHelp}`;
+      const body = stage === 'lexer'
+        ? `${count} lexer error(s) in '${whereOf()}'\n${detail}`
+        : `${count} parse error(s) in '${whereOf()}'\n${detail}`;
+      return new ZyError(`failed to parse module: ${body}`);
+    };
+    let tokens, ast;
+    try { tokens = new Lexer(src).tokenize(); }
+    catch (e) { this.loadingModules.delete(cacheKey); throw moduleReadError(e, 'lexer'); }
+    try { ast = new Parser(tokens).parse(); }
+    catch (e) { this.loadingModules.delete(cacheKey); throw moduleReadError(e, 'parse'); }
 
     // A module loaded at run time passes the same analysis as the entry file
     // (MM-4, settled for the Rust engines in v0.0.8). Without this, a module
