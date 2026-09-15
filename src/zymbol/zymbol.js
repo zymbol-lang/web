@@ -637,9 +637,17 @@ export class Lexer {
       if (this.ch() === '<' && this.ch(1) === '\\') {
         this.consume(); this.consume(); // consume <\
         let _cmd = '';
+        const bashLine = this.line;
+        let closed = false;
         while (this.pos < this.src.length) {
-          if (this.ch() === '\\' && this.ch(1) === '>') { this.consume(); this.consume(); break; }
+          if (this.ch() === '\\' && this.ch(1) === '>') { this.consume(); this.consume(); closed = true; break; }
           _cmd += this.consume();
+        }
+        // `<\ "echo"` with no `\>` ran to the end of the file and was accepted
+        // (ZYJS-021); both Rust lexers refuse it.
+        if (!closed) {
+          throw new ZyStaticError('unterminated bash execute expression', bashLine,
+            'bash execute syntax: <\\ expr1 expr2 ... \\>');
         }
         tok('BASHEXEC', _cmd.trim()); continue;
       }
@@ -1130,6 +1138,16 @@ export class Parser {
 
   parse() {
     const body = this.parseStmtList();
+    // A module file is its block and nothing after it, as `Parser::parse`
+    // requires. `# extra { … }` followed by `x = 1` used to load, and what
+    // failed later was an unrelated "does not export" (ZYJS-021).
+    if (body[0]?.type === 'ModuleBlock') {
+      const extra = body.slice(1).find(st => st && st.type !== 'Noop');
+      if (extra) {
+        throw new ZyStaticError('unexpected token after module block', extra.line ?? null,
+          'a module file must contain only: # name { ... }');
+      }
+    }
     this.checkImportsFirst(body);
     return { type: 'Program', body };
   }
@@ -1362,7 +1380,9 @@ export class Parser {
         const name = this.adv().value;
         return { type: 'LifetimeEnd', name };
       }
-      return null;
+      // `\ 5` destroyed nothing and said nothing (ZYJS-021).
+      throw new ZyStaticError('expected variable name after \\', this.peek().line ?? t.line,
+        'syntax: \\variable to explicitly destroy a variable');
     }
     if (t.type === 'LBRACKET' && this.isDestructuring()) return this.parseArrayDestruct();
     if (t.type === 'LPAREN'   && this.isDestructuring()) return this.parseTupleDestruct();
@@ -1502,7 +1522,12 @@ export class Parser {
       this.adv(); typed = true;
     }
     const varTok = this.eat('IDENT');
-    if (typed) this.match('VBAR'); // consume closing |
+    if (typed && !this.match('VBAR')) {
+      // `<< #|n` with no closing bar was accepted and sat waiting for input
+      // (ZYJS-021); both Rust parsers refuse it before anything runs.
+      throw new ZyStaticError("expected '|' to close #|variable|", this.peek().line ?? line,
+        'numeric input syntax: << #|variable|');
+    }
     const finalCast = cast ?? { kind: typed ? 'numeric' : 'string' };
     return { type: 'Input', prompt, varName: varTok.value, cast: finalCast, line };
   }
@@ -1577,6 +1602,13 @@ export class Parser {
       // `##_` is its own token since it became the Unit literal, so the
       // wildcard is matched before the `##Kind` identifier path.
       if (this.check('UNIT')) { this.adv(); }
+      // `:! ## { }` — the mark with no kind after it. It was taken as a filter
+      // named `##` that never matched, so the error went uncaught (ZYJS-021).
+      // No help yet: the Rust one lists seven of the eleven kinds (GLB-022),
+      // and copying it would teach the same gap. Step 3.2 fixes both at once.
+      if (this.check('IDENT') && this.peek().value === '##') {
+        throw new ZyStaticError("expected error type name after '##'", this.peek().line);
+      }
       const errType = (this.check('IDENT') && this.peek().value.startsWith('##'))
         ? this.adv().value : null;
       catches.push({ errType, body: this.parseBlock() });
@@ -1852,7 +1884,17 @@ export class Parser {
     } else {
       const left = this.parseAdditive();
       if (this.match('RANGE')) {
-        pattern = { type: 'range', from: left, to: this.parseAdditive() };
+        const endTok = this.peek();
+        const to = this.parseAdditive();
+        // The ends are one kind, as `parse_pattern_primary` requires: `'a'..5`
+        // and `1..'z'` used to parse, never match, and fall to `_` (ZYJS-021).
+        if (left?.type === 'Literal' && left.kind === 'int' && !(to?.type === 'Literal' && to.kind === 'int')) {
+          throw new ZyStaticError("expected integer after '..' in range pattern", endTok.line ?? this.peek().line);
+        }
+        if (left?.type === 'Literal' && left.kind === 'char' && !(to?.type === 'Literal' && to.kind === 'char')) {
+          throw new ZyStaticError("expected char after '..' in range pattern", endTok.line ?? this.peek().line);
+        }
+        pattern = { type: 'range', from: left, to };
       } else {
         pattern = { type: 'literal', value: left };
       }
@@ -1952,7 +1994,11 @@ export class Parser {
       let isOut = false;
       if (this.match('RETURN')) isOut = true;
       params.push({ name: pname, isOut });
-      this.match('COMMA');
+      // `f(a b) { }` is not two parameters: both Rust parsers stop at the `b`,
+      // and this one declared two and failed at the call (ZYJS-021).
+      if (!this.match('COMMA') && !this.check('RPAREN')) {
+        throw new ZyStaticError("expected ')' after parameters", this.peek().line, 'function syntax: name(params) { }');
+      }
     }
     this.eat('RPAREN');
     return { type: 'FuncDecl', name, params, body: this.parseBlock(), line };
@@ -2004,6 +2050,14 @@ export class Parser {
         idx = { type: 'BinOp', op: '>', left: idx, right: this.parseAdditive() };
       }
       this.eat('RBRACKET');
+      // A hot name opening a statement with `[` is read as an assignment by
+      // both Rust parsers, and nothing but `=` may follow — which then is the
+      // withdrawn indexed assignment below. `x°[1] 5` and `x°[1]$~ 5` ran here
+      // (ZYJS-021). Their help text teaches `arr[i] = val`, a form that does
+      // not exist (COL-2), so it is not copied: GLB-027.
+      if (hot && !this.check('ASSIGN') && !compound[this.peek().type]) {
+        throw new ZyStaticError("expected '=' after index expression for indexed assignment", this.peek().line ?? line);
+      }
       // Decision 6: the indexed assignment is withdrawn, in all three
       // collections. `=` means "this NAME now holds this value", and
       // `u["k"] = v` names nothing — it reaches inside a structure and changes a
@@ -2293,7 +2347,11 @@ export class Parser {
       this.adv();
       while (!this.check('RPAREN') && !this.check('ARROW') && !this.check('EOF')) {
         params.push(this.eat('IDENT').value);
-        this.match('COMMA');
+        // Two names with no comma between them are not two parameters: both
+        // Rust parsers stop here, and `(x y -> #1)` used to take both (ZYJS-021).
+        if (!this.match('COMMA') && !this.check('RPAREN') && !this.check('ARROW')) {
+          throw new ZyStaticError("expected ')' after lambda parameters", this.peek().line, 'lambda syntax: (a, b) -> expr');
+        }
       }
       if (this.check('RPAREN')) {
         // (params) -> body form: consume ')' before '->'
@@ -2477,6 +2535,13 @@ export class Parser {
         const scoped = this.check('SCOPE');
         this.adv();
         const field = this.eat('IDENT').value;
+        // `alias::fn` is only ever called. Both Rust parsers want the `(`; here
+        // `m::sqrt 4` read the function as a value and printed `<funct/0>4`
+        // (ZYJS-021).
+        if (scoped && !this.check('LPAREN')) {
+          throw new ZyStaticError("expected '(' for module function call", this.peek().line,
+            'module function call syntax: module::function(args)');
+        }
         // `d.k$~ v` writes exactly as `d["k"]$~ v` does. The dot is how
         // COLLECTIONS.md spells reaching a key that is an identifier, and
         // nothing ever said it could only read — the asymmetry was inherited.
@@ -2546,9 +2611,48 @@ export class Parser {
   parseNavAtom() {
     const expr = this.parseAdditive();
     if (this.match('RANGE')) {
-      const to = this.parseAdditive();
+      const to = this.parseNavStepAtom();
       return { kind: 'range', from: expr, to };
     }
+    return { kind: 'index', expr };
+  }
+
+  // A step of a navigation path once it is one — after `>`, `;` or `..` — is
+  // what `parse_nav_atom` in zymbol-parser/src/index_nav.rs takes and nothing
+  // else: an integer, `-integer`, a name, a string key or `( expr )`. A general
+  // expression used to be taken, so `m[1>1.5]` and `m[1>-a]` parsed (ZYJS-021).
+  parseNavStepAtom() {
+    const t = this.peek();
+    if (t.type === 'MINUS') {
+      this.adv();
+      const n = this.peek();
+      if (n.type !== 'NUM') {
+        throw new ZyStaticError("expected integer after '-' in nav index", n.line ?? t.line,
+          'negative indices: arr[-1], arr[-2>-1]');
+      }
+      this.adv();
+      return { type: 'Literal', kind: 'int', value: -n.value };
+    }
+    if (t.type === 'NUM' || t.type === 'IDENT' || t.type === 'STR') return this.parsePrimary();
+    if (t.type === 'LPAREN' && !this.isLambdaStart()) {
+      this.adv();
+      const e = this.parseExpr();
+      if (!this.check('RPAREN')) {
+        throw new ZyStaticError("expected ')' after computed index", this.peek().line,
+          'computed indices: arr[(expr)>(expr)]');
+      }
+      this.adv();
+      return e;
+    }
+    throw new ZyStaticError(
+      'expected navigation step: a position (integer or variable) or a dictionary key (string)',
+      t.line, 'valid nav index: arr[1>2], arr[n>m], arr[(a)>(b)], arr[1>2..4]');
+  }
+
+  // A whole step after `>` or `;`: a strict atom, optionally a range.
+  parseNavStep() {
+    const expr = this.parseNavStepAtom();
+    if (this.match('RANGE')) return { kind: 'range', from: expr, to: this.parseNavStepAtom() };
     return { kind: 'index', expr };
   }
 
@@ -2556,7 +2660,7 @@ export class Parser {
   parseNavContinue(firstAtom) {
     // Build first path (starting with firstAtom)
     const firstPath = [firstAtom];
-    while (this.match('GT')) firstPath.push(this.parseNavAtom());
+    while (this.match('GT')) firstPath.push(this.parseNavStep());
 
     if (!this.check('SEMI')) {
       // Single nav path
@@ -2566,8 +2670,8 @@ export class Parser {
     // Multiple paths separated by ';' — flat extraction
     const paths = [firstPath];
     while (this.match('SEMI')) {
-      const path = [this.parseNavAtom()];
-      while (this.match('GT')) path.push(this.parseNavAtom());
+      const path = [this.parseNavStep()];
+      while (this.match('GT')) path.push(this.parseNavStep());
       paths.push(path);
     }
     return { kind: 'flat', paths };
@@ -2652,7 +2756,19 @@ export class Parser {
 
       case 'DSORTASC':   return { type: 'CollectionOp', op: '$^+', obj: left };
       case 'DSORTDESC':  return { type: 'CollectionOp', op: '$^-', obj: left };
-      case 'DSORT':      return { type: 'CollectionOp', op: '$^',  obj: left, arg: this.parseUnary() };
+      case 'DSORT':
+        // The comparator is a lambda written here, as both Rust parsers require:
+        // `a$^ f` with `f` holding one sorted in this engine alone (ZYJS-021).
+        if (!this.check('LPAREN')) {
+          throw new ZyStaticError("expected comparator lambda after '$^', e.g. $^ (a, b -> a < b)", this.peek().line);
+        }
+        // An opening paren is a lambda being written, so what is missing is its
+        // arrow — `a$^ (v)` parsed here and failed at run time (ZYJS-021).
+        if (!this.isLambdaStart()) {
+          throw new ZyStaticError("expected '->' in lambda expression", this.peek().line,
+            'lambda syntax: x -> expr or (a, b) -> expr');
+        }
+        return { type: 'CollectionOp', op: '$^',  obj: left, arg: this.parseUnary() };
 
       case 'DMAP':       return { type: 'CollectionOp', op: '$>',  obj: left, arg: this.parseUnary(true) };
       case 'DFILTER':    return { type: 'CollectionOp', op: '$|',  obj: left, arg: this.parseUnary(true) };
