@@ -601,6 +601,21 @@ export class Lexer {
             for (let i = 0; i < advance; i++) this.consume();
             tok('DATA_OP', { kind, prec, dynPrec }); continue;
           }
+          // `#.` and `#!` are the round and truncate operators in both Rust
+          // lexers, whatever follows. Here an incomplete one fell to the
+          // old-header branch below, which swallowed the rest of the line
+          // (`#.2 5`, `#.|5|` were refused a line later), or lost its `#`
+          // (`#!2 5` became a logical NOT) (ZYJS-021).
+          if (c1 === '.' || c1 === '!') {
+            const hasCount = readDigits(2).d.length > 0 || readName(2).d.length > 0;
+            if (hasCount) {
+              throw new ZyStaticError("expected '|' after precision", this.line,
+                c1 === '.' ? 'round expression syntax: #.N|expr|' : 'truncate expression syntax: #!N|expr|');
+            }
+            // No help: the Rust one teaches `#..2|value|` (GLB-021).
+            const prefix = '#' + c1;
+            throw new ZyStaticError(`expected a decimal count after '${prefix}'`, this.line);
+          }
         }
         // # followed by space/letter/dot: module block `# name {` or old-style comment
         if (c1 === ' ' || c1 === '.' || /[\p{L}_]/u.test(c1)) {
@@ -2591,6 +2606,13 @@ export class Parser {
       return this.parseNavStructured();
     }
 
+    // A parenthesised first step whose `)` is followed by `>` is a computed
+    // step, as `is_nav_index` decides in Rust, and takes one expression and its
+    // `)`. Parsed as a general operand, `m[(a 1)>1]` was the juxtaposition 11
+    // and failed at run time (ZYJS-021).
+    if (this.check('LPAREN') && !this.isLambdaStart() && this.parenThenGt()) {
+      return this.parseNavContinue(this.parseNavStep());
+    }
     // Parse first nav atom (uses additive, not full comparison, so '>' is nav separator)
     const firstAtom = this.parseNavAtom();
 
@@ -2615,6 +2637,21 @@ export class Parser {
       return { kind: 'range', from: expr, to };
     }
     return { kind: 'index', expr };
+  }
+
+  // `(` … `)` `>` from the current token, at paren depth — Rust's
+  // `scan_nav_gt_after_paren`.
+  parenThenGt() {
+    let depth = 0;
+    for (let i = 0; this.pos + i < this.toks.length; i++) {
+      const t = this.toks[this.pos + i];
+      if (t.type === 'LPAREN') depth++;
+      else if (t.type === 'RPAREN') {
+        depth--;
+        if (depth === 0) return this.toks[this.pos + i + 1]?.type === 'GT';
+      } else if (t.type === 'RBRACKET' || t.type === 'EOF') return false;
+    }
+    return false;
   }
 
   // A step of a navigation path once it is one — after `>`, `;` or `..` — is
