@@ -7627,15 +7627,23 @@ export class Interpreter {
         }
         // `what` names the operation for the error message the CLI raises on a
         // non-numeric string; digits in any script parse (see asciiDigits).
-        const toNum = (v, what = null) => {
+        // `op` is 'round', 'trunc' or null for the formatting family; each has
+        // the tree-walker's words. Anything that is not a number used to become
+        // 0 here, so `#,|"x"|` and `#.2|#1|` printed a number nobody wrote
+        // (GLB-013 A). A string that reads as a number is taken: rounding and
+        // truncating take it in both Rust engines, formatting takes it in the
+        // VM and not in the tree-walker — undecided (GLB-029).
+        const toNum = (v, op = null) => {
           if (v.type === 'int' || v.type === 'float') return v.v;
           if (v.type === 'str') {
             const n = parseFloat(asciiDigits(v.v.trim()));
             if (!isNaN(n)) return n;
-            if (what) throw new ZyError(`cannot convert string '${v.v}' to number for ${what}`, expr.line);
-            return 0;
+            if (op === 'round') throw new ZyError(`cannot convert string '${v.v}' to number for rounding`, expr.line);
+            if (op === 'trunc') throw new ZyError(`cannot convert string '${v.v}' to number for truncation`, expr.line);
           }
-          return 0;
+          if (op === 'round') throw new ZyError(`round expressions only work with numbers or numeric strings, got ${typeIdent(v)}`, expr.line);
+          if (op === 'trunc') throw new ZyError(`truncate expressions only work with numbers or numeric strings, got ${typeIdent(v)}`, expr.line);
+          throw new ZyError(`format expressions only work with numbers, got ${typeIdent(v)}`, expr.line);
         };
         const fmtSci = (num, prec, mode) => {
           if (num === 0) return '0e0';
@@ -7677,9 +7685,9 @@ export class Interpreter {
             }
             return val;
           }
-          case 'round':       return mkFloat(parseFloat(toNum(val, 'rounding').toFixed(expr.prec)));
+          case 'round':       return mkFloat(parseFloat(toNum(val, 'round').toFixed(expr.prec)));
           case 'trunc': {
-            const n = toNum(val, 'truncation');
+            const n = toNum(val, 'trunc');
             const f = Math.pow(10, expr.prec);
             return mkFloat(Math.trunc(n * f) / f);
           }
@@ -7706,8 +7714,34 @@ export class Interpreter {
           case 'sci_round': return mkStr(mapNumeralNumber(fmtSci(toNum(val), expr.prec, 'round'), this.numeralMode));
           case 'sci_trunc': return mkStr(mapNumeralNumber(fmtSci(toNum(val), expr.prec, 'trunc'), this.numeralMode));
           case 'base_conv': {
-            const n = val.type === 'char' ? val.v.codePointAt(0) : Math.trunc(toNum(val));
             const base = expr.prec;
+            // A string is a code written in the operator's base and gives the
+            // character, as data_ops.rs reads it: `0x|"41"|` is 'A'. This
+            // engine read the string as a DECIMAL number and printed its hex
+            // (`0x0029`), and turned anything unreadable into 0 (GLB-013 A).
+            if (val.type === 'str') {
+              let digits = val.v;
+              for (const pre of ['0b', '0o', '0d', '0x', '0B', '0O', '0D', '0X']) {
+                while (digits.startsWith(pre)) digits = digits.slice(2);
+              }
+              const baseName = { 2: 'binary', 8: 'octal', 10: 'decimal', 16: 'hexadecimal' }[base];
+              const shape = { 2: /^\+?[01]+$/, 8: /^\+?[0-7]+$/, 10: /^\+?[0-9]+$/, 16: /^\+?[0-9a-fA-F]+$/ }[base];
+              const code = shape.test(digits) ? parseInt(digits, base) : NaN;
+              if (!Number.isFinite(code) || code > 0xFFFFFFFF) {
+                throw new ZyError(`failed to parse '${digits}' as ${baseName} number`, expr.line);
+              }
+              if (code > 0x10FFFF) {
+                throw new ZyError(`character code must be in range 0..0x10FFFF, got ${code}`, expr.line);
+              }
+              if (code >= 0xD800 && code <= 0xDFFF) {
+                throw new ZyError(`invalid Unicode character code: ${code}`, expr.line);
+              }
+              return mkChar(String.fromCodePoint(code));
+            }
+            if (val.type !== 'char' && val.type !== 'int') {
+              throw new ZyError(`base conversion expressions work with char, int, or string, got ${typeIdent(val)}`, expr.line);
+            }
+            const n = val.type === 'char' ? val.v.codePointAt(0) : val.v;
             if (base === 16) return mkStr('0x' + n.toString(16).toUpperCase().padStart(4, '0'));
             if (base === 2)  return mkStr('0b' + n.toString(2));
             if (base === 8)  return mkStr('0o' + n.toString(8));
