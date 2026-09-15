@@ -5815,6 +5815,15 @@ const TYPEIDENT_BY_TAG = {
   arr: 'Array', unit: 'Unit', error: 'Error', func: 'Function',
 };
 
+// The tree-walker's `Value::type_name`, which some of its messages print. It is
+// an older spelling than `#?`'s (`##[]` where `#?` says `##]`); kept for those
+// messages so the texts match, until step 3.5 settles one spelling.
+function twTypeName(v) {
+  if (v?.type === 'tuple') return isDict(v) ? '##(name:)' : '##()';
+  return ({ int: '###', float: '##.', str: '##"', char: "##'", bool: '##?', arr: '##[]',
+            func: '##fn', lambda: '##fn', error: '##!', unit: '##_' })[v?.type] ?? '##_';
+}
+
 function typeIdent(v) {
   if (v?.type === 'tuple') return isDict(v) ? 'Dict' : 'Tuple';
   return TYPEIDENT_BY_TAG[v?.type] ?? 'Unit';
@@ -7361,6 +7370,12 @@ export class Interpreter {
                 Interpreter.missingKeyMsg(iVal.v, obj.keys), '##Key');
             return obj.v[ki];
           }
+          // A position is an Int. `[1, 2][1.5]` used to read `v[0.5]`, which is
+          // nothing, and print an empty line (GLB-012 A).
+          // (A String key into a dictionary has already returned above.)
+          if (iVal.type !== 'int') {
+            throw new ZyError(`index must be an integer, got ${typeIdent(iVal)}`, expr.line);
+          }
           // Decision 11: a dictionary is addressed by KEY, never by position.
           // In a mutable dictionary a positional index is fragile — adding a key
           // changes what sits at each position, and a program that depended on
@@ -7572,7 +7587,7 @@ export class Interpreter {
           // Int → position, String → dictionary key. Same rule as the read.
           if (iv.type !== 'int' && iv.type !== 'str')
             throw new ZyError(
-              `a navigation step is a position (Int) or a dictionary key (String), got ${iv.type}`);
+              `a navigation step is a position (Int) or a dictionary key (String), got ${typeIdent(iv)}`);
           indices.push(iv.v);
         }
         const newVal = await this.eval(expr.value, env);
@@ -7789,13 +7804,23 @@ export class Interpreter {
   async resolveNavSteps(steps, env) {
     const resolved = [];
     for (const step of steps) {
+      // The value decides how a step addresses — an Int a position, a String a
+      // key — and anything else is refused, as index_nav.rs refuses it. The raw
+      // `.v` went through before, so `v[1>1.5..2]` and `v[1>"a"]` on an array
+      // answered an empty value (GLB-012 A).
       if (step.kind === 'index') {
-        const v = (await this.eval(step.expr, env)).v;
-        resolved.push({ kind: 'index', val: v });
+        const iv = await this.eval(step.expr, env);
+        if (iv.type !== 'int' && iv.type !== 'str') {
+          throw new ZyError(`a navigation step is a position (Int) or a dictionary key (String), got ${typeIdent(iv)}`);
+        }
+        resolved.push({ kind: 'index', val: iv.v });
       } else {
-        const from = (await this.eval(step.from, env)).v;
-        const to   = (await this.eval(step.to,   env)).v;
-        resolved.push({ kind: 'range', from, to });
+        const fromV = await this.eval(step.from, env);
+        const toV   = await this.eval(step.to,   env);
+        for (const b of [fromV, toV]) {
+          if (b.type !== 'int') throw new ZyError(`navigation index must be an integer, got ${typeIdent(b)}`);
+        }
+        resolved.push({ kind: 'range', from: fromV.v, to: toV.v });
       }
     }
     return resolved;
@@ -7840,6 +7865,9 @@ export class Interpreter {
         return obj.v[ki];
       }
       throw new ZyError(Interpreter.notPositionalMsg('d[n>…]', obj.keys));
+    }
+    if (typeof idx === 'string') {
+      throw new ZyError(`a String navigation step addresses a dictionary key, and this is ${twTypeName(obj)}`);
     }
     if (typeof idx === 'boolean') throw new ZyRuntimeError('Cannot use Bool as array index', '##Index');
     if (idx === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
