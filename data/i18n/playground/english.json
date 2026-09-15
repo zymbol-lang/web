@@ -27,6 +27,8 @@
     "E_PARSE_note": "the program could not be read this far",
     "E_VAR": "undefined variable '{name}'",
     "E_VAR_help": "variables must be defined before use",
+    "E_VAR_INTERP": "undefined variable '{name}' in string interpolation",
+    "E_VAR_INTERP_help": "variables must be defined before use; a literal brace is written \\{",
     "E_CONST": "cannot reassign constant '{name}'",
     "E_CONST_help": "a name defined with := never changes",
     "E_FUNC": "undefined function: '{name}'",

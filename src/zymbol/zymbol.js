@@ -1393,7 +1393,8 @@ export class Parser {
     const cast = this.parseInputTypespec();
     let prompt = null;
     if (this.check('STR')) {
-      prompt = { type: 'Literal', kind: 'str', value: this.adv().value };
+      const promptTok = this.adv();
+      prompt = { type: 'Literal', kind: 'str', value: promptTok.value, line: promptTok.line };
     }
     // Legacy `#|variable|` numeric cast — only when no typespec was given.
     let typed = false;
@@ -2715,7 +2716,7 @@ export class Parser {
     if (t.type === 'FLOAT') { this.adv(); return { type: 'Literal', kind: 'float', value: t.value }; }
     if (t.type === 'BOOL')  { this.adv(); return { type: 'Literal', kind: 'bool',  value: t.value }; }
     if (t.type === 'CHAR')  { this.adv(); return { type: 'Literal', kind: 'char',  value: t.value }; }
-    if (t.type === 'STR')   { this.adv(); return { type: 'Literal', kind: 'str',   value: t.value }; }
+    if (t.type === 'STR')   { this.adv(); return { type: 'Literal', kind: 'str',   value: t.value, line: t.line }; }
     // `##_` — the Unit literal (GAP-ZYB-009). The evaluator already had the
     // `unit` case; the value was reachable long before it could be written.
     if (t.type === 'UNIT')  { this.adv(); return { type: 'Literal', kind: 'unit' }; }
@@ -3076,6 +3077,7 @@ class Checker {
   // (`type_check.rs`, `.with_help(...)`). This engine emitted the message and
   // not the help, so the same refusal read as two different diagnostics.
   static HELP_UNDEFINED = 'variables must be defined before use';
+  static HELP_UNDEFINED_INTERP = 'variables must be defined before use; a literal brace is written \\{';
 
   constructor(ast) {
     this.ast         = ast;
@@ -4717,7 +4719,15 @@ class Checker {
               // classes mirror readIdent's lexer rule (HLZ-KL-001 parity) — a
               // narrower rule here would under-mark PUA-script (e.g. pIqaD)
               // identifiers as used, producing a false W_UNUSED.
-              if (/^[\p{L}\p{M}\p{So}\p{Co}_][\p{L}\p{M}\p{N}\p{So}\p{Co}_\u200c\u200d]*$/u.test(name)) this.lookup(name, expr.line);
+              if (/^[\p{L}\p{M}\p{So}\p{Co}_][\p{L}\p{M}\p{N}\p{So}\p{Co}_\u200c\u200d]*$/u.test(name)) {
+                // A name that is nothing is a static error, and a name that is
+                // something is read like an identifier, MEM-2 included — the
+                // author's decision on GLB-018 A, as `check_interpolated_name`
+                // in the Rust analyser. It used to print `{name}` as text.
+                const info = this.lookup(name, expr.line);
+                if (!info) this.error('E_VAR_INTERP', `undefined variable '${name}' in string interpolation`, expr.line, { name }, Checker.HELP_UNDEFINED_INTERP);
+                else this.checkReachOutOfScope(name, expr.line);
+              }
             }
           }
         }

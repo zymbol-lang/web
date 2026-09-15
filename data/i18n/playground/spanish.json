@@ -26,6 +26,8 @@
     "E_PARSE_note": "el programa no se pudo leer más allá de aquí",
     "E_VAR": "variable no definida: '{name}'",
     "E_VAR_help": "las variables deben definirse antes de usarse",
+    "E_VAR_INTERP": "variable no definida en la interpolación: '{name}'",
+    "E_VAR_INTERP_help": "las variables deben definirse antes de usarse; una llave literal se escribe \\{",
     "E_CONST": "no se puede reasignar la constante '{name}'",
     "E_CONST_help": "un nombre definido con := no cambia nunca",
     "E_FUNC": "función no definida: '{name}'",
