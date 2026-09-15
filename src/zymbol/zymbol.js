@@ -2475,6 +2475,9 @@ export class Parser {
   parseUnary(noCollectionChain) {
     const uline = this.peek()?.line ?? null;
     if (this.match('MINUS')) return { type: 'UnaryOp', op: '-', operand: this.parseUnary(), line: uline };
+    // `+x` — a form of the language (decided 2026-09-15, GLB-019 B). Both Rust
+    // parsers read it and this one said `expected expression, found Plus`.
+    if (this.match('PLUS'))  return { type: 'UnaryOp', op: '+', operand: this.parseUnary(), line: uline };
     if (this.match('NOT'))   return { type: 'UnaryOp', op: '!', operand: this.parseUnary(), line: uline };
     if (noCollectionChain && this.isLambdaStart()) return this.parseLambda();
     return noCollectionChain ? this.parsePostfixNoChain() : this.parsePostfix();
@@ -7346,6 +7349,11 @@ export class Interpreter {
           if (val.type !== 'bool')
             throw new ZyError(`logical NOT requires boolean operand, got ${typeIdent(val)}`, expr.line);
           return mkBool(!val.v);
+        }
+        if (expr.op === '+') {
+          if (val.type !== 'int' && val.type !== 'float')
+            throw new ZyError(`unary plus requires numeric operand, got ${typeIdent(val)}`, expr.line);
+          return val;
         }
         break;
       }
