@@ -696,9 +696,13 @@ export class Lexer {
               throw new ZyStaticError("expected '|' after precision", this.at(),
                 c1 === '.' ? 'round expression syntax: #.N|expr|' : 'truncate expression syntax: #!N|expr|');
             }
-            // No help: the Rust one teaches `#..2|value|` (GLB-021).
+            // The help repeats what was written before the count, as the Rust
+            // one does since GLB-021 was fixed — it used to teach `#..2|value|`,
+            // and this engine gave no help rather than copy that.
             const prefix = '#' + c1;
-            throw new ZyStaticError(`expected a decimal count after '${prefix}'`, this.at());
+            const countOp = prefix;
+            throw new ZyStaticError(`expected a decimal count after '${prefix}'`, this.at(),
+              `write the count or the name of a variable holding it: ${countOp}2|value| or ${countOp}n|value|`);
           }
         }
         // `#` followed by a space, a dot or the start of a name is the module
