@@ -701,25 +701,15 @@ export class Lexer {
             throw new ZyStaticError(`expected a decimal count after '${prefix}'`, this.at());
           }
         }
-        // # followed by space/letter/dot: module block `# name {` or old-style comment
-        if (c1 === ' ' || c1 === '.' || /[\p{L}_]/u.test(c1)) {
-          // Lookahead: check for # [.] name { (new module block syntax)
-          let _j = this.pos + 1;
-          while (_j < this.src.length && (this.src[_j] === ' ' || this.src[_j] === '\t')) _j++;
-          if (_j < this.src.length && this.src[_j] === '.') _j++; // optional leading dot
-          const _idStart = _j;
-          while (_j < this.src.length && /[\p{L}\p{M}\p{N}\p{So}\p{Co}_]/u.test(this.src[_j])) _j++;
-          if (_j > _idStart) {
-            let _k = _j;
-            while (_k < this.src.length && (this.src[_k] === ' ' || this.src[_k] === '\t')) _k++;
-            if (_k < this.src.length && this.src[_k] === '{') {
-              this.consume(); // consume #
-              tok('HASH', '#'); continue;
-            }
-          }
-          // Old-style header: skip to EOL
-          while (this.pos < this.src.length && this.src[this.pos] !== '\n') this.consume();
-          continue;
+        // `#` followed by a space, a dot or the start of a name is the module
+        // declaration `# name { … }`, and nothing else: the parser takes it from
+        // here, and refuses what is not one with the Rust parser's words. Only
+        // `# name {` used to be a token — any other such line was an "old-style
+        // header" and vanished to the end of the line, so `# hola` ran in the
+        // browser and was refused by both Rust engines (ZYJS-025).
+        if (c1 === ' ' || c1 === '\t' || c1 === '.' || isIdentStart(c1)) {
+          this.consume(); // consume #
+          tok('HASH', '#'); continue;
         }
         // #> = export block declarator
         if (c1 === '>') { this.consume(); this.consume(); tok('EXPORT_DECL', '#>'); continue; }
@@ -1362,17 +1352,67 @@ export class Parser {
     this.adv(); // consume HASH
     let name = '';
     if (this.check('DOT')) { this.adv(); name += '.'; }
-    name += this.eat('IDENT').value;
-    this.eat('LBRACE');
-    const body = this.parseStmtList();
-    this.eat('RBRACE');
-    // One `#>` per module, as `parse_module_block` requires: a second one used
-    // to load, and the two lists merged (ZYJS-022).
-    const exportDecls = body.filter(s => s?.type === 'ExportDecl');
-    if (exportDecls.length > 1) {
-      throw new ZyStaticError('duplicate export block in module', exportDecls[1],
-        'a module may only have one #> export block');
+    name += this.eat('IDENT', "expected module name after '#'").value;
+    this.eat('LBRACE', "expected '{' after module name",
+      'module body must be enclosed in braces: # name { ... }');
+
+    // The body is read item by item, and each item is judged as it is read —
+    // the loop of `parse_module_block` in `zymbol-parser/src/modules.rs`, rule
+    // for rule. A module holds imports, one export block, constants, variables
+    // and function definitions, and a binding is initialised with a literal
+    // (E013). This engine used to parse the body as any block and leave E013 to
+    // its checker, so the same module failed here as `1 semantic error(s)`,
+    // with no help and at column 0, and as `1 parse error(s)` in Rust.
+    const E013_HELP = 'modules may only contain imports, exports, constants, variables, and function definitions';
+    const body = [];
+    let exported = false;
+    while (!this.check('RBRACE') && !this.check('EOF')) {
+      const t = this.peek();
+      if (t.type === 'IMPORT') { body.push(this.parseStmt()); continue; }
+      if (t.type === 'EXPORT_DECL') {
+        // One `#>` per module: a second one used to load, and the two lists
+        // merged (ZYJS-022).
+        if (exported) {
+          throw new ZyStaticError('duplicate export block in module', t,
+            'a module may only have one #> export block');
+        }
+        exported = true;
+        body.push(this.parseStmt());
+        continue;
+      }
+      if (t.type === 'IDENT') {
+        const next = this.peek(1).type;
+        if (next === 'CONST_ASSIGN' || next === 'ASSIGN') {
+          // Where the initialiser starts, which is where both Rust engines
+          // point: `C := 1 + 2` is refused at the `1`.
+          const valueTok = this.peek(2);
+          const stmt = this.parseStmt();
+          if (!Interpreter.isModuleLiteral(stmt?.value)) {
+            if (next === 'CONST_ASSIGN') {
+              throw new ZyStaticError('E013: constant initializer in module must be a literal', valueTok,
+                'module-level constants must use literal values, not expressions or function calls');
+            }
+            throw new ZyStaticError('E013: variable initializer in module must be a literal', valueTok,
+              'module-level variables must use literal values, not expressions or function calls');
+          }
+          body.push(stmt);
+          continue;
+        }
+        if (next === 'LPAREN') {
+          // `f(…) { … }` declares; `f(…)` alone would run something.
+          let j = 2, depth = 1;
+          while (depth > 0 && this.peek(j).type !== 'EOF') {
+            const k = this.peek(j).type;
+            if (k === 'LPAREN') depth++;
+            else if (k === 'RPAREN') depth--;
+            j++;
+          }
+          if (this.peek(j).type === 'LBRACE') { body.push(this.parseStmt()); continue; }
+        }
+      }
+      throw new ZyStaticError('E013: executable statement not allowed in module body', t, E013_HELP);
     }
+    this.eat('RBRACE', "expected '}' to close module body");
     return { type: 'ModuleBlock', name, body, line };
   }
 
@@ -1398,8 +1438,10 @@ export class Parser {
       // Allow multi-segment bare paths: std/math, std/random, etc.
       while (this.check('DIV')) { this.adv(); path += '/' + this.eat('IDENT').value; }
     }
-    this.eat('FAT_ARROW'); // consume =>
-    const alias = this.eat('IDENT').value;
+    // The words of `parse_import_statement`. They used to be this engine's own
+    // token names — `Expected FAT_ARROW, got 'mat'` — which no reader can act on.
+    this.eat('FAT_ARROW', "expected '=>' for module alias", 'import syntax: <# path => alias');
+    const alias = this.eat('IDENT', "expected alias name after '=>'").value;
     return { type: 'Import', path, alias, line };
   }
 
@@ -4700,25 +4742,10 @@ class Checker {
         return;
 
       case 'ModuleBlock': {
-        const allowedInModule = new Set(['ExportDecl', 'FuncDecl', 'VarAssign', 'ConstAssign', 'Import', 'Noop']);
-        for (const s of (stmt.body ?? [])) {
-          if (s && !allowedInModule.has(s.type))
-            this.error('E013', `E013: executable statement not allowed in module body`, s.line ?? stmt.line, {});
-          // A module binding is initialised with a LITERAL — a scalar, a scalar
-          // with a sign, or a collection literal built only out of those. Only
-          // the statement's *type* was checked here, so `x = 1 + 2` and
-          // `t = json::decode(raw)` were accepted and run, while both Rust
-          // engines refused to parse the module at all. The parity gate could
-          // not see it: a file the other two engines reject has no golden to
-          // disagree with.
-          if (s && (s.type === 'VarAssign' || s.type === 'ConstAssign')
-                && !Interpreter.isModuleLiteral(s.value)) {
-            const what = s.type === 'ConstAssign' ? 'constant' : 'variable';
-            this.error('E013',
-              `E013: ${what} initializer in module must be a literal`,
-              s.line ?? stmt.line, {});
-          }
-        }
+        // What a module body may hold (E013) is the parser's to refuse, as it is
+        // in Rust — `Parser.parseModuleBlock`. It was checked here, and the same
+        // module failed as a semantic error in this engine and a parse error in
+        // the other two (ZYJS-022).
         // And then analyse it. Only the *shape* of the body was checked here, so
         // a module function reassigning the module's own `:=` constant went
         // unreported and the module simply ran — MM-4, which the Rust engines
