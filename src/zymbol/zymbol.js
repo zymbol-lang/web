@@ -207,6 +207,49 @@ const DIGIT_BLOCKS = [
 // are digits instead of keeping a second copy of DIGIT_BLOCKS. It kept none, so
 // a number written in Devanagari was not coloured as a number at all and its
 // decimal point was offered member-access help.
+// ─── What a name is made of — `Lexer::is_ident_start` / `is_ident_continue` ────
+//
+// One definition, used by every place that recognises a name: the tokenizer,
+// `readIdent`, labels, interpolation and the checker. Before GLB-026 B this
+// engine kept its own narrower classes and DROPPED what they left out, so
+// `¿x`, `€x` and `a±b` silently became `x`, `x` and `a b` — `x = 1; ¿x = 5`
+// printed 5 for both. The tables are the Rust lexer's, character for character.
+const IDENT_OPERATOR_CHARS = new Set([...'><=!+-*/%^&|?:.,;()[]{}@~#$¶\\']);
+const INVISIBLE_RANGES = [
+  [0x00AD, 0x00AD], [0x0600, 0x0605], [0x061C, 0x061C], [0x06DD, 0x06DD], [0x070F, 0x070F],
+  [0x0890, 0x0891], [0x08E2, 0x08E2], [0x180E, 0x180E], [0x200B, 0x200F], [0x202A, 0x202E],
+  [0x2060, 0x2064], [0x2066, 0x206F], [0xFEFF, 0xFEFF], [0xFFF9, 0xFFFB], [0x110BD, 0x110BD],
+  [0x110CD, 0x110CD], [0x13430, 0x1343F], [0x1BCA0, 0x1BCA3], [0x1D173, 0x1D17A],
+  [0xE0001, 0xE0001], [0xE0020, 0xE007F],
+];
+// A control character or a Unicode format character: it renders as nothing.
+export function isInvisibleChar(ch) {
+  const cp = ch?.codePointAt(0);
+  if (cp === undefined) return false;
+  if (cp < 0x20 || (cp >= 0x7F && cp <= 0x9F)) return true;
+  return INVISIBLE_RANGES.some(([a, b]) => cp >= a && cp <= b);
+}
+export function isIdentStart(ch) {
+  if (!ch) return false;
+  if (ch === '_') return true;
+  // The backtick and invisible characters never; ZWJ/ZWNJ only inside a name.
+  if (ch === '`' || isInvisibleChar(ch)) return false;
+  if (/\p{Alphabetic}/u.test(ch)) return true;
+  return !/\s/u.test(ch) && digitValue(ch) < 0 && !IDENT_OPERATOR_CHARS.has(ch);
+}
+export function isIdentContinue(ch) {
+  if (!ch) return false;
+  if (ch === '\u200C' || ch === '\u200D') return true;
+  if (ch === '`' || isInvisibleChar(ch)) return false;
+  if (/[\p{Alphabetic}\p{N}_]/u.test(ch)) return true;
+  return !/\s/u.test(ch) && !IDENT_OPERATOR_CHARS.has(ch);
+}
+// A whole name, by the same two rules.
+export function isIdentName(s) {
+  const cs = Array.from(s ?? '');
+  return cs.length > 0 && isIdentStart(cs[0]) && cs.slice(1).every(isIdentContinue);
+}
+
 export function digitValue(ch) {
   const cp = ch.codePointAt(0);
   for (const [base] of DIGIT_BLOCKS) {
@@ -435,6 +478,9 @@ export class Lexer {
   tokenize() {
     const toks = [];
     const tok = (type, value) => toks.push({ type, value, line: this.line });
+    // A byte order mark opening the file is not part of the program (GLB-026 A);
+    // anywhere else it is an invisible character, refused below.
+    if (this.pos === 0 && this.ch() === '\uFEFF') this.consume();
 
     while (this.pos < this.src.length) {
       if (/[ \t\r\n]/.test(this.ch())) { this.consume(); continue; }
@@ -716,7 +762,7 @@ export class Lexer {
       const c = this.ch();
 
       if (c === '_') {
-        if (/[\p{L}\p{Co}0-9_]/u.test(this.ch(1))) { this.readIdent(toks); }
+        if (isIdentContinue(this.ch(1)) && this.ch(1) !== '°') { this.readIdent(toks); }
         else { this.consume(); tok('ELSE', '_'); }
         continue;
       }
@@ -728,14 +774,14 @@ export class Lexer {
           // @:label — labeled loop, break, or continue
           this.consume();
           let label = '';
-          while (/[\p{L}\p{M}\p{N}\p{So}\p{Co}_\u200c\u200d]/u.test(this.ch())) label += this.consume();
+          while (isIdentContinue(this.ch()) && this.ch() !== '°') label += this.consume();
           if (this.ch() === '!') { this.consume(); tok('AT_BREAK', label); }
           else if (this.ch() === '>') { this.consume(); tok('AT_CONT',  label); }
           else tok('AT_LABEL', label);
-        } else if (/[\p{L}\p{M}\p{So}\p{Co}_]/u.test(this.ch())) {
+        } else if (isIdentStart(this.ch()) && this.ch() !== '°') {
           // @label (legacy: label without colon)
           let label = '';
-          while (/[\p{L}\p{M}\p{N}\p{So}\p{Co}_\u200c\u200d]/u.test(this.ch())) label += this.consume();
+          while (isIdentContinue(this.ch()) && this.ch() !== '°') label += this.consume();
           tok('AT_LABEL', label);
         } else {
           tok('AT', '@');
@@ -790,7 +836,7 @@ export class Lexer {
       // written in Sanskrit and names variables that way; the file ran here
       // with a wrong parse and correctly under both Rust engines, and nothing
       // said so. Closing ZYJS-001 is what turned it into a visible refusal.
-      if (/[\p{L}\p{M}\p{So}\p{Co}]/u.test(c)) { this.readIdent(toks); continue; }
+      if (isIdentStart(c)) { this.readIdent(toks); continue; }
 
       const single = {
         '=':'ASSIGN', '<':'LT', '>':'GT',
@@ -818,8 +864,15 @@ export class Lexer {
       // Rust has no token for. The rest still fall through and vanish — `~`
       // among them, which the parameter mark `a~` quietly relies on here while
       // Rust lexes it as a token (ZYJS-020 § what still vanishes).
-      if (c === '&') {
-        throw new ZyStaticError(`unexpected character: '${c}'`, this.line);
+      // An invisible character outside a name is refused too, and is named by
+      // its code point (GLB-026 B) — quoting it would show the reader nothing.
+      // (`\s` in JavaScript counts U+FEFF as space; Rust's is_whitespace does not.)
+      const invisible = isInvisibleChar(c) && !/[\t\n\v\f\r]/.test(c);
+      if (c === '&' || c === '`' || invisible) {
+        const shown = invisible
+          ? `U+${c.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')}`
+          : `'${c}'`;
+        throw new ZyStaticError(`unexpected character: ${shown}`, this.line);
       }
       this.consume();
     }
@@ -1020,7 +1073,7 @@ export class Lexer {
         // An identifier, by the rule the checker and `readIdent` use: never a
         // digit first. The old test only excluded operators, so `"a{1}"`
         // passed and printed `a1` (ZYJS-020).
-        if (!/^[\p{L}\p{M}\p{So}\p{Co}_][\p{L}\p{M}\p{N}\p{So}\p{Co}_\u200c\u200d]*$/u.test(inner)) {
+        if (!isIdentName(inner)) {
           throw new ZyStaticError(
             'invalid character in string interpolation',
             startLine,
@@ -1096,7 +1149,7 @@ export class Lexer {
       // same PUA sub-range for both letters and that script's own digits, so
       // breaking here would truncate real identifiers mid-word (HLZ-KL-001-
       // adjacent parity gap, found via klingon_galaxy/HuD.zy).
-      if (/[\p{L}\p{M}\p{N}\p{So}\p{Co}_]/u.test(c)) { s += this.consume(); continue; }
+      if (isIdentContinue(c)) { s += this.consume(); continue; }
       // `'` continues an identifier once one has begun — `Lexer::is_ident_continue`
       // in Rust admits any non-whitespace, non-operator character, and the
       // apostrophe is not an operator. Klingon needs it (`mI'`, `tlhIngan Hol`),
@@ -5140,7 +5193,7 @@ class Checker {
               // classes mirror readIdent's lexer rule (HLZ-KL-001 parity) — a
               // narrower rule here would under-mark PUA-script (e.g. pIqaD)
               // identifiers as used, producing a false W_UNUSED.
-              if (/^[\p{L}\p{M}\p{So}\p{Co}_][\p{L}\p{M}\p{N}\p{So}\p{Co}_\u200c\u200d]*$/u.test(name)) {
+              if (isIdentName(name)) {
                 // A name that is nothing is a static error, and a name that is
                 // something is read like an identifier, MEM-2 included — the
                 // author's decision on GLB-018 A, as `check_interpolated_name`

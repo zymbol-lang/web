@@ -72,7 +72,7 @@ examples/graphics/mandelbrot/czech.zy	0	2
 examples/graphics/mandelbrot/danish.zy	0	2
 examples/graphics/mandelbrot/dutch.zy	0	2
 examples/graphics/mandelbrot/embera.zy	0	2
-examples/graphics/mandelbrot/emoji.zy	0	1
+examples/graphics/mandelbrot/emoji.zy	0	2
 examples/graphics/mandelbrot/english.zy	0	2
 examples/graphics/mandelbrot/esperanto.zy	0	2
 examples/graphics/mandelbrot/estonian.zy	0	2
@@ -325,7 +325,7 @@ examples/tour/functions.zy	0	0
 examples/tui/hello.zy	0	0
 examples/tui/snake/dibujo.zy	0	0
 examples/tui/snake/logica.zy	0	0
-examples/tui/snake/serpiente.zy	0	2
+examples/tui/snake/serpiente.zy	0	1
 examples/variables/compound-ops.zy	0	0
 examples/variables/constant.zy	0	0
 examples/variables/interpolation.zy	0	0
