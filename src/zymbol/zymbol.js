@@ -1820,17 +1820,17 @@ export class Parser {
       // `##_` is its own token since it became the Unit literal, so the
       // wildcard is matched before the `##Kind` identifier path.
       if (this.check('UNIT')) { this.adv(); }
-      // `:! #Div` — one `#`. No help yet: the Rust one lists three kinds of the
-      // eleven (GLB-022), and step 3.2 fixes both.
+      // `:! #Div` — one `#`. The help lists all eleven kinds, as the Rust one
+      // does since GLB-022 was fixed; it listed three.
       if (this.check('HASH')) {
-        throw new ZyStaticError("expected '##' for error type (missing second #)", this.peek());
+        throw new ZyStaticError("expected '##' for error type (missing second #)", this.peek(),
+          'error types use ## prefix: ##Div, ##Index, ##Key, ##Range, ##Type, ##Parse, ##IO, ##Network, ##DB, ##Time, ##_');
       }
       // `:! ## { }` — the mark with no kind after it. It was taken as a filter
       // named `##` that never matched, so the error went uncaught (ZYJS-021).
-      // No help yet: the Rust one lists seven of the eleven kinds (GLB-022),
-      // and copying it would teach the same gap. Step 3.2 fixes both at once.
       if (this.check('IDENT') && this.peek().value === '##') {
-        throw new ZyStaticError("expected error type name after '##'", this.peek());
+        throw new ZyStaticError("expected error type name after '##'", this.peek(),
+          'valid error types: ##Div, ##Index, ##Key, ##Range, ##Type, ##Parse, ##IO, ##Network, ##DB, ##Time, ##_');
       }
       const errType = (this.check('IDENT') && this.peek().value.startsWith('##'))
         ? this.adv().value : null;
