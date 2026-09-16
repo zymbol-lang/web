@@ -3760,7 +3760,7 @@ class Checker {
       if (!s) continue;
       if (s.type === 'FuncDecl') {
         if (functions.has(s.name)) {
-          this.error('E_NAME', `'${s.name}' is defined twice in this file`, s.line,
+          this.error('E_NAME', `'${s.name}' is defined twice in this file`, s,
             { name: s.name },
             `inside one strong environment a name designates one thing (first defined at line ${functions.get(s.name)}) — rename one, or delete the definition this one replaces`);
         } else {
@@ -3772,13 +3772,13 @@ class Checker {
           if (pn === s.name) {
             this.error('E_NAME',
               `parameter '${pn}' has the same name as the function it belongs to`,
-              s.line, { name: pn },
+              s, { name: pn },
               'a function and its parameters share one strong environment, so inside the body the name would designate two things');
           }
           if (seen.has(pn)) {
             this.error('E_NAME',
               `'${pn}' is declared twice in the parameters of '${s.name}'`,
-              s.line, { name: pn },
+              s, { name: pn },
               `which argument the name refers to is undefined (first declared at line ${seen.get(pn)}) — the three engines answered differently, so the program's value depended on which one ran it`);
           } else {
             seen.set(pn, s.line);
@@ -3858,12 +3858,12 @@ class Checker {
     const label = stmt.label ?? null;
     if (label === null || label === '') {
       if (this.loopLabels.length === 0) {
-        this.error('E014', `'${sym}' outside a loop`, stmt.line, { sym, verb });
+        this.error('E014', `'${sym}' outside a loop`, stmt, { sym, verb });
       }
       return;
     }
     if (!this.loopLabels.includes(label)) {
-      this.error('E015', `no enclosing loop is labelled '${label}'`, stmt.line, { label, sym });
+      this.error('E015', `no enclosing loop is labelled '${label}'`, stmt, { label, sym });
     }
   }
 
@@ -3887,18 +3887,21 @@ class Checker {
         this.warn('W_UNUSED',
           `unused variable '${name}'\n` +
           `= help: consider removing this variable or prefixing with '_' if intentionally unused`,
-          info.line, { name });
+          info, { name });
       }
     }
   }
 
-  define(name, line, isConst = false, isFn = false, isAlias = false) {
+  define(name, at, isConst = false, isFn = false, isAlias = false) {
     if (this.stack.length === 0 || !name) return;
+    // `at` is the declaring node, or a line: the record keeps the column too, so
+    // an unused name is reported where Rust reports it (ZYJS-024).
+    const { line, col } = Checker.posOf(at);
     // `isFn` because functions share this map with variables here, and MEM-2 is
     // about VARIABLES: calling a function defined in the file is not reaching
     // out of scope, it is what a file of functions is for. The Rust analyser
     // keeps the two in separate tables and never had to say so.
-    this.stack[this.stack.length - 1].vars.set(name, { line, isConst, used: false, isFn, isAlias });
+    this.stack[this.stack.length - 1].vars.set(name, { line, col, isConst, used: false, isFn, isAlias });
   }
 
   /**
@@ -4201,10 +4204,10 @@ class Checker {
     }
   }
 
-  defineOrKeep(name, line, isConst = false) {
+  defineOrKeep(name, at, isConst = false) {
     if (this.stack.length === 0 || !name) return;
     if (this.has(name) && !this.onlyVisibleAcrossStrong(name)) return;
-    this.define(name, line, isConst);
+    this.define(name, at, isConst);
   }
 
   /**
@@ -4246,7 +4249,8 @@ class Checker {
    * `undefined variable 'x'`. Two loops each accumulating into their own `x°`
    * silently shared one.
    */
-  hotDefine(name, line, postfix = false) {
+  hotDefine(name, at, postfix = false) {
+    const { line, col } = Checker.posOf(at);
     if (this.stack.length === 0 || !name) return;
     let i = this.stack.length - 1;
     if (postfix) {
@@ -4257,7 +4261,7 @@ class Checker {
     // `isHot`: the marker's whole purpose is to place the name at a boundary
     // and read it from inside, so reaching it is not a MEM-2 crossing. The Rust
     // analyser sidesteps this earlier — `ident.hot` never reaches the check.
-    this.stack[i].vars.set(name, { line, isConst: false, used: false, isHot: true });
+    this.stack[i].vars.set(name, { line, col, isConst: false, used: false, isHot: true });
   }
 
   /** Is this name in scope? Unlike lookup(), it does not mark it used. */
@@ -4319,7 +4323,7 @@ class Checker {
     // per loop instead produced six warnings against the binary's three.
     if (this.lifetimeWarned.has(name)) return;
     this.lifetimeWarned.add(name);
-    this.warn('W_LIFETIME', `ambiguous lifetime for '${name}'`, stmt.line, { name });
+    this.warn('W_LIFETIME', `ambiguous lifetime for '${name}'`, stmt, { name });
   }
 
   /**
@@ -4393,12 +4397,28 @@ class Checker {
   // and would see one string here against a message plus a `.with_help(…)`
   // there, i.e. a difference that is not one. Rust keeps them apart; so does
   // this (ZYJS-002).
-  error(code, msg, line = null, params = null, help = null) {
-    this.diagnostics.push({ severity: 'error', code, message: msg, line, params, help });
+  error(code, msg, at = null, params = null, help = null) {
+    const { line, col } = Checker.posOf(at);
+    this.diagnostics.push({ severity: 'error', code, message: msg, line, col, params, help });
   }
 
-  warn(code, msg, line = null, params = null, help = null) {
-    this.diagnostics.push({ severity: 'warning', code, message: msg, line, params, help });
+  warn(code, msg, at = null, params = null, help = null) {
+    const { line, col } = Checker.posOf(at);
+    this.diagnostics.push({ severity: 'warning', code, message: msg, line, col, params, help });
+  }
+
+  // Where a diagnostic points: a node, or a bare line number. The LINE is the
+  // node's own `line`, exactly what these call sites passed before; the column
+  // is the one the parser stamped on the statement (`zyCol`), and only when it
+  // belongs to that same line — a node whose `line` names an inner token would
+  // otherwise get a column from somewhere else. An expression node carries no
+  // column yet, and says so with null rather than a guess (ZYJS-024).
+  static posOf(at) {
+    if (at === null || at === undefined) return { line: null, col: null };
+    if (typeof at !== 'object') return { line: at, col: null };
+    const line = at.line ?? null;
+    const col = at.col ?? ((at.zyCol != null && at.zyLine === line) ? at.zyCol : null);
+    return { line, col };
   }
 
   // GAP-ZYB-006: walk the statements a top-level `<~` can be reached from —
@@ -4426,13 +4446,13 @@ class Checker {
             'E-EXIT-TYPE',
             `a top-level \`<~\` ends the program, so its value is the exit status ` +
             `and must be a whole number — this one is ${named[v.kind] ?? v.kind}`,
-            stmt.line);
+            stmt);
         } else if (v?.type === 'ArrayLit' || v?.type === 'TupleLit' || v?.type === 'NamedTuple') {
           this.error(
             'E-EXIT-TYPE',
             'a top-level `<~` ends the program, so its value is the exit status ' +
             'and must be a whole number — this one is a collection',
-            stmt.line);
+            stmt);
         }
         return;
       }
@@ -4470,7 +4490,7 @@ class Checker {
     this.checkNameCollisions(this.ast.body);
     this.push(false);
     for (const stmt of this.ast.body) {
-      if (stmt.type === 'FuncDecl') this.define(stmt.name, stmt.line, false, true);
+      if (stmt.type === 'FuncDecl') this.define(stmt.name, stmt, false, true);
     }
     for (const stmt of this.ast.body) this.checkStmt(stmt);
     // GAP-ZYB-006: a `<~` at the top level ends the program, and its value is
@@ -4483,7 +4503,7 @@ class Checker {
   checkBlock(stmts) {
     if (!Array.isArray(stmts)) return;
     for (const s of stmts) {
-      if (s?.type === 'FuncDecl') this.define(s.name, s.line, false);
+      if (s?.type === 'FuncDecl') this.define(s.name, s, false);
     }
     for (const s of stmts) this.checkStmt(s);
   }
@@ -4499,14 +4519,14 @@ class Checker {
         // Prefix hot-def (°name = expr): define target before checking RHS so self-references are valid
         if (wasHot && stmt.name) {
           const info = this.lookup(stmt.name, stmt.line);
-          if (!info) this.hotDefine(stmt.name, stmt.line);
+          if (!info) this.hotDefine(stmt.name, stmt);
         }
         this.checkExpr(stmt.value);
         // Check for reassignment of a constant
         if (stmt.name) {
           const existing = this.lookup(stmt.name, stmt.line);
           if (existing?.isConst) {
-            this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line, { name: stmt.name });
+            this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt, { name: stmt.name });
             return;
           }
         }
@@ -4515,10 +4535,10 @@ class Checker {
           this.error('E_HOT_AMBIG',
             `ambiguous hot-definition markers on '${stmt.name}': ` +
             `use either '°${stmt.name}' (anchors above loop) or '${stmt.name}°' (anchors at loop), not both`,
-            stmt.line, { name: stmt.name });
+            stmt, { name: stmt.name });
           return;
         }
-        if (!wasHot) this.defineOrKeep(stmt.name, stmt.line, false);
+        if (!wasHot) this.defineOrKeep(stmt.name, stmt, false);
         // Remember the type when the value is a literal, which is the only case
         // decided without inference — enough for `n = 1  ? n { … }`, and the
         // same limit the Rust analyser works under when it cannot infer.
@@ -4531,7 +4551,7 @@ class Checker {
 
       case 'ConstAssign': {
         this.checkExpr(stmt.value);
-        this.define(stmt.name, stmt.line, true);
+        this.define(stmt.name, stmt, true);
         return;
       }
 
@@ -4550,16 +4570,16 @@ class Checker {
           this.error('E_HOT_AMBIG',
             `ambiguous hot-definition markers on '${stmt.name}': ` +
             `use either '°${stmt.name}' (anchors above loop) or '${stmt.name}°' (anchors at loop), not both`,
-            stmt.line, { name: stmt.name });
+            stmt, { name: stmt.name });
           return;
         }
         if (!isHot) {
           const info = this.lookup(stmt.name, stmt.line);
-          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line, { name: stmt.name }, Checker.HELP_UNDEFINED);
-          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line, { name: stmt.name });
+          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt, { name: stmt.name }, Checker.HELP_UNDEFINED);
+          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt, { name: stmt.name });
         } else {
           const info = this.lookup(stmt.name, stmt.line);
-          if (!info) this.hotDefine(stmt.name, stmt.line, stmt.hot === true);
+          if (!info) this.hotDefine(stmt.name, stmt, stmt.hot === true);
         }
         this.checkExpr(stmt.value);
         return;
@@ -4569,11 +4589,11 @@ class Checker {
         const isHot = stmt.hot || wasHot;
         if (!isHot) {
           const info = this.lookup(stmt.name, stmt.line);
-          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line, { name: stmt.name }, Checker.HELP_UNDEFINED);
-          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt.line, { name: stmt.name });
+          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt, { name: stmt.name }, Checker.HELP_UNDEFINED);
+          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt, { name: stmt.name });
         } else {
           const info = this.lookup(stmt.name, stmt.line);
-          if (!info) this.hotDefine(stmt.name, stmt.line);
+          if (!info) this.hotDefine(stmt.name, stmt);
         }
         return;
       }
@@ -4583,7 +4603,7 @@ class Checker {
         const obj = stmt.obj ?? stmt.name;
         if (obj) {
           const info = this.lookup(obj, stmt.line);
-          if (!info) this.error('E_VAR', `undefined variable '${obj}'`, stmt.line, { name: obj }, Checker.HELP_UNDEFINED);
+          if (!info) this.error('E_VAR', `undefined variable '${obj}'`, stmt, { name: obj }, Checker.HELP_UNDEFINED);
         }
         this.checkExpr(stmt.index);
         this.checkExpr(stmt.value);
@@ -4594,7 +4614,7 @@ class Checker {
         const name = stmt.name ?? stmt.obj;
         if (name) {
           const info = this.lookup(name, stmt.line);
-          if (!info) this.error('E_VAR', `undefined variable '${name}'`, stmt.line, { name }, Checker.HELP_UNDEFINED);
+          if (!info) this.error('E_VAR', `undefined variable '${name}'`, stmt, { name }, Checker.HELP_UNDEFINED);
         }
         for (const idx of (stmt.indices ?? [])) this.checkExpr(idx);
         this.checkExpr(stmt.value);
@@ -4604,7 +4624,7 @@ class Checker {
       case 'LifetimeEnd': {
         if (stmt.name) {
           const info = this.lookup(stmt.name, stmt.line);
-          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt.line, { name: stmt.name }, Checker.HELP_UNDEFINED);
+          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt, { name: stmt.name }, Checker.HELP_UNDEFINED);
           // GLB-008: the name is NOT removed here. Deleting it made every later
           // use an `undefined variable`, which refuses correct programs — a `\`
           // inside a branch that never runs destroys nothing, and this pass
@@ -4622,7 +4642,7 @@ class Checker {
         // A module alias is not a variable — the Rust analyser keeps aliases in
         // their own set, so MEM-2 never sees one. `m::f()` inside a function is
         // not reaching out of scope.
-        if (stmt.alias) this.define(stmt.alias, stmt.line, false, false, true);
+        if (stmt.alias) this.define(stmt.alias, stmt, false, false, true);
         return;
       }
 
@@ -4650,7 +4670,7 @@ class Checker {
       case 'Input': {
         if (stmt.prompt) this.checkExpr(stmt.prompt);
         const varName = stmt.varName ?? stmt.name;
-        if (varName) this.define(varName, stmt.line, false);
+        if (varName) this.define(varName, stmt, false);
         return;
       }
 
@@ -4684,7 +4704,7 @@ class Checker {
         this.push(false, false, true);
         if (stmt.kind === 'foreach' || stmt.iterable || stmt.iter) {
           this.checkExpr(stmt.iterable ?? stmt.iter);
-          if (stmt.var) this.define(stmt.var, stmt.line, false);
+          if (stmt.var) this.define(stmt.var, stmt, false);
         } else if (stmt.kind === 'range' || stmt.from !== undefined) {
           this.checkExpr(stmt.from);
           this.checkExpr(stmt.to);
@@ -4708,7 +4728,7 @@ class Checker {
               'Guard the empty case.',
               stmt.line ?? null);
           }
-          if (stmt.var) this.define(stmt.var, stmt.line, false);
+          if (stmt.var) this.define(stmt.var, stmt, false);
         } else if (stmt.cond) {
           this.checkExpr(stmt.cond);
         }
@@ -4722,12 +4742,12 @@ class Checker {
 
       case 'CliArgs': {
         // >< name: captures CLI args into a variable
-        if (stmt.variable) this.define(stmt.variable, stmt.line, false);
+        if (stmt.variable) this.define(stmt.variable, stmt, false);
         return;
       }
 
       case 'KeyInput': {
-        if (stmt.varName ?? stmt.variable) this.define(stmt.varName ?? stmt.variable, stmt.line, false);
+        if (stmt.varName ?? stmt.variable) this.define(stmt.varName ?? stmt.variable, stmt, false);
         return;
       }
 
@@ -4816,7 +4836,7 @@ class Checker {
         for (const p of (stmt.params ?? [])) {
           const pname = typeof p === 'string' ? p : p.name;
           if (pname) {
-            this.define(pname, stmt.line, false);
+            this.define(pname, stmt, false);
             // A signature may fix a parameter an implementation does not use;
             // neither Rust analyser warns, and the author decided none does
             // (2026-09-15), as for a lambda's.
@@ -4839,7 +4859,7 @@ class Checker {
         this.push(); this.checkBlock(stmt.tryBody ?? stmt.try); this.pop();
         for (const catch_ of (stmt.catches ?? [])) {
           this.push();
-          this.define('_err', stmt.line, false);
+          this.define('_err', stmt, false);
           this.checkBlock(catch_.body);
           this.pop();
         }
@@ -4861,10 +4881,10 @@ class Checker {
             // is an error, same as direct reassignment.
             const info = this.lookup(t.name, stmt.line);
             if (info?.isConst) {
-              this.error('E_CONST', `cannot reassign constant '${t.name}'`, stmt.line, { name: t.name });
+              this.error('E_CONST', `cannot reassign constant '${t.name}'`, stmt, { name: t.name });
               continue;
             }
-            this.define(t.name, stmt.line, false);
+            this.define(t.name, stmt, false);
           }
         }
         return;
@@ -4962,7 +4982,7 @@ class Checker {
           return;
         }
         const info = this.lookup(expr.name, expr.line);
-        if (!info) this.error('E_VAR', `undefined variable '${expr.name}'`, expr.line, { name: expr.name }, Checker.HELP_UNDEFINED);
+        if (!info) this.error('E_VAR', `undefined variable '${expr.name}'`, expr, { name: expr.name }, Checker.HELP_UNDEFINED);
         // MEM-2, at the same place the Rust analyser checks it: reading an
         // identifier. Not in `lookup`, which assignments also go through —
         // writing inside a function makes a local and never reaches out, so it
@@ -5011,7 +5031,7 @@ class Checker {
         // otherwise the function does not exist (e.g. `cos(x)` without `math::cos`).
         if (typeof expr.callee === 'string' && expr.callee) {
           const info = this.lookup(expr.callee, expr.line);
-          if (!info) this.error('E_FUNC', `undefined function: '${expr.callee}'`, expr.line, { name: expr.callee });
+          if (!info) this.error('E_FUNC', `undefined function: '${expr.callee}'`, expr, { name: expr.callee });
           else if (this.funcArity.has(expr.callee) && !this.reassigned.has(expr.callee)) {
             this.checkArity(expr.callee, this.funcArity.get(expr.callee),
                             (expr.args ?? []).length, expr.line);
@@ -5065,7 +5085,7 @@ class Checker {
         for (const p of (expr.params ?? [])) {
           const pname = typeof p === 'string' ? p : p.name;
           if (pname) {
-            this.define(pname, expr.line, false);
+            this.define(pname, expr, false);
             this.stack[this.stack.length - 1].vars.get(pname).isParam = true;
           }
         }
@@ -5108,13 +5128,13 @@ class Checker {
               `array element ${bad + 1} has type ${kinds[bad]}, but expected ${first} ` +
               `(same as first element)\n` +
               `= help: all array elements must have the same type — write \`#[…]\` if the mix is deliberate`,
-              expr.line);
+              expr);
           } else if (bad < 0 && expr.declaredMixed) {
             // Decision 18: the escape hatch used where it is not needed.
             this.warn('W_MIX_UNNEEDED',
               `this \`#[…]\` has no mixed types: every element is ${first}\n` +
               `= help: use \`[…]\` — \`#[…]\` is for declaring a mix that is deliberate`,
-              expr.line);
+              expr);
           }
         }
         return;
@@ -5277,7 +5297,7 @@ class Checker {
                 // author's decision on GLB-018 A, as `check_interpolated_name`
                 // in the Rust analyser. It used to print `{name}` as text.
                 const info = this.lookup(name, expr.line);
-                if (!info) this.error('E_VAR_INTERP', `undefined variable '${name}' in string interpolation`, expr.line, { name }, Checker.HELP_UNDEFINED_INTERP);
+                if (!info) this.error('E_VAR_INTERP', `undefined variable '${name}' in string interpolation`, expr, { name }, Checker.HELP_UNDEFINED_INTERP);
                 else this.checkReachOutOfScope(name, expr.line);
               }
             }
@@ -9316,6 +9336,7 @@ export function checkSource(src, opts = {}) {
         code: 'E_PARSE',
         message,
         line: line === null ? null : Number(line),
+        col: e?.zyCol ?? null,
         params: { message },
         help: e?.zyHelp ?? null,
       }],

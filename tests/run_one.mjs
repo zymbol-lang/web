@@ -149,7 +149,15 @@ try {
 function formatDiagnostic(severity, d) {
   const [head, ...rest] = String(d.message).split('\n');
   let out = `${severity}: ${head}\n`;
-  if (d.line != null) out += `  --> line ${d.line}\n`;
+  // `--> file:line:col`, the CLI's spelling, whenever the engine knows the
+  // column. A diagnostic that has only a line keeps `--> line N`: writing
+  // `file:line:0` would claim a column nobody measured, and a missing one is a
+  // difference a cell should show, not one a zero should hide (ZYJS-024).
+  if (d.line != null) {
+    out += d.col != null
+      ? `  --> ${displayPath(abs)}:${d.line}:${d.col}\n`
+      : `  --> line ${d.line}\n`;
+  }
   for (const line of rest) out += `  ${line}\n`;
   // The guidance arrives as its own field, as it does from Rust's `Diagnostic`,
   // and is printed the way the CLI prints it. Engines that fold it into the
