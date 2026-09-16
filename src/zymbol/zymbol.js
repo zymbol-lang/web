@@ -401,14 +401,29 @@ class ZyReturn  { constructor(value) { this.value = value; } }
 class ZyBreak    { constructor(label = null) { this.label = label; } }
 class ZyContinue { constructor(label = null) { this.label = label; } }
 class ZyErrorPropagate { constructor(errVal) { this.errVal = errVal; } }
+/** Read a position out of a token, a node, or a bare line number.
+ *
+ * Both Rust engines carry a span on every token and print `file:line:col`; this
+ * engine carried a line alone, so every diagnostic out of a module said column
+ * 0 and no editor could jump to the character (ZYJS-024). A caller that has a
+ * token passes the token.
+ */
+function zyPosOf(at) {
+  if (at && typeof at === 'object') return { line: at.line ?? null, col: at.col ?? null };
+  return { line: at ?? null, col: null };
+}
 class ZyError extends Error {
   // The line goes in `zyLine`, never into the message. The Rust engines put it
   // on its own `-->` line and keep the message itself clean; baking `Line 2: `
   // into the text made the same runtime error read differently here, and put
   // the number in front of a message whose own `help:` line follows it.
-  constructor(msg, line) {
+  constructor(msg, at) {
     super(msg);
-    this.zyLine = line;
+    // `at` is a token, or anything else carrying `{line, col}` — a bare number
+    // is still accepted, and then there is no column to report.
+    const pos = zyPosOf(at);
+    this.zyLine = pos.line;
+    this.zyCol  = pos.col;
   }
 }
 /** The `##` family of an error that carries only a message.
@@ -445,9 +460,11 @@ class ZyStaticError extends Error {
   // `help` is a field for the same reason it is one in Rust's `Diagnostic`: the
   // `=` of `= help:` is what separates the guidance from the message, so a
   // guidance concatenated onto the message is separated by nothing.
-  constructor(msg, line, help = null) {
+  constructor(msg, at, help = null) {
     super(msg);
-    this.zyLine = line;
+    const pos = zyPosOf(at);
+    this.zyLine = pos.line;
+    this.zyCol  = pos.col;
     this.zyHelp = help;
   }
 }
@@ -465,24 +482,41 @@ export class Lexer {
     this.src = [...src];
     this.pos = 0;
     this.line = 1;
+    // The column is 1-based and counts code points, which is what the Rust
+    // lexer's span counts too — `x = "éé" ]` with a combining accent puts the
+    // `]` at column 12 in both, not at the tenth grapheme.
+    this.col = 1;
+    // Where the token being read STARTS. A position is the start of the thing
+    // it names: an error that points past the token it is about points at the
+    // next one (ZYJS-024).
+    this.tokLine = 1;
+    this.tokCol = 1;
   }
 
   ch(offset = 0) { return this.src[this.pos + offset] ?? ''; }
 
+  /** The start of the token being read, for a token or for a diagnostic. */
+  at() { return { line: this.tokLine, col: this.tokCol }; }
+
   consume() {
     const c = this.src[this.pos++];
-    if (c === '\n') this.line++;
+    if (c === '\n') { this.line++; this.col = 1; } else this.col++;
     return c;
   }
 
   tokenize() {
     const toks = [];
-    const tok = (type, value) => toks.push({ type, value, line: this.line });
+    const tok = (type, value) => toks.push({ type, value, line: this.tokLine, col: this.tokCol });
     // A byte order mark opening the file is not part of the program (GLB-026 A);
     // anywhere else it is an invisible character, refused below.
     if (this.pos === 0 && this.ch() === '\uFEFF') this.consume();
 
     while (this.pos < this.src.length) {
+      // Whatever this iteration produces starts HERE: the whitespace and the
+      // comments before it were consumed by iterations of their own, so the
+      // position at the top of the loop is the token's own first character.
+      this.tokLine = this.line;
+      this.tokCol  = this.col;
       if (/[ \t\r\n]/.test(this.ch())) { this.consume(); continue; }
 
       // comment
@@ -495,7 +529,6 @@ export class Lexer {
       // unclosed one to the end of the file: `/* abierto` ran as an empty
       // program, exit 0 (ZYJS-020).
       if (this.ch() === '/' && this.ch(1) === '*') {
-        const commentLine = this.line;
         this.consume(); this.consume();
         let depth = 1;
         while (this.pos < this.src.length && depth > 0) {
@@ -504,7 +537,7 @@ export class Lexer {
           else this.consume();
         }
         if (depth > 0) {
-          throw new ZyStaticError('Unterminated multi-line comment', commentLine, 'add */ to close the comment');
+          throw new ZyStaticError('Unterminated multi-line comment', this.at(), 'add */ to close the comment');
         }
         continue;
       }
@@ -528,7 +561,7 @@ export class Lexer {
             // next token with nothing before it (ZYJS-020).
             throw new ZyStaticError(
               `invalid boolean literal: digit ${c1} is not valid after '#'`,
-              this.line,
+              this.at(),
               "use '#0' (or its Unicode equivalent) for false, '#1' for true");
           }
           this.consume(); this.consume();
@@ -608,7 +641,7 @@ export class Lexer {
             const c2 = this.ch(2);
             if (c2 !== '|' && c2 !== '.' && c2 !== '!') {
               const prefix = '#,';
-              throw new ZyStaticError(`expected '|' after format operator '${prefix}'`, this.line,
+              throw new ZyStaticError(`expected '|' after format operator '${prefix}'`, this.at(),
                 `format expression syntax: ${prefix}|expr| or ${prefix}.N|expr|`);
             }
             if (c2 === '|') { kind = 'comma'; advance = 3; }
@@ -660,12 +693,12 @@ export class Lexer {
           if (c1 === '.' || c1 === '!') {
             const hasCount = readDigits(2).d.length > 0 || readName(2).d.length > 0;
             if (hasCount) {
-              throw new ZyStaticError("expected '|' after precision", this.line,
+              throw new ZyStaticError("expected '|' after precision", this.at(),
                 c1 === '.' ? 'round expression syntax: #.N|expr|' : 'truncate expression syntax: #!N|expr|');
             }
             // No help: the Rust one teaches `#..2|value|` (GLB-021).
             const prefix = '#' + c1;
-            throw new ZyStaticError(`expected a decimal count after '${prefix}'`, this.line);
+            throw new ZyStaticError(`expected a decimal count after '${prefix}'`, this.at());
           }
         }
         // # followed by space/letter/dot: module block `# name {` or old-style comment
@@ -703,7 +736,6 @@ export class Lexer {
       if (this.ch() === '<' && this.ch(1) === '\\') {
         this.consume(); this.consume(); // consume <\
         let _cmd = '';
-        const bashLine = this.line;
         let closed = false;
         while (this.pos < this.src.length) {
           if (this.ch() === '\\' && this.ch(1) === '>') { this.consume(); this.consume(); closed = true; break; }
@@ -712,7 +744,7 @@ export class Lexer {
         // `<\ "echo"` with no `\>` ran to the end of the file and was accepted
         // (ZYJS-021); both Rust lexers refuse it.
         if (!closed) {
-          throw new ZyStaticError('unterminated bash execute expression', bashLine,
+          throw new ZyStaticError('unterminated bash execute expression', this.at(),
             'bash execute syntax: <\\ expr1 expr2 ... \\>');
         }
         tok('BASHEXEC', _cmd.trim()); continue;
@@ -854,7 +886,7 @@ export class Lexer {
       if (c === '!' && this.ch(1) === '=') {
         throw new ZyStaticError(
           "'!=' is not a valid Zymbol operator",
-          this.line,
+          this.at(),
           "use '<>' for not-equal  →  a <> b");
       }
       if (single[c]) { this.consume(); tok(single[c], c); continue; }
@@ -872,11 +904,16 @@ export class Lexer {
         const shown = invisible
           ? `U+${c.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')}`
           : `'${c}'`;
-        throw new ZyStaticError(`unexpected character: ${shown}`, this.line);
+        throw new ZyStaticError(`unexpected character: ${shown}`, this.at());
       }
       this.consume();
     }
 
+    // End of file is where the file ENDS, not where the last token started:
+    // `#> { f,` with nothing after it is refused at 3:1, past the last newline,
+    // which is where both Rust engines point.
+    this.tokLine = this.line;
+    this.tokCol  = this.col;
     tok('EOF', null);
     return toks;
   }
@@ -892,36 +929,36 @@ export class Lexer {
     if (this.ch() === '0') {
       const next = this.ch(1);
       if (next === 'x' || next === 'X') {
-        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 16 }, line: this.line }); return; }
+        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 16 }, line: this.tokLine, col: this.tokCol }); return; }
         this.consume(); this.consume();
         let hex = '';
         while (/[0-9a-fA-F]/.test(this.ch())) hex += this.consume();
-        if (!hex) throw new ZyStaticError(`expected ${'hexadecimal'} digits after base prefix`, this.line);
-        toks.push({ type: 'CHAR', value: this.codePointChar(hex, 16, 'hexadecimal'), line: this.line }); return;
+        if (!hex) throw new ZyStaticError(`expected ${'hexadecimal'} digits after base prefix`, this.at());
+        toks.push({ type: 'CHAR', value: this.codePointChar(hex, 16, 'hexadecimal'), line: this.tokLine, col: this.tokCol }); return;
       }
       if (next === 'b' || next === 'B') {
-        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 2 }, line: this.line }); return; }
+        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 2 }, line: this.tokLine, col: this.tokCol }); return; }
         this.consume(); this.consume();
         let bin = '';
         while (this.ch() === '0' || this.ch() === '1') bin += this.consume();
-        if (!bin) throw new ZyStaticError(`expected ${'binary'} digits after base prefix`, this.line);
-        toks.push({ type: 'CHAR', value: this.codePointChar(bin, 2, 'binary'), line: this.line }); return;
+        if (!bin) throw new ZyStaticError(`expected ${'binary'} digits after base prefix`, this.at());
+        toks.push({ type: 'CHAR', value: this.codePointChar(bin, 2, 'binary'), line: this.tokLine, col: this.tokCol }); return;
       }
       if (next === 'o' || next === 'O') {
-        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 8 }, line: this.line }); return; }
+        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 8 }, line: this.tokLine, col: this.tokCol }); return; }
         this.consume(); this.consume();
         let oct = '';
         while (/[0-7]/.test(this.ch())) oct += this.consume();
-        if (!oct) throw new ZyStaticError(`expected ${'octal'} digits after base prefix`, this.line);
-        toks.push({ type: 'CHAR', value: this.codePointChar(oct, 8, 'octal'), line: this.line }); return;
+        if (!oct) throw new ZyStaticError(`expected ${'octal'} digits after base prefix`, this.at());
+        toks.push({ type: 'CHAR', value: this.codePointChar(oct, 8, 'octal'), line: this.tokLine, col: this.tokCol }); return;
       }
       if (next === 'd' || next === 'D') {
-        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 10 }, line: this.line }); return; }
+        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 10 }, line: this.tokLine, col: this.tokCol }); return; }
         this.consume(); this.consume();
         let dec = '';
         while (/[0-9]/.test(this.ch())) dec += this.consume();
-        if (!dec) throw new ZyStaticError(`expected ${'decimal'} digits after base prefix`, this.line);
-        toks.push({ type: 'CHAR', value: this.codePointChar(dec, 10, 'decimal'), line: this.line }); return;
+        if (!dec) throw new ZyStaticError(`expected ${'decimal'} digits after base prefix`, this.at());
+        toks.push({ type: 'CHAR', value: this.codePointChar(dec, 10, 'decimal'), line: this.tokLine, col: this.tokCol }); return;
       }
     }
     let value = 0;
@@ -933,7 +970,7 @@ export class Lexer {
     let intText = '';
     let activeBlock = ASCII_BASE;
     const MIXED_SCRIPTS = () => new ZyStaticError(
-      'mixed digit scripts in numeric literal', this.line,
+      'mixed digit scripts in numeric literal', this.at(),
       'all digits in a literal must belong to the same numeral system (e.g. all ASCII or all Devanagari)');
     while (this.pos < this.src.length) {
       const dv = digitValue(this.ch());
@@ -961,14 +998,14 @@ export class Lexer {
       }
       const sci = this.readExponentSuffix(`${intText}.${fracText}`);
       const f = parseFloat(`${intText || '0'}.${fracText || '0'}${sci}`);
-      toks.push({ type: 'FLOAT', value: f, line: this.line });
+      toks.push({ type: 'FLOAT', value: f, line: this.tokLine, col: this.tokCol });
     } else {
       // `1e10` with no decimal point is a Float too, exactly as the Rust engines
       // read it (`1e10#?` is `##.`). This case used to fall through to the integer
       // branch, and `e10` was then lexed as an identifier — "undefined variable 'e10'".
       const sci = this.readExponentSuffix(intText);
       if (sci) {
-        toks.push({ type: 'FLOAT', value: parseFloat(value + sci), line: this.line });
+        toks.push({ type: 'FLOAT', value: parseFloat(value + sci), line: this.tokLine, col: this.tokCol });
         return;
       }
       if (!inIntRange(value))
@@ -978,9 +1015,9 @@ export class Lexer {
         // playground, `zyq` — reads that grafía.
         throw new ZyStaticError(
           `integer literal out of range: '${value}'`,
-          this.line,
+          this.at(),
           ZY_INT_RANGE_HELP);
-      toks.push({ type: 'NUM', value, line: this.line });
+      toks.push({ type: 'NUM', value, line: this.tokLine, col: this.tokCol });
     }
   }
 
@@ -990,12 +1027,12 @@ export class Lexer {
   codePointChar(digits, radix, baseName) {
     const code = parseInt(digits, radix);
     if (code > 0xFFFFFFFF) {
-      throw new ZyStaticError(`invalid ${baseName} literal: ${digits}`, this.line);
+      throw new ZyStaticError(`invalid ${baseName} literal: ${digits}`, this.at());
     }
     if (code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) {
       throw new ZyStaticError(
         `invalid Unicode code point: 0x${code.toString(16).toUpperCase()} (${baseName} ${digits})`,
-        this.line);
+        this.at());
     }
     return String.fromCodePoint(code);
   }
@@ -1014,7 +1051,7 @@ export class Lexer {
       // used to be left for the next token (ZYJS-020).
       throw new ZyStaticError(
         `invalid float literal: '${numberText}${Array.from({ length: k }, (_, i) => this.ch(i)).join('')}'`,
-        this.line);
+        this.at());
     }
     let sci = this.consume();
     if (this.ch() === '+' || this.ch() === '-') sci += this.consume();
@@ -1048,7 +1085,7 @@ export class Lexer {
           // The closing quote or the end of the file before the `}`: the
           // interpolation never closed, as the Rust lexer says (ZYJS-020).
           if (this.pos >= this.src.length || this.ch() === '"') {
-            throw new ZyStaticError('unterminated string interpolation', startLine, 'close the interpolation with }');
+            throw new ZyStaticError('unterminated string interpolation', this.at(), 'close the interpolation with }');
           }
           const ch = this.consume();
           if      (ch === '{') { depth++; inner += ch; }
@@ -1090,7 +1127,7 @@ export class Lexer {
         // say why.
         throw new ZyStaticError(
           `unmatched '}' in string`,
-          this.line,
+          this.at(),
           `the escape is symmetric — write \\} for a literal brace, as \\{ is for the opening one`);
       } else {
         cur += this.consume();
@@ -1098,7 +1135,7 @@ export class Lexer {
     }
     if (this.pos < this.src.length) this.consume(); // closing "
     if (cur) parts.push({ t: 'lit', v: cur });
-    toks.push({ type: 'STR', value: parts, line: startLine, endLine: this.line });
+    toks.push({ type: 'STR', value: parts, col: this.tokCol, line: startLine, endLine: this.line });
   }
 
   readChar(toks) {
@@ -1106,14 +1143,14 @@ export class Lexer {
     let ch = '';
     // A quote with nothing after it, or a backslash with nothing after it:
     // `c = '` at the end of the file only warned about `c` (ZYJS-020).
-    if (this.pos >= this.src.length) throw new ZyStaticError('unterminated char literal', this.line);
+    if (this.pos >= this.src.length) throw new ZyStaticError('unterminated char literal', this.at());
     if (this.ch() === '\\') {
       this.consume();
-      if (this.pos >= this.src.length) throw new ZyStaticError('unterminated char literal', this.line);
+      if (this.pos >= this.src.length) throw new ZyStaticError('unterminated char literal', this.at());
       const e = this.consume();
       if (!['n', 't', 'r', "'", '\\', '0'].includes(e)) {
         // The Rust table and nothing else: `'\q'` used to be the letter q.
-        throw new ZyStaticError(`invalid escape sequence: '\\${e}'`, this.line);
+        throw new ZyStaticError(`invalid escape sequence: '\\${e}'`, this.at());
       }
       // Escape table mirrors Lexer::lex_char in zymbol-lexer/src/literals.rs. This used to
       // take the character after the backslash verbatim, so '\n' lexed as the letter "n" —
@@ -1131,9 +1168,9 @@ export class Lexer {
     }
     // One character and its closing quote. `'ab'` used to close nothing and
     // leave `b'` to be read as a name.
-    if (this.ch() !== "'") throw new ZyStaticError("expected closing ' for char literal", this.line);
+    if (this.ch() !== "'") throw new ZyStaticError("expected closing ' for char literal", this.at());
     this.consume();
-    toks.push({ type: 'CHAR', value: ch, line: this.line });
+    toks.push({ type: 'CHAR', value: ch, line: this.tokLine, col: this.tokCol });
   }
 
   readIdent(toks) {
@@ -1180,10 +1217,10 @@ export class Lexer {
         throw new ZyStaticError(
           `ambiguous hot-definition markers on '${s}': ` +
           `use either '°${s}' (anchors above loop) or '${s}°' (anchors at loop), not both`,
-          this.line);
+          this.at());
       }
     }
-    toks.push({ type: 'IDENT', value: s, hot, line: this.line });
+    toks.push({ type: 'IDENT', value: s, hot, line: this.tokLine, col: this.tokCol });
   }
 }
 
@@ -1209,10 +1246,10 @@ export class Parser {
   // (ZYJS-021).
   eat(type, msg, help = null) {
     if (!this.check(type)) {
-      if (msg) throw new ZyStaticError(msg, this.peek().line, help);
+      if (msg) throw new ZyStaticError(msg, this.peek(), help);
       const v = this.peek().value;
       const shown = (v !== null && typeof v === 'object') ? 'string' : (v ?? this.peek().type);
-      throw new ZyError(`Expected ${type}, got '${shown}'`, this.peek().line);
+      throw new ZyError(`Expected ${type}, got '${shown}'`, this.peek());
     }
     return this.adv();
   }
@@ -1225,7 +1262,7 @@ export class Parser {
     if (body[0]?.type === 'ModuleBlock') {
       const extra = body.slice(1).find(st => st && st.type !== 'Noop');
       if (extra) {
-        throw new ZyStaticError('unexpected token after module block', extra.line ?? null,
+        throw new ZyStaticError('unexpected token after module block', extra,
           'a module file must contain only: # name { ... }');
       }
     }
@@ -1333,7 +1370,7 @@ export class Parser {
     // to load, and the two lists merged (ZYJS-022).
     const exportDecls = body.filter(s => s?.type === 'ExportDecl');
     if (exportDecls.length > 1) {
-      throw new ZyStaticError('duplicate export block in module', exportDecls[1].line,
+      throw new ZyStaticError('duplicate export block in module', exportDecls[1],
         'a module may only have one #> export block');
     }
     return { type: 'ModuleBlock', name, body, line };
@@ -1372,8 +1409,10 @@ export class Parser {
   // line into all 101 `throw new ZyError` sites — of which 7 did it.
   parseStmt() {
     const line = this.peek()?.line ?? null;
+    const col  = this.peek()?.col ?? null;
     const s = this._parseStmt();
     if (s && s.zyLine == null) s.zyLine = line;
+    if (s && s.zyCol == null) s.zyCol = col;
     return s;
   }
 
@@ -1394,7 +1433,7 @@ export class Parser {
       // `#> { 5 }`, `#> { mat. }`, `#> { f => }` and the pre-v0.0.6 `:` rename
       // loaded without a word (ZYJS-022).
       const refuse = (msg, tok, help = null) => {
-        throw new ZyStaticError(msg, tok?.line ?? exportLine, help);
+        throw new ZyStaticError(msg, tok ?? { line: exportLine }, help);
       };
       const nameAfter = (msg) => {
         const tok = this.peek();
@@ -1430,7 +1469,7 @@ export class Parser {
       }
       if (!this.check('RBRACE')) refuse("expected '}' to close export block", this.peek());
       this.adv();
-      return { type: 'ExportDecl', names, line: exportLine };
+      return { type: 'ExportDecl', names, line: exportLine, col: t.col ?? null };
     }
     if (t.type === 'OUTPUT')   return this.parseOutput();
     if (t.type === 'INPUT')    return this.parseInput();
@@ -1462,7 +1501,7 @@ export class Parser {
         return { type: 'LifetimeEnd', name };
       }
       // `\ 5` destroyed nothing and said nothing (ZYJS-021).
-      throw new ZyStaticError('expected variable name after \\', this.peek().line ?? t.line,
+      throw new ZyStaticError('expected variable name after \\', this.peek() ?? t,
         'syntax: \\variable to explicitly destroy a variable');
     }
     if (t.type === 'LBRACKET' && this.isDestructuring()) return this.parseArrayDestruct();
@@ -1489,15 +1528,15 @@ export class Parser {
     // build, so `unexpected '${shown}'` is a message no other engine has, even
     // when every rendering of it matches.
     if (t.type === 'LBRACKET') {
-      throw new ZyStaticError("unexpected '[' at statement level", t.line,
+      throw new ZyStaticError("unexpected '[' at statement level", t,
         "use '[a, b] = expr' for array destructuring");
     }
     if (t.type === 'LPAREN') {
-      throw new ZyStaticError("unexpected '(' at statement level", t.line,
+      throw new ZyStaticError("unexpected '(' at statement level", t,
         "use '(a, b) = expr' for tuple destructuring");
     }
     if (t.type === 'HASH_LPAREN') {
-      throw new ZyStaticError("unexpected '#(' at statement level", t.line,
+      throw new ZyStaticError("unexpected '#(' at statement level", t,
         "use '#(name: n) = expr' to destructure a dictionary");
     }
     if (t.type === 'IDENT')    return this.parseIdentStmt();
@@ -1579,7 +1618,7 @@ export class Parser {
         const named = Parser.RUST_TOKEN_NAME[this.peek().type] ?? this.peek().type;
         throw new ZyStaticError(
           `expected expression, found ${named}`,
-          this.peek().line,
+          this.peek(),
           OUTPUT_GRAMMAR_HELP(stray));
       }
     }
@@ -1607,7 +1646,7 @@ export class Parser {
     if (typed && !this.match('VBAR')) {
       // `<< #|n` with no closing bar was accepted and sat waiting for input
       // (ZYJS-021); both Rust parsers refuse it before anything runs.
-      throw new ZyStaticError("expected '|' to close #|variable|", this.peek().line ?? line,
+      throw new ZyStaticError("expected '|' to close #|variable|", this.peek() ?? { line },
         'numeric input syntax: << #|variable|');
     }
     const finalCast = cast ?? { kind: typed ? 'numeric' : 'string' };
@@ -1692,14 +1731,14 @@ export class Parser {
       // `:! #Div` — one `#`. No help yet: the Rust one lists three kinds of the
       // eleven (GLB-022), and step 3.2 fixes both.
       if (this.check('HASH')) {
-        throw new ZyStaticError("expected '##' for error type (missing second #)", this.peek().line);
+        throw new ZyStaticError("expected '##' for error type (missing second #)", this.peek());
       }
       // `:! ## { }` — the mark with no kind after it. It was taken as a filter
       // named `##` that never matched, so the error went uncaught (ZYJS-021).
       // No help yet: the Rust one lists seven of the eleven kinds (GLB-022),
       // and copying it would teach the same gap. Step 3.2 fixes both at once.
       if (this.check('IDENT') && this.peek().value === '##') {
-        throw new ZyStaticError("expected error type name after '##'", this.peek().line);
+        throw new ZyStaticError("expected error type name after '##'", this.peek());
       }
       const errType = (this.check('IDENT') && this.peek().value.startsWith('##'))
         ? this.adv().value : null;
@@ -1958,7 +1997,7 @@ export class Parser {
           throw new ZyError(
             "'*rest' has no meaning in a '??' pattern — a pattern compares, it " +
             'does not bind; for a length test write `?? xs$# { >=3 => … }`',
-            this.peek().line);
+            this.peek());
         } else if (this.check('ELSE')) {
           this.adv();
           elems.push({ kind: 'wildcard' });
@@ -1982,10 +2021,10 @@ export class Parser {
         // The ends are one kind, as `parse_pattern_primary` requires: `'a'..5`
         // and `1..'z'` used to parse, never match, and fall to `_` (ZYJS-021).
         if (left?.type === 'Literal' && left.kind === 'int' && !(to?.type === 'Literal' && to.kind === 'int')) {
-          throw new ZyStaticError("expected integer after '..' in range pattern", endTok.line ?? this.peek().line);
+          throw new ZyStaticError("expected integer after '..' in range pattern", endTok ?? this.peek());
         }
         if (left?.type === 'Literal' && left.kind === 'char' && !(to?.type === 'Literal' && to.kind === 'char')) {
-          throw new ZyStaticError("expected char after '..' in range pattern", endTok.line ?? this.peek().line);
+          throw new ZyStaticError("expected char after '..' in range pattern", endTok ?? this.peek());
         }
         pattern = { type: 'range', from: left, to };
       } else {
@@ -2090,7 +2129,7 @@ export class Parser {
       // `f(a b) { }` is not two parameters: both Rust parsers stop at the `b`,
       // and this one declared two and failed at the call (ZYJS-021).
       if (!this.match('COMMA') && !this.check('RPAREN')) {
-        throw new ZyStaticError("expected ')' after parameters", this.peek().line, 'function syntax: name(params) { }');
+        throw new ZyStaticError("expected ')' after parameters", this.peek(), 'function syntax: name(params) { }');
       }
     }
     this.eat('RPAREN');
@@ -2149,7 +2188,7 @@ export class Parser {
       // (ZYJS-021). Their help text teaches `arr[i] = val`, a form that does
       // not exist (COL-2), so it is not copied: GLB-027.
       if (hot && !this.check('ASSIGN') && !compound[this.peek().type]) {
-        throw new ZyStaticError("expected '=' after index expression for indexed assignment", this.peek().line ?? line);
+        throw new ZyStaticError("expected '=' after index expression for indexed assignment", this.peek() ?? { line });
       }
       // Decision 6: the indexed assignment is withdrawn, in all three
       // collections. `=` means "this NAME now holds this value", and
@@ -2456,7 +2495,7 @@ export class Parser {
         // Two names with no comma between them are not two parameters: both
         // Rust parsers stop here, and `(x y -> #1)` used to take both (ZYJS-021).
         if (!this.match('COMMA') && !this.check('RPAREN') && !this.check('ARROW')) {
-          throw new ZyStaticError("expected ')' after lambda parameters", this.peek().line, 'lambda syntax: (a, b) -> expr');
+          throw new ZyStaticError("expected ')' after lambda parameters", this.peek(), 'lambda syntax: (a, b) -> expr');
         }
       }
       if (this.check('RPAREN')) {
@@ -2651,7 +2690,7 @@ export class Parser {
         // `m::sqrt 4` read the function as a value and printed `<funct/0>4`
         // (ZYJS-021).
         if (scoped && !this.check('LPAREN')) {
-          throw new ZyStaticError("expected '(' for module function call", this.peek().line,
+          throw new ZyStaticError("expected '(' for module function call", this.peek(),
             'module function call syntax: module::function(args)');
         }
         // `d.k$~ v` writes exactly as `d["k"]$~ v` does. The dot is how
@@ -2690,7 +2729,7 @@ export class Parser {
       } else if (this.check('DUPDATE') && !['NavIndex', 'FieldAccess'].includes(left?.type)) {
         // An index or a key is built into an edit above; anything else has no
         // place to write, and `5$~ 9` said "expected expression" (ZYJS-021).
-        throw new ZyStaticError('collection update ($~) requires a place to write', this.peek().line,
+        throw new ZyStaticError('collection update ($~) requires a place to write', this.peek(),
           'use: arr[i]$~ value, arr[i>j]$~ value, or d.key$~ value');
       } else {
         break;
@@ -2779,7 +2818,7 @@ export class Parser {
       this.adv();
       const n = this.peek();
       if (n.type !== 'NUM') {
-        throw new ZyStaticError("expected integer after '-' in nav index", n.line ?? t.line,
+        throw new ZyStaticError("expected integer after '-' in nav index", n ?? t,
           'negative indices: arr[-1], arr[-2>-1]');
       }
       this.adv();
@@ -2790,7 +2829,7 @@ export class Parser {
       this.adv();
       const e = this.parseExpr();
       if (!this.check('RPAREN')) {
-        throw new ZyStaticError("expected ')' after computed index", this.peek().line,
+        throw new ZyStaticError("expected ')' after computed index", this.peek(),
           'computed indices: arr[(expr)>(expr)]');
       }
       this.adv();
@@ -2798,7 +2837,7 @@ export class Parser {
     }
     throw new ZyStaticError(
       'expected navigation step: a position (integer or variable) or a dictionary key (string)',
-      t.line, 'valid nav index: arr[1>2], arr[n>m], arr[(a)>(b)], arr[1>2..4]');
+      t, 'valid nav index: arr[1>2], arr[n>m], arr[(a)>(b)], arr[1>2..4]');
   }
 
   // A whole step after `>` or `;`: a strict atom, optionally a range.
@@ -2871,7 +2910,7 @@ export class Parser {
         // `$--[position:count]` was removed in v0.0.2, and both Rust parsers
         // still name it — a bracket here reads as that form, not as a value.
         if (this.check('LBRACKET')) {
-          throw new ZyStaticError('$--[position:count] is retired — use $-[start..end] instead', this.peek().line,
+          throw new ZyStaticError('$--[position:count] is retired — use $-[start..end] instead', this.peek(),
             'v0.0.2: s$--[0:6] → s$-[0..6]');
         }
         return { type: 'CollectionOp', op: '$--', obj: left, arg: this.parseUnary() };
@@ -2922,7 +2961,7 @@ export class Parser {
         // The comparator is a lambda written here, as both Rust parsers require:
         // `a$^ f` with `f` holding one sorted in this engine alone (ZYJS-021).
         if (!this.check('LPAREN')) {
-          throw new ZyStaticError("expected comparator lambda after '$^', e.g. $^ (a, b -> a < b)", this.peek().line);
+          throw new ZyStaticError("expected comparator lambda after '$^', e.g. $^ (a, b -> a < b)", this.peek());
         }
         // An opening paren is a lambda being written, so what is missing is its
         // arrow — `a$^ (v)` parsed here and failed at run time (ZYJS-021).
@@ -2939,10 +2978,10 @@ export class Parser {
             else if (tk === 'EOF') break;
           }
           if (arrow) {
-            throw new ZyStaticError('expected parameter name in lambda', this.peek().line,
+            throw new ZyStaticError('expected parameter name in lambda', this.peek(),
               'lambda parameters must be identifiers: (a, b) -> expr');
           }
-          throw new ZyStaticError("expected '->' in lambda expression", this.peek().line,
+          throw new ZyStaticError("expected '->' in lambda expression", this.peek(),
             'lambda syntax: x -> expr or (a, b) -> expr');
         }
         return { type: 'CollectionOp', op: '$^',  obj: left, arg: this.parseUnary() };
@@ -3032,7 +3071,7 @@ export class Parser {
   parseTuiBlock() {
     this.adv(); // consume >>|
     if (!this.check('LBRACE')) {
-      throw new ZyStaticError("expected '{' after >>|", this.peek().line, 'TUI block syntax: >>| { statements }');
+      throw new ZyStaticError("expected '{' after >>|", this.peek(), 'TUI block syntax: >>| { statements }');
     }
     const body = this.parseBlock();
     return { type: 'TuiBlock', body };
@@ -3197,11 +3236,11 @@ export class Parser {
       }
       for (;;) {
         if (!(this.check('IDENT') || this.check('STR'))) {
-          throw new ZyStaticError('expected a key in the dictionary', this.peek().line,
+          throw new ZyStaticError('expected a key in the dictionary', this.peek(),
             'a key is a name or a string: #(nombre: valor) or #("gasto.alimentación": valor)');
         }
         if (this.peek(1).type !== 'COLON') {
-          throw new ZyStaticError("expected ':' after the key", this.peek(1).line ?? this.peek().line);
+          throw new ZyStaticError("expected ':' after the key", this.peek(1) ?? this.peek());
         }
         const keyTok = this.adv();
         if (keyTok.type === 'IDENT') {
@@ -3214,7 +3253,7 @@ export class Parser {
           if (parts.some(pt => pt.t !== 'lit')) {
             throw new ZyStaticError(
               'a dictionary key cannot interpolate — use `d[…]$~ value` to add a computed key',
-              keyTok.line);
+              keyTok);
           }
           keys.push(parts.map(pt => pt.v).join(''));
         }
@@ -3307,7 +3346,7 @@ export class Parser {
     // The refusal names the token the way the Rust parser names it, so the
     // three engines refuse the same program with the same sentence.
     const shown = Parser.RUST_TOKEN_NAME[t.type] ?? t.type;
-    throw new ZyStaticError(`expected expression, found ${shown}`, t.line ?? this.peek()?.line);
+    throw new ZyStaticError(`expected expression, found ${shown}`, t ?? this.peek());
   }
 }
 
@@ -6524,12 +6563,18 @@ export class Interpreter {
     const moduleReadError = (e, stage) => {
       if (!(e instanceof ZyStaticError || e instanceof ZyError)) return e;
       const count = 1;
-      let detail = `  ${whereOf()}:${e.zyLine ?? 0}:0: ${e.message}`;
+      let detail = `  ${whereOf()}:${e.zyLine ?? 0}:${e.zyCol ?? 0}: ${e.message}`;
       if (e.zyHelp) detail += `\n    help: ${e.zyHelp}`;
       const body = stage === 'lexer'
         ? `${count} lexer error(s) in '${whereOf()}'\n${detail}`
         : `${count} parse error(s) in '${whereOf()}'\n${detail}`;
-      return new ZyError(`failed to parse module: ${body}`);
+      const err = new ZyError(`failed to parse module: ${body}`);
+      // Already located, twice over: the detail line names the module's file,
+      // line and column. The statement that imported it used to be appended as
+      // a `--> main.zy:4` the Rust engines never print, so the same failure
+      // read as two different errors (ZYJS-024).
+      err.zyLocated = true;
+      return err;
     };
     let tokens, ast;
     try { tokens = new Lexer(src).tokenize(); }
@@ -6549,8 +6594,10 @@ export class Interpreter {
           .map(d => `  ${where}:${d.line ?? 0}:${d.col ?? 0}: ${d.message}` +
                     (d.help ? `\n    help: ${d.help}` : ''))
           .join('\n');
-        throw new ZyStaticError(
+        const err = new ZyStaticError(
           `failed to parse module: ${modDiags.length} semantic error(s) in '${where}'\n${detail}`);
+        err.zyLocated = true;
+        throw err;
       }
     }
 
@@ -6715,7 +6762,7 @@ export class Interpreter {
       // The innermost statement that knows the line wins: an error already
       // carrying one travels out untouched. Control-flow signals (ZyReturn,
       // ZyBreak, ZyErrorPropagate) are not errors and are never touched.
-      if (e instanceof ZyError && e.zyLine == null && stmt.zyLine != null) {
+      if (e instanceof ZyError && e.zyLine == null && !e.zyLocated && stmt.zyLine != null) {
         e.zyLine = stmt.zyLine;
       }
       throw e;
