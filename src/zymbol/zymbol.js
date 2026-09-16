@@ -498,6 +498,18 @@ export class Lexer {
   /** The start of the token being read, for a token or for a diagnostic. */
   at() { return { line: this.tokLine, col: this.tokCol }; }
 
+  /** Where the next token after `offset` characters of this one would start:
+   *  the position a Rust diagnostic names when it points at what stands where
+   *  something else was expected. Assumes the token so far is on one line. */
+  posAhead(offset) {
+    let line = this.tokLine, col = this.tokCol + offset, i = this.pos + offset;
+    while (i < this.src.length && /[ \t\r\n]/.test(this.src[i])) {
+      if (this.src[i] === '\n') { line++; col = 1; } else col++;
+      i++;
+    }
+    return { line, col };
+  }
+
   consume() {
     const c = this.src[this.pos++];
     if (c === '\n') { this.line++; this.col = 1; } else this.col++;
@@ -684,6 +696,28 @@ export class Lexer {
           if (kind !== null) {
             for (let i = 0; i < advance; i++) this.consume();
             tok('DATA_OP', { kind, prec, dynPrec }); continue;
+          }
+          // `#,` and `#^` that did not form an operator are refused as the Rust
+          // parser refuses them (`parse_format_expr`): a `.` or `!` with no
+          // count after it, or a count with no `|` after it. The `#` used to be
+          // left on its own and refused as one — `expected expression, found
+          // Hash` (ZYJS-026). Each points where Rust points: at what stands
+          // where the count, or the `|`, should be.
+          if (c1 === ',' || c1 === '^') {
+            const prefix = '#' + c1;
+            const c2 = this.ch(2);
+            if (c2 === '.' || c2 === '!') {
+              const digits = readDigits(3);
+              const count = digits.d.length > 0 ? digits : readName(3);
+              if (count.d.length === 0) {
+                throw new ZyStaticError(`expected a decimal count after '${prefix}'`, this.posAhead(3),
+                  `write the count or the name of a variable holding it: ${prefix + c2}2|value| or ${prefix + c2}n|value|`);
+              }
+              throw new ZyStaticError(`expected '|' after format operator '${prefix}'`, this.posAhead(count.i),
+                `format expression syntax: ${prefix}|expr| or ${prefix}.N|expr|`);
+            }
+            throw new ZyStaticError(`expected '|' after format operator '${prefix}'`, this.posAhead(2),
+              `format expression syntax: ${prefix}|expr| or ${prefix}.N|expr|`);
           }
           // `#.` and `#!` are the round and truncate operators in both Rust
           // lexers, whatever follows. Here an incomplete one fell to the
