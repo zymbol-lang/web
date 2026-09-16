@@ -719,7 +719,10 @@ export class Lexer {
         // while being a syntax error in both Rust ones: the `#` simply vanished
         // and what ran was a plain `[…]`.
         if (c1 === '[') { this.consume(); tok('HASH', '#'); continue; }
-        this.consume(); continue;
+        // Any other `#` is still a `#`, and the parser refuses it where it
+        // stands. It was consumed and forgotten: `x = 1 #` printed 1 here while
+        // both Rust engines refuse it (ZYJS-025 B).
+        this.consume(); tok('HASH', '#'); continue;
       }
 
       // BashExec <\ cmd \> — browser-only: captures command text, simulates common date/echo
@@ -1584,7 +1587,16 @@ export class Parser {
     if (t.type === 'IDENT')    return this.parseIdentStmt();
     if (t.type === 'SEMI')     { this.adv(); return null; }
     if (t.type === 'PILCROW')  { this.adv(); return { type: 'Output', items: [], newline: true }; }
-    if (t.type === 'HASH')     return this.parseModuleBlock();
+    // `#` declares a module only as the first token of the file — the check at
+    // the top of `Parser::parse` in Rust. Anywhere else it starts no statement,
+    // and is refused where it stands, with the Rust parser's words: it used to
+    // be read as a module block wherever it appeared, and so refused one token
+    // late, on the next line (ZYJS-025 B).
+    if (t.type === 'HASH') {
+      if (this.pos === 0) return this.parseModuleBlock();
+      throw new ZyStaticError(`unexpected token: ${Parser.RUST_TOKEN_NAME.HASH}`, t,
+        'expected statement (>>, <<, ?, ??, @, @!, @>, !?, <~, ¶, \\\\, or identifier)');
+    }
 
     return { type: 'ExprStmt', expr: this.parseExpr() };
   }
@@ -3196,7 +3208,7 @@ export class Parser {
   // refusal; anything outside it falls back to its own name, which is a
   // difference a cell would then show rather than one hidden by a guess.
   static RUST_TOKEN_NAME = {
-    ASSIGN: 'Assign', CONST_ASSIGN: 'ConstAssign', FAT_ARROW: 'FatArrow',
+    ASSIGN: 'Assign', CONST_ASSIGN: 'ConstAssign', FAT_ARROW: 'FatArrow', HASH: 'Hash',
     COMMA: 'Comma', COLON: 'Colon', SEMI: 'Semicolon', DOT: 'Dot',
     RANGE: 'DotDot', BACKSLASH: 'Backslash',
     LPAREN: 'LParen', RPAREN: 'RParen',
