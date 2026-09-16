@@ -6823,7 +6823,20 @@ export class Interpreter {
     // one in `tests/run_one.mjs`, which presents this engine to a shell as one
     // more command-line engine; a runner that always reports 0 is a runner that
     // lies about the contract it documents.
-    const signal = await this.execBlock(program.body, env);
+    let signal;
+    try {
+      signal = await this.execBlock(program.body, env);
+    } catch (e) {
+      // A `$!!` that carries an error out of the top level ends the program
+      // saying which error it was, as a runtime error with its line — as both
+      // Rust engines now do. The propagation signal itself used to reach the
+      // host, and was printed as `Runtime error: [object Object]` (ZYJS-027,
+      // decided 2026-09-16).
+      if (e instanceof ZyErrorPropagate) {
+        throw new ZyRuntimeError(this.display(e.errVal), '##_', e.zyLine ?? null);
+      }
+      throw e;
+    }
     if (signal instanceof ZyReturn) {
       const v = signal.value;
       this.exitCode = v?.type === 'int' ? v.v : (v?.type === 'unit' ? 0 : 1);
@@ -6860,6 +6873,13 @@ export class Interpreter {
       // carrying one travels out untouched. Control-flow signals (ZyReturn,
       // ZyBreak, ZyErrorPropagate) are not errors and are never touched.
       if (e instanceof ZyError && e.zyLine == null && !e.zyLocated && stmt.zyLine != null) {
+        e.zyLine = stmt.zyLine;
+      }
+      // The propagation signal is not an error and nothing else reads it here;
+      // it only remembers the innermost statement it left, for the one case in
+      // which it reaches the top level and becomes the error that ends the
+      // program (ZYJS-027). Inside a function the call returns its value first.
+      if (e instanceof ZyErrorPropagate && e.zyLine == null && stmt.zyLine != null) {
         e.zyLine = stmt.zyLine;
       }
       throw e;
