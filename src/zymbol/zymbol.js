@@ -5582,7 +5582,7 @@ function deepUpdateValue(col, indices, newVal) {
   const updatedSub = deepUpdateValue(sub, indices.slice(1), newVal);
   if (col.type === 'arr')   { const r = [...col.v]; r[idx] = updatedSub; return mkArr(r); }
   if (col.type === 'tuple') { const r = [...col.v]; r[idx] = updatedSub; return { type:'tuple', v:r, keys:col.keys }; }
-  throw new ZyError(`deep update ($~) not supported on ${col.type}`);
+  throw new ZyError(`$~ writes into a collection, and this is ${typeLabel(col)}\nhelp: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`);
 }
 
 // ─── Terminal display width (mirrors unicode-width crate, backs std/term) ────
@@ -6081,12 +6081,10 @@ function typeSymbol(v) {
 
 function buildStdlibModule(name, vfs = null) {
   const asF64 = v => v?.type === 'float' ? v.v : v?.type === 'int' ? v.v : null;
-  const typeCode = typeSymbolBase;
   const typeErr = (fn, ...badArgs) => {
-    const codes = (badArgs.length > 0 ? badArgs : [null])
-      .map(a => `"${typeCode(a).replace(/"/g, '\\"')}"`)
-      .join(', ');
-    throw new ZyError(`mat::${fn}: incompatible argument type(s) [${codes}]`);
+    // The types in words, joined — as the Rust engines say them since GLB-033.
+    const names = (badArgs.length > 0 ? badArgs : [null]).map(typeLabel).join(', ');
+    throw new ZyError(`mat::${fn}: incompatible argument type(s) ${names}`);
   };
 
   if (name === 'std/math') {
@@ -6479,7 +6477,7 @@ function buildStdlibModule(name, vfs = null) {
       const v = args[0];
       if (v?.type === 'str' || v?.type === 'char') return mkInt(displayWidth(v.v));
       // The type it got, as both Rust engines say it (ZYJS-019).
-      throw new ZyError(`term::width: expected a String or Char, got ${v ? typeSymbol(v) : '##_'}`);
+      throw new ZyError(`term::width: expected a String or Char, got ${v ? typeLabel(v) : 'nothing'}`);
     }});
     exports.set('pad_left', { type: 'func', name: 'pad_left', native: true, call: args => {
       if (args[0]?.type !== 'str' || args[1]?.type !== 'int') throw new ZyError('term::pad_left: expected (String, ###)');
@@ -7028,7 +7026,7 @@ export class Interpreter {
         // tree-walker requires; `@~ "x"` and `@~ -1` used to sleep for nothing
         // (GLB-014 E).
         const dur = await this.eval(stmt.duration, env);
-        if (dur.type !== 'int') throw new ZyError(`@~ requires integer milliseconds, got ${typeSymbol(dur)}`, stmt.line);
+        if (dur.type !== 'int') throw new ZyError(`@~ requires integer milliseconds, got ${typeLabel(dur)}`, stmt.line);
         if (dur.v < 0) throw new ZyError(`@~ requires non-negative duration, got ${dur.v}`, stmt.line);
         const ms = dur.v;
         await new Promise(r => {
@@ -7218,7 +7216,7 @@ export class Interpreter {
         const tup = await this.eval(stmt.value, env);
         if (!isDict(tup))
           throw new ZyError(
-            `the pattern #(…) requires a dictionary, got ${typeSymbolBase(tup)}\n` +
+            `the pattern #(…) requires a dictionary, got ${typeLabel(tup)}\n` +
             `help: #(key: name) = d unpacks a dictionary; use (a, b) for a tuple, [a, b] for an array`);
         for (const { field, name } of stmt.targets) {
           const i = tup.keys.indexOf(field);
@@ -7825,7 +7823,7 @@ export class Interpreter {
             `help: use t[1] — names live in a dictionary, #(key: value)`);
         if (!isDict(obj))
           throw new ZyError(
-            `the dot reaches a dictionary key, and this is ${typeSymbolBase(obj)}\n` +
+            `the dot reaches a dictionary key, and this is ${typeLabel(obj)}\n` +
             `help: use d.${expr.field} on a #(…) — for a position, use x[1]`);
         const i = obj.keys.indexOf(expr.field);
         // ##Key, not ##_: an absent key is its own kind whichever way the
@@ -7850,7 +7848,7 @@ export class Interpreter {
         if (iVal.type === 'str') {
           if (!isDict(arr))
             throw new ZyError(
-              `$~ writes into a collection, and this is ${typeSymbolBase(arr)}\n` +
+              `$~ writes into a collection, and this is ${typeLabel(arr)}\n` +
               `help: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`);
           const fi = arr.keys.indexOf(iVal.v);
           // A key that is not there gets ADDED, as `d[k] = v` does in Python.
@@ -7871,6 +7869,14 @@ export class Interpreter {
         if (isDict(arr))
           throw new ZyError(Interpreter.notPositionalMsg('d[n]$~ value', arr.keys));
 
+        // What is written into has to be a collection. It used to fall through
+        // to the index arithmetic, where an Int read as a container of length 0
+        // and the reader was told `tuple index out of bounds` (step 3.5d).
+        if (arr.type !== 'arr' && arr.type !== 'str' && arr.type !== 'tuple')
+          throw new ZyError(
+            `$~ writes into a collection, and this is ${typeLabel(arr)}\n` +
+            `help: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`);
+
         // Integer 1-based index
         const i = iVal.v;
         if (i === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
@@ -7882,7 +7888,7 @@ export class Interpreter {
         if (arr.type === 'arr')   { const r = [...arr.v]; r[idx] = val; return mkArr(r); }
         if (arr.type === 'str')   { const r = [...arr.v]; r[idx] = this.display(val); return mkStr(r.join('')); }
         if (arr.type === 'tuple') { const r = [...arr.v]; r[idx] = val; return { type:'tuple', v:r, keys:arr.keys }; }
-        throw new ZyError(`$~ not supported on ${arr.type}`);
+        throw new ZyError(`$~ writes into a collection, and this is ${typeLabel(arr)}\nhelp: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`);
       }
 
       case 'DeepUpdate': {
@@ -8208,7 +8214,8 @@ export class Interpreter {
   // compares the message text across all four engines, so this must match
   // `value_type_name` (tree-walker) and `tw_type_name` (VM) to the character.
   destructTypeName(val) {
-    return typeSymbolBase(val);
+    // In words, as every other diagnostic names a type (GLB-033, step 3.5d).
+    return typeLabel(val);
   }
 
   // Bind an array or positional-tuple pattern — the mirror of the tree-walker's
@@ -8342,7 +8349,34 @@ export class Interpreter {
       return resolveIdx(n, col.v.length);
     };
 
-    const notSupported = op => { throw new ZyError(`${op} not supported on ${col.type}`); };
+    // Each operator says what it needs, in the words the two Rust engines use
+    // (step 3.5c): `$+ not supported on int` named neither the type nor what
+    // would have worked. An operator with no twin keeps the old sentence.
+    const NOT_SUPPORTED = {
+      '$#':      L => `cannot get length of ${L} - only arrays, tuples, and strings have length`,
+      '$+':      L => `cannot append to ${L} - only arrays, tuples, and strings support $+`,
+      '$+[i]':   L => `$+[i] requires an array, tuple, or string, got ${L}`,
+      '$-':      L => `$- requires an array, tuple, or string, got ${L}`,
+      '$--':     L => `$-- requires an array, tuple, or string, got ${L}`,
+      '$-[i]':   L => `cannot remove from ${L} - only arrays, tuples, and strings support $-[i]`,
+      '$-[i..j]':L => `$-[..] requires an array, tuple, or string, got ${L}`,
+      '$-[i:n]': L => `$-[..] requires an array, tuple, or string, got ${L}`,
+      '$?':      L => `cannot search ${L} - only arrays, tuples, and strings support contains`,
+      '$??':     L => `$?? requires an array, tuple, or string, got ${L}`,
+      '$[i..j]': L => `cannot slice ${L} - only arrays, tuples, named tuples, and strings support slice`,
+      '$[i:n]':  L => `cannot slice ${L} - only arrays, tuples, named tuples, and strings support slice`,
+      '$^':      L => `sort requires an array, got ${L}`,
+      '$^+':     L => `sort requires an array, got ${L}`,
+      '$^-':     L => `sort requires an array, got ${L}`,
+      '$~~':     L => `$~~ requires a string, got ${L}`,
+      '$/':      L => `$/ requires a string on the left, got ${L}`,
+      '$*':      L => `$* requires a string, got ${L}`,
+      '$++':     L => `$++ requires a string or array as base, got ${L}`,
+    };
+    const notSupported = op => {
+      const say = NOT_SUPPORTED[op];
+      throw new ZyError(say ? say(typeLabel(col)) : `${op} not supported on ${col.type}`);
+    };
     const colItems = () => {
       if (col.type === 'arr')   return col.v;
       if (col.type === 'tuple') return col.v;
