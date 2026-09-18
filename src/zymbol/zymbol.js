@@ -6032,6 +6032,34 @@ function twTypeName(v) {
             func: '##fn', lambda: '##fn', error: '##!', unit: '##_' })[v?.type] ?? '##_';
 }
 
+// The type as a diagnostic names it, the way the analyzer does: `Int`, `[Int]`,
+// `(Int, String)`, `#(k: Int)`, `Function` — `zymbol_common::typeword` in Rust,
+// and `Value::type_label` in both engines (decided 2026-09-16, GLB-033). A
+// message says what KIND of value arrived, never the value itself.
+function typeLabel(v) {
+  switch (v?.type) {
+    case 'int':    return 'Int';
+    case 'float':  return 'Float';
+    case 'str':    return 'String';
+    case 'char':   return 'Char';
+    case 'bool':   return 'Bool';
+    case 'error':  return 'Error';
+    case 'func':
+    case 'lambda': return 'Function';
+    case 'arr': {
+      const items = v.v ?? [];
+      if (items.length === 0) return '[?]';
+      const first = typeLabel(items[0]);
+      return items.every(x => typeLabel(x) === first) ? `[${first}]` : '[Any]';
+    }
+    case 'tuple':
+      return isDict(v)
+        ? `#(${(v.keys ?? []).map((k, i) => `${k}: ${typeLabel(v.v[i])}`).join(', ')})`
+        : `(${(v.v ?? []).map(typeLabel).join(', ')})`;
+    default:       return 'Unit';
+  }
+}
+
 function typeIdent(v) {
   if (v?.type === 'tuple') return isDict(v) ? 'Dict' : 'Tuple';
   return TYPEIDENT_BY_TAG[v?.type] ?? 'Unit';
@@ -7644,8 +7672,13 @@ export class Interpreter {
           // A position is an Int. `[1, 2][1.5]` used to read `v[0.5]`, which is
           // nothing, and print an empty line (GLB-012 A).
           // (A String key into a dictionary has already returned above.)
+          // A String reaches a dictionary KEY, so on anything else it says so —
+          // the same words as the navigation form since step 3.5b.
+          if (iVal.type === 'str') {
+            throw new ZyError(`a String addresses a dictionary key, and this is ${typeLabel(obj)}`, expr.line);
+          }
           if (iVal.type !== 'int') {
-            throw new ZyError(`index must be an integer, got ${typeIdent(iVal)}`, expr.line);
+            throw new ZyError(`index must be an integer, got ${typeLabel(iVal)}`, expr.line);
           }
           // Decision 11: a dictionary is addressed by KEY, never by position.
           // In a mutable dictionary a positional index is fragile — adding a key
@@ -8093,7 +8126,7 @@ export class Interpreter {
         const fromV = await this.eval(step.from, env);
         const toV   = await this.eval(step.to,   env);
         for (const b of [fromV, toV]) {
-          if (b.type !== 'int') throw new ZyError(`navigation index must be an integer, got ${typeIdent(b)}`);
+          if (b.type !== 'int') throw new ZyError(`index must be an integer, got ${typeLabel(b)}`);
         }
         resolved.push({ kind: 'range', from: fromV.v, to: toV.v });
       }
@@ -8142,7 +8175,7 @@ export class Interpreter {
       throw new ZyError(Interpreter.notPositionalMsg('d[n>…]', obj.keys));
     }
     if (typeof idx === 'string') {
-      throw new ZyError(`a String navigation step addresses a dictionary key, and this is ${twTypeName(obj)}`);
+      throw new ZyError(`a String addresses a dictionary key, and this is ${typeLabel(obj)}`);
     }
     if (typeof idx === 'boolean') throw new ZyRuntimeError('Cannot use Bool as array index', '##Index');
     if (idx === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
@@ -8162,7 +8195,7 @@ export class Interpreter {
       if (i < 0 || i >= chars.length) throw new ZyRuntimeError(`string index out of bounds: index ${idx} for string of length ${chars.length}`, '##Index');
       return mkChar(chars[i]);
     }
-    throw new ZyError(`Cannot subscript ${obj.type}`);
+    throw new ZyError(`cannot index into ${typeLabel(obj)} — expected array, tuple, or string`);
   }
 
   // Resolve a 1-based index to JS 0-based; 0 is clamped to 0 (for slices)
