@@ -8650,10 +8650,16 @@ export class Interpreter {
       }
 
       case '$*': {
-        const n = (await arg()).v;
+        // The count is a whole number that is not negative, as both Rust
+        // engines require: a Float used to be truncated and a negative one
+        // answered the empty string (ZYJS-028, decided 2026-09-18).
+        const nVal = await arg();
         if (col.type !== 'str') notSupported('$*');
-        if (n <= 0) return mkStr('');
-        return mkStr(col.v.repeat(Math.trunc(n)));
+        if (nVal.type !== 'int')
+          throw new ZyError(`$* repetition count must be an integer, got ${typeLabel(nVal)}`);
+        if (nVal.v < 0)
+          throw new ZyError(`$* repetition count must be non-negative, got ${nVal.v}`);
+        return mkStr(col.v.repeat(nVal.v));
       }
 
       case '$++': {
