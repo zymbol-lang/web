@@ -4124,7 +4124,8 @@ class Checker {
       const kinds = items.map(x => this.staticKind(x));
       if (kinds.some(k => k === null)) return null;
       return e.keys
-        ? `(${e.keys.map((k, i) => `${k}: ${kinds[i]}`).join(', ')})`
+        // `#(k: Int)`, as a dictionary is written (GLB-033).
+        ? `#(${e.keys.map((k, i) => `${k}: ${kinds[i]}`).join(', ')})`
         : `(${kinds.join(', ')})`;
     }
     return this.staticKind(e);
