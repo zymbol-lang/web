@@ -2273,15 +2273,27 @@ export class Parser {
         this.adv();
         idx = { type: 'BinOp', op: '>', left: idx, right: this.parseAdditive() };
       }
-      this.eat('RBRACKET', "expected ']' after index expression");
-      // A hot name opening a statement with `[` is read as an assignment by
-      // both Rust parsers, and nothing but `=` may follow — which then is the
-      // withdrawn indexed assignment below. `x°[1] 5` and `x°[1]$~ 5` ran here
-      // (ZYJS-021). Their help text teaches `arr[i] = val`, a form that does
-      // not exist (COL-2), so it is not copied: GLB-027.
-      if (hot && !this.check('ASSIGN') && !compound[this.peek().type]) {
-        throw new ZyStaticError("expected '=' after index expression for indexed assignment", this.peek() ?? { line });
-      }
+      // One text per failure: a bracket opened for an index and never closed is
+      // the same failure here as in any expression, so it gets `closeNav`'s
+      // words and not a third private set. This branch used to have its own
+      // — "expected ']' after index expression", with no help at all — and it
+      // agreed with nothing but the Rust statement path that said the same and
+      // is gone (GLB-027). Which of the two helps is `is_nav_index`'s choice in
+      // Rust; here the `>` fold above has already answered it.
+      this.eat('RBRACKET', "expected ']' after index",
+        (idx?.type === 'BinOp' && idx.op === '>')
+          ? 'array indexing must use brackets: arr[index] or arr[i>j]'
+          : 'array indexing must use brackets: arr[index]');
+      // A hot name opening a statement with `[` used to be read as an
+      // assignment by both Rust parsers, where nothing but `=` could follow,
+      // and this engine copied the refusal (ZYJS-021). The message it copied
+      // was the last caller of the withdrawn indexed assignment and its help
+      // taught `arr[i] = val`, a form that does not exist (COL-2), so the help
+      // was never copied — GLB-027. The refusal itself is gone now: the gate
+      // that routed `x°[` there was the asymmetry, not the wording. `x°[1]$~ 5`
+      // and the bare read `x°[1]` are the same forms as their cold twins and
+      // take the same branches below, so nothing here asks about `hot` any
+      // more — it rides along on the receiver instead.
       // Decision 6: the indexed assignment is withdrawn, in all three
       // collections. `=` means "this NAME now holds this value", and
       // `u["k"] = v` names nothing — it reaches inside a structure and changes a
@@ -2334,7 +2346,7 @@ export class Parser {
            no effect and no diagnostic, so `d["a"]$~ "" v` assigned `""` and dropped
            `v` in silence. */
         const val = this.parseExprJuxt();
-        const obj = { type: 'Ident', name, line: tok0.line };
+        const obj = { type: 'Ident', name, hot, line: tok0.line };
         // `m[i>j]$~ v` — the deep form. `parseExpr` above read `i>j` as a
         // COMPARISON, because at statement position the bracket is consumed
         // before the nav parser ever sees it, so `m[1>2]$~ 77` indexed with the
@@ -2356,7 +2368,7 @@ export class Parser {
       const spec = (idx?.type === 'BinOp' && idx.op === '>')
         ? { kind: 'path', path: Parser.flattenGtChain(idx) }
         : { kind: 'simple', index: idx };
-      let left = { type: 'NavIndex', obj: { type: 'Ident', name, line: tok0.line }, spec };
+      let left = { type: 'NavIndex', obj: { type: 'Ident', name, hot, line: tok0.line }, spec };
       return this.editStmtOrExpr(this.parsePostfixRest(left), line);
     }
 
@@ -2446,11 +2458,15 @@ export class Parser {
     // An edit of an edit — `x$+ 1 $+ 2` — has an expression for a receiver,
     // not a call: `classify_edit` answers it with its own NO_NAME text.
     const EXPR_NO_NAME = 'this edits what the expression produced, and nothing holds it — assign the result to a name first';
+    // `°` is not decoration on the receiver: it says which scope the name lives
+    // in. The desugaring assigns to that name, so it has to assign with the
+    // same anchoring or `x°[1]$~ 5` would write somewhere else than `x°` reads.
+    let rootHot = false;
     const flatten = (e) => {
       const steps = [];
       const go = (n) => {
         if (!n) return { err: NO_NAME };
-        if (n.type === 'Ident') return n.name;
+        if (n.type === 'Ident') { rootHot = n.hot ?? false; return n.name; }
         if (n.type === 'NavIndex') {
           if (n.obj?.type === 'NavIndex') return { err: CHAINED };
           const root = go(n.obj);
@@ -2493,25 +2509,25 @@ export class Parser {
       if (f.err) {
         throw new ZyStaticError(f.err === NO_NAME ? NO_NAME_HEAD : 'this edit has nothing to write into', line, f.err);
       }
-      if (f.steps.length === 0) return { type: 'InPlaceEdit', name: f.root, expr, line };
+      if (f.steps.length === 0) return { type: 'InPlaceEdit', name: f.root, hot: rootHot, expr, line };
 
       // The receiver is inside the name. `$~` carries its own final step, so it
       // moves onto the whole path; every other edit keeps its shape and is put
       // back where it came from.
-      const obj = { type: 'Ident', name: f.root, line };
+      const obj = { type: 'Ident', name: f.root, hot: rootHot, line };
       if (expr.type === 'FuncUpdate') {
         const last = expr.key !== undefined
           ? { kind: 'index', key: expr.key }
           : { kind: 'index', expr: expr.index };
         const deep = { type: 'DeepUpdate', obj, path: [...f.steps, last], value: expr.value };
-        return { type: 'InPlaceEdit', name: f.root, expr: deep, line };
+        return { type: 'InPlaceEdit', name: f.root, hot: rootHot, expr: deep, line };
       }
       if (expr.type === 'DeepUpdate') {
         const deep = { type: 'DeepUpdate', obj, path: [...f.steps, ...expr.path], value: expr.value };
-        return { type: 'InPlaceEdit', name: f.root, expr: deep, line };
+        return { type: 'InPlaceEdit', name: f.root, hot: rootHot, expr: deep, line };
       }
       const deep = { type: 'DeepUpdate', obj, path: f.steps, value: expr };
-      return { type: 'InPlaceEdit', name: f.root, expr: deep, line };
+      return { type: 'InPlaceEdit', name: f.root, hot: rootHot, expr: deep, line };
     }
     return { type: 'ExprStmt', expr };
   }
@@ -7156,7 +7172,10 @@ export class Interpreter {
             `help: use 'new = ${stmt.name}[i]$~ value' for a functional update`,
             stmt.line);
         const edited = await this.eval(stmt.expr, env);
-        if (!env.set(stmt.name, edited)) env.def(stmt.name, edited);
+        if (!env.set(stmt.name, edited)) {
+          if (stmt.hot) env.hotDef(stmt.name, edited);
+          else env.def(stmt.name, edited);
+        }
         return;
       }
 
