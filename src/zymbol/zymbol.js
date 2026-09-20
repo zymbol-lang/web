@@ -8388,17 +8388,19 @@ export class Interpreter {
         throw new ZyRuntimeError(`${what} must be an integer, got ${typeLabel(v)}`, '##Type');
       return v.v;
     };
-    const needCharStr = (v, what) => {
-      if (v?.type !== 'char' && v?.type !== 'str')
-        throw new ZyRuntimeError(`${what}, got ${typeLabel(v)}`, '##Type');
+    const needCharStr = (v, msg) => {
+      if (v?.type !== 'char' && v?.type !== 'str') throw new ZyRuntimeError(msg, '##Type');
       return v;
     };
     // `n` is 1-based as written; `at` is the resolved 0-based offset.
-    const needInBounds = (n, at, c, label) => {
-      if (at < 0 || at >= lenOf(c))
-        throw new ZyRuntimeError(
-          `${label}index out of bounds: index ${n} for ${cname(c)} of length ${lenOf(c)}`, '##Index');
-      return at;
+    const needInBounds = (n, at, c) => {
+      if (at >= 0 && at < lenOf(c)) return at;
+      const L = lenOf(c);
+      if (c.type === 'arr')
+        throw new ZyRuntimeError(`index out of bounds: index ${n} for array of length ${L}`, '##Index');
+      if (c.type === 'str')
+        throw new ZyRuntimeError(`index out of bounds: index ${n} for string of length ${L}`, '##Index');
+      throw new ZyRuntimeError(`index out of bounds: index ${n} for tuple of length ${L}`, '##Index');
     };
     // The written pair, refused the way the tree-walker refuses it. The numbers
     // in the message are the ones the reader WROTE (GLB-047).
@@ -8468,7 +8470,7 @@ export class Interpreter {
         const v = await arg();
         if (col.type === 'arr')   return mkArr([...col.v, v]);
         if (col.type === 'str') {
-          needCharStr(v, '$+ on string requires char or string element');
+          needCharStr(v, `$+ on string requires char or string element, got ${typeLabel(v)}`);
           return mkStr(col.v + this.displayOutput(v));
         }
         if (isDict(col))
@@ -8483,13 +8485,18 @@ export class Interpreter {
             '$+[i] is not supported on named tuples — no field name available', '##Type');
         const nRaw = needInt(await this.eval(expr.index, env), '$+[i] index');
         const i = resolveIdx(nRaw, lenOf(col));
-        if (i < 0 || i > lenOf(col))
-          throw new ZyRuntimeError(
-            `$+[${nRaw}] index out of bounds for ${cname(col)} of length ${lenOf(col)}`, '##Index');
+        if (i < 0 || i > lenOf(col)) {
+          const L = lenOf(col);
+          if (col.type === 'arr')
+            throw new ZyRuntimeError(`$+[${nRaw}] index out of bounds for array of length ${L}`, '##Index');
+          if (col.type === 'str')
+            throw new ZyRuntimeError(`$+[${nRaw}] index out of bounds for string of length ${L}`, '##Index');
+          throw new ZyRuntimeError(`$+[${nRaw}] index out of bounds for tuple of length ${L}`, '##Index');
+        }
         const v = await arg();
         if (col.type === 'arr') { const r=[...col.v]; r.splice(i,0,v); return mkArr(r); }
         if (col.type === 'str') {
-          needCharStr(v, '$+[i] on string requires char or string element');
+          needCharStr(v, `$+[i] on string requires char or string element, got ${typeLabel(v)}`);
           const r=[...col.v]; r.splice(i,0,this.display(v)); return mkStr(r.join(''));
         }
         if (col.type === 'tuple') {
@@ -8508,7 +8515,7 @@ export class Interpreter {
           const r = [...col.v]; r.splice(i,1); return mkArr(r);
         }
         if (col.type === 'str') {
-          needCharStr(v, '$- on string requires char or string value');
+          needCharStr(v, `$- on string requires char or string value, got ${typeLabel(v)}`);
           const c = this.display(v), i = col.v.indexOf(c);
           return i < 0 ? col : mkStr(col.v.slice(0,i) + col.v.slice(i+c.length));
         }
@@ -8523,7 +8530,7 @@ export class Interpreter {
         const v = await arg();
         if (col.type === 'arr')   return mkArr(col.v.filter(el => !this.equals(el,v)));
         if (col.type === 'str') {
-          needCharStr(v, '$-- on string requires char or string value');
+          needCharStr(v, `$-- on string requires char or string value, got ${typeLabel(v)}`);
           const c = this.display(v); return mkStr(col.v.split(c).join(''));
         }
         if (col.type === 'tuple') {
@@ -8550,8 +8557,9 @@ export class Interpreter {
         }
         if (isDict(col))
           throw new ZyRuntimeError(Interpreter.notPositionalMsg('d$-[n]', col.keys), '##Type');
+        if (col.type !== 'arr' && col.type !== 'str' && col.type !== 'tuple') notSupported('$-[i]');
         const nRaw = needInt(rawIdx, 'remove index');
-        const i = needInBounds(nRaw, resolveIdx(nRaw, lenOf(col)), col, '');
+        const i = needInBounds(nRaw, resolveIdx(nRaw, lenOf(col)), col);
         if (col.type === 'arr')   { const r=[...col.v]; r.splice(i,1); return mkArr(r); }
         if (col.type === 'str')   { const r=[...col.v]; r.splice(i,1); return mkStr(r.join('')); }
         if (col.type === 'tuple') {
@@ -8597,7 +8605,7 @@ export class Interpreter {
         const v = await arg();
         if (col.type === 'arr')   return mkBool(col.v.some(el=>this.equals(el,v)));
         if (col.type === 'str') {
-          needCharStr(v, 'string contains only supports char or string search');
+          needCharStr(v, `string contains only supports char or string search, got ${typeLabel(v)}`);
           return mkBool(col.v.includes(this.display(v)));
         }
         // On a DICTIONARY the question is about the KEY, which is what `in`
@@ -8622,7 +8630,7 @@ export class Interpreter {
         if (col.type === 'arr' || col.type === 'tuple') {
           col.v.forEach((el,i) => { if (this.equals(el,v)) result.push(mkInt(i+1)); }); // 1-based
         } else if (col.type === 'str') {
-          needCharStr(v, '$?? on string requires char or string value');
+          needCharStr(v, `$?? on string requires char or string value, got ${typeLabel(v)}`);
           const chars = [...col.v];
           for (let i=0; i<=chars.length-target.length; i++) {
             if (chars.slice(i,i+target.length).join('')===target) result.push(mkInt(i+1)); // 1-based
@@ -8730,7 +8738,7 @@ export class Interpreter {
       case '$~~': {
         if (col.type !== 'str') notSupported('$~~');
         const fromV = await this.eval(expr.from, env);
-        needCharStr(fromV, '$~~ pattern must be a string or char');
+        needCharStr(fromV, `$~~ pattern must be a string or char, got ${typeLabel(fromV)}`);
         const toV = await this.eval(expr.to, env);
         if (toV?.type !== 'str')
           throw new ZyRuntimeError(`$~~ replacement must be a string, got ${typeLabel(toV)}`, '##Type');
@@ -8758,7 +8766,7 @@ export class Interpreter {
       case '$/': {
         if (col.type !== 'str') notSupported('$/');
         const delimVal = await arg();
-        needCharStr(delimVal, '$/ delimiter must be a char or string');
+        needCharStr(delimVal, `$/ delimiter must be a char or string, got ${typeLabel(delimVal)}`);
         const delim = this.display(delimVal);
         const parts = col.v.split(delim);
         return mkArr(parts.map(p => mkStr(p)));
