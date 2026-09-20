@@ -7897,7 +7897,13 @@ export class Interpreter {
             `$~ writes into a collection, and this is ${typeLabel(arr)}\n` +
             `help: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
 
-        // Integer 1-based index
+        // Integer 1-based index. Strict (D2 revoked, 2026-09-20): a Float came
+        // through and `[1, 2][1.5]$~ 9` answered the array unchanged, because
+        // 1.5 resolved to an offset that indexed nothing.
+        if (iVal?.type !== 'int')
+          throw new ZyRuntimeError(
+            `${arr.type === 'arr' ? 'array' : arr.type === 'str' ? 'string' : 'tuple'} update index must be an integer, got ${typeLabel(iVal)}`,
+            '##Type');
         const i = iVal.v;
         if (i === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
         const len = arr.type === 'str' ? [...arr.v].length : (arr.v?.length ?? 0);
@@ -8369,6 +8375,47 @@ export class Interpreter {
       return resolveIdx(n, col.v.length);
     };
 
+    // Strict (D2 revoked by the author, 2026-09-20): a collection asks for
+    // correct expressions of its values. These are the guards the two Rust
+    // engines have always had and this one did not — it read `"x"` as 0 and
+    // DELETED an element, wrote an Int into a string, and clamped every bound
+    // so a miscalculation came back as a plausible collection. Worded as the
+    // tree-walker words each operation.
+    const lenOf  = c => c.type === 'str' ? [...c.v].length : c.v.length;
+    const cname  = c => c.type === 'arr' ? 'array' : c.type === 'str' ? 'string' : 'tuple';
+    const needInt = (v, what) => {
+      if (v?.type !== 'int')
+        throw new ZyRuntimeError(`${what} must be an integer, got ${typeLabel(v)}`, '##Type');
+      return v.v;
+    };
+    const needCharStr = (v, what) => {
+      if (v?.type !== 'char' && v?.type !== 'str')
+        throw new ZyRuntimeError(`${what}, got ${typeLabel(v)}`, '##Type');
+      return v;
+    };
+    // `n` is 1-based as written; `at` is the resolved 0-based offset.
+    const needInBounds = (n, at, c, label) => {
+      if (at < 0 || at >= lenOf(c))
+        throw new ZyRuntimeError(
+          `${label}index out of bounds: index ${n} for ${cname(c)} of length ${lenOf(c)}`, '##Index');
+      return at;
+    };
+    // The written pair, refused the way the tree-walker refuses it. The numbers
+    // in the message are the ones the reader WROTE (GLB-047).
+    const rangeBounds = (lo, hi, len, use) => {
+      const loN = lo === 0 ? 0 : lo < 0 ? len + lo : lo - 1;
+      const hiN = hi < 0 ? len + hi + 1 : hi;
+      if (loN < 0 || hiN < 0 || loN > len || hiN > len)
+        throw new ZyRuntimeError(use === 'slice'
+          ? `slice indices out of bounds: [${lo}..${hi}] for collection of length ${len}`
+          : `$-[${lo}..${hi}] out of bounds for collection of length ${len}`, '##Index');
+      if (loN > hiN)
+        throw new ZyRuntimeError(use === 'slice'
+          ? `slice start (${lo}) cannot be greater than end (${hi})`
+          : `$-[start..end]: start (${lo}) cannot be greater than end (${hi})`, '##Index');
+      return [loN, hiN];
+    };
+
     // Each operator says what it needs, in the words the two Rust engines use
     // (step 3.5c): `$+ not supported on int` named neither the type nor what
     // would have worked. An operator with no twin keeps the old sentence.
@@ -8420,14 +8467,31 @@ export class Interpreter {
       case '$+': {
         const v = await arg();
         if (col.type === 'arr')   return mkArr([...col.v, v]);
-        if (col.type === 'str')   return mkStr(col.v + this.displayOutput(v));
-        if (col.type === 'tuple') return { type:'tuple', v:[...col.v,v], keys: col.keys ? [...col.keys,null] : null };
+        if (col.type === 'str') {
+          needCharStr(v, '$+ on string requires char or string element');
+          return mkStr(col.v + this.displayOutput(v));
+        }
+        if (isDict(col))
+          throw new ZyRuntimeError(
+            '$+ is not supported on named tuples — no field name available', '##Type');
+        if (col.type === 'tuple') return { type:'tuple', v:[...col.v,v], keys: null };
         notSupported('$+');
       }
       case '$+[i]': {
-        const i = await idx(), v = await arg();
+        if (isDict(col))
+          throw new ZyRuntimeError(
+            '$+[i] is not supported on named tuples — no field name available', '##Type');
+        const nRaw = needInt(await this.eval(expr.index, env), '$+[i] index');
+        const i = resolveIdx(nRaw, lenOf(col));
+        if (i < 0 || i > lenOf(col))
+          throw new ZyRuntimeError(
+            `$+[${nRaw}] index out of bounds for ${cname(col)} of length ${lenOf(col)}`, '##Index');
+        const v = await arg();
         if (col.type === 'arr') { const r=[...col.v]; r.splice(i,0,v); return mkArr(r); }
-        if (col.type === 'str') { const r=[...col.v]; r.splice(i,0,this.display(v)); return mkStr(r.join('')); }
+        if (col.type === 'str') {
+          needCharStr(v, '$+[i] on string requires char or string element');
+          const r=[...col.v]; r.splice(i,0,this.display(v)); return mkStr(r.join(''));
+        }
         if (col.type === 'tuple') {
           const nv=[...col.v]; nv.splice(i,0,v);
           const nk=col.keys?[...col.keys]:null; if(nk)nk.splice(i,0,null);
@@ -8444,6 +8508,7 @@ export class Interpreter {
           const r = [...col.v]; r.splice(i,1); return mkArr(r);
         }
         if (col.type === 'str') {
+          needCharStr(v, '$- on string requires char or string value');
           const c = this.display(v), i = col.v.indexOf(c);
           return i < 0 ? col : mkStr(col.v.slice(0,i) + col.v.slice(i+c.length));
         }
@@ -8458,6 +8523,7 @@ export class Interpreter {
         const v = await arg();
         if (col.type === 'arr')   return mkArr(col.v.filter(el => !this.equals(el,v)));
         if (col.type === 'str') {
+          needCharStr(v, '$-- on string requires char or string value');
           const c = this.display(v); return mkStr(col.v.split(c).join(''));
         }
         if (col.type === 'tuple') {
@@ -8484,7 +8550,8 @@ export class Interpreter {
         }
         if (isDict(col))
           throw new ZyRuntimeError(Interpreter.notPositionalMsg('d$-[n]', col.keys), '##Type');
-        const i = await idx();
+        const nRaw = needInt(rawIdx, 'remove index');
+        const i = needInBounds(nRaw, resolveIdx(nRaw, lenOf(col)), col, '');
         if (col.type === 'arr')   { const r=[...col.v]; r.splice(i,1); return mkArr(r); }
         if (col.type === 'str')   { const r=[...col.v]; r.splice(i,1); return mkStr(r.join('')); }
         if (col.type === 'tuple') {
@@ -8496,8 +8563,10 @@ export class Interpreter {
       case '$-[i:n]': {
         if (isDict(col))
           throw new ZyRuntimeError(Interpreter.notPositionalMsg('d$-[a..b]', col.keys), '##Type');
-        const sv = (await this.eval(expr.start, env)).v;
-        const nv = (await this.eval(expr.count, env)).v;
+        const sv = needInt(await this.eval(expr.start, env), '$-[..] start');
+        const nv = needInt(await this.eval(expr.count, env), '$-[..] count');
+        if (nv < 0)
+          throw new ZyRuntimeError(`$-[..] count must be non-negative, got ${nv}`, '##Index');
         const len = col.type === 'str' ? [...col.v].length : col.v.length;
         const si = resolveIdx(sv, len);
         if (col.type === 'arr')   { const r=[...col.v]; r.splice(si, nv); return mkArr(r); }
@@ -8507,10 +8576,14 @@ export class Interpreter {
       }
       case '$-[i..j]': {
         const len = col.type === 'str' ? [...col.v].length : col.v.length;
-        const fv = expr.range.from ? (await this.eval(expr.range.from, env)).v : 1;
-        const tv = expr.range.to   ? (await this.eval(expr.range.to,   env)).v : len;
-        const fi = resolveIdx(fv, len);
-        const ti = resolveIdx(tv, len);
+        const fv = expr.range.from ? needInt(await this.eval(expr.range.from, env), '$-[..] start') : 1;
+        const tv = expr.range.to   ? needInt(await this.eval(expr.range.to,   env), '$-[..] end')   : len;
+        if (fv <= 0)
+          throw new ZyRuntimeError(`$-[start..] start must be positive (1-based), got ${fv}`, '##Index');
+        if (tv <= 0)
+          throw new ZyRuntimeError(`$-[..end] end must be positive (1-based), got ${tv}`, '##Index');
+        const [fi, tiEx] = rangeBounds(fv, tv, len, 'remove');
+        const ti = tiEx - 1;
         const count = ti - fi + 1;
         if (col.type === 'arr')   { const r=[...col.v]; r.splice(fi,count); return mkArr(r); }
         if (col.type === 'str')   { const r=[...col.v]; r.splice(fi,count); return mkStr(r.join('')); }
@@ -8523,7 +8596,10 @@ export class Interpreter {
       case '$?': {
         const v = await arg();
         if (col.type === 'arr')   return mkBool(col.v.some(el=>this.equals(el,v)));
-        if (col.type === 'str')   return mkBool(col.v.includes(this.display(v)));
+        if (col.type === 'str') {
+          needCharStr(v, 'string contains only supports char or string search');
+          return mkBool(col.v.includes(this.display(v)));
+        }
         // On a DICTIONARY the question is about the KEY, which is what `in`
         // asks in Python and in JS. Decision 10 makes reading an absent key an
         // error, so this is what lets a dictionary built piece by piece be
@@ -8531,8 +8607,12 @@ export class Interpreter {
         // Asking about a value is a different operation and would need its own
         // sign. On a POSITIONAL tuple it stays a value question: there are no
         // keys to ask about.
-        if (isDict(col))
+        if (isDict(col)) {
+          if (v?.type !== 'str')
+            throw new ZyRuntimeError(
+              `a dictionary is asked about a key, so \`$?\` needs a String, got ${typeLabel(v)}`, '##Type');
           return mkBool(col.keys.some(k => k === this.display(v)));
+        }
         if (col.type === 'tuple') return mkBool(col.v.some(el=>this.equals(el,v)));
         notSupported('$?');
       }
@@ -8542,6 +8622,7 @@ export class Interpreter {
         if (col.type === 'arr' || col.type === 'tuple') {
           col.v.forEach((el,i) => { if (this.equals(el,v)) result.push(mkInt(i+1)); }); // 1-based
         } else if (col.type === 'str') {
+          needCharStr(v, '$?? on string requires char or string value');
           const chars = [...col.v];
           for (let i=0; i<=chars.length-target.length; i++) {
             if (chars.slice(i,i+target.length).join('')===target) result.push(mkInt(i+1)); // 1-based
@@ -8560,8 +8641,9 @@ export class Interpreter {
 
       case '$[i..j]': {
         const len = col.type === 'str' ? [...col.v].length : col.v.length;
-        const fi = expr.range.from == null ? 0 : this.resolve1Based((await this.eval(expr.range.from,env)).v, len);
-        const ti = expr.range.to   == null ? len : this.resolve1Based((await this.eval(expr.range.to,env)).v, len) + 1; // inclusive end
+        const fRaw = expr.range.from == null ? 0 : needInt(await this.eval(expr.range.from, env), 'slice start');
+        const tRaw = expr.range.to   == null ? len : needInt(await this.eval(expr.range.to,   env), 'slice end');
+        const [fi, ti] = rangeBounds(fRaw, tRaw, len, 'slice');
         if (col.type === 'arr')   return mkArr(col.v.slice(fi, ti));
         if (col.type === 'str')   return mkStr([...col.v].slice(fi,ti).join(''));
         if (isDict(col))
@@ -8647,9 +8729,21 @@ export class Interpreter {
 
       case '$~~': {
         if (col.type !== 'str') notSupported('$~~');
-        const from = this.display(await this.eval(expr.from, env));
-        const to   = this.display(await this.eval(expr.to,   env));
-        const maxN = expr.count ? (await this.eval(expr.count, env)).v : Infinity;
+        const fromV = await this.eval(expr.from, env);
+        needCharStr(fromV, '$~~ pattern must be a string or char');
+        const toV = await this.eval(expr.to, env);
+        if (toV?.type !== 'str')
+          throw new ZyRuntimeError(`$~~ replacement must be a string, got ${typeLabel(toV)}`, '##Type');
+        const from = this.display(fromV);
+        const to   = this.display(toV);
+        let maxN = Infinity;
+        if (expr.count) {
+          maxN = needInt(await this.eval(expr.count, env), '$~~ count');
+          if (maxN < 0)
+            throw new ZyRuntimeError(
+              `replacement count must be non-negative, got ${maxN}`, '##Index');
+          if (maxN === 0) maxN = Infinity;   // 0 means "all", as both Rust engines read it
+        }
         let result = col.v, idx2 = 0, n = 0;
         while (n < maxN) {
           const p = result.indexOf(from, idx2);
@@ -8664,6 +8758,7 @@ export class Interpreter {
       case '$/': {
         if (col.type !== 'str') notSupported('$/');
         const delimVal = await arg();
+        needCharStr(delimVal, '$/ delimiter must be a char or string');
         const delim = this.display(delimVal);
         const parts = col.v.split(delim);
         return mkArr(parts.map(p => mkStr(p)));
