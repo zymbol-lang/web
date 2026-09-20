@@ -5578,7 +5578,7 @@ function deepUpdateValue(col, indices, newVal) {
   // positional write corrupts data rather than returning the wrong value.
   if (isDict(col)) {
     if (typeof i !== 'string')
-      throw new ZyError(Interpreter.notPositionalMsg('d[n>…]$~ value', col.keys));
+      throw new ZyRuntimeError(Interpreter.notPositionalMsg('d[n>…]$~ value', col.keys), '##Type');
     const ki = col.keys.indexOf(i);
     const sub = ki < 0 ? mkUnit() : col.v[ki];
     const updatedSub = deepUpdateValue(sub, indices.slice(1), newVal);
@@ -5599,7 +5599,7 @@ function deepUpdateValue(col, indices, newVal) {
   const updatedSub = deepUpdateValue(sub, indices.slice(1), newVal);
   if (col.type === 'arr')   { const r = [...col.v]; r[idx] = updatedSub; return mkArr(r); }
   if (col.type === 'tuple') { const r = [...col.v]; r[idx] = updatedSub; return { type:'tuple', v:r, keys:col.keys }; }
-  throw new ZyError(`$~ writes into a collection, and this is ${typeLabel(col)}\nhelp: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`);
+  throw new ZyRuntimeError(`$~ writes into a collection, and this is ${typeLabel(col)}\nhelp: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
 }
 
 // ─── Terminal display width (mirrors unicode-width crate, backs std/term) ────
@@ -7043,7 +7043,7 @@ export class Interpreter {
         // tree-walker requires; `@~ "x"` and `@~ -1` used to sleep for nothing
         // (GLB-014 E).
         const dur = await this.eval(stmt.duration, env);
-        if (dur.type !== 'int') throw new ZyError(`@~ requires integer milliseconds, got ${typeLabel(dur)}`, stmt.line);
+        if (dur.type !== 'int') throw new ZyRuntimeError(`@~ requires integer milliseconds, got ${typeLabel(dur)}`, '##Type', stmt.line);
         if (dur.v < 0) throw new ZyError(`@~ requires non-negative duration, got ${dur.v}`, stmt.line);
         const ms = dur.v;
         await new Promise(r => {
@@ -7379,11 +7379,11 @@ export class Interpreter {
       const toV   = await this.eval(loop.to,   env);
       const stepV = loop.step ? await this.eval(loop.step, env) : null;
       if (stepV) {
-        if (stepV.type !== 'int') throw new ZyError(`step must be an integer, got ${typeIdent(stepV)}`, loop.line);
+        if (stepV.type !== 'int') throw new ZyRuntimeError(`step must be an integer, got ${typeIdent(stepV)}`, '##Type', loop.line);
         if (stepV.v <= 0) throw new ZyError(`step must be positive, got ${stepV.v}`, loop.line);
       }
       if (fromV.type !== 'int' || toV.type !== 'int') {
-        throw new ZyError(`range bounds must be integers, got ${typeIdent(fromV)} and ${typeIdent(toV)}`, loop.line);
+        throw new ZyRuntimeError(`range bounds must be integers, got ${typeIdent(fromV)} and ${typeIdent(toV)}`, '##Type', loop.line);
       }
       const from = fromV.v, to = toV.v;
       const magnitude = stepV ? stepV.v : 1;
@@ -7429,7 +7429,7 @@ export class Interpreter {
       else if (isDict(it))
         items = it.keys.map(k => mkStr(k));
       else if (it.type === 'tuple') items = it.v;
-      else throw new ZyError(`can only iterate over ranges, arrays, strings, tuples and dictionaries, got ${typeIdent(it)}`, loop.line);
+      else throw new ZyRuntimeError(`can only iterate over ranges, arrays, strings, tuples and dictionaries, got ${typeIdent(it)}`, '##Type', loop.line);
 
       // Same rule as the range loop above: a pre-existing name keeps the last
       // element the loop bound to it.
@@ -7653,7 +7653,7 @@ export class Interpreter {
       case 'CallExpr': {
         const fn = await this.eval(expr.callee, env);
         if (!fn || fn.type !== 'func')
-          throw new ZyError(`Expression is not a function`);
+          throw new ZyRuntimeError(`Expression is not a function`, '##Type');
         const args = await this.evalInOrder(expr.args, env);
         // Output parameters must be written back here too, not just in 'Call'. A module
         // call `alias::f(x)` parses as Ident(alias) → FieldAccess → CallExpr (the callee
@@ -7693,10 +7693,10 @@ export class Interpreter {
           // A String reaches a dictionary KEY, so on anything else it says so —
           // the same words as the navigation form since step 3.5b.
           if (iVal.type === 'str') {
-            throw new ZyError(`a String addresses a dictionary key, and this is ${typeLabel(obj)}`, expr.line);
+            throw new ZyRuntimeError(`a String addresses a dictionary key, and this is ${typeLabel(obj)}`, '##Type', expr.line);
           }
           if (iVal.type !== 'int') {
-            throw new ZyError(`index must be an integer, got ${typeLabel(iVal)}`, expr.line);
+            throw new ZyRuntimeError(`index must be an integer, got ${typeLabel(iVal)}`, '##Type', expr.line);
           }
           // Decision 11: a dictionary is addressed by KEY, never by position.
           // In a mutable dictionary a positional index is fragile — adding a key
@@ -7706,9 +7706,9 @@ export class Interpreter {
           // there is, and the size is fixed.
           if (iVal.type === 'int' && isDict(obj)) {
             const first = obj.keys.find(k => k) ?? 'clave';
-            throw new ZyError(
+            throw new ZyRuntimeError(
               `a dictionary is addressed by key, not by position\n` +
-              `help: use d["${first}"] — adding a key changes what sits at each position`);
+              `help: use d["${first}"] — adding a key changes what sits at each position`, '##Type');
           }
           return this.navGetAt(obj, iVal.v);
         }
@@ -7796,7 +7796,7 @@ export class Interpreter {
         // and this is its result. Anything else had to be a function: `5 |> v`
         // with `v = 5` answered 5 (GLB-015 B).
         if (expr.rhs?.type === 'Call' || expr.rhs?.type === 'CallExpr') return result;
-        throw new ZyError('pipe operator requires a callable function or lambda');
+        throw new ZyRuntimeError('pipe operator requires a callable function or lambda', '##Type');
       }
 
       case 'FieldAccess': {
@@ -7867,9 +7867,9 @@ export class Interpreter {
         // String field name — named tuple only (G2)
         if (iVal.type === 'str') {
           if (!isDict(arr))
-            throw new ZyError(
+            throw new ZyRuntimeError(
               `$~ writes into a collection, and this is ${typeLabel(arr)}\n` +
-              `help: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`);
+              `help: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
           const fi = arr.keys.indexOf(iVal.v);
           // A key that is not there gets ADDED, as `d[k] = v` does in Python.
           // The array refuses the same move (decision 13) and the two are not
@@ -7887,15 +7887,15 @@ export class Interpreter {
         // A positional WRITE corrupts data rather than returning the wrong
         // value: strictly worse than the positional read decision 11 withdrew.
         if (isDict(arr))
-          throw new ZyError(Interpreter.notPositionalMsg('d[n]$~ value', arr.keys));
+          throw new ZyRuntimeError(Interpreter.notPositionalMsg('d[n]$~ value', arr.keys), '##Type');
 
         // What is written into has to be a collection. It used to fall through
         // to the index arithmetic, where an Int read as a container of length 0
         // and the reader was told `tuple index out of bounds` (step 3.5d).
         if (arr.type !== 'arr' && arr.type !== 'str' && arr.type !== 'tuple')
-          throw new ZyError(
+          throw new ZyRuntimeError(
             `$~ writes into a collection, and this is ${typeLabel(arr)}\n` +
-            `help: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`);
+            `help: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
 
         // Integer 1-based index
         const i = iVal.v;
@@ -7908,7 +7908,7 @@ export class Interpreter {
         if (arr.type === 'arr')   { const r = [...arr.v]; r[idx] = val; return mkArr(r); }
         if (arr.type === 'str')   { const r = [...arr.v]; r[idx] = this.display(val); return mkStr(r.join('')); }
         if (arr.type === 'tuple') { const r = [...arr.v]; r[idx] = val; return { type:'tuple', v:r, keys:arr.keys }; }
-        throw new ZyError(`$~ writes into a collection, and this is ${typeLabel(arr)}\nhelp: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`);
+        throw new ZyRuntimeError(`$~ writes into a collection, and this is ${typeLabel(arr)}\nhelp: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
       }
 
       case 'DeepUpdate': {
@@ -7920,8 +7920,8 @@ export class Interpreter {
           const iv = atom.key !== undefined ? mkStr(atom.key) : await this.eval(atom.expr, env);
           // Int → position, String → dictionary key. Same rule as the read.
           if (iv.type !== 'int' && iv.type !== 'str')
-            throw new ZyError(
-              `a navigation step is a position (Int) or a dictionary key (String), got ${typeIdent(iv)}`);
+            throw new ZyRuntimeError(
+              `a navigation step is a position (Int) or a dictionary key (String), got ${typeIdent(iv)}`, '##Type');
           indices.push(iv.v);
         }
         const newVal = await this.eval(expr.value, env);
@@ -7965,12 +7965,12 @@ export class Interpreter {
         if (expr.precExpr) {
           const pv = await this.eval(expr.precExpr, env);
           if (pv.type !== 'int') {
-            throw new ZyError(
-              `decimal count must be a whole number, got ${pv.type}`, expr.line);
+            throw new ZyRuntimeError(
+              `decimal count must be a whole number, got ${pv.type}`, '##Type', expr.line);
           }
           if (pv.v < 0) {
-            throw new ZyError(
-              `decimal count must not be negative, got ${pv.v}`, expr.line);
+            throw new ZyRuntimeError(
+              `decimal count must not be negative, got ${pv.v}`, '##Index', expr.line);
           }
           expr = { ...expr, prec: pv.v };
         }
@@ -7990,9 +7990,9 @@ export class Interpreter {
             if (op === 'round') throw new ZyError(`cannot convert string '${v.v}' to number for rounding`, expr.line);
             if (op === 'trunc') throw new ZyError(`cannot convert string '${v.v}' to number for truncation`, expr.line);
           }
-          if (op === 'round') throw new ZyError(`round expressions only work with numbers or numeric strings, got ${typeIdent(v)}`, expr.line);
-          if (op === 'trunc') throw new ZyError(`truncate expressions only work with numbers or numeric strings, got ${typeIdent(v)}`, expr.line);
-          throw new ZyError(`format expressions only work with numbers, got ${typeIdent(v)}`, expr.line);
+          if (op === 'round') throw new ZyRuntimeError(`round expressions only work with numbers or numeric strings, got ${typeIdent(v)}`, '##Type', expr.line);
+          if (op === 'trunc') throw new ZyRuntimeError(`truncate expressions only work with numbers or numeric strings, got ${typeIdent(v)}`, '##Type', expr.line);
+          throw new ZyRuntimeError(`format expressions only work with numbers, got ${typeIdent(v)}`, '##Type', expr.line);
         };
         const fmtSci = (num, prec, mode) => {
           if (num === 0) return '0e0';
@@ -8088,7 +8088,7 @@ export class Interpreter {
               return mkChar(String.fromCodePoint(code));
             }
             if (val.type !== 'char' && val.type !== 'int') {
-              throw new ZyError(`base conversion expressions work with char, int, or string, got ${typeIdent(val)}`, expr.line);
+              throw new ZyRuntimeError(`base conversion expressions work with char, int, or string, got ${typeIdent(val)}`, '##Type', expr.line);
             }
             const n = val.type === 'char' ? val.v.codePointAt(0) : val.v;
             if (base === 16) return mkStr('0x' + n.toString(16).toUpperCase().padStart(4, '0'));
@@ -8110,7 +8110,7 @@ export class Interpreter {
           const _typeNames = { str:'String', int:'Integer', float:'Float', bool:'Bool', char:'Char', arr:'Array', tuple:'Tuple', unit:'Unit' };
           const typeName = _typeNames[val.type] ?? (val.type.charAt(0).toUpperCase() + val.type.slice(1));
           const reqSuffix = expr.op === '##!' ? ' or Char' : '';
-          throw new ZyRuntimeError(`${expr.op} requires a numeric value${reqSuffix}, got ${typeName}`, '##_');
+          throw new ZyRuntimeError(`${expr.op} requires a numeric value${reqSuffix}, got ${typeName}`, '##Type');
         }
         if (expr.op === '##.') return mkFloat(val.v);
         // A float with no integer form in range is a ##Range error, not the
@@ -8145,14 +8145,14 @@ export class Interpreter {
       if (step.kind === 'index') {
         const iv = await this.eval(step.expr, env);
         if (iv.type !== 'int' && iv.type !== 'str') {
-          throw new ZyError(`a navigation step is a position (Int) or a dictionary key (String), got ${typeIdent(iv)}`);
+          throw new ZyRuntimeError(`a navigation step is a position (Int) or a dictionary key (String), got ${typeIdent(iv)}`, '##Type');
         }
         resolved.push({ kind: 'index', val: iv.v });
       } else {
         const fromV = await this.eval(step.from, env);
         const toV   = await this.eval(step.to,   env);
         for (const b of [fromV, toV]) {
-          if (b.type !== 'int') throw new ZyError(`index must be an integer, got ${typeLabel(b)}`);
+          if (b.type !== 'int') throw new ZyRuntimeError(`index must be an integer, got ${typeLabel(b)}`, '##Type');
         }
         resolved.push({ kind: 'range', from: fromV.v, to: toV.v });
       }
@@ -8198,10 +8198,10 @@ export class Interpreter {
         if (ki < 0) throw new ZyRuntimeError(Interpreter.missingKeyMsg(idx, obj.keys), '##Key');
         return obj.v[ki];
       }
-      throw new ZyError(Interpreter.notPositionalMsg('d[n>…]', obj.keys));
+      throw new ZyRuntimeError(Interpreter.notPositionalMsg('d[n>…]', obj.keys), '##Type');
     }
     if (typeof idx === 'string') {
-      throw new ZyError(`a String addresses a dictionary key, and this is ${typeLabel(obj)}`);
+      throw new ZyRuntimeError(`a String addresses a dictionary key, and this is ${typeLabel(obj)}`, '##Type');
     }
     if (typeof idx === 'boolean') throw new ZyRuntimeError('Cannot use Bool as array index', '##Index');
     if (idx === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
@@ -8221,7 +8221,7 @@ export class Interpreter {
       if (i < 0 || i >= chars.length) throw new ZyRuntimeError(`string index out of bounds: index ${idx} for string of length ${chars.length}`, '##Index');
       return mkChar(chars[i]);
     }
-    throw new ZyError(`cannot index into ${typeLabel(obj)} — expected array, tuple, or string`);
+    throw new ZyRuntimeError(`cannot index into ${typeLabel(obj)} — expected array, tuple, or string`, '##Type');
   }
 
   // Resolve a 1-based index to JS 0-based; 0 is clamped to 0 (for slices)
@@ -8395,7 +8395,7 @@ export class Interpreter {
     };
     const notSupported = op => {
       const say = NOT_SUPPORTED[op];
-      throw new ZyError(say ? say(typeLabel(col)) : `${op} not supported on ${col.type}`);
+      throw new ZyRuntimeError(say ? say(typeLabel(col)) : `${op} not supported on ${col.type}`, '##Type');
     };
     const colItems = () => {
       if (col.type === 'arr')   return col.v;
@@ -8483,7 +8483,7 @@ export class Interpreter {
           return { type: 'tuple', v: nv, keys: nk };
         }
         if (isDict(col))
-          throw new ZyError(Interpreter.notPositionalMsg('d$-[n]', col.keys));
+          throw new ZyRuntimeError(Interpreter.notPositionalMsg('d$-[n]', col.keys), '##Type');
         const i = await idx();
         if (col.type === 'arr')   { const r=[...col.v]; r.splice(i,1); return mkArr(r); }
         if (col.type === 'str')   { const r=[...col.v]; r.splice(i,1); return mkStr(r.join('')); }
@@ -8495,7 +8495,7 @@ export class Interpreter {
       }
       case '$-[i:n]': {
         if (isDict(col))
-          throw new ZyError(Interpreter.notPositionalMsg('d$-[a..b]', col.keys));
+          throw new ZyRuntimeError(Interpreter.notPositionalMsg('d$-[a..b]', col.keys), '##Type');
         const sv = (await this.eval(expr.start, env)).v;
         const nv = (await this.eval(expr.count, env)).v;
         const len = col.type === 'str' ? [...col.v].length : col.v.length;
@@ -8515,7 +8515,7 @@ export class Interpreter {
         if (col.type === 'arr')   { const r=[...col.v]; r.splice(fi,count); return mkArr(r); }
         if (col.type === 'str')   { const r=[...col.v]; r.splice(fi,count); return mkStr(r.join('')); }
         if (isDict(col))
-          throw new ZyError(Interpreter.notPositionalMsg('d$-[a..b]', col.keys));
+          throw new ZyRuntimeError(Interpreter.notPositionalMsg('d$-[a..b]', col.keys), '##Type');
         if (col.type === 'tuple') { const r=[...col.v]; r.splice(fi,count); const ks=col.keys?[...col.keys]:null; if(ks)ks.splice(fi,count); return {type:'tuple',v:r,keys:ks}; }
         notSupported('$-[i..j]');
       }
@@ -8565,7 +8565,7 @@ export class Interpreter {
         if (col.type === 'arr')   return mkArr(col.v.slice(fi, ti));
         if (col.type === 'str')   return mkStr([...col.v].slice(fi,ti).join(''));
         if (isDict(col))
-          throw new ZyError(Interpreter.notPositionalMsg('d$[a..b]', col.keys));
+          throw new ZyRuntimeError(Interpreter.notPositionalMsg('d$[a..b]', col.keys), '##Type');
         if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(fi,ti), keys:col.keys?col.keys.slice(fi,ti):null };
         notSupported('$[i..j]');
       }
@@ -8577,7 +8577,7 @@ export class Interpreter {
         if (col.type === 'arr')   return mkArr(col.v.slice(fi, fi+n));
         if (col.type === 'str')   return mkStr([...col.v].slice(fi,fi+n).join(''));
         if (isDict(col))
-          throw new ZyError(Interpreter.notPositionalMsg('d$[a..b]', col.keys));
+          throw new ZyRuntimeError(Interpreter.notPositionalMsg('d$[a..b]', col.keys), '##Type');
         if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(fi,fi+n), keys:col.keys?col.keys.slice(fi,fi+n):null };
         notSupported('$[i:n]');
       }
@@ -8676,9 +8676,9 @@ export class Interpreter {
         const nVal = await arg();
         if (col.type !== 'str') notSupported('$*');
         if (nVal.type !== 'int')
-          throw new ZyError(`$* repetition count must be an integer, got ${typeLabel(nVal)}`);
+          throw new ZyRuntimeError(`$* repetition count must be an integer, got ${typeLabel(nVal)}`, '##Type');
         if (nVal.v < 0)
-          throw new ZyError(`$* repetition count must be non-negative, got ${nVal.v}`);
+          throw new ZyRuntimeError(`$* repetition count must be non-negative, got ${nVal.v}`, '##Index');
         return mkStr(col.v.repeat(nVal.v));
       }
 
@@ -8703,7 +8703,7 @@ export class Interpreter {
   async evalCallable(argExpr, env) {
     const v = await this.eval(argExpr, env);
     if (v && v.type === 'func') return v;
-    throw new ZyError(`Expected a function for collection operator`);
+    throw new ZyRuntimeError(`Expected a function for collection operator`, '##Type');
   }
 
   // Evaluate a Match's subject and find the first arm whose pattern matches,
