@@ -8404,6 +8404,13 @@ export class Interpreter {
     };
     // The written pair, refused the way the tree-walker refuses it. The numbers
     // in the message are the ones the reader WROTE (GLB-047).
+    const sliceSpan = (lo, hi, len) => {
+      const loPos = lo === 0 ? 1 : lo < 0 ? len + lo + 1 : lo;
+      const hiPos = hi < 0 ? len + hi + 1 : hi;
+      if (loPos > hiPos && hiPos >= 1 && loPos <= len) return { down: true, a: loPos, b: hiPos };
+      const [a, b] = rangeBounds(lo, hi, len, 'slice');
+      return { down: false, a, b };
+    };
     const rangeBounds = (lo, hi, len, use) => {
       const loN = lo === 0 ? 0 : lo < 0 ? len + lo : lo - 1;
       const hiN = hi < 0 ? len + hi + 1 : hi;
@@ -8651,11 +8658,19 @@ export class Interpreter {
         const len = col.type === 'str' ? [...col.v].length : col.v.length;
         const fRaw = expr.range.from == null ? 0 : needInt(await this.eval(expr.range.from, env), 'slice start');
         const tRaw = expr.range.to   == null ? len : needInt(await this.eval(expr.range.to,   env), 'slice end');
-        const [fi, ti] = rangeBounds(fRaw, tRaw, len, 'slice');
-        if (col.type === 'arr')   return mkArr(col.v.slice(fi, ti));
-        if (col.type === 'str')   return mkStr([...col.v].slice(fi,ti).join(''));
         if (isDict(col))
           throw new ZyRuntimeError(Interpreter.notPositionalMsg('d$[a..b]', col.keys), '##Type');
+        const span = sliceSpan(fRaw, tRaw, len);
+        if (span.down) {
+          const back = (xs) => { const r = []; for (let p = span.a; p >= span.b; p--) r.push(xs[p - 1]); return r; };
+          if (col.type === 'arr')   return mkArr(back(col.v));
+          if (col.type === 'str')   return mkStr(back([...col.v]).join(''));
+          if (col.type === 'tuple') return { type:'tuple', v:back(col.v), keys:null };
+          notSupported('$[i..j]');
+        }
+        const fi = span.a, ti = span.b;
+        if (col.type === 'arr')   return mkArr(col.v.slice(fi, ti));
+        if (col.type === 'str')   return mkStr([...col.v].slice(fi,ti).join(''));
         if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(fi,ti), keys:col.keys?col.keys.slice(fi,ti):null };
         notSupported('$[i..j]');
       }
