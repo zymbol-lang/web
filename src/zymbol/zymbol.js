@@ -2144,6 +2144,18 @@ export class Parser {
                                          : this.parseTupleDestructPattern();
       this.eat('COLON');
       const iterable = this.parseAdditive();
+      // D4: `@ (a, b):1..3` is refused for what it IS — a pattern over a range,
+      // which yields whole numbers and has nothing to take apart — and not for
+      // failing to parse. The range is read here so the refusal can be the
+      // sentence the two Rust engines give.
+      if (this.check('RANGE')) {
+        this.adv();
+        this.parseAdditive();
+        if (this.match('COLON')) this.parseAdditive();
+        throw new ZyStaticError("tuple pattern '( … )' requires a tuple, got Int",
+          { line },
+          "a range yields whole numbers; use '@ name:a..b' and no pattern");
+      }
       const body = this.parseBlock();
       const tmp = '__zy_par';
       body.unshift({ ...pat, value: { type: 'Ident', name: tmp, line }, line });
@@ -3454,6 +3466,15 @@ export class Parser {
     // The refusal names the token the way the Rust parser names it, so the
     // three engines refuse the same program with the same sentence.
     const shown = Parser.RUST_TOKEN_NAME[t.type] ?? t.type;
+    // D4: a range is only an iterable. Reaching the expression parser with a
+    // `..` in hand means one was written where it cannot be, and that has a
+    // sentence of its own in the two Rust engines — `expected expression, found
+    // DotDot` named the token and not the mistake.
+    if ((t ?? this.peek())?.type === 'RANGE') {
+      throw new ZyStaticError('ranges can only be used in for-each loops',
+        t ?? this.peek(),
+        "write '@ name:a..b { … }'; a range is not a value");
+    }
     throw new ZyStaticError(`expected expression, found ${shown}`, t ?? this.peek());
   }
 }
@@ -4605,6 +4626,15 @@ class Checker {
       }
 
       case 'ConstAssign': {
+        // A constant is declared once. This engine printed the second value and
+        // said nothing; the rule lives in the analyzer, where `check` sees it,
+        // the same place `C = 2` is refused (D5, GLB-019 C).
+        const prior = this.lookup(stmt.name, stmt.line);
+        if (prior?.isConst) {
+          this.error('E_CONST', `constant '${stmt.name}' already declared`, stmt, { name: stmt.name },
+            'a constant is declared once; use a different name');
+          return;
+        }
         this.checkExpr(stmt.value);
         this.define(stmt.name, stmt, true);
         return;
@@ -4725,6 +4755,12 @@ class Checker {
       case 'Input': {
         if (stmt.prompt) this.checkExpr(stmt.prompt);
         const varName = stmt.varName ?? stmt.name;
+        // `<< C` writes what was read into the name, so a constant refuses it
+        // exactly as `C = 2` does (D5).
+        if (varName && this.lookup(varName, stmt.line)?.isConst) {
+          this.error('E_CONST', `cannot reassign constant '${varName}'`, stmt, { name: varName });
+          return;
+        }
         if (varName) this.define(varName, stmt, false);
         return;
       }
@@ -4755,6 +4791,13 @@ class Checker {
         // it the name is defined either way. `lookup` would mark the outer name used, and
         // a variable that only appears as a loop's iterator is not "used" — hence has().
         const preexisting = stmt.var ? this.has(stmt.var) : false;
+        // The iterator is written on every turn, so a constant refuses to be
+        // one (D5). This engine left the constant alone and iterated a copy,
+        // which is a third answer to a question that has one.
+        if (stmt.var && this.lookup(stmt.var, stmt.line)?.isConst) {
+          this.error('E_CONST', `cannot reassign constant '${stmt.var}'`, stmt, { name: stmt.var });
+          return;
+        }
         // Marked as a loop so a POSTFIX `x°` can anchor here — see `hotDefine`.
         this.push(false, false, true);
         if (stmt.kind === 'foreach' || stmt.iterable || stmt.iter) {
