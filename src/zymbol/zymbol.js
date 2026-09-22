@@ -8632,9 +8632,20 @@ export class Interpreter {
           throw new ZyRuntimeError(Interpreter.notPositionalMsg('d$-[a..b]', col.keys), '##Type');
         const sv = needInt(await this.eval(expr.start, env), '$-[..] start');
         const nv = needInt(await this.eval(expr.count, env), '$-[..] count');
+        if (sv <= 0)
+          throw new ZyRuntimeError(`$-[start..] start must be positive (1-based), got ${sv}`, '##Index');
         if (nv < 0)
           throw new ZyRuntimeError(`$-[..] count must be non-negative, got ${nv}`, '##Index');
         const len = col.type === 'str' ? [...col.v].length : col.v.length;
+        // Strict (D2 revoked, GLB-046): a start or a count that runs past the
+        // end is refused, not clamped. `splice` trimmed in silence, so
+        // `[1,2,3]$-[2:3]` answered `[1]` and `$-[4:1]` answered the array
+        // untouched, where both Rust engines refuse. The message is spelled
+        // the way the reader spelled it — a count is `[i:n]`, a range is
+        // `[i..j]` — which is GLB-047 on the form it had not reached.
+        if (sv - 1 > len || sv - 1 + nv > len)
+          throw new ZyRuntimeError(
+            `$-[${sv}:${nv}] out of bounds for collection of length ${len}`, '##Index');
         const si = resolveIdx(sv, len);
         if (col.type === 'arr')   { const r=[...col.v]; r.splice(si, nv); return mkArr(r); }
         if (col.type === 'str')   { const r=[...col.v]; r.splice(si, nv); return mkStr(r.join('')); }
