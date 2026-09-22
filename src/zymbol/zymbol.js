@@ -8219,10 +8219,19 @@ export class Interpreter {
       return await this.evalNavPath(elem, rest);
     }
 
-    // Range step — fan out
+    // Range step — fan out.
+    //
+    // D3: a nav range written from a higher position to a lower one BUILDS, by
+    // reversing — `v[1>3..1]` walks positions 3, 2 and 1 in that order, the
+    // same way `a$[3..1]` reads. It is the only way the language has to
+    // reverse; `$^-` SORTS descending, which is a different question.
+    //
+    // Only the direction is read this way. A position outside the collection
+    // is still refused, by `navGetAt` below.
     const { from, to } = step;
+    const dir = from <= to ? 1 : -1;
     const results = [];
-    for (let i = from; i <= to; i++) {
+    for (let i = from; dir > 0 ? i <= to : i >= to; i += dir) {
       const elem = this.navGetAt(obj, i);
       const sub = await this.evalNavPath(elem, rest);
       // Flatten one level when nested ranges produce arrays
