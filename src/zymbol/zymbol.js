@@ -5629,6 +5629,15 @@ function deepUpdateValue(col, indices, newVal) {
     const r = [...col.v]; r[ki] = updatedSub;
     return { type:'tuple', v:r, keys:col.keys };
   }
+  // Checked BEFORE the length and the index are worked out: an Int here has no
+  // `.v`, so `len` fell to 0 and the reader was told `tuple index out of bounds:
+  // index 1 for tuple of length 0` — a tuple that is not there, a length that is
+  // not right and an index that exists. Writing through a step that lands on a
+  // non-collection fails for the same reason READING through it does, so it says
+  // what the read says (GLB-045, decided 2026-09-22).
+  if (col.type !== 'arr' && col.type !== 'tuple' && col.type !== 'str')
+    throw new ZyRuntimeError(
+      `cannot index into ${typeLabel(col)} — expected array, tuple, or string`, '##Type');
   const len = col.v?.length ?? 0;
   if (i === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
   const idx = i < 0 ? len + i : i - 1;
@@ -6648,6 +6657,14 @@ function captureFor(params, body, env) {
 //
 // Module scope rather than inside `evalCollectionOp`, because `evalCallable` is
 // a method of its own and needs the same sentences.
+// One COMPLETE template per container, for the same reason HOF_NEEDS has one
+// per operator: Rust writes three separate literals, and a shared
+// `${container} update index …` pairs with none of them.
+const UPDATE_INDEX = {
+  arr:   L => `array update index must be an integer, got ${L}`,
+  tuple: L => `tuple update index must be an integer, got ${L}`,
+};
+
 const HOF_NEEDS = {
   map:    L => `map requires array, tuple, string or dictionary, got ${L}`,
   filter: L => `filter requires array, tuple, string or dictionary, got ${L}`,
@@ -7705,8 +7722,10 @@ export class Interpreter {
 
       case 'Call': {
         const fn = env.get(expr.callee);
+        // A family, not a bare error: a name holding the wrong thing is a type
+        // mistake, and `!?` has to be able to sort it (GLB-034, D1).
         if (!fn || fn.type !== 'func')
-          throw new ZyError(`'${expr.callee}' is not a function`);
+          throw new ZyRuntimeError(`'${expr.callee}' is not a function`, '##Type');
         const args = await this.evalInOrder(expr.args, env);
         return await this.callFunc(fn, args, this.buildOutWriteback(fn, expr, env));
       }
@@ -7927,10 +7946,18 @@ export class Interpreter {
 
         // String field name — named tuple only (G2)
         if (iVal.type === 'str') {
-          if (!isDict(arr))
+          // An array IS a collection, so saying it is not was false. What is
+          // wrong is the kind of address: a positional collection takes a
+          // position. The two Rust engines' sentence.
+          if (!isDict(arr)) {
+            const t = UPDATE_INDEX[arr.type];
             throw new ZyRuntimeError(
-              `$~ writes into a collection, and this is ${typeLabel(arr)}\n` +
-              `help: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
+              t ? t(typeLabel(iVal))
+                : `$~ writes into a collection, and this is ${typeLabel(arr)}\n` +
+                  `help: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
+          }
+          // (a string never reaches here: the guard above refuses it, as both
+          // Rust engines do)
           const fi = arr.keys.indexOf(iVal.v);
           // A key that is not there gets ADDED, as `d[k] = v` does in Python.
           // The array refuses the same move (decision 13) and the two are not
@@ -7953,7 +7980,7 @@ export class Interpreter {
         // What is written into has to be a collection. It used to fall through
         // to the index arithmetic, where an Int read as a container of length 0
         // and the reader was told `tuple index out of bounds` (step 3.5d).
-        if (arr.type !== 'arr' && arr.type !== 'str' && arr.type !== 'tuple')
+        if (arr.type !== 'arr' && arr.type !== 'tuple')
           throw new ZyRuntimeError(
             `$~ writes into a collection, and this is ${typeLabel(arr)}\n` +
             `help: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
@@ -7962,9 +7989,7 @@ export class Interpreter {
         // through and `[1, 2][1.5]$~ 9` answered the array unchanged, because
         // 1.5 resolved to an offset that indexed nothing.
         if (iVal?.type !== 'int')
-          throw new ZyRuntimeError(
-            `${arr.type === 'arr' ? 'array' : arr.type === 'str' ? 'string' : 'tuple'} update index must be an integer, got ${typeLabel(iVal)}`,
-            '##Type');
+          throw new ZyRuntimeError(UPDATE_INDEX[arr.type](typeLabel(iVal)), '##Type');
         const i = iVal.v;
         if (i === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
         const len = arr.type === 'str' ? [...arr.v].length : (arr.v?.length ?? 0);
