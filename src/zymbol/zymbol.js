@@ -6641,6 +6641,24 @@ function captureFor(params, body, env) {
 
 // ─── Interpreter ──────────────────────────────────────────────────────────────
 
+// One COMPLETE template per higher-order operator, never one with a hole: the
+// message inventory pairs the engines by how a message is BUILT, so a shared
+// `${what} requires …` would leave a literal no Rust template matches, and the
+// gate would report new one-sided messages that are not new at all.
+//
+// Module scope rather than inside `evalCollectionOp`, because `evalCallable` is
+// a method of its own and needs the same sentences.
+const HOF_NEEDS = {
+  map:    L => `map requires array, tuple, string or dictionary, got ${L}`,
+  filter: L => `filter requires array, tuple, string or dictionary, got ${L}`,
+  reduce: L => `reduce requires array, tuple, string or dictionary, got ${L}`,
+};
+const HOF_LAMBDA = {
+  map:    `map requires lambda function`,
+  filter: `filter requires lambda function`,
+  reduce: `reduce requires lambda function`,
+};
+
 export class Interpreter {
   // A module binding's initialiser must NAME a value, not compute one — the
   // module body runs nothing, which is what E013 is for.
@@ -7696,7 +7714,7 @@ export class Interpreter {
       case 'CallExpr': {
         const fn = await this.eval(expr.callee, env);
         if (!fn || fn.type !== 'func')
-          throw new ZyRuntimeError(`Expression is not a function`, '##Type');
+          throw new ZyRuntimeError(`expression is not callable`, '##Type');
         const args = await this.evalInOrder(expr.args, env);
         // Output parameters must be written back here too, not just in 'Call'. A module
         // call `alias::f(x)` parses as Ident(alias) → FieldAccess → CallExpr (the callee
@@ -8505,15 +8523,25 @@ export class Interpreter {
       const say = NOT_SUPPORTED[op];
       throw new ZyRuntimeError(say ? say(typeLabel(col)) : `${op} not supported on ${col.type}`, '##Type');
     };
-    const colItems = () => {
+    // What a higher-order operator walks: the loop's rule, so what `@ e:v` hands
+    // over is what `v$> (e -> …)` transforms. A DICTIONARY yields its KEYS,
+    // exactly as `@ k:d` does (decision 8) — it used to yield the VALUES here,
+    // which contradicted its own loop. `what` names the operator so the refusal
+    // is the two Rust engines' sentence and not a generic one.
+    const colItems = what => {
+      // isDict FIRST: a dictionary is a tuple carrying keys, so the tuple test
+      // would otherwise swallow it and hand back its values.
+      if (isDict(col))          return col.keys.map(k => mkStr(k));
       if (col.type === 'arr')   return col.v;
       if (col.type === 'tuple') return col.v;
       if (col.type === 'str')   return [...col.v].map(mkChar);
-      notSupported('collection op');
+      throw new ZyRuntimeError(HOF_NEEDS[what](typeLabel(col)), '##Type');
     };
+    // Rebuild the shape the elements came from. Keys walked out of a dictionary
+    // are a list once they are out, so that case answers an array.
     const fromStr = items => col.type === 'str'
       ? mkStr(items.map(v => this.displayOutput(v)).join(''))
-      : col.type === 'tuple'
+      : (col.type === 'tuple' && !isDict(col))
         ? { type:'tuple', v: items, keys: null }
         : mkArr(items);
 
@@ -8776,15 +8804,15 @@ export class Interpreter {
       }
 
       case '$>': {
-        const fn = await this.evalCallable(expr.arg, env);
-        const items = colItems();
+        const fn = await this.evalCallable(expr.arg, env, 'map');
+        const items = colItems('map');
         const mapped = [];
         for (const el of items) mapped.push(await this.callFunc(fn, [el]));
         return fromStr(mapped);
       }
       case '$|': {
-        const fn = await this.evalCallable(expr.arg, env);
-        const items = colItems();
+        const fn = await this.evalCallable(expr.arg, env, 'filter');
+        const items = colItems('filter');
         const kept = [];
         for (const el of items) {
           if (this.truthy(await this.callFunc(fn,[el]))) kept.push(el);
@@ -8797,11 +8825,11 @@ export class Interpreter {
         // lambda was called anyway and answered the initial value (GLB-015 A,
         // decided an arity error, not a collection edge).
         let acc = await this.eval(expr.init, env);
-        const fn = await this.evalCallable(expr.arg, env);
+        const fn = await this.evalCallable(expr.arg, env, 'reduce');
         if (!fn.native && Array.isArray(fn.params) && fn.params.length !== 2) {
           throw new ZyError(`reduce lambda requires 2 parameters (accumulator, element), got ${fn.params.length}`);
         }
-        for (const el of colItems()) acc = await this.callFunc(fn,[acc,el]);
+        for (const el of colItems('reduce')) acc = await this.callFunc(fn,[acc,el]);
         return acc;
       }
 
@@ -8881,10 +8909,14 @@ export class Interpreter {
     throw new ZyError(`Unknown collection operator: ${expr.op}`);
   }
 
-  async evalCallable(argExpr, env) {
+  async evalCallable(argExpr, env, what) {
     const v = await this.eval(argExpr, env);
     if (v && v.type === 'func') return v;
-    throw new ZyRuntimeError(`Expected a function for collection operator`, '##Type');
+    // The two Rust engines name the operator: `map requires lambda function`.
+    // One generic sentence for all of them said neither which operator nor
+    // what it wanted.
+    throw new ZyRuntimeError(
+      what ? HOF_LAMBDA[what] : `Expected a function for collection operator`, '##Type');
   }
 
   // Evaluate a Match's subject and find the first arm whose pattern matches,
