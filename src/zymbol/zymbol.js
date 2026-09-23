@@ -2009,6 +2009,12 @@ export class Parser {
     let elseBranch = null;
     while (this.check('ELSEIF')) {
       this.adv();
+      // The Rust parser's words for this spot. Letting `parseExpr` fail gave
+      // `expected expression, found LBrace`, which names this engine's token
+      // and not the mistake: `_?` without a condition is `_`.
+      if (this.check('LBRACE'))
+        throw new ZyStaticError("'_?' requires a condition", this.peek(),
+          "use '_' (without '?') for an unconditional else branch");
       elseifs.push({ cond: this.parseExpr(), body: this.parseBlock() });
     }
     if (this.check('ELSE')) {
@@ -2033,7 +2039,8 @@ export class Parser {
 
   parseMatchArm() {
     let pattern = this.parseMatchPattern();
-    this.eat('FAT_ARROW');
+    this.eat('FAT_ARROW', "expected '=>' after pattern",
+      'match case syntax: pattern => [value] [{ block }]');
     // The no-bare-comparison restriction (inMatchBody) only applies to the
     // value form (pattern => expr) — there it would swallow the next arm's
     // comparison pattern (e.g. "ice" < 20). A { block } body is unambiguously
@@ -2072,6 +2079,12 @@ export class Parser {
       this.adv();
       const elems = [];
       while (!this.check('RBRACKET') && !this.check('EOF')) {
+        // `=>` cannot begin a pattern element, so reaching it means the `]` is
+        // missing — which is what the Rust parser says. Letting the element
+        // parser hit it gave `expected expression, found FatArrow`, naming the
+        // token this engine stopped on instead of the bracket never closed.
+        if (this.check('FAT_ARROW'))
+          throw new ZyStaticError("expected ']' to close list pattern", this.peek());
         if (this.check('TIMES')) {
           // `??` compares; it does not bind. A pattern element names a *value*
           // to compare against (`?? codigo { umbral => … }` tests `codigo`
@@ -2100,7 +2113,7 @@ export class Parser {
         }
         this.match('COMMA');
       }
-      this.eat('RBRACKET');
+      this.eat('RBRACKET', "expected ']' to close list pattern");
       pattern = { type: 'list', elems };
     } else if (['LT','GT','LTE','GTE','EQ','NEQ'].includes(this.peek().type)) {
       const op = this.adv().value;
@@ -8078,7 +8091,7 @@ export class Interpreter {
           const pv = await this.eval(expr.precExpr, env);
           if (pv.type !== 'int') {
             throw new ZyRuntimeError(
-              `decimal count must be a whole number, got ${pv.type}`, '##Type', expr.line);
+              `decimal count must be a whole number, got ${typeLabel(pv)}`, '##Type', expr.line);
           }
           if (pv.v < 0) {
             throw new ZyRuntimeError(
