@@ -4749,12 +4749,25 @@ class Checker {
         // `>> x°` — the marker initializes, it does not read, so in an output
         // position it says nothing and hides the fact that `x` may not exist.
         // Both Rust engines refuse it; this engine printed `5` and carried on.
-        for (const item of (stmt.items ?? [])) {
+        const outItems = stmt.items ?? [];
+        for (let k = 0; k < outItems.length; k++) {
+          const item = outItems[k];
           // Both spellings: `>> x°` is a hot Ident, and `>> °x` is the
           // empty-name sentinel the prefix lexes to. Rust refuses both.
           if (item?.type === 'Ident' && item.hot === true) {
+            // The NAME, not a literal `x`: the two Rust engines print the name
+            // the reader wrote, so the correction can be copied as it stands.
+            // A prefix `°` leaves the name on the NEXT item, because the
+            // sentinel it lexes to carries none — see `readIdent`.
+            let shown = item.name;
+            if (!shown) {
+              const next = outItems[k + 1];
+              shown = (next?.type === 'Ident' && next.name) ? next.name
+                    : (next?.obj?.type === 'Ident' && next.obj.name) ? next.obj.name
+                    : shown;
+            }
             this.error('E_HOT_OUTPUT',
-              '`°` has no effect in output context — use `>> x ¶`',
+              `\`°\` has no effect in output context — use \`>> ${shown} ¶\``,
               item.line ?? stmt.line, { name: item.name });
           }
         }
