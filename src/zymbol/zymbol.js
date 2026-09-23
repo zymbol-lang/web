@@ -8284,6 +8284,11 @@ export class Interpreter {
 
     // Range step — fan out.
     //
+    // Both bounds are checked BEFORE the walk. Letting the loop ask for
+    // position 0 gave `index 0 is invalid`, which is true of a plain index and
+    // false here: `v[1>-1..2]` has no 0 in it. The tree-walker's order —
+    // a negative bound is its own failure, and only then is a zero one.
+    //
     // D3: a nav range written from a higher position to a lower one BUILDS, by
     // reversing — `v[1>3..1]` walks positions 3, 2 and 1 in that order, the
     // same way `a$[3..1]` reads. It is the only way the language has to
@@ -8292,6 +8297,12 @@ export class Interpreter {
     // Only the direction is read this way. A position outside the collection
     // is still refused, by `navGetAt` below.
     const { from, to } = step;
+    if (from < 0 || to < 0)
+      throw new ZyRuntimeError(
+        'range indices in nav path must be positive integers', '##Index');
+    if (from < 1 || to < 1)
+      throw new ZyRuntimeError(
+        `invalid nav range ${from}..${to} — indices are 1-based`, '##Index');
     const dir = from <= to ? 1 : -1;
     const results = [];
     for (let i = from; dir > 0 ? i <= to : i >= to; i += dir) {
