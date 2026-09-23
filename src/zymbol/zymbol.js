@@ -1490,6 +1490,21 @@ export class Parser {
   // than at each of the ~60 `return { type: ... }` below. A runtime error is
   // reported at the statement that raised it, and the alternative was passing a
   // line into all 101 `throw new ZyError` sites — of which 7 did it.
+  // `@! nombre` reads as the labelled jump it is one character away from, and
+  // is not one: the label goes INSIDE the jump. Left alone the bare jump runs,
+  // the outer loop never ends, and the only warning talks about a useless read.
+  // The name must be on the SAME line — one on the next line is an ordinary
+  // statement with its own warning.
+  refuseLabelAfterJump(kw, line) {
+    const t = this.peek();
+    if (t?.type === 'IDENT' && t.line === line) {
+      throw new ZyStaticError(
+        `'${kw} ${t.value}' is a bare '${kw}' and a name that is read and discarded, not a labelled jump`,
+        t,
+        `the label goes inside the jump: write '@:${t.value}${kw[1]}' to target the loop labelled '${t.value}'`);
+    }
+  }
+
   parseStmt() {
     const line = this.peek()?.line ?? null;
     const col  = this.peek()?.col ?? null;
@@ -1561,8 +1576,12 @@ export class Parser {
     // IDENT here accepted `@!outer` and ran it as if it were `@:outer!` — the
     // form the premise exists to refuse — while both Rust engines rejected it.
     // The labelled break is AT_BREAK, two lines down (ZYJS-015).
-    if (t.type === 'BREAK')    { this.adv(); return { type: 'Break',    label: null }; }
-    if (t.type === 'CONTINUE') { this.adv(); const cl = this.check('IDENT') ? this.adv().value : null; return { type: 'Continue', label: cl }; }
+    if (t.type === 'BREAK')    { this.adv(); this.refuseLabelAfterJump('@!', t.line); return { type: 'Break',    label: null }; }
+    // `@> nombre` used to be read HERE as a labelled continue, which no Rust
+    // engine does: there the name is a separate statement that is read and
+    // thrown away, and the loop spins. One form, one meaning — refused in all
+    // three now (GLB-041, decided 2026-09-23).
+    if (t.type === 'CONTINUE') { this.adv(); this.refuseLabelAfterJump('@>', t.line); return { type: 'Continue', label: null }; }
     if (t.type === 'AT_BREAK') { const lbl = this.adv().value; return { type: 'Break',    label: lbl }; }
     if (t.type === 'AT_CONT')  { const lbl = this.adv().value; return { type: 'Continue', label: lbl }; }
     if (t.type === 'ATSLEEP')    { this.adv(); return { type: 'Sleep', duration: this.parseExpr() }; }
