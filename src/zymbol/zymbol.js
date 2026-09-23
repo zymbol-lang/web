@@ -5638,6 +5638,22 @@ function deepUpdateValue(col, indices, newVal) {
   if (col.type !== 'arr' && col.type !== 'tuple' && col.type !== 'str')
     throw new ZyRuntimeError(
       `cannot index into ${typeLabel(col)} — expected array, tuple, or string`, '##Type');
+  // A string is an array of characters here too: walked by position, written
+  // by position, and a LEAF — there is nothing inside a character to go into.
+  if (col.type === 'str') {
+    const cs = [...col.v];
+    const n  = i < 0 ? cs.length + i : i - 1;
+    if (n < 0 || n >= cs.length)
+      throw new ZyError(`string index out of bounds: index ${i} for string of length ${cs.length}`);
+    if (indices.length > 1)
+      throw new ZyRuntimeError(
+        `cannot index into Char — expected array, tuple, or string`, '##Type');
+    if (newVal?.type !== 'char' && newVal?.type !== 'str')
+      throw new ZyRuntimeError(
+        `$~ on string requires char or string value, got ${typeLabel(newVal)}`, '##Type');
+    cs[n] = newVal.v;
+    return mkStr(cs.join(''));
+  }
   const len = col.v?.length ?? 0;
   if (i === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
   const idx = i < 0 ? len + i : i - 1;
@@ -6662,6 +6678,7 @@ function captureFor(params, body, env) {
 // `${container} update index …` pairs with none of them.
 const UPDATE_INDEX = {
   arr:   L => `array update index must be an integer, got ${L}`,
+  str:   L => `string update index must be an integer, got ${L}`,
   tuple: L => `tuple update index must be an integer, got ${L}`,
 };
 
@@ -7956,8 +7973,6 @@ export class Interpreter {
                 : `$~ writes into a collection, and this is ${typeLabel(arr)}\n` +
                   `help: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
           }
-          // (a string never reaches here: the guard above refuses it, as both
-          // Rust engines do)
           const fi = arr.keys.indexOf(iVal.v);
           // A key that is not there gets ADDED, as `d[k] = v` does in Python.
           // The array refuses the same move (decision 13) and the two are not
@@ -7980,7 +7995,7 @@ export class Interpreter {
         // What is written into has to be a collection. It used to fall through
         // to the index arithmetic, where an Int read as a container of length 0
         // and the reader was told `tuple index out of bounds` (step 3.5d).
-        if (arr.type !== 'arr' && arr.type !== 'tuple')
+        if (arr.type !== 'arr' && arr.type !== 'str' && arr.type !== 'tuple')
           throw new ZyRuntimeError(
             `$~ writes into a collection, and this is ${typeLabel(arr)}\n` +
             `help: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
@@ -7998,7 +8013,12 @@ export class Interpreter {
         if (idx < 0 || idx >= len)
           throw new ZyError(`${container} index out of bounds: index ${i} for ${container} of length ${len}`);
         if (arr.type === 'arr')   { const r = [...arr.v]; r[idx] = val; return mkArr(r); }
-        if (arr.type === 'str')   { const r = [...arr.v]; r[idx] = this.display(val); return mkStr(r.join('')); }
+        if (arr.type === 'str') {
+          if (val?.type !== 'char' && val?.type !== 'str')
+            throw new ZyRuntimeError(
+              `$~ on string requires char or string value, got ${typeLabel(val)}`, '##Type');
+          const r = [...arr.v]; r[idx] = this.display(val); return mkStr(r.join(''));
+        }
         if (arr.type === 'tuple') { const r = [...arr.v]; r[idx] = val; return { type:'tuple', v:r, keys:arr.keys }; }
         throw new ZyRuntimeError(`$~ writes into a collection, and this is ${typeLabel(arr)}\nhelp: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
       }
