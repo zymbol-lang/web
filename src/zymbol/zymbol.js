@@ -1116,6 +1116,15 @@ export class Lexer {
           // The closing quote or the end of the file before the `}`: the
           // interpolation never closed, as the Rust lexer says (ZYJS-020).
           if (this.pos >= this.src.length || this.ch() === '"') {
+            // Both are open here, and the quote opened FIRST. This engine's
+            // lexer throws on the first error rather than collecting them, so
+            // it reports the quote — the one the reader has to fix first — and
+            // the interpolation turns up on the next run. The two Rust engines
+            // report both (GLB-038, decided 2026-09-24).
+            if (!this.src.slice(this.pos).includes('"')) {
+              throw new ZyStaticError('unterminated string literal',
+                { line: startLine, col: this.tokCol }, 'add closing " to end the string');
+            }
             throw new ZyStaticError('unterminated string interpolation', this.at(), 'close the interpolation with }');
           }
           const ch = this.consume();
@@ -1142,6 +1151,12 @@ export class Lexer {
         // digit first. The old test only excluded operators, so `"a{1}"`
         // passed and printed `a1` (ZYJS-020).
         if (!isIdentName(inner)) {
+          // Same rule as the branch above: if the quote is open too, that is
+          // what the reader fixes first, because it opened first.
+          if (!this.src.slice(this.pos).includes('"')) {
+            throw new ZyStaticError('unterminated string literal',
+              { line: startLine, col: this.tokCol }, 'add closing " to end the string');
+          }
           throw new ZyStaticError(
             'invalid character in string interpolation',
             startLine,
