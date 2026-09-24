@@ -460,12 +460,19 @@ class ZyStaticError extends Error {
   // `help` is a field for the same reason it is one in Rust's `Diagnostic`: the
   // `=` of `= help:` is what separates the guidance from the message, so a
   // guidance concatenated onto the message is separated by nothing.
-  constructor(msg, at, help = null) {
+  constructor(msg, at, help = null, more = []) {
     super(msg);
     const pos = zyPosOf(at);
     this.zyLine = pos.line;
     this.zyCol  = pos.col;
     this.zyHelp = help;
+    // Further findings the lexer already knows at this same spot, reported
+    // alongside rather than lost. The lexer stops here either way — it does not
+    // resume — but `>> "a{b ¶` leaves TWO things open and the reader deserves
+    // both, in opening order (GLB-038, decided 2026-09-24). Each entry is
+    // `{ message, help, line, col }`, the shape `checkSource` turns into a
+    // diagnostic, and an empty list is the old behaviour exactly.
+    this.zyMore = more;
   }
 }
 
@@ -1123,7 +1130,10 @@ export class Lexer {
             // report both (GLB-038, decided 2026-09-24).
             if (!this.src.slice(this.pos).includes('"')) {
               throw new ZyStaticError('unterminated string literal',
-                { line: startLine, col: this.tokCol }, 'add closing " to end the string');
+                { line: startLine, col: this.tokCol }, 'add closing " to end the string',
+                [{ message: 'unterminated string interpolation',
+                   help: 'close the interpolation with }',
+                   line: startLine, col: this.tokCol }]);
             }
             throw new ZyStaticError('unterminated string interpolation', this.at(), 'close the interpolation with }');
           }
@@ -1155,7 +1165,10 @@ export class Lexer {
           // what the reader fixes first, because it opened first.
           if (!this.src.slice(this.pos).includes('"')) {
             throw new ZyStaticError('unterminated string literal',
-              { line: startLine, col: this.tokCol }, 'add closing " to end the string');
+              { line: startLine, col: this.tokCol }, 'add closing " to end the string',
+              [{ message: 'invalid character in string interpolation',
+                 help: 'interpolation must be {identifier} — use \\{ for a literal brace',
+                 line: startLine, col: this.tokCol }]);
           }
           throw new ZyStaticError(
             'invalid character in string interpolation',
@@ -9829,18 +9842,27 @@ export function checkSource(src, opts = {}) {
     const raw  = e?.message ?? String(e);
     const line = e?.zyLine ?? (/^Line (\d+): /.exec(raw)?.[1] ?? null);
     const message = raw.replace(/^Line \d+: /, '');
-    return {
-      ast: null,
-      diagnostics: [{
-        severity: 'error',
-        code: 'E_PARSE',
-        message,
-        line: line === null ? null : Number(line),
-        col: e?.zyCol ?? null,
-        params: { message },
-        help: e?.zyHelp ?? null,
-      }],
+    const first = {
+      severity: 'error',
+      code: 'E_PARSE',
+      message,
+      line: line === null ? null : Number(line),
+      col: e?.zyCol ?? null,
+      params: { message },
+      help: e?.zyHelp ?? null,
     };
+    // A refusal may carry more findings from the same spot (`zyMore`). They go
+    // out as ordinary diagnostics, in the order the lexer found them.
+    const rest = (e?.zyMore ?? []).map(m => ({
+      severity: 'error',
+      code: 'E_PARSE',
+      message: m.message,
+      line: m.line ?? null,
+      col: m.col ?? null,
+      params: { message: m.message },
+      help: m.help ?? null,
+    }));
+    return { ast: null, diagnostics: [first, ...rest] };
   }
 
   let diagnostics;
