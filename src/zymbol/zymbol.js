@@ -1299,6 +1299,25 @@ export class Lexer {
           this.at());
       }
     }
+    // `°` anchors a name so it outlives the loop; `_` keeps a name inside its
+    // block. On the same name they ask for opposite things, and this engine
+    // refused the accumulation at run time while both Rust engines accepted it
+    // — no program in the workspace used the pair (GLB-039, decided 2026-09-24).
+    // The prefix form arrives as the empty sentinel just before this name.
+    if (s.startsWith('_')) {
+      const bare = s.slice(1);
+      const prev = toks[toks.length - 1];
+      if (prev && prev.type === 'IDENT' && prev.hot === true && prev.value === '') {
+        throw new ZyStaticError(
+          `'°${s}' anchors the name above the loop and '_' keeps it inside its block — the two markers contradict each other`,
+          prev, `use '°${bare}' to accumulate a value you read after the loop`);
+      }
+      if (hot) {
+        throw new ZyStaticError(
+          `'${s}°' anchors the name at the loop and '_' keeps it inside its block — the two markers contradict each other`,
+          { line: this.tokLine, col: this.tokCol }, `use '${bare}°' to accumulate a value you read after the loop`);
+      }
+    }
     toks.push({ type: 'IDENT', value: s, hot, line: this.tokLine, col: this.tokCol });
   }
 }
