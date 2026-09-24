@@ -1156,15 +1156,35 @@ export class Lexer {
         // printed happily while the same JSON with neither escape was refused.
         // Two spellings of one string, one accepted and one not, with nothing to
         // say why.
+        // Same line as the opening quote: the string is closed and the brace
+        // really is what is wrong. A LATER line means the quote never closed
+        // and the string ran on and ate a `}` that was closing a block — what
+        // the reader needs to hear is that this quote is open, not that a
+        // brace is loose (GLB-038, decided 2026-09-23).
+        if (this.line === startLine) {
+          throw new ZyStaticError(
+            `unmatched '}' in string`,
+            this.at(),
+            `the escape is symmetric — write \\} for a literal brace, as \\{ is for the opening one`);
+        }
         throw new ZyStaticError(
-          `unmatched '}' in string`,
-          this.at(),
-          `the escape is symmetric — write \\} for a literal brace, as \\{ is for the opening one`);
+          'unterminated string literal',
+          { line: startLine, col: this.tokCol },
+          `the string opened here ran on and swallowed the closing brace on line ${this.line} — add the closing quote, or escape the brace to keep it inside the text`);
       } else {
         cur += this.consume();
       }
     }
-    if (this.pos < this.src.length) this.consume(); // closing "
+    // Running out of file with the quote still open is an error, not a string.
+    // This engine consumed nothing and handed back what it had, so `>> "abc`
+    // printed `abc` where both Rust engines refuse the file (GLB-038).
+    if (this.pos >= this.src.length) {
+      throw new ZyStaticError(
+        'unterminated string literal',
+        { line: startLine, col: this.tokCol },
+        'add closing " to end the string');
+    }
+    this.consume(); // closing "
     if (cur) parts.push({ t: 'lit', v: cur });
     toks.push({ type: 'STR', value: parts, col: this.tokCol, line: startLine, endLine: this.line });
   }
