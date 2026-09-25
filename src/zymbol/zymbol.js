@@ -1714,7 +1714,7 @@ export class Parser {
     // late, on the next line (ZYJS-025 B).
     if (t.type === 'HASH') {
       if (this.pos === 0) return this.parseModuleBlock();
-      throw new ZyStaticError(`unexpected token: ${Parser.RUST_TOKEN_NAME.HASH}`, t,
+      throw new ZyStaticError(`unexpected token: ${Parser.tokenSpelling(t)}`, t,
         'expected statement (>>, <<, ?, ??, @, @!, @>, !?, <~, ¶, \\\\, or identifier)');
     }
 
@@ -1789,7 +1789,7 @@ export class Parser {
       // it and could not share it, they had the message and no guidance.
       const stray = OUTPUT_STOP_OPS[this.peek().type];
       if (stray && this.peek().line === opLine) {
-        const named = Parser.RUST_TOKEN_NAME[this.peek().type] ?? this.peek().type;
+        const named = Parser.tokenSpelling(this.peek());
         throw new ZyStaticError(
           `expected expression, found ${named}`,
           this.peek(),
@@ -3360,35 +3360,22 @@ export class Parser {
     return args;
   }
 
-  // The token as the Rust parser NAMES it, for `expected expression, found X`.
-  //
-  // The two lexers agree about what a token is and disagree about what it is
-  // called — `RPAREN` here, `RParen` there — so a refusal that quotes the name
-  // would read differently in the two engines for no reason anybody chose. The
-  // map is the tokens that can actually reach a "there is no expression here"
-  // refusal; anything outside it falls back to its own name, which is a
-  // difference a cell would then show rather than one hidden by a guess.
-  static RUST_TOKEN_NAME = {
-    ASSIGN: 'Assign', CONST_ASSIGN: 'ConstAssign', FAT_ARROW: 'FatArrow', HASH: 'Hash',
-    COMMA: 'Comma', COLON: 'Colon', SEMI: 'Semicolon', DOT: 'Dot',
-    RANGE: 'DotDot', BACKSLASH: 'Backslash',
-    LPAREN: 'LParen', RPAREN: 'RParen',
-    LBRACKET: 'LBracket', RBRACKET: 'RBracket',
-    LBRACE: 'LBrace', RBRACE: 'RBrace',
-    PLUS: 'Plus', MINUS: 'Minus', TIMES: 'Star', DIV: 'Slash',
-    MOD: 'Percent', POW: 'Caret',
-    EQ: 'Eq', NEQ: 'Neq', LT: 'Lt', GT: 'Gt', LTE: 'Le', GTE: 'Ge',
-    AND: 'And', OR: 'Or', NOT: 'Not', PIPE: 'PipeOp', VBAR: 'Pipe',
-    PLUS_EQ: 'PlusAssign', MINUS_EQ: 'MinusAssign', TIMES_EQ: 'StarAssign',
-    DIV_EQ: 'SlashAssign', MOD_EQ: 'PercentAssign', POW_EQ: 'CaretAssign',
-    INC: 'PlusPlus', DEC: 'MinusMinus',
-    IF: 'Question', MATCH: 'DoubleQuestion', ELSEIF: 'ElseIf', ELSE: 'Underscore',
-    ARROW: 'Arrow', RETURN: 'Return', SCOPE: 'ScopeResolution',
-    AT: 'At', BREAK: 'AtBreak', CONTINUE: 'AtContinue', ATSLEEP: 'AtTilde',
-    OUTPUT: 'Output', INPUT: 'Input', IMPORT: 'ModuleImport',
-    TRY: 'TryBlock', CATCH: 'CatchBlock', FINALLY: 'FinallyBlock',
-    EOF: 'end of file',
-  };
+  // The token as a refusal quotes it: `'='`, `'}'`, `'5'`, `"texto"`, `end of
+  // file` — what the program HAS WRITTEN (GLB-028, decided 2026-09-25). It used
+  // to be the Rust parser's variant name, `found Assign`, mirrored here so the
+  // engines agreed; they now agree on the spelling, which both can give. Same
+  // table as `TokenKind::quoted` in crates/zymbol-lexer: canonical spellings,
+  // and a char or string literal keeps its own quotes rather than gaining more.
+  static tokenSpelling(t) {
+    if (!t || t.type === 'EOF') return 'end of file';
+    switch (t.type) {
+      case 'CHAR': return `'${t.value}'`;
+      case 'STR':
+        return `"${(t.value ?? []).map(p => (p.t === 'lit' ? p.v : `{${p.v}}`)).join('')}"`;
+      case 'BOOL': return t.value ? "'#1'" : "'#0'";
+    }
+    return `'${typeof t.value === 'string' || typeof t.value === 'number' ? t.value : t.type}'`;
+  }
 
   parsePrimary() {
     if (this.peek().type === 'LPAREN' && this.isLambdaStart()) return this.parseLambda();
@@ -3560,7 +3547,7 @@ export class Parser {
     //
     // The refusal names the token the way the Rust parser names it, so the
     // three engines refuse the same program with the same sentence.
-    const shown = Parser.RUST_TOKEN_NAME[t.type] ?? t.type;
+    const shown = Parser.tokenSpelling(t);
     // D4: a range is only an iterable. Reaching the expression parser with a
     // `..` in hand means one was written where it cannot be, and that has a
     // sentence of its own in the two Rust engines — `expected expression, found
