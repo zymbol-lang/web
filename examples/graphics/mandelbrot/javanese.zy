@@ -60,7 +60,7 @@ oncat(cr, ci) {
             cr = (x - 1) * ambane  / kolom - 2.1
             ci = (y - 1) * dhuwure / larik - dhuwure / 2.0
             n  = oncat(cr, ci)
-            tandha = "@"
+            tandha = '@'
             werna  = 231
             ? n <> 0 {
                 jangkah = n / 4 + 1

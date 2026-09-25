@@ -63,7 +63,7 @@ dilwo(cr, ci) {
             cr = (x - 1) * niteelí / ałnááná - 2.1
             ci = (y - 1) * nineezí / ałhąąh  - nineezí / 2.0
             n  = dilwo(cr, ci)
-            naaltsoos = "@"
+            naaltsoos = '@'
             bikédzoí  = 231
             ? n <> 0 {
                 nináltsood = n / 4 + 1

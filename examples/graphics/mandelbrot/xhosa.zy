@@ -62,7 +62,7 @@ baleka(cr, ci) {
             cr = (x - 1) * ububanziBendawo / iintsika - 2.1
             ci = (y - 1) * ubudeBendawo    / imigca   - ubudeBendawo / 2.0
             n  = baleka(cr, ci)
-            uphawu = "@"
+            uphawu = '@'
             umbala = 231
             ? n <> 0 {
                 inyathelo = n / 4 + 1

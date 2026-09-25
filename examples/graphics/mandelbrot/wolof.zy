@@ -60,7 +60,7 @@ daw(cr, ci) {
             cr = (x - 1) * yaatuwaayBerab / samp - 2.1
             ci = (y - 1) * guddayBerab    / rëdd - guddayBerab / 2.0
             n  = daw(cr, ci)
-            màndarga = "@"
+            màndarga = '@'
             melo     = 231
             ? n <> 0 {
                 pas = n / 4 + 1

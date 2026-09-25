@@ -59,7 +59,7 @@ ucieczka(cr, ci) {
             cr = (x - 1) * szerokość / kolumny - 2.1
             ci = (y - 1) * wysokość  / wiersze - wysokość / 2.0
             n  = ucieczka(cr, ci)
-            znak = "@"
+            znak = '@'
             barwa = 231
             ? n <> 0 {
                 krok = n / 4 + 1

@@ -168,7 +168,7 @@ fuga(cr, ci) {
             cr = (x - 1) * anchura / cols - 2.1
             ci = (y - 1) * altura  / filas - altura / 2.0
             n  = fuga(cr, ci)
-            marca = "@"
+            marca = '@'
             tinte = 231
             ? n <> 0 {
                 paso = n / 4 + 1

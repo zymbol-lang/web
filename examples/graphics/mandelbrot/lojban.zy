@@ -58,7 +58,7 @@ cliva(cr, ci) {
             cr = (x - 1) * ganra_pixra / sraji - 2.1
             ci = (y - 1) * clani_pixra / pinta - clani_pixra / 2.0
             n  = cliva(cr, ci)
-            sinxa = "@"
+            sinxa = '@'
             skari = 231
             ? n <> 0 {
                 stapa = n / 4 + 1

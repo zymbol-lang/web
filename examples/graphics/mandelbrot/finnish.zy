@@ -61,7 +61,7 @@ pako(cr, ci) {
             cr = (x - 1) * leveys  / sarakkeet - 2.1
             ci = (y - 1) * korkeus / rivit     - korkeus / 2.0
             n  = pako(cr, ci)
-            merkki = "@"
+            merkki = '@'
             sävy   = 231
             ? n <> 0 {
                 askel = n / 4 + 1

@@ -59,7 +59,7 @@ escape(cr, ci) {
             cr = (x - 1) * width  / cols - 2.1
             ci = (y - 1) * height / rows - height / 2.0
             n  = escape(cr, ci)
-            mark = "@"
+            mark = '@'
             tint = 231
             ? n <> 0 {
                 step = n / 4 + 1

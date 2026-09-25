@@ -60,7 +60,7 @@ evadare(cr, ci) {
             cr = (x - 1) * lățime   / coloane - 2.1
             ci = (y - 1) * înălțime / rânduri - înălțime / 2.0
             n  = evadare(cr, ci)
-            semn  = "@"
+            semn  = '@'
             nuanță = 231
             ? n <> 0 {
                 pas = n / 4 + 1

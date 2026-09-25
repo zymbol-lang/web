@@ -62,7 +62,7 @@ ayqiy(cr, ci) {
             cr = (x - 1) * kinraynin / sayaq - 2.1
             ci = (y - 1) * sayaynin  / siqi  - sayaynin / 2.0
             n  = ayqiy(cr, ci)
-            unancha = "@"
+            unancha = '@'
             llimpi  = 231
             ? n <> 0 {
                 thaskiy = n / 4 + 1

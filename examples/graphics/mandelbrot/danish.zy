@@ -60,7 +60,7 @@ flugt(cr, ci) {
             cr = (x - 1) * bredde / kolonner - 2.1
             ci = (y - 1) * højde  / rækker   - højde / 2.0
             n  = flugt(cr, ci)
-            tegn = "@"
+            tegn = '@'
             tone = 231
             ? n <> 0 {
                 trin = n / 4 + 1

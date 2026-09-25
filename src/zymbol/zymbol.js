@@ -3982,6 +3982,11 @@ class Checker {
       switch (s.type) {
         case 'FuncDecl': {
           this.funcArity.set(s.name, (s.params ?? []).length);
+          // Kept whole, so a call's type can be read off the function's `<~`s
+          // (GLB-043). Only the declaration is stored; its type is worked out
+          // the first time a call asks for it.
+          if (!this.funcDecls) this.funcDecls = new Map();
+          this.funcDecls.set(s.name, s);
           // Which slots are `<~` outputs, so a call can be checked against them
           // (REFERENCE.md L34). Functions without one — nearly all — store nothing.
           const outs = (s.params ?? [])
@@ -4315,6 +4320,117 @@ class Checker {
     return kinds.every(k => norm(k) === norm(first)) ? first : null;
   }
 
+  // ─── Type of an expression, the way the Rust type checker infers it ────────
+  //
+  // Used by the reassignment warning, and nothing else (GLB-043, decided
+  // 2026-09-24). This engine used to warn only literal-against-literal, so
+  // `marca = "@"` then `marca = trazo[1]` — String then Char — was flagged by
+  // both Rust engines and passed in silence here, in 110 programs.
+  //
+  // `null` is Rust's Any/Unknown: "cannot tell", and cannot-tell never warns.
+  // Each branch is `infer_expr` in crates/zymbol-semantic/src/type_check.rs,
+  // including where it is NOT conservative — `n / 4` is Int even when `n` is
+  // unknown, because that is what Rust answers.
+  inferType(e, locals = null) {
+    if (!e) return null;
+    const isNum = t => t === 'Int' || t === 'Float';
+    switch (e.type) {
+      case 'Literal':
+        return { int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool', unit: 'Unit' }[e.kind] ?? null;
+      case 'Ident': {
+        // Inside a function body the names are the body's own; a parameter is
+        // unknown, as it is in Rust.
+        if (locals) return locals.has(e.name) ? locals.get(e.name) : null;
+        return this.peekVar(e.name)?.infType ?? null;
+      }
+      case 'UnaryOp': {
+        const t = this.inferType(e.operand ?? e.expr ?? e.value, locals);
+        return e.op === '!' ? 'Bool' : t;
+      }
+      case 'BinOp': {
+        const l = this.inferType(e.left, locals), r = this.inferType(e.right, locals);
+        switch (e.op) {
+          case '+':
+            // `+` only when both sides are known numbers: it does not
+            // concatenate, and with an unknown side Rust says Any.
+            return isNum(l) && isNum(r) ? (l === 'Float' || r === 'Float' ? 'Float' : 'Int') : null;
+          case '-': case '*': case '/': case '%': case '^':
+            return l === 'Float' || r === 'Float' ? 'Float' : 'Int';
+          case '==': case '<>': case '<': case '<=': case '>': case '>=':
+          case '&&': case '||':
+            return 'Bool';
+          default:
+            return null;
+        }
+      }
+      case 'NavIndex': {
+        // A navigation path is Any in Rust; only a single step is typed.
+        if (e.spec?.kind !== 'simple') return null;
+        const obj = e.obj;
+        if (this.inferType(obj, locals) === 'String') return 'Char';
+        // An array hands over its element type, when it is known.
+        if (obj?.type === 'Array') return this.arrayElemKind(obj) ?? null;
+        if (obj?.type === 'Ident' && !locals) {
+          const k = this.peekVar(obj.name)?.elemKind ?? null;
+          return k && !k.startsWith('[') ? k : null;
+        }
+        return null;
+      }
+      case 'Call':
+        return typeof e.callee === 'string' ? this.funcReturnType(e.callee) : null;
+      case 'CollectionOp':
+        return e.op === '$#' ? 'Int' : null;
+      default:
+        return null;
+    }
+  }
+
+  // The type a call returns: every `<~` in the body, through its blocks and
+  // loops but not into a nested function or lambda. None is Unit, one is itself,
+  // several unify — equal stays, Int with Float is Float, anything else is Any.
+  // `infer_return_type_from_block` and `unify_types_static` in Rust.
+  funcReturnType(name) {
+    const decl = this.funcDecls?.get(name);
+    if (!decl) return null;
+    if (!this.retTypes) { this.retTypes = new Map(); this.retBusy = new Set(); }
+    if (this.retTypes.has(name)) return this.retTypes.get(name);
+    if (this.retBusy.has(name)) return null;          // recursion: cannot tell
+    this.retBusy.add(name);
+    const locals = new Map();
+    for (const p of (decl.params ?? [])) locals.set(p.name, null);
+    const found = [];
+    const walk = stmts => {
+      for (const st of (stmts ?? [])) {
+        if (!st) continue;
+        if (st.type === 'FuncDecl' || st.type === 'Lambda') continue;
+        if (st.type === 'VarAssign' && st.name) locals.set(st.name, this.inferType(st.value, locals));
+        if (st.type === 'Return') { found.push(st.value ? this.inferType(st.value, locals) : 'Unit'); continue; }
+        walk(st.then); walk(st.else); walk(st.body);
+        for (const b of (st.elseifs ?? [])) walk(b.body);
+      }
+    };
+    walk(decl.body);
+    let t;
+    if (found.length === 0) t = 'Unit';
+    else t = found.reduce((a, b) => {
+      if (a === null || b === null) return null;
+      if (a === b) return a;
+      if ((a === 'Int' && b === 'Float') || (a === 'Float' && b === 'Int')) return 'Float';
+      return null;
+    });
+    this.retBusy.delete(name);
+    this.retTypes.set(name, t);
+    return t;
+  }
+
+  // `is_compatible_with` in Rust: cannot-tell is always compatible, and Int
+  // with Float is not a change worth a warning.
+  typesCompatible(a, b) {
+    if (a === null || b === null || a === undefined || b === undefined) return true;
+    if ((a === 'Int' && b === 'Float') || (a === 'Float' && b === 'Int')) return true;
+    return a === b;
+  }
+
   noteLiteralType(name, value, line) {
     const OF = { int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool' };
     const t = value?.type === 'Literal' ? (OF[value.kind] ?? null) : null;
@@ -4331,14 +4447,19 @@ class Checker {
         if (this.stack[i].funcBoundary && !name.startsWith('_')) break;
         continue;
       }
-      // Reassigning a literal of a different type: both Rust engines warn, and
-      // this one said nothing. Only literal-to-literal is decided without
-      // inference, which is the same limit the condition check works under.
-      if (info.litType && t && info.litType !== t) {
+      // Reassigning a value of a different type. It used to be decided only
+      // literal against literal; it is decided now the way the Rust type
+      // checker decides it, from the inferred type of the right-hand side
+      // (GLB-043). `infType` is that record, kept apart from `litType` because
+      // the condition check reads `litType` and this step does not change it.
+      const inferred = this.inferType(value);
+      if (info.infType !== undefined && !this.typesCompatible(info.infType, inferred)) {
         this.warn('W_TYPE_CHANGE',
-          `type mismatch: '${name}' was ${info.litType} but assigned ${t}`,
-          line ?? null, { name, was: info.litType, now: t });
+          `type mismatch: '${name}' was ${info.infType} but assigned ${inferred}`,
+          line ?? null, { name, was: info.infType, now: inferred });
       }
+      // Overwritten, as `define_var` overwrites it: after `x = 5`, `x` IS an Int.
+      info.infType = inferred;
       info.litType = (info.litType === undefined || info.litType === t) ? t : null;
       // And the element type when the value is an array literal, which is what
       // lets `a = [1, 2]` then `a $+ "x"` be caught — the shape real code has.

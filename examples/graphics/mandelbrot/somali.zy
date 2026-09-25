@@ -61,7 +61,7 @@ baxso(cr, ci) {
             cr = (x - 1) * ballacGoobta / tiirar - 2.1
             ci = (y - 1) * dhererGoobta / safaf  - dhererGoobta / 2.0
             n  = baxso(cr, ci)
-            calaamad = "@"
+            calaamad = '@'
             midab    = 231
             ? n <> 0 {
                 tallaabo = n / 4 + 1

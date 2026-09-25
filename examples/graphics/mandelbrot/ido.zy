@@ -58,7 +58,7 @@ eskapar(cr, ci) {
             cr = (x - 1) * larjo / kolumni - 2.1
             ci = (y - 1) * alto  / linei   - alto / 2.0
             n  = eskapar(cr, ci)
-            marko  = "@"
+            marko  = '@'
             koloro = 231
             ? n <> 0 {
                 pazo = n / 4 + 1

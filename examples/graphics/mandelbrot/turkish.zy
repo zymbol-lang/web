@@ -58,7 +58,7 @@ kaçış(cr, ci) {
             cr = (x - 1) * en  / sütunlar - 2.1
             ci = (y - 1) * boy / satırlar - boy / 2.0
             n  = kaçış(cr, ci)
-            im  = "@"
+            im  = '@'
             renk = 231
             ? n <> 0 {
                 adım = n / 4 + 1

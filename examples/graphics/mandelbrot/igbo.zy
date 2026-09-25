@@ -60,7 +60,7 @@ gbapụ(cr, ci) {
             cr = (x - 1) * obosaraOhere / ogidi - 2.1
             ci = (y - 1) * ogologoOhere / ahịrị - ogologoOhere / 2.0
             n  = gbapụ(cr, ci)
-            akara = "@"
+            akara = '@'
             agba  = 231
             ? n <> 0 {
                 nzọụkwụ = n / 4 + 1

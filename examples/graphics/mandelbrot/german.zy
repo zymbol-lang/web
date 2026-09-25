@@ -61,7 +61,7 @@ entkommen(cr, ci) {
             cr = (x - 1) * Breite / Spalten - 2.1
             ci = (y - 1) * Höhe   / Zeilen  - Höhe / 2.0
             n  = entkommen(cr, ci)
-            Zeichen = "@"
+            Zeichen = '@'
             Farbe   = 231
             ? n <> 0 {
                 Stufe = n / 4 + 1

@@ -57,7 +57,7 @@ nargh(cr, ci) {
             cr = (x - 1) * Dop_chuq / naQmey    - 2.1
             ci = (y - 1) * ab_chuq  / tlheghmey - ab_chuq / 2.0
             n  = nargh(cr, ci)
-            Degh  = "@"
+            Degh  = '@'
             rItlh = 231
             ? n <> 0 {
                 qam = n / 4 + 1

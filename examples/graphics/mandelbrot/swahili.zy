@@ -59,7 +59,7 @@ toroka(cr, ci) {
             cr = (x - 1) * upanaRamani / safu    - 2.1
             ci = (y - 1) * kimoRamani  / mistari - kimoRamani / 2.0
             n  = toroka(cr, ci)
-            alama = "@"
+            alama = '@'
             rangi = 231
             ? n <> 0 {
                 hatua = n / 4 + 1

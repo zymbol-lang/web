@@ -63,7 +63,7 @@ phatiña(cr, ci) {
             cr = (x - 1) * jach'awi / sayt'ata - 2.1
             ci = (y - 1) * patxawi  / siqi     - patxawi / 2.0
             n  = phatiña(cr, ci)
-            unancha = "@"
+            unancha = '@'
             sami    = 231
             ? n <> 0 {
                 sarawi = n / 4 + 1

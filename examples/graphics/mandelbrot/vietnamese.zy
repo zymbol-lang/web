@@ -60,7 +60,7 @@ thoát(cr, ci) {
             cr = (x - 1) * chiềuRộng / cột  - 2.1
             ci = (y - 1) * chiềuCao  / hàng - chiềuCao / 2.0
             n  = thoát(cr, ci)
-            dấu = "@"
+            dấu = '@'
             màu = 231
             ? n <> 0 {
                 bước = n / 4 + 1

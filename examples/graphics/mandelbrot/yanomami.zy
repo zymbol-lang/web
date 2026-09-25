@@ -62,7 +62,7 @@ waripo(cr, ci) {
             cr = (x - 1) * patapë   / hetupë - 2.1
             ci = (y - 1) * hɨramapë / mãyõ   - hɨramapë / 2.0
             n  = waripo(cr, ci)
-            mesi = "@"
+            mesi = '@'
             ũxi  = 231
             ? n <> 0 {
                 nahi = n / 4 + 1

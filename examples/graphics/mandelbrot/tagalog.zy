@@ -63,7 +63,7 @@ takas(cr, ci) {
             cr = (x - 1) * luwang / haligi - 2.1
             ci = (y - 1) * taas   / hanay  - taas / 2.0
             n  = takas(cr, ci)
-            tanda = "@"
+            tanda = '@'
             kulay = 231
             ? n <> 0 {
                 hakbang = n / 4 + 1

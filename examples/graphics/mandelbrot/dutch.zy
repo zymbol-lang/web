@@ -60,7 +60,7 @@ ontsnap(cr, ci) {
             cr = (x - 1) * breedte / kolommen - 2.1
             ci = (y - 1) * hoogte  / rijen    - hoogte / 2.0
             n  = ontsnap(cr, ci)
-            teken = "@"
+            teken = '@'
             tint  = 231
             ? n <> 0 {
                 stap = n / 4 + 1

@@ -61,7 +61,7 @@ tshaba(cr, ci) {
             cr = (x - 1) * bopharaLefelo / dikholomo - 2.1
             ci = (y - 1) * boleeleLefelo / mela      - boleeleLefelo / 2.0
             n  = tshaba(cr, ci)
-            letshwao = "@"
+            letshwao = '@'
             mmala    = 231
             ? n <> 0 {
                 kgato = n / 4 + 1

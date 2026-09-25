@@ -58,7 +58,7 @@ bēgšana(cr, ci) {
             cr = (x - 1) * platums  / kolonnas - 2.1
             ci = (y - 1) * augstums / rindas   - augstums / 2.0
             n  = bēgšana(cr, ci)
-            zīme = "@"
+            zīme = '@'
             tonis = 231
             ? n <> 0 {
                 solis = n / 4 + 1

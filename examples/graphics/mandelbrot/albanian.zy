@@ -61,7 +61,7 @@ arratisje(cr, ci) {
             cr = (x - 1) * gjeresia / shtyllat - 2.1
             ci = (y - 1) * lartesia / rreshtat - lartesia / 2.0
             n  = arratisje(cr, ci)
-            shenja = "@"
+            shenja = '@'
             ngjyra = 231
             ? n <> 0 {
                 hapi = n / 4 + 1

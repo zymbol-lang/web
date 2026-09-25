@@ -60,7 +60,7 @@ fuga(cr, ci) {
             cr = (x - 1) * amplada / columnes - 2.1
             ci = (y - 1) * alçada  / files    - alçada / 2.0
             n  = fuga(cr, ci)
-            marca = "@"
+            marca = '@'
             to    = 231
             ? n <> 0 {
                 pas = n / 4 + 1

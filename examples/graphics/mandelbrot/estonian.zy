@@ -58,7 +58,7 @@ põgenemine(cr, ci) {
             cr = (x - 1) * laius  / veerud - 2.1
             ci = (y - 1) * kõrgus / read   - kõrgus / 2.0
             n  = põgenemine(cr, ci)
-            märk = "@"
+            märk = '@'
             toon = 231
             ? n <> 0 {
                 samm = n / 4 + 1

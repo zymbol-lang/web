@@ -60,7 +60,7 @@ tiza(cr, ci) {
             cr = (x - 1) * upamhiNzvimbo / mbiru   - 2.1
             ci = (y - 1) * kurebaNzvimbo / mitsara - kurebaNzvimbo / 2.0
             n  = tiza(cr, ci)
-            chiratidzo = "@"
+            chiratidzo = '@'
             ruvara     = 231
             ? n <> 0 {
                 danho = n / 4 + 1

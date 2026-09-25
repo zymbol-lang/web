@@ -60,7 +60,7 @@ teintes = [22, 28, 34, 40, 46, 82, 118, 154, 191]
             cr = (x - 1) * largeur / colonnes - 2.1
             ci = (y - 1) * hauteur / lignes   - hauteur / 2.0
             n  = échappement(cr, ci)
-            marque = "@"
+            marque = '@'
             teinte = 231
             ? n <> 0 {
                 pas = n / 4 + 1

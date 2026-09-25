@@ -65,7 +65,7 @@ anim(cr, ci) {
             cr = (x - 1) * nimal   / wa'alik - 2.1
             ci = (y - 1) * paqalil / cholaj  - paqalil / 2.0
             n  = anim(cr, ci)
-            retal = "@"
+            retal = '@'
             b'onil = 231
             ? n <> 0 {
                 b'inem = n / 4 + 1
