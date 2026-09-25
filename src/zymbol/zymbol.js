@@ -1661,7 +1661,9 @@ export class Parser {
       this.adv();
       if (this.check('IDENT')) {
         const name = this.adv().value;
-        return { type: 'LifetimeEnd', name };
+        // The `\`'s own position: a diagnostic about it points there, as in
+        // both Rust engines (GLB-055).
+        return { type: 'LifetimeEnd', name, line: t.line, col: t.col ?? null };
       }
       // `\ 5` destroyed nothing and said nothing (ZYJS-021).
       throw new ZyStaticError('expected variable name after \\', this.peek() ?? t,
@@ -3710,7 +3712,9 @@ class Env {
       this.destroyed.add(name);
       return true;
     }
-    if (this.parent) return this.parent.destroy(name);
+    // A `\` ends a name in its own strong environment and never past it,
+    // exactly as `set` never writes past it.
+    if (this.parent && !this.funcBoundary) return this.parent.destroy(name);
     return false;
   }
 
@@ -4659,27 +4663,31 @@ class Checker {
    * (MEM-4) are not crossings at all.
    */
   checkReachOutOfScope(name, usageLine) {
+    if (!this.crossesStrongBoundary(name)) return;
+    this.error('E_SCOPE', `'${name}' is read from outside this function`, usageLine,
+      { name },
+      `a function is a self-contained space: a value crosses into it as a parameter, never by being in view — pass '${name}' as one`);
+  }
+
+  /** Whether `name` belongs to a scope outside the innermost strong environment. */
+  crossesStrongBoundary(name) {
     let i = -1;
     for (let k = this.stack.length - 1; k >= 0; k--) {
       if (this.stack[k].vars.has(name)) { i = k; break; }
     }
-    if (i < 0) return;
+    if (i < 0) return false;
     const frame = this.stack[i];
-    if (frame.moduleScope) return;                 // MEM-4: the module's state
+    if (frame.moduleScope) return false;           // MEM-4: the module's state
     const rec = frame.vars.get(name);
-    if (rec?.isConst) return;                      // MEM-1: constants are global
-    if (rec?.isFn) return;                         // a function, not a variable
-    if (rec?.isAlias) return;                      // a module alias, not a variable
-    if (rec?.isHot) return;                        // `°name` lives at a boundary by design
+    if (rec?.isConst) return false;                // MEM-1: constants are global
+    if (rec?.isFn) return false;                   // a function, not a variable
+    if (rec?.isAlias) return false;                // a module alias, not a variable
+    if (rec?.isHot) return false;                  // `°name` lives at a boundary by design
     // The innermost strong environment between the use and the definition.
-    let strong = null;
     for (let k = this.stack.length - 1; k > i; k--) {
-      if (this.stack[k].strong) { strong = this.stack[k].strong; break; }
+      if (this.stack[k].strong) return true;
     }
-    if (!strong) return;
-    this.error('E_SCOPE', `'${name}' is read from outside this function`, usageLine,
-      { name },
-      `a function is a self-contained space: a value crosses into it as a parameter, never by being in view — pass '${name}' as one`);
+    return false;
   }
 
   lookup(name, usageLine) {
@@ -4950,8 +4958,23 @@ class Checker {
 
       case 'LifetimeEnd': {
         if (stmt.name) {
-          const info = this.lookup(stmt.name, stmt.line);
-          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt, { name: stmt.name }, Checker.HELP_UNDEFINED);
+          // MEM-8, decided 2026-09-25 (GLB-055): whether a name is visible here
+          // is decided the way a read decides it, and only a variable can be
+          // destroyed. Same order as `check_lifetime_end` in the Rust analyser.
+          // Codes of their own: the playground renders a diagnostic from its
+          // catalogue by code, so reusing E_CONST or E_SCOPE would show the
+          // wording of a different failure.
+          const name = stmt.name;
+          const info = this.lookup(name, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${name}'`, stmt, { name }, Checker.HELP_UNDEFINED);
+          else if (info.isConst) this.error('E_DESTROY_CONST', `cannot destroy constant '${name}'`, stmt, { name },
+            'a constant lives as long as the program; only a variable can be destroyed');
+          else if (info.isFn) this.error('E_DESTROY_FN', `cannot destroy function '${name}'`, stmt, { name },
+            'a function lives as long as the program; only a variable can be destroyed');
+          else if (info.isAlias) this.error('E_DESTROY_ALIAS', `cannot destroy module alias '${name}'`, stmt, { name },
+            'a module alias lives as long as the program; only a variable can be destroyed');
+          else if (this.crossesStrongBoundary(name)) this.error('E_DESTROY_SCOPE', `'${name}' is destroyed from outside this function`, stmt, { name },
+            'a function is a self-contained space: it can end the life of its own names, never of one it cannot see');
           // GLB-008: the name is NOT removed here. Deleting it made every later
           // use an `undefined variable`, which refuses correct programs — a `\`
           // inside a branch that never runs destroys nothing, and this pass
@@ -6874,6 +6897,10 @@ function collectIdentNames(node, out) {
   // the scope exactly like any other — it is how `compose(f, g) { <~ x -> f(g(x)) }`
   // reaches its own parameters from inside the lambda it returns.
   if (node.type === 'Call' && typeof node.callee === 'string') out.add(node.callee);
+  // `\ x` names a variable as a bare string too. A lambda that destroys `x`
+  // destroys ITS copy (MEM-6: it writes only what it declares), so the copy has
+  // to be taken — without it `\ x` walked up and ended the file's `x`.
+  if (node.type === 'LifetimeEnd' && typeof node.name === 'string') out.add(node.name);
   // A name read inside a string — the `{log}` of `"{log}{s}"` — is a string
   // PART, not an Ident node, and the walk passed over it. A lambda then did not
   // capture it, `{log}` could not resolve at the call, and the evaluation of the
@@ -7630,7 +7657,11 @@ export class Interpreter {
       }
 
       case 'LifetimeEnd': {
-        env.destroy(stmt.name);
+        // A second `\` that runs is a use after the first (MEM-8, GLB-055).
+        if (!env.destroy(stmt.name) && env.wasDestroyed(stmt.name)) {
+          throw new ZyError(
+            `use after destruction: variable '${stmt.name}' was destroyed after its last use`);
+        }
         return;
       }
     }
