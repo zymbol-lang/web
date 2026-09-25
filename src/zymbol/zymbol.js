@@ -9558,7 +9558,9 @@ export class Interpreter {
         // GLOBAL-001: three engines wrote this refusal three ways — the value
         // inside the type, the type alone, and this one's prose. The type alone
         // is the form, because it is the only one an engine can always produce.
-        const opName = { '<':'Lt', '>':'Gt', '<=':'Le', '>=':'Ge' }[op];
+        // The operator as the program writes it (GLB-028, decided 2026-09-25):
+        // it was the Rust enum's name, `'Lt'`, in all three engines.
+        const opName = op;
         // A string against a number keeps its own wording in all three engines:
         // that comparison is DEFINED when the string is a number in any script,
         // so the refusal is about this particular text, not about the types.
