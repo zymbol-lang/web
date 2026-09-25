@@ -3817,6 +3817,9 @@ class Checker {
   // (`type_check.rs`, `.with_help(...)`). This engine emitted the message and
   // not the help, so the same refusal read as two different diagnostics.
   static HELP_UNDEFINED = 'variables must be defined before use';
+  // The guidance both Rust engines give with each of these refusals, verbatim
+  // (GLB-040, decided 2026-09-25: zyjs gives the same help, not less).
+  static HELP_CONST = "constants declared with ':=' cannot be modified";
   static HELP_UNDEFINED_INTERP = 'variables must be defined before use; a literal brace is written \\{';
 
   constructor(ast) {
@@ -3887,7 +3890,8 @@ class Checker {
       if (node?.type === 'Ident') continue;
       this.error('E017',
         `argument ${i + 1} of '${name}' is an output parameter '<~' and needs a variable, not an expression`,
-        line, { name, index: i + 1 });
+        line, { name, index: i + 1 },
+        "'<~' writes the change back into the caller's variable; there is nowhere to write an expression back to — assign it to a variable first");
     }
   }
 
@@ -3910,11 +3914,13 @@ class Checker {
       if (declared) {
         this.error('E018',
           `argument ${i + 1} of '${name}' is an output parameter and must be marked '<~' at the call site`,
-          line, { name, index: i + 1 });
+          line, { name, index: i + 1 },
+          "write the argument as 'name<~' — the mark says the value comes back changed, so a reader does not have to open the function to find out");
       } else {
         this.error('E019',
           `argument ${i + 1} of '${name}' is marked '<~' but the function does not declare it as an output parameter`,
-          line, { name, index: i + 1 });
+          line, { name, index: i + 1 },
+          "drop the '<~', or declare the parameter as an output in the signature");
       }
     }
   }
@@ -4700,7 +4706,10 @@ class Checker {
         if (name.startsWith('_') && i < this.stack.length - 1 && !frame.moduleScope) {
           const crossedNonBoundary = this.stack.slice(i + 1).some(f => !f.funcBoundary);
           if (crossedNonBoundary) {
-            this.error('E_SCOPE', `cannot access underscore variable '${name}' from inner scope`, usageLine, { name });
+            const rec = frame.vars.get(name);
+            this.error('E_SCOPE', `cannot access underscore variable '${name}' from inner scope`, usageLine, { name },
+              `underscore variables are strictly local to their declaration block: '${name}' was declared in an outer scope and cannot be accessed from nested blocks`,
+              rec?.line != null ? [`'${name}' was declared at ${rec.line}:${rec.col ?? '?'}`] : null);
             return { used: true, isConst: false, isScope: true }; // sentinel: suppress follow-up E_VAR
           }
         }
@@ -4723,9 +4732,13 @@ class Checker {
   // and would see one string here against a message plus a `.with_help(…)`
   // there, i.e. a difference that is not one. Rust keeps them apart; so does
   // this (ZYJS-002).
-  error(code, msg, at = null, params = null, help = null) {
+  // `notes` are the `= …` lines Rust's `Diagnostic::with_note` prints between
+  // the location and the help — a list of plain sentences (GLB-040).
+  error(code, msg, at = null, params = null, help = null, notes = null) {
     const { line, col } = Checker.posOf(at);
-    this.diagnostics.push({ severity: 'error', code, message: msg, line, col, params, help });
+    const d = { severity: 'error', code, message: msg, line, col, params, help };
+    if (notes?.length) d.notes = notes;
+    this.diagnostics.push(d);
   }
 
   warn(code, msg, at = null, params = null, help = null) {
@@ -4852,7 +4865,7 @@ class Checker {
         if (stmt.name) {
           const existing = this.lookup(stmt.name, stmt.line);
           if (existing?.isConst) {
-            this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt, { name: stmt.name });
+            this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt, { name: stmt.name }, Checker.HELP_CONST);
             return;
           }
         }
@@ -4911,7 +4924,7 @@ class Checker {
         if (!isHot) {
           const info = this.lookup(stmt.name, stmt.line);
           if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt, { name: stmt.name }, Checker.HELP_UNDEFINED);
-          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt, { name: stmt.name });
+          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt, { name: stmt.name }, Checker.HELP_CONST);
         } else {
           const info = this.lookup(stmt.name, stmt.line);
           if (!info) this.hotDefine(stmt.name, stmt, stmt.hot === true);
@@ -4925,7 +4938,7 @@ class Checker {
         if (!isHot) {
           const info = this.lookup(stmt.name, stmt.line);
           if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt, { name: stmt.name }, Checker.HELP_UNDEFINED);
-          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt, { name: stmt.name });
+          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt, { name: stmt.name }, Checker.HELP_CONST);
         } else {
           const info = this.lookup(stmt.name, stmt.line);
           if (!info) this.hotDefine(stmt.name, stmt);
@@ -5036,7 +5049,7 @@ class Checker {
         // `<< C` writes what was read into the name, so a constant refuses it
         // exactly as `C = 2` does (D5).
         if (varName && this.lookup(varName, stmt.line)?.isConst) {
-          this.error('E_CONST', `cannot reassign constant '${varName}'`, stmt, { name: varName });
+          this.error('E_CONST', `cannot reassign constant '${varName}'`, stmt, { name: varName }, Checker.HELP_CONST);
           return;
         }
         if (varName) this.define(varName, stmt, false);
@@ -5073,7 +5086,7 @@ class Checker {
         // one (D5). This engine left the constant alone and iterated a copy,
         // which is a third answer to a question that has one.
         if (stmt.var && this.lookup(stmt.var, stmt.line)?.isConst) {
-          this.error('E_CONST', `cannot reassign constant '${stmt.var}'`, stmt, { name: stmt.var });
+          this.error('E_CONST', `cannot reassign constant '${stmt.var}'`, stmt, { name: stmt.var }, Checker.HELP_CONST);
           return;
         }
         // Marked as a loop so a POSTFIX `x°` can anchor here — see `hotDefine`.
@@ -5257,7 +5270,8 @@ class Checker {
             // is an error, same as direct reassignment.
             const info = this.lookup(t.name, stmt.line);
             if (info?.isConst) {
-              this.error('E_CONST', `cannot reassign constant '${t.name}'`, stmt, { name: t.name });
+              this.error('E_CONST', `cannot reassign constant '${t.name}'`, stmt, { name: t.name },
+                "constants declared with ':=' cannot be modified — use a different name in the destructuring pattern");
               continue;
             }
             this.define(t.name, stmt, false);

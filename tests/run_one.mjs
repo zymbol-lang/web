@@ -159,6 +159,8 @@ function formatDiagnostic(severity, d) {
       : `  --> line ${d.line}\n`;
   }
   for (const line of rest) out += `  ${line}\n`;
+  // Notes before the help, each on its own `= ` line, as the CLI prints them.
+  for (const note of d.notes ?? []) out += `  = ${note}\n`;
   // The guidance arrives as its own field, as it does from Rust's `Diagnostic`,
   // and is printed the way the CLI prints it. Engines that fold it into the
   // message still work — `rest` above carries those — but nothing new should.
