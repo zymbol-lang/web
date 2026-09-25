@@ -10027,6 +10027,57 @@ export async function moduleOutSlotsFor(ast, resolver, filePath = null) {
   return out;
 }
 
+// Characters in a name that look like one of Zymbol's symbols, and what each is
+// taken for. Same table as crates/zymbol-analyzer/src/confusables.rs.
+//
+// Decided by the author on 2026-09-25: they all stay valid in a name — writing a
+// name in any script, even one that looks encrypted, is the developer's freedom —
+// and only an EDITOR says which symbol it may have meant: the language server,
+// and the playground's problems panel through `confusableHints`. Never
+// `checkSource`, which `tests/run_one.mjs` runs as a command-line engine: the
+// terminal says nothing, as `zymbol check` says nothing. `·` is left out because
+// it is a letter in Catalan; the Cyrillic `о` and the Greek `ο` warn only next
+// to a Latin letter, where they are mistaken for `o`.
+const CONFUSABLES = new Map([
+  ['º', '°'], ['ª', '°'], ['ᵒ', '°'], ['ₒ', '°'], ['∘', '°'], ['◦', '°'],
+  ['ⁿ', 'n'],
+  ['＠', '@'], ['？', '?'], ['！', '!'], ['＃', '#'],
+  ['¿', '?'], ['¡', '!'],
+  ['§', '$'],
+  ['•', '.'],
+  ['¹', '1'],
+  ['о', 'o'], ['ο', 'o'],
+]);
+const isLatinLetter = c => /^[A-Za-z\u00C0-\u024F\u1E00-\u1EFF]$/.test(c) && c !== '×' && c !== '÷';
+const hex4 = c => 'U+' + c.codePointAt(0).toString(16).toUpperCase().padStart(4, '0');
+
+/** One warning per confusable character in a name, for an editor to show. */
+export function confusableHints(src) {
+  let tokens;
+  try { tokens = new Lexer(src).tokenize(); } catch { return []; }
+  const out = [];
+  for (const t of tokens) {
+    if (t.type !== 'IDENT' || !t.value) continue;
+    const chars = [...t.value];
+    chars.forEach((c, i) => {
+      const want = CONFUSABLES.get(c);
+      if (!want) return;
+      if ((c === 'о' || c === 'ο') &&
+          !(i > 0 && isLatinLetter(chars[i - 1])) &&
+          !(i + 1 < chars.length && isLatinLetter(chars[i + 1]))) return;
+      const meant = chars.map((d, j) => (j === i ? want : d)).join('');
+      out.push({
+        severity: 'warning', code: 'W_CONFUSABLE',
+        message: `'${c}' (${hex4(c)}) looks like '${want}' (${hex4(want)}) — did you mean '${meant}'?`,
+        line: t.line, col: t.col != null ? t.col + i : null,
+        params: { char: c, code: hex4(c), want, wantCode: hex4(want), meant },
+        help: null,
+      });
+    });
+  }
+  return out;
+}
+
 /**
  * @param {string} src
  * @param {{moduleArities?: Map<string, Map<string, number>>}} [opts]
