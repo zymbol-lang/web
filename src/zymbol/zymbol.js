@@ -1299,23 +1299,17 @@ export class Lexer {
           this.at());
       }
     }
-    // `°` anchors a name so it outlives the loop; `_` keeps a name inside its
-    // block. On the same name they ask for opposite things, and this engine
-    // refused the accumulation at run time while both Rust engines accepted it
-    // — no program in the workspace used the pair (GLB-039, decided 2026-09-24).
-    // The prefix form arrives as the empty sentinel just before this name.
+    // A prefix `°` anchors the name above the loop, so the value outlives it,
+    // and `_` keeps the name inside its block: a value nothing could ever read.
+    // The suffix `_k°` is the form that means something — it lives through the
+    // iterations and dies with the loop (GLB-039, decided 2026-09-25). The
+    // prefix arrives as the empty sentinel just before this name.
     if (s.startsWith('_')) {
-      const bare = s.slice(1);
       const prev = toks[toks.length - 1];
       if (prev && prev.type === 'IDENT' && prev.hot === true && prev.value === '') {
         throw new ZyStaticError(
-          `'°${s}' anchors the name above the loop and '_' keeps it inside its block — the two markers contradict each other`,
-          prev, `use '°${bare}' to accumulate a value you read after the loop`);
-      }
-      if (hot) {
-        throw new ZyStaticError(
-          `'${s}°' anchors the name at the loop and '_' keeps it inside its block — the two markers contradict each other`,
-          { line: this.tokLine, col: this.tokCol }, `use '${bare}°' to accumulate a value you read after the loop`);
+          `'°${s}' anchors the name above the loop, where '_' makes it unreadable`,
+          prev, `write '${s}°' for a private value that lives through every iteration of the loop`);
       }
     }
     toks.push({ type: 'IDENT', value: s, hot, line: this.tokLine, col: this.tokCol });
@@ -3611,6 +3605,8 @@ class Env {
       // (past any funcBoundary) are module-private and accessible from within the module.
       const v = this._findPastBoundary(name);
       if (v !== undefined) return v;
+      const h = this._findHotAnchored(name);
+      if (h !== undefined) return h;
       throw new ZyRuntimeError(`cannot access underscore variable '${name}' from inner scope`, '##Scope');
     }
     return this.parent.get(name);
@@ -3649,10 +3645,21 @@ class Env {
       this.vars.set(name, value);
       return true;
     }
-    if (name.startsWith('_')) return false;
+    // A `_` name does not reach its parent — except the one anchored on purpose,
+    // which `get` already lets its loop read. Without the same exception here
+    // `_k° += 1` read the value and then lost the write in silence, because
+    // CompoundAssign does not look at what `set` returns: `_k` stayed 0 and a
+    // loop waiting for it to reach 5 never ended.
+    if (name.startsWith('_')) return this.parent ? this.parent._setHotAnchored(name, value) : false;
     if (this.funcBoundary) return false;
     if (this.parent && this.parent.set(name, value)) return true;
     return false;
+  }
+
+  _setHotAnchored(name, value) {
+    if (this.vars.has(name) && this.hotNames?.has(name)) { this.vars.set(name, value); return true; }
+    if (this.funcBoundary || !this.parent) return false;
+    return this.parent._setHotAnchored(name, value);
   }
 
   def(name, value, isConst = false) {
@@ -3668,6 +3675,21 @@ class Env {
     let scope = this;
     while (scope.parent && !scope.funcBoundary) scope = scope.parent;
     scope.vars.set(name, value);
+    // Remembered, so the `_` rule in `get` can tell a value anchored ON PURPOSE
+    // from one that escaped its block: see `_findHotAnchored`.
+    (scope.hotNames ??= new Set()).add(name);
+  }
+
+  // A `_k°` is stored where every hot value is — at the function or the root —
+  // because that is what lets it survive each iteration. Its block is still the
+  // loop's, and the loop body reads it every turn. The `_` rule below refused
+  // that read as "from inner scope", so `_k°` could be written and never used
+  // (GLB-039, decided 2026-09-25). Reading it from a block NESTED in the loop is
+  // refused before anything runs, by the checker, as in both Rust engines.
+  _findHotAnchored(name) {
+    if (this.vars.has(name) && this.hotNames?.has(name)) return this.vars.get(name);
+    if (this.funcBoundary || !this.parent) return undefined;
+    return this.parent._findHotAnchored(name);
   }
 
   has(name) {
