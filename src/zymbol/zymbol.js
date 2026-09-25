@@ -3863,11 +3863,12 @@ class Checker {
    *
    * A variadic function (arity -1, e.g. `math::log`) accepts any count.
    */
-  checkArity(name, expected, actual, line) {
+  checkArity(name, expected, actual, line, params = null) {
     if (expected < 0 || expected === actual) return;
     this.error('E016',
       `function '${name}' expects ${expected} argument(s), but ${actual} were provided`,
-      line, { name, expected, actual });
+      line, { name, expected, actual },
+      params === null ? null : `expected signature: ${name}(${params})`);
   }
 
   /**
@@ -4014,6 +4015,11 @@ class Checker {
       switch (s.type) {
         case 'FuncDecl': {
           this.funcArity.set(s.name, (s.params ?? []).length);
+          // The parameters as the caller writes them, for the arity help
+          // (GLB-040): the names, and `<~` where the call has to spell it.
+          if (!this.funcParamList) this.funcParamList = new Map();
+          this.funcParamList.set(s.name,
+            (s.params ?? []).map(p => (p.isOut ? `${p.name}<~` : p.name)).join(', '));
           // Kept whole, so a call's type can be read off the function's `<~`s
           // (GLB-043). Only the declaration is stored; its type is worked out
           // the first time a call asks for it.
@@ -5424,7 +5430,8 @@ class Checker {
           if (!info) this.error('E_FUNC', `undefined function: '${expr.callee}'`, expr, { name: expr.callee });
           else if (this.funcArity.has(expr.callee) && !this.reassigned.has(expr.callee)) {
             this.checkArity(expr.callee, this.funcArity.get(expr.callee),
-                            (expr.args ?? []).length, expr.line);
+                            (expr.args ?? []).length, expr.line,
+                            this.funcParamList?.get(expr.callee) ?? null);
             this.checkOutputArgs(expr.callee, expr.args ?? [], expr.line);
             // A locally declared function always has a known signature: no
             // recorded slots means it declares no output parameter.
