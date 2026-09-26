@@ -7616,9 +7616,9 @@ export class Interpreter {
         // Rust engines stop there (LLM.md: `>>|` errors without a tty). This
         // used to run the block as if it were plain code (GLB-018 C). The
         // playground always provides one.
+        // The same sentence as both Rust engines (P4-3 E5, 2026-09-26).
         if (!this.tui) {
-          const why = 'no terminal';
-          throw new ZyError(`failed to enable raw mode: ${why}`, stmt.line);
+          throw new ZyError('failed to enable raw mode: not a terminal', stmt.line);
         }
         // A TUI program is interactive and legitimately long-running, so the block is
         // exempt from the execution limits. Raising the ceilings is not enough: `steps`
@@ -7642,6 +7642,9 @@ export class Interpreter {
         try { this.tui.enter(); }
         catch (e) {
           this.maxSteps = savedMax; this.maxBytes = savedByte; this.maxInfiniteIter = savedIter;
+          if ((e?.message ?? e) === 'not a terminal') {
+            throw new ZyError('failed to enable raw mode: not a terminal', stmt.line);
+          }
           throw new ZyError(`failed to enable raw mode: ${e?.message ?? e}`, stmt.line);
         }
         try {

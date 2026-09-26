@@ -170,10 +170,13 @@ ok('warnings stay out of the way until asked',
 // ── warnings appear when asked ───────────────────────────────────────────────
 document.getElementById('problems-warnings').click();
 const withWarnings = [...document.querySelectorAll('.pb-item')];
-ok('asking for warnings shows both of them', withWarnings.length === 3,
+// Three warnings and the error: the constant PI is never read, and since
+// GLB-061 (decided 2026-09-26) an unused constant warns, as in both Rust engines.
+ok('asking for warnings shows all three of them', withWarnings.length === 4,
    withWarnings.map(i => i.textContent.trim()).join(' | '));
+ok('the unused constant is one', withWarnings.some(i => i.textContent.includes('PI') && i.textContent.includes('constante')));
 ok('the loop iterator lifetime is one', withWarnings.some(i => i.textContent.includes("'i'")));
-ok('the unused variable is the other', withWarnings.some(i => i.textContent.includes('contador')));
+ok('the unused variable is another', withWarnings.some(i => i.textContent.includes('contador')));
 ok('a warning line is tinted differently',
    Boolean(highlight.querySelector('.hl-line[data-l="3"].has-warning')));
 ok('a warning number is tinted differently',
