@@ -2180,6 +2180,10 @@ export class Parser {
       this.inMatchBody = true;
       body = { type: 'expr', value: this.parseExpr() };
       this.inMatchBody = false;
+      // `pattern => value { block }`: a value AND a block run for its effect,
+      // as `MatchCase` has both in Rust (ZYJS-038, kept by the author on
+      // 2026-09-26). The value is computed first, then the block runs.
+      if (this.check('LBRACE')) body.effect = this.parseBlock();
     }
     return { pattern, body };
   }
@@ -5363,8 +5367,16 @@ class Checker {
           // `uno = 1  ?? [1] { [uno] => … }` reported `unused variable 'uno'`
           // while both Rust engines said nothing.
           this.checkMatchPattern(arm.pattern);
-          if (Array.isArray(arm.body)) { this.push(); this.checkBlock(arm.body); this.pop(); }
-          else this.checkExpr(arm.body);
+          // The arm's body is `{type:'block', stmts}` or `{type:'expr', value}`,
+          // never the array this looked for, so a block arm was never analysed:
+          // `>> nada` inside one failed only at run time, or not at all when the
+          // arm did not run, where both Rust engines refuse it (step P4.8).
+          const b = arm.body;
+          if (b?.type === 'block') { this.push(); this.checkBlock(b.stmts ?? []); this.pop(); }
+          else if (b?.type === 'expr') this.checkExpr(b.value);
+          else if (Array.isArray(b)) { this.push(); this.checkBlock(b); this.pop(); }
+          else if (b) this.checkExpr(b);
+          if (b?.effect) { this.push(); this.checkBlock(b.effect); this.pop(); }
         }
         return;
       }
@@ -7744,6 +7756,7 @@ export class Interpreter {
           if (!arm) return;
           if (arm.body.type === 'block') return await this.execBlock(arm.body.stmts, new Env(env));
           await this.eval(arm.body.value, env);
+          if (arm.body.effect) return await this.execBlock(arm.body.effect, new Env(env));
           return;
         }
         await this.eval(stmt.expr, env);
@@ -8539,7 +8552,12 @@ export class Interpreter {
           // unwinds through eval() to callFunc's boundary.
           throw sig;
         }
-        return await this.eval(arm.body.value, env);
+        const value = await this.eval(arm.body.value, env);
+        if (arm.body.effect) {
+          const sig = await this.execBlock(arm.body.effect, new Env(env));
+          if (sig !== undefined) throw sig;   // as the block form above does
+        }
+        return value;
       }
 
       case 'DataOp': {
