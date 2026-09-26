@@ -2248,11 +2248,12 @@ export class Parser {
     } else {
       // What can start a pattern, as in `parse_pattern_primary`; anything else
       // is refused with Rust's words rather than the expression parser's
-      // (ZYJS-033, step P4.5). `-` and `(` are let through, as this engine did
-      // before: both Rust engines refuse them and that is the author's call
-      // (GLB-062).
-      const PATTERN_START = ['STR', 'NUM', 'FLOAT', 'CHAR', 'BOOL', 'IDENT', 'MINUS', 'LPAREN'];
-      if (!PATTERN_START.includes(this.peek().type)) {
+      // (ZYJS-033). A `-` only in front of a number — a negative literal is a
+      // pattern, `-x` is not — and a `(` never: a pattern is not an expression
+      // (GLB-062, decided 2026-09-26).
+      const PATTERN_START = ['STR', 'NUM', 'FLOAT', 'CHAR', 'BOOL', 'IDENT'];
+      const negativeNumber = this.check('MINUS') && ['NUM', 'FLOAT'].includes(this.peek(1)?.type);
+      if (!PATTERN_START.includes(this.peek().type) && !negativeNumber) {
         const shown = Parser.tokenSpelling(this.peek());
         throw new ZyStaticError(`expected pattern, found ${shown}`, this.peek());
       }
