@@ -929,11 +929,14 @@ export class Lexer {
       }
       if (single[c]) { this.consume(); tok(single[c], c); continue; }
 
+      // `~` is a token, as in Rust (`TokenKind::Tilde`): the parameter mark
+      // `a~` consumes it, and anywhere else the parser refuses it. It used to
+      // vanish here, so `1 ~ 2` printed `12` (ZYJS-020, step P4.5).
+      if (c === '~') { this.consume(); tok('TILDE', '~'); continue; }
+
       // A lone `&` is refused, as the Rust lexer refuses it; it used to vanish,
       // and `1 & 2` printed `12` (ZYJS-020). It is the only operator character
-      // Rust has no token for. The rest still fall through and vanish — `~`
-      // among them, which the parameter mark `a~` quietly relies on here while
-      // Rust lexes it as a token (ZYJS-020 § what still vanishes).
+      // Rust has no token for.
       // An invisible character outside a name is refused too, and is named by
       // its code point (GLB-026 B) — quoting it would show the reader nothing.
       // (`\s` in JavaScript counts U+FEFF as space; Rust's is_whitespace does not.)
@@ -1734,6 +1737,13 @@ export class Parser {
       throw new ZyStaticError(`unexpected token: ${Parser.tokenSpelling(t)}`, t,
         'expected statement (>>, <<, ?, ??, @, @!, @>, !?, <~, ¶, \\\\, or identifier)');
     }
+    // A `~` starts nothing either, and neither does a literal: `x[1] 5` is the
+    // statement `x[1]` and then a `5` that starts nothing, which both Rust
+    // engines refuse and this one ran in silence (ZYJS-021, step P4.5).
+    if (t.type === 'TILDE' || ['NUM', 'FLOAT', 'STR', 'CHAR', 'BOOL'].includes(t.type)) {
+      throw new ZyStaticError(`unexpected token: ${Parser.tokenSpelling(t)}`, t,
+        'expected statement (>>, <<, ?, ??, @, @!, @>, !?, <~, ¶, \\\\, or identifier)');
+    }
 
     return { type: 'ExprStmt', expr: this.parseExpr() };
   }
@@ -1765,6 +1775,10 @@ export class Parser {
   //
   // The rest are the statement initiators, spelled as `parse_output` spells
   // them: a statement that begins on the same line ends the output.
+  // The operators after a name that make it the start of an assignment.
+  static ASSIGNING = new Set(['ASSIGN', 'PLUS_EQ', 'MINUS_EQ', 'TIMES_EQ', 'DIV_EQ',
+                              'MOD_EQ', 'POW_EQ', 'INC', 'DEC']);
+
   static OUTPUT_END = new Set([
     'OUTPUT', 'SEMI',
     'IF', 'MATCH', 'AT', 'AT_LABEL', 'AT_BREAK', 'AT_CONT', 'ATSLEEP',
@@ -1774,18 +1788,19 @@ export class Parser {
   ]);
 
   parseOutput() {
-    const opLine = this.adv().line;
+    this.adv();
     const items = [];
     while (!this.check('PILCROW') && !this.check('NEWLINE_ESC') &&
            !this.check('RBRACE') && !this.check('EOF')) {
-      // An argument list ends with the line the `>>` began on — except where
-      // the item before it ENDED on a later line, which only a multiline string
-      // can do. There the next token still juxtaposes onto that item, which is
-      // how both Rust engines read it (`parse_juxtaposed` compares against
-      // `acc.span().end.line`): `>> "[" f("a⏎b") "]" ¶` prints the closing
-      // bracket, and printed nothing at all here before HLZ-013.
-      if (this.peek().line > opLine && this.peek().line !== this.prevEndLine()) break;
+      // A line break does NOT end an output — decided 2026-09-25, the rule of
+      // `parse_output` in both Rust engines. It ends at `¶`, `\\`, `}`, `;`,
+      // another `>>`, or what starts a statement: a statement keyword
+      // (OUTPUT_END) or a name being assigned. Cutting at the line lost text in
+      // silence: `>> "valor: " x⏎   " unidades" ¶` printed `valor: 5`, and
+      // GoL's multi-line outputs came out short in the playground (step P4.5).
       if (items.length > 0 && Parser.OUTPUT_END.has(this.peek().type)) break;
+      if (items.length > 0 && this.peek().type === 'IDENT' &&
+          Parser.ASSIGNING.has(this.peek(1)?.type)) break;
       items.push(this.parseAdditive());
       // Refusing has to be explicit. Narrowing the call alone was worse than the
       // bug: `>> 1 == 1 ¶` printed `11`, because the loop simply started a new
@@ -1805,7 +1820,7 @@ export class Parser {
       // message. Both engines gained the help in the same commit; this one had
       // it and could not share it, they had the message and no guidance.
       const stray = OUTPUT_STOP_OPS[this.peek().type];
-      if (stray && this.peek().line === opLine) {
+      if (stray) {
         const named = Parser.tokenSpelling(this.peek());
         throw new ZyStaticError(
           `expected expression, found ${named}`,
@@ -2351,7 +2366,10 @@ export class Parser {
     while (!this.check('RPAREN') && !this.check('EOF')) {
       const pname = this.eat('IDENT', 'expected parameter name', 'parameters must be identifiers').value;
       let isOut = false;
-      if (this.match('RETURN')) isOut = true;
+      // `a~`, the working copy: nothing to record — every parameter is a copy
+      // here — but the mark is a token now and has to be consumed.
+      if (this.match('TILDE')) { /* mutable parameter */ }
+      else if (this.match('RETURN')) isOut = true;
       params.push({ name: pname, isOut });
       // `f(a b) { }` is not two parameters: both Rust parsers stop at the `b`,
       // and this one declared two and failed at the call (ZYJS-021).
