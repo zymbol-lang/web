@@ -967,9 +967,11 @@ export class Lexer {
     // which throws `RangeError: Invalid code point NaN`. A JavaScript exception
     // was reaching the user as the language's diagnostic. Each guard raises the
     // refusal the two Rust engines raise, named for its own base.
+    // Lowercase only, as in the Rust lexer: `0X41` is the number `0` and then
+    // the name `X41`. It read as the character `A` here (step P4.5).
     if (this.ch() === '0') {
       const next = this.ch(1);
-      if (next === 'x' || next === 'X') {
+      if (next === 'x') {
         if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 16 }, line: this.tokLine, col: this.tokCol }); return; }
         this.consume(); this.consume();
         let hex = '';
@@ -977,7 +979,7 @@ export class Lexer {
         if (!hex) throw new ZyStaticError(`expected ${'hexadecimal'} digits after base prefix`, this.at());
         toks.push({ type: 'CHAR', value: this.codePointChar(hex, 16, 'hexadecimal'), line: this.tokLine, col: this.tokCol }); return;
       }
-      if (next === 'b' || next === 'B') {
+      if (next === 'b') {
         if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 2 }, line: this.tokLine, col: this.tokCol }); return; }
         this.consume(); this.consume();
         let bin = '';
@@ -985,7 +987,7 @@ export class Lexer {
         if (!bin) throw new ZyStaticError(`expected ${'binary'} digits after base prefix`, this.at());
         toks.push({ type: 'CHAR', value: this.codePointChar(bin, 2, 'binary'), line: this.tokLine, col: this.tokCol }); return;
       }
-      if (next === 'o' || next === 'O') {
+      if (next === 'o') {
         if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 8 }, line: this.tokLine, col: this.tokCol }); return; }
         this.consume(); this.consume();
         let oct = '';
@@ -993,7 +995,7 @@ export class Lexer {
         if (!oct) throw new ZyStaticError(`expected ${'octal'} digits after base prefix`, this.at());
         toks.push({ type: 'CHAR', value: this.codePointChar(oct, 8, 'octal'), line: this.tokLine, col: this.tokCol }); return;
       }
-      if (next === 'd' || next === 'D') {
+      if (next === 'd') {
         if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 10 }, line: this.tokLine, col: this.tokCol }); return; }
         this.consume(); this.consume();
         let dec = '';
@@ -2244,6 +2246,16 @@ export class Parser {
       const op = this.adv().value;
       pattern = { type: 'comparison', op, value: this.parseAdditive() };
     } else {
+      // What can start a pattern, as in `parse_pattern_primary`; anything else
+      // is refused with Rust's words rather than the expression parser's
+      // (ZYJS-033, step P4.5). `-` and `(` are let through, as this engine did
+      // before: both Rust engines refuse them and that is the author's call
+      // (GLB-062).
+      const PATTERN_START = ['STR', 'NUM', 'FLOAT', 'CHAR', 'BOOL', 'IDENT', 'MINUS', 'LPAREN'];
+      if (!PATTERN_START.includes(this.peek().type)) {
+        const shown = Parser.tokenSpelling(this.peek());
+        throw new ZyStaticError(`expected pattern, found ${shown}`, this.peek());
+      }
       const left = this.parseAdditive();
       if (this.match('RANGE')) {
         const endTok = this.peek();
@@ -3230,11 +3242,11 @@ export class Parser {
           // An arrow inside the parens means the lambda is there and one of its
           // parameters is not a name (`(1, 2 -> #1)`); no arrow means the arrow
           // itself is what is missing.
-          let depth = 0, arrow = false;
+          let depth = 0, arrow = false, after = null;
           for (let i = 0; this.pos + i < this.toks.length; i++) {
             const tk = this.toks[this.pos + i].type;
             if (tk === 'LPAREN') depth++;
-            else if (tk === 'RPAREN' && --depth === 0) break;
+            else if (tk === 'RPAREN' && --depth === 0) { after = this.toks[this.pos + i + 1] ?? null; break; }
             else if (tk === 'ARROW' && depth === 1) { arrow = true; break; }
             else if (tk === 'EOF') break;
           }
@@ -3242,7 +3254,9 @@ export class Parser {
             throw new ZyStaticError('expected parameter name in lambda', this.peek(),
               'lambda parameters must be identifiers: (a, b) -> expr');
           }
-          throw new ZyStaticError("expected '->' in lambda expression", this.peek(),
+          // Where the `->` was expected — the token after the `)`, as the Rust
+          // parser reports it — not the `(` (step P4.5).
+          throw new ZyStaticError("expected '->' in lambda expression", after ?? this.peek(),
             'lambda syntax: x -> expr or (a, b) -> expr');
         }
         return { type: 'CollectionOp', op: '$^',  obj: left, arg: this.parseUnary() };
@@ -3345,9 +3359,14 @@ export class Parser {
       this.adv(); // consume (
       slots = [];
       while (!this.check('RPAREN') && !this.check('EOF')) {
+        const slotTok = this.peek();
         if (this.check('COMMA')) { slots.push(null); this.adv(); }
         else { slots.push(this.parseExpr()); if (this.check('COMMA')) this.adv(); }
-        if (slots.length > 5) throw new Error('>>~ position has at most 5 slots');
+        // Rust's words, on the sixth slot; it was a bare JavaScript Error, with
+        // other words and no position (step P4.5).
+        if (slots.length > 5) {
+          throw new ZyStaticError('>>~ position tuple has at most 5 slots: (fila, col, BKS, fg, bg)', slotTok);
+        }
       }
       this.eat('RPAREN');
     } else {
