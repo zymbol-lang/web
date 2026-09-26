@@ -4477,14 +4477,20 @@ class Checker {
       // checker decides it, from the inferred type of the right-hand side
       // (GLB-043). `infType` is that record, kept apart from `litType` because
       // the condition check reads `litType` and this step does not change it.
+      //
+      // Unit on either side is not a change of type (GLB-043, decided
+      // 2026-09-25): the new value is compared with the last type that was not
+      // Unit, `realType`, while `infType` keeps saying what the name holds now.
       const inferred = this.inferType(value);
-      if (info.infType !== undefined && !this.typesCompatible(info.infType, inferred)) {
+      const was = info.infType === 'Unit' ? info.realType : info.infType;
+      if (was !== undefined && inferred !== 'Unit' && !this.typesCompatible(was, inferred)) {
         this.warn('W_TYPE_CHANGE',
-          `type mismatch: '${name}' was ${info.infType} but assigned ${inferred}`,
-          line ?? null, { name, was: info.infType, now: inferred });
+          `type mismatch: '${name}' was ${was} but assigned ${inferred}`,
+          line ?? null, { name, was, now: inferred });
       }
       // Overwritten, as `define_var` overwrites it: after `x = 5`, `x` IS an Int.
       info.infType = inferred;
+      if (inferred !== 'Unit') info.realType = inferred;
       info.litType = (info.litType === undefined || info.litType === t) ? t : null;
       // And the element type when the value is an array literal, which is what
       // lets `a = [1, 2]` then `a $+ "x"` be caught — the shape real code has.
