@@ -1580,6 +1580,21 @@ export class Parser {
   _parseStmt() {
     const t = this.peek();
 
+    // `°name` opens a statement only as the target of an assignment, as in
+    // `Parser::parse_statement`. The prefix lexes to an empty hot IDENT just
+    // before the name; without this `°x` alone parsed as two statements — the
+    // sentinel and a bare `x` — and was refused later, as `undefined variable`
+    // with a "does nothing" warning (step P4.4). A `[` goes through: `°x[1] = 5`
+    // is refused for what it is, like `x[1] = 5` (GLB-035).
+    if (t.type === 'IDENT' && t.hot === true && t.value === '' && this.peek(1)?.type === 'IDENT') {
+      const ASSIGNING = new Set(['ASSIGN', 'PLUS_EQ', 'MINUS_EQ', 'TIMES_EQ', 'DIV_EQ',
+                                 'MOD_EQ', 'POW_EQ', 'INC', 'DEC', 'LBRACKET']);
+      if (!ASSIGNING.has(this.peek(2)?.type)) {
+        throw new ZyStaticError("'°name' is only valid as an assignment target", t,
+          "use '°x += n' to anchor accumulation above the nearest loop");
+      }
+    }
+
     if (t.type === 'SET_NUMERAL_MODE') { this.adv(); return { type: 'SetNumeralMode', base: t.value }; }
     if (t.type === 'IMPORT') return this.parseImport();
     if (t.type === 'EXPORT_DECL') {
@@ -4181,7 +4196,14 @@ class Checker {
         // it like any other so that a later `n = 1` can clear the record on
         // conflict; returning it here produced `if condition should be Bool, got
         // Bool`, which says nothing and is plainly a bug.
-        if (info) return info.litType && info.litType !== 'Bool' ? info.litType : null;
+        // What the name holds after its LAST assignment, as the Rust type
+        // environment keeps it — `x = 1` then `x = ##_` is Unit, which the
+        // agreeing-literals record (`litType`) had cleared to "unknown" and so
+        // warned nothing (ZYJS-036, step P4.4).
+        if (info) {
+          const now = info.infType ?? info.litType;
+          return now && now !== 'Bool' && now !== 'Any' ? now : null;
+        }
         if (this.stack[i].funcBoundary && !e.name.startsWith('_')) break;
       }
     }
@@ -5149,7 +5171,13 @@ class Checker {
               'Guard the empty case.',
               stmt.line ?? null);
           }
-          if (stmt.var) this.define(stmt.var, stmt, false);
+          if (stmt.var) {
+            this.define(stmt.var, stmt, false);
+            // The iterator of a range is an Int, which a type change from it
+            // needs to know (ZYJS-034, step P4.4).
+            const rec = this.stack[this.stack.length - 1].vars.get(stmt.var);
+            if (rec) rec.infType = 'Int';
+          }
         } else if (stmt.cond) {
           this.checkExpr(stmt.cond);
         }
