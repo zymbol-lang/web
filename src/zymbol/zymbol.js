@@ -9050,6 +9050,13 @@ export class Interpreter {
           throw new ZyRuntimeError(
             '$+[i] is not supported on named tuples — no field name available', '##Type');
         const nRaw = needInt(await this.eval(expr.index, env), '$+[i] index');
+        // A position to insert AT is 1 or more, in the tree-walker's words
+        // (P4-3 E4, decided 2026-09-26). `-1` was read as "before the last" here
+        // and inserted, while both Rust engines refuse it.
+        if (nRaw <= 0) {
+          throw new ZyRuntimeError(
+            `$+[i] index must be positive (1-based, use 1 to insert at the beginning), got ${nRaw}`, '##Index');
+        }
         const i = resolveIdx(nRaw, lenOf(col));
         if (i < 0 || i > lenOf(col)) {
           const L = lenOf(col);
