@@ -115,7 +115,8 @@
  *
  * CLI args (><): supported — pass cliArgs array to runZymbol().
  * BashExec (<\ \>): entropy stub, ranged to match the command it stands in for.
- * Not supported: shell inclusion (</ />).
+ * Execute (</ file />): parsed as the Rust engines parse it; running one fails,
+ *   since a subscript is another process and the browser has none.
  * TUI operators require a >>| { } block to activate the canvas overlay.
  *
  * 2026-08-01 numeral mode and ordering, synced with the Rust engines. An active
@@ -768,6 +769,26 @@ export class Lexer {
         // stands. It was consumed and forgotten: `x = 1 #` printed 1 here while
         // both Rust engines refuse it (ZYJS-025 B).
         this.consume(); tok('HASH', '#'); continue;
+      }
+
+      // Execute `</ path />` — the path is read raw up to `/>`, as both Rust
+      // lexers read it. This engine had no token for it at all, so a program
+      // with a subscript was refused as `expected expression, found '<'`, and
+      // so were the two malformed forms the Rust engines name.
+      if (this.ch() === '<' && this.ch(1) === '/') {
+        const at = this.at();
+        this.consume(); this.consume(); // consume </
+        let raw = '';
+        let closed = false;
+        while (this.pos < this.src.length) {
+          if (this.ch() === '/' && this.ch(1) === '>') { this.consume(); this.consume(); closed = true; break; }
+          raw += this.consume();
+        }
+        if (!closed) {
+          throw new ZyStaticError('unterminated execute expression', at,
+            'execute syntax: </ path.zy />');
+        }
+        tok('EXECUTE', raw.trim()); continue;
       }
 
       // BashExec <\ cmd \> — browser-only: captures command text, simulates common date/echo
@@ -3495,6 +3516,14 @@ export class Parser {
     if (t.type === 'ELSE')         { this.adv(); return { type: 'Ident',       name: '_'      }; }
     if (t.type === 'OUTPUT_QUERY') { this.adv(); return { type: 'TerminalSize' }; }
     if (t.type === 'BASHEXEC')    { const tok = this.adv(); return { type: 'BashExec', cmd: tok.value }; }
+    if (t.type === 'EXECUTE') {
+      const tok = this.adv();
+      if (tok.value === '') {
+        throw new ZyStaticError('expected file path after </', tok, 'execute syntax: </ path.zy />');
+      }
+      const quoted = tok.value.length > 1 && tok.value.startsWith('"') && tok.value.endsWith('"');
+      return { type: 'Execute', path: quoted ? tok.value.slice(1, -1) : tok.value, line: tok.line };
+    }
     if (t.type === 'MATCH') { return this.parseMatchExpr(); }
 
     // Cast operators: ##. ### ##!
@@ -8137,6 +8166,12 @@ export class Interpreter {
         const [rows, cols] = this.tui.getSize();
         return { type: 'tuple', v: [mkInt(rows), mkInt(cols)], keys: null };
       }
+
+      // `</ file />` runs another file as a process and captures what it
+      // prints. The browser has no process to start, so the form parses, is
+      // checked, and fails here, where it is reached.
+      case 'Execute':
+        throw new ZyError(`cannot run '${expr.path}': a subscript runs another file as a process, and the browser has none`, expr.line);
 
       case 'BashExec': {
         const _cmd = (expr.cmd ?? '').replace(/['"]/g, ' ').trim();
