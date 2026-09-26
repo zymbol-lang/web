@@ -8641,7 +8641,6 @@ export class Interpreter {
           }
           return obj.exports.get(expr.field);
         }
-        if (aliasMod && aliasMod.exports.has(expr.field)) return aliasMod.exports.get(expr.field);
         // The wording family the Rust engines use, verbatim — `zyq consensus`
         // compares the text, and "named tuple" is the retired vocabulary.
         if (obj.type === 'tuple' && !obj.keys)
