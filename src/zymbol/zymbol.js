@@ -3742,6 +3742,21 @@ class Env {
     return this.parent.get(name);
   }
 
+  // True when `name` is bound inside a function — the case where, behind a
+  // `.`, the variable hides an import alias of the same name (GLB-070). A
+  // variable of the file lives in the environment the `<#` did, and there the
+  // alias keeps the dot.
+  hidesAlias(name) {
+    for (let e = this; e; e = e.parent) {
+      if (e.vars.has(name)) {
+        for (let x = e; x; x = x.parent) if (x.funcBoundary) return true;
+        return false;
+      }
+      if (e.funcBoundary) return false;
+    }
+    return false;
+  }
+
   _findPastBoundary(name) {
     // Module scope: _ names here are module-private, accessible from within the module
     if (this.isModuleScope && this.vars.has(name)) return this.vars.get(name);
@@ -4945,7 +4960,8 @@ class Checker {
     const path = this.aliasPath.get(alias);
     if (path === undefined) return;
     if (path.startsWith('std/')) { this.checkStdMember(fa, alias, path); return; }
-    if (!this.isAliasHere(alias)) return;
+    // Only behind a `.`: `m::f` names the module whatever the scope holds (GLB-070).
+    if (!fa.scoped && !this.isAliasHere(alias)) return;
     const exports = this.moduleExports.get(alias);
     if (!exports) return;
     const name = fa.field;
@@ -8432,9 +8448,14 @@ export class Interpreter {
         // `m.f()` on a module alias CALLS: it asks for a function, and is told
         // "does not export function" when there is none, as in both Rust
         // engines. Evaluated as a read it said "has no constant" (ZYJS-040).
+        // Unless a variable of the function hides the alias behind the `.`
+        // (GLB-070, decided 2026-09-26).
         const c = expr.callee;
-        const callee = (c?.type === 'FieldAccess' && !c.scoped && c.obj?.type === 'Ident'
-                        && this.moduleAliases.has(c.obj.name)) ? { ...c, scoped: true } : c;
+        let callee = c;
+        if (c?.type === 'FieldAccess' && !c.scoped && c.obj?.type === 'Ident'
+            && this.moduleAliases.has(c.obj.name) && !env.hidesAlias(c.obj.name)) {
+          callee = { ...c, scoped: true };
+        }
         const fn = await this.eval(callee, env);
         if (!fn || fn.type !== 'func')
           throw new ZyRuntimeError(`expression is not callable`, '##Type');
@@ -8595,7 +8616,8 @@ export class Interpreter {
         const aliasName = expr.obj?.type === 'Ident' ? expr.obj.name : null;
         const aliasMod  = aliasName ? this.moduleAliases.get(aliasName) : undefined;
 
-        const obj = expr.scoped && aliasMod ? aliasMod : await this.eval(expr.obj, env);
+        const obj = aliasMod && (expr.scoped || !env.hidesAlias(aliasName))
+          ? aliasMod : await this.eval(expr.obj, env);
         if (obj.type === 'module') {
           if (!obj.exports.has(expr.field)) {
             const modAlias = aliasName ?? 'module';
