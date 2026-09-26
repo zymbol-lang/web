@@ -2100,9 +2100,20 @@ export class Parser {
     }
   }
 
+  // A condition that opens with a prefix `°` — `? °n > 0 { … }` — parses the way
+  // the right-hand side of an assignment does, where the sentinel the prefix
+  // lexes to governs what follows it. `parseExpr` stopped at the sentinel and
+  // read the name as the start of the block (step P4.4; decided 2026-09-25: a
+  // `°` read inside an expression is allowed, it is the accumulator idiom).
+  parseCond() {
+    const t = this.peek();
+    return (t?.type === 'IDENT' && t.hot === true && t.value === '')
+      ? this.parseExprJuxt() : this.parseExpr();
+  }
+
   parseIf() {
     this.adv();
-    const cond = this.parseExpr();
+    const cond = this.parseCond();
     const then = this.parseBlock();
     const elseifs = [];
     let elseBranch = null;
@@ -2114,7 +2125,7 @@ export class Parser {
       if (this.check('LBRACE'))
         throw new ZyStaticError("'_?' requires a condition", this.peek(),
           "use '_' (without '?') for an unconditional else branch");
-      elseifs.push({ cond: this.parseExpr(), body: this.parseBlock() });
+      elseifs.push({ cond: this.parseCond(), body: this.parseBlock() });
     }
     if (this.check('ELSE')) {
       this.adv();
