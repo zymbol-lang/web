@@ -4778,7 +4778,10 @@ class Checker {
   static posOf(at) {
     if (at === null || at === undefined) return { line: null, col: null };
     if (typeof at !== 'object') return { line: at, col: null };
-    const line = at.line ?? null;
+    // A statement node that carries no `line` of its own still has the
+    // position `parseStmt` stamped on it: a destructuring into a constant came
+    // out with no line at all (ZYJS-032, step P4.3).
+    const line = at.line ?? at.zyLine ?? null;
     const col = at.col ?? ((at.zyCol != null && at.zyLine === line) ? at.zyCol : null);
     return { line, col };
   }
