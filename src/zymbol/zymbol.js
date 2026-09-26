@@ -3804,6 +3804,14 @@ class Checker {
   // (`type_check.rs`, `.with_help(...)`). This engine emitted the message and
   // not the help, so the same refusal read as two different diagnostics.
   static HELP_UNDEFINED = 'variables must be defined before use';
+
+  /** An integer written in the source, or `-`/`+` one. */
+  static isIntLiteral(e) {
+    const n = (e && e.type === 'Group') ? (e.expr ?? e.inner) : e;
+    if (n?.type === 'Literal') return n.kind === 'int';
+    return n?.type === 'UnaryOp' && (n.op === '-' || n.op === '+')
+      && n.operand?.type === 'Literal' && n.operand.kind === 'int';
+  }
   // The guidance both Rust engines give with each of these refusals, verbatim
   // (GLB-040, decided 2026-09-25: zyjs gives the same help, not less).
   static HELP_CONST = "constants declared with ':=' cannot be modified";
@@ -3830,6 +3838,8 @@ class Checker {
     this.funcArity  = new Map();
     //   funcOutSlots : local function name → indices of its `<~` parameters
     this.funcOutSlots = new Map();
+    // Constants declared with an integer written in the source (W_RANGE_DIR).
+    this.literalIntConsts = new Set();
     this.aliasPath  = new Map();
     this.reassigned = new Set();
     // alias → (function → arity) for user modules. Empty unless a caller
@@ -4901,6 +4911,7 @@ class Checker {
         }
         this.checkExpr(stmt.value);
         this.define(stmt.name, stmt, true);
+        if (Checker.isIntLiteral(stmt.value)) this.literalIntConsts.add(stmt.name);
         return;
       }
 
@@ -5105,13 +5116,18 @@ class Checker {
           // one-element list. Say so when the direction cannot be read off the
           // source, and say nothing when an enclosing `?` already vouches for
           // the end. Mirrors zymbol-semantic's TypeChecker.
-          const isIntLit = (e) => {
+          //
+          // A bound is read off the source when it is an integer written there,
+          // `-1` included, or a constant declared with one (decided 2026-09-25).
+          const known = (e) => {
             const n = (e && e.type === 'Group') ? (e.expr ?? e.inner) : e;
-            return n?.type === 'Literal' && n.kind === 'int';
+            if (Checker.isIntLiteral(n)) return true;
+            return n?.type === 'Ident' && this.literalIntConsts.has(n.name)
+              && this.lookup(n.name, stmt.line)?.isConst === true;
           };
           const endKey = exprKey(stmt.to);
           const guarded = endKey !== null && this.guardedBounds.includes(endKey);
-          if (!guarded && !(isIntLit(stmt.from) && isIntLit(stmt.to))) {
+          if (!guarded && !(known(stmt.from) && known(stmt.to))) {
             this.warn('W_RANGE_DIR',
               'range direction is decided at runtime: if the end turns out to be ' +
               'lower than the start, this loop counts down instead of not running. ' +
