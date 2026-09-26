@@ -8153,6 +8153,7 @@ export class Interpreter {
         if (!fn || fn.type !== 'func')
           throw new ZyRuntimeError(`'${expr.callee}' is not a function`, '##Type');
         const args = await this.evalInOrder(expr.args, env);
+        this.checkCallArity(fn, args);
         return await this.callFunc(fn, args, this.buildOutWriteback(fn, expr, env));
       }
 
@@ -8161,6 +8162,7 @@ export class Interpreter {
         if (!fn || fn.type !== 'func')
           throw new ZyRuntimeError(`expression is not callable`, '##Type');
         const args = await this.evalInOrder(expr.args, env);
+        this.checkCallArity(fn, args);
         // Output parameters must be written back here too, not just in 'Call'. A module
         // call `alias::f(x)` parses as Ident(alias) → FieldAccess → CallExpr (the callee
         // is not a bare Ident), so every cross-module call landed in this branch and
@@ -9508,6 +9510,19 @@ export class Interpreter {
         ? { paramName: p.name, callerName: expr.args[i].name, callerEnv: env }
         : null)
       .filter(Boolean);
+  }
+
+  /**
+   * A callable value called with the wrong number of arguments is refused, in
+   * the tree-walker's words (`lambda expects 2 arguments, got 1`). It ran: a
+   * missing argument arrived as Unit and failed later, somewhere else, and an
+   * extra one was dropped in silence (step P4.6). Natives keep their own rules.
+   */
+  checkCallArity(fn, args) {
+    if (fn.native || !Array.isArray(fn.params)) return;
+    if (args.length !== fn.params.length) {
+      throw new ZyError(`lambda expects ${fn.params.length} arguments, got ${args.length}`);
+    }
   }
 
   async callFunc(fn, args, outWriteback) {
