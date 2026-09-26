@@ -1644,7 +1644,8 @@ export class Parser {
         } else {
           let exported = first;
           if (this.check('FAT_ARROW')) { this.adv(); exported = nameAfter("expected public name after '=>'"); }
-          names.push({ kind: 'own', internal: first, exported });
+          // Its position, so a refusal about this name points at it (P4-3 E6).
+          names.push({ kind: 'own', internal: first, exported, line: firstTok.line, col: firstTok.col ?? null });
         }
         if (this.check('COMMA') || this.check('SEMI')) this.adv();
       }
@@ -5309,6 +5310,22 @@ class Checker {
         const mark = this.diagnostics.length;
         this.push(false, true);
         this.checkBlock(stmt.body ?? []);
+        // A `#>` block names constants and functions; a variable is the module's
+        // own state (P4-3 E6, decided 2026-09-26), refused here as in
+        // `check_exported_variables`. It failed only where the name was read.
+        const moduleVars = new Set((stmt.body ?? [])
+          .filter(st => st?.type === 'VarAssign').map(st => st.name));
+        for (const st of (stmt.body ?? [])) {
+          if (st?.type !== 'ExportDecl') continue;
+          for (const it of (st.names ?? [])) {
+            if (it.kind === 'own' && moduleVars.has(it.internal)) {
+              const name = it.internal;
+              this.error('E_EXPORT_VAR', `'${name}' is a variable: a module exports constants and functions`,
+                { line: it.line, col: it.col }, { name },
+                "declare it with ':=' if it never changes, or export a function that returns it");
+            }
+          }
+        }
         this.pop();
         const raised = this.diagnostics.splice(mark);
         for (const d of raised) if (d.severity !== 'warning') this.diagnostics.push(d);

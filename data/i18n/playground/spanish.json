@@ -31,6 +31,8 @@
     "E_CONST": "no se puede reasignar la constante '{name}'",
     "E_CONST_help": "un nombre definido con := no cambia nunca",
     "E_FUNC": "función no definida: '{name}'",
+    "E_EXPORT_VAR": "'{name}' es una variable: un módulo exporta constantes y funciones",
+    "E_EXPORT_VAR_help": "decláralo con ':=' si no cambia nunca, o exporta una función que lo devuelva",
     "E_SCOPE": "no se puede acceder a la variable de guion bajo '{name}' desde un ámbito interior",
     "E_SCOPE_FN": "'{name}' se lee desde fuera de esta función",
     "E_SCOPE_FN_help": "una función es un espacio aislado: un valor entra como parámetro, nunca por estar a la vista — pasa '{name}' como parámetro",

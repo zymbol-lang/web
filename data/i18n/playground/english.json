@@ -32,6 +32,8 @@
     "E_CONST": "cannot reassign constant '{name}'",
     "E_CONST_help": "a name defined with := never changes",
     "E_FUNC": "undefined function: '{name}'",
+    "E_EXPORT_VAR": "'{name}' is a variable: a module exports constants and functions",
+    "E_EXPORT_VAR_help": "declare it with ':=' if it never changes, or export a function that returns it",
     "E_SCOPE": "cannot access underscore variable '{name}' from inner scope",
     "E_SCOPE_FN": "'{name}' is read from outside this function",
     "E_SCOPE_FN_help": "a function is a self-contained space: a value crosses into it as a parameter, never by being in view — pass '{name}' as one",
