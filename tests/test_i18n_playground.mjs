@@ -35,6 +35,7 @@ import { PUBLISHED, BASE_LOCALE } from '../src/i18n/i18n.js';
 import { BROWSER_LANG_MAP, LANG_BCP47 } from '../src/i18n/detect.js';
 import { deriveLangs } from '../tools/gen_playground_langs.mjs';
 import { SYMBOLS, GROUPS } from '../src/playground/symbols.js';
+import { checkSource } from '../src/zymbol/zymbol.js';
 
 const WEB_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
 const CAT_DIR = join(WEB_DIR, 'data/i18n/playground');
@@ -238,6 +239,43 @@ section('checker codes vs the catalogue');
   for (const code of Object.keys(ENGINE_WORDS)) {
     check(`ENGINE_WORDS lists ${code}, which the checker still emits`, emitted.has(code));
     check(`ENGINE_WORDS lists ${code}, which now has an entry — take it off the list`, !(`chk.${code}` in base));
+  }
+}
+
+// ─── one code, one sentence ───────────────────────────────────────────────────
+//
+// The panel shows `chk.<code>`, not the engine's message. A code that two
+// different failures share therefore shows the catalogued sentence for BOTH, and
+// one of them is told something false: `'x' is read from outside this function`
+// was shown as "cannot access underscore variable 'x' from inner scope", and
+// `constant 'K' already declared` as "cannot reassign constant 'K'" (ZYJS-031).
+// Any code with a catalogue entry must be emitted with a single sentence — the
+// first literal of its message, placeholders aside.
+section('one code, one sentence');
+{
+  const engineSrc = readFileSync(join(WEB_DIR, 'src/zymbol/zymbol.js'), 'utf8');
+  const call = /this\.(?:warn|error)\(\s*'([A-Z0-9_]+)',\s*(`(?:[^`\\]|\\.)*`|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")/gs;
+  const sentences = new Map();
+  for (const m of engineSrc.matchAll(call)) {
+    const text = m[2].slice(1, -1).replace(/\$\{[^}]*\}/g, '§');
+    if (!sentences.has(m[1])) sentences.set(m[1], new Set());
+    sentences.get(m[1]).add(text);
+  }
+  for (const [code, set] of sentences) {
+    if (!(`chk.${code}` in base)) continue;     // no entry: the engine's own words are shown
+    check(`checker code ${code} has a catalogue entry and one sentence (${set.size})`, set.size === 1);
+  }
+
+  // And the three that were wrong, rendered the way the panel renders them.
+  const render = d => base[`chk.${d.code}`].replace(/\{(\w+)\}/g, (m, k) => d.params?.[k] ?? m);
+  for (const [src, code] of [
+    ['x = 1\nf() { <~ x }\n>> f() ¶\n', 'E_SCOPE_FN'],
+    ['K := 1\nK := 2\n>> K ¶\n',        'E_CONST_REDECL'],
+    ['@ i:1..2 { cuenta = i }\n>> °cuenta ¶\n', 'E_HOT_OUTPUT'],
+  ]) {
+    const d = checkSource(src).diagnostics.find(x => x.code === code);
+    check(`${code}: the panel says what the engine says`, d && render(d) === d.message,
+          d ? `panel ${JSON.stringify(render(d))} engine ${JSON.stringify(d.message)}` : 'not emitted');
   }
 }
 

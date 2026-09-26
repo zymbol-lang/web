@@ -53,7 +53,9 @@ export function createProblems({ panel, list, countEl, titleEl, toggleBtn, warni
   }
   function hintOf(d) {
     const key = `chk.${d.code}_help`;
-    const help = t(key);
+    // With the diagnostic's params, so a guidance can name what the message
+    // names (`pass 'x' as one`); a brace no param matches is left as written.
+    const help = t(key, d.params ?? {});
     if (help !== key) return help;
     // With no entry for the code at all, the engine's own guidance goes with
     // its own message (ZYJS-023).

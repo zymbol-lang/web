@@ -4669,7 +4669,9 @@ class Checker {
    */
   checkReachOutOfScope(name, usageLine) {
     if (!this.crossesStrongBoundary(name)) return;
-    this.error('E_SCOPE', `'${name}' is read from outside this function`, usageLine,
+    // A code of its own: the playground renders `chk.<code>`, and under
+    // E_SCOPE it showed the underscore sentence for this one (ZYJS-031).
+    this.error('E_SCOPE_FN', `'${name}' is read from outside this function`, usageLine,
       { name },
       `a function is a self-contained space: a value crosses into it as a parameter, never by being in view — pass '${name}' as one`);
   }
@@ -4893,7 +4895,7 @@ class Checker {
         // the same place `C = 2` is refused (D5, GLB-019 C).
         const prior = this.lookup(stmt.name, stmt.line);
         if (prior?.isConst) {
-          this.error('E_CONST', `constant '${stmt.name}' already declared`, stmt, { name: stmt.name },
+          this.error('E_CONST_REDECL', `constant '${stmt.name}' already declared`, stmt, { name: stmt.name },
             'a constant is declared once; use a different name');
           return;
         }
@@ -5032,7 +5034,7 @@ class Checker {
             }
             this.error('E_HOT_OUTPUT',
               `\`°\` has no effect in output context — use \`>> ${shown} ¶\``,
-              item.line ?? stmt.line, { name: item.name });
+              item.line ?? stmt.line, { name: shown });
           }
         }
         for (const item of (stmt.items ?? [])) this.checkExpr(item);
