@@ -1354,7 +1354,9 @@ export class Parser {
     if (body[0]?.type === 'ModuleBlock') {
       const extra = body.slice(1).find(st => st && st.type !== 'Noop');
       if (extra) {
-        throw new ZyStaticError('unexpected token after module block', extra,
+        // The statement's own position, which `parseStmt` recorded as zyLine/zyCol.
+        throw new ZyStaticError('unexpected token after module block',
+          { line: extra.zyLine ?? extra.line, col: extra.zyCol ?? null },
           'a module file must contain only: # name { ... }');
       }
     }
@@ -2453,7 +2455,7 @@ export class Parser {
            no effect and no diagnostic, so `d["a"]$~ "" v` assigned `""` and dropped
            `v` in silence. */
         const val = this.parseExprJuxt();
-        const obj = { type: 'Ident', name, hot, line: tok0.line };
+        const obj = { type: 'Ident', name, hot, line: tok0.line, col: tok0.col ?? null };
         // `m[i>j]$~ v` — the deep form. `parseExpr` above read `i>j` as a
         // COMPARISON, because at statement position the bracket is consumed
         // before the nav parser ever sees it, so `m[1>2]$~ 77` indexed with the
@@ -2475,11 +2477,11 @@ export class Parser {
       const spec = (idx?.type === 'BinOp' && idx.op === '>')
         ? { kind: 'path', path: Parser.flattenGtChain(idx) }
         : { kind: 'simple', index: idx };
-      let left = { type: 'NavIndex', obj: { type: 'Ident', name, hot, line: tok0.line }, spec };
+      let left = { type: 'NavIndex', obj: { type: 'Ident', name, hot, line: tok0.line, col: tok0.col ?? null }, spec };
       return this.editStmtOrExpr(this.parsePostfixRest(left), line);
     }
 
-    let left = { type: 'Ident', name, hot, line: tok0.line };
+    let left = { type: 'Ident', name, hot, line: tok0.line, col: tok0.col ?? null };
     const stmtExpr = this.parsePostfixRest(left);
     // A statement that opens with a call is that call and nothing more, as
     // `parse_function_call_statement` requires. `f(1) + 2` used to end at the
@@ -3390,7 +3392,9 @@ export class Parser {
     // `##_` — the Unit literal (GAP-ZYB-009). The evaluator already had the
     // `unit` case; the value was reachable long before it could be written.
     if (t.type === 'UNIT')  { this.adv(); return { type: 'Literal', kind: 'unit' }; }
-    if (t.type === 'IDENT')        { this.adv(); return { type: 'Ident',       name: t.value, hot: t.hot ?? false, line: t.line }; }
+    // With its column, so a diagnostic about the name points where Rust's does
+    // — `mira.zy:3:16`, not `mira.zy:3:0` (ZYJS-024, step P4.1).
+    if (t.type === 'IDENT')        { this.adv(); return { type: 'Ident',       name: t.value, hot: t.hot ?? false, line: t.line, col: t.col ?? null }; }
     if (t.type === 'ELSE')         { this.adv(); return { type: 'Ident',       name: '_'      }; }
     if (t.type === 'OUTPUT_QUERY') { this.adv(); return { type: 'TerminalSize' }; }
     if (t.type === 'BASHEXEC')    { const tok = this.adv(); return { type: 'BashExec', cmd: tok.value }; }
