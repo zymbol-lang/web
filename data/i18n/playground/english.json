@@ -48,6 +48,8 @@
     "E013": "executable statement not allowed in module body",
     "W_CONFUSABLE": "'{char}' ({code}) looks like '{want}' ({wantCode}) — did you mean '{meant}'?",
     "W_UNUSED": "unused variable '{name}'",
+    "W_UNUSED_CONST": "unused constant '{name}'",
+    "W_UNUSED_CONST_help": "consider removing this constant",
     "W_UNUSED_MATCH": "match expression returns values but result is unused",
     "W_UNUSED_MATCH_help": "assign it — `r = ?? v { … }` — or give each arm a block: `pattern => { … }`",
     "E014": "'{sym}' outside a loop",

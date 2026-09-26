@@ -4178,6 +4178,12 @@ class Checker {
           `= help: consider removing this variable or prefixing with '_' if intentionally unused`,
           info, { name });
       }
+      // A constant nobody reads warns too, named as what it is — as both Rust
+      // engines do (GLB-061, decided 2026-09-25).
+      if (!info.used && !name.startsWith('_') && info.isConst && !info.isFn && !info.isAlias) {
+        this.warn('W_UNUSED_CONST', `unused constant '${name}'`, info, { name },
+          'consider removing this constant');
+      }
     }
   }
 
@@ -4959,11 +4965,16 @@ class Checker {
         this.checkExpr(stmt.value);
         // Check for reassignment of a constant
         if (stmt.name) {
-          const existing = this.lookup(stmt.name, stmt.line);
-          if (existing?.isConst) {
+          // `peekVar`, not `lookup`: writing a constant is not reading it, and
+          // `lookup` marked it used, so an unused constant never warned
+          // (GLB-061). Constants are global (MEM-1), so no boundary matters here.
+          if (this.peekVar(stmt.name)?.isConst) {
             this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt, { name: stmt.name }, Checker.HELP_CONST);
             return;
           }
+          // Kept for what it did before: the lookup marks the name, as it
+          // always has for an assignment.
+          this.lookup(stmt.name, stmt.line);
         }
         if (stmt.hot && wasHot) {
           // See CompoundAssign: `°x° = …` asks for two lifetimes at once.
@@ -5145,7 +5156,7 @@ class Checker {
         const varName = stmt.varName ?? stmt.name;
         // `<< C` writes what was read into the name, so a constant refuses it
         // exactly as `C = 2` does (D5).
-        if (varName && this.lookup(varName, stmt.line)?.isConst) {
+        if (varName && this.peekVar(varName)?.isConst) {
           this.error('E_CONST', `cannot reassign constant '${varName}'`, stmt, { name: varName }, Checker.HELP_CONST);
           return;
         }
@@ -5182,7 +5193,7 @@ class Checker {
         // The iterator is written on every turn, so a constant refuses to be
         // one (D5). This engine left the constant alone and iterated a copy,
         // which is a third answer to a question that has one.
-        if (stmt.var && this.lookup(stmt.var, stmt.line)?.isConst) {
+        if (stmt.var && this.peekVar(stmt.var)?.isConst) {
           this.error('E_CONST', `cannot reassign constant '${stmt.var}'`, stmt, { name: stmt.var }, Checker.HELP_CONST);
           return;
         }
@@ -5376,7 +5387,7 @@ class Checker {
           if (t.name && t.name !== '_') {
             // L14 (mirrors type_check.rs): destructuring into a `:=` constant
             // is an error, same as direct reassignment.
-            const info = this.lookup(t.name, stmt.line);
+            const info = this.peekVar(t.name);
             if (info?.isConst) {
               this.error('E_CONST', `cannot reassign constant '${t.name}'`, stmt, { name: t.name },
                 "constants declared with ':=' cannot be modified — use a different name in the destructuring pattern");

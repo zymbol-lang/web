@@ -47,6 +47,8 @@
     "E013": "no se permiten sentencias ejecutables en el cuerpo de un módulo",
     "W_CONFUSABLE": "'{char}' ({code}) se parece a '{want}' ({wantCode}): ¿querías escribir '{meant}'?",
     "W_UNUSED": "variable sin usar: '{name}'",
+    "W_UNUSED_CONST": "constante sin usar: '{name}'",
+    "W_UNUSED_CONST_help": "considera eliminar esta constante",
     "W_UNUSED_MATCH": "el ?? da valores y el resultado no se usa",
     "W_UNUSED_MATCH_help": "asígnalo — `r = ?? v { … }` — o da a cada brazo un bloque: `patrón => { … }`",
     "E014": "'{sym}' fuera de un bucle",
