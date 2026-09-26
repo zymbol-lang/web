@@ -1743,7 +1743,10 @@ export class Parser {
     // A `~` starts nothing either, and neither does a literal: `x[1] 5` is the
     // statement `x[1]` and then a `5` that starts nothing, which both Rust
     // engines refuse and this one ran in silence (ZYJS-021, step P4.5).
-    if (t.type === 'TILDE' || ['NUM', 'FLOAT', 'STR', 'CHAR', 'BOOL'].includes(t.type)) {
+    // A sign, a `!` or a `{` starts none either: `-x` and `!b` are refused by
+    // both Rust engines and this one ran them as expressions, and a bare block
+    // was refused here in other words.
+    if (t.type === 'TILDE' || ['NUM', 'FLOAT', 'STR', 'CHAR', 'BOOL', 'MINUS', 'PLUS', 'NOT', 'LBRACE'].includes(t.type)) {
       throw new ZyStaticError(`unexpected token: ${Parser.tokenSpelling(t)}`, t,
         'expected statement (>>, <<, ?, ??, @, @!, @>, !?, <~, ¶, \\\\, or identifier)');
     }
@@ -2402,6 +2405,7 @@ export class Parser {
   parseIdentStmt() {
     if (this.isFuncDecl()) return this.parseFuncDecl();
 
+    const start = this.pos;
     const tok0 = this.adv();
     const name = tok0.value;
     const hot  = tok0.hot ?? false;
@@ -2540,20 +2544,43 @@ export class Parser {
         ? { kind: 'path', path: Parser.flattenGtChain(idx) }
         : { kind: 'simple', index: idx };
       let left = { type: 'NavIndex', obj: { type: 'Ident', name, hot, line: tok0.line, col: tok0.col ?? null }, spec };
-      return this.editStmtOrExpr(this.parsePostfixRest(left), line);
+      return this.editStmtOrExpr(this.continueStmtExpr(this.parsePostfixRest(left), start), line);
     }
 
     let left = { type: 'Ident', name, hot, line: tok0.line, col: tok0.col ?? null };
     const stmtExpr = this.parsePostfixRest(left);
     // A statement that opens with a call is that call and nothing more, as
     // `parse_function_call_statement` requires. `f(1) + 2` used to end at the
-    // `)` and leave `+ 2` for a statement of its own (ZYJS-021).
+    // `)` and leave `+ 2` for a statement of its own (ZYJS-021). On the next
+    // line too, as Rust reads it: no binary operator starts a statement.
     const BINARY = ['PLUS', 'MINUS', 'TIMES', 'DIV', 'MOD', 'POW', 'EQ', 'NEQ', 'LT', 'GT', 'LTE', 'GTE', 'AND', 'OR'];
     if ((stmtExpr?.type === 'Call' || stmtExpr?.type === 'CallExpr')
-        && BINARY.includes(this.peek().type) && this.peek().line === this.prevEndLine()) {
+        && BINARY.includes(this.peek().type)) {
       throw new ZyStaticError('expected function call', line, 'only function calls can be used as statements');
     }
-    return this.editStmtOrExpr(stmtExpr, line);
+    return this.editStmtOrExpr(this.continueStmtExpr(stmtExpr, start), line);
+  }
+
+  // A statement that opens with a name is a whole expression, as Rust's
+  // `parse_expr_or_edit_statement` reads it: `x > 1` is one statement, valid,
+  // and the checker warns that it does nothing (decided 2026-09-26, ZYJS-035).
+  // This engine stopped after the postfix, so `x > 1` was refused at the `>`
+  // and `x + 1` ran as `x` and then `+1`. When a binary operator follows, the
+  // statement is read again from its name with the full expression grammar —
+  // across a line break too, as Rust does: no binary operator starts a
+  // statement, so nothing that follows could have been one.
+  static STMT_CONTINUES = new Set([
+    'PLUS', 'MINUS', 'TIMES', 'DIV', 'MOD', 'POW',
+    'EQ', 'NEQ', 'LT', 'GT', 'LTE', 'GTE', 'AND', 'OR', 'PIPE',
+  ]);
+
+  continueStmtExpr(expr, start) {
+    // A call is the whole statement (`parse_function_call_statement`), and
+    // one followed by an operator is refused above.
+    if (expr?.type === 'Call' || expr?.type === 'CallExpr') return expr;
+    if (!Parser.STMT_CONTINUES.has(this.peek().type)) return expr;
+    this.pos = start;
+    return this.parseExpr();
   }
 
   // The editing half of the `$` family. The consulting half — `$#`, `$?`, `$[..]`,
@@ -2810,11 +2837,12 @@ export class Parser {
   parseOr()             { return this.parseBinLeft(['OR'],  () => this.parseAnd()); }
   parseAnd()            { return this.parseBinLeft(['AND'], () => this.parseComparison()); }
   parseComparison() {
+    const line = this.peek()?.line ?? null;
     let left = this.parseAdditive();
     if (this.inMatchBody) return left;
     const cmp = { EQ:'==', NEQ:'<>', LT:'<', GT:'>', LTE:'<=', GTE:'>=' };
     const op  = cmp[this.peek().type];
-    if (op) { this.adv(); left = { type:'BinOp', op, left, right: this.parseAdditive() }; }
+    if (op) { this.adv(); left = { type:'BinOp', op, left, right: this.parseAdditive(), line }; }
     return left;
   }
   parseAdditive()       { return this.parseBinLeft(['PLUS','MINUS'], () => this.parseMultiplicative()); }
@@ -4868,6 +4896,22 @@ class Checker {
     this.diagnostics.push(d);
   }
 
+  // The operator of a statement that computes a value out of names and
+  // literals alone — `x > 1`, `a + b * 2` — or null. Rust's `pure_statement_op`.
+  static PURE_OPS = new Set(['+', '-', '*', '/', '%', '^',
+    '==', '<>', '<', '>', '<=', '>=', '&&', '||']);
+
+  static pureStatementOp(expr) {
+    const pure = (e) => {
+      if (!e) return false;
+      if (e.type === 'Ident' || e.type === 'Literal') return true;
+      if (e.type === 'UnaryOp') return pure(e.operand);
+      if (e.type === 'BinOp') return Checker.PURE_OPS.has(e.op) && pure(e.left) && pure(e.right);
+      return false;
+    };
+    return expr?.type === 'BinOp' && pure(expr) ? expr.op : null;
+  }
+
   warn(code, msg, at = null, params = null, help = null) {
     const { line, col } = Checker.posOf(at);
     this.diagnostics.push({ severity: 'warning', code, message: msg, line, col, params, help });
@@ -5481,6 +5525,19 @@ class Checker {
           this.warn('W_UNUSED_MATCH', 'match expression returns values but result is unused',
             expr.line ?? stmt.line, null,
             'assign it — `r = ?? v { … }` — or give each arm a block: `pattern => { … }`');
+        }
+        // A value computed out of names and literals and thrown away: `x > 1`.
+        // Valid, and it does nothing (decided 2026-09-26, ZYJS-035). A call
+        // anywhere inside may be there for its effect, and `|>` is a call.
+        const pureOp = Checker.pureStatementOp(expr);
+        if (pureOp) {
+          const branches = ['==', '<>', '<', '>', '<=', '>=', '&&', '||'].includes(pureOp);
+          this.warn('W_NO_EFFECT',
+            `this statement does nothing: \`${pureOp}\` computes a value and it is discarded`,
+            expr.line ?? stmt.line, { name: pureOp },
+            branches
+              ? 'to branch on it, write `? condition { … }` — otherwise remove it, or use the result'
+              : 'remove it, or use the result — assign it, print it, or pass it on');
         }
         if (expr?.type === 'CollectionOp' && Parser.CONSULT_OPS.has(expr.op)) {
           this.warn('W_NO_EFFECT',
