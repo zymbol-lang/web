@@ -34,7 +34,7 @@ if (!file) {
   process.exit(2);
 }
 
-const { runZymbol, checkSource, moduleAritiesFor, moduleOutSlotsFor, moduleDeclErrors, Lexer, Parser } =
+const { runZymbol, checkSource, moduleAritiesFor, moduleOutSlotsFor, moduleExportsFor, moduleDeclErrors, Lexer, Parser } =
   await import('../src/zymbol/zymbol.js');
 
 // ─── stdin feed ───────────────────────────────────────────────────────────────
@@ -115,11 +115,13 @@ const source = readFileSync(abs, 'utf8');
 // down. Parsing twice costs nothing at this size and keeps the two paths honest.
 let moduleArities = new Map();
 let moduleOutSlots = new Map();
+let moduleExports = new Map();
 let moduleNameDiags = [];
 try {
   const ast = new Parser(new Lexer(source).tokenize()).parse();
   moduleArities = await moduleAritiesFor(ast, resolver, abs);
   moduleOutSlots = await moduleOutSlotsFor(ast, resolver, abs);
+  moduleExports = await moduleExportsFor(ast, resolver, abs);
   // E001 and E014 over the imports. Same plumbing as the two tables above and
   // for the same reason: `checkSource` has no resolver, and these are STATIC
   // refusals — the two Rust engines make them before running, so they have to
@@ -168,7 +170,7 @@ function formatDiagnostic(severity, d) {
   return out;
 }
 
-const { diagnostics: ownDiags } = checkSource(source, { moduleArities, moduleOutSlots });
+const { diagnostics: ownDiags } = checkSource(source, { moduleArities, moduleOutSlots, moduleExports });
 const diagnostics = [...ownDiags, ...moduleNameDiags];
 // Warnings go out too, which they did not before: this engine COMPUTED them and
 // the harness dropped them on the floor, so an unused variable was flagged by

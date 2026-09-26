@@ -2963,8 +2963,8 @@ export class Parser {
         // distinction, so a local variable sharing a module alias's name shadowed the
         // module and any `alias::fn(...)` after it failed — see eval's FieldAccess case.
         const scoped = this.check('SCOPE');
-        this.adv(); const field = this.eatMemberName(scoped);
-        left = { type: 'FieldAccess', obj: left, field, scoped };
+        this.adv(); const ft = this.peek(); const field = this.eatMemberName(scoped);
+        left = { type: 'FieldAccess', obj: left, field, scoped, fieldLine: ft.line, fieldCol: ft.col ?? null };
       } else if (this.check('LPAREN') && sameLine() && left.type === 'Ident') {
         this.adv(); const args = this.parseArgList(); this.closeCallArgs(left);
         left = { type: 'Call', callee: left.name, args, line: left.line ?? this.peek()?.line ?? null };
@@ -3013,6 +3013,7 @@ export class Parser {
       } else if (this.check('DOT') || this.check('SCOPE')) {
         const scoped = this.check('SCOPE');
         this.adv();
+        const ft = this.peek();
         const field = this.eatMemberName(scoped);
         // `alias::fn` is only ever called. Both Rust parsers want the `(`; here
         // `m::sqrt 4` read the function as a value and printed `<funct/0>4`
@@ -3032,7 +3033,9 @@ export class Parser {
           const val = this.parseExprJuxt();
           left = { type: 'FuncUpdate', obj: left, key: field, value: val };
         } else {
-          left = { type: 'FieldAccess', obj: left, field, scoped };
+          // Where the name after the operator is: the `std/` refusals point at
+          // it, as `check_stdlib_access` does (ZYVM-008).
+          left = { type: 'FieldAccess', obj: left, field, scoped, fieldLine: ft.line, fieldCol: ft.col ?? null };
         }
 
       } else if (this.check('LPAREN') && sameLine() && left.type === 'Ident') {
@@ -3986,6 +3989,9 @@ class Checker {
     this.moduleArities = new Map();
     //   moduleOutSlots : alias → (function → indices of its `<~` parameters)
     this.moduleOutSlots = new Map();
+    //   moduleExports : alias → { constants, functions } for user modules
+    //                   (ZYVM-008); built by `moduleExportsFor`
+    this.moduleExports = new Map();
   }
 
   /**
@@ -4925,6 +4931,98 @@ class Checker {
     this.diagnostics.push(d);
   }
 
+  // ZYVM-008, decided 2026-09-26: a member a module does not export is refused
+  // before the program runs. `fa` is a FieldAccess on a name; `asCall` says it
+  // is the callee of a call.
+  //
+  // A `std/` alias is judged by the operator, `::` a function and `.` a
+  // constant, with the words of `check_stdlib_access`. A user module is judged
+  // by use, as Rust's type checker does: a call needs a function, a `.` read
+  // needs a constant, and a variable that shares the alias's name hides it.
+  checkModuleMember(fa, asCall) {
+    if (fa?.type !== 'FieldAccess' || fa.obj?.type !== 'Ident' || !fa.field) return;
+    const alias = fa.obj.name;
+    const path = this.aliasPath.get(alias);
+    if (path === undefined) return;
+    if (path.startsWith('std/')) { this.checkStdMember(fa, alias, path); return; }
+    if (!this.isAliasHere(alias)) return;
+    const exports = this.moduleExports.get(alias);
+    if (!exports) return;
+    const name = fa.field;
+    if (asCall) {
+      if (!exports.functions.has(name)) {
+        this.error('E_MOD_FN', `module '${alias}' does not export function '${name}'`,
+          fa.obj, { alias, name },
+          exports.constants.has(name) ? `read it with '.': ${alias}.${name}` : null);
+      }
+    } else if (!fa.scoped && !exports.constants.has(name)) {
+      const list = exports.constants.size ? [...exports.constants].sort().join(', ') : 'none';
+      this.error('E_MOD_CONST',
+        `Module '${alias}' has no constant '${name}'. Available constants: ${list}`,
+        fa.obj, { alias, name, list },
+        exports.functions.has(name) ? `call it with '::': ${alias}::${name}(…)` : null);
+    }
+  }
+
+  // The nearest record of `name` is the import, not a variable that hides it.
+  isAliasHere(name) {
+    for (let i = this.stack.length - 1; i >= 0; i--) {
+      const rec = this.stack[i].vars.get(name);
+      if (rec) return rec.isAlias === true;
+    }
+    return false;
+  }
+
+  checkStdMember(fa, alias, path) {
+    const fns = STDLIB_ARITIES.get(path);
+    if (!fns) return;
+    const consts = STDLIB_CONSTANTS.get(path) ?? [];
+    const name = fa.field;
+    const at = { line: fa.fieldLine ?? fa.obj.line, col: fa.fieldCol ?? null };
+    if (fa.scoped) {
+      if (fns.has(name)) return;
+      if (consts.includes(name)) {
+        this.error('E_STD_NOT_FN', `'${name}' is a constant of ${path}, not a function`,
+          at, { name, path }, `read it with '.': ${alias}.${name}`);
+        return;
+      }
+      const near = Checker.closestName(name, [...fns.keys()]);
+      this.error('E_STD_FN', `${path} does not export a function '${name}'`, at, { name, path },
+        near !== null ? `did you mean '${alias}::${near}'?` : `${path} exports: ${[...fns.keys()].join(', ')}`);
+      return;
+    }
+    if (consts.includes(name)) return;
+    if (fns.has(name)) {
+      this.error('E_STD_NOT_CONST', `'${name}' is a function of ${path}, not a constant`,
+        at, { name, path }, `call it with '::': ${alias}::${name}(…)`);
+      return;
+    }
+    this.error('E_STD_CONST', `${path} does not export a constant '${name}'`, at, { name, path });
+  }
+
+  // The candidate within edit distance 2 of `name`, closest first and the
+  // first of equals — `closest` in stdlib_access.rs.
+  static closestName(name, candidates) {
+    const dist = (a, b) => {
+      const A = [...a], B = [...b];
+      let prev = Array.from({ length: B.length + 1 }, (_, j) => j);
+      for (let i = 0; i < A.length; i++) {
+        const cur = [i + 1];
+        for (let j = 0; j < B.length; j++) {
+          cur[j + 1] = Math.min(prev[j] + (A[i] !== B[j] ? 1 : 0), prev[j + 1] + 1, cur[j] + 1);
+        }
+        prev = cur;
+      }
+      return prev[B.length];
+    };
+    let best = null, bestD = 3;
+    for (const c of candidates) {
+      const d = dist(name, c);
+      if (d < bestD) { best = c; bestD = d; }
+    }
+    return best;
+  }
+
   // The operator of a statement that computes a value out of names and
   // literals alone — `x > 1`, `a + b * 2` — or null. Rust's `pure_statement_op`.
   static PURE_OPS = new Set(['+', '-', '*', '/', '%', '^',
@@ -5700,7 +5798,10 @@ class Checker {
         // `alias::func(…)` arrives as a FieldAccess callee. Checked against the
         // std/ table, or against a user-module table if one was supplied.
         const callee = expr.callee ?? expr.fn;
-        if (callee?.type === 'FieldAccess' && callee.obj?.type === 'Ident' && callee.field) {
+        const memberBefore = this.diagnostics.length;
+        this.checkModuleMember(callee, true);
+        const memberRefused = this.diagnostics.length > memberBefore;
+        if (!memberRefused && callee?.type === 'FieldAccess' && callee.obj?.type === 'Ident' && callee.field) {
           const expected = this.qualifiedArity(callee.obj.name, callee.field);
           if (expected !== null) {
             this.checkArity(`${callee.obj.name}::${callee.field}`, expected,
@@ -5711,7 +5812,10 @@ class Checker {
                                expr.args ?? [], expr.line);
           }
         }
-        this.checkExpr(callee);
+        // The callee's own walk, without the `.` read check: a call is judged
+        // by what it calls, and that was asked just above.
+        if (callee?.type === 'FieldAccess') this.checkExpr(callee.obj);
+        else this.checkExpr(callee);
         for (const a of (expr.args ?? [])) this.checkExpr(a.value ?? a);
         return;
       }
@@ -5800,6 +5904,7 @@ class Checker {
       }
 
       case 'FieldAccess': {
+        this.checkModuleMember(expr, false);
         this.checkExpr(expr.obj);
         return;
       }
@@ -6581,6 +6686,12 @@ const TIME_PART_NAMES = ['year', 'month', 'day', 'hour', 'minute', 'second', 'mi
 // The functions themselves are built below by `buildStdlibModule`; this table is
 // only about how many arguments each takes, so adding a function means touching
 // both. `web/tests/test_check.mjs` compares this table against the Rust one.
+// The constants `std/` exports, read with `.` — `constants` in
+// crates/zymbol-common/src/stdlib.rs. Only `std/math` has any.
+export const STDLIB_CONSTANTS = new Map([
+  ['std/math', ['PI', 'E']],
+]);
+
 export const STDLIB_ARITIES = new Map([
   ['std/math', new Map([
     ['sqrt',1],['exp',1],['ln',1],['log',-1],['pow',2],['sin',1],['cos',1],['tan',1],
@@ -10295,6 +10406,73 @@ export async function moduleDeclErrors(ast, resolver, filePath = null) {
   return out;
 }
 
+/**
+ * What each user-module alias exports, split into constants and functions —
+ * `module_exports` in crates/zymbol-semantic/src/call_arity.rs.
+ *
+ * ZYVM-008, decided 2026-09-26: `m.nada` and `m::nada()` on a module that does
+ * not export `nada` are refused before the program runs, in all three engines.
+ * A module whose export block cannot be resolved in full contributes nothing,
+ * and its members are left to run time instead of refused on a guess.
+ */
+export async function moduleExportsFor(ast, resolver, filePath = null) {
+  const out = new Map();
+  if (!resolver || !ast?.body) return out;
+  for (const imp of ast.body) {
+    if (imp?.type !== 'Import' || !imp.alias || !imp.path) continue;
+    if (imp.path.startsWith('std/')) continue;   // checked with its own words
+    const exports = await exportsOfImport(imp.path, resolver, filePath, 0);
+    if (exports) out.set(imp.alias, exports);
+  }
+  return out;
+}
+
+async function exportsOfImport(path, resolver, filePath, depth) {
+  if (path.startsWith('std/')) {
+    const fns = STDLIB_ARITIES.get(path);
+    if (!fns) return null;
+    return { constants: new Set(STDLIB_CONSTANTS.get(path) ?? []), functions: new Set(fns.keys()) };
+  }
+  // The re-export hops Rust follows before giving up (MAX_REEXPORT_DEPTH).
+  if (depth > 8) return null;
+  let result;
+  try { result = await resolver(path, filePath); } catch { return null; }
+  if (result == null || result.notFound) return null;
+  const src = typeof result === 'string' ? result : result.src;
+  if (typeof src !== 'string') return null;
+  const inner = (typeof result === 'object' && result.resolver) ? result.resolver : resolver;
+  let ast;
+  try { ast = new Parser(new Lexer(src).tokenize()).parse(); } catch { return null; }
+  const block = (ast.body ?? []).find(s => s?.type === 'ModuleBlock');
+  const exportDecl = (block?.body ?? []).find(s => s?.type === 'ExportDecl');
+  if (!exportDecl) return null;
+  const fns = new Set(), consts = new Set(), imports = new Map();
+  for (const s of [...(ast.body ?? []), ...(block.body ?? [])]) {
+    if (s?.type === 'FuncDecl') fns.add(s.name);
+    else if (s?.type === 'ConstAssign') consts.add(s.name);
+    else if (s?.type === 'Import' && s.alias) imports.set(s.alias, s.path);
+  }
+  const exports = { constants: new Set(), functions: new Set() };
+  for (const item of exportDecl.names) {
+    let from;
+    let name;
+    if (item.kind === 'own') {
+      from = { constants: consts, functions: fns };
+      name = item.internal;
+    } else {
+      const sourcePath = imports.get(item.alias);
+      if (!sourcePath) return null;
+      from = await exportsOfImport(sourcePath, inner, result.resolvedPath ?? filePath, depth + 1);
+      if (!from) return null;
+      name = item.member;
+    }
+    if (from.functions.has(name)) exports.functions.add(item.exported);
+    else if (from.constants.has(name)) exports.constants.add(item.exported);
+    else return null;
+  }
+  return exports;
+}
+
 export async function moduleAritiesFor(ast, resolver, filePath = null) {
   const out = new Map();
   if (!resolver || !ast?.body) return out;
@@ -10435,6 +10613,7 @@ export function checkSource(src, opts = {}) {
     const checker = new Checker(ast);
     if (opts.moduleArities instanceof Map) checker.moduleArities = opts.moduleArities;
     if (opts.moduleOutSlots instanceof Map) checker.moduleOutSlots = opts.moduleOutSlots;
+    if (opts.moduleExports instanceof Map) checker.moduleExports = opts.moduleExports;
     diagnostics = checker.check();
   } catch (e) {
     // The checker walking a shape it did not expect must not look like a broken program.
@@ -10605,6 +10784,7 @@ export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, f
   const checker = new Checker(ast);
   checker.moduleArities = await moduleAritiesFor(ast, moduleResolver, filePath);
   checker.moduleOutSlots = await moduleOutSlotsFor(ast, moduleResolver, filePath);
+  checker.moduleExports = await moduleExportsFor(ast, moduleResolver, filePath);
   const diags   = checker.check();
   // What an imported module DECLARES, before anything runs: its name against
   // its path (E001, GLB-005) and the export block it must have (E014, L48).

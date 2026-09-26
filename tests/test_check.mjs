@@ -27,7 +27,7 @@ import { spawnSync, execFileSync } from 'child_process';
 import { join, dirname, relative } from 'path';
 import { fileURLToPath } from 'url';
 
-import { checkSource, STDLIB_ARITIES } from '../src/zymbol/zymbol.js';
+import { checkSource, STDLIB_ARITIES, STDLIB_CONSTANTS } from '../src/zymbol/zymbol.js';
 
 const WEB_DIR      = dirname(dirname(fileURLToPath(import.meta.url)));
 const EXAMPLES     = join(WEB_DIR, 'examples');
@@ -103,6 +103,10 @@ function stdlibAritiesFromRust() {
     if (!path) continue;
     const fns = new Map();
     for (const f of body.matchAll(/\bf\("([^"]+)",\s*(-?\d+)\)/g)) fns.set(f[1], Number(f[2]));
+    // The constants ride along: `STDLIB_CONSTANTS` is the same kind of copy,
+    // and `math.NADA` is refused before running from it (ZYVM-008).
+    const consts = /constants:\s*&\[([^\]]*)\]/.exec(body)?.[1] ?? '';
+    fns.constants = [...consts.matchAll(/"([^"]+)"/g)].map(c => c[1]);
     out.set(path, fns);
   }
   return out.size > 0 ? out : null;
@@ -125,6 +129,9 @@ let stdlibFailures = 0;
       }
       for (const name of js.keys())
         if (!fns.has(name)) note(`'${path}::${name}' is in zymbol.js, missing from Rust`);
+      const jsConsts = STDLIB_CONSTANTS.get(path) ?? [];
+      if (jsConsts.join(',') !== fns.constants.join(','))
+        note(`'${path}' constants are [${jsConsts}] in zymbol.js, [${fns.constants}] in Rust`);
     }
     for (const path of STDLIB_ARITIES.keys())
       if (!rust.has(path)) note(`zymbol.js has a table for '${path}', which Rust does not list`);
