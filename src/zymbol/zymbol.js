@@ -3578,6 +3578,14 @@ class Env {
 
   get(name) {
     if (this.vars.has(name)) return this.vars.get(name);
+    // The mark sits in the frame the name lived in — a block, a function, a
+    // lambda — so it is looked for at every level the lookup passes, not only
+    // at the root (ZYJS-030): `y` ended inside a function's `?` block said
+    // "'y' is undefined — did you mean 'y°'".
+    if (this.destroyed?.has(name)) {
+      throw new ZyError(
+        `use after destruction: variable '${name}' was destroyed after its last use`);
+    }
     if (!this.parent) {
       // GLB-008: the wording of both Rust engines, verbatim — `zyq consensus`
       // compares text, and more to the point a reader who wrote `\` needs to be
