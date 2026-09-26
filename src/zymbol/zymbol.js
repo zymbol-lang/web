@@ -4234,6 +4234,26 @@ class Checker {
    *
    * The wording is the Rust one, word for word — `zyq consensus` compares text.
    */
+  /**
+   * The lambda of `$>`, `$|` and `$<` takes 1, 1 and 2 parameters. Decided the
+   * way `type_check.rs` decides it — on a lambda written in place or a variable
+   * holding one; a named function is not checked there either (ZYJS-039).
+   */
+  checkHofArity(expr) {
+    const RULE = {
+      '$>': [1, n => `map lambda must have exactly 1 parameter, got ${n}`],
+      '$|': [1, n => `filter lambda must have exactly 1 parameter, got ${n}`],
+      '$<': [2, n => `reduce lambda must have exactly 2 parameters (acc, elem), got ${n}`],
+    }[expr.op];
+    if (!RULE || !expr.arg) return;
+    const arg = expr.arg;
+    const n = arg.type === 'Lambda' ? (arg.params ?? []).length
+            : arg.type === 'Ident' ? this.peekVar(arg.name)?.lambdaArity
+            : undefined;
+    if (n === undefined || n === RULE[0]) return;
+    this.error('E_HOF_ARITY', RULE[1](n), { line: arg.line ?? expr.obj?.line, col: arg.col ?? null }, { n });
+  }
+
   warnNonBoolCondition(cond, kind) {
     const name = this.staticTypeName(cond);
     if (!name) return;                       // Bool, or a type this pass cannot decide
@@ -4590,6 +4610,8 @@ class Checker {
       }
       // Overwritten, as `define_var` overwrites it: after `x = 5`, `x` IS an Int.
       info.infType = inferred;
+      // How many parameters the lambda it holds takes, for `$>`/`$|`/`$<`.
+      info.lambdaArity = value?.type === 'Lambda' ? (value.params ?? []).length : undefined;
       if (inferred !== 'Unit') info.realType = inferred;
       info.litType = (info.litType === undefined || info.litType === t) ? t : null;
       // And the element type when the value is an array literal, which is what
@@ -5687,6 +5709,7 @@ class Checker {
       case 'CollectionOp': {
         this.checkExpr(expr.obj);
         if (expr.arg)  this.checkExpr(expr.arg);
+        this.checkHofArity(expr);
         if (expr.arg2) this.checkExpr(expr.arg2);
         // ZYJS-018: the parser puts operands in more places than `arg`, and a
         // field not visited here is a use nobody counts — `a$[n..2]` and
@@ -8190,7 +8213,13 @@ export class Interpreter {
       }
 
       case 'CallExpr': {
-        const fn = await this.eval(expr.callee, env);
+        // `m.f()` on a module alias CALLS: it asks for a function, and is told
+        // "does not export function" when there is none, as in both Rust
+        // engines. Evaluated as a read it said "has no constant" (ZYJS-040).
+        const c = expr.callee;
+        const callee = (c?.type === 'FieldAccess' && !c.scoped && c.obj?.type === 'Ident'
+                        && this.moduleAliases.has(c.obj.name)) ? { ...c, scoped: true } : c;
+        const fn = await this.eval(callee, env);
         if (!fn || fn.type !== 'func')
           throw new ZyRuntimeError(`expression is not callable`, '##Type');
         const args = await this.evalInOrder(expr.args, env);
@@ -9566,6 +9595,9 @@ export class Interpreter {
 
   async callFunc(fn, args, outWriteback) {
     if (fn.native) return fn.call(args);
+    // The calls `$>`, `$|`, `$<`, `$^` and `|>` make go through here too, and
+    // check their count as a direct call does (GLB-063).
+    this.checkCallArity(fn, args);
     // A qualified call inside a function resolves against the alias table of
     // the MODULE THE FUNCTION WAS WRITTEN IN, never the caller's.
     //
