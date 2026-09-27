@@ -10675,6 +10675,52 @@ export function confusableHints(src) {
 }
 
 /**
+ * `import 'b' is never used` — an alias the file never names again (HLZ-015).
+ * `check_unused_imports` in Rust, and the same reading: over tokens, because a
+ * re-export (`#> { es::saludo => saludo }`) is a use and is not an expression.
+ * An alias is used where it is followed by `::` or `.` and is not itself the
+ * end of a `.`/`::` chain; the import statement's own tokens, from `<#`
+ * through the alias, are not a use.
+ */
+function unusedImports(ast, tokens) {
+  if (!ast || !tokens) return [];
+  const imports = [];
+  const collect = (body) => {
+    for (const s of (body ?? [])) {
+      if (s?.type === 'Import') imports.push(s);
+      else if (s?.type === 'ModuleBlock') collect(s.body);
+    }
+  };
+  collect(ast.body);
+  if (imports.length === 0) return [];
+
+  const used = new Set();
+  let inImport = false, afterArrow = false;
+  tokens.forEach((t, i) => {
+    if (t.type === 'IMPORT') { inImport = true; afterArrow = false; return; }
+    if (inImport) {
+      if (t.type === 'FAT_ARROW') afterArrow = true;
+      else if (afterArrow) inImport = false;
+      return;
+    }
+    if (t.type !== 'IDENT') return;
+    const prev = tokens[i - 1]?.type, next = tokens[i + 1]?.type;
+    if (prev === 'DOT' || prev === 'SCOPE') return;
+    if (next === 'DOT' || next === 'SCOPE') used.add(t.value);
+  });
+
+  return imports.filter(im => !used.has(im.alias)).map(im => ({
+    severity: 'warning',
+    code: 'W_UNUSED_IMPORT',
+    message: `import '${im.alias}' is never used`,
+    line: im.zyLine ?? im.line ?? null,
+    col: im.zyCol ?? null,
+    params: { name: im.alias },
+    help: `remove the import, or call into it as ${im.alias}::name or ${im.alias}.NAME`,
+  }));
+}
+
+/**
  * @param {string} src
  * @param {{moduleArities?: Map<string, Map<string, number>>}} [opts]
  *   `moduleArities` maps an import alias to that module's `moduleAritiesFrom`
@@ -10684,8 +10730,10 @@ export function confusableHints(src) {
  */
 export function checkSource(src, opts = {}) {
   let ast = null;
+  let tokens = null;
   try {
-    ast = new Parser(new Lexer(src).tokenize()).parse();
+    tokens = new Lexer(src).tokenize();
+    ast = new Parser(tokens).parse();
   } catch (e) {
     // ZyError keeps the source line in `zyLine` and prefixes the message with it; older
     // throw sites pass neither, so the prefix is the only thing left to read it from.
@@ -10728,6 +10776,9 @@ export function checkSource(src, opts = {}) {
     console.warn('checkSource: analysis failed —', e?.message ?? e);
     diagnostics = [];
   }
+  // Outside the Checker on purpose: it drops every warning raised inside a
+  // module body (Depurando_GO.md DG-06), and Rust reports this one there too.
+  diagnostics.push(...unusedImports(ast, tokens));
   // A name reported as UNDEFINED must not also be reported as UNUSED.
   //
   // The two come from opposite ends of the same fact: `? #1 { v = 1 }  >> v ¶`

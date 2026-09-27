@@ -58,6 +58,8 @@
     "W_UNUSED": "unused variable '{name}'",
     "W_UNUSED_CONST": "unused constant '{name}'",
     "W_UNUSED_CONST_help": "consider removing this constant",
+    "W_UNUSED_IMPORT": "import '{name}' is never used",
+    "W_UNUSED_IMPORT_help": "remove the import, or call into it as {name}::name or {name}.NAME",
     "W_UNUSED_MATCH": "match expression returns values but result is unused",
     "W_UNUSED_MATCH_help": "assign it — `r = ?? v { … }` — or give each arm a block: `pattern => { … }`",
     "E014": "'{sym}' outside a loop",

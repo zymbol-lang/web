@@ -170,7 +170,7 @@ function formatDiagnostic(severity, d) {
   return out;
 }
 
-const { diagnostics: ownDiags } = checkSource(source, { moduleArities, moduleOutSlots, moduleExports });
+const { diagnostics: ownDiags, ast: checkedAst } = checkSource(source, { moduleArities, moduleOutSlots, moduleExports });
 const diagnostics = [...ownDiags, ...moduleNameDiags];
 // Warnings go out too, which they did not before: this engine COMPUTED them and
 // the harness dropped them on the floor, so an unused variable was flagged by
@@ -180,7 +180,13 @@ const diagnostics = [...ownDiags, ...moduleNameDiags];
 // The order mattered. Emitting these before the layout above was unified would
 // have given every warning both differences at once — the wording and the shape
 // — turning one fixable problem into two.
-for (const d of diagnostics.filter(d => d.severity === 'warning')) {
+// Not for a module file: `zymbol run` refuses one ("is a module file and cannot
+// be run directly") before it analyses anything, so it prints none of them.
+// They used to agree only because the checker dropped every warning inside a
+// module body; `import 'x' is never used` is raised outside it (HLZ-015).
+// Decided as the interpreter decides it: the first statement is the module block.
+const isModuleFile = checkedAst?.body?.[0]?.type === 'ModuleBlock';
+for (const d of diagnostics.filter(d => d.severity === 'warning' && !isModuleFile)) {
   process.stderr.write(formatDiagnostic('warning', d));
 }
 

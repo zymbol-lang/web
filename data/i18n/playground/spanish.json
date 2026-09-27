@@ -57,6 +57,8 @@
     "W_UNUSED": "variable sin usar: '{name}'",
     "W_UNUSED_CONST": "constante sin usar: '{name}'",
     "W_UNUSED_CONST_help": "considera eliminar esta constante",
+    "W_UNUSED_IMPORT": "el import '{name}' no se usa nunca",
+    "W_UNUSED_IMPORT_help": "quita el import, o llama a través de él: {name}::nombre o {name}.NOMBRE",
     "W_UNUSED_MATCH": "el ?? da valores y el resultado no se usa",
     "W_UNUSED_MATCH_help": "asígnalo — `r = ?? v { … }` — o da a cada brazo un bloque: `patrón => { … }`",
     "E014": "'{sym}' fuera de un bucle",
