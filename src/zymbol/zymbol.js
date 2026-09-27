@@ -5945,23 +5945,41 @@ class Checker {
         // is what the Rust analyser does. Without the recursion
         // `[[1], ["x"]]` was accepted here and `array element 2 has type
         // [String], but expected [Int]` in both Rust engines.
-        const kinds = items.map(el => this.staticKind(el));
-        if (kinds.length > 1 && kinds.every(k => k !== null)) {
+        // `staticKind` knows literals and arrays; `inferType` is the mirror of
+        // `infer_expr` for everything else it decides — `k[1]`, a call to a
+        // function of this file, `a$#`. `Any` is a type Rust names but cannot
+        // compare, so here it is "cannot tell".
+        const kindOf = (el) => {
+          const k = this.staticKind(el) ?? this.inferType(el);
+          return k === 'Any' ? null : k;
+        };
+        const kinds = items.map(kindOf);
+        if (kinds.length > 1) {
           // Int and Float mix freely, as they do in every arithmetic position —
           // at any depth, so `[[1], [2.5]]` is not a mix either.
           const norm = (k) => k.replace(/Float/g, 'Int');
           const first = kinds[0];
-          const bad = kinds.findIndex(k => norm(k) !== norm(first));
-          if (bad > 0 && !expr.declaredMixed) {
+          // Each element against the FIRST, as `type_check.rs` does, and an
+          // element this pass cannot type is compatible with anything. This
+          // used to compare only when every kind was known, so one untyped
+          // element switched the whole check off: `[9, "x", p]` ran here and
+          // was refused by both Rust engines (Depurando_GO.md DG-05, a
+          // remainder of DM-04). One error per element, as there.
+          const bad = first === null ? [] : kinds
+            .map((k, i) => (i > 0 && k !== null && norm(k) !== norm(first)) ? i : -1)
+            .filter(i => i > 0);
+          if (bad.length && !expr.declaredMixed) {
             // The guidance goes on its own `help:` line, not folded into the
             // headline with an em dash: the Rust engines emit two lines and
             // `zyq consensus` compares the text.
-            this.error('E_ARRAY_MIX',
-              `array element ${bad + 1} has type ${kinds[bad]}, but expected ${first} ` +
-              `(same as first element)\n` +
-              `= help: all array elements must have the same type — write \`#[…]\` if the mix is deliberate`,
-              expr);
-          } else if (bad < 0 && expr.declaredMixed) {
+            for (const b of bad) {
+              this.error('E_ARRAY_MIX',
+                `array element ${b + 1} has type ${kinds[b]}, but expected ${first} ` +
+                `(same as first element)\n` +
+                `= help: all array elements must have the same type — write \`#[…]\` if the mix is deliberate`,
+                expr);
+            }
+          } else if (!bad.length && expr.declaredMixed && kinds.every(k => k !== null)) {
             // Decision 18: the escape hatch used where it is not needed.
             this.warn('W_MIX_UNNEEDED',
               `this \`#[…]\` has no mixed types: every element is ${first}\n` +
