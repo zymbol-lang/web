@@ -5063,6 +5063,18 @@ class Checker {
     return best;
   }
 
+  // `name = °name …`: the prefix marker's sentinel first, then an expression
+  // whose leftmost name is the one being assigned.
+  static isSelfAccumulator(value, name) {
+    if (!['ImplicitConcat', 'JuxtaConcat', 'CommaJoin'].includes(value?.type)) return false;
+    const items = value.items ?? [];
+    if (items.length < 2) return false;
+    if (items[0]?.type !== 'Ident' || items[0]?.hot !== true || items[0]?.name) return false;
+    let e = items[1];
+    while (e && (e.type === 'BinOp' || e.type === 'ImplicitConcat')) e = e.left ?? e.items?.[0];
+    return e?.type === 'Ident' && e.name === name;
+  }
+
   // The operator of a statement that computes a value out of names and
   // literals alone — `x > 1`, `a + b * 2` — or null. Rust's `pure_statement_op`.
   static PURE_OPS = new Set(['+', '-', '*', '/', '%', '^',
@@ -5201,6 +5213,20 @@ class Checker {
           const info = this.lookup(stmt.name, stmt.line);
           if (!info) this.hotDefine(stmt.name, stmt);
         }
+        // `s = °s i` — an accumulator that this statement brings into being.
+        // Its own `s` on the right, and the assignment, are not a use of it;
+        // only a later read is. Counted as one, `zyjs` never said what both
+        // Rust engines say when nobody reads the result: `unused variable`
+        // (ZYJS-046). Defined here, at the statement, so the warning points
+        // where Rust points: the assignment.
+        let accumulator = null;
+        if (!wasHot && stmt.name && Checker.isSelfAccumulator(stmt.value, stmt.name)
+            && !this.has(stmt.name)) {
+          this.hotDefine(stmt.name, stmt);
+          for (let i = this.stack.length - 1; i >= 0 && !accumulator; i--) {
+            accumulator = this.stack[i].vars.get(stmt.name) ?? null;
+          }
+        }
         this.checkExpr(stmt.value);
         // Check for reassignment of a constant
         if (stmt.name) {
@@ -5231,6 +5257,7 @@ class Checker {
         // guessing, because after `n = 1` then `n = #1` the type is whichever
         // ran last and this pass does not know which.
         if (!wasHot && stmt.name) this.noteLiteralType(stmt.name, stmt.value, stmt.line);
+        if (accumulator) accumulator.used = false;
         return;
       }
 
