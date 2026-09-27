@@ -4256,8 +4256,9 @@ class Checker {
       // Neither Rust analyser warns about a module alias nobody used or a
       // lambda parameter the lambda ignores — a lambda takes what the operation
       // hands it (decided 2026-09-15). This one did, and a module alias was
-      // called a "variable" as well.
-      if (!info.used && !name.startsWith('_') && !info.isConst && !info.isAlias && !info.isParam) {
+      // called a "variable" as well. Nor about a function nobody calls, which
+      // this one also named a variable (ZYJS-043).
+      if (!info.used && !name.startsWith('_') && !info.isConst && !info.isAlias && !info.isParam && !info.isFn) {
         this.warn('W_UNUSED',
           `unused variable '${name}'\n` +
           `= help: consider removing this variable or prefixing with '_' if intentionally unused`,
@@ -5649,7 +5650,10 @@ class Checker {
                 "constants declared with ':=' cannot be modified — use a different name in the destructuring pattern");
               continue;
             }
-            this.define(t.name, stmt, false);
+            // A name already in view is written, not shadowed — the way `x = …`
+            // is. `define` put a second `x` in the block's frame, which died
+            // unread and warned `unused variable` (ZYJS-042).
+            this.defineOrKeep(t.name, stmt, false);
           }
         }
         return;
