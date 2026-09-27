@@ -10721,6 +10721,161 @@ function unusedImports(ast, tokens) {
 }
 
 /**
+ * Code that cannot run (HLZ-016): `check_unreachable` in Rust
+ * (`zymbol-semantic/src/unreachable.rs`), with the same three shapes, the same
+ * folding and the same positions — read that file for the why.
+ *
+ * - after an exit: a statement following `<~`, `@!` or `@>` in its block;
+ * - every branch leaves: a statement after a `? … _ { }` whose branches all do;
+ * - constant condition: a branch whose condition folds to `#0`, the branches
+ *   after one that folds to `#1`, a `@ cond { }` whose condition folds to `#0`.
+ *
+ * `? #1 { … }` alone is the scope-block idiom and says nothing. A dead block
+ * that is empty says nothing either: the warning points at its first statement.
+ */
+function unreachableCode(ast) {
+  if (!ast) return [];
+  const out = [];
+  const seen = new Set();
+  const HELP_EXIT = 'delete it, or move it above the exit';
+  const HELP_CONST = 'remove the dead code, or make the condition depend on something that can change';
+  const warn = (stmt, code, message, help, params = {}) => out.push({
+    severity: 'warning', code, message,
+    line: stmt.zyLine ?? stmt.line ?? null, col: stmt.zyCol ?? null, params, help,
+  });
+
+  // A constant is `{b}` (Bool) or `{n}` (number); anything else is `null`.
+  const fold = (e) => {
+    if (!e) return null;
+    if (e.type === 'Literal') {
+      if (e.kind === 'bool') return { b: e.value };
+      if (e.kind === 'int' || e.kind === 'float') return { n: Number(e.value) };
+      return null;
+    }
+    if (e.type === 'UnaryOp') {
+      const v = fold(e.operand ?? e.expr ?? e.value);
+      if (!v) return null;
+      if (e.op === '!' && 'b' in v) return { b: !v.b };
+      if (e.op === '-' && 'n' in v) return { n: -v.n };
+      if (e.op === '+' && 'n' in v) return { n: v.n };
+      return null;
+    }
+    if (e.type === 'BinOp') {
+      const l = fold(e.left), r = fold(e.right);
+      if (!l || !r) return null;
+      const bb = 'b' in l && 'b' in r, nn = 'n' in l && 'n' in r;
+      switch (e.op) {
+        case '&&': return bb ? { b: l.b && r.b } : null;
+        case '||': return bb ? { b: l.b || r.b } : null;
+        case '==': return bb ? { b: l.b === r.b } : nn ? { b: l.n === r.n } : null;
+        case '<>': return bb ? { b: l.b !== r.b } : nn ? { b: l.n !== r.n } : null;
+        case '<':  return nn ? { b: l.n < r.n } : null;
+        case '<=': return nn ? { b: l.n <= r.n } : null;
+        case '>':  return nn ? { b: l.n > r.n } : null;
+        case '>=': return nn ? { b: l.n >= r.n } : null;
+        default: return null;
+      }
+    }
+    return null;
+  };
+
+  const EXITS = { Return: "'<~'", Break: "'@!'", Continue: "'@>'" };
+  // How a statement always leaves its block: an exit's spelling, '' for an
+  // if/else whose every branch leaves, null otherwise.
+  const leaves = (s) => {
+    if (!s) return null;
+    if (EXITS[s.type]) return EXITS[s.type];
+    if (s.type === 'If' && Array.isArray(s.else)) {
+      const all = blockLeaves(s.then) && (s.elseifs ?? []).every(b => blockLeaves(b.body)) && blockLeaves(s.else);
+      return all ? '' : null;
+    }
+    return null;
+  };
+  const blockLeaves = (b) => (b ?? []).some(s => leaves(s) !== null);
+  const dead = (stmts, code, message) => { if (stmts?.length) warn(stmts[0], code, message, HELP_CONST); };
+
+  const block = (stmts) => {
+    if (!Array.isArray(stmts) || seen.has(stmts)) return;
+    seen.add(stmts);
+    const i = stmts.findIndex(s => leaves(s) !== null);
+    if (i >= 0 && i + 1 < stmts.length) {
+      const exit = leaves(stmts[i]);
+      if (exit === '') {
+        warn(stmts[i + 1], 'W_UNREACHABLE_BRANCHES',
+          "unreachable code: every branch of the '?' above leaves the block", HELP_EXIT);
+      } else {
+        warn(stmts[i + 1], 'W_UNREACHABLE',
+          `unreachable code: this statement comes after ${exit}, which always leaves the block`,
+          HELP_EXIT, { exit });
+      }
+    }
+    for (const s of stmts) stmt(s);
+  };
+
+  const stmt = (s) => {
+    if (!s || typeof s !== 'object') return;
+    switch (s.type) {
+      case 'If': {
+        const conds = [s.cond, ...(s.elseifs ?? []).map(b => b.cond)];
+        const blocks = [s.then, ...(s.elseifs ?? []).map(b => b.body)];
+        if (Array.isArray(s.else)) blocks.push(s.else);
+        for (let k = 0; k < conds.length; k++) {
+          const v = fold(conds[k]);
+          if (v && v.b === false) {
+            dead(blocks[k], 'W_DEAD_BRANCH', 'this branch never runs: its condition is always #0');
+          } else if (v && v.b === true) {
+            const later = blocks.slice(k + 1).find(b => b?.length);
+            if (later) dead(later, 'W_DEAD_AFTER_TRUE',
+              'this branch never runs: an earlier condition in the chain is always #1');
+            break;
+          }
+        }
+        blocks.forEach(block);
+        break;
+      }
+      case 'Loop':
+        if (s.kind === 'while') {
+          const v = fold(s.cond);
+          if (v && v.b === false) dead(s.body, 'W_DEAD_LOOP', 'this loop never runs: its condition is always #0');
+        }
+        block(s.body);
+        break;
+      case 'TryCatch':
+        block(s.tryBody);
+        for (const c of (s.catches ?? [])) block(c.body);
+        block(s.finallyBody);
+        break;
+      case 'FuncDecl':
+      case 'TuiBlock':
+        block(s.body);
+        break;
+      case 'ModuleBlock':
+        block(s.body);
+        break;
+      default:
+        break;
+    }
+    // Blocks that live inside expressions — a lambda's body, a `??` arm — and
+    // a `>>| { }` body, reached by walking every value the statement holds.
+    for (const [k, v] of Object.entries(s)) {
+      if (['then', 'else', 'body', 'tryBody', 'finallyBody'].includes(k) && Array.isArray(v)) continue;
+      exprs(v);
+    }
+  };
+
+  const exprs = (v) => {
+    if (Array.isArray(v)) { v.forEach(exprs); return; }
+    if (!v || typeof v !== 'object') return;
+    if (v.type === 'block' && Array.isArray(v.stmts)) { block(v.stmts); return; }
+    if (Array.isArray(v.body) && v.body.every(x => x && typeof x === 'object' && x.type)) block(v.body);
+    for (const x of Object.values(v)) if (x && typeof x === 'object') exprs(x);
+  };
+
+  block(ast.body);
+  return out;
+}
+
+/**
  * @param {string} src
  * @param {{moduleArities?: Map<string, Map<string, number>>}} [opts]
  *   `moduleArities` maps an import alias to that module's `moduleAritiesFrom`
@@ -10777,8 +10932,9 @@ export function checkSource(src, opts = {}) {
     diagnostics = [];
   }
   // Outside the Checker on purpose: it drops every warning raised inside a
-  // module body (Depurando_GO.md DG-06), and Rust reports this one there too.
+  // module body (Depurando_GO.md DG-06), and Rust reports these two there too.
   diagnostics.push(...unusedImports(ast, tokens));
+  diagnostics.push(...unreachableCode(ast));
   // A name reported as UNDEFINED must not also be reported as UNUSED.
   //
   // The two come from opposite ends of the same fact: `? #1 { v = 1 }  >> v ¶`
