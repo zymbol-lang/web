@@ -2347,12 +2347,16 @@ export class Parser {
     if (this.check('IDENT') && this.peek(1).type === 'COLON') {
       const varName = this.adv().value;
       this.adv();
+      const startTok = this.peek();
       const startExpr = this.parseAdditive();
       if (this.match('RANGE')) {
         const endExpr = this.parseAdditive();
         let stepExpr = null;
         if (this.match('COLON')) stepExpr = this.parseAdditive();
+        // Where the range begins: the warning about its direction points
+        // there, as Rust's does (ZYJS-045). A literal carries no position.
         return { type: 'Loop', kind: 'range', label: null, var: varName, line,
+                 rangeAt: { line: startTok.line, col: startTok.col ?? null },
                  from: startExpr, to: endExpr, step: stepExpr, body: this.parseBlock() };
       }
       return { type: 'Loop', kind: 'foreach', label: null, var: varName, line,
@@ -2372,12 +2376,14 @@ export class Parser {
     if (this.check('IDENT') && this.peek(1).type === 'COLON') {
       const varName = this.adv().value;
       this.adv(); // consume ':'
+      const startTok = this.peek();
       const startExpr = this.parseAdditive();
       if (this.match('RANGE')) {
         const endExpr = this.parseAdditive();
         let stepExpr = null;
         if (this.match('COLON')) stepExpr = this.parseAdditive();
         return { type: 'Loop', kind: 'range', label, var: varName, line,
+                 rangeAt: { line: startTok.line, col: startTok.col ?? null },
                  from: startExpr, to: endExpr, step: stepExpr, body: this.parseBlock() };
       }
       return { type: 'Loop', kind: 'foreach', label, var: varName, line,
@@ -5430,10 +5436,16 @@ class Checker {
           this.error('E_CONST', `cannot reassign constant '${stmt.var}'`, stmt, { name: stmt.var }, Checker.HELP_CONST);
           return;
         }
-        // Marked as a loop so a POSTFIX `x°` can anchor here — see `hotDefine`.
-        this.push(false, false, true);
+        // The header — the iterable, the range's bounds, the condition — is
+        // read where the loop stands, and only the body is inside its frame, as
+        // in both Rust engines. Checked inside, `_xs = [1, 2]  @ x:_xs { … }`
+        // was refused as reading `_xs` from an inner scope (ZYJS-047).
+        //
+        // The frame is marked as a loop so a POSTFIX `x°` can anchor here —
+        // see `hotDefine`.
         if (stmt.kind === 'foreach' || stmt.iterable || stmt.iter) {
           this.checkExpr(stmt.iterable ?? stmt.iter);
+          this.push(false, false, true);
           if (stmt.var) this.define(stmt.var, stmt, false);
         } else if (stmt.kind === 'range' || stmt.from !== undefined) {
           this.checkExpr(stmt.from);
@@ -5461,8 +5473,9 @@ class Checker {
               'range direction is decided at runtime: if the end turns out to be ' +
               'lower than the start, this loop counts down instead of not running. ' +
               'Guard the empty case.',
-              stmt.line ?? null);
+              stmt.rangeAt ?? stmt.line ?? null);
           }
+          this.push(false, false, true);
           if (stmt.var) {
             this.define(stmt.var, stmt, false);
             // The iterator of a range is an Int, which a type change from it
@@ -5472,6 +5485,9 @@ class Checker {
           }
         } else if (stmt.cond) {
           this.checkExpr(stmt.cond);
+          this.push(false, false, true);
+        } else {
+          this.push(false, false, true);
         }
         this.lifetimeWarnForIterator(stmt, preexisting);
         this.loopLabels.push(stmt.label ?? null);
@@ -6047,8 +6063,12 @@ class Checker {
         // Parsed as ImplicitConcat[{Ident name:'' hot:true}, <expr starting with name>]
         if (items.length >= 2 &&
             items[0]?.type === 'Ident' && items[0]?.hot === true && !items[0]?.name) {
+          // Only when the name is not in view yet, as the interpreter does
+          // (`if (!exists) env.hotDef(…)`). A name that exists — `v = °m` on
+          // the loop's own `m` — is a read; defining it again put an unread
+          // `m` at the boundary and warned `unused variable` (ZYJS-044).
           const hotName = this._leftmostIdent(items[1]);
-          if (hotName) this.hotDefine(hotName, items[1]?.line ?? expr.line);
+          if (hotName && !this.has(hotName)) this.hotDefine(hotName, items[1]?.line ?? expr.line);
         }
         for (const item of items) this.checkExpr(item);
         return;
