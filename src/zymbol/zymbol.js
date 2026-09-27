@@ -4192,6 +4192,7 @@ class Checker {
         }
         case 'Import':
           if (s.alias && s.path) this.aliasPath.set(s.alias, s.path);
+          if (s.alias) (this.aliasLine ??= new Map()).set(s.alias, s.line ?? '?');
           break;
         case 'VarAssign':
         case 'ConstAssign':
@@ -4273,6 +4274,7 @@ class Checker {
 
   define(name, at, isConst = false, isFn = false, isAlias = false) {
     if (this.stack.length === 0 || !name) return;
+    if (!isAlias) this.refuseAliasName(name, at, isFn ? 'function' : isConst ? 'constant' : 'variable');
     // `at` is the declaring node, or a line: the record keeps the column too, so
     // an unused name is reported where Rust reports it (ZYJS-024).
     const { line, col } = Checker.posOf(at);
@@ -4735,8 +4737,23 @@ class Checker {
     }
   }
 
+  // MEM-7 reaches the import alias (GLB-070, decided 2026-09-26): the file is
+  // one strong environment, and a variable, constant or function of it that
+  // takes an alias's name is refused — once per name, at its first binding.
+  // Inside a function the name is free. `check_alias_name` in Rust.
+  refuseAliasName(name, at, kind) {
+    if (this.funcDepth !== 0 || !this.aliasPath.has(name)) return;
+    if (this.aliasRefused?.has(name)) return;
+    (this.aliasRefused ??= new Set()).add(name);
+    const importLine = this.aliasLine?.get(name) ?? '?';
+    this.error('E_NAME', `'${name}' is both a module alias and a ${kind} in this file`,
+      at, { name },
+      `a file is one strong environment and a name designates one thing in it (the import is at line ${importLine}) — rename the ${kind}; inside a function the name is free`);
+  }
+
   defineOrKeep(name, at, isConst = false) {
     if (this.stack.length === 0 || !name) return;
+    this.refuseAliasName(name, at, isConst ? 'constant' : 'variable');
     if (this.has(name) && !this.onlyVisibleAcrossStrong(name)) return;
     this.define(name, at, isConst);
   }
