@@ -114,7 +114,8 @@
  * Regression test: interpreter/tests/modules_scope/alias_shadowed_by_variable.zy.
  *
  * CLI args (><): supported — pass cliArgs array to runZymbol().
- * BashExec (<\ \>): entropy stub, ranged to match the command it stands in for.
+ * BashExec (<\ \>): stand-ins for the clock, a literal echo and seed entropy;
+ *   any other command is refused (BUG-GOL-014), as Execute is.
  * Execute (</ file />): parsed as the Rust engines parse it; running one fails,
  *   since a subscript is another process and the browser has none.
  * TUI operators require a >>| { } block to activate the canvas overlay.
@@ -8395,38 +8396,76 @@ export class Interpreter {
         throw new ZyError(`cannot run '${expr.path}': a subscript runs another file as a process, and the browser has none`, expr.line);
 
       case 'BashExec': {
-        const _cmd = (expr.cmd ?? '').replace(/['"]/g, ' ').trim();
-        const _now = new Date();
-        const _pad = n => String(n).padStart(2, '0');
-        if (_cmd.includes('%Y')) return mkStr(String(_now.getFullYear()));
-        if (_cmd.includes('%m')) return mkStr(_pad(_now.getMonth() + 1));
-        if (_cmd.includes('%d')) return mkStr(_pad(_now.getDate()));
-        if (_cmd.includes('%H')) return mkStr(_pad(_now.getHours()));
-        if (_cmd.includes('%M')) return mkStr(_pad(_now.getMinutes()));
-        if (_cmd.includes('%S')) return mkStr(_pad(_now.getSeconds()));
-        if (_cmd.includes('%s')) return mkStr(String(Math.floor(Date.now() / 1000)));
-        if (_cmd.startsWith('echo ') && !_cmd.includes('$')) return mkStr(_cmd.slice(5).trim().replace(/^['"]|['"]$/g, ''));
-
-        // Entropy stubs. A stand-in has to match the ORDER OF MAGNITUDE of the command it
-        // stands in for, not merely be random — because v0.0.9's integer is ±(2^53−1),
-        // fail-closed, and a seed is nearly always multiplied on the next line.
+        // The browser has no shell. What it has is a short list of stand-ins,
+        // each for a command whose answer the page can give honestly: the
+        // clock, a literal `echo`, and the entropy a seed is built from. Any
+        // other command is REFUSED, as `</ … />` is refused just above.
         //
-        // This used to return `Date.now() * 1000000`, epoch in nanoseconds: 1.79e18, some
-        // 199× over the ceiling, and already an imprecise JS Number before Zymbol saw it.
-        // Serpiente's `(#|_ns| + #|_pid| * 31337 + #|_rnd| * 65537) % 2147483647` therefore
-        // raised `integer overflow` before the game drew a frame, in the browser only —
-        // under the CLI `date +%N` returns nanoseconds *within the second*, nine digits.
-        // The stub was reproducing a shell command's purpose and not its range.
+        // It used to answer every other command with a random nine-digit
+        // number (BUG-GOL-014): `<\ "exit 3" \>`, `whoami`, `cat file` and
+        // eight `sqlite3 … 'SELECT …'` in the corpus and the example pool all
+        // got one, and printed or parsed it as if the command had said it.
+        // `expr.cmd` is the source text between `<\` and `\>`, unevaluated, so
+        // only a literal command can be recognised; one built from variables
+        // cannot, and is refused too.
+        const raw = (expr.cmd ?? '').trim();
+        const _cmd = raw.replace(/['"]/g, ' ').replace(/\s+/g, ' ').trim();
         const _rand = n => Math.trunc(Math.random() * n);
-        // date +%N — nanoseconds within the current second, never the epoch
-        if (_cmd.includes('%N')) return mkStr(String(_rand(1e9)));
+        const _pad = n => String(n).padStart(2, '0');
+        // Named as it was written, without the quotes of a single literal.
+        const shown = /^"[^"]*"$/.test(raw) ? raw.slice(1, -1) : raw;
+        const refuse = () => {
+          throw new ZyError(`cannot run '${shown}': a shell command runs as a process, and the browser has none`, expr.line);
+        };
+
+        // date +FORMAT — every specifier the stand-in knows, in place; an
+        // unknown one is refused rather than left as text. `date +%Y-%m-%d`
+        // used to answer with the year alone.
+        const date = /^date \+(\S+)$/.exec(_cmd);
+        if (date) {
+          const now = new Date();
+          let bad = false;
+          const out = date[1].replace(/%(\d*)(.)/g, (_, w, c) => {
+            // A width is only meaningful on %N, where it keeps the leading
+            // digits — `%6N` is microseconds (GO's `date +%s%6N`).
+            if (w && c !== 'N') { bad = true; return ''; }
+            switch (c) {
+              case 'Y': return String(now.getFullYear());
+              case 'm': return _pad(now.getMonth() + 1);
+              case 'd': return _pad(now.getDate());
+              case 'H': return _pad(now.getHours());
+              case 'M': return _pad(now.getMinutes());
+              case 'S': return _pad(now.getSeconds());
+              case 'F': return `${now.getFullYear()}-${_pad(now.getMonth() + 1)}-${_pad(now.getDate())}`;
+              case 'T': return `${_pad(now.getHours())}:${_pad(now.getMinutes())}:${_pad(now.getSeconds())}`;
+              case 's': return String(Math.floor(Date.now() / 1000));
+              // Nanoseconds within the current second, never the epoch: v0.0.9's
+              // integer is ±(2^53−1), fail-closed, and a seed is multiplied on
+              // the next line — the epoch in ns is 199× over the ceiling.
+              case 'N': {
+                const ns = String(_rand(1e9)).padStart(9, '0');
+                return w ? ns.slice(0, Math.min(9, Number(w))) : ns;
+              }
+              case '%': return '%';
+              default: bad = true; return '';
+            }
+          });
+          if (!bad) return mkStr(out);
+          refuse();
+        }
         // echo $$ — a plausible pid, under Linux's default pid_max
-        if (/\$\$/.test(_cmd)) return mkStr(String(1 + _rand(4194304)));
-        // od -An -N2 -tu2 /dev/urandom — two bytes, so a uint16
-        if (_cmd.includes('urandom')) return mkStr(String(_rand(65536)));
-        // Anything else: entropy in the same nine-digit range, which survives being
-        // multiplied by the usual LCG constants without leaving the integer.
-        return mkStr(String(_rand(1e9)));
+        if (_cmd === 'echo $$') return mkStr(String(1 + _rand(4194304)));
+        // od … /dev/urandom — two bytes, so a uint16. The applications strip
+        // od's padding with `| tr -d ' \n'`, and the stand-in's answer has none.
+        if (/^od -An -N2 -tu2 \/dev\/urandom( \| tr -d .*)?$/.test(_cmd)) return mkStr(String(_rand(65536)));
+        // echo of literal words, and nothing the shell would read as syntax:
+        // `echo x | bc` is a pipeline, not an echo. The backquote is written
+        // \x60 so the message inventory's extractor does not read it as the
+        // start of a template literal.
+        if (/^echo( |$)/.test(_cmd) && !/[|&;<>\x60$(){}\\*?]/.test(_cmd)) {
+          return mkStr(_cmd.slice(4).trim());
+        }
+        refuse();
       }
 
       case 'Array':
