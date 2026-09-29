@@ -2,7 +2,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Run one .zy file through the browser engine and print what it produced.
 //
-//   node tests/run_one.mjs FILE.zy [--input FILE]
+//   node tests/run_one.mjs FILE.zy [--input FILE] [-- ARG...]
+//
+// Everything after a bare `--` is the program's command line, what `>< args`
+// reads — spelled as `zymbol run FILE.zy -- ARG...` spells it, so one argument
+// vector can be handed to all three engines. Without it no parameterised
+// program could be graded on the browser engine at all (GAP-GOL-006): the
+// engine had `cliArgs` from the start and this runner always passed `[]`.
 //
 // This exists so a shell script outside this repository can treat the JS engine
 // as one more command-line engine, the way it already treats the Rust
@@ -25,12 +31,15 @@
 import { readFileSync } from 'fs';
 import { resolve, dirname, join, relative } from 'path';
 
-const args = process.argv.slice(2);
+const argv = process.argv.slice(2);
+const dashdash = argv.indexOf('--');
+const args = dashdash < 0 ? argv : argv.slice(0, dashdash);
+const programArgs = dashdash < 0 ? [] : argv.slice(dashdash + 1);
 const file = args.find(a => !a.startsWith('--'));
 const inputArg = args[args.indexOf('--input') + 1];
 
 if (!file) {
-  process.stderr.write('usage: node tests/run_one.mjs FILE.zy [--input FILE]\n');
+  process.stderr.write('usage: node tests/run_one.mjs FILE.zy [--input FILE] [-- ARG...]\n');
   process.exit(2);
 }
 
@@ -261,7 +270,7 @@ try {
   // now, exactly as it is under `zymbol run`.
   const limits = { maxSteps: Infinity, maxBytes: Infinity, maxInfiniteIter: Infinity };
   // eslint-disable-next-line no-unused-vars -- assigned below, read at the foot
-  const result = await runZymbol(source, inputFn, onOutput, resolver, abs, ansiTui, [], { onError, skipModuleNames: true, displayPath: displayPath(abs), ...limits });
+  const result = await runZymbol(source, inputFn, onOutput, resolver, abs, ansiTui, programArgs, { onError, skipModuleNames: true, displayPath: displayPath(abs), ...limits });
   if (result && result.failed) {
     failed = true;
     message = result.message ?? 'engine reported failure';

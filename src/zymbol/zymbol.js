@@ -3743,6 +3743,11 @@ class Env {
       if (v !== undefined) return v;
       const h = this._findHotAnchored(name);
       if (h !== undefined) return h;
+      // The rule is over variables (GUIDE § 4). A function declaration is not
+      // one: both Rust engines call a file-level `_f()` from any block, and so
+      // does this one (BUG-GOL-002).
+      const f = this.parent._getFuncOnly(name);
+      if (f !== undefined && f.type === 'func') return f;
       throw new ZyRuntimeError(`cannot access underscore variable '${name}' from inner scope`, '##Scope');
     }
     return this.parent.get(name);
@@ -4931,8 +4936,11 @@ class Checker {
       const frame = this.stack[i];
       if (frame.vars.has(name)) {
         // Found — check underscore scope violation: _name cannot be read from inner scope
-        // that crosses at least one non-funcBoundary scope to reach the definition
-        if (name.startsWith('_') && i < this.stack.length - 1 && !frame.moduleScope) {
+        // that crosses at least one non-funcBoundary scope to reach the definition.
+        // The rule is over variables (GUIDE § 4): a function declaration is not one,
+        // and both Rust engines call a file-level `_f()` from any block (BUG-GOL-002).
+        if (name.startsWith('_') && i < this.stack.length - 1 && !frame.moduleScope
+            && !frame.vars.get(name)?.isFn) {
           const crossedNonBoundary = this.stack.slice(i + 1).some(f => !f.funcBoundary);
           if (crossedNonBoundary) {
             const rec = frame.vars.get(name);
