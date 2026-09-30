@@ -617,8 +617,13 @@ export class Lexer {
           if (c2 === '_' && !/[A-Za-z0-9_]/.test(this.ch(1))) {
             this.consume(); tok('UNIT', '##_'); continue;
           }
+          // The kind is a name like any other, in any script — `:! ##Κανόνας`
+          // and `##Κανόνας("…")` work in both Rust engines. It was ASCII here.
           let name = '##';
-          while (/[A-Za-z0-9_]/.test(this.ch())) { name += this.ch(); this.consume(); }
+          while (isIdentContinue(this.ch()) && this.ch() !== '°') { name += this.ch(); this.consume(); }
+          // `##Kind(` written together builds an error value (GAP-GOL-003).
+          // Decided here, where a blank is still visible.
+          if (name.length > 2 && this.ch() === '(') { tok('ERRCON', name); continue; }
           tok('IDENT', name); continue;
         }
         if (c1 === '?') {
@@ -2220,11 +2225,42 @@ export class Parser {
     if (!this.check('OR')) return first;
     const alts = [first];
     while (this.match('OR')) alts.push(this.parseMatchPatternPrimary());
+    // A name bound in one alternative would not exist when another matched.
+    const bound = alts.find(a => a.type === 'errkind' && a.bind);
+    if (bound) {
+      throw new ZyStaticError("a pattern that names an error's message stands alone in its arm", bound.at,
+        'give it an arm of its own, or match the kind without naming the message: ##Kind(_)');
+    }
     return { type: 'or', alts };
   }
 
   parseMatchPatternPrimary() {
     let pattern;
+    // `##Kind`, `##Kind(_)`, `##Kind(name)` — an error of that kind, and the
+    // third form puts its message in `name` (GAP-GOL-016). ERRCON is the kind
+    // with its `(` touching; a bare IDENT `##Kind` matches the kind alone.
+    if (this.check('ERRCON')) {
+      const t = this.adv(); this.adv();             // ##Kind and (
+      const kind = t.value.slice(2);
+      let bind = null;
+      if (this.check('IDENT')) bind = this.adv().value;
+      else if (this.check('ELSE')) this.adv();      // `_`
+      else {
+        throw new ZyStaticError('an error pattern names its message, or ignores it with _', this.peek(),
+          `##${kind}(message) binds it for the arm; ##${kind}(_) or ##${kind} matches the kind alone`);
+      }
+      this.eat('RPAREN', "expected ')' to close the error pattern", `an error pattern is written ##${kind}(message)`);
+      return { type: 'errkind', kind: t.value, bind, at: t, line: t.line };
+    }
+    if (this.check('IDENT') && this.peek().value.startsWith('##')) {
+      const t = this.adv();
+      // `## A(m)`: the lexer stopped at the blank.
+      if (t.value.length === 2) {
+        const nx = this.peek();
+        throw new ZyStaticError(`an error kind is written together: ##${nx?.type === 'IDENT' ? nx.value : ''}`, t);
+      }
+      return { type: 'errkind', kind: t.value, bind: null, at: t, line: t.line };
+    }
     if (this.check('ELSE')) {
       this.adv();
       pattern = { type: 'wildcard' };
@@ -2242,12 +2278,19 @@ export class Parser {
         // token this engine stopped on instead of the bracket never closed.
         if (this.check('FAT_ARROW'))
           throw new ZyStaticError("expected ']' to close list pattern", this.peek());
+        // An element is a value compared with an element of the array; an
+        // error pattern takes a value apart, and belongs to an arm.
+        if (this.check('ERRCON') || (this.check('IDENT') && this.peek().value.startsWith('##'))) {
+          throw new ZyStaticError('an error pattern is not an element of a list pattern', this.peek(),
+            'match the error in an arm of its own: ##Kind(m) => …');
+        }
         if (this.check('TIMES')) {
-          // `??` compares; it does not bind. A pattern element names a *value*
-          // to compare against (`?? codigo { umbral => … }` tests `codigo`
-          // against the value of `umbral`), and no pattern ever creates a name —
-          // `?? [1,2,3] { [a,b,c] => a }` is `undefined variable 'a'` in every
-          // engine, this one included.
+          // `??` compares; a list element does not bind. It names a *value* to
+          // compare against (`?? codigo { umbral => … }` tests `codigo` against
+          // the value of `umbral`) — `?? [1,2,3] { [a,b,c] => a }` is
+          // `undefined variable 'a'` in every engine, this one included. The
+          // one pattern that creates a name is `##Kind(m)`, standing alone in
+          // its arm (GAP-GOL-016).
           //
           // So `*x` has nothing to bind the rest to. All it could contribute is
           // "and some more elements", which is a length test written in the
@@ -3522,6 +3565,34 @@ export class Parser {
     if (t.type === 'UNIT')  { this.adv(); return { type: 'Literal', kind: 'unit' }; }
     // With its column, so a diagnostic about the name points where Rust's does
     // — `mira.zy:3:16`, not `mira.zy:3:0` (ZYJS-024, step P4.1).
+    // `##Kind("message")` — an error value (GAP-GOL-003). The lexer emitted
+    // ERRCON only when the `(` touches the name.
+    if (t.type === 'ERRCON') {
+      this.adv(); this.adv();                       // ##Kind and (
+      const at = this.peek();                       // where the message starts
+      const value = this.parseExprJuxt();
+      const kind = t.value.slice(2);                // the name, as Rust holds it
+      if (!this.check('RPAREN')) {
+        throw new ZyStaticError("expected ')' to close the error's message", this.peek(),
+          `an error value is written ##${kind}("message")`);
+      }
+      this.adv();
+      return { type: 'ErrorConstruct', kind: t.value, value, line: t.line, col: t.col ?? null,
+               valueLine: at.line, valueCol: at.col ?? null };
+    }
+    // A kind anywhere else in an expression is the constructor missing its
+    // message, or written apart — the Rust parser's wording.
+    if (t.type === 'IDENT' && t.value.startsWith('##')) {
+      // `## Parse(…)`: the lexer stopped at the blank, and the name follows.
+      const nx = this.peek(1);
+      const kind = t.value.length > 2 ? t.value.slice(2)
+                 : (nx?.type === 'IDENT' && nx.line === t.line ? nx.value : null);
+      if (kind) {
+        throw new ZyStaticError(
+          `an error kind in an expression builds an error value, and needs its message: ##${kind}("…")`, t,
+          `write it together, with the message in parentheses: ##${kind}("what went wrong") — \`:! ##${kind}\` is where a kind stands alone`);
+      }
+    }
     if (t.type === 'IDENT')        { this.adv(); return { type: 'Ident',       name: t.value, hot: t.hot ?? false, line: t.line, col: t.col ?? null }; }
     if (t.type === 'ELSE')         { this.adv(); return { type: 'Ident',       name: '_'      }; }
     if (t.type === 'OUTPUT_QUERY') { this.adv(); return { type: 'TerminalSize' }; }
@@ -5624,6 +5695,10 @@ class Checker {
           // `uno = 1  ?? [1] { [uno] => … }` reported `unused variable 'uno'`
           // while both Rust engines said nothing.
           this.checkMatchPattern(arm.pattern);
+          // `##Kind(m) =>` is a birth like `m = …`: a visible `m` is kept and
+          // assigned, a new one lives in the arm (MEM-7, no shadowing).
+          const bind = arm.pattern?.type === 'errkind' ? arm.pattern.bind : null;
+          if (bind) { this.push(); this.defineOrKeep(bind, arm.pattern.at ?? arm.pattern, false); }
           // The arm's body is `{type:'block', stmts}` or `{type:'expr', value}`,
           // never the array this looked for, so a block arm was never analysed:
           // `>> nada` inside one failed only at run time, or not at all when the
@@ -5634,6 +5709,7 @@ class Checker {
           else if (Array.isArray(b)) { this.push(); this.checkBlock(b); this.pop(); }
           else if (b) this.checkExpr(b);
           if (b?.effect) { this.push(); this.checkBlock(b.effect); this.pop(); }
+          if (bind) this.pop();
         }
         return;
       }
@@ -6167,6 +6243,20 @@ class Checker {
               }
             }
           }
+        }
+        return;
+      }
+
+      // `##Kind("message")`: the message is text — refused here when its type
+      // is known and is not a String, as the Rust analyser refuses it.
+      case 'ErrorConstruct': {
+        this.checkExpr(expr.value);
+        const t = this.inferType(expr.value);
+        if (t && t !== 'String') {
+          const kind = expr.kind.slice(2);
+          this.error('E_TYPE', `an error's message is a String, got ${t}`,
+            { line: expr.valueLine ?? expr.line, col: expr.valueCol ?? null }, { type: t },
+            `build the text first: ##${kind}("…"), or ##${kind}("" x) to turn a value into it`);
         }
         return;
       }
@@ -8062,9 +8152,10 @@ export class Interpreter {
         if (stmt.expr.type === 'Match') {
           const arm = await this.selectMatchArm(stmt.expr, env);
           if (!arm) return;
-          if (arm.body.type === 'block') return await this.execBlock(arm.body.stmts, new Env(env));
-          await this.eval(arm.body.value, env);
-          if (arm.body.effect) return await this.execBlock(arm.body.effect, new Env(env));
+          const aenv = arm.runEnv;
+          if (arm.body.type === 'block') return await this.execBlock(arm.body.stmts, new Env(aenv));
+          await this.eval(arm.body.value, aenv);
+          if (arm.body.effect) return await this.execBlock(arm.body.effect, new Env(aenv));
           return;
         }
         await this.eval(stmt.expr, env);
@@ -8394,6 +8485,16 @@ export class Interpreter {
       // checked, and fails here, where it is reached.
       case 'Execute':
         throw new ZyError(`cannot run '${expr.path}': a subscript runs another file as a process, and the browser has none`, expr.line);
+
+      case 'ErrorConstruct': {
+        // A soft error value, never a raise: `$!` is #1, `$!!` propagates it,
+        // no `:!` sees it — the same shape std/io's errors have here.
+        const m = await this.eval(expr.value, env);
+        if (m.type !== 'str') {
+          throw new ZyRuntimeError(`an error's message is a String, got ${typeLabel(m)}`, '##Type', expr.line);
+        }
+        return { type: 'error', errType: expr.kind, v: m.v };
+      }
 
       case 'BashExec': {
         // The browser has no shell. What it has is a short list of stand-ins,
@@ -8899,8 +9000,9 @@ export class Interpreter {
         // No arm matched: that aborts, as in both Rust engines and as LLM.md
         // says. A `##_` nobody computed used to flow on (GLB-016).
         if (!arm) throw new ZyError('no pattern matched in match expression', expr.line);
+        const aenv = arm.runEnv;
         if (arm.body.type === 'block') {
-          const sig = await this.execBlock(arm.body.stmts, new Env(env));
+          const sig = await this.execBlock(arm.body.stmts, new Env(aenv));
           if (sig === undefined) return mkUnit();
           // A control-flow signal (<~, @!, @>) inside a match arm's block must
           // unwind past this expression context to its real target (the
@@ -8909,9 +9011,9 @@ export class Interpreter {
           // unwinds through eval() to callFunc's boundary.
           throw sig;
         }
-        const value = await this.eval(arm.body.value, env);
+        const value = await this.eval(arm.body.value, aenv);
         if (arm.body.effect) {
-          const sig = await this.execBlock(arm.body.effect, new Env(env));
+          const sig = await this.execBlock(arm.body.effect, new Env(aenv));
           if (sig !== undefined) throw sig;   // as the block form above does
         }
         return value;
@@ -9835,14 +9937,28 @@ export class Interpreter {
   async selectMatchArm(matchExpr, env) {
     const val = await this.eval(matchExpr.expr, env);
     for (const arm of matchExpr.arms) {
-      if (await this.matchPattern(arm.pattern, val, env)) return arm;
+      // A fresh object per match, never a field written on the tree.
+      if (await this.matchPattern(arm.pattern, val, env)) return { ...arm, runEnv: this.armEnv(arm, val, env) };
     }
     return null;
+  }
+
+  // The environment an arm runs in. `##Kind(m) =>` is a birth like `m = …`:
+  // a visible `m` is assigned (no shadowing, MEM-7), and a new one lives in the
+  // arm's own environment. Every other arm runs where the match is.
+  armEnv(arm, subject, env) {
+    const p = arm.pattern;
+    if (p?.type !== 'errkind' || !p.bind || subject?.type !== 'error') return env;
+    const own = new Env(env);
+    const msg = mkStr(subject.v ?? '');
+    if (!own.set(p.bind, msg)) own.def(p.bind, msg);
+    return own;
   }
 
   async matchPattern(pattern, val, env) {
     switch (pattern.type) {
       case 'wildcard': return true;
+      case 'errkind':  return val?.type === 'error' && val.errType === pattern.kind;
       case 'guard':    return this.truthy(await this.eval(pattern.cond, env));
       case 'or': {
         // Alternatives are tested left to right; first match wins

@@ -172,9 +172,11 @@ export function highlightLine(line, inBlockComment) {
           const tok = s.slice(i, i+3);
           out += op('t-op', tok); i += 3; continue;
         }
-        if (c2 !== undefined && /[A-Za-z_]/.test(c2)) {
+        // The kind is a name in any script, as the lexers take it: `##Κανόνας`
+        // after `:!` and in the constructor `##Κανόνας("…")` (GAP-GOL-003).
+        if (c2 !== undefined && /[\p{L}_]/u.test(c2)) {
           let j = i+2;
-          while (j < len && /[A-Za-z0-9_]/.test(s[j])) j++;
+          while (j < len && /[\p{L}\p{M}\p{So}\p{Co}0-9_]/u.test(s[j])) j++;
           out += op('t-kw', s.slice(i,j), '##type');
           i = j; continue;
         }
