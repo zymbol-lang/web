@@ -4896,6 +4896,47 @@ class Checker {
     this.stack[i].vars.set(name, { line, col, isConst: false, used: false, isHot: true });
   }
 
+  /**
+   * `@ m:…` over a visible `m` writes that `m` — a block has no namespace of
+   * its own (MEM-7) — so the loop is an assignment to it and not a second `m`
+   * in the loop's frame. What `noteLiteralType` does for `m = …`: the change of
+   * type warns with the same words, and the record says what `m` holds now.
+   * Not marked used: being an iterator is not a read (ERROR-GOL-017).
+   */
+  assignIterator(name, type, at) {
+    let info = null;
+    for (let i = this.stack.length - 1; i >= 0 && !info; i--) {
+      info = this.stack[i].vars.get(name) ?? null;
+      if (!info && this.stack[i].funcBoundary && !name.startsWith('_')) break;
+    }
+    if (!info) { this.define(name, at, false); return; }
+    const was = info.infType === 'Unit' ? info.realType : info.infType;
+    if (was !== undefined && type !== 'Unit' && !this.typesCompatible(was, type)) {
+      this.warn('W_TYPE_CHANGE',
+        `type mismatch: '${name}' was ${was} but assigned ${type}`,
+        at, { name, was, now: type });
+    }
+    info.infType = type;
+    if (type !== 'Unit') info.realType = type;
+    info.litType = null;
+    info.lambdaArity = undefined;
+    info.elemKind = null;
+    info.shape = null;
+  }
+
+  /**
+   * What a for-each hands its iterator, as `type_check.rs` infers it: an
+   * array's element type, a Char from a String, and cannot-tell otherwise.
+   */
+  iteratorElemType(iterable) {
+    if (!iterable) return null;
+    if (this.inferType(iterable) === 'String') return 'Char';
+    const k = iterable.type === 'Array' ? this.arrayElemKind(iterable)
+            : iterable.type === 'Ident' ? (this.peekVar(iterable.name)?.elemKind ?? null)
+            : null;
+    return k && !k.startsWith('[') ? k : null;
+  }
+
   /** Is this name in scope? Unlike lookup(), it does not mark it used. */
   has(name) {
     if (!name) return false;
@@ -5552,8 +5593,14 @@ class Checker {
         // see `hotDefine`.
         if (stmt.kind === 'foreach' || stmt.iterable || stmt.iter) {
           this.checkExpr(stmt.iterable ?? stmt.iter);
+          // Asked before push(), like `preexisting`: the type of what the
+          // loop hands its iterator.
+          const elemType = stmt.var && preexisting ? this.iteratorElemType(stmt.iterable ?? stmt.iter) : null;
           this.push(false, false, true);
-          if (stmt.var) this.define(stmt.var, stmt, false);
+          if (stmt.var) {
+            if (preexisting) this.assignIterator(stmt.var, elemType, stmt);
+            else this.define(stmt.var, stmt, false);
+          }
         } else if (stmt.kind === 'range' || stmt.from !== undefined) {
           this.checkExpr(stmt.from);
           this.checkExpr(stmt.to);
@@ -5583,7 +5630,9 @@ class Checker {
               stmt.rangeAt ?? stmt.line ?? null);
           }
           this.push(false, false, true);
-          if (stmt.var) {
+          if (stmt.var && preexisting) {
+            this.assignIterator(stmt.var, 'Int', stmt);
+          } else if (stmt.var) {
             this.define(stmt.var, stmt, false);
             // The iterator of a range is an Int, which a type change from it
             // needs to know (ZYJS-034, step P4.4).
