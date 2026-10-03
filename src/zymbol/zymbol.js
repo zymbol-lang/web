@@ -9872,7 +9872,7 @@ export class Interpreter {
             const less = await this.callFunc(cmpFn, [items[j-1], items[j]]);
             // A comparator answers a Bool; truthiness stood in for one here and
             // `a - b` sorted (GLB-024, decided a ##Type).
-            if (less.type !== 'bool') throw new ZyError(`sort comparator must return a Bool, got ${typeIdent(less)}`);
+            if (less.type !== 'bool') throw new ZyRuntimeError(`sort comparator must return a Bool, got ${typeIdent(less)}`, '##Type', expr.line);
             if (!less.v) { const tmp = items[j-1]; items[j-1] = items[j]; items[j] = tmp; }
             else break;
           }
