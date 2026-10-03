@@ -9867,14 +9867,23 @@ export class Interpreter {
         if (col.type !== 'arr') notSupported('$^');
         const cmpFn = await this.evalCallable(expr.arg, env);
         const items = [...col.v];
-        for (let i = 1; i < items.length; i++) {
-          for (let j = i; j > 0; j--) {
-            const less = await this.callFunc(cmpFn, [items[j-1], items[j]]);
-            // A comparator answers a Bool; truthiness stood in for one here and
-            // `a - b` sorted (GLB-024, decided a ##Type).
-            if (less.type !== 'bool') throw new ZyRuntimeError(`sort comparator must return a Bool, got ${typeIdent(less)}`, '##Type', expr.line);
-            if (!less.v) { const tmp = items[j-1]; items[j-1] = items[j]; items[j] = tmp; }
-            else break;
+        // A comparator answers a Bool; truthiness stood in for one here and
+        // `a - b` sorted (GLB-024, decided a ##Type).
+        const says = async (x, y) => {
+          const r = await this.callFunc(cmpFn, [x, y]);
+          if (r.type !== 'bool') throw new ZyRuntimeError(`sort comparator must return a Bool, got ${typeIdent(r)}`, '##Type', expr.line);
+          return r.v;
+        };
+        // The Rust engines' bubble sort, call for call, and stable (GLB-073,
+        // decided 2026-10-03): swap only when the first does NOT go before the
+        // second AND the second goes before the first. This was an insertion
+        // sort that swapped on the first #0, so a strict comparator reversed
+        // its ties.
+        const n = items.length;
+        for (let i = 0; i < n; i++) {
+          for (let j = 0; j < n - i - 1; j++) {
+            if (await says(items[j], items[j+1])) continue;
+            if (await says(items[j+1], items[j])) { const tmp = items[j]; items[j] = items[j+1]; items[j+1] = tmp; }
           }
         }
         return mkArr(items);
