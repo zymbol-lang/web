@@ -9806,6 +9806,8 @@ export class Interpreter {
           col.v.forEach((el,i) => { if (this.equals(el,v)) result.push(mkInt(i+1)); }); // 1-based
         } else if (col.type === 'str') {
           needCharStr(v, `$?? on string requires char or string value, got ${typeLabel(v)}`);
+          // An empty pattern is refused (GLB-078, decided 2026-10-03).
+          if (target === '') throw new ZyRuntimeError('$?? pattern must not be empty', '##Index', expr.line);
           const chars = [...col.v];
           for (let i=0; i<=chars.length-target.length; i++) {
             if (chars.slice(i,i+target.length).join('')===target) result.push(mkInt(i+1)); // 1-based
@@ -9947,6 +9949,10 @@ export class Interpreter {
               `replacement count must be non-negative, got ${maxN}`, '##Index');
           if (maxN === 0) maxN = Infinity;   // 0 means "all", as both Rust engines read it
         }
+        // An empty pattern is refused (GLB-078/079, decided 2026-10-03). Here it
+        // never ended: `indexOf('', i)` is always `i`, and the loop found the
+        // empty string again in front of the same character.
+        if (from === '') throw new ZyRuntimeError('$~~ pattern must not be empty', '##Index', expr.line);
         let result = col.v, idx2 = 0, n = 0;
         while (n < maxN) {
           const p = result.indexOf(from, idx2);
@@ -9963,6 +9969,10 @@ export class Interpreter {
         const delimVal = await arg();
         needCharStr(delimVal, `$/ delimiter must be a char or string, got ${typeLabel(delimVal)}`);
         const delim = this.display(delimVal);
+        // An empty delimiter is refused (GLB-079, decided 2026-10-03): `split('')`
+        // gave the characters here and Rust gave them with an empty string at
+        // each end.
+        if (delim === '') throw new ZyRuntimeError('$/ delimiter must not be empty', '##Index', expr.line);
         const parts = col.v.split(delim);
         return mkArr(parts.map(p => mkStr(p)));
       }
