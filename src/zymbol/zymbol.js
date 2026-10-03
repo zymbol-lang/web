@@ -9892,7 +9892,10 @@ export class Interpreter {
         const items = colItems('filter');
         const kept = [];
         for (const el of items) {
-          if (this.truthy(await this.callFunc(fn,[el]))) kept.push(el);
+          const keep = await this.callFunc(fn,[el]);
+          // A predicate answers a Bool; truthiness stood in for one here (GLB-080).
+          if (keep.type !== 'bool') throw new ZyRuntimeError(`filter lambda must return boolean, got ${typeLabel(keep)}`, '##Type', expr.line);
+          if (keep.v) kept.push(el);
         }
         return fromStr(kept);
       }
