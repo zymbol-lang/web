@@ -797,22 +797,18 @@ export class Lexer {
         tok('EXECUTE', raw.trim()); continue;
       }
 
-      // BashExec <\ cmd \> — browser-only: captures command text, simulates common date/echo
+      // BashExec <\ expr … \> — the content is ordinary Zymbol, tokenized
+      // normally (GLB-004, GLB-075): a bare word is a variable, not shell text.
+      // `\>` closes it only while one is open, as in the Rust lexer.
       if (this.ch() === '<' && this.ch(1) === '\\') {
         this.consume(); this.consume(); // consume <\
-        let _cmd = '';
-        let closed = false;
-        while (this.pos < this.src.length) {
-          if (this.ch() === '\\' && this.ch(1) === '>') { this.consume(); this.consume(); closed = true; break; }
-          _cmd += this.consume();
-        }
-        // `<\ "echo"` with no `\>` ran to the end of the file and was accepted
-        // (ZYJS-021); both Rust lexers refuse it.
-        if (!closed) {
-          throw new ZyStaticError('unterminated bash execute expression', this.at(),
-            'bash execute syntax: <\\ expr1 expr2 ... \\>');
-        }
-        tok('BASHEXEC', _cmd.trim()); continue;
+        this.bashDepth = (this.bashDepth ?? 0) + 1;
+        tok('BASHOPEN'); continue;
+      }
+      if (this.bashDepth > 0 && this.ch() === '\\' && this.ch(1) === '>') {
+        this.consume(); this.consume();
+        this.bashDepth--;
+        tok('BASHCLOSE'); continue;
       }
 
       // TUI operators (3-4 chars) — must come before twoMap so >> and << aren't consumed first
@@ -3596,7 +3592,17 @@ export class Parser {
     if (t.type === 'IDENT')        { this.adv(); return { type: 'Ident',       name: t.value, hot: t.hot ?? false, line: t.line, col: t.col ?? null }; }
     if (t.type === 'ELSE')         { this.adv(); return { type: 'Ident',       name: '_'      }; }
     if (t.type === 'OUTPUT_QUERY') { this.adv(); return { type: 'TerminalSize' }; }
-    if (t.type === 'BASHEXEC')    { const tok = this.adv(); return { type: 'BashExec', cmd: tok.value }; }
+    if (t.type === 'BASHOPEN') {
+      const open = this.adv();
+      const args = [];
+      while (this.peek().type !== 'BASHCLOSE' && this.peek().type !== 'EOF') args.push(this.parseExpr());
+      if (this.peek().type !== 'BASHCLOSE') {
+        throw new ZyStaticError('unterminated bash execute expression', open,
+          'bash execute syntax: <\\ expr1 expr2 ... \\>');
+      }
+      this.adv();
+      return { type: 'BashExec', args, line: open.line };
+    }
     if (t.type === 'EXECUTE') {
       const tok = this.adv();
       if (tok.value === '') {
@@ -6310,6 +6316,11 @@ class Checker {
         return;
       }
 
+      // Every argument of `<\ … \>` is an expression, so it is checked as one
+      case 'BashExec':
+        for (const a of expr.args) this.checkExpr(a);
+        return;
+
       // Terminals — nothing to check
       case 'BoolLiteral':
       case 'IntLiteral':
@@ -6317,7 +6328,6 @@ class Checker {
       case 'StringLiteral':
       case 'CharLiteral':
       case 'Numeral':
-      case 'BashExec':
       case 'CliArgs':
       case 'TerminalSize':
       case 'KeyInput':
@@ -8555,10 +8565,16 @@ export class Interpreter {
         // number (BUG-GOL-014): `<\ "exit 3" \>`, `whoami`, `cat file` and
         // eight `sqlite3 … 'SELECT …'` in the corpus and the example pool all
         // got one, and printed or parsed it as if the command had said it.
-        // `expr.cmd` is the source text between `<\` and `\>`, unevaluated, so
-        // only a literal command can be recognised; one built from variables
-        // cannot, and is refused too.
-        const raw = (expr.cmd ?? '').trim();
+        // The arguments are evaluated and concatenated, with no separator
+        // (GLB-004), and the stand-ins are matched against the result — so a
+        // command built from variables is recognised when it comes out as one
+        // of them, and refused otherwise.
+        const bashStr = v => v.type === 'bool' ? (v.v ? '#1' : '#0')
+          : (v.type === 'array' || v.type === 'tuple') ? v.v.map(bashStr).join(' ')
+          : String(v.v);
+        let raw = '';
+        for (const a of expr.args) raw += bashStr(await this.eval(a, env));
+        raw = raw.trim();
         const _cmd = raw.replace(/['"]/g, ' ').replace(/\s+/g, ' ').trim();
         const _rand = n => Math.trunc(Math.random() * n);
         const _pad = n => String(n).padStart(2, '0');
