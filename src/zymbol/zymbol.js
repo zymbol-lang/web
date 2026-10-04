@@ -2469,6 +2469,19 @@ export class Parser {
     return { type: 'FuncDecl', name, params, body: this.parseBlock(), line };
   }
 
+  // Whether the bracket at the cursor has a `..` at its own depth.
+  bracketHasRange() {
+    let depth = 0;
+    for (let i = this.pos; i < this.toks.length; i++) {
+      const t = this.toks[i].type;
+      if (t === 'LBRACKET' || t === 'LPAREN') depth++;
+      else if (t === 'RBRACKET' || t === 'RPAREN') { depth--; if (depth === 0) return false; }
+      else if (t === 'RANGE' && depth === 1) return true;
+      else if (t === 'EOF') return false;
+    }
+    return false;
+  }
+
   parseIdentStmt() {
     if (this.isFuncDecl()) return this.parseFuncDecl();
 
@@ -2491,6 +2504,21 @@ export class Parser {
 
     if (this.match('ASSIGN')) {
       return { type: 'VarAssign', name, hot, value: this.parseRHS(), line };
+    }
+
+    // A bracket with a range in it — `a[1..2]$+ 5`, `m[1..2>1]$~ 9` — selects
+    // several places, and a write reaches one (GLB-077, decided 2026-10-03).
+    // The branch below reads the index as one expression and could not parse a
+    // range; the expression path reads it as the navigator does, and the edit
+    // is then refused with the Rust texts.
+    if (this.check('LBRACKET') && this.peek().line === this.prevEndLine() && this.bracketHasRange()) {
+      const left = { type: 'Ident', name, hot, line: tok0.line, col: tok0.col ?? null };
+      const stmtExpr = this.parsePostfixRest(left);
+      const RANGE_STEP = 'a write reaches one place, so its path has no ranges';
+      if (stmtExpr?.type === 'FuncUpdate' || stmtExpr?.type === 'DeepUpdate' || this.check('DUPDATE')) {
+        throw new ZyStaticError('collection update ($~) requires a place to write', line, RANGE_STEP);
+      }
+      return this.editStmtOrExpr(this.continueStmtExpr(stmtExpr, start), line);
     }
 
     // subscript assign: name[idx] = val
@@ -2710,10 +2738,9 @@ export class Parser {
     // exit 0, no diagnostic. So a receiver with a path becomes a deep write at
     // that path, which is machinery this engine already has.
     //
-    // A bracket directly after a bracket is refused: `d["x"]["y"]` is the deep
-    // navigator spelled twice and `d["x">"y"]` is the form. The dot composes
-    // freely — a different syntax, not a second spelling of the same one.
-    const CHAINED = 'a bracket after a bracket is what the navigator is for: write `d["x">"y"]$~ value`';
+    // A bracket directly after a bracket never reaches here: it is refused when
+    // it is READ (GLB-072), so the `CHAINED` help this had was deleted with its
+    // Rust twin (GLB-077). The dot composes freely.
     const RANGE_STEP = 'a write reaches one place, so its path has no ranges';
     // Two causes, two headlines — the Rust engines distinguish them and this
     // engine gave the bracket-after-bracket message to both, so `f()[1]$~ 5`
@@ -2733,7 +2760,6 @@ export class Parser {
         if (!n) return { err: NO_NAME };
         if (n.type === 'Ident') { rootHot = n.hot ?? false; return n.name; }
         if (n.type === 'NavIndex') {
-          if (n.obj?.type === 'NavIndex') return { err: CHAINED };
           const root = go(n.obj);
           if (typeof root !== 'string') return root;
           if (n.spec.kind === 'simple') steps.push({ kind: 'index', expr: n.spec.index });
@@ -2742,6 +2768,10 @@ export class Parser {
               if (a.kind === 'range') return { err: RANGE_STEP };
               steps.push(a);
             }
+          } else if (n.spec.kind === 'flat' && n.spec.paths.length === 1
+                     && n.spec.paths[0].some(a => a.kind === 'range')) {
+            // `a[1..2]`: one bracket whose path has a range (GLB-077).
+            return { err: RANGE_STEP };
           } else return { err: NO_NAME };
           return root;
         }
@@ -2759,15 +2789,6 @@ export class Parser {
     };
 
     if (isEdit) {
-      // `$~` keeps its final access beside the receiver rather than inside it,
-      // so the bracket-after-bracket rule has to be asked here too: in
-      // `d["x"]["y"]$~ 5` the node is FuncUpdate{obj: NavIndex, index}, and
-      // `flatten` only ever sees the NavIndex. A key means the access was a
-      // dot, which composes.
-      if ((expr.type === 'FuncUpdate' && expr.key === undefined && expr.obj?.type === 'NavIndex')
-          || (expr.type === 'DeepUpdate' && expr.obj?.type === 'NavIndex')) {
-        throw new ZyError(`this edit has nothing to write into\n= help: ${CHAINED}`, line);
-      }
       const f = flatten(expr.obj);
       // Decision 20: an edit with nowhere to write is refused, rather than run
       // for a result nothing holds.
