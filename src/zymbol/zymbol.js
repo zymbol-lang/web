@@ -3264,11 +3264,40 @@ export class Parser {
 
   // ─── Collection ops ───────────────────────────────────────────────────────
 
+  // A `(` or `[` on the same line right after an operator that takes no
+  // operand — `$#`, `$^+`, `$^-`, and `$++` with no item — is refused at parse
+  // time, as in the Rust parser and with its text (GLB-076, decided
+  // 2026-10-03). This engine used to call or index the result.
+  refuseAfterOperandless(op) {
+    const opTok = this.toks[this.pos - 1], next = this.peek();
+    if (next.line !== opTok.line) return;
+    const table = {
+      DLEN: {
+        LBRACKET: ["unexpected '[' after '$#'", 'to index the result, put the operation in parentheses: (c$#)[i]'],
+        LPAREN:   ["unexpected '(' after '$#'", "'$#' takes nothing; to use its result, put the operation in parentheses: (c$#)"],
+      },
+      DSORTASC: {
+        LBRACKET: ["unexpected '[' after '$^+'", 'to index the result, put the operation in parentheses: (c$^+)[i]'],
+        LPAREN:   ["unexpected '(' after '$^+'", "'$^+' sorts in natural order and takes no comparator; to sort with one, use c$^ (a, b -> a < b)"],
+      },
+      DSORTDESC: {
+        LBRACKET: ["unexpected '[' after '$^-'", 'to index the result, put the operation in parentheses: (c$^-)[i]'],
+        LPAREN:   ["unexpected '(' after '$^-'", "'$^-' sorts in natural order and takes no comparator; to sort with one, use c$^ (a, b -> a > b)"],
+      },
+      DCONCATBUILD: {
+        LBRACKET: ["unexpected '[' after '$++'", "'$++' appends the items written after it; to insert at a position, use c$+[i] value"],
+      },
+    };
+    const hit = table[op]?.[next.type];
+    if (hit) throw new ZyStaticError(hit[0], next, hit[1]);
+  }
+
   parseCollectionOp(left) {
     const op = this.adv().type;
 
     switch (op) {
       case 'DLEN':
+        this.refuseAfterOperandless(op);
         return { type: 'CollectionOp', op: '$#', obj: left };
 
       case 'DAPPEND_AT': {
@@ -3332,8 +3361,8 @@ export class Parser {
           // See BUG-ZYB-002 above: the value is a full expression.
           return { type: 'CollectionOp', op: '$~', obj: left, index: idx, arg: this.parseExprJuxt() }; }
 
-      case 'DSORTASC':   return { type: 'CollectionOp', op: '$^+', obj: left };
-      case 'DSORTDESC':  return { type: 'CollectionOp', op: '$^-', obj: left };
+      case 'DSORTASC':   this.refuseAfterOperandless(op); return { type: 'CollectionOp', op: '$^+', obj: left };
+      case 'DSORTDESC':  this.refuseAfterOperandless(op); return { type: 'CollectionOp', op: '$^-', obj: left };
       case 'DSORT':
         // The comparator is a lambda written here, as both Rust parsers require:
         // `a$^ f` with `f` holding one sorted in this engine alone (ZYJS-021).
@@ -3433,6 +3462,7 @@ export class Parser {
                !this.check('RBRACE') && !this.check('EOF') && canStart()) {
           items.push(this.parsePostfix());
         }
+        if (items.length === 0) this.refuseAfterOperandless(op);
         return { type: 'CollectionOp', op: '$++', obj: left, items };
       }
 
