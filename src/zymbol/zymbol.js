@@ -4671,6 +4671,12 @@ class Checker {
   operandTypeName(e) {
     if (!e) return null;
     if (e.type === 'Literal' && e.kind === 'unit') return 'Unit';
+    // A name that holds `##_` NOW is Unit to the analyser, as Rust reads it from
+    // the environment: `x = ##_` then `x - 1` warns there and was silent here
+    // (GLB-089, decided 2026-10-05). `infType` is what the name holds now;
+    // `staticKind` keeps the literal type it was first given, and Unit leaves
+    // none there, which is why it never saw this.
+    if (e.type === 'Ident' && this.peekVar(e.name)?.infType === 'Unit') return 'Unit';
     if (e.type === 'Tuple') {
       const items = e.items ?? [];
       if (items.length === 0) return null;
@@ -4811,12 +4817,29 @@ class Checker {
     const locals = new Map();
     for (const p of (decl.params ?? [])) locals.set(p.name, null);
     const found = [];
+    // The blocks `collect_return_types` descends into, and no others: the
+    // branches of a `?`, a loop's body, the `!?` block and each `:!` (not the
+    // `:>`), and a `??` written as a statement, whose value arms are returns.
+    // The `!?` and the `??` were missing here, so `risky(a) { !? { <~ a[1] } :!
+    // { <~ _err } }` was taken to return Unit (GLB-089).
     const walk = stmts => {
       for (const st of (stmts ?? [])) {
         if (!st) continue;
         if (st.type === 'FuncDecl' || st.type === 'Lambda') continue;
         if (st.type === 'VarAssign' && st.name) locals.set(st.name, this.inferType(st.value, locals));
         if (st.type === 'Return') { found.push(st.value ? this.inferType(st.value, locals) : 'Unit'); continue; }
+        if (st.type === 'TryCatch') {
+          walk(st.tryBody ?? st.try);
+          for (const c of (st.catches ?? [])) walk(c.body);
+          continue;
+        }
+        if (st.type === 'ExprStmt' && st.expr?.type === 'Match' && !st.expr.paren) {
+          for (const arm of (st.expr.arms ?? [])) {
+            if (arm?.body?.type === 'expr') found.push(this.inferType(arm.body.value, locals));
+            else if (arm?.body?.type === 'block') walk(arm.body.stmts);
+          }
+          continue;
+        }
         walk(st.then); walk(st.else); walk(st.body);
         for (const b of (st.elseifs ?? [])) walk(b.body);
       }
