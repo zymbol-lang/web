@@ -3021,7 +3021,8 @@ export class Parser {
     while (true) {
       if (this.check('LBRACKET') && sameLine()) {
         this.rejectChainedIndex(left, this.peek().line);
-        this.adv(); const spec = this.parseNavContent(); this.closeNav(spec);
+        const navAhead = this.isNavIndexAhead();
+        this.adv(); const spec = this.parseNavContent(); this.closeNav(spec, navAhead);
         left = { type: 'NavIndex', obj: left, spec };
       } else if (this.check('DOT') || this.check('SCOPE')) {
         // Record which operator produced this node. `::` and `.` build the same shape but
@@ -3059,9 +3060,10 @@ export class Parser {
         // running, because those have somewhere to put the result and so never
         // reached the edit refusal that was supposed to catch them.
         this.rejectChainedIndex(left, this.peek().line);
+        const navAhead = this.isNavIndexAhead();
         this.adv();
         const spec = this.parseNavContent();
-        this.closeNav(spec);
+        this.closeNav(spec, navAhead);
         if ((spec.kind === 'simple' || spec.kind === 'path') && this.check('DUPDATE')) {
           this.adv();
           // See BUG-ZYB-002 above: the value is a full expression.
@@ -3138,15 +3140,55 @@ export class Parser {
 
   // ─── Navigation index parsing ─────────────────────────────────────────────
 
-  // The `]` that closes an index, in the Rust words for what it closes.
-  closeNav(spec) {
-    if (spec?.kind === 'flat') return this.eat('RBRACKET', "expected ']' after flat extraction");
+  // Whether the `[` at the cursor opens a navigation rather than a plain index:
+  // `is_nav_index` in crates/zymbol-parser/src/index_nav.rs, token for token. It
+  // looks ahead BEFORE the bracket is read, and that is what decides which help
+  // an unclosed bracket gets — not what the content turned out to be (GLB-036).
+  // A hot name and an interpolated string are other tokens in Rust, so neither
+  // starts a path there.
+  isNavIndexAhead() {
+    const t1 = this.peek(1), t2 = this.peek(2);
+    const sep = t => t && (t.type === 'GT' || t.type === 'SEMI' || t.type === 'RANGE');
+    switch (t1?.type) {
+      case 'LBRACKET': return true;
+      case 'NUM': return sep(t2);
+      case 'IDENT': return !t1.hot && sep(t2);
+      case 'STR': return (Array.isArray(t1.value) ? t1.value.every(p => p.t === 'lit') : true) && sep(t2);
+      case 'MINUS': return t2?.type === 'NUM' && sep(this.peek(3));
+      case 'LPAREN': {
+        // `arr[(expr)>(expr)]`: a `>` right after a `)` that closes at depth 0.
+        let depth = 0;
+        for (let k = 1; ; k++) {
+          const t = this.peek(k);
+          if (!t || t.type === 'EOF' || t.type === 'RBRACKET') return false;
+          if (t.type === 'LPAREN') depth++;
+          else if (t.type === 'RPAREN') {
+            if (depth === 0) return false;
+            depth--;
+            if (depth === 0 && this.peek(k + 1)?.type === 'GT') return true;
+          }
+          if (this.pos + k >= this.toks.length - 1) return false;
+        }
+      }
+      default: return false;
+    }
+  }
+
+  // The `]` that closes an index, in the Rust words for what it closes. Which
+  // words is decided the way Rust decides them: a plain index (`navAhead`
+  // false) gets the plain help whatever was read inside it; a navigation gets
+  // the navigator's, and only a `;` makes it a flat extraction — a range alone
+  // does not, though this engine builds the same node for both (GLB-036).
+  closeNav(spec, navAhead = true) {
     if (spec?.kind === 'structured') {
       return this.eat('RBRACKET', "expected ']' to close structured extraction",
         'structured extraction: arr[[row>col] ; [row>col]]');
     }
-    if (this.inPipeTarget) {
+    if (this.inPipeTarget || !navAhead) {
       return this.eat('RBRACKET', "expected ']' after index", 'array indexing must use brackets: arr[index]');
+    }
+    if (spec?.kind === 'flat' && (spec.paths?.length ?? 0) > 1) {
+      return this.eat('RBRACKET', "expected ']' after flat extraction");
     }
     return this.eat('RBRACKET', "expected ']' after index", 'array indexing must use brackets: arr[index] or arr[i>j]');
   }
