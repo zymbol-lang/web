@@ -9118,7 +9118,7 @@ export class Interpreter {
         // value, which is the family of ZYJS-003 and ZYJS-006.
         if (expr.op === '-') {
           if (val.type !== 'int' && val.type !== 'float')
-            throw new ZyError(`negation requires numeric operand, got ${typeIdent(val)}`, expr.line);
+            throw new ZyRuntimeError(`negation requires numeric operand, got ${typeIdent(val)}`, '##Type', expr.line);
           return val.type === 'float' ? mkFloat(-val.v) : mkInt(-val.v);
         }
         if (expr.op === '!') {
@@ -9128,7 +9128,7 @@ export class Interpreter {
         }
         if (expr.op === '+') {
           if (val.type !== 'int' && val.type !== 'float')
-            throw new ZyError(`unary plus requires numeric operand, got ${typeIdent(val)}`, expr.line);
+            throw new ZyRuntimeError(`unary plus requires numeric operand, got ${typeIdent(val)}`, '##Type', expr.line);
           return val;
         }
         break;
@@ -10723,13 +10723,18 @@ export class Interpreter {
         // It also used to interpolate the VALUES — `fmtArg` — which for a tuple
         // or a dictionary produced `tuple([object Object])`, and for `##_`
         // produced `undefined` (ZYJS-006). The family names types.
-        if (op === '+')
-          throw new ZyError(`+ is arithmetic only — use juxtaposition to concatenate strings: "a" b "c"`);
+        //
+        // A wrong TYPE is a `##Type` (D1; GLB-088). The guidance for `+` is for
+        // text on either side; with no text in sight `+` names the types like
+        // the rest of the family (GLB-059, decided 2026-10-05).
+        const text = l.type === 'str' || r.type === 'str';
+        if (op === '+' && text)
+          throw new ZyRuntimeError(`+ is arithmetic only — use juxtaposition to concatenate strings: "a" b "c"`, '##Type');
         if (op === '/')
-          throw new ZyError(`/ requires numeric operands — use $/ to split strings`);
+          throw new ZyRuntimeError(`/ requires numeric operands — use $/ to split strings`, '##Type');
         if (op === '^')
-          throw new ZyError(`power operator requires numeric operands: ${typeIdent(l)}, ${typeIdent(r)}`);
-        throw new ZyError(`arithmetic requires numeric operands: ${typeIdent(l)}, ${typeIdent(r)}`);
+          throw new ZyRuntimeError(`power operator requires numeric operands: ${typeIdent(l)}, ${typeIdent(r)}`, '##Type');
+        throw new ZyRuntimeError(`arithmetic requires numeric operands: ${typeIdent(l)}, ${typeIdent(r)}`, '##Type');
       }
     }
 
