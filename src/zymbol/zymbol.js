@@ -8505,7 +8505,8 @@ export class Interpreter {
           const vals = [];
           for (const s of slots) {
             const v = s ? (lone && s === slots[0] ? lone : await this.eval(s, env)) : null;
-            if (v != null && v.type !== 'int') throw new ZyError(`>>~ slot expects Int, got ${this.display(v)}`, stmt.line);
+            // Named by its type, and a `##Type` (GLB-033, D1; GLB-042).
+            if (v != null && v.type !== 'int') throw new ZyRuntimeError(`>>~ slot expects Int, got ${typeIdent(v)}`, '##Type', stmt.line);
             vals.push(v);
           }
           if (vals[0] != null) row = vals[0].v;
