@@ -4793,6 +4793,303 @@ class Checker {
     return t;
   }
 
+  // ─── Parameter types inferred from the body (ZYJS-048, decided 2026-10-05) ──
+  //
+  // What a parameter must be is decided by how the body uses it, and a call
+  // that passes something else is refused before the program runs — the rule
+  // the Rust engines already had and this engine did not, so `f(v) { <~ v + 1 }`
+  // with `f("a")` ran every effect before it and failed at the `+`.
+  //
+  // A mirror, rule by rule, of `infer_function_signature` and
+  // `collect_constraints_*` in crates/zymbol-semantic/src/type_check.rs —
+  // including what it does NOT look at: a parenthesized expression is a Group
+  // there and is not descended into, `==` and juxtaposition constrain nothing,
+  // an ordering constrains only against a literal, and a function declared
+  // later contributes nothing, because signatures are inferred in order.
+  //
+  // `null` is Rust's Any: cannot tell, and cannot-tell never refuses.
+  inferParamTypes(body) {
+    this.paramTypes = new Map();
+    const decls = [];
+    for (const st of (body ?? [])) {
+      if (st?.type === 'FuncDecl') decls.push(st);
+      else if (st?.type === 'ModuleBlock') {
+        for (const m of (st.body ?? [])) if (m?.type === 'FuncDecl') decls.push(m);
+      }
+    }
+    this.sigDecls = new Set(decls);
+    // First pass: every top-level function, its parameters unknown.
+    for (const d of decls) this.paramTypes.set(d.name, (d.params ?? []).map(() => null));
+    // Second pass, in order: each signature sees the ones before it.
+    for (const d of decls) this.paramTypes.set(d.name, this.inferSignatureParams(d));
+  }
+
+  inferSignatureParams(decl) {
+    const params = (decl.params ?? []).map(p => (typeof p === 'string' ? p : p.name));
+    const constraints = new Map(params.map(p => [p, []]));
+    const kinds = new Map();
+    this.collectIndexReceiverKinds(decl.body, kinds);
+    const ctx = { params, constraints, kinds };
+    this.collectConstraintsBlock(decl.body, ctx);
+    return params.map(p => Checker.constraintType(constraints.get(p)));
+  }
+
+  // `unify` and `to_type` of `TypeConstraint`, folded left in the order the
+  // constraints were found.
+  static constraintType(list) {
+    if (!list || list.length === 0) return null;
+    const unify = (a, b) => {
+      if (a.k === 'exact') return a;
+      if (b.k === 'exact') return b;
+      if ((a.k === 'num' && b.k === 'compat' && b.t === 'Int') ||
+          (a.k === 'compat' && a.t === 'Int' && b.k === 'num')) return { k: 'exact', t: 'Int' };
+      if ((a.k === 'num' && b.k === 'compat' && b.t === 'Float') ||
+          (a.k === 'compat' && a.t === 'Float' && b.k === 'num')) return { k: 'exact', t: 'Float' };
+      if (a.k === 'num' || b.k === 'num') return { k: 'num' };
+      if (a.k === 'bool' || b.k === 'bool') return { k: 'bool' };
+      if (a.k === 'compat') return a;
+      return b;
+    };
+    const c = list.reduce(unify);
+    return c.k === 'num' ? 'Number' : c.k === 'bool' ? 'Bool' : (c.t ?? null);
+  }
+
+  // A name bound in the body to a collection literal says what a bracket on it
+  // indexes — a position or a key. Bound twice to different kinds, it is
+  // dropped (`collect_index_receiver_kinds`).
+  collectIndexReceiverKinds(stmts, kinds) {
+    for (const st of (stmts ?? [])) {
+      if (!st) continue;
+      if (st.type === 'VarAssign' && st.name) {
+        const k = Checker.receiverLiteralKind(st.value);
+        if (k) {
+          if (!kinds.has(st.name)) kinds.set(st.name, k);
+          else if (kinds.get(st.name) !== k) kinds.delete(st.name);
+        }
+      } else if (st.type === 'If') {
+        this.collectIndexReceiverKinds(st.then, kinds);
+        for (const b of (st.elseifs ?? [])) this.collectIndexReceiverKinds(b.body, kinds);
+        this.collectIndexReceiverKinds(st.else, kinds);
+      } else if (st.type === 'Loop') {
+        this.collectIndexReceiverKinds(st.body, kinds);
+      }
+    }
+  }
+
+  static receiverLiteralKind(e) {
+    if (!e) return null;
+    if (e.type === 'Array') return 'position';
+    if (e.type === 'Tuple') return e.keys ? 'key' : 'position';
+    if (e.type === 'Literal' && e.kind === 'str') return 'position';
+    return null;
+  }
+
+  collectConstraintsBlock(stmts, ctx) {
+    for (const st of (stmts ?? [])) this.collectConstraintsStmt(st, ctx);
+  }
+
+  collectConstraintsStmt(st, ctx) {
+    if (!st) return;
+    const ident = name => ({ type: 'Ident', name });
+    switch (st.type) {
+      case 'VarAssign': case 'ConstAssign':
+        this.collectConstraintsExpr(st.value, ctx); return;
+      // `x += v` and `v++` are an assignment of a binary expression in Rust.
+      case 'CompoundAssign':
+        this.collectConstraintsExpr({ type: 'BinOp', op: st.op, left: ident(st.name), right: st.value }, ctx);
+        return;
+      case 'Increment':
+        this.collectConstraintsExpr({ type: 'BinOp', op: st.op === '--' ? '-' : '+',
+                                      left: ident(st.name), right: { type: 'Literal', kind: 'int', value: 1 } }, ctx);
+        return;
+      case 'Output':
+        for (const it of (st.items ?? [])) this.collectConstraintsExpr(it, ctx);
+        return;
+      case 'Return':
+        if (st.value) this.collectConstraintsExpr(st.value, ctx);
+        return;
+      case 'If':
+        this.collectConstraintsExpr(st.cond, ctx);
+        this.collectConstraintsBlock(st.then, ctx);
+        for (const b of (st.elseifs ?? [])) {
+          this.collectConstraintsExpr(b.cond, ctx);
+          this.collectConstraintsBlock(b.body, ctx);
+        }
+        this.collectConstraintsBlock(st.else, ctx);
+        return;
+      case 'Loop':
+        if (st.kind === 'while') this.collectConstraintsExpr(st.cond, ctx);
+        if (st.kind === 'foreach') this.collectConstraintsExpr(st.iterable, ctx);
+        this.collectConstraintsBlock(st.body, ctx);
+        return;
+      case 'InPlaceEdit':
+        this.collectConstraintsExpr(st.expr, ctx); return;
+      case 'ExprStmt': {
+        const e = st.expr;
+        // A `??` written as a statement is `Statement::Match` in Rust: the
+        // scrutinee and each arm's value are read; as a value it is not.
+        if (e?.type === 'Match' && !e.paren) {
+          this.collectConstraintsExpr(e.expr, ctx);
+          for (const arm of (e.arms ?? [])) {
+            if (arm?.body?.type === 'expr') this.collectConstraintsExpr(arm.body.value, ctx);
+          }
+          return;
+        }
+        this.collectConstraintsExpr(e, ctx);
+        return;
+      }
+      default:
+        return;
+    }
+  }
+
+  collectConstraintsExpr(e, ctx) {
+    // A parenthesized expression is a Group in Rust, which this walk does not
+    // enter, and a grouped name is not a parameter to it.
+    if (!e || e.paren) return;
+    const { params, constraints, kinds } = ctx;
+    const paramOf = n => (n && !n.paren && n.type === 'Ident' && params.includes(n.name)) ? n.name : null;
+    const add = (name, c) => { if (name) constraints.get(name).push(c); };
+    const litType = n => {
+      if (!n || n.paren || n.type !== 'Literal') return null;
+      return { int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool', unit: 'Unit' }[n.kind] ?? null;
+    };
+    switch (e.type) {
+      case 'BinOp': {
+        const l = paramOf(e.left), r = paramOf(e.right);
+        switch (e.op) {
+          case '+': case '-': case '*': case '/': case '%': case '^':
+            add(l, { k: 'num' }); add(r, { k: 'num' }); break;
+          case '&&': case '||':
+            add(l, { k: 'bool' }); add(r, { k: 'bool' }); break;
+          case '<': case '<=': case '>': case '>=': {
+            const rt = litType(e.right), lt = litType(e.left);
+            if (l && rt) add(l, { k: 'compat', t: rt });
+            if (r && lt) add(r, { k: 'compat', t: lt });
+            break;
+          }
+          default: break;   // `==`, `<>`: nothing — `==` never coerces
+        }
+        this.collectConstraintsExpr(e.left, ctx);
+        this.collectConstraintsExpr(e.right, ctx);
+        return;
+      }
+      // Juxtaposition constrains nothing (every value has a string form), but
+      // its parts are read.
+      case 'JuxtaConcat': case 'ImplicitConcat': case 'CommaJoin':
+        for (const it of (e.items ?? [])) this.collectConstraintsExpr(it, ctx);
+        return;
+      case 'UnaryOp': {
+        const operand = e.operand ?? e.expr ?? e.value;
+        const p = paramOf(operand);
+        if (e.op === '-' || e.op === '+') add(p, { k: 'num' });
+        else if (e.op === '!') add(p, { k: 'bool' });
+        this.collectConstraintsExpr(operand, ctx);
+        return;
+      }
+      case 'Call': {
+        const sig = typeof e.callee === 'string' ? this.paramTypes?.get(e.callee) : null;
+        (e.args ?? []).forEach((a, i) => {
+          const node = a;
+          const p = paramOf(node);
+          const t = sig?.[i];
+          if (p && t) add(p, { k: 'compat', t });
+        });
+        for (const a of (e.args ?? [])) this.collectConstraintsExpr(a, ctx);
+        return;
+      }
+      case 'CallExpr':
+        for (const a of (e.args ?? [])) this.collectConstraintsExpr(a, ctx);
+        return;
+      case 'NavIndex': {
+        if (e.spec?.kind !== 'simple') return;
+        const p = paramOf(e.spec.index);
+        if (p) {
+          const obj = e.obj;
+          let kind = Checker.receiverLiteralKind(obj);
+          if (!kind && obj?.type === 'Ident' && !params.includes(obj.name)) kind = kinds.get(obj.name) ?? null;
+          if (kind) add(p, { k: 'exact', t: kind === 'key' ? 'String' : 'Int' });
+        }
+        this.collectConstraintsExpr(e.obj, ctx);
+        this.collectConstraintsExpr(e.spec.index, ctx);
+        return;
+      }
+      case 'Array':
+        for (const it of (e.items ?? [])) this.collectConstraintsExpr(it, ctx);
+        return;
+      case 'CollectionOp':
+        if (e.op === '$+' || e.op === '$?') {
+          this.collectConstraintsExpr(e.obj, ctx);
+          this.collectConstraintsExpr(e.arg, ctx);
+        }
+        return;
+      default:
+        return;
+    }
+  }
+
+  // The type `infer_expr` gives an argument, as far as the message has to name
+  // it. Kept apart from `inferType`, which the reassignment warning reads and
+  // which this must not change. `null`: cannot tell, and nothing is refused.
+  argType(e) {
+    if (!e) return null;
+    switch (e.type) {
+      case 'Literal':
+        return { int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool', unit: 'Unit' }[e.kind] ?? null;
+      case 'Array': {
+        const items = e.items ?? [];
+        if (items.length === 0) return '[Any]';
+        const t = this.argType(items[0]);
+        return t ? `[${t}]` : null;
+      }
+      case 'Tuple': {
+        const items = e.items ?? [];
+        const ts = items.map(it => this.argType(it));
+        if (ts.some(t => !t)) return null;
+        return e.keys
+          ? `#(${ts.map((t, i) => `${e.keys[i]}: ${t}`).join(', ')})`
+          : `(${ts.join(', ')})`;
+      }
+      case 'JuxtaConcat': case 'ImplicitConcat':
+        return 'String';
+      case 'Ident': {
+        const info = this.peekVar(e.name);
+        if (!info) return null;
+        if (info.isParam) return info.paramType ?? null;
+        if (info.elemKind) return `[${info.elemKind}]`;
+        return info.infType ?? null;
+      }
+      default:
+        return this.inferType(e);
+    }
+  }
+
+  // `types_compatible_static`: cannot-tell is compatible, Int and Float are,
+  // and Number is either of them and nothing else.
+  static argCompatible(a, p) {
+    if (!a || !p) return true;
+    if (a === p) return true;
+    const num = t => t === 'Int' || t === 'Float';
+    if (num(a) && num(p)) return true;
+    if ((a === 'Number' && num(p)) || (num(a) && p === 'Number')) return true;
+    return false;
+  }
+
+  checkArgTypes(name, args, line) {
+    const sig = this.paramTypes?.get(name);
+    if (!sig || sig.length !== (args ?? []).length) return;
+    args.forEach((a, i) => {
+      const node = a;
+      const expected = sig[i];
+      const got = this.argType(node);
+      if (!Checker.argCompatible(got, expected)) {
+        this.error('E_ARG_TYPE',
+          `argument ${i + 1} has type ${got}, but function '${name}' expects ${expected}`,
+          node?.line ?? line, { index: i + 1, got, name, expected });
+      }
+    });
+  }
+
   // `is_compatible_with` in Rust: cannot-tell is always compatible, and Int
   // with Float is not a change worth a warning.
   typesCompatible(a, b) {
@@ -5357,6 +5654,7 @@ class Checker {
 
   check() {
     this.collectArities(this.ast.body);
+    this.inferParamTypes(this.ast.body);
     this.checkNameCollisions(this.ast.body);
     this.push(false);
     for (const stmt of this.ast.body) {
@@ -5842,6 +6140,16 @@ class Checker {
             this.stack[this.stack.length - 1].vars.get(pname).isParam = true;
           }
         }
+        // Inside the body a parameter has its inferred type, as Rust defines it
+        // for the third pass: a Number passed on where a Bool is expected is
+        // refused there too (ZYJS-048).
+        if (this.sigDecls?.has(stmt)) {
+          const sig = this.paramTypes.get(stmt.name) ?? [];
+          (stmt.params ?? []).forEach((p, i) => {
+            const info = this.stack[this.stack.length - 1].vars.get(typeof p === 'string' ? p : p.name);
+            if (info) info.paramType = sig[i] ?? null;
+          });
+        }
         this.checkBlock(stmt.body);
         this.loopLabels = outerLoops;
         this.funcDepth--;
@@ -6052,6 +6360,7 @@ class Checker {
             this.checkArity(expr.callee, this.funcArity.get(expr.callee),
                             (expr.args ?? []).length, expr.line,
                             this.funcParamList?.get(expr.callee) ?? null);
+            this.checkArgTypes(expr.callee, expr.args ?? [], expr.line);
             this.checkOutputArgs(expr.callee, expr.args ?? [], expr.line);
             // A locally declared function always has a known signature: no
             // recorded slots means it declares no output parameter.

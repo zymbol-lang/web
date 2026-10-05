@@ -78,6 +78,7 @@
     "E017": "argument {index} of '{name}' is an output parameter '<~' and needs a variable, not an expression",
     "E018": "argument {index} of '{name}' is an output parameter and must be marked '<~' at the call site",
     "E019": "argument {index} of '{name}' is marked '<~' but the function does not declare it as an output parameter",
+    "E_ARG_TYPE": "argument {index} has type {got}, but function '{name}' expects {expected}",
     "E_HOT_AMBIG": "ambiguous hot-definition markers on '{name}': use either '°{name}' (anchors above loop) or '{name}°' (anchors at loop), not both",
     "E_HOT_OUTPUT": "`°` has no effect in output context — use `>> {name} ¶`",
     "W_ARITH_TYPE": "arithmetic operation on non-numeric type: {type}",
