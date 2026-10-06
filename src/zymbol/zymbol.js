@@ -9123,11 +9123,11 @@ export class Interpreter {
           const name  = isAnd ? 'AND' : 'OR';
           const l = await this.eval(expr.left, env);
           if (l.type !== 'bool')
-            throw new ZyError(`logical ${name} requires boolean operands, got ${typeIdent(l)}`, expr.line);
+            throw new ZyRuntimeError(`logical ${name} requires boolean operands, got ${typeIdent(l)}`, '##Type', expr.line);
           if (l.v !== isAnd) return mkBool(l.v);
           const r = await this.eval(expr.right, env);
           if (r.type !== 'bool')
-            throw new ZyError(`logical ${name} requires boolean operands, got ${typeIdent(r)}`, expr.line);
+            throw new ZyRuntimeError(`logical ${name} requires boolean operands, got ${typeIdent(r)}`, '##Type', expr.line);
           return mkBool(r.v);
         }
         return this.applyOp(expr.op, await this.eval(expr.left, env), await this.eval(expr.right, env));
@@ -9147,7 +9147,7 @@ export class Interpreter {
         }
         if (expr.op === '!') {
           if (val.type !== 'bool')
-            throw new ZyError(`logical NOT requires boolean operand, got ${typeIdent(val)}`, expr.line);
+            throw new ZyRuntimeError(`logical NOT requires boolean operand, got ${typeIdent(val)}`, '##Type', expr.line);
           return mkBool(!val.v);
         }
         if (expr.op === '+') {
@@ -10788,7 +10788,8 @@ export class Interpreter {
           throw new ZyError(`cannot compare integer ${l.v} with string '${r.v}' using operator '${opName}'`);
         if (l.type === 'float' && r.type === 'str')
           throw new ZyError(`cannot compare float ${l.v} with string '${r.v}' using operator '${opName}'`);
-        throw new ZyError(`cannot compare values with operator '${opName}': ${typeIdent(l)} and ${typeIdent(r)}`);
+        // Two types that never compare are a wrong TYPE: a `##Type` (D1; GLB-091).
+        throw new ZyRuntimeError(`cannot compare values with operator '${opName}': ${typeIdent(l)} and ${typeIdent(r)}`, '##Type');
       }
       switch (op) {
         case '<':  return mkBool(ordLt(ord));
