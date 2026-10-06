@@ -4649,7 +4649,7 @@ class Checker {
     const name = this.operandTypeName(operand);
     if (!name) return;
     if (expr.op === '-' || expr.op === '+') {
-      if (name === 'Int' || name === 'Float') return;
+      if (name === 'Int' || name === 'Float' || name === 'Number') return;
       this.warn('W_UNARY_TYPE', `unary ${expr.op} on non-numeric type: ${name}`,
                 operand?.line ?? expr.line ?? null, { op: expr.op, type: name });
     } else if (expr.op === '!') {
@@ -4671,12 +4671,19 @@ class Checker {
   operandTypeName(e) {
     if (!e) return null;
     if (e.type === 'Literal' && e.kind === 'unit') return 'Unit';
-    // A name that holds `##_` NOW is Unit to the analyser, as Rust reads it from
-    // the environment: `x = ##_` then `x - 1` warns there and was silent here
-    // (GLB-089, decided 2026-10-05). `infType` is what the name holds now;
-    // `staticKind` keeps the literal type it was first given, and Unit leaves
-    // none there, which is why it never saw this.
-    if (e.type === 'Ident' && this.peekVar(e.name)?.infType === 'Unit') return 'Unit';
+    // A name is read for what it holds NOW, as Rust reads it from its type
+    // environment: `x = 1`, `x = "a"`, then `x - 1` warns there. This read the
+    // literal type the name was given (`staticKind`), which a change of type
+    // clears to "cannot tell", so it warned only while the name never changed
+    // (GLB-096, decided 2026-10-06; GLB-089 had decided it for Unit, which
+    // leaves no literal type at all). `infType` is what the name holds now, as
+    // `argType` names it — `null`, and Rust's `Any`, are "cannot tell", and
+    // cannot-tell never warns. A name nothing assigned here, a parameter, has
+    // no `infType`, and is read as before.
+    if (e.type === 'Ident') {
+      const info = this.peekVar(e.name);
+      if (info && info.infType !== undefined) return info.infType === 'Any' ? null : info.infType;
+    }
     if (e.type === 'Tuple') {
       const items = e.items ?? [];
       if (items.length === 0) return null;
@@ -4710,7 +4717,9 @@ class Checker {
     const name = this.operandTypeName(expr.left);
     if (!name) return;
     if (ARITH.has(expr.op)) {
-      if (name === 'Int' || name === 'Float') return;
+      // `Number` is Int-or-Float undetermined, numeric as in Rust's `is_numeric`;
+      // a name holds one after `x = a`, with `a` a parameter inferred numeric.
+      if (name === 'Int' || name === 'Float' || name === 'Number') return;
       this.warn('W_ARITH_TYPE', `arithmetic operation on non-numeric type: ${name}`,
                 expr.left.line ?? expr.line ?? null, { type: name });
     } else {
