@@ -4671,6 +4671,10 @@ class Checker {
   operandTypeName(e) {
     if (!e) return null;
     if (e.type === 'Literal' && e.kind === 'unit') return 'Unit';
+    // `[]` is `[Any]`, as Rust names it: `staticKind` takes the type the
+    // elements share, and an empty array has none to share (ZYJS-049). Held in a
+    // name it was already `[Any]`, through `argType`.
+    if (e.type === 'Array' && (e.items ?? e.elements ?? []).length === 0) return '[Any]';
     // A name is read for what it holds NOW, as Rust reads it from its type
     // environment: `x = 1`, `x = "a"`, then `x - 1` warns there. This read the
     // literal type the name was given (`staticKind`), which a change of type
@@ -4766,8 +4770,13 @@ class Checker {
         return { int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool', unit: 'Unit' }[e.kind] ?? null;
       case 'Ident': {
         // Inside a function body the names are the body's own; a parameter is
-        // unknown, as it is in Rust.
-        if (locals) return locals.has(e.name) ? locals.get(e.name) : null;
+        // unknown, as it is in Rust. A lambda's body also reads the names
+        // around it — it is a light environment (MEM-6) — which its `locals`
+        // say with `seesOuter`.
+        if (locals) {
+          if (locals.has(e.name)) return locals.get(e.name);
+          if (!locals.seesOuter) return null;
+        }
         return this.peekVar(e.name)?.infType ?? null;
       }
       case 'UnaryOp': {
@@ -4779,8 +4788,12 @@ class Checker {
         switch (e.op) {
           case '+':
             // `+` only when both sides are known numbers: it does not
-            // concatenate, and with an unknown side Rust says Any.
-            return isNum(l) && isNum(r) ? (l === 'Float' || r === 'Float' ? 'Float' : 'Int') : null;
+            // concatenate, and with an unknown side Rust says Any. Said here
+            // only when a side IS `Any` — a lambda's parameter — so that
+            // `(a, b) -> a + b` is named `(Any, Any) -> Any` as in Rust, and
+            // nothing outside a lambda's body changes.
+            if (isNum(l) && isNum(r)) return l === 'Float' || r === 'Float' ? 'Float' : 'Int';
+            return l === 'Any' || r === 'Any' ? 'Any' : null;
           case '-': case '*': case '/': case '%': case '^':
             return l === 'Float' || r === 'Float' ? 'Float' : 'Int';
           case '==': case '<>': case '<': case '<=': case '>': case '>=':
@@ -4807,9 +4820,49 @@ class Checker {
         return typeof e.callee === 'string' ? this.funcReturnType(e.callee) : null;
       case 'CollectionOp':
         return e.op === '$#' ? 'Int' : null;
+      case 'Lambda':
+        return this.lambdaType(e, locals);
       default:
         return null;
     }
+  }
+
+  /**
+   * The type of a lambda as `infer_expr` names it in Rust: `(Any, …) -> R` —
+   * every parameter `Any`, and `R` what the body gives with them, an expression
+   * or the `<~` of a block (Unit when it has none). The body reads the names
+   * around it (MEM-6). `null` when this pass cannot tell what the body gives:
+   * naming it otherwise than Rust would be worse than saying nothing (ZYJS-049).
+   */
+  lambdaType(e, outer = null) {
+    const params = (e.params ?? []).map(p => (typeof p === 'string' ? p : p?.name));
+    const locals = new Map(outer ?? []);
+    for (const p of params) locals.set(p, 'Any');
+    locals.seesOuter = outer ? outer.seesOuter === true : true;
+    const body = e.body;
+    const ret = body?.type === 'block'
+      ? this.returnTypeOfBlock(body.stmts, locals)
+      : this.valueType(body?.type === 'expr' ? body.value : body, locals);
+    if (!ret) return null;
+    return `(${params.map(() => 'Any').join(', ')}) -> ${ret}`;
+  }
+
+  /** `inferType`, naming a collection literal the way `argType` does. */
+  valueType(e, locals) {
+    if (e?.type === 'Array') {
+      const items = e.items ?? [];
+      if (items.length === 0) return '[Any]';
+      const t = this.valueType(items[0], locals);
+      return t ? `[${t}]` : null;
+    }
+    if (e?.type === 'Tuple') {
+      const ts = (e.items ?? []).map(it => this.valueType(it, locals));
+      if (ts.some(t => !t)) return null;
+      return e.keys
+        ? `#(${ts.map((t, i) => `${e.keys[i]}: ${t}`).join(', ')})`
+        : `(${ts.join(', ')})`;
+    }
+    return this.inferType(e, locals);
   }
 
   // The type a call returns: every `<~` in the body, through its blocks and
@@ -4825,6 +4878,14 @@ class Checker {
     this.retBusy.add(name);
     const locals = new Map();
     for (const p of (decl.params ?? [])) locals.set(p.name, null);
+    const t = this.returnTypeOfBlock(decl.body, locals);
+    this.retBusy.delete(name);
+    this.retTypes.set(name, t);
+    return t;
+  }
+
+  /** What the `<~` of a block give, unified; Unit when there is none. */
+  returnTypeOfBlock(body, locals) {
     const found = [];
     // The blocks `collect_return_types` descends into, and no others: the
     // branches of a `?`, a loop's body, the `!?` block and each `:!` (not the
@@ -4853,18 +4914,14 @@ class Checker {
         for (const b of (st.elseifs ?? [])) walk(b.body);
       }
     };
-    walk(decl.body);
-    let t;
-    if (found.length === 0) t = 'Unit';
-    else t = found.reduce((a, b) => {
+    walk(body);
+    if (found.length === 0) return 'Unit';
+    return found.reduce((a, b) => {
       if (a === null || b === null) return null;
       if (a === b) return a;
       if ((a === 'Int' && b === 'Float') || (a === 'Float' && b === 'Int')) return 'Float';
       return null;
     });
-    this.retBusy.delete(name);
-    this.retTypes.set(name, t);
-    return t;
   }
 
   // ─── Parameter types inferred from the body (ZYJS-048, decided 2026-10-05) ──
@@ -5151,12 +5208,93 @@ class Checker {
   // `types_compatible_static`: cannot-tell is compatible, Int and Float are,
   // and Number is either of them and nothing else.
   static argCompatible(a, p) {
-    if (!a || !p) return true;
-    if (a === p) return true;
-    const num = t => t === 'Int' || t === 'Float';
-    if (num(a) && num(p)) return true;
-    if ((a === 'Number' && num(p)) || (num(a) && p === 'Number')) return true;
-    return false;
+    return Checker.typesCompatibleStatic(a, p);
+  }
+
+  /**
+   * `types_compatible_static` in Rust, over the names this pass gives types —
+   * the relation an argument and an array element are checked with. Cannot-tell
+   * (`null`, `?`) and `Any` fit anything, at any depth; Int and Float fit each
+   * other, and Number fits either; arrays, tuples, dictionaries and functions
+   * fit part by part. A change of type is the other relation, `typesCompatible`
+   * (`is_compatible_with`), which compares a function whole.
+   *
+   * Part by part matters since a lambda has a type (ZYJS-049): the elements of
+   * `[(x) -> x + 1, (x) -> x * 2]` are `(Any) -> Any` and `(Any) -> Int`, the
+   * same function to Rust, and comparing the names refused the array.
+   */
+  static typesCompatibleStatic(a, b) {
+    return Checker.fitStatic(Checker.parseTypeName(a), Checker.parseTypeName(b));
+  }
+
+  static fitStatic(A, B) {
+    if (!A || !B || A.k === 'any' || B.k === 'any') return true;
+    if (A.k === 'prim' && B.k === 'prim') {
+      if (A.n === B.n) return true;
+      const num = n => n === 'Int' || n === 'Float';
+      if (num(A.n) && num(B.n)) return true;
+      return (A.n === 'Number' && num(B.n)) || (num(A.n) && B.n === 'Number');
+    }
+    if (A.k !== B.k) return false;
+    const all = (xs, ys) => xs.length === ys.length && xs.every((x, i) => Checker.fitStatic(x, ys[i]));
+    switch (A.k) {
+      case 'array': return Checker.fitStatic(A.e, B.e);
+      case 'tuple': return all(A.items, B.items);
+      case 'dict':  return A.fields.length === B.fields.length &&
+                           A.fields.every((f, i) => f.name === B.fields[i].name && Checker.fitStatic(f.t, B.fields[i].t));
+      case 'fn':    return all(A.params, B.params) && Checker.fitStatic(A.ret, B.ret);
+      default:      return false;
+    }
+  }
+
+  /**
+   * A type name as this pass writes it — `Int`, `[Int]`, `(Int, String)`,
+   * `#(k: Int)`, `(Any) -> Int`, `?` — read back into its parts. `null` for
+   * cannot-tell, and for anything it cannot read, which fits everything.
+   */
+  static parseTypeName(name) {
+    if (name === null || name === undefined) return null;
+    const src = String(name);
+    let i = 0;
+    const eat = t => { if (src.startsWith(t, i)) { i += t.length; return true; } return false; };
+    const list = (close, item) => {
+      const out = [];
+      if (eat(close)) return out;
+      for (;;) {
+        const x = item();
+        if (x === undefined) return undefined;
+        out.push(x);
+        if (eat(close)) return out;
+        if (!eat(', ')) return undefined;
+      }
+    };
+    const type = () => {
+      if (eat('[')) { const e = type(); return e !== undefined && eat(']') ? { k: 'array', e } : undefined; }
+      if (eat('#(')) {
+        const fields = list(')', () => {
+          const m = /^[^:,()]+/.exec(src.slice(i));
+          if (!m) return undefined;
+          i += m[0].length;
+          if (!eat(': ')) return undefined;
+          const t = type();
+          return t === undefined ? undefined : { name: m[0], t };
+        });
+        return fields === undefined ? undefined : { k: 'dict', fields };
+      }
+      if (eat('(')) {
+        const items = list(')', type);
+        if (items === undefined) return undefined;
+        if (eat(' -> ')) { const ret = type(); return ret === undefined ? undefined : { k: 'fn', params: items, ret }; }
+        return { k: 'tuple', items };
+      }
+      if (eat('?')) return { k: 'any' };
+      const m = /^[A-Za-z]+/.exec(src.slice(i));
+      if (!m) return undefined;
+      i += m[0].length;
+      return m[0] === 'Any' ? { k: 'any' } : { k: 'prim', n: m[0] };
+    };
+    const t = type();
+    return t === undefined || i !== src.length ? null : t;
   }
 
   checkArgTypes(name, args, line) {
@@ -5178,6 +5316,7 @@ class Checker {
   // with Float is not a change worth a warning.
   typesCompatible(a, b) {
     if (a === null || b === null || a === undefined || b === undefined) return true;
+    if (a === 'Any' || b === 'Any') return true;
     if ((a === 'Int' && b === 'Float') || (a === 'Float' && b === 'Int')) return true;
     // Number is "Int or Float, undetermined" — a parameter used in arithmetic —
     // so either settling it is no change (as `is_compatible_with` in Rust).
@@ -6016,7 +6155,16 @@ class Checker {
           this.error('E_CONST', `cannot reassign constant '${varName}'`, stmt, { name: varName }, Checker.HELP_CONST);
           return;
         }
-        if (varName) this.define(varName, stmt, false);
+        if (varName) {
+          this.define(varName, stmt, false);
+          // What the marker reads, as GLB-098 settled it in Rust: `<<` and `##"`
+          // a String, `###` an Int, `##.` a Float, `##'` a Char — and `#|…|`
+          // cannot tell, since the line decides (ZYJS-049).
+          const READ = { string: 'String', text: 'String', int: 'Int', float: 'Float', decimal: 'Float', char: 'Char', numeric: null };
+          const kind = stmt.cast?.kind ?? 'string';
+          const rec = this.stack[this.stack.length - 1].vars.get(varName);
+          if (rec && kind in READ) rec.infType = READ[kind];
+        }
         return;
       }
 
@@ -6064,11 +6212,18 @@ class Checker {
           this.checkExpr(stmt.iterable ?? stmt.iter);
           // Asked before push(), like `preexisting`: the type of what the
           // loop hands its iterator.
-          const elemType = stmt.var && preexisting ? this.iteratorElemType(stmt.iterable ?? stmt.iter) : null;
+          const elemType = stmt.var ? this.iteratorElemType(stmt.iterable ?? stmt.iter) : null;
           this.push(false, false, true);
           if (stmt.var) {
             if (preexisting) this.assignIterator(stmt.var, elemType, stmt);
-            else this.define(stmt.var, stmt, false);
+            else {
+              this.define(stmt.var, stmt, false);
+              // A new iterator holds the element too, as Rust defines it; only
+              // a reused name used to learn it, so `@ c:"ab" { c - 1 }` warned
+              // in Rust and not here (ZYJS-049) — as the range loop below does.
+              const rec = this.stack[this.stack.length - 1].vars.get(stmt.var);
+              if (rec && elemType) rec.infType = elemType;
+            }
           }
         } else if (stmt.kind === 'range' || stmt.from !== undefined) {
           this.checkExpr(stmt.from);
@@ -6579,8 +6734,10 @@ class Checker {
         const kinds = items.map(kindOf);
         if (kinds.length > 1) {
           // Int and Float mix freely, as they do in every arithmetic position —
-          // at any depth, so `[[1], [2.5]]` is not a mix either.
-          const norm = (k) => k.replace(/Float/g, 'Int');
+          // at any depth, so `[[1], [2.5]]` is not a mix either. The elements
+          // are compared as Rust compares them, part by part
+          // (`typesCompatibleStatic`): two lambdas of the same arity are the
+          // same function when one of them returns `Any` (ZYJS-049).
           const first = kinds[0];
           // Each element against the FIRST, as `type_check.rs` does, and an
           // element this pass cannot type is compatible with anything. This
@@ -6589,7 +6746,7 @@ class Checker {
           // was refused by both Rust engines (Depurando_GO.md DG-05, a
           // remainder of DM-04). One error per element, as there.
           const bad = first === null ? [] : kinds
-            .map((k, i) => (i > 0 && k !== null && norm(k) !== norm(first)) ? i : -1)
+            .map((k, i) => (i > 0 && k !== null && !Checker.typesCompatibleStatic(k, first)) ? i : -1)
             .filter(i => i > 0);
           if (bad.length && !expr.declaredMixed) {
             // The guidance goes on its own `help:` line, not folded into the
