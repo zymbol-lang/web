@@ -5115,8 +5115,18 @@ class Checker {
           ? `#(${ts.map((t, i) => `${e.keys[i]}: ${t}`).join(', ')})`
           : `(${ts.join(', ')})`;
       }
-      case 'JuxtaConcat': case 'ImplicitConcat':
+      case 'JuxtaConcat': case 'ImplicitConcat': {
+        // `°x + 1` and `°l$+ v` arrive as the prefix hot-def sentinel — an
+        // unnamed hot Ident — followed by the expression it governs: the value
+        // is that expression, not a juxtaposition. Taking every one of these for
+        // a String turned an accumulator into a type change and an indexed read
+        // of it into a Char (GLB-093).
+        const items = e.items ?? [];
+        if (items[0]?.type === 'Ident' && items[0].hot && items[0].name === '') {
+          return items.length === 2 ? this.argType(items[1]) : 'String';
+        }
         return 'String';
+      }
       case 'Ident': {
         const info = this.peekVar(e.name);
         if (!info) return null;
@@ -5160,6 +5170,12 @@ class Checker {
   typesCompatible(a, b) {
     if (a === null || b === null || a === undefined || b === undefined) return true;
     if ((a === 'Int' && b === 'Float') || (a === 'Float' && b === 'Int')) return true;
+    // Number is "Int or Float, undetermined" — a parameter used in arithmetic —
+    // so either settling it is no change (as `is_compatible_with` in Rust).
+    if ((a === 'Number' && (b === 'Int' || b === 'Float')) || (b === 'Number' && (a === 'Int' || a === 'Float'))) return true;
+    // An array whose element type is not known yet — `[]` is `[Any]` — has no
+    // element type to change (GLB-093, as `is_compatible_with` in Rust).
+    if ((a === '[Any]' && b.startsWith('[')) || (b === '[Any]' && a.startsWith('['))) return true;
     return a === b;
   }
 
@@ -5200,7 +5216,11 @@ class Checker {
       // Unit on either side is not a change of type (GLB-043, decided
       // 2026-09-25): the new value is compared with the last type that was not
       // Unit, `realType`, while `infType` keeps saying what the name holds now.
-      const inferred = this.inferType(value);
+      // Collections included, as `infer_expr` names them — `[Int]`, `(Int, Int)`,
+      // `#(k: Int)`: `inferType` knows scalars only, so a change to or from a
+      // collection passed in silence here and not in Rust (GLB-093, decided
+      // 2026-10-05). `argType` is that naming.
+      const inferred = this.argType(value);
       const was = info.infType === 'Unit' ? info.realType : info.infType;
       if (was !== undefined && inferred !== 'Unit' && !this.typesCompatible(was, inferred)) {
         this.warn('W_TYPE_CHANGE',
@@ -5288,9 +5308,15 @@ class Checker {
    * found this.
    */
   onlyVisibleAcrossStrong(name) {
+    let crossed = false;
     for (let k = this.stack.length - 1; k >= 0; k--) {
-      if (this.stack[k].vars.has(name)) return false;   // found on this side
-      if (this.stack[k].strong) return true;            // crossed out first
+      // Found: across a strong environment it is out of reach — unless it is a
+      // module's own state, which its functions do reach (MEM-4), as
+      // `crossesStrongBoundary` already says. Treated as out of reach, a module
+      // function's `estado = "listo"` made a local and the module's `estado`
+      // never saw the change (GLB-093).
+      if (this.stack[k].vars.has(name)) return crossed && !this.stack[k].moduleScope;
+      if (this.stack[k].strong) crossed = true;
     }
     return false;
   }
@@ -6165,7 +6191,12 @@ class Checker {
         }
         this.pop();
         const raised = this.diagnostics.splice(mark);
-        for (const d of raised) if (d.severity !== 'warning') this.diagnostics.push(d);
+        // Except the type-change warning, which the Rust analyser gives for a
+        // module and which this engine now reads as it does — the module's own
+        // state changed inside one of its functions included (GLB-093). The rest
+        // stay dropped: kept, the unused-variable analysis here flags every
+        // exported name of 224 module files, which the CLI does not.
+        for (const d of raised) if (d.severity !== 'warning' || d.code === 'W_TYPE_CHANGE') this.diagnostics.push(d);
         return;
       }
 
