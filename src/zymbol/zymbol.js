@@ -10754,7 +10754,8 @@ export class Interpreter {
         const text = l.type === 'str' || r.type === 'str';
         if (op === '+' && text)
           throw new ZyRuntimeError(`+ is arithmetic only — use juxtaposition to concatenate strings: "a" b "c"`, '##Type');
-        if (op === '/')
+        // The same for `/` and its guidance about `$/` (GLB-090).
+        if (op === '/' && text)
           throw new ZyRuntimeError(`/ requires numeric operands — use $/ to split strings`, '##Type');
         if (op === '^')
           throw new ZyRuntimeError(`power operator requires numeric operands: ${typeIdent(l)}, ${typeIdent(r)}`, '##Type');
