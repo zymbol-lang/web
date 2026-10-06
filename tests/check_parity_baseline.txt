@@ -325,7 +325,7 @@ examples/tour/functions.zy	0	0
 examples/tui/hello.zy	0	0
 examples/tui/snake/dibujo.zy	0	0
 examples/tui/snake/logica.zy	0	0
-examples/tui/snake/serpiente.zy	0	1
+examples/tui/snake/serpiente.zy	0	0
 examples/variables/compound-ops.zy	0	0
 examples/variables/constant.zy	0	0
 examples/variables/interpolation.zy	0	0
