@@ -10829,14 +10829,18 @@ export class Interpreter {
         // `cmp_order_error` write them — and `zyquality/messages/` compares the
         // engines' SOURCES, where `with integer §` and `with § §` are two
         // different messages however identically they print.
+        // The kind is `##Parse` — reading the text as a number is what failed —
+        // and it is declared here, because the message carries the text and the
+        // words of the text decided the kind: `"index" < 10` was an `##Index`
+        // (GLB-094, decided 2026-10-06).
         if (l.type === 'str' && r.type === 'int')
-          throw new ZyError(`cannot compare string '${l.v}' with integer ${r.v} using operator '${opName}'`);
+          throw new ZyRuntimeError(`cannot compare string '${l.v}' with integer ${r.v} using operator '${opName}'`, '##Parse');
         if (l.type === 'str' && r.type === 'float')
-          throw new ZyError(`cannot compare string '${l.v}' with float ${r.v} using operator '${opName}'`);
+          throw new ZyRuntimeError(`cannot compare string '${l.v}' with float ${r.v} using operator '${opName}'`, '##Parse');
         if (l.type === 'int' && r.type === 'str')
-          throw new ZyError(`cannot compare integer ${l.v} with string '${r.v}' using operator '${opName}'`);
+          throw new ZyRuntimeError(`cannot compare integer ${l.v} with string '${r.v}' using operator '${opName}'`, '##Parse');
         if (l.type === 'float' && r.type === 'str')
-          throw new ZyError(`cannot compare float ${l.v} with string '${r.v}' using operator '${opName}'`);
+          throw new ZyRuntimeError(`cannot compare float ${l.v} with string '${r.v}' using operator '${opName}'`, '##Parse');
         // Two types that never compare are a wrong TYPE: a `##Type` (D1; GLB-091).
         throw new ZyRuntimeError(`cannot compare values with operator '${opName}': ${typeIdent(l)} and ${typeIdent(r)}`, '##Type');
       }
