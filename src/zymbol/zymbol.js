@@ -5173,11 +5173,23 @@ class Checker {
     const shape = value?.type === 'Array' ? '##]'
                 : value?.type === 'Tuple' ? (value.keys ? '##(' : '##)')
                 : null;
+    let crossedLambda = false;
     for (let i = this.stack.length - 1; i >= 0; i--) {
-      const info = this.stack[i].vars.get(name);
-      if (!info) {
+      const found = this.stack[i].vars.get(name);
+      if (!found) {
+        if (this.stack[i].lambda) crossedLambda = true;
         if (this.stack[i].funcBoundary && !name.startsWith('_')) break;
         continue;
+      }
+      // A name from outside a lambda, written inside it: the write stays in the
+      // lambda (MEM-6), so the type change is warned against the name outside
+      // — as Rust does — but recorded on a copy in the current frame, and the
+      // name outside keeps its type (GLB-092). Reading the copy is reading the
+      // name, so it counts as a use of both.
+      let info = found;
+      if (crossedLambda) {
+        info = { ...found, shadowOf: found.shadowOf ?? found, used: true, isParam: false };
+        this.stack[this.stack.length - 1].vars.set(name, info);
       }
       // Reassigning a value of a different type. It used to be decided only
       // literal against literal; it is decided now the way the Rust type
@@ -5482,8 +5494,10 @@ class Checker {
             return { used: true, isConst: false, isScope: true }; // sentinel: suppress follow-up E_VAR
           }
         }
-        frame.vars.get(name).used = true;
-        return frame.vars.get(name);
+        const rec = frame.vars.get(name);
+        rec.used = true;
+        if (rec.shadowOf) rec.shadowOf.used = true;
+        return rec;
       }
       if (frame.funcBoundary && !name.startsWith('_')) break;
     }
@@ -6473,6 +6487,10 @@ class Checker {
         // file. Nothing is global to it at any depth, and nothing here has to
         // say so: not pushing a boundary IS the rule.
         this.push(false);
+        // But what it WRITES stays in it (MEM-6): marked, so an assignment in
+        // here to a name from outside changes the type of a copy, not of the
+        // name outside (GLB-092, as the Rust analyser's lambda floor).
+        this.stack[this.stack.length - 1].lambda = true;
         this.funcDepth++;
         // Loop context does not close over, though: a `@!` in a lambda body
         // cannot break the loop the lambda was written inside, so the stack is
