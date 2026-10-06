@@ -9597,8 +9597,10 @@ export class Interpreter {
           if (v.type === 'str') {
             const n = parseFloat(asciiDigits(v.v.trim()));
             if (!isNaN(n)) return n;
-            if (op === 'round') throw new ZyError(`cannot convert string '${v.v}' to number for rounding`, expr.line);
-            if (op === 'trunc') throw new ZyError(`cannot convert string '${v.v}' to number for truncation`, expr.line);
+            // Reading the text as a number is what failed: a `##Parse`, declared,
+            // because the words of the text chose the family (GLB-097).
+            if (op === 'round') throw new ZyRuntimeError(`cannot convert string '${v.v}' to number for rounding`, '##Parse', expr.line);
+            if (op === 'trunc') throw new ZyRuntimeError(`cannot convert string '${v.v}' to number for truncation`, '##Parse', expr.line);
           }
           if (op === 'round') throw new ZyRuntimeError(`round expressions only work with numbers or numeric strings, got ${typeIdent(v)}`, '##Type', expr.line);
           if (op === 'trunc') throw new ZyRuntimeError(`truncate expressions only work with numbers or numeric strings, got ${typeIdent(v)}`, '##Type', expr.line);
@@ -9687,7 +9689,8 @@ export class Interpreter {
               const shape = { 2: /^\+?[01]+$/, 8: /^\+?[0-7]+$/, 10: /^\+?[0-9]+$/, 16: /^\+?[0-9a-fA-F]+$/ }[base];
               const code = shape.test(digits) ? parseInt(digits, base) : NaN;
               if (!Number.isFinite(code) || code > 0xFFFFFFFF) {
-                throw new ZyError(`failed to parse '${digits}' as ${baseName} number`, expr.line);
+                // `##Parse`, declared: the words of the text chose it (GLB-097).
+                throw new ZyRuntimeError(`failed to parse '${digits}' as ${baseName} number`, '##Parse', expr.line);
               }
               if (code > 0x10FFFF) {
                 throw new ZyError(`character code must be in range 0..0x10FFFF, got ${code}`, expr.line);
