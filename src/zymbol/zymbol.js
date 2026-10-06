@@ -5015,62 +5015,162 @@ class Checker {
     return null;
   }
 
+  // A constraint reaches a parameter only when every path through the body
+  // requires it (GLB-101, decided 2026-10-06), as `collect_constraints_from_block`
+  // in Rust. The language is variant: `f(v) { t = v#?  ? t[1] == "###" { <~ v + 1 }
+  // _? t[1] == "##\"" { <~ v "1" } }` treats each type its own way, and collecting
+  // every branch into one set refused `f("a")`, the call it was written for. Each
+  // path keeps what it evaluated, a `<~` closes it, and a parameter is required to
+  // be what all of them agree on. Only how the constraints combine changed, not
+  // what is read: a block that was not read (`!?`, the block arm of a `??`) still
+  // contributes nothing, and is walked only to see where its paths end.
   collectConstraintsBlock(stmts, ctx) {
-    for (const st of (stmts ?? [])) this.collectConstraintsStmt(st, ctx);
+    const paths = this.constraintPaths(stmts, ctx, new Map());
+    const every = Checker.meetPaths(paths.returned, paths.falls) ?? new Map();
+    for (const p of ctx.params) ctx.constraints.set(p, every.get(p) ?? []);
   }
 
-  collectConstraintsStmt(st, ctx) {
-    if (!st) return;
+  // What a path requires is a Map from parameter to its constraints, in the
+  // order they were found. `null` is "no path".
+  static meetPaths(a, b) {
+    if (!a) return b;
+    if (!b) return a;
+    const same = (x, y) => x.k === y.k && x.t === y.t;
+    const out = new Map();
+    for (const [name, cs] of a) {
+      const theirs = b.get(name);
+      if (!theirs) continue;
+      const both = cs.filter(c => theirs.some(t => same(c, t)));
+      if (both.length) out.set(name, both);
+    }
+    return out;
+  }
+
+  static joinPaths(path, more) {
+    const out = new Map(path);
+    for (const [name, cs] of more) {
+      if (cs.length) out.set(name, [...(out.get(name) ?? []), ...cs]);
+    }
+    return out;
+  }
+
+  // The same paths, with what they required replaced by `at`.
+  static requiringPaths(paths, at) {
+    return { returned: paths.returned ? at : null, falls: paths.falls ? at : null };
+  }
+
+  // What these expressions require of the parameters, apart from the rest.
+  constraintsOf(exprs, ctx) {
+    const found = new Map(ctx.params.map(p => [p, []]));
+    const local = { ...ctx, constraints: found };
+    for (const e of exprs) this.collectConstraintsExpr(e, local);
+    for (const [name, cs] of found) if (!cs.length) found.delete(name);
+    return found;
+  }
+
+  constraintPaths(stmts, ctx, start) {
+    let returned = null;
+    let here = start;
+    for (const st of (stmts ?? [])) {
+      if (!here) break;              // every path has left the block
+      const paths = this.constraintPathsOfStmt(st, ctx, here);
+      returned = Checker.meetPaths(returned, paths.returned);
+      here = paths.falls;
+    }
+    return { returned, falls: here };
+  }
+
+  constraintPathsOfStmt(st, ctx, at) {
+    const through = (more) => ({ returned: null, falls: Checker.joinPaths(at, this.constraintsOf(more, ctx)) });
+    if (!st) return { returned: null, falls: at };
     const ident = name => ({ type: 'Ident', name });
     switch (st.type) {
       case 'VarAssign': case 'ConstAssign':
-        this.collectConstraintsExpr(st.value, ctx); return;
+        return through([st.value]);
       // `x += v` and `v++` are an assignment of a binary expression in Rust.
       case 'CompoundAssign':
-        this.collectConstraintsExpr({ type: 'BinOp', op: st.op, left: ident(st.name), right: st.value }, ctx);
-        return;
+        return through([{ type: 'BinOp', op: st.op, left: ident(st.name), right: st.value }]);
       case 'Increment':
-        this.collectConstraintsExpr({ type: 'BinOp', op: st.op === '--' ? '-' : '+',
-                                      left: ident(st.name), right: { type: 'Literal', kind: 'int', value: 1 } }, ctx);
-        return;
+        return through([{ type: 'BinOp', op: st.op === '--' ? '-' : '+',
+                          left: ident(st.name), right: { type: 'Literal', kind: 'int', value: 1 } }]);
       case 'Output':
-        for (const it of (st.items ?? [])) this.collectConstraintsExpr(it, ctx);
-        return;
-      case 'Return':
-        if (st.value) this.collectConstraintsExpr(st.value, ctx);
-        return;
-      case 'If':
-        this.collectConstraintsExpr(st.cond, ctx);
-        this.collectConstraintsBlock(st.then, ctx);
-        for (const b of (st.elseifs ?? [])) {
-          this.collectConstraintsExpr(b.cond, ctx);
-          this.collectConstraintsBlock(b.body, ctx);
-        }
-        this.collectConstraintsBlock(st.else, ctx);
-        return;
-      case 'Loop':
-        if (st.kind === 'while') this.collectConstraintsExpr(st.cond, ctx);
-        if (st.kind === 'foreach') this.collectConstraintsExpr(st.iterable, ctx);
-        this.collectConstraintsBlock(st.body, ctx);
-        return;
+        return through(st.items ?? []);
       case 'InPlaceEdit':
-        this.collectConstraintsExpr(st.expr, ctx); return;
+        return through([st.expr]);
+      // A `<~` closes its path.
+      case 'Return':
+        return { returned: Checker.joinPaths(at, this.constraintsOf(st.value ? [st.value] : [], ctx)), falls: null };
+      // The first condition is read on every path through the `?`; a `_?`
+      // condition only on the paths that reach it. With no `_`, one path enters
+      // no branch at all.
+      case 'If': {
+        let reached = Checker.joinPaths(at, this.constraintsOf([st.cond], ctx));
+        const then = this.constraintPaths(st.then, ctx, reached);
+        let { returned, falls } = then;
+        for (const b of (st.elseifs ?? [])) {
+          reached = Checker.joinPaths(reached, this.constraintsOf([b.cond], ctx));
+          const paths = this.constraintPaths(b.body, ctx, reached);
+          returned = Checker.meetPaths(returned, paths.returned);
+          falls = Checker.meetPaths(falls, paths.falls);
+        }
+        if (st.else) {
+          const paths = this.constraintPaths(st.else, ctx, reached);
+          returned = Checker.meetPaths(returned, paths.returned);
+          falls = Checker.meetPaths(falls, paths.falls);
+        } else {
+          falls = Checker.meetPaths(falls, reached);
+        }
+        return { returned, falls };
+      }
+      // The header is read on every path; the body may not run at all.
+      case 'Loop': {
+        const header = [];
+        if (st.kind === 'while') header.push(st.cond);
+        if (st.kind === 'foreach') header.push(st.iterable);
+        const reached = Checker.joinPaths(at, this.constraintsOf(header, ctx));
+        const body = this.constraintPaths(st.body, ctx, reached);
+        return { returned: body.returned, falls: reached };
+      }
+      // Nothing under `!?` is required: a failure anywhere in it goes to a `:!`.
+      // A `<~` in it still closes its path.
+      case 'TryCatch': {
+        let { returned, falls } = Checker.requiringPaths(this.constraintPaths(st.tryBody, ctx, at), at);
+        for (const c of (st.catches ?? [])) {
+          const paths = Checker.requiringPaths(this.constraintPaths(c.body, ctx, at), at);
+          returned = Checker.meetPaths(returned, paths.returned);
+          falls = Checker.meetPaths(falls, paths.falls);
+        }
+        return { returned, falls };
+      }
+      case 'Break': case 'Continue':
+        return { returned: null, falls: null };
       case 'ExprStmt': {
         const e = st.expr;
         // A `??` written as a statement is `Statement::Match` in Rust: the
-        // scrutinee and each arm's value are read; as a value it is not.
+        // scrutinee is read on every path, and each arm is one path. A value
+        // arm's value is read and the path goes on — the statement discards it.
+        // A block arm was never read, and still ends the paths that return in
+        // it. A value no arm matches fails there (`no pattern matched`), so it
+        // is no path. As a value, a `??` is not read.
         if (e?.type === 'Match' && !e.paren) {
-          this.collectConstraintsExpr(e.expr, ctx);
+          const reached = Checker.joinPaths(at, this.constraintsOf([e.expr], ctx));
+          let returned = null, falls = null;
           for (const arm of (e.arms ?? [])) {
-            if (arm?.body?.type === 'expr') this.collectConstraintsExpr(arm.body.value, ctx);
+            let paths = { returned: null, falls: reached };
+            if (arm?.body?.type === 'block') {
+              paths = Checker.requiringPaths(this.constraintPaths(arm.body.stmts, ctx, reached), reached);
+            } else if (arm?.body?.type === 'expr' && paths.falls) {
+              paths = { returned: null, falls: Checker.joinPaths(paths.falls, this.constraintsOf([arm.body.value], ctx)) };
+            }
+            returned = Checker.meetPaths(returned, paths.returned);
+            falls = Checker.meetPaths(falls, paths.falls);
           }
-          return;
+          return { returned, falls };
         }
-        this.collectConstraintsExpr(e, ctx);
-        return;
+        return through([e]);
       }
       default:
-        return;
+        return { returned: null, falls: at };
     }
   }
 
