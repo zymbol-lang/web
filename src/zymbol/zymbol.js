@@ -5349,8 +5349,8 @@ class Checker {
    * the relation an argument and an array element are checked with. Cannot-tell
    * (`null`, `?`) and `Any` fit anything, at any depth; Int and Float fit each
    * other, and Number fits either; arrays, tuples, dictionaries and functions
-   * fit part by part. A change of type is the other relation, `typesCompatible`
-   * (`is_compatible_with`), which compares a function whole.
+   * fit part by part. A change of type, `typesCompatible` (`is_compatible_with`),
+   * is this same relation since GLB-104.
    *
    * Part by part matters since a lambda has a type (ZYJS-049): the elements of
    * `[(x) -> x + 1, (x) -> x * 2]` are `(Any) -> Any` and `(Any) -> Int`, the
@@ -5445,45 +5445,18 @@ class Checker {
     });
   }
 
-  // `is_compatible_with` in Rust: cannot-tell is always compatible, and Int
-  // with Float is not a change worth a warning.
+  // `is_compatible_with` in Rust, which is `types_compatible_static` since
+  // GLB-104 (decided 2026-10-07): a change of type is the relation an argument
+  // and an element are checked with, at every depth. Cannot-tell fits anything,
+  // Int and Float fit each other and Number fits either, and an array, a tuple,
+  // a dictionary or a function fits part by part — `(1, 2)` then `(1, 2.5)` is
+  // no more a change than `1` then `2.5`, and `[1]` then `[1.5]` is none either.
+  // A name this pass cannot parse is compared as written.
   typesCompatible(a, b) {
     if (a === null || b === null || a === undefined || b === undefined) return true;
-    if (a === 'Any' || b === 'Any') return true;
-    if ((a === 'Int' && b === 'Float') || (a === 'Float' && b === 'Int')) return true;
-    // Number is "Int or Float, undetermined" — a parameter used in arithmetic —
-    // so either settling it is no change (as `is_compatible_with` in Rust).
-    if ((a === 'Number' && (b === 'Int' || b === 'Float')) || (b === 'Number' && (a === 'Int' || a === 'Float'))) return true;
-    // An array whose element type is not known yet — `[]` is `[Any]` — has no
-    // element type to change (GLB-093, as `is_compatible_with` in Rust).
-    if ((a === '[Any]' && b.startsWith('[')) || (b === '[Any]' && a.startsWith('['))) return true;
-    // A function is compared part by part (GLB-100), as `is_compatible_with`
-    // compares it in Rust: the same arity, each parameter and the return by
-    // this same relation. `(Any) -> Any` and `(Any) -> Int` are one function.
     const A = Checker.parseTypeName(a), B = Checker.parseTypeName(b);
-    if (A?.k === 'fn' && B?.k === 'fn') return Checker.fitChange(A, B);
+    if (A && B) return Checker.fitStatic(A, B);
     return a === b;
-  }
-
-  // `is_compatible_with` over parsed type names: cannot-tell and `Any` fit
-  // anything, Int and Float fit each other and Number fits either, an array of
-  // `Any` fits any array, a function fits part by part — and everything else
-  // only when it is the same type.
-  static fitChange(A, B) {
-    if (!A || !B || A.k === 'any' || B.k === 'any') return true;
-    if (A.k === 'prim' && B.k === 'prim') {
-      if (A.n === B.n) return true;
-      const num = n => n === 'Int' || n === 'Float';
-      if (num(A.n) && num(B.n)) return true;
-      return (A.n === 'Number' && num(B.n)) || (num(A.n) && B.n === 'Number');
-    }
-    if (A.k === 'array' && B.k === 'array' && (A.e?.k === 'any' || B.e?.k === 'any')) return true;
-    if (A.k === 'fn' && B.k === 'fn') {
-      return A.params.length === B.params.length
-        && A.params.every((p, i) => Checker.fitChange(p, B.params[i]))
-        && Checker.fitChange(A.ret, B.ret);
-    }
-    return JSON.stringify(A) === JSON.stringify(B);
   }
 
   noteLiteralType(name, value, line) {
