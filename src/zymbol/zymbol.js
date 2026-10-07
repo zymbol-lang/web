@@ -4915,7 +4915,8 @@ class Checker {
     const found = [];
     // The blocks `collect_return_types` descends into, and no others: the
     // branches of a `?`, a loop's body, the `!?` block and each `:!` (not the
-    // `:>`), and a `??` written as a statement, whose value arms are returns.
+    // `:>`), and the arms of a `??` written as a statement — their blocks, not
+    // their values, which the statement discards (GLB-102).
     // The `!?` and the `??` were missing here, so `risky(a) { !? { <~ a[1] } :!
     // { <~ _err } }` was taken to return Unit (GLB-089).
     const walk = stmts => {
@@ -4929,10 +4930,13 @@ class Checker {
           for (const c of (st.catches ?? [])) walk(c.body);
           continue;
         }
+        // An arm's value is not a return: the statement discards it, as the
+        // engines run it; a `<~` inside an arm's block — or the block after a
+        // value, `pattern => value { … }` — does return (GLB-102).
         if (st.type === 'ExprStmt' && st.expr?.type === 'Match' && !st.expr.paren) {
           for (const arm of (st.expr.arms ?? [])) {
-            if (arm?.body?.type === 'expr') found.push(this.inferType(arm.body.value, locals));
-            else if (arm?.body?.type === 'block') walk(arm.body.stmts);
+            if (arm?.body?.type === 'block') walk(arm.body.stmts);
+            else if (arm?.body?.effect) walk(arm.body.effect);
           }
           continue;
         }
