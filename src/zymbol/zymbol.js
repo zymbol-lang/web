@@ -447,9 +447,12 @@ function errorKindOfMessage(message) {
   return '##_';
 }
 class ZyRuntimeError extends ZyError {
-  constructor(msg, errType = '##_', line) {
+  constructor(msg, errType, line) {
     super(msg, line);
-    this.errType = errType;
+    this.errType = errType ?? '##_';
+    // A `##_` passed on purpose is a kind too, and the words of the message do
+    // not get to change it (GLB-099); one left out is read by the words.
+    this.kindDeclared = errType !== undefined;
   }
 }
 class ZyStaticError extends Error {
@@ -3909,17 +3912,19 @@ class Env {
     // lambda — so it is looked for at every level the lookup passes, not only
     // at the root (ZYJS-030): `y` ended inside a function's `?` block said
     // "'y' is undefined — did you mean 'y°'".
+    // `##_`, declared: the words of the name chose the family — a variable
+    // called `index` was an `##Index` (GLB-099).
     if (this.destroyed?.has(name)) {
-      throw new ZyError(
-        `use after destruction: variable '${name}' was destroyed after its last use`);
+      throw new ZyRuntimeError(
+        `use after destruction: variable '${name}' was destroyed after its last use`, '##_');
     }
     if (!this.parent) {
       // GLB-008: the wording of both Rust engines, verbatim — `zyq consensus`
       // compares text, and more to the point a reader who wrote `\` needs to be
       // told that is what happened rather than sent to look for a definition.
       if (this.wasDestroyed(name)) {
-        throw new ZyError(
-          `use after destruction: variable '${name}' was destroyed after its last use`);
+        throw new ZyRuntimeError(
+          `use after destruction: variable '${name}' was destroyed after its last use`, '##_');
       }
       throw new ZyError(`'${name}' is undefined — did you mean '${name}°' (hot definition)?`);
     }
@@ -9053,7 +9058,7 @@ export class Interpreter {
           if (err instanceof ZyErrorPropagate) throw err; // $!! propagates through try/catch
           // An error raised with a kind keeps it; one that carries only a message
           // is read by the words, as the Rust engines read it.
-          const errType = (err.errType && err.errType !== '##_')
+          const errType = (err.errType && (err.errType !== '##_' || err.kindDeclared))
             ? err.errType
             : errorKindOfMessage(err.message ?? String(err));
           const matched = stmt.catches.find(
@@ -9076,8 +9081,8 @@ export class Interpreter {
       case 'LifetimeEnd': {
         // A second `\` that runs is a use after the first (MEM-8, GLB-055).
         if (!env.destroy(stmt.name) && env.wasDestroyed(stmt.name)) {
-          throw new ZyError(
-            `use after destruction: variable '${stmt.name}' was destroyed after its last use`);
+          throw new ZyRuntimeError(
+            `use after destruction: variable '${stmt.name}' was destroyed after its last use`, '##_');
         }
         return;
       }
@@ -9311,7 +9316,9 @@ export class Interpreter {
       // prints. The browser has no process to start, so the form parses, is
       // checked, and fails here, where it is reached.
       case 'Execute':
-        throw new ZyError(`cannot run '${expr.path}': a subscript runs another file as a process, and the browser has none`, expr.line);
+        // An `##IO`, declared, as the Rust engines raise a subscript they cannot
+        // run (GLB-099): the path's words chose the family before.
+        throw new ZyRuntimeError(`cannot run '${expr.path}': a subscript runs another file as a process, and the browser has none`, '##IO', expr.line);
 
       case 'ErrorConstruct': {
         // A soft error value, never a raise: `$!` is #1, `$!!` propagates it,
@@ -9710,14 +9717,16 @@ export class Interpreter {
         }
         // The wording family the Rust engines use, verbatim — `zyq consensus`
         // compares the text, and "named tuple" is the retired vocabulary.
+        // A `##Type` (D1), declared: the words of the name chose the family —
+        // `t.index` was an `##Index` (GLB-099).
         if (obj.type === 'tuple' && !obj.keys)
-          throw new ZyError(
+          throw new ZyRuntimeError(
             `a positional tuple is addressed by position, not by name: '${expr.field}'\n` +
-            `help: use t[1] — names live in a dictionary, #(key: value)`);
+            `help: use t[1] — names live in a dictionary, #(key: value)`, '##Type');
         if (!isDict(obj))
-          throw new ZyError(
+          throw new ZyRuntimeError(
             `the dot reaches a dictionary key, and this is ${typeLabel(obj)}\n` +
-            `help: use d.${expr.field} on a #(…) — for a position, use x[1]`);
+            `help: use d.${expr.field} on a #(…) — for a position, use x[1]`, '##Type');
         const i = obj.keys.indexOf(expr.field);
         // ##Key, not ##_: an absent key is its own kind whichever way the
         // reader arrived — through the dot or through the bracket (decision 10).
