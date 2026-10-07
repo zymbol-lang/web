@@ -5554,6 +5554,13 @@ class Checker {
   checkMatchPattern(p) {
     if (!p) return;
     if (p.type === 'Ident' && p.name) { this.lookup(p.name, p.line); return; }
+    // `umbral =>` arrives as a literal pattern whose value is the name: the
+    // arm compares the scrutinee with what `umbral` holds, so the pattern
+    // reads it. Unread here, the name was reported unused (ZYJS-055).
+    if (p.type === 'literal' && p.value?.type === 'Ident' && p.value.name) {
+      this.lookup(p.value.name, p.value.line ?? p.line);
+      return;
+    }
     for (const e of (p.elems ?? p.items ?? [])) {
       if (e?.kind === 'literal') this.checkExpr(e.expr);
       else if (e?.kind === 'bind' && e.name) this.lookup(e.name, p.line);
