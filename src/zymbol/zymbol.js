@@ -5191,8 +5191,10 @@ class Checker {
         switch (e.op) {
           case '+': case '-': case '*': case '/': case '%': case '^':
             add(l, { k: 'num' }); add(r, { k: 'num' }); break;
+          // The left side only: the right one runs when the left does not
+          // decide, so it is not on every path (TYP-2, GLB-103).
           case '&&': case '||':
-            add(l, { k: 'bool' }); add(r, { k: 'bool' }); break;
+            add(l, { k: 'bool' }); break;
           case '<': case '<=': case '>': case '>=': {
             const rt = litType(e.right), lt = litType(e.left);
             if (l && rt) add(l, { k: 'compat', t: rt });
@@ -5202,7 +5204,8 @@ class Checker {
           default: break;   // `==`, `<>`: nothing — `==` never coerces
         }
         this.collectConstraintsExpr(e.left, ctx);
-        this.collectConstraintsExpr(e.right, ctx);
+        // Nor anything inside the right side of `&&` and `||` (GLB-103).
+        if (e.op !== '&&' && e.op !== '||') this.collectConstraintsExpr(e.right, ctx);
         return;
       }
       // Juxtaposition constrains nothing (every value has a string form), but
