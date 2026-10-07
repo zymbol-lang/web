@@ -57,6 +57,8 @@
     "W_UNUSED": "variable sin usar: '{name}'",
     "W_UNUSED_CONST": "constante sin usar: '{name}'",
     "W_UNUSED_CONST_help": "considera eliminar esta constante",
+    "W_WRITE_ONLY": "a '{name}' se le asigna un valor que nunca se lee",
+    "W_WRITE_ONLY_help": "considera eliminar la variable o usar su valor",
     "W_UNREACHABLE": "código inalcanzable: esta sentencia va después de {exit}, que siempre sale del bloque",
     "W_UNREACHABLE_help": "bórrala, o muévela antes de la salida",
     "W_UNREACHABLE_BRANCHES": "código inalcanzable: todas las ramas del '?' de arriba salen del bloque",

@@ -4467,10 +4467,18 @@ class Checker {
       // called a "variable" as well. Nor about a function nobody calls, which
       // this one also named a variable (ZYJS-043).
       if (!info.used && !name.startsWith('_') && !info.isConst && !info.isAlias && !info.isParam && !info.isFn) {
-        this.warn('W_UNUSED',
-          `unused variable '${name}'\n` +
-          `= help: consider removing this variable or prefixing with '_' if intentionally unused`,
-          info, { name });
+        // Written again and never read is its own warning, as in Rust's
+        // `is_write_only`: the second write counted as a read here, so
+        // `x = 1  x = 2` said nothing at all (ZYJS-052).
+        if (info.assigned) {
+          this.warn('W_WRITE_ONLY', `variable '${name}' is assigned but never read`, info, { name },
+            'consider removing this variable or using its value');
+        } else {
+          this.warn('W_UNUSED',
+            `unused variable '${name}'\n` +
+            `= help: consider removing this variable or prefixing with '_' if intentionally unused`,
+            info, { name });
+        }
       }
       // A constant nobody reads warns too, named as what it is — as both Rust
       // engines do (GLB-061, decided 2026-09-25).
@@ -5554,6 +5562,25 @@ class Checker {
     for (const alt of (p.alts ?? [])) this.checkMatchPattern(alt);
   }
 
+  /**
+   * Mark a visible name written, the way `lookup(…, true)` does, without its
+   * `_name` check — a destructuring target never had it (ZYJS-052).
+   */
+  markWritten(name) {
+    const info = this.visibleRecord(name);
+    if (info) info.assigned = true;
+  }
+
+  /** The record a name reaches from here, within the function — `lookup`'s search, marking nothing. */
+  visibleRecord(name) {
+    for (let i = this.stack.length - 1; i >= 0; i--) {
+      const info = this.stack[i].vars.get(name);
+      if (info) return info;
+      if (this.stack[i].funcBoundary && !name.startsWith('_')) break;
+    }
+    return null;
+  }
+
   /** Mark a name used if it is in scope; say nothing if it is not. */
   markUsedIfPresent(name) {
     for (let i = this.stack.length - 1; i >= 0; i--) {
@@ -5791,7 +5818,11 @@ class Checker {
     return false;
   }
 
-  lookup(name, usageLine) {
+  /**
+   * Find a visible name and mark it read — or, with `write`, written: a write is
+   * not a use, and a name written and never read is reported (ZYJS-052).
+   */
+  lookup(name, usageLine, write = false) {
     if (!name) return null;
     for (let i = this.stack.length - 1; i >= 0; i--) {
       const frame = this.stack[i];
@@ -5812,8 +5843,12 @@ class Checker {
           }
         }
         const rec = frame.vars.get(name);
-        rec.used = true;
-        if (rec.shadowOf) rec.shadowOf.used = true;
+        if (write) {
+          rec.assigned = true;
+        } else {
+          rec.used = true;
+          if (rec.shadowOf) rec.shadowOf.used = true;
+        }
         return rec;
       }
       if (frame.funcBoundary && !name.startsWith('_')) break;
@@ -6080,6 +6115,10 @@ class Checker {
     switch (stmt.type) {
 
       case 'VarAssign': {
+        // What the name was before this statement: a record the statement
+        // itself brings into being (a hot definition, an accumulator) is the
+        // declaration, and its own write is not a second one (ZYJS-052).
+        const prior = stmt.name ? this.visibleRecord(stmt.name) : null;
         // Prefix hot-def (°name = expr): define target before checking RHS so self-references are valid
         if (wasHot && stmt.name) {
           const info = this.lookup(stmt.name, stmt.line);
@@ -6109,9 +6148,11 @@ class Checker {
             this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt, { name: stmt.name }, Checker.HELP_CONST);
             return;
           }
-          // Kept for what it did before: the lookup marks the name, as it
-          // always has for an assignment.
-          this.lookup(stmt.name, stmt.line);
+          // The lookup still refuses a `_name` written from an inner block;
+          // what it marks is a write, not a read (ZYJS-052): it marked the
+          // name used, so a variable written twice and never read was silent.
+          const rec = this.lookup(stmt.name, stmt.line, true);
+          if (rec && rec !== prior) rec.assigned = false;
         }
         if (stmt.hot && wasHot) {
           // See CompoundAssign: `°x° = …` asks for two lifetimes at once.
@@ -6611,7 +6652,9 @@ class Checker {
             }
             // A name already in view is written, not shadowed — the way `x = …`
             // is. `define` put a second `x` in the block's frame, which died
-            // unread and warned `unused variable` (ZYJS-042).
+            // unread and warned `unused variable` (ZYJS-042). Written, so it
+            // is `assigned but never read` if nothing reads it (ZYJS-052).
+            this.markWritten(t.name);
             this.defineOrKeep(t.name, stmt, false);
           }
         }
@@ -12005,7 +12048,7 @@ export function checkSource(src, opts = {}) {
     diagnostics.filter(d => d.code === 'E_VAR' && d.params?.name).map(d => d.params.name));
   if (quiet.size > 0) {
     diagnostics = diagnostics.filter(
-      d => !(d.code === 'W_UNUSED' && quiet.has(d.params?.name)));
+      d => !((d.code === 'W_UNUSED' || d.code === 'W_WRITE_ONLY') && quiet.has(d.params?.name)));
   }
   return { ast, diagnostics };
 }

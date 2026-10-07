@@ -58,6 +58,8 @@
     "W_UNUSED": "unused variable '{name}'",
     "W_UNUSED_CONST": "unused constant '{name}'",
     "W_UNUSED_CONST_help": "consider removing this constant",
+    "W_WRITE_ONLY": "variable '{name}' is assigned but never read",
+    "W_WRITE_ONLY_help": "consider removing this variable or using its value",
     "W_UNREACHABLE": "unreachable code: this statement comes after {exit}, which always leaves the block",
     "W_UNREACHABLE_help": "delete it, or move it above the exit",
     "W_UNREACHABLE_BRANCHES": "unreachable code: every branch of the '?' above leaves the block",
