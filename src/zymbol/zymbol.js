@@ -6787,7 +6787,11 @@ class Checker {
         } else if (expr.callee && typeof expr.callee === 'object') {
           this.checkExpr(expr.callee);
         }
-        for (const a of (expr.args ?? [])) this.checkExpr(a.value ?? a);
+        // Each argument is an expression node — the `<~` mark is kept apart, in
+        // `args.outArgs`. `a.value ?? a` handed a string literal's own parts to
+        // `checkExpr` instead of the literal, so the name read by `f("{t}")`
+        // was never marked: 28 false `unused variable` in GO's 棋戦.zy (ZYJS-054).
+        for (const a of (expr.args ?? [])) this.checkExpr(a);
         return;
       }
 
@@ -6813,7 +6817,7 @@ class Checker {
         // by what it calls, and that was asked just above.
         if (callee?.type === 'FieldAccess') this.checkExpr(callee.obj);
         else this.checkExpr(callee);
-        for (const a of (expr.args ?? [])) this.checkExpr(a.value ?? a);
+        for (const a of (expr.args ?? [])) this.checkExpr(a);
         return;
       }
 
