@@ -5453,7 +5453,33 @@ class Checker {
     // An array whose element type is not known yet — `[]` is `[Any]` — has no
     // element type to change (GLB-093, as `is_compatible_with` in Rust).
     if ((a === '[Any]' && b.startsWith('[')) || (b === '[Any]' && a.startsWith('['))) return true;
+    // A function is compared part by part (GLB-100), as `is_compatible_with`
+    // compares it in Rust: the same arity, each parameter and the return by
+    // this same relation. `(Any) -> Any` and `(Any) -> Int` are one function.
+    const A = Checker.parseTypeName(a), B = Checker.parseTypeName(b);
+    if (A?.k === 'fn' && B?.k === 'fn') return Checker.fitChange(A, B);
     return a === b;
+  }
+
+  // `is_compatible_with` over parsed type names: cannot-tell and `Any` fit
+  // anything, Int and Float fit each other and Number fits either, an array of
+  // `Any` fits any array, a function fits part by part — and everything else
+  // only when it is the same type.
+  static fitChange(A, B) {
+    if (!A || !B || A.k === 'any' || B.k === 'any') return true;
+    if (A.k === 'prim' && B.k === 'prim') {
+      if (A.n === B.n) return true;
+      const num = n => n === 'Int' || n === 'Float';
+      if (num(A.n) && num(B.n)) return true;
+      return (A.n === 'Number' && num(B.n)) || (num(A.n) && B.n === 'Number');
+    }
+    if (A.k === 'array' && B.k === 'array' && (A.e?.k === 'any' || B.e?.k === 'any')) return true;
+    if (A.k === 'fn' && B.k === 'fn') {
+      return A.params.length === B.params.length
+        && A.params.every((p, i) => Checker.fitChange(p, B.params[i]))
+        && Checker.fitChange(A.ret, B.ret);
+    }
+    return JSON.stringify(A) === JSON.stringify(B);
   }
 
   noteLiteralType(name, value, line) {
