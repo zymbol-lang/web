@@ -8975,7 +8975,10 @@ export class Interpreter {
         // since eval() only ever returns plain Values.
         if (stmt.expr.type === 'Match') {
           const arm = await this.selectMatchArm(stmt.expr, env);
-          if (!arm) return;
+          // No arm matched: that aborts here too, as it does for a `??` used as a
+          // value (GLB-016) and as both Rust engines do for either. Written as a
+          // statement, the program went on to the next line (ZYJS-051).
+          if (!arm) throw new ZyError('no pattern matched in match expression', stmt.expr.line);
           const aenv = arm.runEnv;
           if (arm.body.type === 'block') return await this.execBlock(arm.body.stmts, new Env(aenv));
           await this.eval(arm.body.value, aenv);
