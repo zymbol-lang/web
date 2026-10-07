@@ -6027,6 +6027,11 @@ class Checker {
   // type inference, and the Rust one lets an inferred `Any` through for the
   // same reason. A wrong literal is the case worth catching and the one a
   // reader writes by mistake.
+  // Rust's help, word for word: without it the two analysers refused the same
+  // `<~` in different words (GLB-107).
+  static HELP_EXIT = '`<~ 0` for success and `<~ 1` (or another number) for failure; ' +
+    'to print something before leaving, use `>>` on the line above';
+
   checkTopLevelExit(stmt) {
     if (!stmt || stmt.type === 'FuncDecl') return;
     const walk = (block) => {
@@ -6044,13 +6049,13 @@ class Checker {
             'E-EXIT-TYPE',
             `a top-level \`<~\` ends the program, so its value is the exit status ` +
             `and must be a whole number — this one is ${named[v.kind] ?? v.kind}`,
-            stmt);
+            stmt, null, Checker.HELP_EXIT);
         } else if (v?.type === 'ArrayLit' || v?.type === 'TupleLit' || v?.type === 'NamedTuple') {
           this.error(
             'E-EXIT-TYPE',
             'a top-level `<~` ends the program, so its value is the exit status ' +
             'and must be a whole number — this one is a collection',
-            stmt);
+            stmt, null, Checker.HELP_EXIT);
         }
         return;
       }
@@ -6065,11 +6070,38 @@ class Checker {
         for (const c of stmt.catches ?? []) walk(c.body ?? c.block);
         walk(stmt.finallyBody ?? stmt.finally);
         return;
-      case 'Match':
-        for (const c of stmt.cases ?? []) walk(c.body ?? c.block);
-        return;
       case 'TuiBlock': walk(stmt.body); return;
-      default: return;
+      default: break;
+    }
+    // A `??` — written as a statement or inside an expression of this
+    // statement — runs its arms' blocks here, at the top level: their `<~` end
+    // the program too. A lambda's body returns to its caller and is not entered.
+    // The `case 'Match'` this replaced read `stmt.cases`, a shape the parser
+    // never builds, so `?? v { 1 => { <~ "b" } }` was not refused here (GLB-107).
+    const seen = new Set();
+    const scan = (node) => {
+      if (!node || typeof node !== 'object' || seen.has(node)) return;
+      seen.add(node);
+      if (Array.isArray(node)) { for (const x of node) scan(x); return; }
+      if (node.type === 'Lambda' || node.type === 'FuncDecl') return;
+      if (node.type === 'Match' && Array.isArray(node.arms)) {
+        scan(node.scrutinee);
+        for (const arm of node.arms) {
+          if (arm?.body?.type === 'block') walk(arm.body.stmts);
+          else {
+            scan(arm?.body?.value);
+            if (arm?.body?.effect) walk(arm.body.effect);
+          }
+        }
+        return;
+      }
+      for (const [k, v] of Object.entries(node)) {
+        if (k === 'line' || k === 'col' || k === 'zyLine' || k === 'zyCol') continue;
+        if (v && typeof v === 'object') scan(v);
+      }
+    };
+    if (stmt.type !== 'If' && stmt.type !== 'Loop' && stmt.type !== 'TryCatch' && stmt.type !== 'TuiBlock') {
+      scan(stmt);
     }
   }
 
@@ -8776,6 +8808,13 @@ export class Interpreter {
       if (e instanceof ZyErrorPropagate && e.zyLine == null && stmt.zyLine != null) {
         e.zyLine = stmt.zyLine;
       }
+      // A `<~`, `@!` or `@>` thrown out of an expression — a `??` arm whose
+      // value is used — is this statement's own exit, and is returned the way
+      // a statement returns one, so the loop, the function or the program takes
+      // it. Thrown on, it reached the top level and the loops, which only read
+      // returned signals: `x = ?? v { 1 => { <~ 5 } }` ended the program with
+      // `Runtime error: [object Object]` (GLB-107).
+      if (e instanceof ZyReturn || e instanceof ZyBreak || e instanceof ZyContinue) return e;
       throw e;
     }
   }
