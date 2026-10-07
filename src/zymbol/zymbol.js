@@ -1769,7 +1769,13 @@ export class Parser {
     // A sign, a `!` or a `{` starts none either: `-x` and `!b` are refused by
     // both Rust engines and this one ran them as expressions, and a bare block
     // was refused here in other words.
-    if (t.type === 'TILDE' || ['NUM', 'FLOAT', 'STR', 'CHAR', 'BOOL', 'MINUS', 'PLUS', 'NOT', 'LBRACE'].includes(t.type)) {
+    // Nor does any other value: `##_`, an error value `##Kind("…")`, `#|…|`, a
+    // rounding or format `#.2|…|` `#,|…|` `#^|…|`, a base conversion `0x|…|`, or
+    // a subscript `</ … />` written alone. Both Rust engines refuse them where
+    // the statement starts; this one ran them and threw the value away
+    // (ZYJS-050).
+    if (t.type === 'TILDE' || ['NUM', 'FLOAT', 'STR', 'CHAR', 'BOOL', 'MINUS', 'PLUS', 'NOT', 'LBRACE',
+                               'UNIT', 'ERRCON', 'DATA_OP', 'EXECUTE'].includes(t.type)) {
       throw new ZyStaticError(`unexpected token: ${Parser.tokenSpelling(t)}`, t,
         'expected statement (>>, <<, ?, ??, @, @!, @>, !?, <~, ¶, \\\\, or identifier)');
     }
@@ -3631,6 +3637,21 @@ export class Parser {
   static tokenSpelling(t) {
     if (!t || t.type === 'EOF') return 'end of file';
     switch (t.type) {
+      // As `TokenKind::quoted` spells them in Rust: a value operator by the
+      // mark it opens with, an error value by its `#`, a subscript whole.
+      case 'UNIT': return "'##_'";
+      case 'ERRCON': return "'#'";
+      case 'EXECUTE': return `'</ ${t.value} />'`;
+      case 'DATA_OP': {
+        const k = t.value?.kind ?? '';
+        if (k === 'base_conv') return `'${{ 16: '0x', 2: '0b', 8: '0o', 10: '0d' }[t.value.prec] ?? '0d'}'`;
+        if (k === 'eval') return "'#|'";
+        if (k === 'round') return "'#.'";
+        if (k === 'trunc') return "'#!'";
+        if (k.startsWith('comma')) return "'#,'";
+        if (k.startsWith('sci')) return "'#^'";
+        break;
+      }
       case 'CHAR': return `'${t.value}'`;
       case 'STR':
         return `"${(t.value ?? []).map(p => (p.t === 'lit' ? p.v : `{${p.v}}`)).join('')}"`;
