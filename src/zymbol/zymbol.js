@@ -4904,14 +4904,23 @@ class Checker {
     this.retBusy.add(name);
     const locals = new Map();
     for (const p of (decl.params ?? [])) locals.set(p.name, null);
-    const t = this.returnTypeOfBlock(decl.body, locals);
+    // A local of a named function has no type for its return: Rust defines
+    // every one as `Any` before reading the `<~` (`define_local_vars_from_block`).
+    // Typed by the last assignment walked, whatever the path, `f(c) { r = 5
+    // ? c > 0 { r = "a" } <~ r }` was a function of String, and `g(f(0))` —
+    // 6 in the Rust engines — was refused here before it ran (ZYJS-053).
+    const t = this.returnTypeOfBlock(decl.body, locals, { localsUnknown: true });
     this.retBusy.delete(name);
     this.retTypes.set(name, t);
     return t;
   }
 
-  /** What the `<~` of a block give, unified; Unit when there is none. */
-  returnTypeOfBlock(body, locals) {
+  /**
+   * What the `<~` of a block give, unified; Unit when there is none. A lambda's
+   * locals keep the type of their assignment, as Rust checks a block body
+   * before it reads it; a named function's do not (`localsUnknown`, ZYJS-053).
+   */
+  returnTypeOfBlock(body, locals, { localsUnknown = false } = {}) {
     const found = [];
     // The blocks `collect_return_types` descends into, and no others: the
     // branches of a `?`, a loop's body, the `!?` block and each `:!` (not the
@@ -4923,7 +4932,9 @@ class Checker {
       for (const st of (stmts ?? [])) {
         if (!st) continue;
         if (st.type === 'FuncDecl' || st.type === 'Lambda') continue;
-        if (st.type === 'VarAssign' && st.name) locals.set(st.name, this.inferType(st.value, locals));
+        if (st.type === 'VarAssign' && st.name) {
+          locals.set(st.name, localsUnknown ? null : this.inferType(st.value, locals));
+        }
         if (st.type === 'Return') { found.push(st.value ? this.inferType(st.value, locals) : 'Unit'); continue; }
         if (st.type === 'TryCatch') {
           walk(st.tryBody ?? st.try);
