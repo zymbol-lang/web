@@ -7179,7 +7179,7 @@ class Checker {
         if (t && t !== 'String') {
           const kind = expr.kind.slice(2);
           this.error('E_TYPE', `an error's message is a String, got ${t}`,
-            { line: expr.valueLine ?? expr.line, col: expr.valueCol ?? null }, { type: t },
+            { line: expr.valueLine ?? expr.line, col: expr.valueCol ?? null }, { type: t, kind },
             `build the text first: ##${kind}("…"), or ##${kind}("" x) to turn a value into it`);
         }
         return;

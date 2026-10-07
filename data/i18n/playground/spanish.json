@@ -80,6 +80,8 @@
     "E018": "el argumento {index} de '{name}' es un parámetro de salida y debe marcarse '<~' en la llamada",
     "E019": "el argumento {index} de '{name}' lleva '<~' pero la función no lo declara como parámetro de salida",
     "E_ARG_TYPE": "el argumento {index} es de tipo {got}, pero la función '{name}' espera {expected}",
+    "E_TYPE": "el mensaje de un error es un String, y este es {type}",
+    "E_TYPE_help": "construye antes el texto: ##{kind}(\"…\"), o ##{kind}(\"\" x) para convertir un valor en texto",
     "E_HOT_AMBIG": "marcas de definición caliente ambiguas en '{name}': usa '°{name}' (ancla sobre el bucle) o '{name}°' (ancla en el bucle), no las dos",
     "E_HOT_OUTPUT": "`°` no tiene efecto en una salida — usa `>> {name} ¶`",
     "W_ARITH_TYPE": "operación aritmética sobre un tipo no numérico: {type}",
