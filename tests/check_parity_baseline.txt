@@ -320,7 +320,7 @@ examples/shell/timestamp-id.zy	0	0
 examples/tour/basics.zy	0	0
 examples/tour/collections.zy	0	0
 examples/tour/control.zy	0	0
-examples/tour/errors.zy	0	1
+examples/tour/errors.zy	0	0
 examples/tour/functions.zy	0	0
 examples/tui/hello.zy	0	0
 examples/tui/snake/dibujo.zy	0	0
