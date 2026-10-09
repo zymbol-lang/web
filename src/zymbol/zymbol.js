@@ -10802,19 +10802,29 @@ export class Interpreter {
           if (r.type !== 'bool') throw new ZyRuntimeError(`sort comparator must return a Bool, got ${typeIdent(r)}`, '##Type', expr.line);
           return r.v;
         };
-        // The Rust engines' bubble sort, call for call, and stable (GLB-073,
-        // decided 2026-10-03): swap only when the first does NOT go before the
-        // second AND the second goes before the first. This was an insertion
-        // sort that swapped on the first #0, so a strict comparator reversed
-        // its ties.
+        // The Rust engines' bottom-up merge sort, call for call (GLB-108,
+        // decided 2026-10-09): runs of width 1, 2, 4, …, merged left to right.
+        // It was their bubble sort, which visited every pair. Stable by rule B
+        // (GLB-073): the left element is taken unless it does NOT go before the
+        // right one AND the right one goes before it — before GLB-073 this was
+        // an insertion sort that reversed a strict comparator's ties.
         const n = items.length;
-        for (let i = 0; i < n; i++) {
-          for (let j = 0; j < n - i - 1; j++) {
-            if (await says(items[j], items[j+1])) continue;
-            if (await says(items[j+1], items[j])) { const tmp = items[j]; items[j] = items[j+1]; items[j+1] = tmp; }
+        let src = items, merged = [];
+        for (let width = 1; width < n; width *= 2) {
+          merged = [];
+          for (let lo = 0; lo < n; lo += 2 * width) {
+            const mid = Math.min(lo + width, n), hi = Math.min(lo + 2 * width, n);
+            let i = lo, j = mid;
+            while (i < mid && j < hi) {
+              if (await says(src[i], src[j]) || !(await says(src[j], src[i]))) merged.push(src[i++]);
+              else merged.push(src[j++]);
+            }
+            while (i < mid) merged.push(src[i++]);
+            while (j < hi) merged.push(src[j++]);
           }
+          src = merged;
         }
-        return mkArr(items);
+        return mkArr(src);
       }
 
       case '$>': {
