@@ -423,8 +423,8 @@
       "summary": "Lee texto y rechaza lo que pase del largo indicado, volviendo a preguntar."
     },
     "typed_chr": {
-      "concept": "Entrada de un carácter",
-      "summary": "Lee exactamente un carácter, y vuelve a preguntar si recibe más."
+      "concept": "Carácter, desde un código o como entrada",
+      "summary": "En una expresión, convierte un punto de código (un Int) en su carácter: ##'65 es A. Tras <<, lee exactamente un carácter, y vuelve a preguntar si recibe más."
     },
     "base_lit": {
       "concept": "Literal con base",

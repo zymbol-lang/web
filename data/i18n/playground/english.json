@@ -424,8 +424,8 @@
       "summary": "Reads text and rejects anything longer than the stated limit, asking again."
     },
     "typed_chr": {
-      "concept": "Checked character input",
-      "summary": "Reads exactly one character, asking again if given more."
+      "concept": "Character, from a code or as input",
+      "summary": "In an expression, turns a code point (an Int) into its character: ##'65 is A. After <<, reads exactly one character, asking again if given more."
     },
     "base_lit": {
       "concept": "Base literal",

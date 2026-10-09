@@ -2866,7 +2866,7 @@ export class Parser {
       return { type: 'CommaJoin', items };
     }
     // Implicit string concatenation: collect multiple expressions on the same line
-    const implicitExprStart = new Set(['STR','IDENT','NUM','FLOAT','CHAR','BOOL','LPAREN','LBRACKET','MINUS','NOT','CAST_FLOAT','CAST_INT_ROUND','CAST_INT_TRUNC','DATA_OP','MATCH','ELSE']);
+    const implicitExprStart = new Set(['STR','IDENT','NUM','FLOAT','CHAR','BOOL','LPAREN','LBRACKET','MINUS','NOT','CAST_FLOAT','CAST_INT_ROUND','CAST_INT_TRUNC','CAST_CHAR','DATA_OP','MATCH','ELSE']);
     const items = [first];
     while (this.peek().line === this.prevEndLine() && implicitExprStart.has(this.peek().type)) {
       items.push(this.parseExpr());
@@ -3543,7 +3543,7 @@ export class Parser {
         const canStart = () => {
           const t = this.peek().type;
           return ['NUM','FLOAT','BOOL','CHAR','STR','IDENT','LPAREN','ELSE',
-                  'CAST_FLOAT','CAST_INT_ROUND','CAST_INT_TRUNC'].includes(t);
+                  'CAST_FLOAT','CAST_INT_ROUND','CAST_INT_TRUNC','CAST_CHAR'].includes(t);
         };
         while (this.peek().line === opLine && !this.check('PILCROW') &&
                !this.check('RBRACE') && !this.check('EOF') && canStart()) {
@@ -3749,6 +3749,9 @@ export class Parser {
     if (t.type === 'CAST_FLOAT')     { this.adv(); return { type: 'CastOp', op: '##.', operand: this.parseUnary() }; }
     if (t.type === 'CAST_INT_ROUND') { this.adv(); return { type: 'CastOp', op: '###', operand: this.parseUnary() }; }
     if (t.type === 'CAST_INT_TRUNC') { this.adv(); return { type: 'CastOp', op: '##!', operand: this.parseUnary() }; }
+    // `##'` — an Int code point to its Char, the pair of `##!` on a Char
+    // (GLB-109). `<< ##' "msg" c` reads it as a typespec before any expression.
+    if (t.type === 'CAST_CHAR')      { this.adv(); return { type: 'CastOp', op: "##'", operand: this.parseUnary() }; }
 
     // `#[…]` — an array whose mix of element types is DECLARED (decision 15).
     // Same collection and same type as `[…]`: `#?` answers `##]` for both. What
@@ -4852,6 +4855,11 @@ class Checker {
             return null;
         }
       }
+      // A cast's type is its target, whatever the operand — as `infer_expr`
+      // answers it in Rust. Not knowing it here left every reassignment through
+      // a cast without the type-change warning the CLI gives (GLB-109).
+      case 'CastOp':
+        return { '##.': 'Float', '###': 'Int', '##!': 'Int', "##'": 'Char' }[e.op];
       case 'NavIndex': {
         // A navigation path is Any in Rust; only a single step is typed.
         if (e.spec?.kind !== 'simple') return null;
@@ -10131,6 +10139,22 @@ export class Interpreter {
 
       case 'CastOp': {
         const val = await this.eval(expr.operand, env);
+        // `##'` (GLB-109): only an Int is a code — a whole Float is not one,
+        // `##'###f` writes the rounding — and a code with no character (past
+        // 0x10FFFF, or a surrogate) is `##Range`, as in data_ops.rs.
+        if (expr.op === "##'") {
+          if (val.type === 'char') return val;
+          if (val.type !== 'int') {
+            const _names = { str:'String', float:'Float', bool:'Bool', arr:'Array', tuple:'Tuple', unit:'Unit' };
+            const typeName = _names[val.type] ?? (val.type.charAt(0).toUpperCase() + val.type.slice(1));
+            throw new ZyRuntimeError(`##' requires an Int or Char, got ${typeName}`, '##Type');
+          }
+          const code = val.v;
+          if (!Number.isInteger(code) || code < 0 || code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) {
+            throw new ZyRuntimeError("character out of range: ##' cannot represent this Int", '##Range');
+          }
+          return mkChar(String.fromCodePoint(code));
+        }
         // ##! also accepts a Char, casting it to its Unicode code point —
         // the only direct Char→Int route (mirrors data_ops.rs CastKind::ToIntTrunc).
         if (expr.op === '##!' && val.type === 'char') return mkInt(val.v.codePointAt(0));
