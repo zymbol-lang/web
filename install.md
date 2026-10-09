@@ -132,7 +132,7 @@ zymbol --version
 
 ```bash
 zymbol run file.zy          # tree-walker interpreter (default)
-zymbol run --vm file.zy     # register VM (~4× faster)
+zymbol run --vm file.zy     # register VM (faster; how much depends on the program)
 zymbol repl                 # interactive REPL
 zymbol check file.zy        # syntax and semantic check only
 zymbol fmt file.zy --write  # format in place
