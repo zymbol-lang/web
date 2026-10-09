@@ -1626,6 +1626,21 @@ export class Parser {
       }
     }
 
+    // `s = s + 1  i = i + 1` on one line: the right-hand side of `=` takes
+    // juxtaposition, so the `i` was read as one more operand of `s + 1` and the
+    // statement that starts here starts at the second `=`. A name just before
+    // an assignment that opens a statement was consumed by the statement before
+    // it, so say that, in `Parser::parse_statement`'s words (GLB-111). It used
+    // to be `expected expression, found '='`, which named the token only.
+    const JOINING = new Set(['ASSIGN', 'PLUS_EQ', 'MINUS_EQ', 'TIMES_EQ', 'DIV_EQ',
+                             'MOD_EQ', 'POW_EQ', 'INC', 'DEC']);
+    const before = this.pos > 0 ? this.toks[this.pos - 1] : null;
+    if (JOINING.has(t.type) && before?.type === 'IDENT' && !before.hot) {
+      throw new ZyStaticError(
+        `unexpected ${Parser.tokenSpelling(t)}: '${before.value}' was read as part of the expression before it`,
+        t, "a new statement starts on a new line, or after ';'");
+    }
+
     if (t.type === 'SET_NUMERAL_MODE') { this.adv(); return { type: 'SetNumeralMode', base: t.value }; }
     if (t.type === 'IMPORT') return this.parseImport();
     if (t.type === 'EXPORT_DECL') {
