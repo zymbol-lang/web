@@ -10115,11 +10115,11 @@ export class Interpreter {
                 // `##Parse`, declared: the words of the text chose it (GLB-097).
                 throw new ZyRuntimeError(`failed to parse '${digits}' as ${baseName} number`, '##Parse', expr.line);
               }
-              if (code > 0x10FFFF) {
-                throw new ZyError(`character code must be in range 0..0x10FFFF, got ${code}`, expr.line);
-              }
-              if (code >= 0xD800 && code <= 0xDFFF) {
-                throw new ZyError(`invalid Unicode character code: ${code}`, expr.line);
+              // A code with no character — past 0x10FFFF, or a surrogate — is
+              // `##Range`, as `##'` raises it, without the value (GLB-113).
+              if (code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) {
+                const pfx = { 2: '0b', 8: '0o', 10: '0d', 16: '0x' }[base];
+                throw new ZyRuntimeError(`character out of range: ${pfx}|…| cannot represent this code`, '##Range', expr.line);
               }
               return mkChar(String.fromCodePoint(code));
             }
