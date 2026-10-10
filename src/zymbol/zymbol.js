@@ -2920,7 +2920,14 @@ export class Parser {
         // (params) -> body form: consume ')' before '->'
         this.adv();
       } else {
-        // (params -> body) form: closing ')' comes after body
+        // (params -> body) form: closing ')' comes after body. It takes one
+        // parameter or more — the thunk is `() -> body`. `(-> 1)` was read as
+        // one with none, and ran here while both Rust parsers refused it
+        // (ZYJS-056).
+        if (params.length === 0) {
+          throw new ZyStaticError(
+            `expected expression, found ${Parser.tokenSpelling(this.peek())}`, this.peek());
+        }
         parensWrapped = true;
       }
     } else {
