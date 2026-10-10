@@ -135,7 +135,7 @@ export const SYMBOLS = {
   '.':    { id:'member',     group:'mod', example:'person = #(name: "Ada", age: 36)\n>> person.name ¶' },
 
   // ── Shell and scripts ────────────────────────────────────────────────────────
-  '<\\':  { id:'shell',      group:'shell', example:'greeting = <\\ echo hola \\>\n>> greeting ¶' },
+  '<\\':  { id:'shell',      group:'shell', example:'greeting = <\\ "echo hola" \\>\n>> greeting ¶' },
   '</':   { id:'script',     group:'shell', example:'r = </ ./helper.zy />\n>> r ¶' },
 
   // ── Structure ────────────────────────────────────────────────────────────────
@@ -251,6 +251,7 @@ export const REF_ROWS = {
   '`##.expr`': '##.',
   '`###expr`': '###',
   '`##!expr`': '##!',
+  "`##'expr`": "##'",
   '`#,|x|`': '#,|',
   '`#^|x|`': '#^|',
   '`0x`, `0b`, `0o`, `0d`': '0x',

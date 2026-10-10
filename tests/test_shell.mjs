@@ -72,7 +72,7 @@ check('a seed built from the three stand-ins stays in range', r.out === '#1' && 
 // ─── everything else is refused ───────────────────────────────────────────────
 section('commands with no stand-in are refused');
 
-for (const cmd of ['"exit 3"', 'whoami', '"cat datos.txt"',
+for (const cmd of ['"exit 3"', '"whoami"', '"cat datos.txt"',
                    `"sqlite3 x.db 'SELECT 1;'"`, `"echo 'scale=2; 355/113' | bc"`,
                    '"date +%Q"', '"true"']) {
   r = await shell(cmd);

@@ -9563,7 +9563,12 @@ export class Interpreter {
         if (_cmd === 'echo $$') return mkStr(String(1 + _rand(4194304)));
         // od … /dev/urandom — two bytes, so a uint16. The applications strip
         // od's padding with `| tr -d ' \n'`, and the stand-in's answer has none.
-        if (/^od -An -N2 -tu2 \/dev\/urandom( \| tr -d .*)?$/.test(_cmd)) return mkStr(String(_rand(65536)));
+        // Whatever `tr -d` is given is optional here: quotes and whitespace are
+        // flattened above, so `' \n'` — a space and a newline, since `\n` became
+        // an escape — leaves nothing after `-d`. The pattern asked for something
+        // there, and the very command the published games seed from was refused
+        // (ZYJS-059).
+        if (/^od -An -N2 -tu2 \/dev\/urandom( \| tr -d( .*)?)?$/.test(_cmd)) return mkStr(String(_rand(65536)));
         // echo of literal words, and nothing the shell would read as syntax:
         // `echo x | bc` is a pipeline, not an echo. The backquote is written
         // \x60 so the message inventory's extractor does not read it as the
