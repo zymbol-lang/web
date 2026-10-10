@@ -9438,12 +9438,19 @@ export class Interpreter {
       // loop ends early through `@!` (REFERENCE.md L24, settled for the Rust
       // engines in v0.0.8). `env.set` reports false for a name that does not
       // exist, which is exactly the case where the iterator stays loop-local.
+      // A loop variable that is the module's STATE is that state on every
+      // turn, as an assignment to it would be (GLB-119, decided 2026-10-10).
+      // It was bound in the turn's own scope and published when the loop
+      // ended, so a function of the module called from the body read the value
+      // from before the loop.
+      const isState = Interpreter.isModuleState(env, loop.var);
       let lastEnv = null;
       for (let i = from; step > 0 ? i <= to : i >= to; i += step) {
         this.tick();
         const iter = new Env(outer);
-        iter.def(loop.var, mkInt(i));
-        lastEnv = iter;
+        if (isState) env.set(loop.var, mkInt(i));
+        else iter.def(loop.var, mkInt(i));
+        lastEnv = isState ? null : iter;
         const sig = await this.execBlock(loop.body, iter);
         if (brk(sig)) break;
         if (cnt(sig)) continue;
@@ -9478,12 +9485,14 @@ export class Interpreter {
 
       // Same rule as the range loop above: a pre-existing name keeps the last
       // element the loop bound to it.
+      const isState = Interpreter.isModuleState(env, loop.var);
       let lastEnv = null;
       for (const item of items) {
         this.tick();
         const iter = new Env(outer);
-        iter.def(loop.var, item);
-        lastEnv = iter;
+        if (isState) env.set(loop.var, item);
+        else iter.def(loop.var, item);
+        lastEnv = isState ? null : iter;
         const sig = await this.execBlock(loop.body, iter);
         if (brk(sig)) break;
         if (cnt(sig)) continue;
