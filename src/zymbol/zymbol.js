@@ -8648,6 +8648,7 @@ export class Interpreter {
     this.outputBytes     = 0;
     this.maxBytes        = 32_000;
     this.lastYield       = performance.now();
+    this.yieldAt         = 0;
     this.numeralMode     = 0x0030;
     this.moduleResolver  = moduleResolver;
     // The file whose statements this interpreter runs. Set by `run` for the
@@ -8816,7 +8817,17 @@ export class Interpreter {
       throw new ZyError(`Execution limit reached (${grouped(this.maxSteps)} steps) — infinite loop?`);
   }
 
+  // Every loop calls this once a turn, to hand the page its turn when 16 ms
+  // have gone by. Asking the clock each time was 13.5 % of a long loop with a
+  // small body — more than the body's own bookkeeping. `tick` already counts the
+  // work done, so the clock is asked once that count has moved by a thousand
+  // evaluations: a fraction of a millisecond of interpreting, whatever a turn
+  // costs, so the page waits no longer than it did. The count going BACKWARDS
+  // is the end of a `>>|` block, which restores it; that asks the clock too.
   maybeYield() {
+    const done = this.steps - this.yieldAt;
+    if (done >= 0 && done < 1024) return;
+    this.yieldAt = this.steps;
     const now = performance.now();
     if (now - this.lastYield > 16) {
       this.lastYield = now;
