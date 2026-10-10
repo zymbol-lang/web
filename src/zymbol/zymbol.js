@@ -3950,7 +3950,31 @@ class Env {
     this.isModuleScope = isModuleScope;
   }
 
+  // ── Who owns an array (ZYJS-014) ──────────────────────────────────────────
+  //
+  // A collection assigns by value, and this engine honoured that by copying the
+  // array on EVERY edit: `a$+ x` in a loop cost the square of its length, and
+  // `t[i]$~ v` the size of `t`. An edit can write where the array is when the
+  // variable is its only holder — and that is what `own` on the wrapper says.
+  //
+  // The rule is conservative and has one direction. Only an edit of a variable,
+  // stored back into that variable, produces an owned array. Any READ of the
+  // variable that hands the wrapper to someone — another name, an argument, an
+  // element of something else, a capture, a loop — goes through `get`, which
+  // takes the mark away for good. `peek` reads without touching it, and is for
+  // the few readers that keep nothing: the edit itself, `$#`, `$?`, one index.
+  // An array nobody marked is shared, so a path this missed copies, as before.
   get(name) {
+    const v = this._lookup(name);
+    if (v.own) v.own = false;
+    return v;
+  }
+
+  peek(name) {
+    return this._lookup(name);
+  }
+
+  _lookup(name) {
     if (this.vars.has(name)) return this.vars.get(name);
     // The mark sits in the frame the name lived in — a block, a function, a
     // lambda — so it is looked for at every level the lookup passes, not only
@@ -3991,7 +4015,7 @@ class Env {
       if (f !== undefined && f.type === 'func') return f;
       throw new ZyRuntimeError(`cannot access underscore variable '${name}' from inner scope`, '##Scope');
     }
-    return this.parent.get(name);
+    return this.parent._lookup(name);
   }
 
   // True when `name` is bound inside a function — the case where, behind a
@@ -7322,6 +7346,25 @@ function navPathFans(steps) {
   return steps.some(s => s.kind === 'range');
 }
 
+// An operand that only reads — a literal, a name, arithmetic, one index, `$#`:
+// evaluating it runs none of the program's code, so it cannot write a variable.
+// An edit writes in place, and a read skips the copy, only beside operands like
+// these: left to right, the receiver is read BEFORE its operands, and one that
+// could write it has to find the value as it was (GLB-115). Anything not listed
+// is not "impure" — it simply takes the path that copies.
+function plainOperand(n) {
+  if (!n) return true;
+  switch (n.type) {
+    case 'Literal': case 'Ident': return true;
+    case 'UnaryOp': return plainOperand(n.operand ?? n.expr ?? n.arg);
+    case 'BinOp':   return plainOperand(n.left) && plainOperand(n.right);
+    case 'NavIndex':
+      return n.spec?.kind === 'simple' && plainOperand(n.obj) && plainOperand(n.spec.index);
+    case 'CollectionOp': return n.op === '$#' && plainOperand(n.obj);
+    default: return false;
+  }
+}
+
 const mkArr   = v => ({ type: 'arr',   v });
 const mkTuple = v => ({ type: 'tuple', v, keys: null });
 const mkUnit  = () => ({ type: 'unit' });
@@ -8954,7 +8997,15 @@ export class Interpreter {
       }
 
       case 'VarAssign': {
+        // `t = t$+ x`, written in full, is the same edit as the statement
+        // `t$+ x`, and may write where the array is too (ZYJS-014).
+        const v0 = stmt.value;
+        if (!stmt.hot && (v0?.type === 'CollectionOp' || v0?.type === 'FuncUpdate')
+            && v0.obj?.type === 'Ident' && v0.obj.name === stmt.name && !v0.obj.hot) {
+          this._ownEdit = v0;
+        }
         const val = await this.eval(stmt.value, env);
+        this._ownEdit = null;
         if (!env.set(stmt.name, val)) {
           if (stmt.hot) env.hotDef(stmt.name, val);
           else env.def(stmt.name, val);
@@ -9142,13 +9193,21 @@ export class Interpreter {
         // Immutability is a property of the value, not of the operator, so this
         // is one check rather than an exception inside each of `$+`, `$-`, `$^`…
         let recv = null;
-        try { recv = env.get(stmt.name); } catch { /* undefined: let eval report it */ }
+        try { recv = env.peek(stmt.name); } catch { /* undefined: let eval report it */ }
         if (recv?.type === 'tuple' && !isDict(recv))
           throw new ZyError(
             `cannot modify tuple '${stmt.name}': tuples are immutable\n` +
             `help: use 'new = ${stmt.name}[i]$~ value' for a functional update`,
             stmt.line);
+        // `name <edit> …` on a plain name: the edit may write into the array
+        // where it is, when this variable is its only holder (ZYJS-014). The
+        // evaluator is told which node that is, and consumes the note at once.
+        if (!stmt.hot && stmt.expr?.obj?.type === 'Ident' && stmt.expr.obj.name === stmt.name
+            && !stmt.expr.obj.hot) {
+          this._ownEdit = stmt.expr;
+        }
         const edited = await this.eval(stmt.expr, env);
+        this._ownEdit = null;
         if (!env.set(stmt.name, edited)) {
           if (stmt.hot) env.hotDef(stmt.name, edited);
           else env.def(stmt.name, edited);
@@ -9701,7 +9760,7 @@ export class Interpreter {
         // mistake, and `!?` has to be able to sort it (GLB-034, D1).
         if (!fn || fn.type !== 'func')
           throw new ZyRuntimeError(`'${expr.callee}' is not a function`, '##Type');
-        const args = await this.evalInOrder(expr.args, env);
+        const args = await this.evalArgs(fn, expr, env);
         this.checkCallArity(fn, args);
         return await this.callFunc(fn, args, this.buildOutWriteback(fn, expr, env));
       }
@@ -9721,7 +9780,7 @@ export class Interpreter {
         const fn = await this.eval(callee, env);
         if (!fn || fn.type !== 'func')
           throw new ZyRuntimeError(`expression is not callable`, '##Type');
-        const args = await this.evalInOrder(expr.args, env);
+        const args = await this.evalArgs(fn, expr, env);
         this.checkCallArity(fn, args);
         // Output parameters must be written back here too, not just in 'Call'. A module
         // call `alias::f(x)` parses as Ident(alias) → FieldAccess → CallExpr (the callee
@@ -9734,8 +9793,14 @@ export class Interpreter {
       }
 
       case 'NavIndex': {
-        const obj  = await this.eval(expr.obj, env);
         const spec = expr.spec;
+        // One element of an array, by a plain index: the reader keeps the
+        // element and nothing of the array, so the array stays its variable's
+        // own (ZYJS-014) — `t[i]$~ t[i] + 1` reads and writes without a copy.
+        let obj = (expr.obj?.type === 'Ident' && !expr.obj.hot
+                   && spec?.kind === 'simple' && plainOperand(spec.index))
+          ? env.peek(expr.obj.name) : null;
+        if (obj?.type !== 'arr') obj = await this.eval(expr.obj, env);
 
         if (spec.kind === 'simple') {
           const iVal = await this.eval(spec.index, env);
@@ -9929,7 +9994,13 @@ export class Interpreter {
         return await this.evalCollectionOp(expr, env);
 
       case 'FuncUpdate': {
-        const arr  = await this.eval(expr.obj, env);
+        // `t[i]$~ v` for its own variable — see `Env.get` (ZYJS-014).
+        const own = this._ownEdit === expr;
+        if (own) this._ownEdit = null;
+        let arr = (own && expr.obj?.type === 'Ident' && !expr.obj.hot
+                   && plainOperand(expr.index) && plainOperand(expr.value))
+          ? env.peek(expr.obj.name) : null;
+        if (arr?.type !== 'arr') arr = await this.eval(expr.obj, env);
         // `d.k$~ v` carries its key directly; `d[e]$~ v` evaluates one.
         const iVal = expr.key !== undefined ? mkStr(expr.key) : await this.eval(expr.index, env);
         const val  = await this.eval(expr.value, env);
@@ -9985,7 +10056,12 @@ export class Interpreter {
         const container = arr.type === 'arr' ? 'array' : arr.type === 'str' ? 'string' : 'tuple';
         if (idx < 0 || idx >= len)
           throw new ZyError(`${container} index out of bounds: index ${i} for ${container} of length ${len}`);
-        if (arr.type === 'arr')   { const r = [...arr.v]; r[idx] = val; return mkArr(r); }
+        if (arr.type === 'arr') {
+          if (own && arr.own) { arr.v[idx] = val; return arr; }
+          const r = mkArr([...arr.v]); r.v[idx] = val;
+          if (own) r.own = true;
+          return r;
+        }
         if (arr.type === 'str') {
           if (val?.type !== 'char' && val?.type !== 'str')
             throw new ZyRuntimeError(
@@ -10480,6 +10556,11 @@ export class Interpreter {
 
   async evalCollectionOp(expr, env) {
     // Hot array-accumulator: arr°$+ i initializes arr to [] instead of 0
+    // `own`: this node is the edit of a variable whose result goes straight
+    // back into it — see `Env.get`. Consumed here, so nothing evaluated below
+    // can take it for its own.
+    const own = this._ownEdit === expr;
+    if (own) this._ownEdit = null;
     let col;
     if (expr.op === '$+' && expr.obj?.type === 'Ident' && expr.obj?.hot) {
       let existing = null;
@@ -10487,7 +10568,17 @@ export class Interpreter {
       if (existing === null) { col = mkArr([]); env.hotDef(expr.obj.name, col); }
       else col = existing;
     } else {
-      col = await this.eval(expr.obj, env);
+      // The receiver is read without being marked shared when this operator
+      // keeps nothing of it — it edits it for its own variable, or only
+      // measures or searches it — and no operand could write it meanwhile.
+      const keepsNothing = expr.obj?.type === 'Ident' && !expr.obj.hot && (
+        expr.op === '$#'
+        || (expr.op === '$?' && plainOperand(expr.arg))
+        || (own && expr.op === '$+' && plainOperand(expr.arg))
+        || (own && expr.op === '$-[i]' && plainOperand(expr.index))
+        || (own && expr.op === '$++' && (expr.items ?? []).every(plainOperand)));
+      col = keepsNothing ? env.peek(expr.obj.name) : null;
+      if (col?.type !== 'arr') col = await this.eval(expr.obj, env);
     }
     const arg = () => this.eval(expr.arg, env);
 
@@ -10611,7 +10702,12 @@ export class Interpreter {
 
       case '$+': {
         const v = await arg();
-        if (col.type === 'arr')   return mkArr([...col.v, v]);
+        if (col.type === 'arr') {
+          if (own && col.own) { col.v.push(v); return col; }
+          const r = mkArr([...col.v, v]);
+          if (own) r.own = true;
+          return r;
+        }
         if (col.type === 'str') {
           needCharStr(v, `$+ on string requires char or string element, got ${typeLabel(v)}`);
           return mkStr(col.v + this.displayOutput(v));
@@ -10710,7 +10806,12 @@ export class Interpreter {
         if (col.type !== 'arr' && col.type !== 'str' && col.type !== 'tuple') notSupported('$-[i]');
         const nRaw = needInt(rawIdx, 'remove index');
         const i = needInBounds(nRaw, resolveIdx(nRaw, lenOf(col)), col);
-        if (col.type === 'arr')   { const r=[...col.v]; r.splice(i,1); return mkArr(r); }
+        if (col.type === 'arr') {
+          if (own && col.own) { col.v.splice(i, 1); return col; }
+          const r = mkArr([...col.v]); r.v.splice(i, 1);
+          if (own) r.own = true;
+          return r;
+        }
         if (col.type === 'str')   { const r=[...col.v]; r.splice(i,1); return mkStr(r.join('')); }
         if (col.type === 'tuple') {
           const nv=[...col.v],nk=col.keys?[...col.keys]:null; nv.splice(i,1); if(nk)nk.splice(i,1);
@@ -10995,7 +11096,10 @@ export class Interpreter {
           return mkStr(result);
         }
         if (col.type === 'arr') {
-          return mkArr([...col.v, ...evalItems]);
+          if (own && col.own) { for (const item of evalItems) col.v.push(item); return col; }
+          const r = mkArr([...col.v, ...evalItems]);
+          if (own) r.own = true;
+          return r;
         }
         notSupported('$++');
       }
@@ -11152,16 +11256,44 @@ export class Interpreter {
     // the copy is dropped if the call fails (GLB-117, S3). Anything else is the
     // caller's own variable, and what the function wrote to it before failing
     // stays written (S1).
-    const isState = name => {
-      for (let e = env; e; e = e.parent) if (e.vars.has(name)) return e.isModuleScope === true;
-      return false;
-    };
     return fn.params
       .map((p, i) => p.isOut && expr.args[i]?.type === 'Ident'
         ? { paramName: p.name, callerName: expr.args[i].name, callerEnv: env,
-            isState: isState(expr.args[i].name) }
+            isState: Interpreter.isModuleState(env, expr.args[i].name) }
         : null)
       .filter(Boolean);
+  }
+
+  /** Whether `name`, looked up from `env`, is a module's own state. */
+  static isModuleState(env, name) {
+    for (let e = env; e; e = e.parent) if (e.vars.has(name)) return e.isModuleScope === true;
+    return false;
+  }
+
+  /**
+   * The arguments of a call, left to right. An output argument that is the
+   * caller's own variable is LENT (GLB-117): it is read without being marked
+   * shared, so an array that variable owns arrives owned, and the function
+   * writes it where it is instead of copying it on its first edit. Module state
+   * is copied (S3), and so is a variable given as output twice in one call —
+   * the checker refuses that call (S2), and a program that got here without it
+   * must not end up with two parameters writing one array.
+   */
+  async evalArgs(fn, expr, env) {
+    const params = fn.params;
+    if (!params?.some?.(p => p.isOut)) return this.evalInOrder(expr.args, env);
+    const outNames = expr.args
+      .filter((a, i) => params[i]?.isOut && a?.type === 'Ident')
+      .map(a => a.name);
+    const out = [];
+    for (let i = 0; i < expr.args.length; i++) {
+      const a = expr.args[i];
+      const lent = params[i]?.isOut && a?.type === 'Ident' && !a.hot
+        && outNames.indexOf(a.name) === outNames.lastIndexOf(a.name)
+        && !Interpreter.isModuleState(env, a.name);
+      out.push(lent ? env.peek(a.name) : await this.eval(a, env));
+    }
+    return out;
   }
 
   /**
