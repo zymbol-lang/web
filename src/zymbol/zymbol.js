@@ -4332,6 +4332,24 @@ class Checker {
           "drop the '<~', or declare the parameter as an output in the signature");
       }
     }
+    // The same variable as two output arguments (GLB-117, S2). An output
+    // parameter IS the caller's variable for as long as the call lasts, and one
+    // variable cannot be two parameters at once. It used to be copied into
+    // both, and the second write-back discarded the first in silence:
+    // `h(e<~, e<~)` kept only what the second parameter wrote.
+    const seen = new Set();
+    for (const i of marked) {
+      const a = args[i];
+      if (a?.type !== 'Ident') continue;
+      if (seen.has(a.name)) {
+        this.error('E020',
+          `'${a.name}' is given to '${name}' as an output argument twice`,
+          line, { variable: a.name, name },
+          "an output parameter is the caller's own variable while the call lasts, so one variable cannot be two of them — what one wrote would be lost to the other; give each '<~' a variable of its own");
+      } else {
+        seen.add(a.name);
+      }
+    }
   }
 
   /** Arity of `alias::field`, or null when nothing reliable is known. */
@@ -11129,9 +11147,19 @@ export class Interpreter {
    */
   buildOutWriteback(fn, expr, env) {
     if (!fn.params?.some(p => p.isOut)) return null;
+    // `isState`: the argument is module state, which is not LENT to the
+    // parameter — every function of the module can see it — but copied, and
+    // the copy is dropped if the call fails (GLB-117, S3). Anything else is the
+    // caller's own variable, and what the function wrote to it before failing
+    // stays written (S1).
+    const isState = name => {
+      for (let e = env; e; e = e.parent) if (e.vars.has(name)) return e.isModuleScope === true;
+      return false;
+    };
     return fn.params
       .map((p, i) => p.isOut && expr.args[i]?.type === 'Ident'
-        ? { paramName: p.name, callerName: expr.args[i].name, callerEnv: env }
+        ? { paramName: p.name, callerName: expr.args[i].name, callerEnv: env,
+            isState: isState(expr.args[i].name) }
         : null)
       .filter(Boolean);
   }
@@ -11234,6 +11262,20 @@ export class Interpreter {
     }
     for (let i = 0; i < fn.params.length; i++)
       funcEnv.def(fn.params[i].name, args[i] ?? mkUnit());
+    // An output parameter goes back to the caller's variable on EVERY way out
+    // of the function. It used to be written back only when the body ran to
+    // its end: a failure left the caller's variable as it was before the call
+    // — a copy had been worked on — and so did a `$!!` and a `<~` thrown from
+    // inside a `??` used as a value. Since GLB-117 the parameter IS the
+    // caller's variable for as long as the call lasts (S1).
+    const giveBack = failed => {
+      if (!outWriteback) return;
+      for (const { paramName, callerName, callerEnv, isState } of outWriteback) {
+        if (failed && isState) continue;
+        const val = funcEnv.vars.get(paramName);
+        if (val !== undefined) callerEnv.set(callerName, val);
+      }
+    };
     let sig;
     try {
       sig = await this.execBlock(fn.body, funcEnv);
@@ -11245,20 +11287,15 @@ export class Interpreter {
         e.zyFile = fn.srcFile;
       }
       // $!! (ZyErrorPropagate) exits the function and returns the error value to the caller
-      if (e instanceof ZyErrorPropagate) return e.errVal;
+      if (e instanceof ZyErrorPropagate) { giveBack(false); return e.errVal; }
       // <~ inside a match arm, when the match is evaluated as a sub-expression
       // (not a bare statement), unwinds here as a thrown ZyReturn — see eval()'s
       // 'Match' case.
-      if (e instanceof ZyReturn) return e.value;
+      if (e instanceof ZyReturn) { giveBack(false); return e.value; }
+      giveBack(true);
       throw e;
     }
-    // Write back output params to caller env
-    if (outWriteback) {
-      for (const { paramName, callerName, callerEnv } of outWriteback) {
-        const val = funcEnv.vars.get(paramName);
-        if (val !== undefined) callerEnv.set(callerName, val);
-      }
-    }
+    giveBack(false);
     if (sig instanceof ZyReturn) return sig.value;
     return mkUnit();
   }

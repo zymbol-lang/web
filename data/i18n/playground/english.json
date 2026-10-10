@@ -80,6 +80,8 @@
     "E017": "argument {index} of '{name}' is an output parameter '<~' and needs a variable, not an expression",
     "E018": "argument {index} of '{name}' is an output parameter and must be marked '<~' at the call site",
     "E019": "argument {index} of '{name}' is marked '<~' but the function does not declare it as an output parameter",
+    "E020": "'{variable}' is given to '{name}' as an output argument twice",
+    "E020_help": "an output parameter is the caller's own variable while the call lasts, so one variable cannot be two of them — what one wrote would be lost to the other; give each '<~' a variable of its own",
     "E_ARG_TYPE": "argument {index} has type {got}, but function '{name}' expects {expected}",
     "E_TYPE": "an error's message is a String, got {type}",
     "E_TYPE_help": "build the text first: ##{kind}(\"…\"), or ##{kind}(\"\" x) to turn a value into it",

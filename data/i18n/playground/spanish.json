@@ -79,6 +79,8 @@
     "E017": "el argumento {index} de '{name}' es un parámetro de salida '<~' y necesita una variable, no una expresión",
     "E018": "el argumento {index} de '{name}' es un parámetro de salida y debe marcarse '<~' en la llamada",
     "E019": "el argumento {index} de '{name}' lleva '<~' pero la función no lo declara como parámetro de salida",
+    "E020": "'{variable}' se da a '{name}' dos veces como argumento de salida",
+    "E020_help": "un parámetro de salida es la propia variable de quien llama mientras dura la llamada, así que una variable no puede ser dos de ellos — lo que escribiera uno lo perdería el otro; da a cada '<~' su propia variable",
     "E_ARG_TYPE": "el argumento {index} es de tipo {got}, pero la función '{name}' espera {expected}",
     "E_TYPE": "el mensaje de un error es un String, y este es {type}",
     "E_TYPE_help": "construye antes el texto: ##{kind}(\"…\"), o ##{kind}(\"\" x) para convertir un valor en texto",
