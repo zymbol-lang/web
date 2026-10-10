@@ -3238,7 +3238,16 @@ export class Parser {
     if (this.check('LPAREN') && !this.isLambdaStart() && this.parenThenGt()) {
       return this.parseNavContinue(this.parseNavStep());
     }
-    // Parse first nav atom (uses additive, not full comparison, so '>' is nav separator)
+    // What makes the content a navigation path is decided on its first tokens,
+    // as `is_nav_index` decides in Rust: an integer, a name or a string
+    // followed by `>`, `;` or `..`, or `-integer` followed by one of them.
+    // Anything else is an ordinary expression, whatever comes later in it:
+    // `m[f()>2]` indexes with the comparison `f() > 2`. The first step used to
+    // be any additive expression, so that was a path here and a `Bool` index in
+    // both Rust engines (ZYJS-057).
+    if (!this.navPathAhead()) {
+      return { kind: 'simple', index: this.parseExpr() };
+    }
     const firstAtom = this.parseNavAtom();
 
     // nav path or flat extraction?
@@ -3252,6 +3261,16 @@ export class Parser {
     }
     // Single range at top level (unusual) → flat
     return { kind: 'flat', paths: [[firstAtom]] };
+  }
+
+  // An atom and then `>`, `;` or `..`, from the current token — the lookahead
+  // of `is_nav_index` in zymbol-parser/src/index_nav.rs.
+  navPathAhead() {
+    const sep = t => !!t && (t.type === 'GT' || t.type === 'SEMI' || t.type === 'RANGE');
+    const t0 = this.peek(0);
+    if (t0.type === 'NUM' || t0.type === 'IDENT' || t0.type === 'STR') return sep(this.peek(1));
+    if (t0.type === 'MINUS') return this.peek(1)?.type === 'NUM' && sep(this.peek(2));
+    return false;
   }
 
   // Parse a nav atom: additive expr, optionally followed by '..' range
@@ -7276,6 +7295,15 @@ const mkFloat = v => ({ type: 'float', v });
 const mkBool  = v => ({ type: 'bool',  v: !!v });
 const mkStr   = v => ({ type: 'str',   v: String(v) });
 const mkChar  = v => ({ type: 'char',  v: String(v) });
+// A navigation path yields ONE value, unless one of its steps is a range — then
+// it yields one per position walked, and an extraction takes them all. Whether a
+// path fans out is a property of the path, not of what it found: `m[1;2]` on an
+// array of rows is two rows. The extractions used to spread any array they were
+// handed, so that answered the four cells of both rows (ZYJS-058).
+function navPathFans(steps) {
+  return steps.some(s => s.kind === 'range');
+}
+
 const mkArr   = v => ({ type: 'arr',   v });
 const mkTuple = v => ({ type: 'tuple', v, keys: null });
 const mkUnit  = () => ({ type: 'unit' });
@@ -9742,7 +9770,7 @@ export class Interpreter {
           for (const path of spec.paths) {
             const resolvedSteps = await this.resolveNavSteps(path, env);
             const val = await this.evalNavPath(obj, resolvedSteps);
-            if (val.type === 'arr') results.push(...val.v);
+            if (navPathFans(resolvedSteps)) results.push(...val.v);
             else results.push(val);
           }
           return mkArr(results);
@@ -9756,7 +9784,7 @@ export class Interpreter {
             for (const path of group.paths) {
               const resolvedSteps = await this.resolveNavSteps(path, env);
               const val = await this.evalNavPath(obj, resolvedSteps);
-              if (val.type === 'arr') results.push(...val.v);
+              if (navPathFans(resolvedSteps)) results.push(...val.v);
               else results.push(val);
             }
             return mkArr(results);
@@ -9768,7 +9796,7 @@ export class Interpreter {
             for (const path of group.paths) {
               const resolvedSteps = await this.resolveNavSteps(path, env);
               const val = await this.evalNavPath(obj, resolvedSteps);
-              if (val.type === 'arr') results.push(...val.v);
+              if (navPathFans(resolvedSteps)) results.push(...val.v);
               else results.push(val);
             }
             groups.push(mkArr(results));
@@ -10255,8 +10283,10 @@ export class Interpreter {
     for (let i = from; dir > 0 ? i <= to : i >= to; i += dir) {
       const elem = this.navGetAt(obj, i);
       const sub = await this.evalNavPath(elem, rest);
-      // Flatten one level when nested ranges produce arrays
-      if (rest.length > 0 && sub.type === 'arr') results.push(...sub.v);
+      // One level is flattened when the REST of the path fans out too — then
+      // `sub` is the list of what it walked. A rest with no range found one
+      // value, and an array found that way is a value, not a list (ZYJS-058).
+      if (navPathFans(rest)) results.push(...sub.v);
       else results.push(sub);
     }
     return mkArr(results);
