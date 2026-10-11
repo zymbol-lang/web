@@ -2017,9 +2017,11 @@ export class Parser {
     let i = 0, depth = 0;
     const start = this.peek(0).type;
     const close = start === 'LBRACKET' ? 'RBRACKET' : 'RPAREN';
+    // `#(` opens a paren as `(` does: `@ #(k: a):filas` (GLB-122).
+    const opens = start === 'LBRACKET' ? ['LBRACKET'] : ['LPAREN', 'HASH_LPAREN'];
     while (this.pos + i < this.toks.length) {
       const t = this.toks[this.pos + i++];
-      if (t.type === start) depth++;
+      if (opens.includes(t.type)) depth++;
       else if (t.type === close) { depth--; if (depth === 0) break; }
     }
     return this.peek(i).type === 'COLON';
@@ -2085,6 +2087,27 @@ export class Parser {
   }
 
   parseTupleDestructPattern() {
+    // `@ (k: a):ps` — the same refusal the assignment gives (GLB-122).
+    if (this.check('LPAREN') && this.peek(1).type === 'IDENT' && this.peek(2).type === 'COLON') {
+      throw new ZyStaticError(
+        'a dictionary pattern is written `#(…)`', this.peek(0).line,
+        'write `#(` here: `#(name: n) = d`. A bare `(…)` takes a tuple apart, by position');
+    }
+    // `@ #(k: a, v: b):filas` — the dictionary pattern, as on the left of `=`.
+    if (this.check('HASH_LPAREN')) {
+      this.refusePositionalUnderTheMark();
+      this.adv();
+      const targets = [];
+      while (!this.check('RPAREN') && !this.check('EOF')) {
+        const field = this.eat('IDENT').value;
+        this.eat('COLON', "expected ':' after field name in named tuple destructure");
+        const name  = this.eat('IDENT', "expected variable name after ':' in named tuple destructure").value;
+        targets.push({ field, name });
+        this.match('COMMA');
+      }
+      this.eat('RPAREN');
+      return { type: 'NamedDestruct', targets };
+    }
     this.adv();
     const targets = [];
     while (!this.check('RPAREN') && !this.check('EOF')) {
@@ -2127,9 +2150,31 @@ export class Parser {
     return { type: 'ArrayDestruct', targets, value: this.parseExpr() };
   }
 
+  /**
+   * `#(a, b) = t`: the dictionary's mark over a positional pattern (GLB-123).
+   * This engine already refused it, with the words of a missing `:`; the two
+   * Rust engines ran it. One sentence in all three now.
+   */
+  refusePositionalUnderTheMark() {
+    if (!this.check('HASH_LPAREN')) return;
+    if (this.peek(1).type === 'IDENT' && this.peek(2).type === 'COLON') return;
+    throw new ZyStaticError('a dictionary pattern takes `key: name` pairs', this.peek(0).line,
+      '`#(name: n) = d` unpacks a dictionary; write `(a, b) = t` to take a tuple apart, by position');
+  }
+
   parseTupleDestruct() {
     const isNamed = this.peek(0).type === 'HASH_LPAREN'
       || (this.peek(1).type === 'IDENT' && this.peek(2).type === 'COLON');
+    // A dictionary pattern is written `#(…)`, as the literal is (GLB-122): the
+    // bare `(name: n) = d` was the second spelling the mark had ended on the
+    // other side of `=`.
+    if (isNamed && this.peek(0).type !== 'HASH_LPAREN') {
+      throw new ZyStaticError(
+        'a dictionary pattern is written `#(…)`', this.peek(0).line,
+        'write `#(` here: `#(name: n) = d`. A bare `(…)` takes a tuple apart, by position');
+    }
+    // And the other half (GLB-123): under `#(` go `key: name` pairs.
+    this.refusePositionalUnderTheMark();
     this.adv();
     if (isNamed) {
       const targets = [];
@@ -2383,7 +2428,7 @@ export class Parser {
     // `@ (` is already taken — `@ (n + 1) { }` is a valid count loop — and the
     // disambiguator is the `:` after the `)`, the same scan `isDestructuring`
     // already does for `=`.
-    if ((this.check('LPAREN') || this.check('LBRACKET')) && this.isLoopPattern()) {
+    if ((this.check('LPAREN') || this.check('LBRACKET') || this.check('HASH_LPAREN')) && this.isLoopPattern()) {
       const pat = this.check('LBRACKET') ? this.parseArrayDestructPattern()
                                          : this.parseTupleDestructPattern();
       this.eat('COLON');
