@@ -2151,6 +2151,33 @@ export class Parser {
   }
 
   /**
+   * At a `(` that has to open a lambda: refuse it when it does not, saying
+   * which of the two things is missing.
+   */
+  requireLambdaInParens() {
+    if (this.isLambdaStart()) return;
+    // An arrow inside the parens means the lambda is there and one of its
+    // parameters is not a name (`(1, 2 -> #1)`); no arrow means the arrow
+    // itself is what is missing.
+    let depth = 0, arrow = false, after = null;
+    for (let i = 0; this.pos + i < this.toks.length; i++) {
+      const tk = this.toks[this.pos + i].type;
+      if (tk === 'LPAREN') depth++;
+      else if (tk === 'RPAREN' && --depth === 0) { after = this.toks[this.pos + i + 1] ?? null; break; }
+      else if (tk === 'ARROW' && depth === 1) { arrow = true; break; }
+      else if (tk === 'EOF') break;
+    }
+    if (arrow) {
+      throw new ZyStaticError('expected parameter name in lambda', this.peek(),
+        'lambda parameters must be identifiers: (a, b) -> expr');
+    }
+    // Where the `->` was expected — the token after the `)`, as the Rust
+    // parser reports it — not the `(` (step P4.5).
+    throw new ZyStaticError("expected '->' in lambda expression", after ?? this.peek(),
+      'lambda syntax: x -> expr or (a, b) -> expr');
+  }
+
+  /**
    * `#(a, b) = t`: the dictionary's mark over a positional pattern (GLB-123).
    * This engine already refused it, with the words of a missing `:`; the two
    * Rust engines ran it. One sentence in all three now.
@@ -3529,31 +3556,18 @@ export class Parser {
         }
         // An opening paren is a lambda being written, so what is missing is its
         // arrow — `a$^ (v)` parsed here and failed at run time (ZYJS-021).
-        if (!this.isLambdaStart()) {
-          // An arrow inside the parens means the lambda is there and one of its
-          // parameters is not a name (`(1, 2 -> #1)`); no arrow means the arrow
-          // itself is what is missing.
-          let depth = 0, arrow = false, after = null;
-          for (let i = 0; this.pos + i < this.toks.length; i++) {
-            const tk = this.toks[this.pos + i].type;
-            if (tk === 'LPAREN') depth++;
-            else if (tk === 'RPAREN' && --depth === 0) { after = this.toks[this.pos + i + 1] ?? null; break; }
-            else if (tk === 'ARROW' && depth === 1) { arrow = true; break; }
-            else if (tk === 'EOF') break;
-          }
-          if (arrow) {
-            throw new ZyStaticError('expected parameter name in lambda', this.peek(),
-              'lambda parameters must be identifiers: (a, b) -> expr');
-          }
-          // Where the `->` was expected — the token after the `)`, as the Rust
-          // parser reports it — not the `(` (step P4.5).
-          throw new ZyStaticError("expected '->' in lambda expression", after ?? this.peek(),
-            'lambda syntax: x -> expr or (a, b) -> expr');
-        }
+        this.requireLambdaInParens();
         return { type: 'CollectionOp', op: '$^',  obj: left, arg: this.parseUnary() };
 
-      case 'DMAP':       return { type: 'CollectionOp', op: '$>',  obj: left, arg: this.parseUnary(true) };
-      case 'DFILTER':    return { type: 'CollectionOp', op: '$|',  obj: left, arg: this.parseUnary(true) };
+      // `nums$> (double)`: the same rule (ZYJS-061). A named function goes
+      // without parentheses — `nums$> double` — because `(` opens a lambda.
+      // This engine alone read the parenthesised name as a grouping and ran it.
+      case 'DMAP':
+        if (this.check('LPAREN')) this.requireLambdaInParens();
+        return { type: 'CollectionOp', op: '$>',  obj: left, arg: this.parseUnary(true) };
+      case 'DFILTER':
+        if (this.check('LPAREN')) this.requireLambdaInParens();
+        return { type: 'CollectionOp', op: '$|',  obj: left, arg: this.parseUnary(true) };
 
       case 'DREDUCE':
         this.eat('LPAREN');
