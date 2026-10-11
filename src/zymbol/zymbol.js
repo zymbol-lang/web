@@ -2422,6 +2422,12 @@ export class Parser {
         const shown = Parser.tokenSpelling(this.peek());
         throw new ZyStaticError(`expected pattern, found ${shown}`, this.peek());
       }
+      // A hot name is not a pattern: `acc° =>` would create the name it is
+      // supposed to compare with. The Rust parser refuses it; this engine read
+      // it as an identifier pattern over a name it had just invented (ZYJS-062).
+      if (this.check('IDENT') && this.peek().hot && this.peek().value) {
+        throw new ZyStaticError(`expected pattern, found '${this.peek().value}°'`, this.peek());
+      }
       const left = this.parseAdditive();
       if (this.match('RANGE')) {
         const endTok = this.peek();
@@ -5711,22 +5717,28 @@ class Checker {
    * variable being read. `corpus/match/13_ident_scalar.zy` records that at the
    * top level and `20_list_pattern_compares.zy` inside a list.
    */
-  checkMatchPattern(p) {
+  checkMatchPattern(p, line = null) {
     if (!p) return;
-    if (p.type === 'Ident' && p.name) { this.lookup(p.name, p.line); return; }
+    const at = p.line ?? line;
+    // A name in a pattern is READ like any other identifier: it has to exist,
+    // and from inside a function it cannot be a variable of the file (MEM-2).
+    // It was only marked used, so `?? s { tope => … }` in a function read the
+    // file's `tope` here while the Rust engines failed, each its own way
+    // (GLB-124).
+    if (p.type === 'Ident' && p.name) { this.checkExpr(p); return; }
     // `umbral =>` arrives as a literal pattern whose value is the name: the
     // arm compares the scrutinee with what `umbral` holds, so the pattern
     // reads it. Unread here, the name was reported unused (ZYJS-055).
     if (p.type === 'literal' && p.value?.type === 'Ident' && p.value.name) {
-      this.lookup(p.value.name, p.value.line ?? p.line);
+      this.checkExpr({ ...p.value, line: p.value.line ?? p.line });
       return;
     }
     for (const e of (p.elems ?? p.items ?? [])) {
       if (e?.kind === 'literal') this.checkExpr(e.expr);
-      else if (e?.kind === 'bind' && e.name) this.lookup(e.name, p.line);
-      else if (e?.name && e.name !== '_') this.lookup(e.name, p.line);
+      else if (e?.kind === 'bind' && e.name) this.checkExpr({ type: 'Ident', name: e.name, line: at });
+      else if (e?.name && e.name !== '_') this.checkExpr({ type: 'Ident', name: e.name, line: at });
     }
-    for (const alt of (p.alts ?? [])) this.checkMatchPattern(alt);
+    for (const alt of (p.alts ?? [])) this.checkMatchPattern(alt, at);
   }
 
   /**
@@ -6755,7 +6767,7 @@ class Checker {
           // inside a LIST pattern. Only the top level was looked up here, so
           // `uno = 1  ?? [1] { [uno] => … }` reported `unused variable 'uno'`
           // while both Rust engines said nothing.
-          this.checkMatchPattern(arm.pattern);
+          this.checkMatchPattern(arm.pattern, arm.line ?? stmt.line ?? null);
           // `##Kind(m) =>` is a birth like `m = …`: a visible `m` is kept and
           // assigned, a new one lives in the arm (MEM-7, no shadowing).
           const bind = arm.pattern?.type === 'errkind' ? arm.pattern.bind : null;
@@ -6966,6 +6978,12 @@ class Checker {
         }
         const info = this.lookup(expr.name, expr.line);
         if (!info) this.error('E_VAR', `undefined variable '${expr.name}'`, expr, { name: expr.name }, Checker.HELP_UNDEFINED);
+        // A module alias standing alone is not a value (GLB-125): `M.NAME` and
+        // `M::f()` reach into a module and never come through here. This engine
+        // ran `x = M`, `M == M` and a `??` pattern `M =>`; the Rust engines
+        // failed, each its own way, and `check` said nothing in any of them.
+        else if (info.isAlias) this.error('E_MODULE_VALUE', `'${expr.name}' is a module, not a value`, expr, { name: expr.name },
+          `a module is reached through its members: ${expr.name}::name(…) calls a function, ${expr.name}.NAME reads a constant`);
         // MEM-2, at the same place the Rust analyser checks it: reading an
         // identifier. Not in `lookup`, which assignments also go through —
         // writing inside a function makes a local and never reaches out, so it
@@ -7057,7 +7075,11 @@ class Checker {
         }
         // The callee's own walk, without the `.` read check: a call is judged
         // by what it calls, and that was asked just above.
-        if (callee?.type === 'FieldAccess') this.checkExpr(callee.obj);
+        if (callee?.type === 'FieldAccess') {
+          // `M::f(…)`: the alias is the way in, not a value read (GLB-125).
+          if (callee.obj?.type === 'Ident' && this.isAliasHere(callee.obj.name)) this.lookup(callee.obj.name, callee.obj.line);
+          else this.checkExpr(callee.obj);
+        }
         else this.checkExpr(callee);
         for (const a of (expr.args ?? [])) this.checkExpr(a);
         return;
@@ -7172,7 +7194,10 @@ class Checker {
 
       case 'FieldAccess': {
         this.checkModuleMember(expr, false);
-        this.checkExpr(expr.obj);
+        // `M.NAME` reaches INTO a module: the alias is used, and it is not
+        // being read as a value — the one place it may stand (GLB-125).
+        if (expr.obj?.type === 'Ident' && this.isAliasHere(expr.obj.name)) this.lookup(expr.obj.name, expr.obj.line);
+        else this.checkExpr(expr.obj);
         return;
       }
 

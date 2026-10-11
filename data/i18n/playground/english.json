@@ -89,6 +89,8 @@
     "E_HOT_OUTPUT": "`°` has no effect in output context — use `>> {name} ¶`",
     "W_ARITH_TYPE": "arithmetic operation on non-numeric type: {type}",
     "E_COND_TYPE": "a condition must be a Bool, got {type}",
+    "E_MODULE_VALUE": "'{name}' is a module, not a value",
+    "E_MODULE_VALUE_help": "a module is reached through its members: {name}::name(…) calls a function, {name}.NAME reads a constant",
     "W_LOGIC_TYPE": "logical operation on non-boolean type: {type}",
     "W_RANGE_DIR": "range direction is decided at runtime: if the end turns out to be lower than the start, this loop counts down instead of not running. Guard the empty case.",
     "W_TYPE_CHANGE": "type mismatch: '{name}' was {was} but assigned {now}",

@@ -88,6 +88,8 @@
     "E_HOT_OUTPUT": "`°` no tiene efecto en una salida — usa `>> {name} ¶`",
     "W_ARITH_TYPE": "operación aritmética sobre un tipo no numérico: {type}",
     "E_COND_TYPE": "una condición tiene que ser Bool, y es {type}",
+    "E_MODULE_VALUE": "'{name}' es un módulo, no un valor",
+    "E_MODULE_VALUE_help": "a un módulo se llega por sus miembros: {name}::nombre(…) llama a una función, {name}.NOMBRE lee una constante",
     "W_LOGIC_TYPE": "operación lógica sobre un tipo no booleano: {type}",
     "W_RANGE_DIR": "la dirección del rango se decide al ejecutar: si el final resulta menor que el inicio, el bucle cuenta hacia atrás en vez de no correr. Protege el caso vacío.",
     "W_TYPE_CHANGE": "tipos distintos: '{name}' era {was} y se le asigna {now}",
