@@ -4066,6 +4066,16 @@ class Env {
       this.vars.set(name, value);
       return true;
     }
+    // A variable of the module that a `\` ended: assigning it gives it back to
+    // the MODULE (GLB-120, decided 2026-10-11). The assignment used to find
+    // nothing here and define a local in the function that made it, so the
+    // module never had its variable again — a sibling that read it failed, and
+    // two functions that wrote it no longer wrote the same thing.
+    if (this.isModuleScope && this.destroyed?.has(name)) {
+      this.vars.set(name, value);
+      this.destroyed.delete(name);
+      return true;
+    }
     // A `_` name does not reach its parent — except the one anchored on purpose,
     // which `get` already lets its loop read. Without the same exception here
     // `_k° += 1` read the value and then lost the write in silence, because
@@ -11286,7 +11296,11 @@ export class Interpreter {
 
   /** Whether `name`, looked up from `env`, is a module's own state. */
   static isModuleState(env, name) {
-    for (let e = env; e; e = e.parent) if (e.vars.has(name)) return e.isModuleScope === true;
+    for (let e = env; e; e = e.parent) {
+      if (e.vars.has(name)) return e.isModuleScope === true;
+      // Ended by a `\` and not assigned since: still the module's (GLB-120).
+      if (e.isModuleScope && e.destroyed?.has(name)) return true;
+    }
     return false;
   }
 
