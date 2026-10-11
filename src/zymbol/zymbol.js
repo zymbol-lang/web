@@ -4621,13 +4621,13 @@ class Checker {
    * one that survives and nothing ever marks it used.
    */
   /**
-   * `? 1 { … }` — a condition that is not a Bool.
+   * `? 1 { … }` — a condition that is not a Bool is refused (GLB-121).
    *
-   * Both Rust engines warn and this one said nothing, so a program that leans on
-   * an Int being truthy looked clean here and noisy on the command line
-   * (`DM-05`). Only literals are decided statically, which is the same limit the
-   * Rust analyser works under: it warns on a type it can infer and stays quiet
-   * on `Any` or `Unknown` rather than guessing.
+   * It was a warning (`DM-05`), and under that one warning the three engines
+   * each took their own branch: nine of thirteen types diverged. Only what is
+   * decided without inference is refused here, which is the limit the Rust
+   * analyser works under too — it stays quiet on `Any` or `Unknown` rather
+   * than guessing, and the engine raises a `##Type` when the value arrives.
    *
    * The wording is the Rust one, word for word — `zyq consensus` compares text.
    */
@@ -4651,11 +4651,11 @@ class Checker {
     this.error('E_HOF_ARITY', RULE[1](n), { line: arg.line ?? expr.obj?.line, col: arg.col ?? null }, { n });
   }
 
-  warnNonBoolCondition(cond, kind) {
+  refuseNonBoolCondition(cond) {
     const name = this.staticTypeName(cond);
     if (!name) return;                       // Bool, or a type this pass cannot decide
-    this.warn('W_COND_TYPE', `${kind} condition should be Bool, got ${name}`,
-              cond.line ?? null, { kind, type: name });
+    this.error('E_COND_TYPE', `a condition must be a Bool, got ${name}`,
+               { line: cond.line ?? null, col: cond.col ?? null }, { type: name });
   }
 
   /** The type of an expression when it is decided without inference, else null. */
@@ -6494,7 +6494,7 @@ class Checker {
 
       case 'If': {
         this.checkExpr(stmt.cond);
-        this.warnNonBoolCondition(stmt.cond, 'if');
+        this.refuseNonBoolCondition(stmt.cond);
         // A comparison in the condition guards the range bounds it names for the
         // whole THEN block — `? n >= 2 { @ i:2..n … }` is the correct way to
         // write that loop and must not be warned about. Only the then block, as
@@ -6505,7 +6505,7 @@ class Checker {
         this.guardedBounds.length = guardDepth;
         for (const elif of (stmt.elseifs ?? [])) {
           this.checkExpr(elif.cond);
-          this.warnNonBoolCondition(elif.cond, 'else-if');
+          this.refuseNonBoolCondition(elif.cond);
           this.push(); this.checkBlock(elif.body ?? elif.then); this.pop();
         }
         if (stmt.else) { this.push(); this.checkBlock(stmt.else); this.pop(); }
@@ -9195,9 +9195,10 @@ export class Interpreter {
       }
 
       case 'If': {
-        if (this.truthy(await this.eval(stmt.cond, env))) return await this.execBlock(stmt.then, new Env(env));
+        // A condition is a Bool and nothing else (GLB-121): no truthiness.
+        if (this.condition(await this.eval(stmt.cond, env), stmt.cond, stmt)) return await this.execBlock(stmt.then, new Env(env));
         for (const ei of stmt.elseifs)
-          if (this.truthy(await this.eval(ei.cond, env))) return await this.execBlock(ei.body, new Env(env));
+          if (this.condition(await this.eval(ei.cond, env), ei.cond, stmt)) return await this.execBlock(ei.body, new Env(env));
         if (stmt.else) return await this.execBlock(stmt.else, new Env(env));
         return;
       }
@@ -11694,6 +11695,16 @@ export class Interpreter {
       return a.v.every((el, i) => this.equals(el, b.v[i]));
     }
     return a.v === b.v;
+  }
+
+  /**
+   * The value of a `?` / `_?` condition: a Bool, or a `##Type` error — at the
+   * line of the STATEMENT, which for a `_?` is the line of its `?`, as every
+   * run-time error is placed.
+   */
+  condition(val, cond, stmt) {
+    if (val?.type === 'bool') return val.v;
+    throw new ZyRuntimeError(`a condition must be a Bool, got ${typeIdent(val)}`, '##Type', stmt?.zyLine ?? null);
   }
 
   truthy(val) {
