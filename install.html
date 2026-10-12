@@ -148,8 +148,8 @@
             </td>
             <td>
               <div class="dl-hash-cell">
-                <span class="dl-hash-val" title="pending — the signed installer is not published yet">pending</span>
-                <button class="dl-copy-btn" data-hash="pending">copy</button>
+                <span class="dl-hash-val" title="db08e8f07ec07c7fb7ab29feac266700cc1112b9ac63b59b5c4792005a5027c4">db08e8f07ec0</span>
+                <button class="dl-copy-btn" data-hash="db08e8f07ec07c7fb7ab29feac266700cc1112b9ac63b59b5c4792005a5027c4">copy</button>
               </div>
             </td>
           </tr>
@@ -163,7 +163,7 @@
     </div>
 
     <div class="info-block" style="margin-top:0.75rem">
-      <strong>Code signed:</strong> the Windows <code>.exe</code> and <code>.msi</code> are digitally signed via <a href="https://signpath.io" target="_blank" rel="noopener" style="color:var(--green)">SignPath.io</a>. You can verify the signature under the file's Properties → Digital Signatures, or check the SHA256 above.
+      <strong>Code signed:</strong> the Windows <code>.msi</code> carries a digital signature (Authenticode, SHA-256) made with the project's own <strong>self-signed</strong> certificate, <code>CN=zymbol-lang</code>. It proves the file is the one that was built and has not been altered; it does <em>not</em> make Windows treat the publisher as trusted, so SmartScreen may still warn. The <code>zymbol.exe</code> inside is not signed. You can read the signature under the file's Properties → Digital Signatures, or check the SHA256 above.
     </div>
   </div>
 </div>

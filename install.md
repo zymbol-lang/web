@@ -34,16 +34,19 @@ configuration needed.
 
 | Arch | Download | SHA256 |
 | --- | --- | --- |
-| x86_64 | [zymbol_lang_v0.0.10_x86_64_windows.msi](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.10/zymbol_lang_v0.0.10_x86_64_windows.msi) | `pending` |
+| x86_64 | [zymbol_lang_v0.0.10_x86_64_windows.msi](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.10/zymbol_lang_v0.0.10_x86_64_windows.msi) | `db08e8f07ec07c7fb7ab29feac266700cc1112b9ac63b59b5c4792005a5027c4` |
 
 ```bash
 # After installing, open a new terminal and verify:
 zymbol --version
 ```
 
-**Code signed:** the Windows `.exe` and `.msi` are digitally signed via
-[SignPath.io](https://signpath.io). Verify under the file's Properties → Digital
-Signatures, or check the SHA256 above.
+**Code signed:** the Windows `.msi` carries a digital signature (Authenticode,
+SHA-256) made with the project's own **self-signed** certificate, `CN=zymbol-lang`.
+It proves the file is the one that was built and has not been altered; it does
+*not* make Windows treat the publisher as trusted, so SmartScreen may still warn.
+The `zymbol.exe` inside is not signed. You can read the signature under the file's
+Properties → Digital Signatures, or check the SHA256 above.
 
 ## macOS
 

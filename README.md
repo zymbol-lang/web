@@ -20,10 +20,10 @@
 ---
 
 > **Live at v0.0.9; v0.0.10 is prepared on the `v0.0.10` branch.** The `v0.0.10` tag and
-> its release assets exist, and `index.html`, `install.html` and `changelog.html` on the
-> branch carry the real SHA256 digests of every published file — except the Windows
-> installer, whose cell says `pending` until the signed `.msi` is uploaded. The branch
-> merges to `main` only after that, because `main` is what GitHub Pages serves.
+> all 17 of its release assets exist, and `index.html`, `install.html` and `changelog.html`
+> on the branch carry the real SHA256 digest of every published file, the Windows
+> installer included. The branch merges to `main` after the release is checked, because
+> `main` is what GitHub Pages serves.
 >
 > **The rule this banner used to enforce still holds**, and is the reason it is rewritten
 > rather than deleted: `main` is what GitHub Pages serves, so a version bump merges to
