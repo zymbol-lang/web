@@ -289,11 +289,75 @@
 <!-- ═══ TIMELINE ═══ -->
 <div class="cl-timeline">
 
+  <!-- ── v0.0.10 ── -->
+  <div class="cl-entry">
+    <div class="cl-entry-head">
+      <span class="cl-version">v0.0.10</span>
+      <span class="cl-badge-latest">latest</span>
+      <span class="cl-date">October 12, 2026</span>
+    </div>
+    <div class="cl-title">The Premises as Source, a Matrix with No Red Cell, and Edits That Happen in Place</div>
+
+    <div class="cl-groups">
+
+      <div class="cl-group">
+        <span class="cl-group-label added">Added</span>
+        <ul class="cl-change-list">
+          <li><strong><code>##Kind("message")</code> builds an error, and <code>##Kind(m) =&gt;</code> reads it back</strong> — a soft error <em>value</em>: the spelling an error prints as and the kind a <code>:!</code> matches, in any script. The pattern is the first that creates a name, and the binding is a birth like <code>m = …</code>, never a shadow</li>
+          <li><strong>A command's exit status is a soft <code>##IO</code> that carries it</strong> — <code>exit N</code>, then what the command said. And a subscript takes its own arguments, <code>&lt;/ app.zy -L es --list /&gt;</code>, running in this process and in the caller's engine</li>
+          <li><strong><code>zymbol run app.zy --keys app.keys</code></strong> — a full-screen program tested without a terminal: <code>&gt;&gt;|</code> draws on a virtual 24×80 screen, <code>&lt;&lt;|</code> reads a key script, and each block's last frame goes to the output as text</li>
+          <li><strong><code>zymbol run --count</code></strong> — what a program cost, in units that do not depend on the machine: <code>steps</code>, <code>calls</code>, <code>allocs</code>, <code>bytes</code> and <code>copied</code> on stderr — exact, where the clock moves by tens of percent on a 20 ms program</li>
+          <li><strong><code>##'expr</code> — an Int code point to its Char</strong> — a sibling of <code>###</code> and <code>##.</code>; and a base-prefixed literal is a Char in any range</li>
+          <li><strong>A slice written high-to-low builds backwards</strong> — <code>a$[3..1]</code> → <code>[30, 20, 10]</code>, and in navigation. The only reversal the language has; <code>$^-</code> sorts</li>
+          <li><strong>A named function is a <code>??</code> pattern</strong> — <code>?? h { f =&gt; … }</code> asks whether <code>h</code> is the function <code>f</code>, by identity, as <code>==</code> does</li>
+          <li><strong>Four new warnings</strong> — an import nobody uses, code that cannot run, a bare expression statement that does nothing, and an unused constant — called a constant</li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label changed">Changed</span>
+        <ul class="cl-change-list">
+          <li><strong>A named function sees only its parameters</strong> — <code>x = 1  f() { &lt;~ x }</code> is an error. v0.0.9 had the opposite; this takes it back, so a body behaves the same called or taken as a value. A lambda inherits its enclosing scope. Constants (<code>:=</code>) still cross</li>
+          <li><strong>A condition is a Bool and nothing else</strong> — <code>? xs { … }</code> with an array, a number or a string is refused before running where the type is known, and is a <code>##Type</code> at run time where it arrives through a parameter. Nine of thirteen kinds of value used to take a branch by rules of their own, all three engines exiting 0</li>
+          <li><strong>Collections are strict</strong> — the VM accepted 13 of the 40 malformed <code>$</code> forms the tree-walker refuses; it accepts 2 now, and zyjs was made strict in the same step</li>
+          <li><strong>The error family says what is wrong</strong> — a wrong <em>type</em> is <code>##Type</code>; a wrong <em>value</em> of the right type — 0, negative, out of bounds — is <code>##Index</code>, in all three engines</li>
+          <li><strong>The dictionary pattern is written <code>#(…)</code></strong> — the bare <code>(name: n) = person</code> is refused, as the bare literal was; <code>@ #(k: a, v: b):rows</code> is accepted in a loop head; <code>#(a, b) = t</code> is refused</li>
+          <li><strong>A module alias is not a value</strong> — <code>x = M</code>, <code>M == M</code> and <code>f(M)</code> are refused before running: <code>'M' is a module, not a value</code>. <code>M::name(…)</code> and <code>M.NAME</code> are untouched</li>
+          <li><strong>A constant twice, a loose range, <code>&lt;&lt; K</code> and <code>@ K:xs</code></strong> — are static errors, with the same text in every engine</li>
+          <li><strong><code>\ name</code> is refused on what is not alive</strong> — and on a module's variable it ends it for the module. An unmatched <code>??</code> aborts in the VM as in the tree-walker, instead of yielding <code>##_</code></li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label fixed">Fixed</span>
+        <ul class="cl-change-list">
+          <li><strong>One dispatch loop in the VM, and errors that stay pending</strong> — a <code>!?</code> could not nest; a <code>:!</code> filter that did not match swallowed the error; <code>@!</code>, <code>@&gt;</code> and <code>&lt;~</code> crossed a <code>!?</code> without running its <code>:&gt;</code>; and a callback of <code>$&gt;</code> ran on a second loop that skipped 49 instructions in silence</li>
+          <li><strong>A block lambda that ends without <code>&lt;~</code> gives <code>##_</code></strong> — the tree-walker aborted where the VM and zyjs went on</li>
+          <li><strong><code>$^</code> is stable, and with a comparator a merge sort</strong> — it was quadratic in all three engines: at n = 4 000 the VM went from 1 102 ms to 21 ms. <code>$??</code> overlaps, and an empty pattern is <code>##Index</code></li>
+          <li><strong>An edit happens where the collection lives</strong> — an output parameter is the caller's variable, lent: 2 000 calls over 16 000 elements went from 2 808 M instructions to 55 M in the tree-walker and from 1 204 M to 19 M in the VM. Module state is edited in place in both: 12 000 calls writing one cell, 1 930 ms → 27 ms</li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label changed">Known issues</span>
+        <ul class="cl-change-list">
+          <li><strong><code>&gt;&gt; +a ¶</code> is refused by <code>zytw</code> and <code>zyvm</code></strong> — and accepted by <code>zyjs</code>; <code>b = +a</code> works in all three. One token in the parser, filed as GLB-127</li>
+          <li><strong>A value a call returns and the caller uses once stays in its register</strong> — until something reuses it: two such calls in a row cost twice the memory in the VM. The VM still uses about six times less memory per array. ZYVM-022</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="cl-actions">
+      <a href="https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.10" target="_blank" class="btn-ghost">↗ GitHub</a>
+      <a href="install.html" class="btn-ghost">↓ Download</a>
+    </div>
+  </div>
+
   <!-- ── v0.0.9 ── -->
   <div class="cl-entry">
     <div class="cl-entry-head">
       <span class="cl-version">v0.0.9</span>
-      <span class="cl-badge-latest">latest</span>
       <span class="cl-date">September 9, 2026</span>
     </div>
     <div class="cl-title">The Collections Settled, the Editing Model, and a Calendar</div>

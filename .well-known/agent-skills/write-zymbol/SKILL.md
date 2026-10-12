@@ -11,7 +11,7 @@ is an English word and identifiers can be written in any script — Spanish,
 Japanese, Arabic, Klingon pIqaD, emoji. `?` is if, `@` is loop, `<~` is return,
 `#1` is true, `¶` is newline.
 
-Version v0.0.9. Canonical reference: `GUIDE.md` in
+Version v0.0.10. Canonical reference: `GUIDE.md` in
 <https://github.com/zymbol-lang/interpreter>. Every code block below is executed
 by this project's CI, so it runs as written.
 
@@ -26,14 +26,16 @@ behaves wrong.
 3. **A variable you never read is a warning.** Prefix it `_` when that is
    deliberate: `_unused = 42`, `@ _i:1..3 { … }`.
 4. **A function sees none of the caller's variables.** Scope is isolated, not
-   lexical-with-fallback: reading an outer `g` inside a function is
-   `'g' is undefined`. Pass it in as a parameter.
+   lexical-with-fallback: reading an outer `g` inside a function is the error
+   `'g' is read from outside this function`. Pass it in as a parameter.
 5. **`??` is pattern matching, not a condition chain.** An arm is *operator +
    value* — `< 0 => "cold"`, `90..100 => 'A'` — with the subject implicit. It
    never evaluates a boolean expression. Use `?` / `_?` / `_` for those.
 6. **Booleans are `#1` and `#0`** — no `true`, no `false`, no `null`. And the
    comparisons disagree on purpose: `"5" > 4` is `#1` (ordering coerces numeric
-   text) while `"5" == 5` is `#0` (`==` never coerces).
+   text) while `"5" == 5` is `#0` (`==` never coerces). A `?` condition must be
+   a Bool and nothing else: `? xs { … }` over an array, a number or a string is
+   the error `a condition must be a Bool`, not a truthiness test.
 7. **Slices include both ends.** `arr$[1..3]` is three elements.
 8. **`/` is division; `$/` splits a string.** They look alike and do not overlap.
 9. **A named function in a HOF slot takes no parentheses.** `nums$> double` is right;

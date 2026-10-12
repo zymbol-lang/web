@@ -4,8 +4,8 @@
 > symbol — `?` is if, `@` is loop, `<~` is return, `#1` is true — so identifiers can
 > be written in any human language and the program reads the same everywhere. It
 > ships as a Rust interpreter (tree-walker plus a register VM), an LSP server and a
-> VS Code extension. In development: v0.0.9, public alpha. Current download: v0.0.8 —
-> there is no v0.0.9 tag or binary yet, so every install link hands you v0.0.8.
+> VS Code extension. Current release: v0.0.10, public alpha (the Windows installer is
+> published once it is signed; every other download is on the install page).
 > Code is AGPL-3.0-only; manuals, examples and documentation are CC BY-SA 4.0.
 
 Every page of this site is also served as Markdown: send `Accept: text/markdown`,
@@ -16,7 +16,7 @@ or swap the extension — `/install.html` → `/install.md`.
 - [Home](https://zymbol-lang.org/index.md): the fourteen marks one at a time, how they join into operators, and a Mandelbrot written in symbols.
 - [Install](https://zymbol-lang.org/install.md): binaries for Linux/Windows/macOS with SHA256, VS Code extension, build from source.
 - [Playground](https://zymbol-lang.org/playground.md): the browser engine's exact capabilities and limits, deep-link format, example groups.
-- [Releases](https://zymbol-lang.org/changelog.md): full changelog, v0.0.1 through v0.0.8, plus v0.0.9 as it is being written (unreleased).
+- [Releases](https://zymbol-lang.org/changelog.md): full changelog, v0.0.1 through v0.0.10.
 - [pIqaD reference](https://zymbol-lang.org/piqad-reference.md): Klingon script, CSUR block U+F8D0–U+F8FF.
 - [Overview](https://zymbol-lang.org/overview.md): the former front page — the showcase, the operator table, FizzBuzz in any human language, the manuals. Archived: accurate as of v0.0.8 and no longer updated.
 

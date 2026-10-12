@@ -111,7 +111,7 @@
           "install": "Install"
         },
         "dl": {
-          "version": "v0.0.9 · Public Alpha",
+          "version": "v0.0.10 · Public Alpha",
           "title": "Get Zymbol",
           "btn": "Download & Install",
           "meta": "Linux · Windows · macOS"
@@ -329,7 +329,7 @@
           "install": "Instalar"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa pública",
+          "version": "v0.0.10 · Alfa pública",
           "title": "Consigue Zymbol",
           "btn": "Descargar e instalar",
           "meta": "Linux · Windows · macOS"
@@ -547,7 +547,7 @@
           "install": "Instalar"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa pública",
+          "version": "v0.0.10 · Alfa pública",
           "title": "Baixe o Zymbol",
           "btn": "Baixar e instalar",
           "meta": "Linux · Windows · macOS"
@@ -770,7 +770,7 @@
           "install": "Installer"
         },
         "dl": {
-          "version": "v0.0.9 · Alpha publique",
+          "version": "v0.0.10 · Alpha publique",
           "title": "Obtenir Zymbol",
           "btn": "Télécharger et installer",
           "meta": "Linux · Windows · macOS"
@@ -988,7 +988,7 @@
           "install": "Installieren"
         },
         "dl": {
-          "version": "v0.0.9 · Öffentliche Alpha",
+          "version": "v0.0.10 · Öffentliche Alpha",
           "title": "Zymbol holen",
           "btn": "Herunterladen und installieren",
           "meta": "Linux · Windows · macOS"
@@ -1206,7 +1206,7 @@
           "install": "Installa"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa pubblica",
+          "version": "v0.0.10 · Alfa pubblica",
           "title": "Prendi Zymbol",
           "btn": "Scarica e installa",
           "meta": "Linux · Windows · macOS"
@@ -1424,7 +1424,7 @@
           "install": "Installeren"
         },
         "dl": {
-          "version": "v0.0.9 · Publieke alfa",
+          "version": "v0.0.10 · Publieke alfa",
           "title": "Haal Zymbol",
           "btn": "Downloaden en installeren",
           "meta": "Linux · Windows · macOS"
@@ -1642,7 +1642,7 @@
           "install": "Zainstaluj"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa publiczna",
+          "version": "v0.0.10 · Alfa publiczna",
           "title": "Weź Zymbola",
           "btn": "Pobierz i zainstaluj",
           "meta": "Linux · Windows · macOS"
@@ -1860,7 +1860,7 @@
           "install": "Установить"
         },
         "dl": {
-          "version": "v0.0.9 · Открытая альфа",
+          "version": "v0.0.10 · Открытая альфа",
           "title": "Взять Zymbol",
           "btn": "Скачать и установить",
           "meta": "Linux · Windows · macOS"
@@ -2078,7 +2078,7 @@
           "install": "Встановити"
         },
         "dl": {
-          "version": "v0.0.9 · Відкрита альфа",
+          "version": "v0.0.10 · Відкрита альфа",
           "title": "Взяти Zymbol",
           "btn": "Завантажити і встановити",
           "meta": "Linux · Windows · macOS"
@@ -2296,7 +2296,7 @@
           "install": "Инсталирай"
         },
         "dl": {
-          "version": "v0.0.9 · Публична алфа",
+          "version": "v0.0.10 · Публична алфа",
           "title": "Вземи Zymbol",
           "btn": "Изтегли и инсталирай",
           "meta": "Linux · Windows · macOS"
@@ -2514,7 +2514,7 @@
           "install": "Instaliraj"
         },
         "dl": {
-          "version": "v0.0.9 · Javna alfa",
+          "version": "v0.0.10 · Javna alfa",
           "title": "Uzmi Zymbol",
           "btn": "Preuzmi i instaliraj",
           "meta": "Linux · Windows · macOS"
@@ -2732,7 +2732,7 @@
           "install": "Nainstalovat"
         },
         "dl": {
-          "version": "v0.0.9 · Veřejná alfa",
+          "version": "v0.0.10 · Veřejná alfa",
           "title": "Získej Zymbol",
           "btn": "Stáhnout a nainstalovat",
           "meta": "Linux · Windows · macOS"
@@ -2950,7 +2950,7 @@
           "install": "Nainštalovať"
         },
         "dl": {
-          "version": "v0.0.9 · Verejná alfa",
+          "version": "v0.0.10 · Verejná alfa",
           "title": "Získaj Zymbol",
           "btn": "Stiahnuť a nainštalovať",
           "meta": "Linux · Windows · macOS"
@@ -3168,7 +3168,7 @@
           "install": "Instalează"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa publică",
+          "version": "v0.0.10 · Alfa publică",
           "title": "Ia Zymbol",
           "btn": "Descarcă și instalează",
           "meta": "Linux · Windows · macOS"
@@ -3474,7 +3474,7 @@
           "install": "Asenna"
         },
         "dl": {
-          "version": "v0.0.9 · Julkinen alfa",
+          "version": "v0.0.10 · Julkinen alfa",
           "title": "Hanki Zymbol",
           "btn": "Lataa ja asenna",
           "meta": "Linux · Windows · macOS"
@@ -3692,7 +3692,7 @@
           "install": "Paigalda"
         },
         "dl": {
-          "version": "v0.0.9 · Avalik alfa",
+          "version": "v0.0.10 · Avalik alfa",
           "title": "Võta Zymbol",
           "btn": "Laadi alla ja paigalda",
           "meta": "Linux · Windows · macOS"
@@ -3910,7 +3910,7 @@
           "install": "Uzstādīt"
         },
         "dl": {
-          "version": "v0.0.9 · Publiskā alfa",
+          "version": "v0.0.10 · Publiskā alfa",
           "title": "Paņem Zymbol",
           "btn": "Lejupielādēt un uzstādīt",
           "meta": "Linux · Windows · macOS"
@@ -4128,7 +4128,7 @@
           "install": "Įdiegti"
         },
         "dl": {
-          "version": "v0.0.9 · Vieša alfa",
+          "version": "v0.0.10 · Vieša alfa",
           "title": "Paimk Zymbol",
           "btn": "Atsisiųsti ir įdiegti",
           "meta": "Linux · Windows · macOS"
@@ -4346,7 +4346,7 @@
           "install": "Installer"
         },
         "dl": {
-          "version": "v0.0.9 · Offentlig alfa",
+          "version": "v0.0.10 · Offentlig alfa",
           "title": "Hent Zymbol",
           "btn": "Last ned og installer",
           "meta": "Linux · Windows · macOS"
@@ -4564,7 +4564,7 @@
           "install": "Installér"
         },
         "dl": {
-          "version": "v0.0.9 · Offentlig alfa",
+          "version": "v0.0.10 · Offentlig alfa",
           "title": "Hent Zymbol",
           "btn": "Download og installér",
           "meta": "Linux · Windows · macOS"
@@ -4782,7 +4782,7 @@
           "install": "Installera"
         },
         "dl": {
-          "version": "v0.0.9 · Offentlig alfa",
+          "version": "v0.0.10 · Offentlig alfa",
           "title": "Hämta Zymbol",
           "btn": "Ladda ner och installera",
           "meta": "Linux · Windows · macOS"
@@ -5000,7 +5000,7 @@
           "install": "Setja upp"
         },
         "dl": {
-          "version": "v0.0.9 · Opinber alfa",
+          "version": "v0.0.10 · Opinber alfa",
           "title": "Náðu í Zymbol",
           "btn": "Sækja og setja upp",
           "meta": "Linux · Windows · macOS"
@@ -5218,7 +5218,7 @@
           "install": "Εγκατάσταση"
         },
         "dl": {
-          "version": "v0.0.9 · Δημόσια άλφα",
+          "version": "v0.0.10 · Δημόσια άλφα",
           "title": "Πάρε το Zymbol",
           "btn": "Κατέβασέ το και εγκατάστησέ το",
           "meta": "Linux · Windows · macOS"
@@ -5436,7 +5436,7 @@
           "install": "Инсталирај"
         },
         "dl": {
-          "version": "v0.0.9 · Јавна алфа",
+          "version": "v0.0.10 · Јавна алфа",
           "title": "Узми Zymbol",
           "btn": "Преузми и инсталирај",
           "meta": "Linux · Windows · macOS"
@@ -5659,7 +5659,7 @@
           "install": "التثبيت"
         },
         "dl": {
-          "version": "v0.0.9 · ألفا عامة",
+          "version": "v0.0.10 · ألفا عامة",
           "title": "احصل على Zymbol",
           "btn": "نزّله وثبّته",
           "meta": "Linux · Windows · macOS"
@@ -5877,7 +5877,7 @@
           "install": "התקנה"
         },
         "dl": {
-          "version": "v0.0.9 · אלפא ציבורית",
+          "version": "v0.0.10 · אלפא ציבורית",
           "title": "קבל את Zymbol",
           "btn": "הורד והתקן",
           "meta": "Linux · Windows · macOS"
@@ -6095,7 +6095,7 @@
           "install": "نصب"
         },
         "dl": {
-          "version": "v0.0.9 · آلفای عمومی",
+          "version": "v0.0.10 · آلفای عمومی",
           "title": "Zymbol را بگیرید",
           "btn": "دانلود و نصب",
           "meta": "Linux · Windows · macOS"
@@ -6313,7 +6313,7 @@
           "install": "تنصیب"
         },
         "dl": {
-          "version": "v0.0.9 · عوامی الفا",
+          "version": "v0.0.10 · عوامی الفا",
           "title": "Zymbol حاصل کریں",
           "btn": "ڈاؤن لوڈ کر کے نصب کریں",
           "meta": "Linux · Windows · macOS"
@@ -6531,7 +6531,7 @@
           "install": "संस्थापित करें"
         },
         "dl": {
-          "version": "v0.0.9 · सार्वजनिक अल्फ़ा",
+          "version": "v0.0.10 · सार्वजनिक अल्फ़ा",
           "title": "Zymbol लीजिए",
           "btn": "उतारें और संस्थापित करें",
           "meta": "Linux · Windows · macOS"
@@ -6749,7 +6749,7 @@
           "install": "বসান"
         },
         "dl": {
-          "version": "v0.0.9 · সর্বজনীন আলফা",
+          "version": "v0.0.10 · সর্বজনীন আলফা",
           "title": "Zymbol নিন",
           "btn": "নামান ও বসান",
           "meta": "Linux · Windows · macOS"
@@ -6967,7 +6967,7 @@
           "install": "बसवा"
         },
         "dl": {
-          "version": "v0.0.9 · सार्वजनिक अल्फा",
+          "version": "v0.0.10 · सार्वजनिक अल्फा",
           "title": "Zymbol घ्या",
           "btn": "उतरवा आणि बसवा",
           "meta": "Linux · Windows · macOS"
@@ -7185,7 +7185,7 @@
           "install": "ਬਿਠਾਓ"
         },
         "dl": {
-          "version": "v0.0.9 · ਜਨਤਕ ਅਲਫ਼ਾ",
+          "version": "v0.0.10 · ਜਨਤਕ ਅਲਫ਼ਾ",
           "title": "Zymbol ਲਵੋ",
           "btn": "ਲਾਹੋ ਤੇ ਬਿਠਾਓ",
           "meta": "Linux · Windows · macOS"
@@ -7403,7 +7403,7 @@
           "install": "安装"
         },
         "dl": {
-          "version": "v0.0.9 · 公开 Alpha",
+          "version": "v0.0.10 · 公开 Alpha",
           "title": "取得 Zymbol",
           "btn": "下载并安装",
           "meta": "Linux · Windows · macOS"
@@ -7621,7 +7621,7 @@
           "install": "導入"
         },
         "dl": {
-          "version": "v0.0.9 · 公開アルファ",
+          "version": "v0.0.10 · 公開アルファ",
           "title": "Zymbol を入手",
           "btn": "ダウンロードして導入",
           "meta": "Linux · Windows · macOS"
@@ -7839,7 +7839,7 @@
           "install": "설치"
         },
         "dl": {
-          "version": "v0.0.9 · 공개 알파",
+          "version": "v0.0.10 · 공개 알파",
           "title": "Zymbol 받기",
           "btn": "내려받아 설치",
           "meta": "Linux · Windows · macOS"
@@ -8057,7 +8057,7 @@
           "install": "Pasang"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa publik",
+          "version": "v0.0.10 · Alfa publik",
           "title": "Ambil Zymbol",
           "btn": "Unduh dan pasang",
           "meta": "Linux · Windows · macOS"
@@ -8275,7 +8275,7 @@
           "install": "Cài đặt"
         },
         "dl": {
-          "version": "v0.0.9 · Alpha công khai",
+          "version": "v0.0.10 · Alpha công khai",
           "title": "Lấy Zymbol",
           "btn": "Tải về và cài đặt",
           "meta": "Linux · Windows · macOS"
@@ -8493,7 +8493,7 @@
           "install": "ติดตั้ง"
         },
         "dl": {
-          "version": "v0.0.9 · อัลฟาสาธารณะ",
+          "version": "v0.0.10 · อัลฟาสาธารณะ",
           "title": "เอา Zymbol",
           "btn": "ดาวน์โหลดและติดตั้ง",
           "meta": "Linux · Windows · macOS"
@@ -8711,7 +8711,7 @@
           "install": "Iluklok"
         },
         "dl": {
-          "version": "v0.0.9 · Alpang pambayan",
+          "version": "v0.0.10 · Alpang pambayan",
           "title": "Kunin ang Zymbol",
           "btn": "Ibaba at iluklok",
           "meta": "Linux · Windows · macOS"
@@ -8929,7 +8929,7 @@
           "install": "Sakinisha"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa ya umma",
+          "version": "v0.0.10 · Alfa ya umma",
           "title": "Pata Zymbol",
           "btn": "Pakua na usakinishe",
           "meta": "Linux · Windows · macOS"
@@ -9147,7 +9147,7 @@
           "install": "Sanya"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa na jama'a",
+          "version": "v0.0.10 · Alfa na jama'a",
           "title": "Samo Zymbol",
           "btn": "Sauke ka sanya",
           "meta": "Linux · Windows · macOS"
@@ -9365,7 +9365,7 @@
           "install": "Fi sórí ẹ̀rọ"
         },
         "dl": {
-          "version": "v0.0.9 · Áfà gbogbo ènìyàn",
+          "version": "v0.0.10 · Áfà gbogbo ènìyàn",
           "title": "Gba Zymbol",
           "btn": "Gbà kí o sì fi sórí ẹ̀rọ",
           "meta": "Linux · Windows · macOS"
@@ -9583,7 +9583,7 @@
           "install": "ይጫኑ"
         },
         "dl": {
-          "version": "v0.0.9 · ይፋዊ አልፋ",
+          "version": "v0.0.10 · ይፋዊ አልፋ",
           "title": "Zymbol ያግኙ",
           "btn": "አውርደው ይጫኑ",
           "meta": "Linux · Windows · macOS"
@@ -9801,7 +9801,7 @@
           "install": "⬇️ Install"
         },
         "dl": {
-          "version": "v0.0.9 · 🧪 public alpha",
+          "version": "v0.0.10 · 🧪 public alpha",
           "title": "⬇️ Get Zymbol",
           "btn": "⬇️ Download and install",
           "meta": "Linux · Windows · macOS"
@@ -10019,7 +10019,7 @@
           "install": "Kurulum"
         },
         "dl": {
-          "version": "v0.0.9 · Kamuya açık alfa",
+          "version": "v0.0.10 · Kamuya açık alfa",
           "title": "Zymbol'ü edin",
           "btn": "İndir ve kur",
           "meta": "Linux · Windows · macOS"
@@ -10327,7 +10327,7 @@
           "install": "Instalar"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa pública",
+          "version": "v0.0.10 · Alfa pública",
           "title": "Obtenha o Zymbol",
           "btn": "Descarregar e instalar",
           "meta": "Linux · Windows · macOS"
@@ -10545,7 +10545,7 @@
           "install": "நிறுவுக"
         },
         "dl": {
-          "version": "v0.0.9 · பொது ஆல்ஃபா",
+          "version": "v0.0.10 · பொது ஆல்ஃபா",
           "title": "Zymbol பெறுக",
           "btn": "இறக்கி நிறுவுக",
           "meta": "Linux · Windows · macOS"
@@ -10763,7 +10763,7 @@
           "install": "Instal·la"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa pública",
+          "version": "v0.0.10 · Alfa pública",
           "title": "Aconsegueix Zymbol",
           "btn": "Baixa i instal·la",
           "meta": "Linux · Windows · macOS"
@@ -10981,7 +10981,7 @@
           "install": "Instalatu"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa publikoa",
+          "version": "v0.0.10 · Alfa publikoa",
           "title": "Eskuratu Zymbol",
           "btn": "Deskargatu eta instalatu",
           "meta": "Linux · Windows · macOS"
@@ -11199,7 +11199,7 @@
           "install": "అమర్చు"
         },
         "dl": {
-          "version": "v0.0.9 · బహిరంగ ఆల్ఫా",
+          "version": "v0.0.10 · బహిరంగ ఆల్ఫా",
           "title": "Zymbol తీసుకోండి",
           "btn": "దించి అమర్చండి",
           "meta": "Linux · Windows · macOS"
@@ -11417,7 +11417,7 @@
           "install": "ಅಳವಡಿಸಿ"
         },
         "dl": {
-          "version": "v0.0.9 · ಸಾರ್ವಜನಿಕ ಆಲ್ಫಾ",
+          "version": "v0.0.10 · ಸಾರ್ವಜನಿಕ ಆಲ್ಫಾ",
           "title": "Zymbol ತೆಗೆದುಕೊಳ್ಳಿ",
           "btn": "ಇಳಿಸಿ ಮತ್ತು ಅಳವಡಿಸಿ",
           "meta": "Linux · Windows · macOS"
@@ -11635,7 +11635,7 @@
           "install": "დაყენება"
         },
         "dl": {
-          "version": "v0.0.9 · საჯარო ალფა",
+          "version": "v0.0.10 · საჯარო ალფა",
           "title": "აიღე Zymbol",
           "btn": "ჩამოტვირთე და დააყენე",
           "meta": "Linux · Windows · macOS"
@@ -11941,7 +11941,7 @@
           "install": "Faka"
         },
         "dl": {
-          "version": "v0.0.9 · I-alfa yomphakathi",
+          "version": "v0.0.10 · I-alfa yomphakathi",
           "title": "Thola iZymbol",
           "btn": "Landa uyifake",
           "meta": "Linux · Windows · macOS"
@@ -12159,7 +12159,7 @@
           "install": "Տեղադրում"
         },
         "dl": {
-          "version": "v0.0.9 · Հանրային ալֆա",
+          "version": "v0.0.10 · Հանրային ալֆա",
           "title": "Ստացիր Zymbol-ը",
           "btn": "Ներբեռնիր և տեղադրիր",
           "meta": "Linux · Windows · macOS"
@@ -12377,7 +12377,7 @@
           "install": "Churay"
         },
         "dl": {
-          "version": "v0.0.9 · Llapanpaq alfa",
+          "version": "v0.0.10 · Llapanpaq alfa",
           "title": "Zymbol-ta hurqhuy",
           "btn": "Uraykuchiy hinaspa churay",
           "meta": "Linux · Windows · macOS"
@@ -12595,7 +12595,7 @@
           "install": "Instalar"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa pública",
+          "version": "v0.0.10 · Alfa pública",
           "title": "Consegue Zymbol",
           "btn": "Descargar e instalar",
           "meta": "Linux · Windows · macOS"
@@ -12813,7 +12813,7 @@
           "install": "Namesti"
         },
         "dl": {
-          "version": "v0.0.9 · Javna alfa",
+          "version": "v0.0.10 · Javna alfa",
           "title": "Vzemi Zymbol",
           "btn": "Prenesi in namesti",
           "meta": "Linux · Windows · macOS"
@@ -13031,7 +13031,7 @@
           "install": "Instalo"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa publike",
+          "version": "v0.0.10 · Alfa publike",
           "title": "Merr Zymbol",
           "btn": "Shkarko dhe instalo",
           "meta": "Linux · Windows · macOS"
@@ -13249,7 +13249,7 @@
           "install": "Усталяваць"
         },
         "dl": {
-          "version": "v0.0.9 · Публічная альфа",
+          "version": "v0.0.10 · Публічная альфа",
           "title": "Вазьмі Zymbol",
           "btn": "Спампаваць і ўсталяваць",
           "meta": "Linux · Windows · macOS"
@@ -13467,7 +13467,7 @@
           "install": "સ્થાપો"
         },
         "dl": {
-          "version": "v0.0.9 · જાહેર આલ્ફા",
+          "version": "v0.0.10 · જાહેર આલ્ફા",
           "title": "Zymbol લો",
           "btn": "ઉતારો અને સ્થાપો",
           "meta": "Linux · Windows · macOS"
@@ -13685,7 +13685,7 @@
           "install": "Pasang"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa awam",
+          "version": "v0.0.10 · Alfa awam",
           "title": "Ambil Zymbol",
           "btn": "Muat turun dan pasang",
           "meta": "Linux · Windows · macOS"
@@ -13903,7 +13903,7 @@
           "install": "တပ်ဆင်ပါ"
         },
         "dl": {
-          "version": "v0.0.9 · အများပြည်သူ အယ်လ်ဖာ",
+          "version": "v0.0.10 · အများပြည်သူ အယ်လ်ဖာ",
           "title": "Zymbol ယူပါ",
           "btn": "ဒေါင်းလုပ်ဆွဲ၍ တပ်ဆင်ပါ",
           "meta": "Linux · Windows · macOS"
@@ -14121,7 +14121,7 @@
           "install": "जडान गर्नुहोस्"
         },
         "dl": {
-          "version": "v0.0.9 · सार्वजनिक अल्फा",
+          "version": "v0.0.10 · सार्वजनिक अल्फा",
           "title": "Zymbol लिनुहोस्",
           "btn": "झिकेर जडान गर्नुहोस्",
           "meta": "Linux · Windows · macOS"
@@ -14339,7 +14339,7 @@
           "install": "Quraşdır"
         },
         "dl": {
-          "version": "v0.0.9 · İctimai alfa",
+          "version": "v0.0.10 · İctimai alfa",
           "title": "Zymbol-u əldə et",
           "btn": "Yüklə və quraşdır",
           "meta": "Linux · Windows · macOS"
@@ -14557,7 +14557,7 @@
           "install": "Saz bike"
         },
         "dl": {
-          "version": "v0.0.9 · Alfaya giştî",
+          "version": "v0.0.10 · Alfaya giştî",
           "title": "Zymbol bistîne",
           "btn": "Dakêşe û saz bike",
           "meta": "Linux · Windows · macOS"
@@ -14775,7 +14775,7 @@
           "install": "Emohenda"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa opavavépe",
+          "version": "v0.0.10 · Alfa opavavépe",
           "title": "Erahauka Zymbol",
           "btn": "Emboguejy ha emohenda",
           "meta": "Linux · Windows · macOS"
@@ -14993,7 +14993,7 @@
           "install": "Wụnye"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa ọha",
+          "version": "v0.0.10 · Alfa ọha",
           "title": "Nweta Zymbol",
           "btn": "Budata wụnye ya",
           "meta": "Linux · Windows · macOS"
@@ -15211,7 +15211,7 @@
           "install": "Installeer"
         },
         "dl": {
-          "version": "v0.0.9 · Publieke alfa",
+          "version": "v0.0.10 · Publieke alfa",
           "title": "Kry Zymbol",
           "btn": "Laai af en installeer",
           "meta": "Linux · Windows · macOS"
@@ -15429,7 +15429,7 @@
           "install": "Sampal"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa bu askan wi",
+          "version": "v0.0.10 · Alfa bu askan wi",
           "title": "Jëlal Zymbol",
           "btn": "Yeb ko te sampal ko",
           "meta": "Linux · Windows · macOS"
@@ -15647,7 +15647,7 @@
           "install": "Faka"
         },
         "dl": {
-          "version": "v0.0.9 · I-alfa yoluntu",
+          "version": "v0.0.10 · I-alfa yoluntu",
           "title": "Fumana iZymbol",
           "btn": "Khuphela uyifake",
           "meta": "Linux · Windows · macOS"
@@ -15865,7 +15865,7 @@
           "install": "Инсталирај"
         },
         "dl": {
-          "version": "v0.0.9 · Јавна алфа",
+          "version": "v0.0.10 · Јавна алфа",
           "title": "Земи Zymbol",
           "btn": "Преземи и инсталирај",
           "meta": "Linux · Windows · macOS"
@@ -16083,7 +16083,7 @@
           "install": "Xictlālia"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa tepan",
+          "version": "v0.0.10 · Alfa tepan",
           "title": "Xiccui Zymbol",
           "btn": "Xictemōhui īhuān xictlālia",
           "meta": "Linux · Windows · macOS"
@@ -16301,7 +16301,7 @@
           "install": "Ts'a'ab"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa ti' tuláakal",
+          "version": "v0.0.10 · Alfa ti' tuláakal",
           "title": "Ch'a' Zymbol",
           "btn": "Emes yéetel ts'a'",
           "meta": "Linux · Windows · macOS"
@@ -16519,7 +16519,7 @@
           "install": "Elkünun"
         },
         "dl": {
-          "version": "v0.0.9 · Kom che alfa",
+          "version": "v0.0.10 · Kom che alfa",
           "title": "Nienge Zymbol",
           "btn": "Nagümün ka elkünun",
           "meta": "Linux · Windows · macOS"
@@ -16737,7 +16737,7 @@
           "install": "Bii' nínil"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa t'áá ałtso",
+          "version": "v0.0.10 · Alfa t'áá ałtso",
           "title": "Zymbol nídiitįįh",
           "btn": "Náánídzįįh dóó bii' nínil",
           "meta": "Linux · Windows · macOS"
@@ -16955,7 +16955,7 @@
           "install": "ᎠᏝᏅᏗ"
         },
         "dl": {
-          "version": "v0.0.9 · ᏂᎦᏛ ᎠᎵᏣ",
+          "version": "v0.0.10 · ᏂᎦᏛ ᎠᎵᏣ",
           "title": "Zymbol ᎯᎩ",
           "btn": "ᎯᏂᏰᏍᎩ ᎠᎴ ᎯᏝᏅᎩ",
           "meta": "Linux · Windows · macOS"
@@ -17261,7 +17261,7 @@
           "install": "Uchaña"
         },
         "dl": {
-          "version": "v0.0.9 · Taqiniru alfa",
+          "version": "v0.0.10 · Taqiniru alfa",
           "title": "Zymbol katuqaña",
           "btn": "Apaqaña ukat uchaña",
           "meta": "Linux · Windows · macOS"
@@ -17479,7 +17479,7 @@
           "install": "Puluwata"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa süpüla süpüshua",
+          "version": "v0.0.10 · Alfa süpüla süpüshua",
           "title": "Payaawata Zymbol",
           "btn": "Pusütira otta puluwata",
           "meta": "Linux · Windows · macOS"
@@ -17697,7 +17697,7 @@
           "install": "B'ʉbid'a"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa jũmaʉ̃ba",
+          "version": "v0.0.10 · Alfa jũmaʉ̃ba",
           "title": "Zymbol edad'a",
           "btn": "Edad'a ax̶ĩ b'ʉbid'a",
           "meta": "Linux · Windows · macOS"
@@ -17915,7 +17915,7 @@
           "install": "Thë hetu"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa yanomamɨ pëha",
+          "version": "v0.0.10 · Alfa yanomamɨ pëha",
           "title": "Zymbol thë hɨpɨ",
           "btn": "Thë wai ai thë hetu",
           "meta": "Linux · Windows · macOS"
@@ -18133,7 +18133,7 @@
           "install": "Kaa'i"
         },
         "dl": {
-          "version": "v0.0.9 · Alfaa uummataa",
+          "version": "v0.0.10 · Alfaa uummataa",
           "title": "Zymbol argadhu",
           "btn": "Buufadhuu kaa'i",
           "meta": "Linux · Windows · macOS"
@@ -18351,7 +18351,7 @@
           "install": "A sigi"
         },
         "dl": {
-          "version": "v0.0.9 · Foroba alifa",
+          "version": "v0.0.10 · Foroba alifa",
           "title": "Zymbol sɔrɔ",
           "btn": "A jigin ka a sigi",
           "meta": "Linux · Windows · macOS"
@@ -18569,7 +18569,7 @@
           "install": "Aar"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa yimɓe fof",
+          "version": "v0.0.10 · Alfa yimɓe fof",
           "title": "Heɓ Zymbol",
           "btn": "Aawto njaaru",
           "meta": "Linux · Windows · macOS"
@@ -18787,7 +18787,7 @@
           "install": "Tia yango"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa ya bato nyonso",
+          "version": "v0.0.10 · Alfa ya bato nyonso",
           "title": "Zwa Zymbol",
           "btn": "Kitisa mpe tia",
           "meta": "Linux · Windows · macOS"
@@ -19005,7 +19005,7 @@
           "install": "Rakib"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa dadweyne",
+          "version": "v0.0.10 · Alfa dadweyne",
           "title": "Hel Zymbol",
           "btn": "Soo dejiso oo rakib",
           "meta": "Linux · Windows · macOS"
@@ -19223,7 +19223,7 @@
           "install": "ጽዓን"
         },
         "dl": {
-          "version": "v0.0.9 · ህዝባዊ ኣልፋ",
+          "version": "v0.0.10 · ህዝባዊ ኣልፋ",
           "title": "Zymbol ውሰድ",
           "btn": "ኣውርድ ጽዓኖ",
           "meta": "Linux · Windows · macOS"
@@ -19441,7 +19441,7 @@
           "install": "Isa"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa yeruzhinji",
+          "version": "v0.0.10 · Alfa yeruzhinji",
           "title": "Tora Zymbol",
           "btn": "Dhawunirodha uise",
           "meta": "Linux · Windows · macOS"
@@ -19659,7 +19659,7 @@
           "install": "Instali"
         },
         "dl": {
-          "version": "v0.0.9 · Publika alfao",
+          "version": "v0.0.10 · Publika alfao",
           "title": "Akiru Zymbol",
           "btn": "Elŝutu kaj instalu",
           "meta": "Linux · Windows · macOS"
@@ -19877,7 +19877,7 @@
           "install": "ko punji"
         },
         "dl": {
-          "version": "v0.0.9 · gubni cnino",
+          "version": "v0.0.10 · gubni cnino",
           "title": "ko cpacu la zymbol",
           "btn": "ko cpacu gi'e punji",
           "meta": "Linux · Windows · macOS"
@@ -20095,7 +20095,7 @@
           "install": "o pana"
         },
         "dl": {
-          "version": "v0.0.9 · sin pi jan ale",
+          "version": "v0.0.10 · sin pi jan ale",
           "title": "o kama jo e Zymbol",
           "btn": "o kama jo, o pana",
           "meta": "Linux · Windows · macOS"
@@ -20313,7 +20313,7 @@
           "install": "Instalar"
         },
         "dl": {
-          "version": "v0.0.9 · Publika alfao",
+          "version": "v0.0.10 · Publika alfao",
           "title": "Obtenez Zymbol",
           "btn": "Deschargez ed instalez",
           "meta": "Linux · Windows · macOS"
@@ -20531,7 +20531,7 @@
           "install": "Installar"
         },
         "dl": {
-          "version": "v0.0.9 · Alpha public",
+          "version": "v0.0.10 · Alpha public",
           "title": "Obtene Zymbol",
           "btn": "Discarga e installa",
           "meta": "Linux · Windows · macOS"
@@ -20749,7 +20749,7 @@
           "install": "yIlan"
         },
         "dl": {
-          "version": "v0.0.9 · nugh alfa",
+          "version": "v0.0.10 · nugh alfa",
           "title": "zymbol yISuq",
           "btn": "yIchargh 'ej yIlan",
           "meta": "Linux · Windows · macOS"
@@ -21407,7 +21407,7 @@
           "install": ""
         },
         "dl": {
-          "version": "0.0.9 ·  alfa",
+          "version": "0.0.10 ·  alfa",
           "title": "zymbol ",
           "btn": "  ",
           "meta": "Linux · Windows · macOS"
@@ -21625,7 +21625,7 @@
           "install": "ᐊᐢᑌᐦᐊ"
         },
         "dl": {
-          "version": "v0.0.9 · ᑳᑭᓇ ᐊᓪᐸ",
+          "version": "v0.0.10 · ᑳᑭᓇ ᐊᓪᐸ",
           "title": "Zymbol ᒥᔮᐦᑳᐣ",
           "btn": "ᓂᐦᑖᐤ ᒥᓇ ᐊᐢᑌᐦᐊ",
           "meta": "Linux · Windows · macOS"
@@ -21843,7 +21843,7 @@
           "install": "Enstale"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa piblik",
+          "version": "v0.0.10 · Alfa piblik",
           "title": "Pran Zymbol",
           "btn": "Telechaje epi enstale",
           "meta": "Linux · Windows · macOS"
@@ -22061,7 +22061,7 @@
           "install": "Instaal"
         },
         "dl": {
-          "version": "v0.0.9 · Pablik alfa",
+          "version": "v0.0.10 · Pablik alfa",
           "title": "Get Zymbol",
           "btn": "Dongluod an instaal",
           "meta": "Linux · Windows · macOS"
@@ -22279,7 +22279,7 @@
           "install": "Pasang"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa umum",
+          "version": "v0.0.10 · Alfa umum",
           "title": "Njupuk Zymbol",
           "btn": "Undhuh lan pasang",
           "meta": "Linux · Windows · macOS"
@@ -22497,7 +22497,7 @@
           "install": "ដំឡើង"
         },
         "dl": {
-          "version": "v0.0.9 · អាល់ហ្វាសាធារណៈ",
+          "version": "v0.0.10 · អាល់ហ្វាសាធារណៈ",
           "title": "យក Zymbol",
           "btn": "ទាញយក និងដំឡើង",
           "meta": "Linux · Windows · macOS"
@@ -22715,7 +22715,7 @@
           "install": "Teeka"
         },
         "dl": {
-          "version": "v0.0.9 · Alufa ya bonna",
+          "version": "v0.0.10 · Alufa ya bonna",
           "title": "Funa Zymbol",
           "btn": "Diyunuloodi oteeke",
           "meta": "Linux · Windows · macOS"
@@ -22933,7 +22933,7 @@
           "install": "ຕິດຕັ້ງ"
         },
         "dl": {
-          "version": "v0.0.9 · ອາລຟາສາທາລະນະ",
+          "version": "v0.0.10 · ອາລຟາສາທາລະນະ",
           "title": "ເອົາ Zymbol",
           "btn": "ດາວໂຫຼດ ແລະ ຕິດຕັ້ງ",
           "meta": "Linux · Windows · macOS"
@@ -23151,7 +23151,7 @@
           "install": "Ikani"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa ya anthu onse",
+          "version": "v0.0.10 · Alfa ya anthu onse",
           "title": "Tengani Zymbol",
           "btn": "Tsitsani ndi kuyika",
           "meta": "Linux · Windows · macOS"
@@ -23369,7 +23369,7 @@
           "install": "Instɔl"
         },
         "dl": {
-          "version": "v0.0.9 · Pɔblik alfa",
+          "version": "v0.0.10 · Pɔblik alfa",
           "title": "Kolet Zymbol",
           "btn": "Daunlod an instɔl",
           "meta": "Linux · Windows · macOS"
@@ -23587,7 +23587,7 @@
           "install": "نصب"
         },
         "dl": {
-          "version": "v0.0.9 · عامه الفا",
+          "version": "v0.0.10 · عامه الفا",
           "title": "Zymbol ترلاسه کړئ",
           "btn": "ښکته او نصب یې کړئ",
           "meta": "Linux · Windows · macOS"
@@ -23805,7 +23805,7 @@
           "install": "Chaya'a'"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa chike konojel",
+          "version": "v0.0.10 · Alfa chike konojel",
           "title": "Chak'ama' Zymbol",
           "btn": "Chaqasaj xuquje' chaya'a'",
           "meta": "Linux · Windows · macOS"
@@ -24023,7 +24023,7 @@
           "install": "Pasang"
         },
         "dl": {
-          "version": "v0.0.9 · Alfa umum",
+          "version": "v0.0.10 · Alfa umum",
           "title": "Nyokot Zymbol",
           "btn": "Undeur jeung pasang",
           "meta": "Linux · Windows · macOS"
@@ -24241,7 +24241,7 @@
           "install": "Tsenya"
         },
         "dl": {
-          "version": "v0.0.9 · Alofa ya botlhe",
+          "version": "v0.0.10 · Alofa ya botlhe",
           "title": "Bona Zymbol",
           "btn": "Laolola o tsenye",
           "meta": "Linux · Windows · macOS"
@@ -24459,7 +24459,7 @@
           "install": "സ്ഥാപിക്കൂ"
         },
         "dl": {
-          "version": "v0.0.9 · പൊതു ആൽഫ",
+          "version": "v0.0.10 · പൊതു ആൽഫ",
           "title": "Zymbol എടുക്കൂ",
           "btn": "ഇറക്കി സ്ഥാപിക്കൂ",
           "meta": "Linux · Windows · macOS"
@@ -24677,7 +24677,7 @@
           "install": "ස්ථාපනය"
         },
         "dl": {
-          "version": "v0.0.9 · ප්‍රසිද්ධ ඇල්ෆා",
+          "version": "v0.0.10 · ප්‍රසිද්ධ ඇල්ෆා",
           "title": "Zymbol ගන්න",
           "btn": "බාගෙන ස්ථාපනය කරන්න",
           "meta": "Linux · Windows · macOS"

@@ -158,6 +158,19 @@
  * run is not a file it runs differently, which is why the diverge count is the
  * one to read.
  *
+ * Parity re-measured 2026-10-11 for the v0.0.10 release, through zyq, on a fresh
+ * clone of the published branches:
+ *   node tests/test_runner.mjs               → 683 files: 664 agree, 0 diverge
+ *   node tests/test_runner.mjs --dir examples → 332 files: 216 agree, 0 diverge
+ * The residue is the same kind of thing: 19 corpus files that corpus.toml excuses
+ * for zyjs with a written reason (std/db, <\ cmd \>, TUI), and the pool's own
+ * @skip-parity markers. ZyDDT's matrix asks this engine 1 705 cells with the other
+ * two and it agrees on every one but one, which is declared: GLB-127 — `>> +a` is
+ * accepted here and refused by the two Rust engines, and this engine is the one
+ * that matches the decided form. What it does NOT have: `--keys` and `--count` are
+ * CLI flags of the Rust engines; its own step budget (2 000 000 steps, 100 000
+ * iterations of `@ { }`) is lifted by tests/run_one.mjs, not by the playground.
+ *
  * Every gap this comment used to list is closed, and each was verified on its own
  * rather than inferred from the total:
  *   - arity            corpus/arity/ → 7 files, 3 engines, 7 agree. This engine no

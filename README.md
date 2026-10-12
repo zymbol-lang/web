@@ -19,9 +19,11 @@
 
 ---
 
-> **Live at v0.0.8.** The `v0.0.8` tag is cut, the release assets exist, and
-> `index.html`, `install.html` and `changelog.html` carry real SHA256 digests — no
-> `pending` placeholders remain. Work for v0.0.9 happens on the `v0.0.9` branch.
+> **Live at v0.0.9; v0.0.10 is prepared on the `v0.0.10` branch.** The `v0.0.10` tag and
+> its release assets exist, and `index.html`, `install.html` and `changelog.html` on the
+> branch carry the real SHA256 digests of every published file — except the Windows
+> installer, whose cell says `pending` until the signed `.msi` is uploaded. The branch
+> merges to `main` only after that, because `main` is what GitHub Pages serves.
 >
 > **The rule this banner used to enforce still holds**, and is the reason it is rewritten
 > rather than deleted: `main` is what GitHub Pages serves, so a version bump merges to

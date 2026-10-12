@@ -6,7 +6,50 @@
 This is the Markdown representation of <https://zymbol-lang.org/changelog.html>.
 Downloads for the current release: [/install.md](install.md).
 
-## v0.0.9 — September 9, 2026 (latest)
+## v0.0.10 — October 12, 2026 (latest)
+
+**The Premises as Source, a Matrix with No Red Cell, and Edits That Happen in Place**
+
+[Download and install](install.md) ·
+[Release](https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.10).
+The full text is in the interpreter repository:
+<https://github.com/zymbol-lang/interpreter/blob/v0.0.10/CHANGELOG.md>.
+
+### Added
+
+- **`##Kind("message")` builds an error, and `##Kind(m) =>` reads it back** — a soft error *value*: the spelling an error prints as and the kind a `:!` matches, in any script. The pattern is the first that creates a name, and the binding is a birth like `m = …`, never a shadow
+- **A command's exit status is a soft `##IO` that carries it** — `exit N`, then what the command said. And a subscript takes its own arguments, `</ app.zy -L es --list />`, running in this process and in the caller's engine
+- **`zymbol run app.zy --keys app.keys`** — a full-screen program tested without a terminal: `>>|` draws on a virtual 24×80 screen, `<<|` reads a key script, and each block's last frame goes to the output as text
+- **`zymbol run --count`** — what a program cost, in units that do not depend on the machine: `steps`, `calls`, `allocs`, `bytes` and `copied` on stderr — exact, where the clock moves by tens of percent on a 20 ms program
+- **`##'expr` — an Int code point to its Char** — a sibling of `###` and `##.`; and a base-prefixed literal is a Char in any range
+- **A slice written high-to-low builds backwards** — `a$[3..1]` → `[30, 20, 10]`, and in navigation. The only reversal the language has; `$^-` sorts
+- **A named function is a `??` pattern** — `?? h { f => … }` asks whether `h` is the function `f`, by identity, as `==` does
+- **Four new warnings** — an import nobody uses, code that cannot run, a bare expression statement that does nothing, and an unused constant — called a constant
+
+### Changed
+
+- **A named function sees only its parameters** — `x = 1  f() { <~ x }` is an error. v0.0.9 had the opposite; this takes it back, so a body behaves the same called or taken as a value. A lambda inherits its enclosing scope. Constants (`:=`) still cross
+- **A condition is a Bool and nothing else** — `? xs { … }` with an array, a number or a string is refused before running where the type is known, and is a `##Type` at run time where it arrives through a parameter. Nine of thirteen kinds of value used to take a branch by rules of their own, all three engines exiting 0
+- **Collections are strict** — the VM accepted 13 of the 40 malformed `$` forms the tree-walker refuses; it accepts 2 now, and zyjs was made strict in the same step
+- **The error family says what is wrong** — a wrong *type* is `##Type`; a wrong *value* of the right type — 0, negative, out of bounds — is `##Index`, in all three engines
+- **The dictionary pattern is written `#(…)`** — the bare `(name: n) = person` is refused, as the bare literal was; `@ #(k: a, v: b):rows` is accepted in a loop head; `#(a, b) = t` is refused
+- **A module alias is not a value** — `x = M`, `M == M` and `f(M)` are refused before running: `'M' is a module, not a value`. `M::name(…)` and `M.NAME` are untouched
+- **A constant twice, a loose range, `<< K` and `@ K:xs`** — are static errors, with the same text in every engine
+- **`\ name` is refused on what is not alive** — and on a module's variable it ends it for the module. An unmatched `??` aborts in the VM as in the tree-walker, instead of yielding `##_`
+
+### Fixed
+
+- **One dispatch loop in the VM, and errors that stay pending** — a `!?` could not nest; a `:!` filter that did not match swallowed the error; `@!`, `@>` and `<~` crossed a `!?` without running its `:>`; and a callback of `$>` ran on a second loop that skipped 49 instructions in silence
+- **A block lambda that ends without `<~` gives `##_`** — the tree-walker aborted where the VM and zyjs went on
+- **`$^` is stable, and with a comparator a merge sort** — it was quadratic in all three engines: at n = 4 000 the VM went from 1 102 ms to 21 ms. `$??` overlaps, and an empty pattern is `##Index`
+- **An edit happens where the collection lives** — an output parameter is the caller's variable, lent: 2 000 calls over 16 000 elements went from 2 808 M instructions to 55 M in the tree-walker and from 1 204 M to 19 M in the VM. Module state is edited in place in both: 12 000 calls writing one cell, 1 930 ms → 27 ms
+
+### Known issues
+
+- **`>> +a ¶` is refused by `zytw` and `zyvm`** — and accepted by `zyjs`; `b = +a` works in all three. One token in the parser, filed as GLB-127
+- **A value a call returns and the caller uses once stays in its register** — until something reuses it: two such calls in a row cost twice the memory in the VM. The VM still uses about six times less memory per array. ZYVM-022
+
+## v0.0.9 — September 9, 2026
 
 **The Collections Settled, the Editing Model, and a Calendar**
 
