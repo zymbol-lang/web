@@ -64,7 +64,7 @@ kañy(cr, ci) {
             cr = (x - 1) * ipekue   / tysýipu'ã - 2.1
             ci = (y - 1) * yvatekue / tysýi     - yvatekue / 2.0
             n  = kañy(cr, ci)
-            techaukaha = "@"
+            techaukaha = '@'
             sa'y       = 231
             ? n <> 0 {
                 pyrũ = n / 4 + 1

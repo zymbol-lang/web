@@ -59,7 +59,7 @@ pobeg(cr, ci) {
             cr = (x - 1) * širina / stolpci - 2.1
             ci = (y - 1) * višina / vrstice - višina / 2.0
             n  = pobeg(cr, ci)
-            znak  = "@"
+            znak  = '@'
             barva = 231
             ? n <> 0 {
                 korak = n / 4 + 1

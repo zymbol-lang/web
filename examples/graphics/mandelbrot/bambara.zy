@@ -59,7 +59,7 @@ boli(cr, ci) {
             cr = (x - 1) * bonyaYɔrɔ / jɔyɔrɔw - 2.1
             ci = (y - 1) * janyaYɔrɔ / layiniw - janyaYɔrɔ / 2.0
             n  = boli(cr, ci)
-            taamasiɲɛn = "@"
+            taamasiɲɛn = '@'
             kulɛri     = 231
             ? n <> 0 {
                 sen = n / 4 + 1

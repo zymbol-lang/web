@@ -59,7 +59,7 @@ ranawe(cr, ci) {
             cr = (x - 1) * waidPles / kolom - 2.1
             ci = (y - 1) * haitPles / layn  - haitPles / 2.0
             n  = ranawe(cr, ci)
-            mak  = "@"
+            mak  = '@'
             kala = 231
             ? n <> 0 {
                 step = n / 4 + 1

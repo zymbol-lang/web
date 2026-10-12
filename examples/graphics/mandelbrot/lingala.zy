@@ -61,7 +61,7 @@ kokima(cr, ci) {
             cr = (x - 1) * boneneEsika  / makonzí - 2.1
             ci = (y - 1) * bosandaEsika / milongo - bosandaEsika / 2.0
             n  = kokima(cr, ci)
-            elembo = "@"
+            elembo = '@'
             langi  = 231
             ? n <> 0 {
                 litambe = n / 4 + 1

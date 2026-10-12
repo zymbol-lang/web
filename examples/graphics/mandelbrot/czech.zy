@@ -58,7 +58,7 @@ barvy = [22, 28, 34, 40, 46, 82, 118, 154, 191]
             cr = (x - 1) * šířka / sloupce - 2.1
             ci = (y - 1) * výška / řádky   - výška / 2.0
             n  = únik(cr, ci)
-            značka = "@"
+            značka = '@'
             barva  = 231
             ? n <> 0 {
                 krok = n / 4 + 1

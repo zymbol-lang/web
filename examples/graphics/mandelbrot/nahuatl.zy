@@ -65,7 +65,7 @@ choloa(cr, ci) {
             cr = (x - 1) * patlahualiztli / temimilli - 2.1
             ci = (y - 1) * cuauhticayotl  / pantli    - cuauhticayotl / 2.0
             n  = choloa(cr, ci)
-            machiyotl = "@"
+            machiyotl = '@'
             tlapalli  = 231
             ? n <> 0 {
                 tlamantli = n / 4 + 1

@@ -60,7 +60,7 @@ weka(cr, ci) {
             cr = (x - 1) * pokaLipu / palisa - 2.1
             ci = (y - 1) * suliLipu / linja  - suliLipu / 2.0
             n  = weka(cr, ci)
-            sitelen = "@"
+            sitelen = '@'
             kule    = 231
             ? n <> 0 {
                 noka = n / 4 + 1

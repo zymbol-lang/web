@@ -62,7 +62,7 @@ wãbʉa(cr, ci) {
             cr = (x - 1) * bĩgua  / wãrĩ     - 2.1
             ci = (y - 1) * borroa / kirak'ai - borroa / 2.0
             n  = wãbʉa(cr, ci)
-            kirak'ada = "@"
+            kirak'ada = '@'
             pak'uada  = 231
             ? n <> 0 {
                 mĩrũ = n / 4 + 1

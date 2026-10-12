@@ -59,7 +59,7 @@ fly(cr, ci) {
             cr = (x - 1) * bredd / kolumner - 2.1
             ci = (y - 1) * höjd  / rader    - höjd / 2.0
             n  = fly(cr, ci)
-            tecken = "@"
+            tecken = '@'
             ton    = 231
             ? n <> 0 {
                 steg = n / 4 + 1

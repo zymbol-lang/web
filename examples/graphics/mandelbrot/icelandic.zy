@@ -60,7 +60,7 @@ flótti(cr, ci) {
             cr = (x - 1) * breidd / dálkar - 2.1
             ci = (y - 1) * hæð    / raðir  - hæð / 2.0
             n  = flótti(cr, ci)
-            tákn = "@"
+            tákn = '@'
             litur = 231
             ? n <> 0 {
                 skref = n / 4 + 1

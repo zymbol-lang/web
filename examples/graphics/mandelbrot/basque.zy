@@ -61,7 +61,7 @@ ihes(cr, ci) {
             cr = (x - 1) * zabalera / zutabeak   - 2.1
             ci = (y - 1) * altuera  / errenkadak - altuera / 2.0
             n  = ihes(cr, ci)
-            marka  = "@"
+            marka  = '@'
             kolorea = 231
             ? n <> 0 {
                 urratsa = n / 4 + 1

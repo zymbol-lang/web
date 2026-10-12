@@ -60,7 +60,7 @@ fuga(cr, ci) {
             cr = (x - 1) * larghezza / colonne - 2.1
             ci = (y - 1) * altezza   / righe   - altezza / 2.0
             n  = fuga(cr, ci)
-            segno = "@"
+            segno = '@'
             tinta = 231
             ? n <> 0 {
                 passo = n / 4 + 1

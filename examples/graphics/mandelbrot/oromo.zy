@@ -60,7 +60,7 @@ baqachuu(cr, ci) {
             cr = (x - 1) * bal'inaBakka  / utubaawwan - 2.1
             ci = (y - 1) * dheerinaBakka / tarreewwan - dheerinaBakka / 2.0
             n  = baqachuu(cr, ci)
-            mallattoo = "@"
+            mallattoo = '@'
             halluu    = 231
             ? n <> 0 {
                 tarkaanfii = n / 4 + 1

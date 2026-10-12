@@ -61,7 +61,7 @@ dogde(cr, ci) {
             cr = (x - 1) * yaajolNokku / tuggorɗe - 2.1
             ci = (y - 1) * juutolNokku / diide    - juutolNokku / 2.0
             n  = dogde(cr, ci)
-            maande = "@"
+            maande = '@'
             noone  = 231
             ? n <> 0 {
                 tappol = n / 4 + 1

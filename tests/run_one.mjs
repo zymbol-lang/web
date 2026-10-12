@@ -2,7 +2,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Run one .zy file through the browser engine and print what it produced.
 //
-//   node tests/run_one.mjs FILE.zy [--input FILE]
+//   node tests/run_one.mjs FILE.zy [--input FILE] [-- ARG...]
+//
+// Everything after a bare `--` is the program's command line, what `>< args`
+// reads — spelled as `zymbol run FILE.zy -- ARG...` spells it, so one argument
+// vector can be handed to all three engines. Without it no parameterised
+// program could be graded on the browser engine at all (GAP-GOL-006): the
+// engine had `cliArgs` from the start and this runner always passed `[]`.
 //
 // This exists so a shell script outside this repository can treat the JS engine
 // as one more command-line engine, the way it already treats the Rust
@@ -25,16 +31,19 @@
 import { readFileSync } from 'fs';
 import { resolve, dirname, join, relative } from 'path';
 
-const args = process.argv.slice(2);
+const argv = process.argv.slice(2);
+const dashdash = argv.indexOf('--');
+const args = dashdash < 0 ? argv : argv.slice(0, dashdash);
+const programArgs = dashdash < 0 ? [] : argv.slice(dashdash + 1);
 const file = args.find(a => !a.startsWith('--'));
 const inputArg = args[args.indexOf('--input') + 1];
 
 if (!file) {
-  process.stderr.write('usage: node tests/run_one.mjs FILE.zy [--input FILE]\n');
+  process.stderr.write('usage: node tests/run_one.mjs FILE.zy [--input FILE] [-- ARG...]\n');
   process.exit(2);
 }
 
-const { runZymbol, checkSource, moduleAritiesFor, moduleOutSlotsFor, moduleDeclErrors, Lexer, Parser } =
+const { runZymbol, checkSource, moduleAritiesFor, moduleOutSlotsFor, moduleExportsFor, moduleDeclErrors, Lexer, Parser } =
   await import('../src/zymbol/zymbol.js');
 
 // ─── stdin feed ───────────────────────────────────────────────────────────────
@@ -85,6 +94,16 @@ const abs = resolve(file);
 // string meant every nested import resolved against the entry file, so the
 // `<# ./module` inside i18n/matematicas/中文.zy looked for i18n/module.zy and
 // was reported as "module not found".
+// The name a diagnostic quotes, spelled exactly as the Rust engines spell it:
+// relative to the working directory when the file is under it, absolute
+// otherwise. Node's `relative()` alone would answer `../../x.zy` for a file
+// outside the tree, where `Path::strip_prefix` fails and Rust keeps the
+// absolute path — and `zyq consensus` compares the text.
+const displayPath = (full) => {
+  const rel = relative(process.cwd(), full);
+  return (rel && !rel.startsWith('..')) ? rel : full;
+};
+
 const makeResolver = (baseDir) => (spec) => {
   const candidate = spec.endsWith('.zy') ? spec : `${spec}.zy`;
   const full = resolve(baseDir, candidate);
@@ -92,7 +111,7 @@ const makeResolver = (baseDir) => (spec) => {
     const src = readFileSync(full, 'utf8');
     // displayPath is what diagnostics quote: relative, like the CLI's.
     return { src, resolver: makeResolver(dirname(full)), resolvedPath: full,
-             displayPath: relative(process.cwd(), full) };
+             displayPath: displayPath(full) };
   } catch { return null; }
 };
 const resolver = makeResolver(dirname(abs));
@@ -105,11 +124,13 @@ const source = readFileSync(abs, 'utf8');
 // down. Parsing twice costs nothing at this size and keeps the two paths honest.
 let moduleArities = new Map();
 let moduleOutSlots = new Map();
+let moduleExports = new Map();
 let moduleNameDiags = [];
 try {
   const ast = new Parser(new Lexer(source).tokenize()).parse();
   moduleArities = await moduleAritiesFor(ast, resolver, abs);
   moduleOutSlots = await moduleOutSlotsFor(ast, resolver, abs);
+  moduleExports = await moduleExportsFor(ast, resolver, abs);
   // E001 and E014 over the imports. Same plumbing as the two tables above and
   // for the same reason: `checkSource` has no resolver, and these are STATIC
   // refusals — the two Rust engines make them before running, so they have to
@@ -139,8 +160,18 @@ try {
 function formatDiagnostic(severity, d) {
   const [head, ...rest] = String(d.message).split('\n');
   let out = `${severity}: ${head}\n`;
-  if (d.line != null) out += `  --> line ${d.line}\n`;
+  // `--> file:line:col`, the CLI's spelling, whenever the engine knows the
+  // column. A diagnostic that has only a line keeps `--> line N`: writing
+  // `file:line:0` would claim a column nobody measured, and a missing one is a
+  // difference a cell should show, not one a zero should hide (ZYJS-024).
+  if (d.line != null) {
+    out += d.col != null
+      ? `  --> ${displayPath(abs)}:${d.line}:${d.col}\n`
+      : `  --> line ${d.line}\n`;
+  }
   for (const line of rest) out += `  ${line}\n`;
+  // Notes before the help, each on its own `= ` line, as the CLI prints them.
+  for (const note of d.notes ?? []) out += `  = ${note}\n`;
   // The guidance arrives as its own field, as it does from Rust's `Diagnostic`,
   // and is printed the way the CLI prints it. Engines that fold it into the
   // message still work — `rest` above carries those — but nothing new should.
@@ -148,7 +179,7 @@ function formatDiagnostic(severity, d) {
   return out;
 }
 
-const { diagnostics: ownDiags } = checkSource(source, { moduleArities, moduleOutSlots });
+const { diagnostics: ownDiags, ast: checkedAst } = checkSource(source, { moduleArities, moduleOutSlots, moduleExports });
 const diagnostics = [...ownDiags, ...moduleNameDiags];
 // Warnings go out too, which they did not before: this engine COMPUTED them and
 // the harness dropped them on the floor, so an unused variable was flagged by
@@ -158,7 +189,13 @@ const diagnostics = [...ownDiags, ...moduleNameDiags];
 // The order mattered. Emitting these before the layout above was unified would
 // have given every warning both differences at once — the wording and the shape
 // — turning one fixable problem into two.
-for (const d of diagnostics.filter(d => d.severity === 'warning')) {
+// Not for a module file: `zymbol run` refuses one ("is a module file and cannot
+// be run directly") before it analyses anything, so it prints none of them.
+// They used to agree only because the checker dropped every warning inside a
+// module body; `import 'x' is never used` is raised outside it (HLZ-015).
+// Decided as the interpreter decides it: the first statement is the module block.
+const isModuleFile = checkedAst?.body?.[0]?.type === 'ModuleBlock';
+for (const d of diagnostics.filter(d => d.severity === 'warning' && !isModuleFile)) {
   process.stderr.write(formatDiagnostic('warning', d));
 }
 
@@ -184,7 +221,13 @@ const onOutput = s => { out += s; };
 const ansiTui = {
   active: false,
   aborted: false,
-  enter() {}, leave() {},
+  // `>>|` takes over a terminal. Through a pipe there is none, and the CLI
+  // fails there (crossterm cannot enable raw mode); so does this context, or a
+  // TUI block would run here as plain code where the CLI refuses it (GLB-018 C).
+  enter() {
+    if (!process.stdin.isTTY || !process.stdout.isTTY) throw new Error('not a terminal');
+  },
+  leave() {},
   clear() { out += '\x1b[2J\x1b[1;1H'; },
   printAt(row, col, text, bks, fg, bg) {
     let style = '';
@@ -227,7 +270,7 @@ try {
   // now, exactly as it is under `zymbol run`.
   const limits = { maxSteps: Infinity, maxBytes: Infinity, maxInfiniteIter: Infinity };
   // eslint-disable-next-line no-unused-vars -- assigned below, read at the foot
-  const result = await runZymbol(source, inputFn, onOutput, resolver, abs, ansiTui, [], { onError, skipModuleNames: true, ...limits });
+  const result = await runZymbol(source, inputFn, onOutput, resolver, abs, ansiTui, programArgs, { onError, skipModuleNames: true, displayPath: displayPath(abs), ...limits });
   if (result && result.failed) {
     failed = true;
     message = result.message ?? 'engine reported failure';

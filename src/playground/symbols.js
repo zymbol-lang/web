@@ -121,7 +121,7 @@ export const SYMBOLS = {
   '###':   { id:'to_int',    group:'data', example:'>> ###3.7 ¶' },
   '##!':   { id:'to_int_tr', group:'data', example:'>> ##!3.7 ¶' },
   '##"':   { id:'typed_str', group:'data', example:'<< ##"(20) "name: " n\n>> n ¶' },
-  "##'":   { id:'typed_chr', group:'data', example:"<< ##' \"key: \" k\n>> k ¶" },
+  "##'":   { id:'typed_chr', group:'data', example:">> ##'65 ¶\n<< ##' \"key: \" k\n>> k ¶" },
   '0x':    { id:'base_lit',  group:'data', example:'>> 0x41 ¶\n>> 0b1010 ¶\n>> 0o17 ¶' },
   '#1':    { id:'true',      group:'data', ops:'bool', example:'ready = #1\n? ready { >> "yes" ¶ }' },
   '#0':    { id:'false',     group:'data', ops:'bool', example:'ready = #0\n? !ready { >> "no" ¶ }' },
@@ -135,7 +135,7 @@ export const SYMBOLS = {
   '.':    { id:'member',     group:'mod', example:'person = #(name: "Ada", age: 36)\n>> person.name ¶' },
 
   // ── Shell and scripts ────────────────────────────────────────────────────────
-  '<\\':  { id:'shell',      group:'shell', example:'greeting = <\\ echo hola \\>\n>> greeting ¶' },
+  '<\\':  { id:'shell',      group:'shell', example:'greeting = <\\ "echo hola" \\>\n>> greeting ¶' },
   '</':   { id:'script',     group:'shell', example:'r = </ ./helper.zy />\n>> r ¶' },
 
   // ── Structure ────────────────────────────────────────────────────────────────
@@ -251,6 +251,7 @@ export const REF_ROWS = {
   '`##.expr`': '##.',
   '`###expr`': '###',
   '`##!expr`': '##!',
+  "`##'expr`": "##'",
   '`#,|x|`': '#,|',
   '`#^|x|`': '#^|',
   '`0x`, `0b`, `0o`, `0d`': '0x',

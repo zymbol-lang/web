@@ -59,7 +59,7 @@ bijeg(cr, ci) {
             cr = (x - 1) * širina / stupci - 2.1
             ci = (y - 1) * visina / redci  - visina / 2.0
             n  = bijeg(cr, ci)
-            znak = "@"
+            znak = '@'
             boja = 231
             ? n <> 0 {
                 korak = n / 4 + 1

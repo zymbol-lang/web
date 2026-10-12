@@ -58,7 +58,7 @@ eskapi(cr, ci) {
             cr = (x - 1) * larĝeco / kolumnoj - 2.1
             ci = (y - 1) * alteco  / linioj   - alteco / 2.0
             n  = eskapi(cr, ci)
-            marko  = "@"
+            marko  = '@'
             koloro = 231
             ? n <> 0 {
                 paŝo = n / 4 + 1

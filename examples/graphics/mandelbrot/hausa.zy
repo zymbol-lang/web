@@ -60,7 +60,7 @@ tsere(cr, ci) {
             cr = (x - 1) * faɗinFili  / ginshiƙai - 2.1
             ci = (y - 1) * tsayinFili / layuka    - tsayinFili / 2.0
             n  = tsere(cr, ci)
-            alama = "@"
+            alama = '@'
             launi = 231
             ? n <> 0 {
                 mataki = n / 4 + 1

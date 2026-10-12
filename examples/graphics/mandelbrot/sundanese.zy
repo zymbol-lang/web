@@ -61,7 +61,7 @@ kabur(cr, ci) {
             cr = (x - 1) * rubakna    / kolom - 2.1
             ci = (y - 1) * jangkungna / baris - jangkungna / 2.0
             n  = kabur(cr, ci)
-            tanda = "@"
+            tanda = '@'
             kelir = 231
             ? n <> 0 {
                 léngkah = n / 4 + 1

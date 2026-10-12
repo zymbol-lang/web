@@ -58,7 +58,7 @@ qaçış(cr, ci) {
             cr = (x - 1) * genişlik / sütunlar - 2.1
             ci = (y - 1) * uzunluq  / sətirlər - uzunluq / 2.0
             n  = qaçış(cr, ci)
-            işarə = "@"
+            işarə = '@'
             rəng  = 231
             ? n <> 0 {
                 addım = n / 4 + 1

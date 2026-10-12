@@ -65,7 +65,7 @@ montun(cr, ci) {
             cr = (x - 1) * fütalen / witran - 2.1
             ci = (y - 1) * alülen  / wirin  - alülen / 2.0
             n  = montun(cr, ci)
-            wirintun = "@"
+            wirintun = '@'
             ad       = 231
             ? n <> 0 {
                 trekan = n / 4 + 1

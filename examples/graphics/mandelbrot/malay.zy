@@ -60,7 +60,7 @@ terlepas(cr, ci) {
             cr = (x - 1) * lebar  / lajur - 2.1
             ci = (y - 1) * tinggi / baris - tinggi / 2.0
             n  = terlepas(cr, ci)
-            tanda = "@"
+            tanda = '@'
             rona  = 231
             ? n <> 0 {
                 langkah = n / 4 + 1

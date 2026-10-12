@@ -59,7 +59,7 @@ rev(cr, ci) {
             cr = (x - 1) * firehiyaRû    / stûn - 2.1
             ci = (y - 1) * bilindahiyaRû / rêz  - bilindahiyaRû / 2.0
             n  = rev(cr, ci)
-            nîşan = "@"
+            nîşan = '@'
             rengek = 231
             ? n <> 0 {
                 gav = n / 4 + 1

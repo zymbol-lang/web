@@ -60,7 +60,7 @@ chape(cr, ci) {
             cr = (x - 1) * lajè / kolòn - 2.1
             ci = (y - 1) * wotè / liy   - wotè / 2.0
             n  = chape(cr, ci)
-            mak = "@"
+            mak = '@'
             koulè = 231
             ? n <> 0 {
                 pa = n / 4 + 1

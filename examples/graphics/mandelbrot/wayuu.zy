@@ -66,7 +66,7 @@ awataa(cr, ci) {
             cr = (x - 1) * miyoʼukuaa  / atchinjaa   - 2.1
             ci = (y - 1) * iipünaakuaa / ashajuushii - iipünaakuaa / 2.0
             n  = awataa(cr, ci)
-            ayaawaa = "@"
+            ayaawaa = '@'
             ayaakua = 231
             ? n <> 0 {
                 wanaa = n / 4 + 1

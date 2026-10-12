@@ -60,7 +60,7 @@ fuga(cr, ci) {
             cr = (x - 1) * largura / columnas - 2.1
             ci = (y - 1) * altura  / filas    - altura / 2.0
             n  = fuga(cr, ci)
-            marca = "@"
+            marca = '@'
             ton   = 231
             ? n <> 0 {
                 paso = n / 4 + 1

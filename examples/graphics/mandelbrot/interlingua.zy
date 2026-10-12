@@ -60,7 +60,7 @@ escappar(cr, ci) {
             cr = (x - 1) * largor / columnas - 2.1
             ci = (y - 1) * altor  / lineas   - altor / 2.0
             n  = escappar(cr, ci)
-            marca = "@"
+            marca = '@'
             color = 231
             ? n <> 0 {
                 passo = n / 4 + 1

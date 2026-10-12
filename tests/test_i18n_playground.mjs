@@ -11,7 +11,7 @@
 // answers every key the base catalogue asks.
 //
 // It follows the shape the project publishes for Zymbol applications in
-// interpreter/USERAPPI18N.md §10: walk catalogue × locales, and make "translation == key"
+// zymbol-design/USERAPPI18N.md §10: walk catalogue × locales, and make "translation == key"
 // mean "never translated" by giving every key a domain prefix.
 //
 // It also guards two derivations that no browser will ever complain about:
@@ -35,6 +35,7 @@ import { PUBLISHED, BASE_LOCALE } from '../src/i18n/i18n.js';
 import { BROWSER_LANG_MAP, LANG_BCP47 } from '../src/i18n/detect.js';
 import { deriveLangs } from '../tools/gen_playground_langs.mjs';
 import { SYMBOLS, GROUPS } from '../src/playground/symbols.js';
+import { checkSource } from '../src/zymbol/zymbol.js';
 
 const WEB_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
 const CAT_DIR = join(WEB_DIR, 'data/i18n/playground');
@@ -210,6 +211,73 @@ for (const page of ['index.html', 'overview.html']) {
 
   diff(BROWSER_LANG_MAP, inlineLocale, 'detect.js BROWSER_LANG_MAP', `${page} LOCALE_MAP`);
   diff(LANG_BCP47, inlineBcp47, 'detect.js LANG_BCP47', `${page} BCP47`);
+}
+
+// ─── every diagnostic the engine emits reaches the panel as words ──────────────
+//
+// The Problems panel renders `chk.<code>`, and a code with no entry used to be
+// shown as the key itself — `chk.W_NO_EFFECT` — for 19 of the checker's 28
+// codes (ZYJS-023). It now falls back to the engine's English message, so every
+// code needs an entry OR a place in this list, with the reason a template does
+// not fit: each of these emits several different sentences under one code.
+section('checker codes vs the catalogue');
+{
+  const ENGINE_WORDS = {
+    E_ARRAY_MIX:      'three sentences (element mix, append, write), none with params',
+    E_NAME:           'four sentences, each with its own help naming a line',
+    W_NO_EFFECT:      'a name read and discarded, or a consulting $ operator',
+    W_UNARY_TYPE:     'unary +/- and logical not are worded apart',
+    W_DESTRUCT_SHAPE: 'the pattern, what it accepts and what it got, no params',
+    W_MIX_UNNEEDED:   'names the element type in the sentence, no params',
+    E_HOF_ARITY:      'map, filter and reduce are worded apart, each with its own count',
+  };
+  const engineSrc = readFileSync(join(WEB_DIR, 'src/zymbol/zymbol.js'), 'utf8');
+  const emitted = new Set([...engineSrc.matchAll(/this\.(?:warn|error)\('([A-Z0-9_]+)'/g)].map(m => m[1]));
+  for (const code of emitted) {
+    check(`checker code ${code} has a catalogue entry or a declared reason`,
+      (`chk.${code}` in base) || code in ENGINE_WORDS);
+  }
+  for (const code of Object.keys(ENGINE_WORDS)) {
+    check(`ENGINE_WORDS lists ${code}, which the checker still emits`, emitted.has(code));
+    check(`ENGINE_WORDS lists ${code}, which now has an entry — take it off the list`, !(`chk.${code}` in base));
+  }
+}
+
+// ─── one code, one sentence ───────────────────────────────────────────────────
+//
+// The panel shows `chk.<code>`, not the engine's message. A code that two
+// different failures share therefore shows the catalogued sentence for BOTH, and
+// one of them is told something false: `'x' is read from outside this function`
+// was shown as "cannot access underscore variable 'x' from inner scope", and
+// `constant 'K' already declared` as "cannot reassign constant 'K'" (ZYJS-031).
+// Any code with a catalogue entry must be emitted with a single sentence — the
+// first literal of its message, placeholders aside.
+section('one code, one sentence');
+{
+  const engineSrc = readFileSync(join(WEB_DIR, 'src/zymbol/zymbol.js'), 'utf8');
+  const call = /this\.(?:warn|error)\(\s*'([A-Z0-9_]+)',\s*(`(?:[^`\\]|\\.)*`|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")/gs;
+  const sentences = new Map();
+  for (const m of engineSrc.matchAll(call)) {
+    const text = m[2].slice(1, -1).replace(/\$\{[^}]*\}/g, '§');
+    if (!sentences.has(m[1])) sentences.set(m[1], new Set());
+    sentences.get(m[1]).add(text);
+  }
+  for (const [code, set] of sentences) {
+    if (!(`chk.${code}` in base)) continue;     // no entry: the engine's own words are shown
+    check(`checker code ${code} has a catalogue entry and one sentence (${set.size})`, set.size === 1);
+  }
+
+  // And the three that were wrong, rendered the way the panel renders them.
+  const render = d => base[`chk.${d.code}`].replace(/\{(\w+)\}/g, (m, k) => d.params?.[k] ?? m);
+  for (const [src, code] of [
+    ['x = 1\nf() { <~ x }\n>> f() ¶\n', 'E_SCOPE_FN'],
+    ['K := 1\nK := 2\n>> K ¶\n',        'E_CONST_REDECL'],
+    ['@ i:1..2 { cuenta = i }\n>> °cuenta ¶\n', 'E_HOT_OUTPUT'],
+  ]) {
+    const d = checkSource(src).diagnostics.find(x => x.code === code);
+    check(`${code}: the panel says what the engine says`, d && render(d) === d.message,
+          d ? `panel ${JSON.stringify(render(d))} engine ${JSON.stringify(d.message)}` : 'not emitted');
+  }
 }
 
 // ─── report ──────────────────────────────────────────────────────────────────

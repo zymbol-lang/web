@@ -59,7 +59,7 @@ pabėgimas(cr, ci) {
             cr = (x - 1) * plotis  / stulpeliai - 2.1
             ci = (y - 1) * aukštis / eilutės    - aukštis / 2.0
             n  = pabėgimas(cr, ci)
-            ženklas   = "@"
+            ženklas   = '@'
             atspalvis = 231
             ? n <> 0 {
                 žingsnis = n / 4 + 1

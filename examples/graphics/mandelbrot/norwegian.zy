@@ -60,7 +60,7 @@ rømme(cr, ci) {
             cr = (x - 1) * bredde / kolonner - 2.1
             ci = (y - 1) * høyde  / rader    - høyde / 2.0
             n  = rømme(cr, ci)
-            tegn = "@"
+            tegn = '@'
             tone = 231
             ? n <> 0 {
                 steg = n / 4 + 1

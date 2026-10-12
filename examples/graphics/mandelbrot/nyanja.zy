@@ -62,7 +62,7 @@ thawa(cr, ci) {
             cr = (x - 1) * mulifupiMalo / mizati - 2.1
             ci = (y - 1) * msinkhuMalo  / mizere - msinkhuMalo / 2.0
             n  = thawa(cr, ci)
-            chizindikiro = "@"
+            chizindikiro = '@'
             mtundu       = 231
             ? n <> 0 {
                 gawo = n / 4 + 1

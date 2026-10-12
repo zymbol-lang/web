@@ -62,7 +62,7 @@ dduka(cr, ci) {
             cr = (x - 1) * obugaziKifo  / empagi    - 2.1
             ci = (y - 1) * obuwanvuKifo / ennyiriri - obuwanvuKifo / 2.0
             n  = dduka(cr, ci)
-            akabonero = "@"
+            akabonero = '@'
             ebbala    = 231
             ? n <> 0 {
                 omutendera = n / 4 + 1

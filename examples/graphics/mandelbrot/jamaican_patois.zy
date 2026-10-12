@@ -59,7 +59,7 @@ ronwe(cr, ci) {
             cr = (x - 1) * widt / kalam - 2.1
             ci = (y - 1) * hait / rou   - hait / 2.0
             n  = ronwe(cr, ci)
-            maak = "@"
+            maak = '@'
             kola = 231
             ? n <> 0 {
                 step = n / 4 + 1

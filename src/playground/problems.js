@@ -22,8 +22,8 @@
  * and the real tool does not.
  */
 
-import { checkSource } from '../zymbol/zymbol.js';
-import { t, localeDir, onLocaleChange } from '../i18n/i18n.js';
+import { checkSource, confusableHints } from '../zymbol/zymbol.js';
+import { t, tHas, localeDir, onLocaleChange } from '../i18n/i18n.js';
 
 const WARN_KEY = 'zy-pg-warnings';
 const DEBOUNCE_MS = 600;
@@ -45,12 +45,21 @@ export function createProblems({ panel, list, countEl, titleEl, toggleBtn, warni
    * English prose, so `chk.E_PARSE` is a passthrough and the reader sees it verbatim.
    */
   function messageOf(d) {
-    return t(`chk.${d.code}`, d.params ?? {});
+    // A code with no catalogue entry — one whose engine message varies too
+    // much for a template — is shown in the engine's English words, as E_PARSE
+    // is. It used to show the key itself, `chk.W_NO_EFFECT` (ZYJS-023).
+    const key = `chk.${d.code}`;
+    return tHas(key) ? t(key, d.params ?? {}) : (d.message ?? key);
   }
   function hintOf(d) {
     const key = `chk.${d.code}_help`;
-    const help = t(key);
-    return help === key ? null : help;
+    // With the diagnostic's params, so a guidance can name what the message
+    // names (`pass 'x' as one`); a brace no param matches is left as written.
+    const help = t(key, d.params ?? {});
+    if (help !== key) return help;
+    // With no entry for the code at all, the engine's own guidance goes with
+    // its own message (ZYJS-023).
+    return tHas(`chk.${d.code}`) ? null : (d.help ?? null);
   }
 
   function visible() {
@@ -141,7 +150,9 @@ export function createProblems({ panel, list, countEl, titleEl, toggleBtn, warni
   /** Runs the checker over what is on screen right now. */
   function run() {
     const src = getSource();
-    diagnostics = src.trim() ? checkSource(src).diagnostics : [];
+    // The confusable-character hints are the editor's alone: the engine's
+    // `checkSource` never gives them, so a terminal never shows them.
+    diagnostics = src.trim() ? [...checkSource(src).diagnostics, ...confusableHints(src)] : [];
     render();
   }
 
