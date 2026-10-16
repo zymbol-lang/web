@@ -395,6 +395,32 @@ function numeralBool(b, base)  { return '#' + numeralInt(b ? 1 : 0, base); }
 // place.
 function isDict(v) { return v?.type === 'tuple' && v.keys != null; }
 
+// Where a key sits in a dictionary, by hash (GLB-132): `keys.indexOf` walked
+// the keys, so adding n of them cost n². The index is kept per keys ARRAY,
+// which is never changed in place — except by `dictPut` on a dictionary its
+// variable owns (ZYJS-014's mark), and that keeps the index with it.
+const DICT_INDEX = new WeakMap();
+function dictIndex(keys) {
+  let ix = DICT_INDEX.get(keys);
+  if (!ix) {
+    ix = new Map();
+    keys.forEach((k, i) => { if (!ix.has(k)) ix.set(k, i); });
+    DICT_INDEX.set(keys, ix);
+  }
+  return ix;
+}
+function keyIndex(dict, k) {
+  const i = dictIndex(dict.keys).get(k);
+  return i === undefined ? -1 : i;
+}
+// Add a key at the end of a dictionary this edit owns, in place.
+function dictPut(dict, k, val) {
+  const ix = dictIndex(dict.keys);
+  dict.v.push(val);
+  dict.keys.push(k);
+  ix.set(k, dict.keys.length - 1);
+}
+
 // ─── Signal types ─────────────────────────────────────────────────────────────
 
 const OUTPUT_STOP_OPS = {
@@ -7639,7 +7665,7 @@ function deepUpdateValue(col, indices, newVal) {
   if (isDict(col)) {
     if (typeof i !== 'string')
       throw new ZyRuntimeError(Interpreter.notPositionalMsg('d[n>…]$~ value', col.keys), '##Type');
-    const ki = col.keys.indexOf(i);
+    const ki = keyIndex(col, i);
     const sub = ki < 0 ? mkUnit() : col.v[ki];
     const updatedSub = deepUpdateValue(sub, indices.slice(1), newVal);
     if (ki < 0) return { type:'tuple', v:[...col.v, updatedSub], keys:[...col.keys, i] };
@@ -9405,7 +9431,7 @@ export class Interpreter {
             `the pattern #(…) requires a dictionary, got ${typeLabel(tup)}\n` +
             `help: #(key: name) = d unpacks a dictionary; use (a, b) for a tuple, [a, b] for an array`);
         for (const { field, name } of stmt.targets) {
-          const i = tup.keys.indexOf(field);
+          const i = keyIndex(tup, field);
           // ##Key, exactly as reading the key would raise: binding nothing made
           // the pattern succeed with the name empty (the tree-walker did too,
           // until v0.0.9 — decision 10 refuses the silent undefined).
@@ -9948,7 +9974,7 @@ export class Interpreter {
           // any key, which is what JSON needs — `d["mi clave"]` cannot be
           // written any other way.
           if (iVal.type === 'str' && obj.type === 'tuple' && obj.keys) {
-            const ki = obj.keys.indexOf(iVal.v);
+            const ki = keyIndex(obj, iVal.v);
             if (ki < 0)
               throw new ZyRuntimeError(
                 Interpreter.missingKeyMsg(iVal.v, obj.keys), '##Key');
@@ -10114,7 +10140,7 @@ export class Interpreter {
           throw new ZyRuntimeError(
             `the dot reaches a dictionary key, and this is ${typeLabel(obj)}\n` +
             `help: use d.${expr.field} on a #(…) — for a position, use x[1]`, '##Type');
-        const i = obj.keys.indexOf(expr.field);
+        const i = keyIndex(obj, expr.field);
         // ##Key, not ##_: an absent key is its own kind whichever way the
         // reader arrived — through the dot or through the bracket (decision 10).
         if (i < 0) throw new ZyRuntimeError(
@@ -10134,7 +10160,7 @@ export class Interpreter {
         let arr = (own && expr.obj?.type === 'Ident' && !expr.obj.hot
                    && plainOperand(expr.index) && plainOperand(expr.value))
           ? env.peek(expr.obj.name) : null;
-        if (arr?.type !== 'arr') arr = await this.eval(expr.obj, env);
+        if (arr?.type !== 'arr' && !isDict(arr)) arr = await this.eval(expr.obj, env);
         // `d.k$~ v` carries its key directly; `d[e]$~ v` evaluates one.
         const iVal = expr.key !== undefined ? mkStr(expr.key) : await this.eval(expr.index, env);
         const val  = await this.eval(expr.value, env);
@@ -10151,18 +10177,29 @@ export class Interpreter {
                 : `$~ writes into a collection, and this is ${typeLabel(arr)}\n` +
                   `help: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
           }
-          const fi = arr.keys.indexOf(iVal.v);
+          const fi = keyIndex(arr, iVal.v);
           // A key that is not there gets ADDED, as `d[k] = v` does in Python.
           // The array refuses the same move (decision 13) and the two are not
           // inconsistent: an array is addressed by POSITION, so writing past the
           // end leaves a hole — JavaScript's own `<3 empty items>` is what that
           // looks like — while a dictionary is addressed by KEY and has none to
           // leave. Without it, a JSON built piece by piece could not be built.
-          if (fi < 0) {
-            return { type: 'tuple', v: [...arr.v, val], keys: [...arr.keys, iVal.v] };
+          //
+          // Where it is, when this variable is its only holder — as an array is
+          // written (ZYJS-014): copying both lists on every write made building
+          // a dictionary cost n² whatever the lookup did (GLB-132).
+          if (own && arr.own) {
+            if (fi < 0) dictPut(arr, iVal.v, val); else arr.v[fi] = val;
+            return arr;
           }
-          const r = [...arr.v]; r[fi] = val;
-          return { type: 'tuple', v: r, keys: arr.keys };
+          // A dictionary that will be owned gets keys of its own too: one it
+          // shared with the original would be pushed into in place later.
+          const r = fi < 0
+            ? { type: 'tuple', v: [...arr.v, val], keys: [...arr.keys, iVal.v] }
+            : { type: 'tuple', v: [...arr.v], keys: own ? [...arr.keys] : arr.keys };
+          if (fi >= 0) r.v[fi] = val;
+          if (own) r.own = true;
+          return r;
         }
 
         // A positional WRITE corrupts data rather than returning the wrong
@@ -10536,7 +10573,7 @@ export class Interpreter {
     // `[…]` is a VARIABLE, which is exactly what makes a computed key possible.
     if (isDict(obj)) {
       if (typeof idx === 'string') {
-        const ki = obj.keys.indexOf(idx);
+        const ki = keyIndex(obj, idx);
         if (ki < 0) throw new ZyRuntimeError(Interpreter.missingKeyMsg(idx, obj.keys), '##Key');
         return obj.v[ki];
       }
@@ -10928,7 +10965,7 @@ export class Interpreter {
         // `d$-["beta"]` delete the FIRST key here instead of the named one.
         const rawIdx = await this.eval(expr.index, env);
         if (rawIdx.type === 'str' && isDict(col)) {
-          const ki = col.keys.indexOf(rawIdx.v);
+          const ki = keyIndex(col, rawIdx.v);
           if (ki < 0)
             throw new ZyRuntimeError(Interpreter.missingKeyMsg(rawIdx.v, col.keys), '##Key');
           const nv = [...col.v], nk = [...col.keys];
