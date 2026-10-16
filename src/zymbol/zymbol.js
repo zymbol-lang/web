@@ -475,8 +475,18 @@ class ZyError extends Error {
  * wrong type raised a plain message, and it was ##Type in the tree-walker and
  * ##_ here and in the VM (GLB-010).
  */
+// How deep a program may call (D7, decided by the author 2026-10-16; GLB-133):
+// at most this many calls active at once, the same number in the three engines.
+// A call in tail position — `<~ f(…)` to the function itself, outside any `!?`
+// of its own — replaces the one that made it in the Rust engines, and is not
+// counted here either. This engine's calls live on the heap and would go on
+// far past it; the number is what makes a deep program answer the same.
+const MAX_ACTIVE_CALLS = 10000;
+const DEPTH_EXCEEDED = `call depth exceeded: more than ${MAX_ACTIVE_CALLS} calls active at once`;
+
 function errorKindOfMessage(message) {
   const m = String(message ?? '').toLowerCase();
+  if (m.startsWith('call depth exceeded')) return '##Depth';
   if (m.includes('overflow') || m.includes('out of range')) return '##Range';
   if (m.includes('no key')) return '##Key';
   if (m.includes('index') || m.includes('out of bounds')) return '##Index';
@@ -8784,6 +8794,14 @@ export class Interpreter {
     // (maybeYield), so this ceiling bounds wasted work, not the page.
     this.maxSteps        = 2_000_000;
     this.maxInfiniteIter = 100_000;
+    // Calls active at once, and one frame per call saying which function runs
+    // and how many `!?` it has open — for the depth limit and the tail call
+    // (GLB-133). `_tailCallNode` is the Call a `<~` said is in tail position;
+    // `_tailNow` carries that answer the last step into `callFunc`.
+    this.activeCalls = 0;
+    this.callFrames = [];
+    this._tailCallNode = null;
+    this._tailNow = false;
     this.outputBytes     = 0;
     this.maxBytes        = 32_000;
     this.lastYield       = performance.now();
@@ -9201,6 +9219,13 @@ export class Interpreter {
       }
 
       case 'Return': {
+        // `<~ f(…)` to the function itself, with no `!?` of this frame open, is
+        // a tail call: the Call it evaluates first is told so (GLB-133).
+        const frame = this.callFrames[this.callFrames.length - 1];
+        if (frame && frame.tries === 0 && stmt.value?.type === 'Call'
+            && stmt.value.callee === frame.name) {
+          this._tailCallNode = stmt.value;
+        }
         const val = stmt.value ? await this.eval(stmt.value, env) : mkUnit();
         return new ZyReturn(val);
       }
@@ -9444,31 +9469,16 @@ export class Interpreter {
       }
 
       case 'TryCatch': {
-        let result;
+        // The whole `!?` — body, `:!` and `:>` — is open for the tail call, as
+        // the VM's try_stack has it: a `<~ f()` inside owes the handler or the
+        // `:>` (GLB-133, ZYTW-017).
+        const tryFrame = this.callFrames[this.callFrames.length - 1];
+        if (tryFrame) tryFrame.tries++;
         try {
-          result = await this.execBlock(stmt.tryBody, new Env(env));
-        } catch (err) {
-          if (err instanceof ZyErrorPropagate) throw err; // $!! propagates through try/catch
-          // An error raised with a kind keeps it; one that carries only a message
-          // is read by the words, as the Rust engines read it.
-          const errType = (err.errType && (err.errType !== '##_' || err.kindDeclared))
-            ? err.errType
-            : errorKindOfMessage(err.message ?? String(err));
-          const matched = stmt.catches.find(
-            c => !c.errType || c.errType === errType || c.errType === '##_'
-          );
-          if (matched) {
-            const catchEnv = new Env(env);
-            const errMsg = err.message ?? String(err);
-            catchEnv.def('_err', { type: 'error', errType, v: errMsg });
-            result = await this.execBlock(matched.body, catchEnv);
-          } else {
-            throw err;
-          }
+          return await this.execTryCatch(stmt, env);
         } finally {
-          if (stmt.finallyBody) await this.execBlock(stmt.finallyBody, new Env(env));
+          if (tryFrame) tryFrame.tries--;
         }
-        return result;
       }
 
       case 'LifetimeEnd': {
@@ -9482,6 +9492,36 @@ export class Interpreter {
     }
   }
 
+
+  // A `!?` statement: what `case 'TryCatch'` runs once it has counted the
+  // block as open for the tail call.
+  async execTryCatch(stmt, env) {
+    let result;
+    try {
+      result = await this.execBlock(stmt.tryBody, new Env(env));
+    } catch (err) {
+      if (err instanceof ZyErrorPropagate) throw err; // $!! propagates through try/catch
+      // An error raised with a kind keeps it; one that carries only a message
+      // is read by the words, as the Rust engines read it.
+      const errType = (err.errType && (err.errType !== '##_' || err.kindDeclared))
+        ? err.errType
+        : errorKindOfMessage(err.message ?? String(err));
+      const matched = stmt.catches.find(
+        c => !c.errType || c.errType === errType || c.errType === '##_'
+      );
+      if (matched) {
+        const catchEnv = new Env(env);
+        const errMsg = err.message ?? String(err);
+        catchEnv.def('_err', { type: 'error', errType, v: errMsg });
+        result = await this.execBlock(matched.body, catchEnv);
+      } else {
+        throw err;
+      }
+    } finally {
+      if (stmt.finallyBody) await this.execBlock(stmt.finallyBody, new Env(env));
+    }
+    return result;
+  }
 
   // What an iterator leaves behind (REFERENCE.md L24, MM-11).
   //
@@ -9915,6 +9955,9 @@ export class Interpreter {
       }
 
       case 'Call': {
+        // Read before the arguments: a call inside one is not the tail call.
+        const tail = expr === this._tailCallNode;
+        if (tail) this._tailCallNode = null;
         const fn = env.get(expr.callee);
         // A family, not a bare error: a name holding the wrong thing is a type
         // mistake, and `!?` has to be able to sort it (GLB-034, D1).
@@ -9922,6 +9965,7 @@ export class Interpreter {
           throw new ZyRuntimeError(`'${expr.callee}' is not a function`, '##Type');
         const args = await this.evalArgs(fn, expr, env);
         this.checkCallArity(fn, args);
+        this._tailNow = tail;
         return await this.callFunc(fn, args, this.buildOutWriteback(fn, expr, env));
       }
 
@@ -11498,6 +11542,26 @@ export class Interpreter {
 
   async callFunc(fn, args, outWriteback) {
     if (fn.native) return fn.call(args);
+    // Counted in, or refused (D7, GLB-133). A tail call takes the place of the
+    // call that made it, so it adds nothing; it still gets a frame of its own,
+    // which only says which function is running and how many `!?` it has open.
+    const tail = this._tailNow === true;
+    this._tailNow = false;
+    if (!tail) {
+      if (this.activeCalls >= MAX_ACTIVE_CALLS)
+        throw new ZyRuntimeError(DEPTH_EXCEEDED, '##Depth');
+      this.activeCalls++;
+    }
+    this.callFrames.push({ name: fn.name, tries: 0 });
+    try {
+      return await this._callFuncCounted(fn, args, outWriteback);
+    } finally {
+      this.callFrames.pop();
+      if (!tail) this.activeCalls--;
+    }
+  }
+
+  async _callFuncCounted(fn, args, outWriteback) {
     // The calls `$>`, `$|`, `$<`, `$^` and `|>` make go through here too, and
     // check their count as a direct call does (GLB-063).
     this.checkCallArity(fn, args);
