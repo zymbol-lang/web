@@ -3915,6 +3915,12 @@ export class Parser {
           }
           keys.push(parts.map(pt => pt.v).join(''));
         }
+        // A key appears once (GLB-131, decided 2026-10-16): the literal kept
+        // both, and every read and write went to the first.
+        if (keys.indexOf(keys[keys.length - 1]) !== keys.length - 1) {
+          throw new ZyStaticError(`key '${keys[keys.length - 1]}' appears twice in the dictionary`, keyTok,
+            'a dictionary holds each key once: keep the one you mean, or rename the other');
+        }
         this.adv(); // consume ':'
         items.push(this.parseExprJuxt());
         if (!this.match('COMMA')) break;
