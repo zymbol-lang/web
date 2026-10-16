@@ -11061,13 +11061,25 @@ export class Interpreter {
       }
 
       case '$[i:n]': {
-        const fv=(await this.eval(expr.range.from,env)).v, n=(await this.eval(expr.range.count,env)).v;
-        const len = col.type === 'str' ? [...col.v].length : col.v.length;
-        const fi = this.resolve1Based(fv, len);
-        if (col.type === 'arr')   return mkArr(col.v.slice(fi, fi+n));
-        if (col.type === 'str')   return mkStr([...col.v].slice(fi,fi+n).join(''));
+        if (col.type !== 'arr' && col.type !== 'str' && col.type !== 'tuple') notSupported('$[i:n]');
+        const fv = needInt(await this.eval(expr.range.from, env), 'slice start');
+        const n  = needInt(await this.eval(expr.range.count, env), 'slice count');
         if (isDict(col))
           throw new ZyRuntimeError(Interpreter.notPositionalMsg('d$[a..b]', col.keys), '##Type');
+        const len = lenOf(col);
+        // Strict, as the two Rust engines are (GLB-129): a start or a count
+        // that runs past the end is refused, not clamped, and the message
+        // spells the count form as it was written — GLB-047's rule, which
+        // `$-[i:n]` already followed. `slice` used to trim in silence, and a
+        // non-integer bound was read as whatever `.v` held.
+        const fi = fv === 0 ? 0 : fv < 0 ? len + fv : fv - 1;
+        if (n < 0)
+          throw new ZyRuntimeError(`slice count must be non-negative, got ${n}`, '##Index');
+        if (fi < 0 || fi > len || fi + n > len)
+          throw new ZyRuntimeError(
+            `slice indices out of bounds: [${fv}:${n}] for collection of length ${len}`, '##Index');
+        if (col.type === 'arr')   return mkArr(col.v.slice(fi, fi+n));
+        if (col.type === 'str')   return mkStr([...col.v].slice(fi,fi+n).join(''));
         if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(fi,fi+n), keys:col.keys?col.keys.slice(fi,fi+n):null };
         notSupported('$[i:n]');
       }
