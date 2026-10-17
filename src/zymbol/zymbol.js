@@ -10950,8 +10950,12 @@ export class Interpreter {
       throw new ZyRuntimeError(HOF_NEEDS[what](typeLabel(col)), '##Type');
     };
     // Rebuild the shape the elements came from. Keys walked out of a dictionary
-    // are a list once they are out, so that case answers an array.
-    const fromStr = items => col.type === 'str'
+    // are a list once they are out, so that case answers an array. A text is
+    // rebuilt only from characters and texts: a lambda that turns them into
+    // something else has left the text behind, and the answer is an array, as
+    // in both Rust engines (ZYJS-067). It used to glue the numbers together.
+    const fromStr = items => (col.type === 'str'
+        && items.every(v => v.type === 'char' || v.type === 'str'))
       ? mkStr(items.map(v => this.displayOutput(v)).join(''))
       : (col.type === 'tuple' && !isDict(col))
         ? { type:'tuple', v: items, keys: null }
