@@ -3968,7 +3968,10 @@ export class Parser {
 
     if (t.type === 'LPAREN') {
       this.adv();
-      if (this.check('RPAREN')) { this.adv(); return { type: 'Literal', kind: 'unit' }; }
+      // `()` is nothing at all: there is no empty tuple in Zymbol (REFERENCE.md,
+      // GUIDE.md), and the two Rust parsers refuse it. This one read it as Unit,
+      // so `<~ ()` ran here and nowhere else (ZYJS-063). Unit is `##_`.
+      if (this.check('RPAREN')) throw new ZyStaticError("expected expression, found ')'", this.peek());
 
       // A dictionary is written `#(…)`. The bare form was how it was written
       // until v0.0.9, when the colon was the whole of what told `(a: 1)` from
