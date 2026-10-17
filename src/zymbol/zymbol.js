@@ -9524,7 +9524,20 @@ export class Interpreter {
       if (matched) {
         const catchEnv = new Env(env);
         const errMsg = err.message ?? String(err);
-        catchEnv.def('_err', { type: 'error', errType, v: errMsg });
+        // `_err` is born as `m = …` is (MEM-7, the rule `##Kind(m)` follows):
+        // one already visible — the `_err` of a `:!` this one is nested in —
+        // is assigned, and a new one lives in the clause. Defining it here
+        // every time made a second `_err` under the first, so after a nested
+        // `!?` the outer clause read its own error again where the two Rust
+        // engines read the inner one (ZYJS-066).
+        // The clause reads its own — a `_` name is not read through a parent
+        // here — and the visible one is written too, found by hand because
+        // `set` keeps a `_` name from reaching a parent.
+        const errVal = { type: 'error', errType, v: errMsg };
+        catchEnv.def('_err', errVal);
+        let holder = env;
+        while (holder && !holder.vars.has('_err')) holder = holder.funcBoundary ? null : holder.parent;
+        if (holder) holder.vars.set('_err', errVal);
         result = await this.execBlock(matched.body, catchEnv);
       } else {
         throw err;
