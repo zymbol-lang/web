@@ -2375,6 +2375,61 @@ export class Parser {
     return { type: 'or', alts };
   }
 
+  // `[ … ]` as a pattern: an element is `_`, a nested list pattern, a name
+  // whose value is compared, or a value.
+  parseListPattern() {
+    this.adv();
+    const elems = [];
+    while (!this.check('RBRACKET') && !this.check('EOF')) {
+      // `=>` cannot begin a pattern element, so reaching it means the `]` is
+      // missing — which is what the Rust parser says. Letting the element
+      // parser hit it gave `expected expression, found FatArrow`, naming the
+      // token this engine stopped on instead of the bracket never closed.
+      if (this.check('FAT_ARROW'))
+        throw new ZyStaticError("expected ']' to close list pattern", this.peek());
+      // An element is a value compared with an element of the array; an
+      // error pattern takes a value apart, and belongs to an arm.
+      if (this.check('ERRCON') || (this.check('IDENT') && this.peek().value.startsWith('##'))) {
+        throw new ZyStaticError('an error pattern is not an element of a list pattern', this.peek(),
+          'match the error in an arm of its own: ##Kind(m) => …');
+      }
+      if (this.check('TIMES')) {
+        // `??` compares; a list element does not bind. It names a *value* to
+        // compare against (`?? codigo { umbral => … }` tests `codigo` against
+        // the value of `umbral`) — `?? [1,2,3] { [a,b,c] => a }` is
+        // `undefined variable 'a'` in every engine, this one included. The
+        // one pattern that creates a name is `##Kind(m)`, standing alone in
+        // its arm (GAP-GOL-016).
+        //
+        // So `*x` has nothing to bind the rest to. All it could contribute is
+        // "and some more elements", which is a length test written in the
+        // notation of destructuring, and the length test already exists:
+        // `?? xs$# { >=3 => … }`. This engine was the only one that accepted
+        // the form, and it appeared to work only because an identifier inside
+        // a list pattern degraded to a wildcard here (DM-26) — so `[a, *x]`
+        // was measuring a named wildcard, not a rest (DM-25).
+        throw new ZyError(
+          "'*rest' has no meaning in a '??' pattern — a pattern compares, it " +
+          'does not bind; for a length test write `?? xs$# { >=3 => … }`',
+          this.peek());
+      } else if (this.check('LBRACKET')) {
+        // A list inside a list is a pattern too, with its own `_`: it was
+        // parsed as an array literal and `_` read as a variable (ZYJS-064).
+        elems.push({ kind: 'nested', pattern: this.parseListPattern() });
+      } else if (this.check('ELSE')) {
+        this.adv();
+        elems.push({ kind: 'wildcard' });
+      } else if (this.check('IDENT') && (this.peek(1).type === 'COMMA' || this.peek(1).type === 'RBRACKET')) {
+        elems.push({ kind: 'bind', name: this.adv().value });
+      } else {
+        elems.push({ kind: 'literal', expr: this.parseAdditive() });
+      }
+      this.match('COMMA');
+    }
+    this.eat('RBRACKET', "expected ']' to close list pattern");
+    return { type: 'list', elems };
+  }
+
   parseMatchPatternPrimary() {
     let pattern;
     // `##Kind`, `##Kind(_)`, `##Kind(name)` — an error of that kind, and the
@@ -2409,53 +2464,7 @@ export class Parser {
       this.adv();
       pattern = { type: 'guard', cond: this.parseExpr() };
     } else if (this.check('LBRACKET')) {
-      // List pattern: [a, b, *rest] or [1, "x", _]
-      this.adv();
-      const elems = [];
-      while (!this.check('RBRACKET') && !this.check('EOF')) {
-        // `=>` cannot begin a pattern element, so reaching it means the `]` is
-        // missing — which is what the Rust parser says. Letting the element
-        // parser hit it gave `expected expression, found FatArrow`, naming the
-        // token this engine stopped on instead of the bracket never closed.
-        if (this.check('FAT_ARROW'))
-          throw new ZyStaticError("expected ']' to close list pattern", this.peek());
-        // An element is a value compared with an element of the array; an
-        // error pattern takes a value apart, and belongs to an arm.
-        if (this.check('ERRCON') || (this.check('IDENT') && this.peek().value.startsWith('##'))) {
-          throw new ZyStaticError('an error pattern is not an element of a list pattern', this.peek(),
-            'match the error in an arm of its own: ##Kind(m) => …');
-        }
-        if (this.check('TIMES')) {
-          // `??` compares; a list element does not bind. It names a *value* to
-          // compare against (`?? codigo { umbral => … }` tests `codigo` against
-          // the value of `umbral`) — `?? [1,2,3] { [a,b,c] => a }` is
-          // `undefined variable 'a'` in every engine, this one included. The
-          // one pattern that creates a name is `##Kind(m)`, standing alone in
-          // its arm (GAP-GOL-016).
-          //
-          // So `*x` has nothing to bind the rest to. All it could contribute is
-          // "and some more elements", which is a length test written in the
-          // notation of destructuring, and the length test already exists:
-          // `?? xs$# { >=3 => … }`. This engine was the only one that accepted
-          // the form, and it appeared to work only because an identifier inside
-          // a list pattern degraded to a wildcard here (DM-26) — so `[a, *x]`
-          // was measuring a named wildcard, not a rest (DM-25).
-          throw new ZyError(
-            "'*rest' has no meaning in a '??' pattern — a pattern compares, it " +
-            'does not bind; for a length test write `?? xs$# { >=3 => … }`',
-            this.peek());
-        } else if (this.check('ELSE')) {
-          this.adv();
-          elems.push({ kind: 'wildcard' });
-        } else if (this.check('IDENT') && (this.peek(1).type === 'COMMA' || this.peek(1).type === 'RBRACKET')) {
-          elems.push({ kind: 'bind', name: this.adv().value });
-        } else {
-          elems.push({ kind: 'literal', expr: this.parseAdditive() });
-        }
-        this.match('COMMA');
-      }
-      this.eat('RBRACKET', "expected ']' to close list pattern");
-      pattern = { type: 'list', elems };
+      pattern = this.parseListPattern();
     } else if (['LT','GT','LTE','GTE','EQ','NEQ'].includes(this.peek().type)) {
       const op = this.adv().value;
       pattern = { type: 'comparison', op, value: this.parseAdditive() };
@@ -11397,15 +11406,18 @@ export class Interpreter {
         return val.v >= fromV.v && val.v <= toV.v;
       }
       case 'comparison': {
-        const pv = (await this.eval(pattern.value, env)).v;
+        // Once: `== eco(7)` evaluated its operand a second time for `==` and
+        // `<>`, so each call in it ran twice (ZYJS-065).
+        const pval = await this.eval(pattern.value, env);
+        const pv = pval.v;
         const sv = val.v;
         switch (pattern.op) {
           case '<':  return sv < pv;
           case '>':  return sv > pv;
           case '<=': return sv <= pv;
           case '>=': return sv >= pv;
-          case '==': return this.equals(val, await this.eval(pattern.value, env));
-          case '<>': return !this.equals(val, await this.eval(pattern.value, env));
+          case '==': return this.equals(val, pval);
+          case '<>': return !this.equals(val, pval);
         }
         return false;
       }
@@ -11427,6 +11439,7 @@ export class Interpreter {
         const restIdx = elems.findIndex(e => e.kind === 'rest');
         const matchElem = async (elem, arrVal) => {
           if (elem.kind === 'wildcard') return true;
+          if (elem.kind === 'nested') return this.matchPattern(elem.pattern, arrVal, env);
           if (elem.kind === 'literal') return this.equals(arrVal, await this.eval(elem.expr, env));
           // An identifier inside a list pattern is a *value to compare*, exactly
           // as it is at the top of a pattern — not a name being created. This
