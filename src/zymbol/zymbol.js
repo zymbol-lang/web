@@ -1890,8 +1890,11 @@ export class Parser {
   ]);
 
   parseOutput() {
-    this.adv();
+    const outLine = this.adv().line;
     const items = [];
+    // Where each item starts and ends, for the edit that starts a line inside
+    // the output (GLB-137): the checker warns there, as zymbol-semantic does.
+    const itemLines = [];
     while (!this.check('PILCROW') && !this.check('NEWLINE_ESC') &&
            !this.check('RBRACE') && !this.check('EOF')) {
       // A line break does NOT end an output — decided 2026-09-25, the rule of
@@ -1903,7 +1906,9 @@ export class Parser {
       if (items.length > 0 && Parser.OUTPUT_END.has(this.peek().type)) break;
       if (items.length > 0 && this.peek().type === 'IDENT' &&
           Parser.ASSIGNING.has(this.peek(1)?.type)) break;
+      const startLine = this.peek().line;
       items.push(this.parseAdditive());
+      itemLines.push([startLine, this.toks[this.pos - 1]?.line ?? startLine]);
       // Refusing has to be explicit. Narrowing the call alone was worse than the
       // bug: `>> 1 == 1 ¶` printed `11`, because the loop simply started a new
       // argument and the leftover `==` fell through the primary parser without a
@@ -1931,7 +1936,7 @@ export class Parser {
       }
     }
     const nl = this.match('PILCROW', 'NEWLINE_ESC');
-    return { type: 'Output', items, newline: !!nl, line: this.peek().line };
+    return { type: 'Output', items, newline: !!nl, line: this.peek().line, outLine, itemLines };
   }
 
   parseInput() {
@@ -3980,7 +3985,8 @@ export class Parser {
       // `()` is nothing at all: there is no empty tuple in Zymbol (REFERENCE.md,
       // GUIDE.md), and the two Rust parsers refuse it. This one read it as Unit,
       // so `<~ ()` ran here and nowhere else (ZYJS-063). Unit is `##_`.
-      if (this.check('RPAREN')) throw new ZyStaticError("expected expression, found ')'", this.peek());
+      if (this.check('RPAREN'))
+        throw new ZyStaticError(`expected expression, found ${Parser.tokenSpelling(this.peek())}`, this.peek());
 
       // A dictionary is written `#(…)`. The bare form was how it was written
       // until v0.0.9, when the colon was the whole of what told `(a: 1)` from
@@ -6576,6 +6582,21 @@ class Checker {
 
       case 'Output':
       case 'OutputPos': {
+        // An edit that starts a line inside a `>>` is printed, not made
+        // (GLB-137, decided 2026-10-16) — the words of zymbol-semantic.
+        if (stmt.type === 'Output' && stmt.itemLines) {
+          let prevLine = stmt.outLine;
+          (stmt.items ?? []).forEach((item, k) => {
+            const [start, end] = stmt.itemLines[k];
+            const unwrapped = item?.type === 'Group' ? (item.expr ?? item.inner) : item;
+            if (Parser.isEditNode(unwrapped) && start > prevLine) {
+              this.warn('W_OUTPUT_EDIT',
+                'this line continues the `>>` above: an edit here is printed, not made — end the output with ¶ to make it a statement',
+                start);
+            }
+            prevLine = end;
+          });
+        }
         // `>> x°` — the marker initializes, it does not read, so in an output
         // position it says nothing and hides the fact that `x` may not exist.
         // Both Rust engines refuse it; this engine printed `5` and carried on.
@@ -10501,10 +10522,14 @@ export class Interpreter {
               throw new ZyRuntimeError(`base conversion expressions work with char, int, or string, got ${typeIdent(val)}`, '##Type', expr.line);
             }
             const n = val.type === 'char' ? val.v.codePointAt(0) : val.v;
-            if (base === 16) return mkStr('0x' + n.toString(16).toUpperCase().padStart(4, '0'));
-            if (base === 2)  return mkStr('0b' + n.toString(2));
-            if (base === 8)  return mkStr('0o' + n.toString(8));
-            if (base === 10) return mkStr('0d' + n.toString(10).padStart(4, '0'));
+            // A negative one carries its sign in front, and the digits are those
+            // of its absolute value: `-0x00FF` (GLB-136). It was put inside the
+            // padding, `0x0-FF`.
+            const sg = n < 0 ? '-' : '', m = Math.abs(n);
+            if (base === 16) return mkStr(sg + '0x' + m.toString(16).toUpperCase().padStart(4, '0'));
+            if (base === 2)  return mkStr(sg + '0b' + m.toString(2));
+            if (base === 8)  return mkStr(sg + '0o' + m.toString(8));
+            if (base === 10) return mkStr(sg + '0d' + m.toString(10).padStart(4, '0'));
             return val;
           }
         }
