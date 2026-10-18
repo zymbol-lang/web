@@ -8,18 +8,18 @@ The programs, their twins and the script that measured them: https://github.com/
 
 How long each language took, with Zymbol v0.0.11 = 1.00 — geometric mean of elapsed time over the sixteen programs. Above 1, slower than Zymbol; below 1, faster. The last two, marked JIT, compile to machine code while they run.
 
-| Language | Kind | Whole process, Zymbol = 1 | Start-up subtracted, Zymbol = 1 |
-|---|---|---:|---:|
-| Zymbol (VM) v0.0.11 | interpreter | 1.00× | 1.00× |
-| PHP 8.4.26 | interpreter | 0.63× | 0.35× |
-| Lua 5.4.7 | interpreter | 0.64× | 0.47× |
-| Perl v5.40.1 | interpreter | 1.75× | 1.67× |
-| Ruby 3.3.8 | interpreter | 1.86× | 0.83× |
-| Python (CPython) 3.13.5 | interpreter | 1.89× | 1.69× |
-| JavaScript (Node, V8) v24.16.0 | JIT | 0.48× | 0.13× |
-| Julia 1.12.7 | JIT | 1.81× | 0.17× |
+| Language | Kind | Whole process | Start-up subtracted | Its start-up |
+|---|---|---:|---:|---:|
+| Zymbol (VM) v0.0.11 | interpreter | 1.00× | 0.99× | 2.7 ms |
+| PHP 8.4.26 | interpreter | 0.63× | 0.35× | 25 ms |
+| Lua 5.4.7 | interpreter | 0.64× | 0.47× | 1.9 ms |
+| Perl v5.40.1 | interpreter | 1.75× | 1.65× | 2.0 ms |
+| Ruby 3.3.8 | interpreter | 1.86× | 0.82× | 69 ms |
+| Python (CPython) 3.13.5 | interpreter | 1.89× | 1.68× | 11 ms |
+| JavaScript (Node, V8) v24.16.0 | JIT | 0.48× | 0.13× | 28 ms |
+| Julia 1.12.7 | JIT | 1.81× | 0.17× | 185 ms |
 
-Start-up subtracted: each language's empty-program time taken off every figure, over the 11 programs Zymbol takes 100 ms or more on — Julia comes to 0.17×, next to JavaScript's 0.13×; among the interpreters, PHP (0.35×), Lua (0.47×) and Ruby (0.83×) are then ahead of Zymbol.
+Both columns have one reference, Zymbol's whole process = 1.00. Start-up subtracted: each language's own empty-program time taken off every figure — Zymbol's 2.7 ms as well, which is why it moves from 1.00× to 0.99× and no further — over the 11 programs Zymbol takes 100 ms or more on. Julia comes to 0.17×, next to JavaScript's 0.13×; among the interpreters, PHP (0.35×), Lua (0.47×) and Ruby (0.82×) are then ahead of Zymbol.
 
 Zymbol is the third fastest of the six interpreters in the geometric mean. Among the other interpreters: PHP is 1.6× faster than Zymbol; Lua is 1.6× faster than Zymbol; Perl is 1.7× slower than Zymbol; Ruby is 1.9× slower than Zymbol; Python is 1.9× slower than Zymbol. PHP's opcache JIT is off on the command line and Ruby's YJIT is off without `--yjit`, so both run as interpreters. JavaScript (Node, V8) is 2.1× faster than Zymbol, as a JIT compiler is expected to be. Julia compiles every function before it first runs it and starts in 185 ms before running anything; on programs this short, start-up is a large part of its figures.
 
