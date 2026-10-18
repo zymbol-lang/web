@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Benchmarks — Zymbol-Lang</title>
+  <meta name="description" content="How fast is Zymbol? Sixteen programs in five languages — Zymbol, Python, Perl, JavaScript and Julia — with the same printed answer, measured on one machine.">
+  <link rel="alternate" type="text/markdown" href="benchmarks.md">
+  <link rel="license" href="LICENSE">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="assets/img/favicon.png">
+  <script>
+  (function(){
+    var s = localStorage.getItem('zy-theme');
+    var light = s ? s === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+    if (light) document.documentElement.classList.add('light');
+  })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/site.css">
+  <style>
+    .bm-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:0.75rem; margin:1.25rem 0 0.5rem; }
+    .bm-card { background:var(--bg2); border:1px solid var(--line); border-radius:var(--radius-lg); padding:1rem 1.1rem; }
+    .bm-card.zy { border-color:var(--green-mid); background:var(--green-dim); }
+    .bm-card .k { font-family:var(--mono); font-size:0.72rem; color:var(--mid); text-transform:uppercase; letter-spacing:0.06em; }
+    .bm-card .v { font-family:var(--mono); font-size:1.7rem; font-weight:600; color:var(--white); margin:0.2rem 0; }
+    .bm-card.zy .v { color:var(--green); }
+    .bm-card .s { font-size:0.78rem; color:var(--text); }
+    .bm-bars { margin:1.25rem 0 0.25rem; display:flex; flex-direction:column; gap:0.45rem; }
+    .bm-bar { display:grid; grid-template-columns:12rem 1fr 4.5rem; align-items:center; gap:0.6rem; font-size:0.8rem; }
+    .bm-bar .n { color:var(--hi); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .bm-bar .t { display:block; height:0.9rem; background:var(--bg3); border-radius:3px; overflow:hidden; }
+    .bm-bar .f { display:block; height:100%; background:var(--dim); border-radius:3px; }
+    .bm-bar.zy .f { background:var(--green); }
+    .bm-bar.jit .f { background:var(--op); opacity:0.75; }
+    .bm-bar .x { font-family:var(--mono); color:var(--hi); text-align:right; }
+    .bm-table td.num, .bm-table th.num { text-align:right; font-family:var(--mono); }
+    .bm-table td.best { color:var(--green); font-weight:600; }
+    .bm-table td.zycol { background:var(--green-dim); }
+    .bm-table td .d { display:block; font-size:0.7rem; color:var(--mid); font-family:var(--ui); }
+    .bm-table th.jit, .bm-table td.jit { color:var(--op); }
+    .bm-note { font-size:0.82rem; color:var(--text); border-left:2px solid var(--green-mid); padding:0.4rem 0 0.4rem 0.9rem; margin:1rem 0; }
+    .bm-list { margin:0.5rem 0 0 1.1rem; font-size:0.86rem; color:var(--text); line-height:1.7; }
+    .bm-list code, .bm-note code { font-family:var(--mono); font-size:0.8rem; color:var(--hi); }
+    @media (max-width: 640px) {
+      .bm-bar { grid-template-columns:7.5rem 1fr 3.6rem; font-size:0.72rem; }
+      .bm-card .v { font-size:1.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header>
+  <a href="index.html" class="logo">
+    <img src="assets/img/logo.png" alt="Zymbol-Lang">
+    <span class="logo-code">
+      <span class="logo-sym">@{</span>
+      <span class="logo-op">&gt;&gt;</span><span class="logo-str">" Zymbol-Lang "</span>
+      <span class="logo-sym">}</span>
+    </span>
+  </a>
+  <div class="header-right">
+    <nav id="main-nav">
+      <a href="index.html#showcase">Showcase</a>
+      <a href="index.html#operators">Operators</a>
+      <a href="index.html#features">Features</a>
+      <a href="index.html#manual">Docs</a>
+      <a href="changelog.html">Releases</a>
+      <a href="https://github.com/zymbol-lang/interpreter" target="_blank" rel="noopener" class="icon-link" title="GitHub" aria-label="GitHub"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+      <a href="https://x.com/ZymbolLang" target="_blank" rel="noopener" class="icon-link" title="X / Twitter" aria-label="X / Twitter"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.74-8.855L1.254 2.25H8.08l4.253 5.622L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg></a>
+      <a href="playground.html" class="nav-cta">Try Online</a>
+    </nav>
+    <button id="theme-toggle" aria-label="Toggle theme" title="Toggle light/dark">
+      <span id="theme-icon">🌙</span>
+    </button>
+    <button id="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span>☰</span>
+    </button>
+  </div>
+</header>
+
+<!-- ═══ ALPHA NOTICE ═══ -->
+<div class="alpha-notice">
+  <span class="alpha-badge">Public Alpha · v0.0.10</span>
+  This is a concept validation release — Zymbol is in active development. APIs, syntax, and features may change between versions.
+  <a href="https://github.com/zymbol-lang/interpreter" target="_blank">Follow progress on GitHub →</a>
+</div>
+
+<!-- ═══ HERO ═══ -->
+<div class="install-hero">
+  <div class="section-tag">performance · measured 2026-10-18</div>
+  <h1>How fast is Zymbol?</h1>
+  <p>Sixteen programs, five languages, the same printed answer. One machine, CPU time per process, start-up included — and the programs, the twins and the script that measured them are public.</p>
+  <div class="hero-actions">
+    <a href="#languages" class="btn-primary">Five languages</a>
+    <a href="#evolution" class="btn-ghost">v0.0.10 → v0.0.11</a>
+    <a href="#method" class="btn-ghost">How it was measured</a>
+    <a href="https://github.com/zymbol-lang/zyquality/tree/v0.0.11/bench/big" target="_blank" rel="noopener" class="btn-ghost">The programs ↗</a>
+  </div>
+</div>
+
+<!-- ═══ AT A GLANCE ═══ -->
+<div class="install-section" id="glance">
+  <div class="container">
+    <h2>At a glance</h2>
+    <p class="section-sub">CPU time relative to CPython, geometric mean over the sixteen programs — lower is faster. Zymbol is the development branch v0.0.11, on its register VM.</p>
+    <div class="bm-grid">
+      <div class="bm-card zy"><div class="k">Zymbol v0.0.11</div><div class="v">0.53×</div><div class="s">1.9× faster than Python — the fastest of the three interpreters</div></div>
+      <div class="bm-card"><div class="k">Perl v5.40.1</div><div class="v">0.90×</div><div class="s">interpreter</div></div>
+      <div class="bm-card"><div class="k">Python 3.13.5</div><div class="v">1.00×</div><div class="s">interpreter — the reference</div></div>
+      <div class="bm-card"><div class="k">Node v24.16.0</div><div class="v">0.26×</div><div class="s">JIT compiler — 2.1× faster than Zymbol</div></div>
+      <div class="bm-card"><div class="k">Julia 1.12.7</div><div class="v">2.99×</div><div class="s">JIT compiler — compiling each program is most of its time here</div></div>
+    </div>
+    <div class="bm-bars">
+        <div class="bm-bar jit"><span class="n">JavaScript (Node, V8)</span><span class="t"><span class="f" style="width:8.5%"></span></span><span class="x">0.26×</span></div>
+        <div class="bm-bar zy"><span class="n">Zymbol (VM)</span><span class="t"><span class="f" style="width:17.6%"></span></span><span class="x">0.53×</span></div>
+        <div class="bm-bar "><span class="n">Perl</span><span class="t"><span class="f" style="width:30.0%"></span></span><span class="x">0.90×</span></div>
+        <div class="bm-bar "><span class="n">Python (CPython)</span><span class="t"><span class="f" style="width:33.5%"></span></span><span class="x">1.00×</span></div>
+        <div class="bm-bar jit"><span class="n">Julia</span><span class="t"><span class="f" style="width:100.0%"></span></span><span class="x">2.99×</span></div>
+    </div>
+    <p class="bm-note">Zymbol, Python and Perl are interpreters: they run the program without turning it into machine code. Node (V8) and Julia are JIT compilers and are here as the reference of what compiling buys. Node is expected to win, and does. Julia compiles every function before it first runs it; on programs that take under a second, that compilation is most of what a run costs — Julia shines on longer computations, which these are not.</p>
+  </div>
+</div>
+
+<!-- ═══ FIVE LANGUAGES ═══ -->
+<div class="install-section" id="languages">
+  <div class="container">
+    <h2>Program by program</h2>
+    <p class="section-sub">Milliseconds of CPU time, median of 5 runs, start-up included. Green: the fastest interpreter on that program. Blue columns are the JIT compilers. Every twin printed exactly what the Python twin printed — 80 of 80.</p>
+    <div class="dl-table-wrap">
+      <table class="dl-table bm-table">
+        <thead>
+          <tr><th>Program</th><th class="num">Zymbol</th><th class="num jit">Node</th><th class="num">Perl</th><th class="num">Python</th><th class="num jit">Julia</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>array_update</code><span class="d">write 3 000 slots of a 20 000-slot array</span></td><td class="num zycol best">4.1</td><td class="num jit">40</td><td class="num">9.1</td><td class="num">11</td><td class="num jit">697</td></tr>
+            <tr><td><code>collatz</code><span class="d">longest Collatz chain below 60 000</span></td><td class="num zycol best">346</td><td class="num jit">47</td><td class="num">555</td><td class="num">804</td><td class="num jit">672</td></tr>
+            <tr><td><code>fib_rec</code><span class="d">naive recursive fib(34) — 18 million calls</span></td><td class="num zycol">903</td><td class="num jit">98</td><td class="num">2531</td><td class="num best">755</td><td class="num jit">701</td></tr>
+            <tr><td><code>hof_chain</code><span class="d">map, filter, reduce over 100 000 numbers, 25 times</span></td><td class="num zycol">321</td><td class="num jit">211</td><td class="num best">279</td><td class="num">404</td><td class="num jit">1008</td></tr>
+            <tr><td><code>loop_mod</code><span class="d">ten million turns of integer arithmetic</span></td><td class="num zycol best">426</td><td class="num jit">191</td><td class="num">522</td><td class="num">1288</td><td class="num jit">815</td></tr>
+            <tr><td><code>mandelbrot</code><span class="d">250×250 Mandelbrot set, floating point</span></td><td class="num zycol best">171</td><td class="num jit">52</td><td class="num">440</td><td class="num">541</td><td class="num jit">699</td></tr>
+            <tr><td><code>match_loop</code><span class="d">classify three million numbers by range</span></td><td class="num zycol best">244</td><td class="num jit">52</td><td class="num">650</td><td class="num">513</td><td class="num jit">645</td></tr>
+            <tr><td><code>matmul</code><span class="d">150×150 integer matrix product</span></td><td class="num zycol">409</td><td class="num jit">56</td><td class="num best">348</td><td class="num">680</td><td class="num jit">772</td></tr>
+            <tr><td><code>nqueens</code><span class="d">every solution of 10 queens</span></td><td class="num zycol best">262</td><td class="num jit">49</td><td class="num">505</td><td class="num">301</td><td class="num jit">1156</td></tr>
+            <tr><td><code>primes_trial</code><span class="d">primes below 300 000 by trial division</span></td><td class="num zycol best">206</td><td class="num jit">51</td><td class="num">387</td><td class="num">551</td><td class="num jit">776</td></tr>
+            <tr><td><code>sort_builtin</code><span class="d">sort 600 000 numbers, natural order</span></td><td class="num zycol best">96</td><td class="num jit">119</td><td class="num">239</td><td class="num">270</td><td class="num jit">863</td></tr>
+            <tr><td><code>sort_cmp_300k</code><span class="d">sort 300 000 numbers with a comparator</span></td><td class="num zycol">353</td><td class="num jit">126</td><td class="num best">268</td><td class="num">606</td><td class="num jit">987</td></tr>
+            <tr><td><code>sort_cmp_4k</code><span class="d">sort 4 000 numbers with a comparator</span></td><td class="num zycol">7.6</td><td class="num jit">32</td><td class="num best">5.1</td><td class="num">27</td><td class="num jit">969</td></tr>
+            <tr><td><code>strings_scan_long</code><span class="d">count vowels in an 88 000-character text</span></td><td class="num zycol best">27</td><td class="num jit">54</td><td class="num">79</td><td class="num">62</td><td class="num jit">970</td></tr>
+            <tr><td><code>strings_scan_short</code><span class="d">count vowels in a short text, 200 times</span></td><td class="num zycol best">62</td><td class="num jit">54</td><td class="num">113</td><td class="num">86</td><td class="num jit">665</td></tr>
+            <tr><td><code>tak</code><span class="d">Takeuchi function, deep recursion</span></td><td class="num zycol">365</td><td class="num jit">65</td><td class="num">1246</td><td class="num best">304</td><td class="num jit">680</td></tr>
+            <tr><td><strong>geometric mean, Python = 1</strong></td><td class="num zycol">0.53×</td><td class="num jit">0.26×</td><td class="num">0.90×</td><td class="num">1.00×</td><td class="num jit">2.99×</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="bm-note">Where Zymbol is not first, said plainly: it is slower than Python on the two deep-recursion programs, <code>fib_rec</code> and <code>tak</code> — a call still costs Zymbol more than it costs CPython, and that is the next thing being worked on. Perl is faster on <code>hof_chain</code>, <code>matmul</code>, <code>sort_cmp_300k</code>, <code>sort_cmp_4k</code>. Zymbol is the fastest interpreter on 10 of the sixteen.</p>
+  </div>
+</div>
+
+<!-- ═══ EVOLUTION ═══ -->
+<div class="install-section" id="evolution">
+  <div class="container">
+    <h2>From v0.0.10 to v0.0.11</h2>
+    <p class="section-sub">The same sixteen programs, CPU time relative to Python. v0.0.10 ran the tree-walker by default; its register VM was <code>zymbol run --vm</code>. From v0.0.11 the VM is the default, and this release's work went into it.</p>
+    <div class="dl-table-wrap">
+      <table class="dl-table bm-table">
+        <thead>
+          <tr><th>Program</th><th class="num">v0.0.10 default<br>(tree-walker)</th><th class="num">v0.0.10 <code>--vm</code></th><th class="num">v0.0.11</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>array_update</code></td><td class="num">0.29×</td><td class="num">0.20×</td><td class="num zycol best">0.16×</td></tr>
+            <tr><td><code>collatz</code></td><td class="num">2.62×</td><td class="num">0.58×</td><td class="num zycol best">0.42×</td></tr>
+            <tr><td><code>fib_rec</code></td><td class="num">11.43×</td><td class="num">1.40×</td><td class="num zycol best">1.23×</td></tr>
+            <tr><td><code>hof_chain</code></td><td class="num">5.20×</td><td class="num">1.03×</td><td class="num zycol best">0.79×</td></tr>
+            <tr><td><code>loop_mod</code></td><td class="num">2.02×</td><td class="num">0.60×</td><td class="num zycol best">0.33×</td></tr>
+            <tr><td><code>mandelbrot</code></td><td class="num">5.32×</td><td class="num">0.42×</td><td class="num zycol best">0.30×</td></tr>
+            <tr><td><code>match_loop</code></td><td class="num">3.56×</td><td class="num">0.72×</td><td class="num zycol best">0.46×</td></tr>
+            <tr><td><code>matmul</code></td><td class="num">5.61×</td><td class="num">0.79×</td><td class="num zycol best">0.63×</td></tr>
+            <tr><td><code>nqueens</code></td><td class="num">9.11×</td><td class="num">1.13×</td><td class="num zycol best">0.85×</td></tr>
+            <tr><td><code>primes_trial</code></td><td class="num">3.82×</td><td class="num">0.51×</td><td class="num zycol best">0.37×</td></tr>
+            <tr><td><code>sort_builtin</code></td><td class="num">1.48×</td><td class="num">0.44×</td><td class="num zycol best">0.34×</td></tr>
+            <tr><td><code>sort_cmp_300k</code></td><td class="num">5.27×</td><td class="num">1.14×</td><td class="num zycol best">0.60×</td></tr>
+            <tr><td><code>sort_cmp_4k</code></td><td class="num">2.26×</td><td class="num">0.94×</td><td class="num zycol best">0.37×</td></tr>
+            <tr><td><code>strings_scan_long</code></td><td class="num">3.10×</td><td class="num">7.98×</td><td class="num zycol best">0.68×</td></tr>
+            <tr><td><code>strings_scan_short</code></td><td class="num">3.54×</td><td class="num">1.53×</td><td class="num zycol best">0.60×</td></tr>
+            <tr><td><code>tak</code></td><td class="num">16.64×</td><td class="num">1.66×</td><td class="num zycol best">1.20×</td></tr>
+            <tr><td><strong>geometric mean</strong></td><td class="num">3.67×</td><td class="num">0.88×</td><td class="num zycol best">0.51×</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="bm-grid">
+      <div class="bm-card zy"><div class="k">what a user sees</div><div class="v">7.2× faster</div><div class="s">v0.0.11 against v0.0.10 as it ran by default</div></div>
+      <div class="bm-card"><div class="k">VM against VM</div><div class="v">1.7× faster</div><div class="s">in CPU time; 2.0× fewer instructions</div></div>
+    </div>
+    <p class="bm-note">What changed in the VM, in short: a counted loop and a for-each that end each turn in one instruction, <code>$&gt;</code> <code>$|</code> <code>$&lt;</code> calling their lambda on the VM's own frames, a sort comparator that is a plain comparison evaluated without a call, an assignment written by the instruction that computes it, a text that keeps its character count, a dictionary found by a fast seeded hash, and a call that stopped paying for work it did not need. Nothing in the language changed: every program prints what it printed.</p>
+  </div>
+</div>
+
+<!-- ═══ METHOD ═══ -->
+<div class="install-section" id="method">
+  <div class="container">
+    <h2>How it was measured</h2>
+    <p class="section-sub">One machine, one session: AMD Ryzen 7 4800H with Radeon Graphics, Linux 6.12.111+deb13-amd64.</p>
+    <div class="dl-table-wrap" style="margin-bottom:1rem">
+      <table class="dl-table">
+        <thead><tr><th>Language</th><th>Version</th><th>Kind</th></tr></thead>
+        <tbody>
+            <tr><td>Zymbol (VM)</td><td>v0.0.11 (development, 7ef269c)</td><td>interpreter</td></tr>
+            <tr><td>JavaScript (Node, V8)</td><td>v24.16.0</td><td>JIT compiler</td></tr>
+            <tr><td>Perl</td><td>v5.40.1</td><td>interpreter</td></tr>
+            <tr><td>Python (CPython)</td><td>3.13.5</td><td>interpreter</td></tr>
+            <tr><td>Julia</td><td>1.12.7</td><td>JIT compiler</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="bm-list">
+      <li><strong>Twins.</strong> Each program is written once per language with the same algorithm and the same shape as the Python twin, and its printed line is compared with Python's before any figure is kept. Julia's twins put their code inside a <code>main()</code> function — a global in Julia is untyped, and measuring that would measure a use nobody writes.</li>
+      <li><strong>CPU time</strong> is <code>perf stat</code>'s <code>task-clock</code> for the whole process, median of 5 runs: start-up, parsing, compiling and running. Time varies a few percent between sessions; the figures that gate Zymbol's own development are counted in instructions, which do not.</li>
+      <li><strong>Start-up</strong> of an empty program, included in every figure above:</li>
+    </ul>
+    <div class="dl-table-wrap" style="max-width:26rem;margin:0.75rem 0 1rem">
+      <table class="dl-table bm-table">
+        <thead><tr><th>Empty program</th><th class="num">ms</th></tr></thead>
+        <tbody>
+            <tr><td>Zymbol (VM)</td><td class="num">2.0</td></tr>
+            <tr><td>JavaScript (Node, V8)</td><td class="num">28</td></tr>
+            <tr><td>Perl</td><td class="num">2.2</td></tr>
+            <tr><td>Python (CPython)</td><td class="num">10</td></tr>
+            <tr><td>Julia</td><td class="num">165</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="bm-list">
+      <li><strong>Not a ranking of languages.</strong> Sixteen small programs say how fast an interpreter runs loops, calls, arithmetic, collections and text — not how fast real applications are, which depend on libraries this does not touch.</li>
+      <li><strong>v0.0.11 is not released yet.</strong> These are figures of its development branch (commit <code>7ef269c</code>); the release notes will carry the final ones.</li>
+    </ul>
+    <div class="code-block" style="margin-top:1rem">
+      <span class="cmt"># reproduce — from zyquality/bench/big/</span><br>
+      <span class="kw">ZYMBOL_BIN</span>=zymbol python3 langs.py --runs 5 --json out.json<br>
+      <span class="cmt"># the v0.0.10 / v0.0.11 / Python comparison is run.py with ZYMBOL_OLD</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">
+      <img src="assets/img/logo.png" alt="Zymbol-Lang" style="height:1.6rem;width:auto;opacity:0.8;vertical-align:middle;">
+    </div>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="index.html#showcase">Showcase</a>
+      <a href="index.html#operators">Operators</a>
+      <a href="install.html">Download</a>
+      <a href="benchmarks.html">Benchmarks</a>
+      <a href="changelog.html">Releases</a>
+      <a href="benchmarks.html">Benchmarks</a>
+      <a href="index.html#features">Features</a>
+      <a href="index.html#manual">Docs</a>
+      <a href="https://github.com/zymbol-lang/interpreter" target="_blank" rel="noopener" class="icon-link" title="GitHub" aria-label="GitHub"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+      <a href="https://x.com/ZymbolLang" target="_blank" rel="noopener" class="icon-link" title="X / Twitter" aria-label="X / Twitter"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.74-8.855L1.254 2.25H8.08l4.253 5.622L18.244 2.25Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg></a>
+    </div>
+    <div class="footer-copy">No words. Just symbols.</div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  // Theme toggle
+  var btn = document.getElementById('theme-toggle');
+  var icon = document.getElementById('theme-icon');
+  function applyTheme(light) {
+    document.documentElement.classList.toggle('light', light);
+    icon.textContent = light ? '☀️' : '🌙';
+  }
+  var stored = localStorage.getItem('zy-theme');
+  var isLight = stored ? stored === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+  applyTheme(isLight);
+  btn.addEventListener('click', function () {
+    isLight = !isLight;
+    localStorage.setItem('zy-theme', isLight ? 'light' : 'dark');
+    applyTheme(isLight);
+  });
+
+  // Hamburger menu
+  var menuBtn = document.getElementById('menu-toggle');
+  var nav = document.getElementById('main-nav');
+  menuBtn.addEventListener('click', function () {
+    var open = nav.classList.toggle('open');
+    menuBtn.setAttribute('aria-expanded', open);
+  });
+
+}());
+</script>
+</body>
+</html>

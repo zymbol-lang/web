@@ -17,6 +17,7 @@ or swap the extension — `/install.html` → `/install.md`.
 - [Install](https://zymbol-lang.org/install.md): binaries for Linux/Windows/macOS with SHA256, VS Code extension, build from source.
 - [Playground](https://zymbol-lang.org/playground.md): the browser engine's exact capabilities and limits, deep-link format, example groups.
 - [Releases](https://zymbol-lang.org/changelog.md): full changelog, v0.0.1 through v0.0.10.
+- [Benchmarks](https://zymbol-lang.org/benchmarks.md): sixteen programs in Zymbol, Python, Perl, JavaScript and Julia with the same printed answer — CPU time per process, v0.0.10 against the v0.0.11 development branch, and how it was measured.
 - [pIqaD reference](https://zymbol-lang.org/piqad-reference.md): Klingon script, CSUR block U+F8D0–U+F8FF.
 - [Overview](https://zymbol-lang.org/overview.md): the former front page — the showcase, the operator table, FizzBuzz in any human language, the manuals. Archived: accurate as of v0.0.8 and no longer updated.
 
