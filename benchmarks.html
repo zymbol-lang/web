@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Benchmarks — Zymbol-Lang</title>
-  <meta name="description" content="How fast is Zymbol? Sixteen programs in eight languages — Zymbol, Lua, PHP, Perl, Ruby, Python, JavaScript and Julia — with the same printed answer, measured on one machine against Zymbol v0.0.11.">
+  <meta name="description" content="How fast is Zymbol? Sixteen programs in eight languages — Zymbol, PHP, Lua, Perl, Ruby, Python, JavaScript and Julia — with the same printed answer, measured on one machine against Zymbol v0.0.11.">
   <link rel="alternate" type="text/markdown" href="benchmarks.md">
   <link rel="license" href="LICENSE">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -30,6 +30,9 @@
     .bm-card .v { font-family:var(--mono); font-size:1.7rem; font-weight:600; color:var(--white); margin:0.2rem 0; }
     .bm-card.zy .v { color:var(--green); }
     .bm-card .s { font-size:0.78rem; color:var(--text); }
+    .bm-card .s2 { font-family:var(--mono); font-size:0.7rem; color:var(--mid); margin-top:0.45rem; padding-top:0.4rem; border-top:1px dashed var(--line); }
+    .bm-card .s2 b { color:var(--hi); font-weight:600; }
+    .bm-bars h3 { font-size:0.78rem; font-family:var(--mono); color:var(--mid); text-transform:uppercase; letter-spacing:0.06em; margin:0.9rem 0 0.15rem; font-weight:500; }
     .bm-jit { font-family:var(--mono); font-size:0.64rem; font-weight:600; letter-spacing:0.08em; color:var(--op);
               border:1px solid color-mix(in srgb, var(--op) 55%, transparent); border-radius:999px; padding:0.05rem 0.45rem; }
     .bm-card .bm-jit { position:absolute; top:-0.62rem; left:0.9rem; background:var(--bg); }
@@ -108,7 +111,7 @@
 <div class="install-hero">
   <div class="section-tag">performance · measured 2026-10-18</div>
   <h1>How fast is Zymbol?</h1>
-  <p>Sixteen programs, eight languages, the same printed answer — every figure against Zymbol v0.0.11. One machine, CPU time per process, start-up included, and the programs, their twins and the script that measured them are public.</p>
+  <p>Sixteen programs, eight languages, the same printed answer — every figure against Zymbol v0.0.11. One machine, elapsed time per process, start-up included, and the programs, their twins and the script that measured them are public.</p>
   <div class="hero-actions">
     <a href="#languages" class="btn-primary">Eight languages</a>
     <a href="#evolution" class="btn-ghost">v0.0.10 → v0.0.11</a>
@@ -121,29 +124,40 @@
 <div class="install-section" id="glance">
   <div class="container">
     <h2>At a glance</h2>
-    <p class="section-sub">How long each language took, with Zymbol v0.0.11 = 1.00 — geometric mean of CPU time over the sixteen programs. Above 1, slower than Zymbol; below 1, faster. Zymbol runs on its register VM, from the development branch.</p>
+    <p class="section-sub">How long each language took, with Zymbol v0.0.11 = 1.00 — geometric mean of elapsed time over the sixteen programs. Above 1, slower than Zymbol; below 1, faster. Zymbol runs on its register VM, from the development branch.</p>
     <div class="bm-grid">
-      <div class="bm-card zy"><div class="k">Zymbol v0.0.11</div><div class="v">1.00×</div><div class="s">interpreter — the reference; the third fastest of the six interpreters in the mean</div></div>
-      <div class="bm-card "><div class="k">Lua 5.4.7</div><div class="v">0.55×</div><div class="s">interpreter — 1.8× faster than Zymbol</div></div>
-      <div class="bm-card "><div class="k">PHP 8.4.26</div><div class="v">0.64×</div><div class="s">interpreter — 1.6× faster than Zymbol</div></div>
-      <div class="bm-card "><div class="k">Perl v5.40.1</div><div class="v">1.62×</div><div class="s">interpreter — 1.6× slower than Zymbol</div></div>
-      <div class="bm-card "><div class="k">Ruby 3.3.8</div><div class="v">1.75×</div><div class="s">interpreter — 1.7× slower than Zymbol</div></div>
-      <div class="bm-card "><div class="k">Python 3.13.5</div><div class="v">1.93×</div><div class="s">interpreter — 1.9× slower than Zymbol</div></div>
-      <div class="bm-card jit"><span class="bm-jit">JIT</span><div class="k">JavaScript v24.16.0</div><div class="v">0.50×</div><div class="s">JIT compiler — 2.0× faster than Zymbol</div></div>
-      <div class="bm-card jit"><span class="bm-jit">JIT</span><div class="k">Julia 1.12.7</div><div class="v">5.07×</div><div class="s">JIT compiler — 5.1× slower than Zymbol; compiling each program is most of its time here</div></div>
+      <div class="bm-card zy"><div class="k">Zymbol v0.0.11</div><div class="v">1.00×</div><div class="s">interpreter — the reference; the third fastest of the six interpreters in the mean</div><div class="s2">start-up subtracted: <b>1.00×</b></div></div>
+      <div class="bm-card "><div class="k">PHP 8.4.26</div><div class="v">0.63×</div><div class="s">interpreter — 1.6× faster than Zymbol</div><div class="s2">start-up subtracted: <b>0.35×</b></div></div>
+      <div class="bm-card "><div class="k">Lua 5.4.7</div><div class="v">0.64×</div><div class="s">interpreter — 1.6× faster than Zymbol</div><div class="s2">start-up subtracted: <b>0.47×</b></div></div>
+      <div class="bm-card "><div class="k">Perl v5.40.1</div><div class="v">1.75×</div><div class="s">interpreter — 1.7× slower than Zymbol</div><div class="s2">start-up subtracted: <b>1.67×</b></div></div>
+      <div class="bm-card "><div class="k">Ruby 3.3.8</div><div class="v">1.86×</div><div class="s">interpreter — 1.9× slower than Zymbol</div><div class="s2">start-up subtracted: <b>0.83×</b></div></div>
+      <div class="bm-card "><div class="k">Python 3.13.5</div><div class="v">1.89×</div><div class="s">interpreter — 1.9× slower than Zymbol</div><div class="s2">start-up subtracted: <b>1.69×</b></div></div>
+      <div class="bm-card jit"><span class="bm-jit">JIT</span><div class="k">JavaScript v24.16.0</div><div class="v">0.48×</div><div class="s">JIT compiler — 2.1× faster than Zymbol</div><div class="s2">start-up subtracted: <b>0.13×</b></div></div>
+      <div class="bm-card jit"><span class="bm-jit">JIT</span><div class="k">Julia 1.12.7</div><div class="v">1.81×</div><div class="s">JIT compiler — 1.8× slower than Zymbol; 185 ms of it is start-up</div><div class="s2">start-up subtracted: <b>0.17×</b></div></div>
     </div>
     <div class="bm-bars">
-        <div class="bm-bar zy"><span class="n">Zymbol (VM)</span><span class="t"><span class="f" style="width:19.7%"></span><span class="one" style="left:19.7%" title="Zymbol = 1.00"></span></span><span class="x">1.00×</span></div>
-        <div class="bm-bar "><span class="n">Lua</span><span class="t"><span class="f" style="width:10.9%"></span><span class="one" style="left:19.7%" title="Zymbol = 1.00"></span></span><span class="x">0.55×</span></div>
-        <div class="bm-bar "><span class="n">PHP</span><span class="t"><span class="f" style="width:12.6%"></span><span class="one" style="left:19.7%" title="Zymbol = 1.00"></span></span><span class="x">0.64×</span></div>
-        <div class="bm-bar "><span class="n">Perl</span><span class="t"><span class="f" style="width:32.0%"></span><span class="one" style="left:19.7%" title="Zymbol = 1.00"></span></span><span class="x">1.62×</span></div>
-        <div class="bm-bar "><span class="n">Ruby</span><span class="t"><span class="f" style="width:34.4%"></span><span class="one" style="left:19.7%" title="Zymbol = 1.00"></span></span><span class="x">1.75×</span></div>
-        <div class="bm-bar "><span class="n">Python (CPython)</span><span class="t"><span class="f" style="width:38.0%"></span><span class="one" style="left:19.7%" title="Zymbol = 1.00"></span></span><span class="x">1.93×</span></div>
+        <h3>whole process — all sixteen programs</h3>
+        <div class="bm-bar zy"><span class="n">Zymbol (VM)</span><span class="t"><span class="f" style="width:52.9%"></span><span class="one" style="left:52.9%" title="Zymbol = 1.00"></span></span><span class="x">1.00×</span></div>
+        <div class="bm-bar "><span class="n">PHP</span><span class="t"><span class="f" style="width:33.3%"></span><span class="one" style="left:52.9%" title="Zymbol = 1.00"></span></span><span class="x">0.63×</span></div>
+        <div class="bm-bar "><span class="n">Lua</span><span class="t"><span class="f" style="width:33.6%"></span><span class="one" style="left:52.9%" title="Zymbol = 1.00"></span></span><span class="x">0.64×</span></div>
+        <div class="bm-bar "><span class="n">Perl</span><span class="t"><span class="f" style="width:92.3%"></span><span class="one" style="left:52.9%" title="Zymbol = 1.00"></span></span><span class="x">1.75×</span></div>
+        <div class="bm-bar "><span class="n">Ruby</span><span class="t"><span class="f" style="width:98.4%"></span><span class="one" style="left:52.9%" title="Zymbol = 1.00"></span></span><span class="x">1.86×</span></div>
+        <div class="bm-bar "><span class="n">Python (CPython)</span><span class="t"><span class="f" style="width:100.0%"></span><span class="one" style="left:52.9%" title="Zymbol = 1.00"></span></span><span class="x">1.89×</span></div>
         <div class="bm-sep"><span class="bm-jit">JIT</span></div>
-        <div class="bm-bar jit"><span class="n">JavaScript (Node, V8)</span><span class="t"><span class="f" style="width:9.8%"></span><span class="one" style="left:19.7%" title="Zymbol = 1.00"></span></span><span class="x">0.50×</span></div>
-        <div class="bm-bar jit"><span class="n">Julia</span><span class="t"><span class="f" style="width:100.0%"></span><span class="one" style="left:19.7%" title="Zymbol = 1.00"></span></span><span class="x">5.07×</span></div>
+        <div class="bm-bar jit"><span class="n">JavaScript (Node, V8)</span><span class="t"><span class="f" style="width:25.3%"></span><span class="one" style="left:52.9%" title="Zymbol = 1.00"></span></span><span class="x">0.48×</span></div>
+        <div class="bm-bar jit"><span class="n">Julia</span><span class="t"><span class="f" style="width:95.7%"></span><span class="one" style="left:52.9%" title="Zymbol = 1.00"></span></span><span class="x">1.81×</span></div>
+        <h3>start-up subtracted — the 11 programs Zymbol takes 100 ms or more on</h3>
+        <div class="bm-bar zy"><span class="n">Zymbol (VM)</span><span class="t"><span class="f" style="width:59.1%"></span><span class="one" style="left:59.1%" title="Zymbol = 1.00"></span></span><span class="x">1.00×</span></div>
+        <div class="bm-bar "><span class="n">PHP</span><span class="t"><span class="f" style="width:20.6%"></span><span class="one" style="left:59.1%" title="Zymbol = 1.00"></span></span><span class="x">0.35×</span></div>
+        <div class="bm-bar "><span class="n">Lua</span><span class="t"><span class="f" style="width:27.7%"></span><span class="one" style="left:59.1%" title="Zymbol = 1.00"></span></span><span class="x">0.47×</span></div>
+        <div class="bm-bar "><span class="n">Perl</span><span class="t"><span class="f" style="width:98.4%"></span><span class="one" style="left:59.1%" title="Zymbol = 1.00"></span></span><span class="x">1.67×</span></div>
+        <div class="bm-bar "><span class="n">Ruby</span><span class="t"><span class="f" style="width:49.0%"></span><span class="one" style="left:59.1%" title="Zymbol = 1.00"></span></span><span class="x">0.83×</span></div>
+        <div class="bm-bar "><span class="n">Python (CPython)</span><span class="t"><span class="f" style="width:100.0%"></span><span class="one" style="left:59.1%" title="Zymbol = 1.00"></span></span><span class="x">1.69×</span></div>
+        <div class="bm-sep"><span class="bm-jit">JIT</span></div>
+        <div class="bm-bar jit"><span class="n">JavaScript (Node, V8)</span><span class="t"><span class="f" style="width:7.7%"></span><span class="one" style="left:59.1%" title="Zymbol = 1.00"></span></span><span class="x">0.13×</span></div>
+        <div class="bm-bar jit"><span class="n">Julia</span><span class="t"><span class="f" style="width:10.0%"></span><span class="one" style="left:59.1%" title="Zymbol = 1.00"></span></span><span class="x">0.17×</span></div>
     </div>
-    <p class="bm-note">Zymbol, Lua, PHP, Perl, Ruby and Python are interpreters: they run the program without turning it into machine code — PHP's opcache JIT is off on the command line, and Ruby's YJIT is off without <code>--yjit</code>, so both run here as interpreters. JavaScript (Node, V8) and Julia, marked <span class="bm-jit">JIT</span>, compile it to machine code while it runs, and are here as the reference of what compiling buys. JavaScript is expected to win, and does. Julia compiles every function before it first runs it; on programs that take under a second, that compilation is most of what a run costs — Julia shines on longer computations, which these are not.</p>
+    <p class="bm-note">Zymbol, PHP, Lua, Perl, Ruby and Python are interpreters: they run the program without turning it into machine code — PHP's opcache JIT is off on the command line, and Ruby's YJIT is off without <code>--yjit</code>, so both run here as interpreters. JavaScript (Node, V8) and Julia, marked <span class="bm-jit">JIT</span>, compile it to machine code while it runs, and are here as the reference of what compiling buys. JavaScript is expected to win, and does. Julia compiles every function before it first runs it, and starts in 185 ms before running anything — on programs this short, start-up is a large part of every figure it has. Subtract each language's start-up and Julia comes to 0.17×, next to JavaScript's 0.13×; among the interpreters, PHP (0.35×), Lua (0.47×) and Ruby (0.83×) are then ahead of Zymbol.</p>
   </div>
 </div>
 
@@ -151,35 +165,35 @@
 <div class="install-section" id="languages">
   <div class="container">
     <h2>Program by program</h2>
-    <p class="section-sub">Milliseconds of CPU time, median of 5 runs, start-up included. Green: the fastest interpreter on that program. Every twin printed exactly what the Python twin printed — 128 of 128.</p>
+    <p class="section-sub">Milliseconds of elapsed time, median of 5 runs, start-up included. Green: the fastest interpreter on that program. Every twin printed exactly what the Python twin printed — 128 of 128.</p>
     <div class="dl-table-wrap">
       <table class="dl-table bm-table">
         <thead>
           <tr class="grp"><th></th><th colspan="6" class="num">interpreters</th><th colspan="2" class="jit first"><span class="bm-jit">JIT</span></th></tr>
-          <tr><th>Program</th><th class="num zycol">Zymbol</th><th class="num">Lua</th><th class="num">PHP</th><th class="num">Perl</th><th class="num">Ruby</th><th class="num">Python</th><th class="num jit first">JavaScript</th><th class="num jit">Julia</th></tr>
+          <tr><th>Program</th><th class="num zycol">Zymbol</th><th class="num">PHP</th><th class="num">Lua</th><th class="num">Perl</th><th class="num">Ruby</th><th class="num">Python</th><th class="num jit first">JavaScript</th><th class="num jit">Julia</th></tr>
         </thead>
         <tbody>
-            <tr><td><code>array_update</code><span class="d">write 3 000 slots of a 20 000-slot array</span></td><td class="num zycol">6.0</td><td class="num best">1.6</td><td class="num">15</td><td class="num">5.3</td><td class="num">72</td><td class="num">24</td><td class="num jit first">32</td><td class="num jit">592</td></tr>
-            <tr><td><code>collatz</code><span class="d">longest Collatz chain below 60 000</span></td><td class="num zycol">349</td><td class="num">148</td><td class="num best">143</td><td class="num">569</td><td class="num">293</td><td class="num">802</td><td class="num jit first">68</td><td class="num jit">599</td></tr>
-            <tr><td><code>fib_rec</code><span class="d">naive recursive fib(34) — 18 million calls</span></td><td class="num zycol">913</td><td class="num">400</td><td class="num best">299</td><td class="num">2561</td><td class="num">541</td><td class="num">740</td><td class="num jit first">100</td><td class="num jit">626</td></tr>
-            <tr><td><code>hof_chain</code><span class="d">map, filter, reduce over 100 000 numbers, 25 times</span></td><td class="num zycol">324</td><td class="num best">189</td><td class="num">240</td><td class="num">277</td><td class="num">441</td><td class="num">420</td><td class="num jit first">206</td><td class="num jit">1020</td></tr>
-            <tr><td><code>loop_mod</code><span class="d">ten million turns of integer arithmetic</span></td><td class="num zycol">433</td><td class="num best">149</td><td class="num">167</td><td class="num">518</td><td class="num">679</td><td class="num">1275</td><td class="num jit first">196</td><td class="num jit">731</td></tr>
-            <tr><td><code>mandelbrot</code><span class="d">250×250 Mandelbrot set, floating point</span></td><td class="num zycol">177</td><td class="num best">80</td><td class="num">87</td><td class="num">439</td><td class="num">252</td><td class="num">540</td><td class="num jit first">55</td><td class="num jit">625</td></tr>
-            <tr><td><code>match_loop</code><span class="d">classify three million numbers by range</span></td><td class="num zycol">251</td><td class="num best">106</td><td class="num">136</td><td class="num">661</td><td class="num">342</td><td class="num">524</td><td class="num jit first">54</td><td class="num jit">576</td></tr>
-            <tr><td><code>matmul</code><span class="d">150×150 integer matrix product</span></td><td class="num zycol">407</td><td class="num">108</td><td class="num best">95</td><td class="num">350</td><td class="num">338</td><td class="num">673</td><td class="num jit first">72</td><td class="num jit">659</td></tr>
-            <tr><td><code>nqueens</code><span class="d">every solution of 10 queens</span></td><td class="num zycol">269</td><td class="num">129</td><td class="num best">92</td><td class="num">503</td><td class="num">250</td><td class="num">297</td><td class="num jit first">51</td><td class="num jit">1166</td></tr>
-            <tr><td><code>primes_trial</code><span class="d">primes below 300 000 by trial division</span></td><td class="num zycol">215</td><td class="num">78</td><td class="num best">72</td><td class="num">401</td><td class="num">223</td><td class="num">602</td><td class="num jit first">61</td><td class="num jit">753</td></tr>
-            <tr><td><code>sort_builtin</code><span class="d">sort 600 000 numbers, natural order</span></td><td class="num zycol best">96</td><td class="num">251</td><td class="num">145</td><td class="num">246</td><td class="num">192</td><td class="num">272</td><td class="num jit first">115</td><td class="num jit">784</td></tr>
-            <tr><td><code>sort_cmp_300k</code><span class="d">sort 300 000 numbers with a comparator</span></td><td class="num zycol">349</td><td class="num">284</td><td class="num">308</td><td class="num best">257</td><td class="num">408</td><td class="num">610</td><td class="num jit first">129</td><td class="num jit">1002</td></tr>
-            <tr><td><code>sort_cmp_4k</code><span class="d">sort 4 000 numbers with a comparator</span></td><td class="num zycol">8.5</td><td class="num best">3.8</td><td class="num">27</td><td class="num">6.8</td><td class="num">61</td><td class="num">27</td><td class="num jit first">42</td><td class="num jit">998</td></tr>
-            <tr><td><code>strings_scan_long</code><span class="d">count vowels in an 88 000-character text</span></td><td class="num zycol">29</td><td class="num">52</td><td class="num best">28</td><td class="num">82</td><td class="num">215</td><td class="num">62</td><td class="num jit first">61</td><td class="num jit">988</td></tr>
-            <tr><td><code>strings_scan_short</code><span class="d">count vowels in a short text, 200 times</span></td><td class="num zycol">67</td><td class="num">70</td><td class="num best">39</td><td class="num">128</td><td class="num">295</td><td class="num">98</td><td class="num jit first">54</td><td class="num jit">565</td></tr>
-            <tr><td><code>tak</code><span class="d">Takeuchi function, deep recursion</span></td><td class="num zycol">363</td><td class="num">172</td><td class="num best">166</td><td class="num">1262</td><td class="num">256</td><td class="num">297</td><td class="num jit first">65</td><td class="num jit">724</td></tr>
-            <tr><td><strong>geometric mean, Zymbol = 1</strong></td><td class="num zycol">1.00×</td><td class="num">0.55×</td><td class="num">0.64×</td><td class="num">1.62×</td><td class="num">1.75×</td><td class="num">1.93×</td><td class="num jit first">0.50×</td><td class="num jit">5.07×</td></tr>
+            <tr><td><code>array_update</code><span class="d">write 3 000 slots of a 20 000-slot array</span></td><td class="num zycol">5.8</td><td class="num">14</td><td class="num best">3.3</td><td class="num">12</td><td class="num">77</td><td class="num">20</td><td class="num jit first">32</td><td class="num jit">220</td></tr>
+            <tr><td><code>collatz</code><span class="d">longest Collatz chain below 60 000</span></td><td class="num zycol">341</td><td class="num best">133</td><td class="num">147</td><td class="num">558</td><td class="num">286</td><td class="num">790</td><td class="num jit first">52</td><td class="num jit">208</td></tr>
+            <tr><td><code>fib_rec</code><span class="d">naive recursive fib(34) — 18 million calls</span></td><td class="num zycol">925</td><td class="num best">303</td><td class="num">397</td><td class="num">2551</td><td class="num">550</td><td class="num">762</td><td class="num jit first">97</td><td class="num jit">218</td></tr>
+            <tr><td><code>hof_chain</code><span class="d">map, filter, reduce over 100 000 numbers, 25 times</span></td><td class="num zycol">321</td><td class="num">240</td><td class="num best">198</td><td class="num">269</td><td class="num">444</td><td class="num">414</td><td class="num jit first">196</td><td class="num jit">371</td></tr>
+            <tr><td><code>loop_mod</code><span class="d">ten million turns of integer arithmetic</span></td><td class="num zycol">421</td><td class="num">169</td><td class="num best">166</td><td class="num">527</td><td class="num">663</td><td class="num">1272</td><td class="num jit first">180</td><td class="num jit">236</td></tr>
+            <tr><td><code>mandelbrot</code><span class="d">250×250 Mandelbrot set, floating point</span></td><td class="num zycol">170</td><td class="num best">75</td><td class="num">96</td><td class="num">433</td><td class="num">249</td><td class="num">528</td><td class="num jit first">44</td><td class="num jit">215</td></tr>
+            <tr><td><code>match_loop</code><span class="d">classify three million numbers by range</span></td><td class="num zycol">249</td><td class="num">135</td><td class="num best">108</td><td class="num">644</td><td class="num">352</td><td class="num">520</td><td class="num jit first">50</td><td class="num jit">211</td></tr>
+            <tr><td><code>matmul</code><span class="d">150×150 integer matrix product</span></td><td class="num zycol">394</td><td class="num best">83</td><td class="num">104</td><td class="num">353</td><td class="num">328</td><td class="num">675</td><td class="num jit first">55</td><td class="num jit">222</td></tr>
+            <tr><td><code>nqueens</code><span class="d">every solution of 10 queens</span></td><td class="num zycol">268</td><td class="num best">91</td><td class="num">141</td><td class="num">515</td><td class="num">248</td><td class="num">312</td><td class="num jit first">69</td><td class="num jit">513</td></tr>
+            <tr><td><code>primes_trial</code><span class="d">primes below 300 000 by trial division</span></td><td class="num zycol">207</td><td class="num best">79</td><td class="num">92</td><td class="num">383</td><td class="num">227</td><td class="num">539</td><td class="num jit first">45</td><td class="num jit">226</td></tr>
+            <tr><td><code>sort_builtin</code><span class="d">sort 600 000 numbers, natural order</span></td><td class="num zycol best">90</td><td class="num">145</td><td class="num">260</td><td class="num">246</td><td class="num">197</td><td class="num">289</td><td class="num jit first">124</td><td class="num jit">238</td></tr>
+            <tr><td><code>sort_cmp_300k</code><span class="d">sort 300 000 numbers with a comparator</span></td><td class="num zycol">359</td><td class="num">308</td><td class="num">289</td><td class="num best">277</td><td class="num">421</td><td class="num">635</td><td class="num jit first">125</td><td class="num jit">365</td></tr>
+            <tr><td><code>sort_cmp_4k</code><span class="d">sort 4 000 numbers with a comparator</span></td><td class="num zycol">7.1</td><td class="num">17</td><td class="num best">4.7</td><td class="num">6.8</td><td class="num">79</td><td class="num">18</td><td class="num jit first">43</td><td class="num jit">339</td></tr>
+            <tr><td><code>strings_scan_long</code><span class="d">count vowels in an 88 000-character text</span></td><td class="num zycol best">30</td><td class="num">30</td><td class="num">58</td><td class="num">69</td><td class="num">223</td><td class="num">53</td><td class="num jit first">53</td><td class="num jit">324</td></tr>
+            <tr><td><code>strings_scan_short</code><span class="d">count vowels in a short text, 200 times</span></td><td class="num zycol">58</td><td class="num best">38</td><td class="num">78</td><td class="num">129</td><td class="num">310</td><td class="num">87</td><td class="num jit first">52</td><td class="num jit">210</td></tr>
+            <tr><td><code>tak</code><span class="d">Takeuchi function, deep recursion</span></td><td class="num zycol">364</td><td class="num best">165</td><td class="num">172</td><td class="num">1241</td><td class="num">262</td><td class="num">309</td><td class="num jit first">62</td><td class="num jit">214</td></tr>
+            <tr><td><strong>geometric mean, Zymbol = 1</strong></td><td class="num zycol">1.00×</td><td class="num">0.63×</td><td class="num">0.64×</td><td class="num">1.75×</td><td class="num">1.86×</td><td class="num">1.89×</td><td class="num jit first">0.48×</td><td class="num jit">1.81×</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="bm-note">Said plainly: Zymbol is the third fastest of the six interpreters. Lua is faster on 13 of the sixteen and PHP is faster on 13 of the sixteen — both are mature virtual machines with decades of tuning behind them, and Lua's is a register machine like Zymbol's; they are the bar Zymbol is measured against now. Zymbol is ahead of Perl, Ruby and Python in the mean, and still behind one of them on a few programs: Perl on <code>array_update</code>, <code>hof_chain</code>, <code>matmul</code>, <code>sort_cmp_300k</code>, <code>sort_cmp_4k</code>; Ruby on <code>collatz</code>, <code>fib_rec</code>, <code>matmul</code>, <code>nqueens</code>, <code>tak</code>; Python on <code>fib_rec</code>, <code>tak</code>. The deep-recursion programs, <code>fib_rec</code> and <code>tak</code>, are where a call still costs Zymbol most, and that is the next thing being worked on. Zymbol is the fastest interpreter on 1 of the sixteen.</p>
+    <p class="bm-note">Said plainly: Zymbol is the third fastest of the six interpreters. PHP is faster on 12 of the sixteen and Lua is faster on 13 of the sixteen — both are mature virtual machines with decades of tuning behind them, and Lua's is a register machine like Zymbol's; they are the bar Zymbol is measured against now. Zymbol is ahead of Perl, Ruby and Python in the mean, and still behind one of them on a few programs: Perl on <code>hof_chain</code>, <code>matmul</code>, <code>sort_cmp_300k</code>, <code>sort_cmp_4k</code>; Ruby on <code>collatz</code>, <code>fib_rec</code>, <code>matmul</code>, <code>nqueens</code>, <code>tak</code>; Python on <code>fib_rec</code>, <code>tak</code>. The deep-recursion programs, <code>fib_rec</code> and <code>tak</code>, are where a call still costs Zymbol most, and that is the next thing being worked on. Zymbol is the fastest interpreter on 2 of the sixteen.</p>
   </div>
 </div>
 
@@ -232,8 +246,8 @@
         <thead><tr><th>Language</th><th>Version</th><th>Kind</th></tr></thead>
         <tbody>
             <tr><td>Zymbol (VM)</td><td>v0.0.11 (development branch, 7ef269c)</td><td>interpreter</td></tr>
-            <tr><td>Lua</td><td>5.4.7</td><td>interpreter</td></tr>
             <tr><td>PHP</td><td>8.4.26</td><td>interpreter</td></tr>
+            <tr><td>Lua</td><td>5.4.7</td><td>interpreter</td></tr>
             <tr><td>Perl</td><td>v5.40.1</td><td>interpreter</td></tr>
             <tr><td>Ruby</td><td>3.3.8</td><td>interpreter</td></tr>
             <tr><td>Python (CPython)</td><td>3.13.5</td><td>interpreter</td></tr>
@@ -244,21 +258,21 @@
     </div>
     <ul class="bm-list">
       <li><strong>Twins.</strong> Each program is written once per language with the same algorithm and the same shape as the Python twin, and its printed line is compared with Python's before any figure is kept. Julia's twins put their code inside a <code>main()</code> function — a global in Julia is untyped, and measuring that would measure a use nobody writes.</li>
-      <li><strong>CPU time</strong> is user + system time of the whole process as the kernel accounts it, median of 5 runs: start-up, parsing, compiling and running. Time varies a few percent between sessions; the figures that gate Zymbol's own development are counted in instructions, which do not.</li>
+      <li><strong>Elapsed time</strong> — what whoever runs the program waits — is the figure on this page, median of 5 runs of the whole process on an otherwise idle machine: start-up, parsing, compiling and running. CPU time (user + system, as the kernel accounts it) was recorded too, and agrees with it for the interpreters, which run on one thread; it does not for the JIT compilers, which compile on other threads while the program starts — Julia used 2.8× as much CPU time as elapsed time, JavaScript 1.1×. Measured in CPU time, Julia would read 5.17× and JavaScript 0.52× against Zymbol: that is the figure an earlier version of this page showed, and it charged Julia for work no one waits for. Time varies a few percent between sessions; the figures that gate Zymbol's own development are counted in instructions, which do not.</li>
       <li><strong>Start-up</strong> of an empty program, included in every figure above:</li>
     </ul>
     <div class="dl-table-wrap" style="max-width:26rem;margin:0.75rem 0 1rem">
       <table class="dl-table bm-table">
         <thead><tr><th>Empty program</th><th class="num">ms</th></tr></thead>
         <tbody>
-            <tr><td>Zymbol (VM)</td><td class="num">2.6</td></tr>
-            <tr><td>Lua</td><td class="num">2.2</td></tr>
-            <tr><td>PHP</td><td class="num">14</td></tr>
-            <tr><td>Perl</td><td class="num">2.4</td></tr>
-            <tr><td>Ruby</td><td class="num">72</td></tr>
+            <tr><td>Zymbol (VM)</td><td class="num">2.7</td></tr>
+            <tr><td>PHP</td><td class="num">25</td></tr>
+            <tr><td>Lua</td><td class="num">1.9</td></tr>
+            <tr><td>Perl</td><td class="num">2.0</td></tr>
+            <tr><td>Ruby</td><td class="num">69</td></tr>
             <tr><td>Python (CPython)</td><td class="num">11</td></tr>
-            <tr><td>JavaScript (Node, V8) <span class="bm-jit">JIT</span></td><td class="num">29</td></tr>
-            <tr><td>Julia <span class="bm-jit">JIT</span></td><td class="num">190</td></tr>
+            <tr><td>JavaScript (Node, V8) <span class="bm-jit">JIT</span></td><td class="num">28</td></tr>
+            <tr><td>Julia <span class="bm-jit">JIT</span></td><td class="num">185</td></tr>
         </tbody>
       </table>
     </div>
