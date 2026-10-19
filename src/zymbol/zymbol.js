@@ -7702,7 +7702,11 @@ function validateInput(s, cast) {
 
 // ─── Deep update helper (G1) ──────────────────────────────────────────────────
 
-function deepUpdateValue(col, indices, newVal) {
+// `inPlace`: this edit owns `col` (ZYJS-014), and the outermost level is
+// written where it is (GLB-140) — it was copied whole on every edit. The levels
+// below are copied as before: nothing marks them, and a row another name has
+// read out of `col` must not see the write.
+function deepUpdateValue(col, indices, newVal, inPlace = false) {
   if (indices.length === 0) return newVal;
   const i   = indices[0];
   // A dictionary step addresses a KEY. Adds the key when it is not there, just
@@ -7712,8 +7716,17 @@ function deepUpdateValue(col, indices, newVal) {
     if (typeof i !== 'string')
       throw new ZyRuntimeError(Interpreter.notPositionalMsg('d[n>…]$~ value', col.keys), '##Type');
     const ki = keyIndex(col, i);
+    // Added only as the LAST step. A path that goes on past an absent key fails
+    // as reading it does (COLLECTIONS.md, "An absent key is `##Key`"); it walked
+    // on into a Unit and said "cannot index into Unit" (GLB-141).
+    if (ki < 0 && indices.length > 1)
+      throw new ZyRuntimeError(Interpreter.missingKeyMsg(i, col.keys), '##Key');
     const sub = ki < 0 ? mkUnit() : col.v[ki];
     const updatedSub = deepUpdateValue(sub, indices.slice(1), newVal);
+    if (inPlace) {
+      if (ki < 0) dictPut(col, i, updatedSub); else col.v[ki] = updatedSub;
+      return col;
+    }
     if (ki < 0) return { type:'tuple', v:[...col.v, updatedSub], keys:[...col.keys, i] };
     const r = [...col.v]; r[ki] = updatedSub;
     return { type:'tuple', v:r, keys:col.keys };
@@ -7754,6 +7767,7 @@ function deepUpdateValue(col, indices, newVal) {
     throw new ZyError(`${container} index out of bounds: index ${i} for ${container} of length ${len}`);
   const sub        = col.v[idx];
   const updatedSub = deepUpdateValue(sub, indices.slice(1), newVal);
+  if (inPlace && col.type === 'arr') { col.v[idx] = updatedSub; return col; }
   if (col.type === 'arr')   { const r = [...col.v]; r[idx] = updatedSub; return mkArr(r); }
   if (col.type === 'tuple') { const r = [...col.v]; r[idx] = updatedSub; return { type:'tuple', v:r, keys:col.keys }; }
   throw new ZyRuntimeError(`$~ writes into a collection, and this is ${typeLabel(col)}\nhelp: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
@@ -9204,7 +9218,7 @@ export class Interpreter {
         // `t = t$+ x`, written in full, is the same edit as the statement
         // `t$+ x`, and may write where the array is too (ZYJS-014).
         const v0 = stmt.value;
-        if (!stmt.hot && (v0?.type === 'CollectionOp' || v0?.type === 'FuncUpdate')
+        if (!stmt.hot && (v0?.type === 'CollectionOp' || v0?.type === 'FuncUpdate' || v0?.type === 'DeepUpdate')
             && v0.obj?.type === 'Ident' && v0.obj.name === stmt.name && !v0.obj.hot) {
           this._ownEdit = v0;
         }
@@ -10337,7 +10351,16 @@ export class Interpreter {
       }
 
       case 'DeepUpdate': {
-        const root = await this.eval(expr.obj, env);
+        // `m[i>j]$~ v` for its own variable — see `Env.get` (ZYJS-014) and
+        // `deepUpdateValue` (GLB-140). Peeked, as `FuncUpdate` peeks, only when
+        // no operand can write `m` (GLB-115).
+        const own = this._ownEdit === expr;
+        if (own) this._ownEdit = null;
+        let root = (own && expr.obj?.type === 'Ident' && !expr.obj.hot
+                    && expr.path.every(a => a.kind !== 'range' && (a.key !== undefined || plainOperand(a.expr)))
+                    && plainOperand(expr.value))
+          ? env.peek(expr.obj.name) : null;
+        if (root?.type !== 'arr' && !isDict(root)) root = await this.eval(expr.obj, env);
         const indices = [];
         for (const atom of expr.path) {
           if (atom.kind === 'range') throw new ZyError('deep update ($~) does not support ranges in the path');
@@ -10350,7 +10373,15 @@ export class Interpreter {
           indices.push(iv.v);
         }
         const newVal = await this.eval(expr.value, env);
-        return deepUpdateValue(root, indices, newVal);
+        const r = deepUpdateValue(root, indices, newVal, own && root.own === true);
+        // A copy this variable will hold alone is owned from now on; a
+        // dictionary gets keys of its own, or a later in-place add would push
+        // into the original's (as `FuncUpdate` does).
+        if (own && r !== root && (r.type === 'arr' || isDict(r))) {
+          if (isDict(r)) r.keys = [...r.keys];
+          r.own = true;
+        }
+        return r;
       }
 
       case 'TypeMetadata': {
