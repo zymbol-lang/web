@@ -1,99 +1,100 @@
 # How fast is Zymbol?
 
-Sixteen programs, eight languages, the same printed answer, measured on 2026-10-18 — every figure against Zymbol v0.0.11 = 1.00. One machine, elapsed time per process, start-up included. Zymbol is the development branch v0.0.11 (commit `7ef269c`) on its register VM; the release is v0.0.10.
+Sixteen programs, eight languages and four Zymbol engines, the same printed answer, measured on 2026-10-18. One machine, elapsed time per process. Zymbol v0.0.11 is the development branch (commit `7ef269c`); the release is v0.0.10. The HTML page lets the reader pick any language or engine as the reference; this twin carries the figures against Zymbol v0.0.11 = 1.00.
 
 The programs, their twins and the script that measured them: https://github.com/zymbol-lang/zyquality/tree/v0.0.11/bench/big
 
-## At a glance
+## Against Zymbol v0.0.11
 
-How long each language took, with Zymbol v0.0.11 = 1.00 — geometric mean of elapsed time over the sixteen programs. Above 1, slower than Zymbol; below 1, faster. The last two, marked JIT, compile to machine code while they run.
+Geometric mean of elapsed time. Whole process: all sixteen programs, start-up included. Start-up subtracted: each language's own empty-program time taken off — Zymbol's too — over the 11 programs Zymbol takes 100 ms or more on, still against Zymbol's whole process = 1.00.
 
-| Language | Kind | Whole process | Start-up subtracted | Its start-up |
+| Language or engine | Kind | Whole process | Start-up subtracted | Its start-up |
 |---|---|---:|---:|---:|
-| Zymbol (VM) v0.0.11 | interpreter | 1.00× | 0.99× | 2.7 ms |
-| PHP 8.4.26 | interpreter | 0.63× | 0.35× | 25 ms |
-| Lua 5.4.7 | interpreter | 0.64× | 0.47× | 1.9 ms |
-| Perl v5.40.1 | interpreter | 1.75× | 1.65× | 2.0 ms |
-| Ruby 3.3.8 | interpreter | 1.86× | 0.82× | 69 ms |
-| Python (CPython) 3.13.5 | interpreter | 1.89× | 1.68× | 11 ms |
-| JavaScript (Node, V8) v24.16.0 | JIT | 0.48× | 0.13× | 28 ms |
-| Julia 1.12.7 | JIT | 1.81× | 0.17× | 185 ms |
+| Zymbol v0.0.11 · VM | register VM, the default | 1.00× | 0.99× | 4.6 ms |
+| Zymbol v0.0.11 · tree-walker | tree-walker, --tw | 7.45× | 9.35× | 3.9 ms |
+| Zymbol v0.0.10 · VM | register VM, --vm | 1.68× | 1.41× | 3.3 ms |
+| Zymbol v0.0.10 · tree-walker | tree-walker, its default | 7.22× | 9.15× | 2.7 ms |
+| PHP 8.4.26 | Zend VM; opcache JIT off on the command line | 0.63× | 0.38× | 15 ms |
+| Lua 5.4.7 | PUC Lua, register VM | 0.64× | 0.45× | 2.3 ms |
+| Perl v5.40.1 | interpreter | 1.70× | 1.64× | 2.4 ms |
+| Ruby 3.3.8 | CRuby VM; YJIT off without --yjit | 1.77× | 0.83× | 61 ms |
+| Python 3.13.5 | CPython | 1.84× | 1.65× | 12 ms |
+| JavaScript · Node v24.16.0 | JIT compiler | 0.46× | 0.11× | 36 ms |
+| Julia 1.12.7 | JIT compiler | 1.76× | 0.14× | 194 ms |
 
-Both columns have one reference, Zymbol's whole process = 1.00. Start-up subtracted: each language's own empty-program time taken off every figure — Zymbol's 2.7 ms as well, which is why it moves from 1.00× to 0.99× and no further — over the 11 programs Zymbol takes 100 ms or more on. Julia comes to 0.17×, next to JavaScript's 0.13×; among the interpreters, PHP (0.35×), Lua (0.47×) and Ruby (0.82×) are then ahead of Zymbol.
-
-Zymbol is the third fastest of the six interpreters in the geometric mean. Among the other interpreters: PHP is 1.6× faster than Zymbol; Lua is 1.6× faster than Zymbol; Perl is 1.7× slower than Zymbol; Ruby is 1.9× slower than Zymbol; Python is 1.9× slower than Zymbol. PHP's opcache JIT is off on the command line and Ruby's YJIT is off without `--yjit`, so both run as interpreters. JavaScript (Node, V8) is 2.1× faster than Zymbol, as a JIT compiler is expected to be. Julia compiles every function before it first runs it and starts in 185 ms before running anything; on programs this short, start-up is a large part of its figures.
+Zymbol v0.0.11 is the third fastest of the six interpreters. PHP is faster on 13 of the sixteen programs and Lua is faster on 12 of the sixteen programs. Zymbol is ahead of Perl, Ruby and Python in the mean. With start-up subtracted, PHP (0.38×), Lua (0.45×) and Ruby (0.83×) are ahead of it, and Julia (0.14×) comes next to JavaScript (0.11×). PHP's opcache JIT is off on the command line and Ruby's YJIT is off without `--yjit`, so both run as interpreters.
 
 ## Program by program
 
-Milliseconds of elapsed time, median of 5 runs, start-up included. 128 of 128 twins printed exactly what the Python twin printed. Interpreters first; the JIT compilers last.
+Milliseconds of elapsed time, median of 5 runs, start-up included. 176 of 176 twins printed exactly what the Python twin printed.
 
-| Program | What it does | Zymbol | PHP | Lua | Perl | Ruby | Python | JavaScript (JIT) | Julia (JIT) |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `array_update` | write 3 000 slots of a 20 000-slot array | 5.8 | 14 | 3.3 | 12 | 77 | 20 | 32 | 220 |
-| `collatz` | longest Collatz chain below 60 000 | 341 | 133 | 147 | 558 | 286 | 790 | 52 | 208 |
-| `fib_rec` | naive recursive fib(34) — 18 million calls | 925 | 303 | 397 | 2551 | 550 | 762 | 97 | 218 |
-| `hof_chain` | map, filter, reduce over 100 000 numbers, 25 times | 321 | 240 | 198 | 269 | 444 | 414 | 196 | 371 |
-| `loop_mod` | ten million turns of integer arithmetic | 421 | 169 | 166 | 527 | 663 | 1272 | 180 | 236 |
-| `mandelbrot` | 250×250 Mandelbrot set, floating point | 170 | 75 | 96 | 433 | 249 | 528 | 44 | 215 |
-| `match_loop` | classify three million numbers by range | 249 | 135 | 108 | 644 | 352 | 520 | 50 | 211 |
-| `matmul` | 150×150 integer matrix product | 394 | 83 | 104 | 353 | 328 | 675 | 55 | 222 |
-| `nqueens` | every solution of 10 queens | 268 | 91 | 141 | 515 | 248 | 312 | 69 | 513 |
-| `primes_trial` | primes below 300 000 by trial division | 207 | 79 | 92 | 383 | 227 | 539 | 45 | 226 |
-| `sort_builtin` | sort 600 000 numbers, natural order | 90 | 145 | 260 | 246 | 197 | 289 | 124 | 238 |
-| `sort_cmp_300k` | sort 300 000 numbers with a comparator | 359 | 308 | 289 | 277 | 421 | 635 | 125 | 365 |
-| `sort_cmp_4k` | sort 4 000 numbers with a comparator | 7.1 | 17 | 4.7 | 6.8 | 79 | 18 | 43 | 339 |
-| `strings_scan_long` | count vowels in an 88 000-character text | 30 | 30 | 58 | 69 | 223 | 53 | 53 | 324 |
-| `strings_scan_short` | count vowels in a short text, 200 times | 58 | 38 | 78 | 129 | 310 | 87 | 52 | 210 |
-| `tak` | Takeuchi function, deep recursion | 364 | 165 | 172 | 1241 | 262 | 309 | 62 | 214 |
-| geometric mean, Zymbol = 1 | | 1.00× | 0.63× | 0.64× | 1.75× | 1.86× | 1.89× | 0.48× | 1.81× |
-
-Zymbol is the third fastest of the six interpreters. PHP is faster on 12 of the sixteen and Lua is faster on 13 of the sixteen — both are mature virtual machines with decades of tuning behind them, and Lua's is a register machine like Zymbol's. Zymbol is ahead of Perl, Ruby and Python in the mean, and behind one of them on a few programs: Perl on `hof_chain`, `matmul`, `sort_cmp_300k`, `sort_cmp_4k`; Ruby on `collatz`, `fib_rec`, `matmul`, `nqueens`, `tak`; Python on `fib_rec`, `tak`. The deep-recursion programs, `fib_rec` and `tak`, are where a call still costs Zymbol most. Zymbol is the fastest interpreter on 2 of the sixteen.
+| Program | What it does | Zymbol | Zymbol TW | Zymbol 0.10 VM | Zymbol 0.10 TW | PHP | Lua | Perl | Ruby | Python | JavaScript (JIT) | Julia (JIT) |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `array_update` | write 3 000 slots of a 20 000-slot array | 6.2 | 16 | 9.2 | 16 | 24 | 3.0 | 5.8 | 79 | 13 | 40 | 221 |
+| `collatz` | longest Collatz chain below 60 000 | 337 | 2002 | 461 | 2094 | 136 | 148 | 561 | 291 | 814 | 56 | 212 |
+| `fib_rec` | naive recursive fib(34) — 18 million calls | 911 | 8395 | 1051 | 8486 | 302 | 406 | 2553 | 548 | 755 | 100 | 223 |
+| `hof_chain` | map, filter, reduce over 100 000 numbers, 25 times | 330 | 2437 | 428 | 2332 | 248 | 186 | 270 | 446 | 418 | 188 | 359 |
+| `loop_mod` | ten million turns of integer arithmetic | 427 | 2668 | 788 | 2592 | 170 | 167 | 533 | 684 | 1297 | 188 | 231 |
+| `mandelbrot` | 250×250 Mandelbrot set, floating point | 185 | 2945 | 240 | 2932 | 88 | 96 | 452 | 235 | 529 | 53 | 218 |
+| `match_loop` | classify three million numbers by range | 253 | 1901 | 378 | 1859 | 128 | 115 | 668 | 353 | 510 | 51 | 214 |
+| `matmul` | 150×150 integer matrix product | 406 | 3864 | 520 | 3805 | 83 | 96 | 345 | 321 | 665 | 63 | 226 |
+| `nqueens` | every solution of 10 queens | 270 | 2893 | 357 | 2828 | 93 | 136 | 504 | 243 | 303 | 59 | 514 |
+| `primes_trial` | primes below 300 000 by trial division | 204 | 2218 | 294 | 2186 | 76 | 84 | 398 | 232 | 547 | 49 | 225 |
+| `sort_builtin` | sort 600 000 numbers, natural order | 94 | 466 | 120 | 469 | 143 | 247 | 247 | 181 | 280 | 113 | 240 |
+| `sort_cmp_300k` | sort 300 000 numbers with a comparator | 356 | 3625 | 677 | 3181 | 303 | 295 | 266 | 406 | 631 | 129 | 354 |
+| `sort_cmp_4k` | sort 4 000 numbers with a comparator | 8.7 | 36 | 11 | 31 | 17 | 10 | 13 | 67 | 31 | 31 | 343 |
+| `strings_scan_long` | count vowels in an 88 000-character text | 30 | 194 | 499 | 179 | 27 | 61 | 79 | 226 | 51 | 51 | 341 |
+| `strings_scan_short` | count vowels in a short text, 200 times | 65 | 354 | 139 | 346 | 39 | 78 | 127 | 310 | 99 | 46 | 213 |
+| `tak` | Takeuchi function, deep recursion | 359 | 5091 | 506 | 5005 | 163 | 175 | 1264 | 265 | 303 | 60 | 219 |
+| geometric mean, Zymbol v0.0.11 = 1 | | 1.00× | 7.45× | 1.68× | 7.22× | 0.63× | 0.64× | 1.70× | 1.77× | 1.84× | 0.46× | 1.76× |
 
 ## From v0.0.10 to v0.0.11
 
-CPU time with Zymbol v0.0.11 = 1.00. v0.0.10 ran the tree-walker by default; its register VM was `zymbol run --vm`. From v0.0.11 the VM is the default.
+Zymbol against itself — no other language here. v0.0.10 ran the tree-walker by default; its VM was `zymbol run --vm`. Elapsed milliseconds, median of 5 runs; in brackets, against v0.0.11 = 1.00.
 
-| Program | v0.0.11 | v0.0.10 `--vm` | v0.0.10 default (tree-walker) | Python |
-|---|---:|---:|---:|---:|
-| `array_update` | 1.00× | 1.24× | 1.77× | 6.11× |
-| `collatz` | 1.00× | 1.37× | 6.23× | 2.38× |
-| `fib_rec` | 1.00× | 1.13× | 9.26× | 0.81× |
-| `hof_chain` | 1.00× | 1.31× | 6.62× | 1.27× |
-| `loop_mod` | 1.00× | 1.83× | 6.17× | 3.06× |
-| `mandelbrot` | 1.00× | 1.37× | 17.49× | 3.29× |
-| `match_loop` | 1.00× | 1.55× | 7.66× | 2.15× |
-| `matmul` | 1.00× | 1.26× | 8.96× | 1.60× |
-| `nqueens` | 1.00× | 1.32× | 10.65× | 1.17× |
-| `primes_trial` | 1.00× | 1.36× | 10.24× | 2.68× |
-| `sort_builtin` | 1.00× | 1.29× | 4.35× | 2.94× |
-| `sort_cmp_300k` | 1.00× | 1.90× | 8.80× | 1.67× |
-| `sort_cmp_4k` | 1.00× | 2.50× | 6.04× | 2.68× |
-| `strings_scan_long` | 1.00× | 11.69× | 4.54× | 1.46× |
-| `strings_scan_short` | 1.00× | 2.57× | 5.94× | 1.68× |
-| `tak` | 1.00× | 1.38× | 13.83× | 0.83× |
-| geometric mean | 1.00× | 1.72× | 7.15× | 1.95× |
+| Program | v0.0.11 VM | v0.0.10 `--vm` | v0.0.10 tree-walker (its default) |
+|---|---:|---:|---:|
+| `array_update` | 6.2 ms (1.00×) | 9.2 ms (1.49×) | 16 ms (2.64×) |
+| `collatz` | 337 ms (1.00×) | 461 ms (1.37×) | 2094 ms (6.22×) |
+| `fib_rec` | 911 ms (1.00×) | 1051 ms (1.15×) | 8486 ms (9.32×) |
+| `hof_chain` | 330 ms (1.00×) | 428 ms (1.30×) | 2332 ms (7.06×) |
+| `loop_mod` | 427 ms (1.00×) | 788 ms (1.84×) | 2592 ms (6.07×) |
+| `mandelbrot` | 185 ms (1.00×) | 240 ms (1.30×) | 2932 ms (15.89×) |
+| `match_loop` | 253 ms (1.00×) | 378 ms (1.49×) | 1859 ms (7.34×) |
+| `matmul` | 406 ms (1.00×) | 520 ms (1.28×) | 3805 ms (9.36×) |
+| `nqueens` | 270 ms (1.00×) | 357 ms (1.33×) | 2828 ms (10.49×) |
+| `primes_trial` | 204 ms (1.00×) | 294 ms (1.44×) | 2186 ms (10.69×) |
+| `sort_builtin` | 94 ms (1.00×) | 120 ms (1.27×) | 469 ms (4.96×) |
+| `sort_cmp_300k` | 356 ms (1.00×) | 677 ms (1.90×) | 3181 ms (8.94×) |
+| `sort_cmp_4k` | 8.7 ms (1.00×) | 11 ms (1.22×) | 31 ms (3.57×) |
+| `strings_scan_long` | 30 ms (1.00×) | 499 ms (16.43×) | 179 ms (5.88×) |
+| `strings_scan_short` | 65 ms (1.00×) | 139 ms (2.12×) | 346 ms (5.28×) |
+| `tak` | 359 ms (1.00×) | 506 ms (1.41×) | 5005 ms (13.94×) |
+| geometric mean | 1.00× | 1.68× | 7.22× |
 
-v0.0.11 is 7.2× faster than v0.0.10 as it ran by default, and 1.7× faster than v0.0.10's VM (2.0× fewer instructions). Nothing in the language changed: every program prints what it printed.
+In elapsed time, v0.0.11 is 7.2× faster than v0.0.10 as it ran by default, and 1.7× faster than v0.0.10's VM. Nothing in the language changed: every program prints what it printed.
 
 ## How it was measured
 
 AMD Ryzen 7 4800H with Radeon Graphics, Linux 6.12.111+deb13-amd64.
 
-| Language | Version | Kind |
-|---|---|---|
-| Zymbol (VM) | v0.0.11 (development branch, 7ef269c) | interpreter |
-| PHP | 8.4.26 | interpreter |
-| Lua | 5.4.7 | interpreter |
-| Perl | v5.40.1 | interpreter |
-| Ruby | 3.3.8 | interpreter |
-| Python (CPython) | 3.13.5 | interpreter |
-| JavaScript (Node, V8) | v24.16.0 | JIT compiler |
-| Julia | 1.12.7 | JIT compiler |
+| Language or engine | Version |
+|---|---|
+| Zymbol v0.0.11 · VM | v0.0.11 (development branch, 7ef269c) |
+| Zymbol v0.0.11 · tree-walker | v0.0.11 (development branch, 7ef269c) |
+| Zymbol v0.0.10 · VM | v0.0.10 |
+| Zymbol v0.0.10 · tree-walker | v0.0.10 |
+| PHP | 8.4.26 |
+| Lua | 5.4.7 |
+| Perl | v5.40.1 |
+| Ruby | 3.3.8 |
+| Python | 3.13.5 |
+| JavaScript · Node | v24.16.0 |
+| Julia | 1.12.7 |
 
 - Each program is written once per language with the same algorithm and shape as the Python twin; its printed line is compared with Python's before any figure is kept. Julia's twins put their code inside a `main()` function, because a global in Julia is untyped.
-- Elapsed time is the figure on this page, median of 5 runs of the whole process on an otherwise idle machine: start-up, parsing, compiling and running. CPU time was recorded too and agrees with it for the interpreters; not for the JIT compilers, which compile on other threads — Julia used 2.8× as much CPU time as elapsed time, JavaScript 1.1×. In CPU time Julia would read 5.17× and JavaScript 0.52× against Zymbol; an earlier version of this page showed CPU time, which charged Julia for work no one waits for.
-- Start-up of an empty program, elapsed ms: Zymbol (VM) 2.7, PHP 25, Lua 1.9, Perl 2.0, Ruby 69, Python (CPython) 11, JavaScript (Node, V8) 28, Julia 185.
+- Elapsed time, median of 5 runs of the whole process on an otherwise idle machine. CPU time was recorded too; it agrees for the interpreters, not for the JIT compilers, which compile on other threads — Julia used 2.9× as much CPU time as elapsed time. An earlier version of this page showed CPU time, which charged Julia for work no one waits for.
 - Not a ranking of languages: sixteen small programs say how fast an interpreter runs loops, calls, arithmetic, collections and text, not how fast real applications are.
 - v0.0.11 is not released yet; these are figures of its development branch.
 
-Reproduce, from `zyquality/bench/big/`: `ZYMBOL_BIN=zymbol python3 langs.py --runs 5 --json out.json`.
+Reproduce, from `zyquality/bench/big/`: `ZYMBOL_BIN=zymbol ZYMBOL_OLD=zymbol-0.0.10 python3 langs.py --runs 5 --json out.json`.
