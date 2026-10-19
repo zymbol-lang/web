@@ -7543,6 +7543,9 @@ function plainOperand(n) {
     case 'NavIndex':
       return n.spec?.kind === 'simple' && plainOperand(n.obj) && plainOperand(n.spec.index);
     case 'CollectionOp': return n.op === '$#' && plainOperand(n.obj);
+    // A collection literal runs no code of the program either, when what it
+    // holds does not: `m$+ [i, 0, 0]` copied `m` on every append (ZYJS-068).
+    case 'Array': case 'Tuple': return (n.items ?? []).every(plainOperand);
     default: return false;
   }
 }
