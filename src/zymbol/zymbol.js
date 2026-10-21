@@ -7544,6 +7544,12 @@ const mkInt   = v => ({ type: 'int',   v: Math.trunc(v) });
 const mkFloat = v => ({ type: 'float', v });
 const mkBool  = v => ({ type: 'bool',  v: !!v });
 const mkStr   = v => ({ type: 'str',   v: String(v) });
+// The characters of a text value, split once and kept on the value: `s[i]`,
+// a slice and `s$#` used to spread `[...v]` on every call, so a loop over the
+// positions of a text was quadratic even in ASCII — 9.4 s for 32 000 (GLB-139,
+// corrected 2026-10-21). Safe because a text value is never changed in place:
+// every edit builds a new one with `mkStr`, which starts without `cps`.
+const strChars = s => s.cps ?? (s.cps = [...s.v]);
 const mkChar  = v => ({ type: 'char',  v: String(v) });
 // A navigation path yields ONE value, unless one of its steps is a range — then
 // it yields one per position walked, and an extraction takes them all. Whether a
@@ -10355,7 +10361,7 @@ export class Interpreter {
           throw new ZyRuntimeError(UPDATE_INDEX[arr.type](typeLabel(iVal)), '##Type');
         const i = iVal.v;
         if (i === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
-        const len = arr.type === 'str' ? [...arr.v].length : (arr.v?.length ?? 0);
+        const len = arr.type === 'str' ? strChars(arr).length : (arr.v?.length ?? 0);
         const idx = i < 0 ? len + i : i - 1;
         const container = arr.type === 'arr' ? 'array' : arr.type === 'str' ? 'string' : 'tuple';
         if (idx < 0 || idx >= len)
@@ -10749,7 +10755,7 @@ export class Interpreter {
       return obj.v[i] ?? mkUnit();
     }
     if (obj.type === 'str') {
-      const chars = [...obj.v];
+      const chars = strChars(obj);
       const i = idx < 0 ? chars.length + idx : idx - 1;
       if (i < 0 || i >= chars.length) throw new ZyRuntimeError(`string index out of bounds: index ${idx} for string of length ${chars.length}`, '##Index');
       return mkChar(chars[i]);
@@ -10822,7 +10828,7 @@ export class Interpreter {
       // `1e+22` where Zymbol displays 10000000000000000000000 — 5 against 23.
       case 'int':   count = String(val.v).length; break;
       case 'float': count = floatText(val.v).length; break;
-      case 'str':   count = [...val.v].length; break;
+      case 'str':   count = strChars(val).length; break;
       case 'char':  count = 1; break;
       case 'bool':  count = 1; break;
       case 'arr':   count = val.v.length; break;
@@ -10927,7 +10933,7 @@ export class Interpreter {
     // DELETED an element, wrote an Int into a string, and clamped every bound
     // so a miscalculation came back as a plausible collection. Worded as the
     // tree-walker words each operation.
-    const lenOf  = c => c.type === 'str' ? [...c.v].length : c.v.length;
+    const lenOf  = c => c.type === 'str' ? strChars(c).length : c.v.length;
     const cname  = c => c.type === 'arr' ? 'array' : c.type === 'str' ? 'string' : 'tuple';
     const needInt = (v, what) => {
       if (v?.type !== 'int')
@@ -11028,7 +11034,7 @@ export class Interpreter {
     switch (expr.op) {
       case '$#': {
         if (col.type === 'arr')   return mkInt(col.v.length);
-        if (col.type === 'str')   return mkInt([...col.v].length);
+        if (col.type === 'str')   return mkInt(strChars(col).length);
         if (col.type === 'tuple') return mkInt(col.v.length);
         notSupported('$#');
       }
@@ -11161,7 +11167,7 @@ export class Interpreter {
           throw new ZyRuntimeError(`$-[start..] start must be positive (1-based), got ${sv}`, '##Index');
         if (nv < 0)
           throw new ZyRuntimeError(`$-[..] count must be non-negative, got ${nv}`, '##Index');
-        const len = col.type === 'str' ? [...col.v].length : col.v.length;
+        const len = col.type === 'str' ? strChars(col).length : col.v.length;
         // Strict (D2 revoked, GLB-046): a start or a count that runs past the
         // end is refused, not clamped. `splice` trimmed in silence, so
         // `[1,2,3]$-[2:3]` answered `[1]` and `$-[4:1]` answered the array
@@ -11178,7 +11184,7 @@ export class Interpreter {
         notSupported('$-[i:n]');
       }
       case '$-[i..j]': {
-        const len = col.type === 'str' ? [...col.v].length : col.v.length;
+        const len = col.type === 'str' ? strChars(col).length : col.v.length;
         const fv = expr.range.from ? needInt(await this.eval(expr.range.from, env), '$-[..] start') : 1;
         const tv = expr.range.to   ? needInt(await this.eval(expr.range.to,   env), '$-[..] end')   : len;
         if (fv <= 0)
@@ -11228,7 +11234,7 @@ export class Interpreter {
           needCharStr(v, `$?? on string requires char or string value, got ${typeLabel(v)}`);
           // An empty pattern is refused (GLB-078, decided 2026-10-03).
           if (target === '') throw new ZyRuntimeError('$?? pattern must not be empty', '##Index', expr.line);
-          const chars = [...col.v];
+          const chars = strChars(col);
           for (let i=0; i<=chars.length-target.length; i++) {
             if (chars.slice(i,i+target.length).join('')===target) result.push(mkInt(i+1)); // 1-based
           }
@@ -11245,7 +11251,7 @@ export class Interpreter {
       }
 
       case '$[i..j]': {
-        const len = col.type === 'str' ? [...col.v].length : col.v.length;
+        const len = col.type === 'str' ? strChars(col).length : col.v.length;
         const fRaw = expr.range.from == null ? 0 : needInt(await this.eval(expr.range.from, env), 'slice start');
         const tRaw = expr.range.to   == null ? len : needInt(await this.eval(expr.range.to,   env), 'slice end');
         if (isDict(col))
@@ -11254,13 +11260,13 @@ export class Interpreter {
         if (span.down) {
           const back = (xs) => { const r = []; for (let p = span.a; p >= span.b; p--) r.push(xs[p - 1]); return r; };
           if (col.type === 'arr')   return mkArr(back(col.v));
-          if (col.type === 'str')   return mkStr(back([...col.v]).join(''));
+          if (col.type === 'str')   return mkStr(back(strChars(col)).join(''));
           if (col.type === 'tuple') return { type:'tuple', v:back(col.v), keys:null };
           notSupported('$[i..j]');
         }
         const fi = span.a, ti = span.b;
         if (col.type === 'arr')   return mkArr(col.v.slice(fi, ti));
-        if (col.type === 'str')   return mkStr([...col.v].slice(fi,ti).join(''));
+        if (col.type === 'str')   return mkStr(strChars(col).slice(fi,ti).join(''));
         if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(fi,ti), keys:col.keys?col.keys.slice(fi,ti):null };
         notSupported('$[i..j]');
       }
@@ -11284,7 +11290,7 @@ export class Interpreter {
           throw new ZyRuntimeError(
             `slice indices out of bounds: [${fv}:${n}] for collection of length ${len}`, '##Index');
         if (col.type === 'arr')   return mkArr(col.v.slice(fi, fi+n));
-        if (col.type === 'str')   return mkStr([...col.v].slice(fi,fi+n).join(''));
+        if (col.type === 'str')   return mkStr(strChars(col).slice(fi,fi+n).join(''));
         if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(fi,fi+n), keys:col.keys?col.keys.slice(fi,fi+n):null };
         notSupported('$[i:n]');
       }
