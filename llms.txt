@@ -17,8 +17,6 @@ or swap the extension — `/install.html` → `/install.md`.
 - [Install](https://zymbol-lang.org/install.md): binaries for Linux/Windows/macOS with SHA256, VS Code extension, build from source.
 - [Playground](https://zymbol-lang.org/playground.md): the browser engine's exact capabilities and limits, deep-link format, example groups.
 - [Releases](https://zymbol-lang.org/changelog.md): full changelog, v0.0.1 through v0.0.10.
-- [Benchmarks](https://zymbol-lang.org/benchmarks.md): sixteen programs in Zymbol and seven other languages (Python, Perl, PHP, Lua, Ruby, JavaScript, Julia) with the same printed answer — elapsed time per process, measured 2026-10-18, v0.0.10 against the v0.0.11 development branch, and how it was measured.
-- [Benchmarks, 2026-10-20](https://zymbol-lang.org/benchmarks2.md): the same programs measured again two days later, and what changed in Zymbol since — the two commits built alike and run side by side, and the two days compared with their controls.
 - [pIqaD reference](https://zymbol-lang.org/piqad-reference.md): Klingon script, CSUR block U+F8D0–U+F8FF.
 - [Overview](https://zymbol-lang.org/overview.md): the former front page — the showcase, the operator table, FizzBuzz in any human language, the manuals. Archived: accurate as of v0.0.8 and no longer updated.
 
@@ -52,7 +50,7 @@ authoritative over both.
 
 ## Source
 
-- [Interpreter](https://github.com/zymbol-lang/interpreter): Rust workspace, 19 crates. `GUIDE.md` is the authoritative language reference, `REFERENCE.md` the complete symbol table and limitations, `ARCHITECTURE.md` the crate catalog.
+- [Interpreter](https://github.com/zymbol-lang/interpreter): Rust workspace, 20 crates. `GUIDE.md` is the authoritative language reference, `REFERENCE.md` the complete symbol table and limitations, `ARCHITECTURE.md` the crate catalog.
 - [VS Code extension](https://github.com/zymbol-lang/vscode): TypeScript LSP client.
 - [This site](https://github.com/zymbol-lang/web): static HTML/CSS/JS, no build step; `src/zymbol/zymbol.js` is a hand-maintained JavaScript mirror of the tree-walker.
 

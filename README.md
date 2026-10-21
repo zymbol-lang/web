@@ -637,14 +637,15 @@ Pointed at the example pool (`--dir examples`) it audits every published example
 in its own first lines with `// @skip-parity: <reason>` rather than being listed here — the
 pool is not this runner's corpus, and duplicating its paths into the skip table would rot.
 
-**Re-measured 2026-08-31 on v0.0.9: zero divergences**, in the corpus and in the pool alike.
+**Re-measured 2026-10-20 on the v0.0.11 branch: zero divergences**, in the corpus and in the
+pool alike (first measured at zero on 2026-08-31, v0.0.9).
 
 ```
-node tests/test_runner.mjs                → 661 files: 631 agree, 0 diverge
-node tests/test_runner.mjs --dir examples → 282 files: 216 agree, 0 diverge
+node tests/test_runner.mjs                → 714 files: 695 agree, 0 diverge
+node tests/test_runner.mjs --dir examples → 332 files: 216 agree, 0 diverge
 ```
 
-The residue is *excused, not divergent*: 30 corpus files and 66 examples that `corpus.toml`
+The residue is *excused, not divergent*: 19 corpus files and 116 examples that `corpus.toml`
 excludes for `zyjs` with a written reason — `std/db` is ODBC, `<\ cmd \>` entropy differs by
 design, TUI needs a real TTY — plus the pool's own `@skip-parity` markers.
 
