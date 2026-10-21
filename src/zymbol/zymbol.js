@@ -3131,13 +3131,18 @@ export class Parser {
     return left;
   }
 
+  // The operand of a unary is parsed with its postfix: `-v[1]` is `-(v[1])`
+  // (GLB-145, decided 2026-10-21; this engine already read it so, the Rust ones
+  // did not). The operand keeps the caller's `noCollectionChain`: as the
+  // argument of `$+`, `[1] $+ -4 $+ 5` is `([1] $+ -4) $+ 5`, and dropping the
+  // flag here made it `[1] $+ -(4 $+ 5)` — an append to an Int.
   parseUnary(noCollectionChain) {
     const uline = this.peek()?.line ?? null;
-    if (this.match('MINUS')) return { type: 'UnaryOp', op: '-', operand: this.parseUnary(), line: uline };
+    if (this.match('MINUS')) return { type: 'UnaryOp', op: '-', operand: this.parseUnary(noCollectionChain), line: uline };
     // `+x` — a form of the language (decided 2026-09-15, GLB-019 B). Both Rust
     // parsers read it and this one said `expected expression, found Plus`.
-    if (this.match('PLUS'))  return { type: 'UnaryOp', op: '+', operand: this.parseUnary(), line: uline };
-    if (this.match('NOT'))   return { type: 'UnaryOp', op: '!', operand: this.parseUnary(), line: uline };
+    if (this.match('PLUS'))  return { type: 'UnaryOp', op: '+', operand: this.parseUnary(noCollectionChain), line: uline };
+    if (this.match('NOT'))   return { type: 'UnaryOp', op: '!', operand: this.parseUnary(noCollectionChain), line: uline };
     if (noCollectionChain && this.isLambdaStart()) return this.parseLambda();
     return noCollectionChain ? this.parsePostfixNoChain() : this.parsePostfix();
   }
@@ -4956,6 +4961,10 @@ class Checker {
       const info = this.peekVar(e.name);
       if (info && info.infType !== undefined) return info.infType === 'Any' ? null : info.infType;
     }
+    // `x#?` is always the triple (symbol, count, display), and Rust's analyser
+    // names it so: `-x#?`, which is `-(x#?)` since GLB-145, warned there and
+    // not here.
+    if (e.type === 'TypeMetadata') return '(String, Int, Any)';
     if (e.type === 'Tuple') {
       const items = e.items ?? [];
       if (items.length === 0) return null;
