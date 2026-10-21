@@ -4864,6 +4864,15 @@ class Checker {
       const k = this.arrayElemKind(e);
       return k ? `[${k}]` : null;
     }
+    // A unary keeps the kind of an operand it applies to: `!` a Bool, `-`/`+`
+    // a number. Without this, `[1] $+ !#1` and `[#1] $+ -3` ran here while both
+    // Rust analysers refuse them (ZYJS-069) — a refusal, not a warning, so the
+    // engines stopped running the same programs. Any other operand: say nothing.
+    if (e.type === 'UnaryOp') {
+      const k = this.staticKind(e.operand);
+      if (e.op === '!') return k === 'Bool' ? 'Bool' : null;
+      return k === 'Int' || k === 'Float' ? k : null;
+    }
     return null;
   }
 
@@ -7337,10 +7346,16 @@ class Checker {
           for (const g of given) {
             const got = this.staticKind(g);
             if (want && got && norm(want) !== norm(got)) {
+              // Where, and the help on its own line, as the literal's check
+              // above does: this one said neither, because a CollectionOp
+              // carries no line and the guidance was folded in with a dash
+              // (ZYJS-069). The element is where Rust points; failing that,
+              // the receiver.
+              const at = [g, expr, expr.obj].find(n => n && (n.line ?? n.zyLine) != null) ?? null;
               this.error('E_ARRAY_MIX',
-                `cannot ${verb} ${got} to [${want}]: type mismatch — ` +
-                `expected element of type ${want}`,
-                expr.line ?? null);
+                `cannot ${verb} ${got} to [${want}]: type mismatch\n` +
+                `= help: expected element of type ${want}`,
+                at);
             }
           }
         }
@@ -7377,10 +7392,11 @@ class Checker {
         const got = this.staticKind(expr.value);
         const norm = (k) => k.replace(/Float/g, 'Int');
         if (want && got && norm(want) !== norm(got)) {
+          const at = [expr.value, expr, expr.obj].find(n => n && (n.line ?? n.zyLine) != null) ?? null;
           this.error('E_ARRAY_MIX',
-            `cannot write ${got} to [${want}]: type mismatch — ` +
-            `expected element of type ${want}`,
-            expr.line ?? null);
+            `cannot write ${got} to [${want}]: type mismatch\n` +
+            `= help: expected element of type ${want}`,
+            at);
         }
         return;
       }
