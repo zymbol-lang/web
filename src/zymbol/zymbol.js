@@ -164,10 +164,11 @@
  *   node tests/test_runner.mjs --dir examples → 332 files: 216 agree, 0 diverge
  * The residue is the same kind of thing: 19 corpus files that corpus.toml excuses
  * for zyjs with a written reason (std/db, <\ cmd \>, TUI), and the pool's own
- * @skip-parity markers. ZyDDT's matrix asks this engine 1 705 cells with the other
- * two and it agrees on every one but one, which is declared: GLB-127 — `>> +a` is
- * accepted here and refused by the two Rust engines, and this engine is the one
- * that matches the decided form. What it does NOT have: `--keys` and `--count` are
+ * @skip-parity markers. ZyDDT's matrix asks this engine every cell with the other
+ * two and it agrees on every one (2026-10-21). The last three it did not were
+ * closed that day: GLB-127 (`>> +a`) and GLB-145 (`-v[1]` is `-(v[1])`), fixed in
+ * the Rust parser, which this engine already read as decided; and GLB-146, the
+ * count of `#?` on a number, fixed here — it left the sign out. What it does NOT have: `--keys` and `--count` are
  * CLI flags of the Rust engines; its own step budget (2 000 000 steps, 100 000
  * iterations of `@ { }`) is lifted by tests/run_one.mjs, not by the playground.
  *
@@ -10815,8 +10816,12 @@ export class Interpreter {
     const sym = val.type === 'error' ? typeSymbolBase(val) : typeSymbol(val);
     let count;
     switch (val.type) {
-      case 'int':   count = String(Math.abs(val.v)).length; break;
-      case 'float': count = String(val.v).replace(/^-/, '').length; break;
+      // A number counts the characters it is displayed with, sign and point
+      // included: `-3` is 2, `-2.5` is 4 (GLB-146, decided 2026-10-21). This
+      // dropped the sign, and counted a Float through `String()`, which writes
+      // `1e+22` where Zymbol displays 10000000000000000000000 — 5 against 23.
+      case 'int':   count = String(val.v).length; break;
+      case 'float': count = floatText(val.v).length; break;
       case 'str':   count = [...val.v].length; break;
       case 'char':  count = 1; break;
       case 'bool':  count = 1; break;
