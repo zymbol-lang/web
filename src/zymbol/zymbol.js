@@ -8312,7 +8312,7 @@ export const STDLIB_ARITIES = new Map([
   ['std/random', new Map([['entero',2],['rango',1],['peso_f64',0],['semilla',1]])],
   ['std/json',   new Map([['decode',1],['decode_map',2],['encode',1]])],
   ['std/io',     new Map([['read',1],['write',2],['append',2],['exists',1],['delete',1],['list',1],['mkdir',1]])],
-  ['std/net',    new Map([['get',-1],['post',-1],['post_json',-1],['head',1]])],
+  ['std/net',    new Map([['get',-1],['post',-1],['post_json',-1],['head',-1]])],
   ['std/term',   new Map([['width',1],['pad_left',2],['pad_right',2],['center',2],['truncate',2]])],
   // Everything but `now` takes an optional trailing zone, so everything but
   // `now` is variadic.
@@ -8634,40 +8634,63 @@ function buildStdlibModule(name, vfs = null) {
         return [k, v];
       });
     };
-    const request = async (url, headerPairs, contentType, body) => {
+    // The optional time limit after the headers, in seconds, an Int or a Float
+    // above zero (ZethyCLI G1, decided by the author on 2026-10-24): the words of
+    // `zymbol_common::net`. Without it `fetch` waits as long as the server takes.
+    const parseLimit = (arg, fname) => {
+      if (arg == null) return null;
+      if ((arg.type === 'int' || arg.type === 'float') && arg.v > 0 && Number.isFinite(arg.v)) return arg.v;
+      throw new ZyError(`${fname}: the time limit must be a positive number of seconds`);
+    };
+    const timeoutMsg = secs => `timeout: no answer within ${secs} s`;
+    // An AbortController covers the whole request, the body included, as
+    // ureq's `timeout_global` does.
+    const limited = secs => {
+      if (secs == null) return { signal: undefined, done: () => {} };
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), secs * 1000);
+      return { signal: ctl.signal, done: () => clearTimeout(timer) };
+    };
+    const request = async (url, headerPairs, contentType, body, secs = null) => {
       const headers = new Headers();
       if (contentType) headers.set('Content-Type', contentType);
       for (const [k, v] of headerPairs) headers.set(k, v);
+      const lim = limited(secs);
       try {
         const resp = await fetch(url, body == null
-          ? { headers }
-          : { method: 'POST', headers, body });
+          ? { headers, signal: lim.signal }
+          : { method: 'POST', headers, body, signal: lim.signal });
         if (!resp.ok) return netErr(`${url}: status code ${resp.status}`);
         return mkStr(await resp.text());
       } catch (e) {
+        if (lim.signal?.aborted) return netErr(timeoutMsg(secs));
         return netErr(e.message ?? String(e));
+      } finally {
+        lim.done();
       }
     };
     exports.set('get', { type: 'func', name: 'get', native: true, call: args => {
       const url = strOf(args[0]);
       if (url === null) throw new ZyError('net::get: expected String url');
-      return request(url, parseHeaders(args[1], 'net::get'), null, null);
+      return request(url, parseHeaders(args[1], 'net::get'), null, null, parseLimit(args[2], 'net::get'));
     }});
     exports.set('post', { type: 'func', name: 'post', native: true, call: args => {
       const url = strOf(args[0]), body = strOf(args[1]);
       if (url === null || body === null) throw new ZyError('net::post: expected (String, String)');
-      return request(url, parseHeaders(args[2], 'net::post'), 'text/plain', body);
+      return request(url, parseHeaders(args[2], 'net::post'), 'text/plain', body, parseLimit(args[3], 'net::post'));
     }});
     exports.set('post_json', { type: 'func', name: 'post_json', native: true, call: args => {
       const url = strOf(args[0]), body = strOf(args[1]);
       if (url === null || body === null) throw new ZyError('net::post_json: expected (String, String)');
-      return request(url, parseHeaders(args[2], 'net::post_json'), 'application/json', body);
+      return request(url, parseHeaders(args[2], 'net::post_json'), 'application/json', body, parseLimit(args[3], 'net::post_json'));
     }});
     exports.set('head', { type: 'func', name: 'head', native: true, call: async args => {
       const url = strOf(args[0]);
       if (url === null) throw new ZyError('net::head: expected String url');
-      try { return mkBool((await fetch(url, { method: 'HEAD' })).ok); }
+      const lim = limited(parseLimit(args[1], 'net::head'));
+      try { return mkBool((await fetch(url, { method: 'HEAD', signal: lim.signal })).ok); }
       catch { return mkBool(false); }
+      finally { lim.done(); }
     }});
     return { type: 'module', exports };
   }
