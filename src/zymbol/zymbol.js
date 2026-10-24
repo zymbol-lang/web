@@ -578,6 +578,14 @@ export const ZyRandom = {
   },
 };
 
+/**
+ * `std/net`'s process-wide time limit, set by `net::timeout(s)` and kept as the
+ * value the program gave, so that `timeout` hands back an Int as an Int —
+ * `zymbol_common::net` in Rust (ZethyCLI G1). `null` is none. Each run starts
+ * without one, as a process does.
+ */
+export const ZyNet = { limit: null };
+
 export class Lexer {
   constructor(src) {
     this.src = [...src];
@@ -8312,7 +8320,7 @@ export const STDLIB_ARITIES = new Map([
   ['std/random', new Map([['entero',2],['rango',1],['peso_f64',0],['semilla',1]])],
   ['std/json',   new Map([['decode',1],['decode_map',2],['encode',1]])],
   ['std/io',     new Map([['read',1],['write',2],['append',2],['exists',1],['delete',1],['list',1],['mkdir',1]])],
-  ['std/net',    new Map([['get',-1],['post',-1],['post_json',-1],['head',-1]])],
+  ['std/net',    new Map([['get',-1],['post',-1],['post_json',-1],['head',-1],['timeout',1]])],
   ['std/term',   new Map([['width',1],['pad_left',2],['pad_right',2],['center',2],['truncate',2]])],
   // Everything but `now` takes an optional trailing zone, so everything but
   // `now` is variadic.
@@ -8634,13 +8642,19 @@ function buildStdlibModule(name, vfs = null) {
         return [k, v];
       });
     };
-    // The optional time limit after the headers, in seconds, an Int or a Float
-    // above zero (ZethyCLI G1, decided by the author on 2026-10-24): the words of
-    // `zymbol_common::net`. Without it `fetch` waits as long as the server takes.
+    // A time limit in seconds, an Int or a Float, `0` or more, `0` being none
+    // (ZethyCLI G1, decided by the author on 2026-10-24): the rules and the words
+    // of `zymbol_common::net`. A request takes the one after its headers, and
+    // otherwise the run's own (`ZyNet.limit`, set by `net::timeout`); without
+    // either `fetch` waits as long as the server takes.
+    const limitOf = (arg, fname) => {
+      if ((arg?.type === 'int' || arg?.type === 'float') && arg.v >= 0 && Number.isFinite(arg.v)) return arg;
+      throw new ZyError(`${fname}: the time limit must be a number of seconds, 0 or more`);
+    };
     const parseLimit = (arg, fname) => {
-      if (arg == null) return null;
-      if ((arg.type === 'int' || arg.type === 'float') && arg.v > 0 && Number.isFinite(arg.v)) return arg.v;
-      throw new ZyError(`${fname}: the time limit must be a positive number of seconds`);
+      if (arg == null) return ZyNet.limit ? ZyNet.limit.v : null;
+      const own = limitOf(arg, fname);
+      return own.v === 0 ? null : own.v;
     };
     const timeoutMsg = secs => `timeout: no answer within ${secs} s`;
     // An AbortController covers the whole request, the body included, as
@@ -8683,6 +8697,12 @@ function buildStdlibModule(name, vfs = null) {
       const url = strOf(args[0]), body = strOf(args[1]);
       if (url === null || body === null) throw new ZyError('net::post_json: expected (String, String)');
       return request(url, parseHeaders(args[2], 'net::post_json'), 'application/json', body, parseLimit(args[3], 'net::post_json'));
+    }});
+    exports.set('timeout', { type: 'func', name: 'timeout', native: true, call: args => {
+      const limit = limitOf(args[0], 'net::timeout');
+      const before = ZyNet.limit ?? mkInt(0);
+      ZyNet.limit = limit.v === 0 ? null : limit;
+      return before;
     }});
     exports.set('head', { type: 'func', name: 'head', native: true, call: async args => {
       const url = strOf(args[0]);
@@ -13287,6 +13307,7 @@ export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, f
   // A run starts unseeded, as a process does: the playground runs one program
   // after another in the same page, and a seed must not reach the next (G8).
   ZyRandom.reset();
+  ZyNet.limit = null;
   const tokens = new Lexer(src).tokenize();
   const ast    = new Parser(tokens).parse();
 

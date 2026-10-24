@@ -4,10 +4,12 @@
 //
 //   node tests/test_net.mjs
 //
-// ZethyCLI G1, decided by the author on 2026-10-24, option A: `net::get(url,
-// headers, seconds)`, the same after the headers of `post` and `post_json`, and
-// `net::head(url, seconds)`. Against a server that accepts and never answers, the
-// program comes back within the limit with a soft `##Network` in the words of
+// ZethyCLI G1, decided by the author on 2026-10-24: `net::get(url, headers,
+// seconds)`, the same after the headers of `post` and `post_json`, and
+// `net::head(url, seconds)` — and, for a request that gives none, the run's own,
+// `net::timeout(seconds)`, which returns the one it replaces. `0` is no limit.
+// Against a server that accepts and never answers, the program comes back
+// within the limit with a soft `##Network` in the words of
 // `zymbol_common::net`, and goes on to its next line; before, `fetch` waited past
 // two minutes. A server that answers inside the limit still gives its body. The
 // Rust engines are held to the same by `zymbol-cli/tests/cli_net_timeout.rs`.
@@ -65,11 +67,28 @@ r = await run(`<# std/net => net
 `);
 check('the body, #1, and the body without a limit', r.out === 'hola\n#1\nhola', r.out);
 
-section('a limit that is not a positive number is refused');
-for (const v of ['0', '-1', '"5"', '#1']) {
+section('the run\'s own limit, and a call that overrides it');
+started = Date.now();
+r = await run(`<# std/net => net
+>> net::timeout(1) ¶
+>> net::get("http://127.0.0.1:${mutePort}/") ¶
+>> net::get("http://127.0.0.1:${quickPort}/", [], 0) ¶
+>> net::head("http://127.0.0.1:${mutePort}/") ¶
+>> net::timeout(2.5) " " net::timeout(0) " " net::timeout(0) ¶
+`);
+check('timeout hands back what it replaced, and every request without its own takes it',
+      r.out === '0\n##Network(timeout: no answer within 1 s)\nhola\n#0\n1 2.5 0', r.out);
+check('it came back within the limit', (Date.now() - started) / 1000 < 10, '');
+r = await run(`<# std/net => net\n>> net::timeout(0) ¶\n`);
+check('a run starts without a limit, whatever the run before set', r.out === '0', r.out);
+
+section('a limit that is not a number of seconds, 0 or more, is refused');
+for (const v of ['-1', '"5"', '#1']) {
   r = await run(`<# std/net => net\nr = net::get("http://127.0.0.1:${quickPort}/", [], ${v})\n>> r ¶\n`);
-  check(`${v} is refused`, r.failed && r.out.includes('net::get: the time limit must be a positive number of seconds'), r.out);
+  check(`${v} is refused`, r.failed && r.out.includes('net::get: the time limit must be a number of seconds, 0 or more'), r.out);
 }
+r = await run(`<# std/net => net\n>> net::timeout(-2) ¶\n`);
+check('timeout(-2) is refused', r.failed && r.out.includes('net::timeout: the time limit must be a number of seconds, 0 or more'), r.out);
 
 for (const s of held) s.destroy();
 mute.close();
