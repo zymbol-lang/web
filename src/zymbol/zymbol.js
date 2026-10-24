@@ -539,6 +539,45 @@ const grouped = n => (Number.isFinite(n) ? n.toLocaleString('en-US').replace(/,/
 
 // ─── Lexer ────────────────────────────────────────────────────────────────────
 
+/**
+ * `std/random`'s generator: xoshiro256++, its state expanded from one 64-bit
+ * seed by splitmix64 — `zymbol_intrinsics::random` in Rust, step for step, in
+ * BigInt. `random::semilla(n)` gives one sequence in the three engines (G8,
+ * decided by the author on 2026-10-24); without it the first draw seeds from
+ * `Math.random()`, as the Rust engines seed from the clock.
+ */
+export const ZyRandom = {
+  state: null,
+  M: (1n << 64n) - 1n,
+  reset() { this.state = null; },
+  stateFrom(seed) {
+    let x = BigInt.asUintN(64, seed);
+    const out = [];
+    for (let i = 0; i < 4; i++) {
+      x = (x + 0x9E3779B97F4A7C15n) & this.M;
+      let z = x;
+      z = ((z ^ (z >> 30n)) * 0xBF58476D1CE4E5B9n) & this.M;
+      z = ((z ^ (z >> 27n)) * 0x94D049BB133111EBn) & this.M;
+      out.push(z ^ (z >> 31n));
+    }
+    return out;
+  },
+  seed(n) { this.state = this.stateFrom(BigInt(n)); },
+  rotl(x, k) { return ((x << BigInt(k)) | (x >> BigInt(64 - k))) & this.M; },
+  next() {
+    if (!this.state) {
+      const hi = BigInt(Math.floor(Math.random() * 2 ** 32)), lo = BigInt(Math.floor(Math.random() * 2 ** 32));
+      this.state = this.stateFrom((hi << 32n) | lo);
+    }
+    const s = this.state, M = this.M;
+    const result = (this.rotl((s[0] + s[3]) & M, 23) + s[0]) & M;
+    const t = (s[1] << 17n) & M;
+    s[2] ^= s[0]; s[3] ^= s[1]; s[1] ^= s[2]; s[0] ^= s[3];
+    s[2] ^= t; s[3] = this.rotl(s[3], 45);
+    return result;
+  },
+};
+
 export class Lexer {
   constructor(src) {
     this.src = [...src];
@@ -8270,7 +8309,7 @@ export const STDLIB_ARITIES = new Map([
     ['asin',1],['acos',1],['atan',1],['atan2',2],['tanh',1],['sinh',1],['cosh',1],
     ['sigmoid',1],['abs',1],['max',2],['min',2],['floor',1],['ceil',1],['round',1],
   ])],
-  ['std/random', new Map([['entero',2],['rango',1],['peso_f64',0]])],
+  ['std/random', new Map([['entero',2],['rango',1],['peso_f64',0],['semilla',1]])],
   ['std/json',   new Map([['decode',1],['decode_map',2],['encode',1]])],
   ['std/io',     new Map([['read',1],['write',2],['append',2],['exists',1],['delete',1],['list',1],['mkdir',1]])],
   ['std/net',    new Map([['get',-1],['post',-1],['post_json',-1],['head',1]])],
@@ -8482,20 +8521,29 @@ function buildStdlibModule(name, vfs = null) {
   }
 
   if (name === 'std/random') {
+    // `ZyRandom`, the generator of both Rust engines step for step: a seed gives
+    // one sequence in the three (G8). `Math.random()` was used here, and no
+    // seed could reach it.
     const exports = new Map();
     exports.set('entero', { type: 'func', name: 'entero', native: true, call: args => {
       if (args[0]?.type !== 'int' || args[1]?.type !== 'int' || args[1].v < args[0].v)
         throw new ZyError('random::entero: expected (###, ###) with max >= min');
-      return mkInt(args[0].v + Math.floor(Math.random() * (args[1].v - args[0].v + 1)));
+      const lo = BigInt(args[0].v), range = BigInt(args[1].v) - lo + 1n;
+      return mkInt(Number(lo + ZyRandom.next() % range));
     }});
     exports.set('rango', { type: 'func', name: 'rango', native: true, call: args => {
       if (args[0]?.type !== 'int' || args[0].v <= 0)
         throw new ZyError('random::rango: expected positive ###');
-      return mkInt(Math.floor(Math.random() * args[0].v));
+      return mkInt(Number(ZyRandom.next() % BigInt(args[0].v)));
     }});
     exports.set('peso_f64', { type: 'func', name: 'peso_f64', native: true, call: () =>
-      mkFloat((Math.floor(Math.random() * 201) - 100) / 1000)
+      mkFloat((Number(ZyRandom.next() % 201n) - 100) / 1000)
     });
+    exports.set('semilla', { type: 'func', name: 'semilla', native: true, call: args => {
+      if (args[0]?.type !== 'int') throw new ZyError('random::semilla: expected ###');
+      ZyRandom.seed(args[0].v);
+      return mkUnit();
+    }});
     return { type: 'module', exports };
   }
 
@@ -13213,6 +13261,9 @@ export function buildSymbolIndex(src) {
 }
 
 export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, filePath = null, tuiContext = null, cliArgs = [], opts = {}) {
+  // A run starts unseeded, as a process does: the playground runs one program
+  // after another in the same page, and a seed must not reach the next (G8).
+  ZyRandom.reset();
   const tokens = new Lexer(src).tokenize();
   const ast    = new Parser(tokens).parse();
 
