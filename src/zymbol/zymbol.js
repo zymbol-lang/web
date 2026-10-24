@@ -12517,6 +12517,219 @@ function unusedImports(ast, tokens) {
   }));
 }
 
+// A condition folded: `{b}` (Bool) or `{n}` (number), `null` when it is not a
+// constant. Shared by `unreachableCode` and `destroyedReads`, as Rust shares
+// `unreachable::fold`.
+function foldCondition(e) {
+  if (!e) return null;
+  if (e.type === 'Literal') {
+    if (e.kind === 'bool') return { b: e.value };
+    if (e.kind === 'int' || e.kind === 'float') return { n: Number(e.value) };
+    return null;
+  }
+  if (e.type === 'UnaryOp') {
+    const v = foldCondition(e.operand ?? e.expr ?? e.value);
+    if (!v) return null;
+    if (e.op === '!' && 'b' in v) return { b: !v.b };
+    if (e.op === '-' && 'n' in v) return { n: -v.n };
+    if (e.op === '+' && 'n' in v) return { n: v.n };
+    return null;
+  }
+  if (e.type === 'BinOp') {
+    const l = foldCondition(e.left), r = foldCondition(e.right);
+    if (!l || !r) return null;
+    const bb = 'b' in l && 'b' in r, nn = 'n' in l && 'n' in r;
+    switch (e.op) {
+      case '&&': return bb ? { b: l.b && r.b } : null;
+      case '||': return bb ? { b: l.b || r.b } : null;
+      case '==': return bb ? { b: l.b === r.b } : nn ? { b: l.n === r.n } : null;
+      case '<>': return bb ? { b: l.b !== r.b } : nn ? { b: l.n !== r.n } : null;
+      case '<':  return nn ? { b: l.n < r.n } : null;
+      case '<=': return nn ? { b: l.n <= r.n } : null;
+      case '>':  return nn ? { b: l.n > r.n } : null;
+      case '>=': return nn ? { b: l.n >= r.n } : null;
+      default: return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * A read of a name that `\ name` has certainly destroyed (G4, decided by the
+ * author on 2026-10-23): `check_destroyed_reads` in Rust
+ * (`zymbol-semantic/src/destroyed.rs`), with the same rules, the same message
+ * and the same positions — read that file for the why. A warning and not a
+ * refusal: MEM-8 keeps the error at run time.
+ */
+function destroyedReads(ast) {
+  if (!ast) return [];
+  const out = [];
+  const HELP = 'this read fails when it runs — move the destruction after it, or remove it';
+  // A state is a Map name → line of its `\`; `null` is a path that cannot get here.
+  const meet = (a, b) => {
+    if (a === null) return b;
+    if (b === null) return a;
+    return new Map([...a].filter(([n]) => b.has(n)));
+  };
+  const reads = (e, acc) => {
+    if (!e || typeof e !== 'object') return;
+    if (Array.isArray(e)) { for (const x of e) reads(x, acc); return; }
+    if (e.type === 'Ident') { acc.push({ name: e.name, line: e.line, col: e.col ?? null }); return; }
+    // `g(…)` keeps the name it calls as text: a read of `g`, as Rust's identifier is.
+    if (e.type === 'Call' && typeof e.callee === 'string') acc.push({ name: e.callee, line: e.line, col: null });
+    if (e.type === 'Lambda') return;            // runs later; its parameters may reuse the name
+    if (e.type === 'Match') { reads(e.expr, acc); return; }  // its arms can bind the name
+    if (e.type === 'Literal') {
+      if (e.kind === 'str' && Array.isArray(e.value)) {
+        for (const p of e.value) if (p?.t === 'expr') acc.push({ name: p.v, line: e.line, col: e.col ?? null });
+      }
+      return;
+    }
+    for (const k of Object.keys(e)) {
+      if (k === 'line' || k === 'col' || k === 'type') continue;
+      reads(e[k], acc);
+    }
+  };
+  const expr = (e, st) => {
+    if (!st || st.size === 0) return;
+    const acc = [];
+    reads(e, acc);
+    for (const r of acc) {
+      if (!st.has(r.name)) continue;
+      out.push({
+        severity: 'warning', code: 'W_DESTROYED_READ',
+        message: `'${r.name}' is read after '\\ ${r.name}' destroyed it (line ${st.get(r.name)})`,
+        line: r.line ?? null, col: r.col, params: { name: r.name }, help: HELP,
+      });
+    }
+  };
+  const armBound = (p) => p?.type === 'errkind' ? (p.bind ?? null)
+    : p?.type === 'or' ? ((p.alts ?? []).find(a => a?.type === 'errkind' && a.bind)?.bind ?? null) : null;
+  const destructNames = (s) => (s.targets ?? []).map(t => t.name).filter(n => n && n !== '_');
+  // Every name a block can assign, at any depth, functions aside.
+  const assignedIn = (stmts, acc = new Set()) => {
+    for (const s of (stmts ?? [])) {
+      if (!s || typeof s !== 'object') continue;
+      switch (s.type) {
+        case 'VarAssign': case 'Increment': case 'CompoundAssign': acc.add(s.name); break;
+        case 'TupleDestruct': case 'ArrayDestruct': case 'NamedDestruct': destructNames(s).forEach(n => acc.add(n)); break;
+        case 'Input': acc.add(s.varName); break;
+        case 'KeyInput': case 'CliArgs': acc.add(s.variable); break;
+        case 'If': assignedIn(s.then, acc); (s.elseifs ?? []).forEach(b => assignedIn(b.body, acc)); if (Array.isArray(s.else)) assignedIn(s.else, acc); break;
+        case 'Loop': assignedIn(s.body, acc); if (s.var) acc.add(s.var); break;
+        case 'TryCatch': assignedIn(s.tryBody, acc); (s.catches ?? []).forEach(c => assignedIn(c.body, acc)); if (s.finallyBody) assignedIn(s.finallyBody, acc); break;
+        case 'TuiBlock': assignedIn(s.body, acc); break;
+        case 'ExprStmt':
+          if (s.expr?.type === 'Match') for (const a of s.expr.arms ?? []) { if (a.body?.type === 'block') assignedIn(a.body.stmts, acc); if (a.body?.effect) assignedIn(a.body.effect, acc); }
+          break;
+      }
+    }
+    return acc;
+  };
+  const without = (st, names) => new Map([...st].filter(([n]) => !names.has(n)));
+  const funcNames = new Set();
+  const collectFuncs = (stmts) => {
+    for (const s of (stmts ?? [])) {
+      if (!s || typeof s !== 'object') continue;
+      if (s.type === 'FuncDecl') { funcNames.add(s.name); collectFuncs(s.body); }
+      if (s.type === 'ModuleBlock') collectFuncs(s.body);
+      if (s.type === 'Import' && s.alias) funcNames.add(s.alias);   // refused by `\` too
+    }
+  };
+  collectFuncs(ast.body);
+
+  const block = (stmts, st) => {
+    for (const s of (stmts ?? [])) {
+      if (st === null) { if (s?.type === 'FuncDecl') block(s.body, new Map()); continue; }
+      st = stmt(s, st);
+    }
+    return st;
+  };
+  const stmt = (s, st) => {
+    if (!s || typeof s !== 'object') return st;
+    st = new Map(st);
+    switch (s.type) {
+      case 'LifetimeEnd':
+        // `\ f` on a declared function is refused before anything runs, and
+        // destroys nothing: no read of `f` is warned about.
+        if (funcNames.has(s.name)) return st;
+        st.delete(s.name); st.set(s.name, s.line); return st;
+      case 'VarAssign': expr(s.value, st); st.delete(s.name); return st;
+      case 'Increment': expr({ type: 'Ident', name: s.name, line: s.line, col: s.col ?? null }, st); st.delete(s.name); return st;
+      // `x += v` reads `x` first, as Rust's `Assignment` of `x + v` does.
+      case 'CompoundAssign':
+        expr({ type: 'Ident', name: s.name, line: s.line, col: s.col ?? null }, st);
+        expr(s.value, st); st.delete(s.name); return st;
+      case 'TupleDestruct': case 'ArrayDestruct': case 'NamedDestruct': expr(s.value, st); destructNames(s).forEach(n => st.delete(n)); return st;
+      case 'Input': st.delete(s.varName); return st;
+      case 'KeyInput': case 'CliArgs': st.delete(s.variable); return st;
+      case 'Return': expr(s.value, st); return null;
+      case 'Break': case 'Continue': return null;
+      case 'FuncDecl': block(s.body, new Map()); return st;
+      case 'ModuleBlock': return block(s.body, st);
+      case 'If': {
+        const conds = [s.cond, ...(s.elseifs ?? []).map(b => b.cond)];
+        const blocks = [s.then, ...(s.elseifs ?? []).map(b => b.body)];
+        let outSt = null, decided = false;
+        for (let k = 0; k < conds.length; k++) {
+          expr(conds[k], st);
+          const v = foldCondition(conds[k]);
+          if (v && v.b === false) continue;
+          outSt = meet(outSt, block(blocks[k], new Map(st)));
+          if (v && v.b === true) { decided = true; break; }
+        }
+        if (!decided) outSt = meet(outSt, Array.isArray(s.else) ? block(s.else, new Map(st)) : st);
+        return outSt;
+      }
+      case 'Loop': {
+        if (s.kind === 'while') {
+          expr(s.cond, st);
+          const v = foldCondition(s.cond);
+          if (v && v.b === false) return st;
+        } else {
+          for (const k of Object.keys(s)) if (!['body', 'type', 'kind', 'label', 'var', 'line', 'col'].includes(k)) expr(s[k], st);
+        }
+        const inner = new Map(st);
+        if (s.var) inner.delete(s.var);
+        block(s.body, inner);
+        return without(st, assignedIn(s.body, new Set(s.var ? [s.var] : [])));
+      }
+      case 'TryCatch': {
+        const afterTry = block(s.tryBody, new Map(st));
+        const failed = without(st, assignedIn(s.tryBody));
+        let outSt = afterTry;
+        for (const c of (s.catches ?? [])) outSt = meet(outSt, block(c.body, new Map(failed)));
+        if (s.finallyBody) block(s.finallyBody, meet(failed, afterTry) ?? new Map());
+        return outSt;
+      }
+      case 'TuiBlock': return block(s.body, st);
+      case 'ExprStmt':
+        if (s.expr?.type === 'Match') {
+          const m = s.expr;
+          expr(m.expr, st);
+          let outSt = new Map(st);
+          for (const a of (m.arms ?? [])) {
+            const arm = new Map(st);
+            const b = armBound(a.pattern);
+            if (b) arm.delete(b);
+            let end = arm;
+            if (a.body?.type === 'expr') { expr(a.body.value, arm); if (a.body.effect) end = block(a.body.effect, arm); }
+            else if (a.body?.type === 'block') end = block(a.body.stmts, arm);
+            outSt = meet(outSt, end);
+          }
+          return outSt;
+        }
+        expr(s.expr, st); return st;
+      default:
+        // Output, OutputPos, Sleep, InPlaceEdit, FuncUpdate and the rest: what they read.
+        for (const k of Object.keys(s)) if (!['type', 'line', 'col'].includes(k)) expr(s[k], st);
+        return st;
+    }
+  };
+  block(ast.body, new Map());
+  return out;
+}
+
 /**
  * Code that cannot run (HLZ-016): `check_unreachable` in Rust
  * (`zymbol-semantic/src/unreachable.rs`), with the same three shapes, the same
@@ -12541,40 +12754,7 @@ function unreachableCode(ast) {
     line: stmt.zyLine ?? stmt.line ?? null, col: stmt.zyCol ?? null, params, help,
   });
 
-  // A constant is `{b}` (Bool) or `{n}` (number); anything else is `null`.
-  const fold = (e) => {
-    if (!e) return null;
-    if (e.type === 'Literal') {
-      if (e.kind === 'bool') return { b: e.value };
-      if (e.kind === 'int' || e.kind === 'float') return { n: Number(e.value) };
-      return null;
-    }
-    if (e.type === 'UnaryOp') {
-      const v = fold(e.operand ?? e.expr ?? e.value);
-      if (!v) return null;
-      if (e.op === '!' && 'b' in v) return { b: !v.b };
-      if (e.op === '-' && 'n' in v) return { n: -v.n };
-      if (e.op === '+' && 'n' in v) return { n: v.n };
-      return null;
-    }
-    if (e.type === 'BinOp') {
-      const l = fold(e.left), r = fold(e.right);
-      if (!l || !r) return null;
-      const bb = 'b' in l && 'b' in r, nn = 'n' in l && 'n' in r;
-      switch (e.op) {
-        case '&&': return bb ? { b: l.b && r.b } : null;
-        case '||': return bb ? { b: l.b || r.b } : null;
-        case '==': return bb ? { b: l.b === r.b } : nn ? { b: l.n === r.n } : null;
-        case '<>': return bb ? { b: l.b !== r.b } : nn ? { b: l.n !== r.n } : null;
-        case '<':  return nn ? { b: l.n < r.n } : null;
-        case '<=': return nn ? { b: l.n <= r.n } : null;
-        case '>':  return nn ? { b: l.n > r.n } : null;
-        case '>=': return nn ? { b: l.n >= r.n } : null;
-        default: return null;
-      }
-    }
-    return null;
-  };
+  const fold = foldCondition;
 
   const EXITS = { Return: "'<~'", Break: "'@!'", Continue: "'@>'" };
   // How a statement always leaves its block: an exit's spelling, '' for an
@@ -12732,6 +12912,7 @@ export function checkSource(src, opts = {}) {
   // module body (Depurando_GO.md DG-06), and Rust reports these two there too.
   diagnostics.push(...unusedImports(ast, tokens));
   diagnostics.push(...unreachableCode(ast));
+  diagnostics.push(...destroyedReads(ast));
   // A name reported as UNDEFINED must not also be reported as UNUSED.
   //
   // The two come from opposite ends of the same fact: `? #1 { v = 1 }  >> v ¶`
