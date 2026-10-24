@@ -2427,18 +2427,21 @@ export class Parser {
         elems.push({ kind: 'wildcard' });
       } else if (this.check('IDENT') && (this.peek(1).type === 'COMMA' || this.peek(1).type === 'RBRACKET')) {
         elems.push({ kind: 'bind', name: this.adv().value });
+      } else if (['LT', 'GT', 'LTE', 'GTE', 'EQ', 'NEQ'].includes(this.peek().type)
+                 || this.peek(this.check('MINUS') ? 2 : 1)?.type === 'RANGE') {
+        // A comparison or a range is an element too, and means what it means
+        // in an arm (GLB-148, decided by the author on 2026-10-24): read as the
+        // arm reads it, with the same checks, and matched by `matchPattern`.
+        elems.push({ kind: 'nested', pattern: this.parseMatchPatternPrimary() });
       } else {
         // One token, two with a sign, as the Rust parser reads an element: what
         // follows is `,` or `]`. Read as an expression, `[1 + 2] =>` ran here
-        // and both Rust engines refuse it (ZYJS-070). A `..` after it is left
-        // to the expression parser, which refuses it — a range inside a list
-        // pattern is GLB-148, undecided.
+        // and both Rust engines refuse it (ZYJS-070).
         const start = this.pos;
         const at = this.peek();
         const width = this.check('MINUS') && ['NUM', 'FLOAT'].includes(this.peek(1)?.type) ? 2 : 1;
-        const ranged = this.peek(width)?.type === 'RANGE';
         const expr = this.parseAdditive();
-        if (!ranged && this.pos !== start + width) {
+        if (this.pos !== start + width) {
           this.pos = start + width;
           throw new ZyStaticError("expected ']' to close list pattern", this.peek());
         }
@@ -5907,9 +5910,13 @@ class Checker {
       this.checkExpr({ ...p.value, line: p.value.line ?? p.line });
       return;
     }
+    // `< tope =>` reads `tope`: the comparison's value is an expression, and it
+    // was never looked at here, so the name was reported unused (GLB-148).
+    if (p.type === 'comparison') { this.checkExpr(p.value); return; }
     for (const e of (p.elems ?? p.items ?? [])) {
       if (e?.kind === 'literal') this.checkExpr(e.expr);
       else if (e?.kind === 'bind' && e.name) this.checkExpr({ type: 'Ident', name: e.name, line: at });
+      else if (e?.kind === 'nested') this.checkMatchPattern(e.pattern, at);
       else if (e?.name && e.name !== '_') this.checkExpr({ type: 'Ident', name: e.name, line: at });
     }
     for (const alt of (p.alts ?? [])) this.checkMatchPattern(alt, at);
@@ -11625,10 +11632,16 @@ export class Interpreter {
       }
       case 'list': {
         // Scalar scrutinee: list pattern means "value is one of these" (membership)
+        // Every element is tested as the same pattern is in an arm, as
+        // `match_stmt.rs` does: a nested pattern — a range, a comparison, a list
+        // (GLB-148) — and a name, whose value is compared (DM-26). Only `_` and
+        // a value were tested here, so `?? 3 { [a] => … }` with `a = 3` fell to `_`.
         if (val.type !== 'arr') {
           for (const elem of pattern.elems) {
             if (elem.kind === 'wildcard') return true;
             if (elem.kind === 'literal' && this.equals(val, await this.eval(elem.expr, env))) return true;
+            if (elem.kind === 'nested' && await this.matchPattern(elem.pattern, val, env)) return true;
+            if (elem.kind === 'bind' && await this.matchIdentInPattern(elem.name, val, env)) return true;
           }
           return false;
         }
