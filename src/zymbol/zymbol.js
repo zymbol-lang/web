@@ -4210,12 +4210,14 @@ class Env {
       this.vars.set(name, value);
       return true;
     }
-    // A variable of the module that a `\` ended: assigning it gives it back to
-    // the MODULE (GLB-120, decided 2026-10-11). The assignment used to find
-    // nothing here and define a local in the function that made it, so the
-    // module never had its variable again — a sibling that read it failed, and
-    // two functions that wrote it no longer wrote the same thing.
-    if (this.isModuleScope && this.destroyed?.has(name)) {
+    // A name that a `\` ended here: assigning it gives it back to THIS
+    // environment, from whichever block the assignment is in (GLB-147, decided
+    // 2026-10-23: `\` keeps the name's place). It is the rule GLB-120 decided on
+    // 2026-10-11 for a variable of the module, where the assignment used to find
+    // nothing and define a local in the function that made it, so the module
+    // never had its variable again. A block did the same with a file or
+    // function variable, and the VM did not.
+    if (this.destroyed?.has(name)) {
       this.vars.set(name, value);
       this.destroyed.delete(name);
       return true;
@@ -4240,9 +4242,12 @@ class Env {
   def(name, value, isConst = false) {
     this.vars.set(name, value);
     if (isConst) this.consts.add(name);
-    // `\` ends a life; it does not burn the name. Assigning revives it, so the
-    // destroyed mark is cleared here and in every parent that holds it.
-    for (let e = this; e; e = e.parent) e.destroyed?.delete(name);
+    // `\` ends a life; it does not burn the name. Assigning revives it — in the
+    // environment that holds the mark, which `set` finds first (GLB-147). A
+    // definition here is a name of THIS environment, and leaves a parent's mark
+    // alone: clearing it made a loop's iterator, defined in each turn's scope,
+    // erase the `\` of the name outside, so the loop could not give it back.
+    this.destroyed?.delete(name);
   }
 
   hotDef(name, value) {
@@ -12689,10 +12694,12 @@ function destroyedReads(ast) {
         } else {
           for (const k of Object.keys(s)) if (!['body', 'type', 'kind', 'label', 'var', 'line', 'col'].includes(k)) expr(s[k], st);
         }
-        const inner = new Map(st);
-        if (s.var) inner.delete(s.var);
-        block(s.body, inner);
-        return without(st, assignedIn(s.body, new Set(s.var ? [s.var] : [])));
+        // A turn after the first starts where the last one ended: what the body
+        // assigns anywhere in it is alive there (GLB-147), so it is not certain
+        // inside the body either.
+        const assigned = assignedIn(s.body, new Set(s.var ? [s.var] : []));
+        block(s.body, without(st, assigned));
+        return without(st, assigned);
       }
       case 'TryCatch': {
         const afterTry = block(s.tryBody, new Map(st));
