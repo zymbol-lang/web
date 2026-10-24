@@ -2428,7 +2428,21 @@ export class Parser {
       } else if (this.check('IDENT') && (this.peek(1).type === 'COMMA' || this.peek(1).type === 'RBRACKET')) {
         elems.push({ kind: 'bind', name: this.adv().value });
       } else {
-        elems.push({ kind: 'literal', expr: this.parseAdditive() });
+        // One token, two with a sign, as the Rust parser reads an element: what
+        // follows is `,` or `]`. Read as an expression, `[1 + 2] =>` ran here
+        // and both Rust engines refuse it (ZYJS-070). A `..` after it is left
+        // to the expression parser, which refuses it — a range inside a list
+        // pattern is GLB-148, undecided.
+        const start = this.pos;
+        const at = this.peek();
+        const width = this.check('MINUS') && ['NUM', 'FLOAT'].includes(this.peek(1)?.type) ? 2 : 1;
+        const ranged = this.peek(width)?.type === 'RANGE';
+        const expr = this.parseAdditive();
+        if (!ranged && this.pos !== start + width) {
+          this.pos = start + width;
+          throw new ZyStaticError("expected ']' to close list pattern", this.peek());
+        }
+        elems.push({ kind: 'literal', expr, line: at.line, col: at.col });
       }
       this.match('COMMA');
     }
@@ -2466,14 +2480,11 @@ export class Parser {
     if (this.check('ELSE')) {
       this.adv();
       pattern = { type: 'wildcard' };
-    } else if (this.check('ELSEIF')) {
-      this.adv();
-      pattern = { type: 'guard', cond: this.parseExpr() };
     } else if (this.check('LBRACKET')) {
       pattern = this.parseListPattern();
     } else if (['LT','GT','LTE','GTE','EQ','NEQ'].includes(this.peek().type)) {
-      const op = this.adv().value;
-      pattern = { type: 'comparison', op, value: this.parseAdditive() };
+      const opTok = this.adv();
+      pattern = { type: 'comparison', op: opTok.value, value: this.parseAdditive(), line: opTok.line, col: opTok.col };
     } else {
       // What can start a pattern, as in `parse_pattern_primary`; anything else
       // is refused with Rust's words rather than the expression parser's
@@ -2492,21 +2503,40 @@ export class Parser {
       if (this.check('IDENT') && this.peek().hot && this.peek().value) {
         throw new ZyStaticError(`expected pattern, found '${this.peek().value}°'`, this.peek());
       }
+      // One token, two with a sign, as `parse_pattern_primary` reads it: what
+      // follows is `=>`, `..` after an Int or a Char, `||` or `,`. Reading an
+      // expression here let `1 + 2 =>`, `f(3) =>` and `a[1] =>` run where both
+      // Rust engines refuse them (ZYJS-070).
+      const start = this.pos;
+      const width = negativeNumber ? 2 : 1;
+      const at = this.peek();
       const left = this.parseAdditive();
+      const notPattern = () => new ZyStaticError("expected '=>' after pattern", this.peek(),
+        'match case syntax: pattern => [value] [{ block }]');
+      if (this.pos !== start + width) { this.pos = start + width; throw notPattern(); }
+      const isLit = (e, kind) => e?.type === 'Literal' && e.kind === kind;
+      const isInt = (e) => isLit(e, 'int') || (e?.type === 'UnaryOp' && e.op === '-' && isLit(e.operand ?? e.expr ?? e.value, 'int'));
+      // A range is Int..Int or Char..Char: after anything else Rust does not
+      // read the `..`, and a Float, a String or a name before it ran here
+      // (ZYJS-070).
+      if (this.check('RANGE') && !isInt(left) && !isLit(left, 'char')) throw notPattern();
       if (this.match('RANGE')) {
         const endTok = this.peek();
+        const endStart = this.pos;
+        const endWidth = this.check('MINUS') && this.peek(1)?.type === 'NUM' ? 2 : 1;
         const to = this.parseAdditive();
+        if (this.pos !== endStart + endWidth) { this.pos = endStart + endWidth; throw notPattern(); }
         // The ends are one kind, as `parse_pattern_primary` requires: `'a'..5`
         // and `1..'z'` used to parse, never match, and fall to `_` (ZYJS-021).
-        if (left?.type === 'Literal' && left.kind === 'int' && !(to?.type === 'Literal' && to.kind === 'int')) {
+        if (isInt(left) && !isInt(to)) {
           throw new ZyStaticError("expected integer after '..' in range pattern", endTok ?? this.peek());
         }
         if (left?.type === 'Literal' && left.kind === 'char' && !(to?.type === 'Literal' && to.kind === 'char')) {
           throw new ZyStaticError("expected char after '..' in range pattern", endTok ?? this.peek());
         }
-        pattern = { type: 'range', from: left, to };
+        pattern = { type: 'range', from: left, to, line: at.line, col: at.col };
       } else {
-        pattern = { type: 'literal', value: left };
+        pattern = { type: 'literal', value: left, line: at.line, col: at.col };
       }
     }
     return pattern;
@@ -5814,6 +5844,53 @@ class Checker {
    * variable being read. `corpus/match/13_ident_scalar.zy` records that at the
    * top level and `20_list_pattern_compares.zy` inside a list.
    */
+  /**
+   * `check_pattern_type` in `type_check.rs`, with its words: a literal or a
+   * range of another type than the scrutinee, and a comparison against a
+   * scrutinee that is not a scalar, are refused before anything runs. This
+   * engine checked none of it, so `?? (1, 2) { 1 => … _ => … }` took the `_`
+   * and `?? "x" { 1..5 => … }` failed only when it ran, where both Rust
+   * engines refuse the program (ZYJS-071). Where `argType` cannot name the
+   * scrutinee nothing is said, as Rust says nothing about `Unknown`.
+   */
+  checkPatternType(p, scrut) {
+    if (!p || !scrut) return;
+    const OF = { int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool', unit: 'Unit' };
+    const litType = (e) => e?.type === 'Literal' ? (OF[e.kind] ?? null)
+      : e?.type === 'UnaryOp' ? litType(e.operand ?? e.expr ?? e.value) : null;
+    const fits = (t) => Checker.typesCompatibleStatic(t, scrut);
+    switch (p.type) {
+      case 'literal': {
+        const t = litType(p.value);
+        if (t && !fits(t)) this.error('E_PATTERN_TYPE', `pattern type ${t} does not match scrutinee type ${scrut}`, p.line ? p : p.value);
+        return;
+      }
+      case 'range': {
+        const t = litType(p.from);
+        if (t && !fits(t)) this.error('E_PATTERN_TYPE', `range pattern type ${t} does not match scrutinee type ${scrut}`, p.line ? p : p.from);
+        return;
+      }
+      case 'comparison': {
+        const T = Checker.parseTypeName(scrut);
+        if (T && T.k !== 'any' && !(T.k === 'prim' && ['Int', 'Float', 'Char', 'String', 'Number'].includes(T.n))) {
+          this.error('E_PATTERN_TYPE', `comparison pattern requires scalar scrutinee, got ${scrut}`, p.line ? p : p.value);
+        }
+        return;
+      }
+      case 'or': for (const a of (p.alts ?? [])) this.checkPatternType(a, scrut); return;
+      case 'list': {
+        const T = Checker.parseTypeName(scrut);
+        const elem = T?.k === 'array' && /^\[.*\]$/.test(scrut) ? scrut.slice(1, -1) : scrut;
+        for (const el of (p.elems ?? [])) {
+          if (el.kind === 'literal') this.checkPatternType({ type: 'literal', value: el.expr, line: el.line, col: el.col }, elem);
+          else if (el.kind === 'nested') this.checkPatternType(el.pattern, elem);
+        }
+        return;
+      }
+      default: return;
+    }
+  }
+
   checkMatchPattern(p, line = null) {
     if (!p) return;
     const at = p.line ?? line;
@@ -6873,6 +6950,10 @@ class Checker {
 
       case 'Match': {
         this.checkExpr(stmt.subject ?? stmt.expr);
+        // The type of every pattern against the scrutinee's, where this pass can
+        // name it (ZYJS-071).
+        const scrutType = this.argType(stmt.subject ?? stmt.expr);
+        if (scrutType) for (const arm of (stmt.arms ?? [])) this.checkPatternType(arm.pattern, scrutType);
         for (const arm of (stmt.arms ?? [])) {
           // An identifier in a pattern is a VALUE that gets compared, so it is a
           // use of that variable — at the top of the pattern and, equally,
@@ -11502,7 +11583,6 @@ export class Interpreter {
     switch (pattern.type) {
       case 'wildcard': return true;
       case 'errkind':  return val?.type === 'error' && val.errType === pattern.kind;
-      case 'guard':    return this.truthy(await this.eval(pattern.cond, env));
       case 'or': {
         // Alternatives are tested left to right; first match wins
         for (const alt of pattern.alts) {

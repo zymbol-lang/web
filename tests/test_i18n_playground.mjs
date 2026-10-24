@@ -230,6 +230,7 @@ section('checker codes vs the catalogue');
     W_DESTRUCT_SHAPE: 'the pattern, what it accepts and what it got, no params',
     W_MIX_UNNEEDED:   'names the element type in the sentence, no params',
     E_HOF_ARITY:      'map, filter and reduce are worded apart, each with its own count',
+    E_PATTERN_TYPE:   'a literal, a range and a comparison are worded apart, each naming two types',
   };
   const engineSrc = readFileSync(join(WEB_DIR, 'src/zymbol/zymbol.js'), 'utf8');
   const emitted = new Set([...engineSrc.matchAll(/this\.(?:warn|error)\('([A-Z0-9_]+)'/g)].map(m => m[1]));
