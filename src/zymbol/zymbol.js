@@ -2330,7 +2330,7 @@ export class Parser {
   }
 
   parseMatchExpr() {
-    const line = this.peek().line;
+    const { line, col } = this.peek();
     this.adv();
     const expr = this.parseExpr();
     this.eat('LBRACE', "expected '{' after match expression", 'match syntax: ?? expr { pattern => value }');
@@ -2339,7 +2339,7 @@ export class Parser {
       arms.push(this.parseMatchArm());
     }
     this.eat('RBRACE', "expected '}' to close match expression", 'match expression must be enclosed in braces');
-    return { type: 'Match', expr, arms, line };
+    return { type: 'Match', expr, arms, line, col };
   }
 
   parseMatchArm() {
@@ -12738,6 +12738,52 @@ function destroyedReads(ast) {
 }
 
 /**
+ * A `??` that may find no arm (G5, decided by the author on 2026-10-24):
+ * `check_match_coverage` in Rust (`zymbol-semantic/src/match_coverage.rs`),
+ * with the same rules, the same message and the same positions — read that
+ * file for the why. A warning: the run-time error stays the error.
+ */
+function matchCoverage(ast) {
+  if (!ast) return [];
+  const out = [];
+  const complete = (m) => {
+    const alts = (m.arms ?? []).flatMap(a => a.pattern?.type === 'or' ? (a.pattern.alts ?? []) : [a.pattern]);
+    if (alts.some(p => p?.type === 'wildcard')) return true;
+    const bools = new Set(alts.filter(p => p?.type === 'literal' && p.value?.type === 'Literal' && p.value.kind === 'bool')
+      .map(p => p.value.value));
+    if (bools.size === 2) return true;
+    const cmps = alts.filter(p => p?.type === 'comparison')
+      .map(p => ({ op: p.op, k: foldCondition(p.value) }))
+      .filter(c => c.k && 'n' in c.k).map(c => ({ op: c.op, k: c.k.n }));
+    return cmps.some(lo => cmps.some(hi => {
+      if ((lo.op === '<' || lo.op === '<=') && (hi.op === '>' || hi.op === '>='))
+        return hi.k < lo.k || (hi.k === lo.k && (lo.op === '<=' || hi.op === '>='));
+      return lo.op === '==' && hi.op === '<>' && lo.k === hi.k;
+    }));
+  };
+  const seen = new Set();
+  const visit = (n) => {
+    if (!n || typeof n !== 'object' || seen.has(n)) return;
+    seen.add(n);
+    if (Array.isArray(n)) { for (const x of n) visit(x); return; }
+    if (n.type === 'Match' && Array.isArray(n.arms) && !complete(n)) {
+      out.push({
+        severity: 'warning', code: 'W_MATCH_NO_ARM',
+        message: "this '??' has no '_' arm: a value no arm matches stops the program",
+        line: n.line ?? null, col: n.col ?? null, params: {},
+        help: 'add `_ => …` for every other value — or, if no other value can arrive, catch the error where it matters with `!?`',
+      });
+    }
+    for (const k of Object.keys(n)) {
+      if (k === 'line' || k === 'col' || k === 'type' || k === 'at') continue;
+      visit(n[k]);
+    }
+  };
+  visit(ast);
+  return out.sort((a, b) => (a.line ?? 0) - (b.line ?? 0) || (a.col ?? 0) - (b.col ?? 0));
+}
+
+/**
  * Code that cannot run (HLZ-016): `check_unreachable` in Rust
  * (`zymbol-semantic/src/unreachable.rs`), with the same three shapes, the same
  * folding and the same positions — read that file for the why.
@@ -12916,10 +12962,11 @@ export function checkSource(src, opts = {}) {
     diagnostics = [];
   }
   // Outside the Checker on purpose: it drops every warning raised inside a
-  // module body (Depurando_GO.md DG-06), and Rust reports these two there too.
+  // module body (Depurando_GO.md DG-06), and Rust reports these there too.
   diagnostics.push(...unusedImports(ast, tokens));
   diagnostics.push(...unreachableCode(ast));
   diagnostics.push(...destroyedReads(ast));
+  diagnostics.push(...matchCoverage(ast));
   // A name reported as UNDEFINED must not also be reported as UNUSED.
   //
   // The two come from opposite ends of the same fact: `? #1 { v = 1 }  >> v ¶`
