@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img alt="version v0.0.8" src="https://img.shields.io/badge/version-v0.0.8-informational?style=flat-square"/>
+  <img alt="version v0.0.10" src="https://img.shields.io/badge/version-v0.0.10-informational?style=flat-square"/>
   <img alt="build: none by design" src="https://img.shields.io/badge/build-none%20by%20design-success?style=flat-square"/>
   <img alt="code: AGPL-3.0-only" src="https://img.shields.io/badge/code-AGPL--3.0--only-blue?style=flat-square"/>
   <img alt="docs: CC-BY-SA-4.0" src="https://img.shields.io/badge/docs-CC--BY--SA--4.0-blue?style=flat-square"/>
@@ -19,11 +19,12 @@
 
 ---
 
-> **Live at v0.0.9; v0.0.10 is prepared on the `v0.0.10` branch.** The `v0.0.10` tag and
-> all 17 of its release assets exist, and `index.html`, `install.html` and `changelog.html`
-> on the branch carry the real SHA256 digest of every published file, the Windows
-> installer included. The branch merges to `main` after the release is checked, because
-> `main` is what GitHub Pages serves.
+> **Live at v0.0.10; v0.0.11 is in development on the `v0.0.11` branch.** `v0.0.10` was
+> merged to `main` on 2026-10-12, with the real SHA256 digest of every published file in
+> `index.html`, `install.html` and `changelog.html`. On the `v0.0.11` branch the install
+> pages still say v0.0.10, correctly: their download links change only when the v0.0.11
+> release assets exist. *(Until 2026-10-25 this banner said "Live at v0.0.9", the state of
+> the day before that merge.)*
 >
 > **The rule this banner used to enforce still holds**, and is the reason it is rewritten
 > rather than deleted: `main` is what GitHub Pages serves, so a version bump merges to
@@ -637,7 +638,7 @@ Pointed at the example pool (`--dir examples`) it audits every published example
 in its own first lines with `// @skip-parity: <reason>` rather than being listed here — the
 pool is not this runner's corpus, and duplicating its paths into the skip table would rot.
 
-**Re-measured 2026-10-20 on the v0.0.11 branch: zero divergences**, in the corpus and in the
+**Re-measured 2026-10-25 on the v0.0.11 branch: zero divergences**, in the corpus and in the
 pool alike (first measured at zero on 2026-08-31, v0.0.9).
 
 ```

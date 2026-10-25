@@ -1,10 +1,10 @@
 # Web Interpreter — Gaps & Status
 
-**Date:** 2026-08-31
-**Tests:** 661 corpus files — **631 agree, 0 diverge** · 222 example files — **216 agree,
-0 diverge**
+**Date:** 2026-10-25 (first written 2026-08-31, at 661 corpus files and 222 examples)
+**Tests:** 714 corpus files — **695 agree, 0 diverge**, 19 excused in `corpus.toml` · 332
+example files — **216 agree, 0 diverge**, 116 excused
 **Tool:** `node tests/test_runner.mjs`, which delegates to `zyq consensus --engines
-zytw,zyjs` (v0.0.9 branch)
+zytw,zyjs` (v0.0.11 branch)
 
 > The corpus is the shared one in `zyquality/`, so it grows when any engine's tests do and
 > this page goes stale without anyone editing `zymbol.js`. **Re-run the tool before quoting
