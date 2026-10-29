@@ -20,7 +20,7 @@
 // The digit tables come from the lexer itself rather than a second copy here:
 // `digitValue` knows all 60-odd Unicode decimal blocks, and a table kept twice
 // is a table that eventually disagrees with itself.
-import { digitValue, digitBlockBase, decimalSeparator } from '../zymbol/zymbol.js';
+import { digitValue, digitBlockBase, decimalSeparator, isIdentStart, isIdentContinue } from '../zymbol/zymbol.js';
 
 export function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -201,11 +201,17 @@ export function highlightLine(line, inBlockComment) {
         // The count may be a NAME as well as digits — `#,.n|10.5|` reads its
         // precision from a variable, and the lexer takes it — so a form that
         // computes its own precision was left unmarked and unaskable.
+        // Digits of any script and a name by the lexer's rule, as the lexer
+        // reads them (ZYJS-072): `#.२|x|` and `#.n२|x|` were left unmarked.
+        // Both are measured in code units, since `s` is indexed by them.
         const digitsAt = k => {
-          let d = 0;
-          while (k + d < len && /[0-9]/.test(s[k+d])) d++;
+          let d = 0, g;
+          while ((g = digAt(s, k + d))) d += g.len;
           if (d > 0) return d;
-          while (k + d < len && /[\p{L}_0-9]/u.test(s[k+d])) d++;
+          const cpAt = j => { const cp = s.codePointAt(j); return cp === undefined ? '' : String.fromCodePoint(cp); };
+          if (!isIdentStart(cpAt(k))) return 0;
+          let c;
+          while ((c = cpAt(k + d)) && isIdentContinue(c) && c !== '°') d += c.length;
           return d;
         };
         let end = -1, key = null;

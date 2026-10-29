@@ -732,9 +732,21 @@ export class Lexer {
         }
         {
           let kind = null, prec = null, advance = 0, dynPrec = false;
+          // The count is an integer literal, so it is read as one: in any of
+          // the 69 digit blocks, one block per count. It read only [0-9], and
+          // `#.२|x|` — which both Rust engines accept — was refused here
+          // (ZYJS-072). `d` is the count in ASCII, for `parseInt`.
           const readDigits = start => {
-            let d = '', i = start;
-            while (/[0-9]/.test(this.ch(i))) { d += this.ch(i); i++; }
+            let d = '', i = start, block = -1;
+            while (this.ch(i) && digitValue(this.ch(i)) >= 0) {
+              const b = digitBlockBase(this.ch(i));
+              if (block < 0) block = b;
+              else if (b !== block) {
+                throw new ZyStaticError('mixed digit scripts in numeric literal', this.posAhead(start),
+                  'all digits in a literal must belong to the same numeral system (e.g. all ASCII or all Devanagari)');
+              }
+              d += String(digitValue(this.ch(i))); i++;
+            }
             return { d, i };
           };
           // GAP-ZYB-001: the decimal count may be a NAME instead of digits —
@@ -742,9 +754,11 @@ export class Lexer {
           // read here and handed to the parser, which turns it into an
           // expression evaluated when the program runs. For money the count is
           // configuration: it belongs to the currency, not to the source.
+          // A name by the rule of every other name: `n२` is one, and `1_0` is not.
           const readName = start => {
             let d = '', i = start;
-            while (/[\p{L}_0-9]/u.test(this.ch(i) || '')) { d += this.ch(i); i++; }
+            if (!isIdentStart(this.ch(i))) return { d, i };
+            while (isIdentContinue(this.ch(i)) && this.ch(i) !== '°') { d += this.ch(i); i++; }
             return { d, i };
           };
           if (c1 === '|') {
@@ -839,9 +853,10 @@ export class Lexer {
           // (`#.2 5`, `#.|5|` were refused a line later), or lost its `#`
           // (`#!2 5` became a logical NOT) (ZYJS-021).
           if (c1 === '.' || c1 === '!') {
-            const hasCount = readDigits(2).d.length > 0 || readName(2).d.length > 0;
-            if (hasCount) {
-              throw new ZyStaticError("expected '|' after precision", this.at(),
+            const digits = readDigits(2);
+            const count = digits.d.length > 0 ? digits : readName(2);
+            if (count.d.length > 0) {
+              throw new ZyStaticError("expected '|' after precision", this.posAhead(count.i),
                 c1 === '.' ? 'round expression syntax: #.N|expr|' : 'truncate expression syntax: #!N|expr|');
             }
             // The help repeats what was written before the count, as the Rust
@@ -849,7 +864,7 @@ export class Lexer {
             // and this engine gave no help rather than copy that.
             const prefix = '#' + c1;
             const countOp = prefix;
-            throw new ZyStaticError(`expected a decimal count after '${prefix}'`, this.at(),
+            throw new ZyStaticError(`expected a decimal count after '${prefix}'`, this.posAhead(2),
               `write the count or the name of a variable holding it: ${countOp}2|value| or ${countOp}n|value|`);
           }
         }
