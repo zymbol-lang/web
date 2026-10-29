@@ -1,0 +1,13399 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+/*
+ * Copyright (C) 2024-2026 Zymbol-Lang Team
+ *
+ * This file is a hand-written JavaScript port of the Rust tree-walker in
+ * <https://github.com/zymbol-lang/interpreter>, and a derivative work of it.
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Affero General Public License, version 3, as published by
+ * the Free Software Foundation.
+ *
+ * It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ * PURPOSE. See the GNU Affero General Public License for more details:
+ * <https://www.gnu.org/licenses/agpl-3.0.html>, or LICENSE-AGPL-3.0 in this
+ * repository.
+ *
+ * This engine runs in the browser at zymbol-lang.org/playground.html. Section 13
+ * applies: the complete corresponding source of what runs there is
+ * <https://github.com/zymbol-lang/web>, and the playground says so in its own ?
+ * panel.
+ */
+
+/**
+ * zymbol.js — Browser interpreter for the Zymbol playground
+ *
+ * v0.0.4: 1-based indexing, multi-dimensional navigation (arr[i>j>k]),
+ * type-cast operators (##. ### ##!), string split ($/), ConcatBuild ($++),
+ * explicit lifetime end (\ var).
+ *
+ * v0.0.5: string repeat ($*), hot definition (°), module alias (:), sleep (@~),
+ * labeled loops (@:label { } / @:label! / @:label>), TUI canvas operators
+ * (>>! >>? >>~ <<| <<|? >>|), caught error values (##_(...)), hotDef scope fix.
+ *
+ * v0.0.6: FatArrow (=>) replaces : as match/import/export separator (already in v0.0.5 JS);
+ * $~ on named tuples — integer + field-name string index (G2);
+ * deep update arr[i>j]$~ val (G1, DeepUpdate node);
+ * stdlib modules std/math (22 fns + PI/E) and std/random (3 fns);
+ * bare import paths support slashes: <# std/math => alias;
+ * native function call path in callFunc (fn.native).
+ *
+ * v0.0.7: stdlib std/json (decode/decode_map/encode via JSON.parse/stringify — ##Parse text is
+ * engine-specific), std/net (get/post/post_json/head via fetch; optional headers arg;
+ * CORS applies), std/io (per-run virtual filesystem: Map of files + Set of dirs);
+ * std/db NOT available (requires ODBC). Typed input << <typespec> "prompt" var with
+ * ##.(t,d) / ##. / ###(n) / ##"(n) / ##' — validates, re-prompts on invalid input.
+ * Input EOF contract: inputFn returning null/undefined = EOF → runtime error, like
+ * the CLI on closed stdin. Legacy << #|v| now converts numeric strings (Int/Float).
+ * Checker: static undefined-function detection (E_FUNC) for bare-identifier calls,
+ * mirroring zymbol-semantic type_check (the test1.zy cos() case).
+ * 2026-06-12 parity sync: nested Unit in collections displays as `()` (was an
+ * empty hole — Rust engines unified the same day); Checker rejects destructuring
+ * into a `:=` constant (L14, E_CONST), mirroring type_check.rs.
+ * 2026-07-02 parity sync: json::decode_map(text, map) — decode + recursive key
+ * rename per a NamedTuple map (data-level i18n), mirroring stdlib/json.rs.
+ *
+ * v0.0.8: match or-patterns — p1 || p2 || p3 in a match arm, tested left to right,
+ * first match wins. Alternatives combine any pattern kinds (literal, range,
+ * comparison, ident, list) and are top-level only, so list elements stay
+ * unambiguous. Mirrors Pattern::Or in zymbol-ast / zymbol-parser.
+ * 2026-07-27 v0.0.8 distribution-parity pass (playground now runs zy-GO,
+ * zy-Serpiente, zyKlingonGalaxy, Z-Tic-Tac-Toe): ##! on a Char casts to its
+ * code point (data_ops.rs CastKind::ToIntTrunc); delimited juxtaposition —
+ * implicit concat in call args, array/tuple elements and grouped expressions
+ * (HLZ-007), not just at statement level; std/term (width/pad_left/pad_right/
+ * center/truncate) added, unit-test-verified against stdlib/term.rs; open
+ * start/end collection slices arr$[i..] and arr$[..j] (only arr$[i..j] parsed
+ * before); comparison operators (<, >, ==, …) no longer wrongly rejected
+ * inside a match arm's { block } body — the no-bare-comparison rule is for
+ * the value form (pattern => expr) only, mirroring parse_match_arm_value;
+ * a `<~` return inside a match arm's block no longer gets silently swallowed
+ * when the match itself is a bare statement or a sub-expression (assignment
+ * RHS, argument, …) — eval()'s 'Match' case now throws the arm's ZyReturn
+ * signal so it unwinds to callFunc, the same mechanism $!! already used;
+ * identifier continuation no longer stops at a Private-Use-Area character
+ * that happens to double as a script's own digit block (e.g. Klingon pIqaD
+ * CSUR reuses U+F8F0–F8F9 for both letters and digits) — mirrors
+ * Lexer::is_ident_continue, which never special-cased digit blocks past the
+ * first character; the string-interpolation "is this a bare identifier"
+ * checker regex gained \p{So}\p{Co} (HLZ-KL-001 parity — was under-marking
+ * PUA-script names as used, producing a false W_UNUSED).
+ * 2026-07-28 escape sequences inside CHARACTER literals: readChar took the
+ * character after the backslash verbatim, so '\n' lexed as the letter "n" —
+ * a `'\n' => …` match arm never matched a real newline (and did match "n").
+ * String literals were always fine, which is why this survived: it only shows
+ * up where a program compares against a control character. Symptom was Enter
+ * doing nothing in TUI programs in the playground (arrow keys are literal
+ * glyphs, so they kept working). Escape table now mirrors Lexer::lex_char in
+ * zymbol-lexer/src/literals.rs. Regression test:
+ * interpreter/tests/bugs/bug_char_escape_lexing.zy (run by both engines).
+ * 2026-07-28 output parameters (`<~`) across a module boundary: only eval()'s
+ * 'Call' branch built the write-back list, but `alias::f(x)` parses as
+ * Ident → FieldAccess → CallExpr, so every cross-module call silently dropped
+ * its out-params — the callee mutated its local copy and the caller never saw
+ * it. Both branches now share buildOutWriteback(). This is what made GO
+ * unplayable in the browser: 盤::着手(局面<~, …, 取数<~, コウ点<~) placed stones
+ * and counted captures into parameters the caller never received, so the move
+ * counter advanced while the board stayed empty. Covered by
+ * interpreter/tests/modules_scope/{out_param_module,mod_state_return}.zy.
+ * 2026-07-28 codePointDisplayWidth is now exported, so the playground's canvas
+ * renderer measures characters with this table instead of its own local
+ * approximation. BrowserTUI._isWide used `cp >= 0x1F000 || FF01..FFE6`, which
+ * calls ⚫/⚪ (U+26AA/U+26AB) narrow while the table correctly calls them wide:
+ * the font drew each GO stone two cells wide and the renderer clipped it to
+ * one, slicing every stone in half on screen. Layout and rendering must agree
+ * on width or one of them is always wrong.
+ * 2026-07-28 module aliases now live in their own namespace (this.moduleAliases),
+ * mirroring the tree-walker's `import_aliases`, and the parser records whether a
+ * field access came from `::` or `.`. Both operators built the same FieldAccess
+ * node and resolved the object as an ordinary expression, so a plain variable
+ * sharing an alias's name made the module unreachable: zyKlingonGalaxy imports
+ * Duj and then uses that same name for the player's ship, so `duj = duj::bIj(duj,
+ * …)` — every left/right move — died with "'.<name>' requires a named tuple".
+ * Regression test: interpreter/tests/modules_scope/alias_shadowed_by_variable.zy.
+ *
+ * CLI args (><): supported — pass cliArgs array to runZymbol().
+ * BashExec (<\ \>): stand-ins for the clock, a literal echo and seed entropy;
+ *   any other command is refused (BUG-GOL-014), as Execute is.
+ * Execute (</ file />): parsed as the Rust engines parse it; running one fails,
+ *   since a subscript is another process and the browser has none.
+ * TUI operators require a >>| { } block to activate the canvas overlay.
+ *
+ * 2026-08-01 numeral mode and ordering, synced with the Rust engines. An active
+ * numeral mode (#d0d9#) now reaches interpolation, juxtaposition, $++ and collection
+ * elements, not just bare >>; and orderValues() replaces three disagreeing comparison
+ * paths with the single rule: numeric when both sides are numbers (a string counts if
+ * #|…| would convert it, in any of the 69 digit scripts), lexicographic when both are
+ * non-numeric text, an error when a number meets text that is not one. == still never
+ * coerces. Mirrors cmp_order (VM) and compare_values (tree-walker).
+ *
+ * 2026-08-22 `#|c|` reads a digit from a Char, not only from a String —
+ * `#|'७'|` is 7 as `#|"७"|` already was, in all 69 digit scripts, and a Char
+ * that is not a digit comes back untouched (GAP-ZYB-012). `<<|` hands over a
+ * Char, so this is the shape a keyboard produces.
+ *
+ * 2026-08-22 the decimal count of a format operator may be a NAME as well as
+ * digits — `#,.n|x|`, `#.n|x|`, `#!n|x|`, `#^.n|x|` (GAP-ZYB-001). The count is
+ * lexed inside the DATA_OP token, so the name is read there and the parser
+ * turns it into an expression evaluated at run time. A name and not a general
+ * expression, in all three engines: the `|` that opens the value is also how
+ * bitwise-or is spelled, and this lexer scans the count in one pass.
+ *
+ * 2026-08-21 `$~` takes a whole expression as its value, juxtaposition included,
+ * in all three parse paths (statement `name[i]$~ v`, nav-index postfix, and the
+ * CollectionOp form). It used to take one unary operand and leave the rest of the
+ * line to be parsed as a separate statement, so `d["a"]$~ "" v` assigned `""` and
+ * dropped `v` in silence — same as both Rust engines did. BUG-ZYB-002.
+ *
+ * Parity re-measured 2026-09-09 for the v0.0.9 release, through zyq — the count
+ * is still zero:
+ *   node tests/test_runner.mjs               → 666 files: 636 agree, 0 diverge
+ *   node tests/test_runner.mjs --dir examples → 332 files: 216 agree, 0 diverge
+ * The residue is excused, not divergent: 30 corpus files that corpus.toml
+ * excludes for zyjs with a written reason (std/db is ODBC, <\ cmd \> entropy,
+ * TUI needs a real TTY), plus the pool's own @skip-parity markers — 116 of them
+ * now, against 6 at the previous measurement, because the pool itself grew from
+ * 222 files to 332 and most of what arrived is TUI. A file this engine cannot
+ * run is not a file it runs differently, which is why the diverge count is the
+ * one to read.
+ *
+ * Parity re-measured 2026-10-11 for the v0.0.10 release, through zyq, on a fresh
+ * clone of the published branches:
+ *   node tests/test_runner.mjs               → 683 files: 664 agree, 0 diverge
+ *   node tests/test_runner.mjs --dir examples → 332 files: 216 agree, 0 diverge
+ * The residue is the same kind of thing: 19 corpus files that corpus.toml excuses
+ * for zyjs with a written reason (std/db, <\ cmd \>, TUI), and the pool's own
+ * @skip-parity markers. ZyDDT's matrix asks this engine every cell with the other
+ * two and it agrees on every one (2026-10-21). The last three it did not were
+ * closed that day: GLB-127 (`>> +a`) and GLB-145 (`-v[1]` is `-(v[1])`), fixed in
+ * the Rust parser, which this engine already read as decided; and GLB-146, the
+ * count of `#?` on a number, fixed here — it left the sign out. What it does NOT have: `--keys` and `--count` are
+ * CLI flags of the Rust engines; its own step budget (2 000 000 steps, 100 000
+ * iterations of `@ { }`) is lifted by tests/run_one.mjs, not by the playground.
+ *
+ * Every gap this comment used to list is closed, and each was verified on its own
+ * rather than inferred from the total:
+ *   - arity            corpus/arity/ → 7 files, 3 engines, 7 agree. This engine no
+ *                      longer fills a missing argument with Unit; it was the last one
+ *                      that did.
+ *   - MM-4, MM-9, MM-11  corpus/bugs/bug_mm* → 12 files, 12 agree.
+ *   - HLZ-005          errors/parser/parent_path_alias.zy → agrees.
+ *   - global-const interpolation  modules_scope/interp_global_const.zy → agrees.
+ *   - HLZ-KL-001       f(mI') { <~ mI' } returns 7 here and in the CLI; the lexer
+ *                      accepts "'" inside an identifier, so tlhIngan Hol parses.
+ *   - float literals   >> 3.14159265 ¶ prints 3.14159265 in both engines. This was
+ *                      the worst of them: it affected EVERY float literal, and went
+ *                      unnoticed until the example pool became real files on disk.
+ *
+ * Keep this block measured, never edited: it was wrong for three weeks because the
+ * gaps were fixed and the comment was not. Re-run the two commands above; do not
+ * reason about parity from this text. The historical per-test table, with the same
+ * correction applied, is interpreter/IMPL_V008.md § E.3.
+ */
+
+// ─── Unicode digit blocks (mirrors DIGIT_BLOCKS in zymbol-lexer) ─────────────
+const DIGIT_BLOCKS = [
+  [0x0030,'ASCII'],[0x0660,'Arabic-Indic'],[0x06F0,'Ext. Arabic-Indic'],
+  [0x07C0,'NKo'],[0x0966,'Devanagari'],[0x09E6,'Bengali'],[0x0A66,'Gurmukhi'],
+  [0x0AE6,'Gujarati'],[0x0B66,'Oriya'],[0x0BE6,'Tamil'],[0x0C66,'Telugu'],
+  [0x0CE6,'Kannada'],[0x0D66,'Malayalam'],[0x0DE6,'Sinhala Archaic'],
+  [0x0E50,'Thai'],[0x0ED0,'Lao'],[0x0F20,'Tibetan'],[0x1040,'Myanmar'],
+  [0x1090,'Myanmar Shan'],[0x17E0,'Khmer'],[0x1810,'Mongolian'],
+  [0x1946,'Limbu'],[0x19D0,'New Tai Lue'],[0x1A80,'Tai Tham Hora'],
+  [0x1A90,'Tai Tham Tham'],[0x1B50,'Balinese'],[0x1BB0,'Sundanese'],
+  [0x1C40,'Lepcha'],[0x1C50,'Ol Chiki'],[0xA620,'Vai'],[0xA8D0,'Saurashtra'],
+  [0xA900,'Kayah Li'],[0xA9D0,'Javanese'],[0xA9F0,'Myanmar Tai Laing'],
+  [0xAA50,'Cham'],[0xABF0,'Meetei Mayek'],[0xF8F0,'Klingon pIqaD'],
+  [0xFF10,'Fullwidth'],[0x104A0,'Osmanya'],[0x10D30,'Hanifi Rohingya'],
+  [0x11066,'Brahmi'],[0x110F0,'Sora Sompeng'],[0x11136,'Chakma'],
+  [0x111D0,'Sharada'],[0x112F0,'Khudawadi'],[0x11450,'Newa'],
+  [0x114D0,'Tirhuta'],[0x11650,'Modi'],[0x116C0,'Takri'],[0x11730,'Ahom'],
+  [0x118E0,'Warang Citi'],[0x11950,'Dives Akuru'],[0x11C50,'Bhaiksuki'],
+  [0x11D50,'Masaram Gondi'],[0x11DA0,'Gunjala Gondi'],[0x11F50,'Kawi'],
+  [0x16A60,'Mro'],[0x16AC0,'Tangsa'],[0x16B50,'Pahawh Hmong'],
+  [0x1D7CE,'Mathematical Bold'],[0x1D7D8,'Mathematical Double-struck'],
+  [0x1D7E2,'Mathematical Sans-serif'],[0x1D7EC,'Math Sans-serif Bold'],
+  [0x1D7F6,'Mathematical Monospace'],[0x1E140,'Nyiakeng Puachue Hmong'],
+  [0x1E2F0,'Wancho'],[0x1E4F0,'Nag Mundari'],[0x1E950,'Adlam'],
+  [0x1FBF0,'Segmented/LCD'],
+];
+
+// Exported so src/playground/highlight.js can ASK the lexer which characters
+// are digits instead of keeping a second copy of DIGIT_BLOCKS. It kept none, so
+// a number written in Devanagari was not coloured as a number at all and its
+// decimal point was offered member-access help.
+// ─── What a name is made of — `Lexer::is_ident_start` / `is_ident_continue` ────
+//
+// One definition, used by every place that recognises a name: the tokenizer,
+// `readIdent`, labels, interpolation and the checker. Before GLB-026 B this
+// engine kept its own narrower classes and DROPPED what they left out, so
+// `¿x`, `€x` and `a±b` silently became `x`, `x` and `a b` — `x = 1; ¿x = 5`
+// printed 5 for both. The tables are the Rust lexer's, character for character.
+const IDENT_OPERATOR_CHARS = new Set([...'><=!+-*/%^&|?:.,;()[]{}@~#$¶\\']);
+const INVISIBLE_RANGES = [
+  [0x00AD, 0x00AD], [0x0600, 0x0605], [0x061C, 0x061C], [0x06DD, 0x06DD], [0x070F, 0x070F],
+  [0x0890, 0x0891], [0x08E2, 0x08E2], [0x180E, 0x180E], [0x200B, 0x200F], [0x202A, 0x202E],
+  [0x2060, 0x2064], [0x2066, 0x206F], [0xFEFF, 0xFEFF], [0xFFF9, 0xFFFB], [0x110BD, 0x110BD],
+  [0x110CD, 0x110CD], [0x13430, 0x1343F], [0x1BCA0, 0x1BCA3], [0x1D173, 0x1D17A],
+  [0xE0001, 0xE0001], [0xE0020, 0xE007F],
+];
+// A control character or a Unicode format character: it renders as nothing.
+export function isInvisibleChar(ch) {
+  const cp = ch?.codePointAt(0);
+  if (cp === undefined) return false;
+  if (cp < 0x20 || (cp >= 0x7F && cp <= 0x9F)) return true;
+  return INVISIBLE_RANGES.some(([a, b]) => cp >= a && cp <= b);
+}
+export function isIdentStart(ch) {
+  if (!ch) return false;
+  if (ch === '_') return true;
+  // The backtick and invisible characters never; ZWJ/ZWNJ only inside a name.
+  if (ch === '`' || isInvisibleChar(ch)) return false;
+  if (/\p{Alphabetic}/u.test(ch)) return true;
+  return !/\s/u.test(ch) && digitValue(ch) < 0 && !IDENT_OPERATOR_CHARS.has(ch);
+}
+export function isIdentContinue(ch) {
+  if (!ch) return false;
+  if (ch === '\u200C' || ch === '\u200D') return true;
+  if (ch === '`' || isInvisibleChar(ch)) return false;
+  if (/[\p{Alphabetic}\p{N}_]/u.test(ch)) return true;
+  return !/\s/u.test(ch) && !IDENT_OPERATOR_CHARS.has(ch);
+}
+// A whole name, by the same two rules.
+export function isIdentName(s) {
+  const cs = Array.from(s ?? '');
+  return cs.length > 0 && isIdentStart(cs[0]) && cs.slice(1).every(isIdentContinue);
+}
+
+export function digitValue(ch) {
+  const cp = ch.codePointAt(0);
+  for (const [base] of DIGIT_BLOCKS) {
+    if (cp >= base && cp <= base + 9) return cp - base;
+  }
+  return -1;
+}
+
+export function digitBlockBase(ch) {
+  const cp = ch.codePointAt(0);
+  for (const [base] of DIGIT_BLOCKS) {
+    if (cp >= base && cp <= base + 9) return base;
+  }
+  return -1;
+}
+
+/** Block base of the ASCII digits — the default numeral mode. */
+const ASCII_BASE = 0x0030;
+
+// ─── Script separators (mirrors SCRIPT_SEPARATORS in zymbol-lexer) ───────────
+//
+// `[blockBase, decimalSeparator, thousandsSeparator]` for the scripts that
+// encode their own. The admission bar is narrow and objective: Unicode itself
+// must name the character a numeric separator for that script. Exactly one
+// script clears it — Arabic, through U+066B ARABIC DECIMAL SEPARATOR and
+// U+066C ARABIC THOUSANDS SEPARATOR — and it clears it for both of its digit
+// blocks. Every other script writes ASCII `.` and `,`.
+const SCRIPT_SEPARATORS = [
+  [0x0660, '\u066B', '\u066C'],   // Arabic-Indic
+  [0x06F0, '\u066B', '\u066C'],   // Extended Arabic-Indic (Persian, Urdu)
+];
+
+export function decimalSeparator(blockBase) {
+  const e = SCRIPT_SEPARATORS.find(([base]) => base === blockBase);
+  return e ? e[1] : '.';
+}
+
+function thousandsSeparator(blockBase) {
+  const e = SCRIPT_SEPARATORS.find(([base]) => base === blockBase);
+  return e ? e[2] : ',';
+}
+
+/** ASCII `.` or any script's own — reading is script-blind, writing is not. */
+function isDecimalSeparator(ch) {
+  return ch === '.' || SCRIPT_SEPARATORS.some(([, dec]) => dec === ch);
+}
+
+// Rewrites one FORMATTED NUMBER into the script identified by `blockBase`:
+// digits, decimal separator and thousands separator all follow the script.
+//
+// The argument must be a single number and nothing else — the separators are
+// ordinary punctuation, so running this over composite text would rewrite marks
+// that were never separators. Composite text never reaches here: a list, an
+// interpolation and a concatenation each map their numbers one at a time and
+// add their own commas afterwards.
+function mapNumeralNumber(s, blockBase) {
+  if (blockBase === ASCII_BASE) return s;
+  const decimal = decimalSeparator(blockBase);
+  const thousands = thousandsSeparator(blockBase);
+  return [...s].map(ch => {
+    if (ch >= '0' && ch <= '9') return String.fromCodePoint(blockBase + (ch.charCodeAt(0) - 0x30));
+    if (ch === '.') return decimal;
+    if (ch === ',') return thousands;
+    return ch;
+  }).join('');
+}
+
+function numeralInt(n, base)   { return mapNumeralNumber(String(Math.trunc(n)), base); }
+// A float as Zymbol spells it, which is not how JavaScript spells it.
+//
+// Three separate disagreements with the other engines lived in `String(f)`:
+//
+//   · the infinities print `Infinity` / `-Infinity`, not `inf` / `-inf`;
+//   · `-0` prints `0`, losing the sign the other three keep;
+//   · magnitudes at or past 1e21, and below 1e-6, switch to exponent notation
+//     (`1e+21`, `1e-7`) where the others always print the digits out flat.
+//
+// The last one is the language's call, not this engine's: `#^` is the operator
+// that *asks* for scientific notation, and it already agrees in all four. So a
+// plain `>>` prints digits, and anyone who wants an exponent writes `#^`.
+// (`NaN` already agreed everywhere.)
+function floatText(f) {
+  if (Number.isNaN(f)) return 'NaN';
+  if (f === Infinity) return 'inf';
+  if (f === -Infinity) return '-inf';
+  if (Object.is(f, -0)) return '-0';
+  return expandExponent(String(f));
+}
+
+// `1e+21` → `1000000000000000000000`, `1.5e-10` → `0.00000000015`.
+// The Rust engines get the same shape for free, since Rust's `{}` for f64 never
+// emits an exponent; JavaScript is the only engine that needs this by hand.
+// (It was written to mirror `expand_exponent` in zyml/src/value.ml, which had
+// the same problem in OCaml. That engine was retired on 2026-08-17, so this is
+// no longer a two-place rule — `zyq consensus` against the Rust engines is what
+// holds it now.)
+function expandExponent(str) {
+  const ei = str.indexOf('e');
+  if (ei < 0) return str;
+  let mant = str.slice(0, ei);
+  const ex = Number(str.slice(ei + 1));
+  const neg = mant.startsWith('-');
+  if (neg) mant = mant.slice(1);
+  const di = mant.indexOf('.');
+  const ip = di < 0 ? mant : mant.slice(0, di);
+  const fp = di < 0 ? ''   : mant.slice(di + 1);
+  const digits = ip + fp;
+  const point = ip.length + ex;          // where the decimal point lands
+  let body;
+  if (point <= 0)                  body = '0.' + '0'.repeat(-point) + digits;
+  else if (point >= digits.length) body = digits + '0'.repeat(point - digits.length);
+  else                             body = digits.slice(0, point) + '.' + digits.slice(point);
+  if (body.includes('.')) body = body.replace(/0+$/, '').replace(/\.$/, '');
+  return neg ? '-' + body : body;
+}
+function numeralFloat(f, base) { return mapNumeralNumber(floatText(f), base); }
+function numeralBool(b, base)  { return '#' + numeralInt(b ? 1 : 0, base); }
+
+// Is this value a dictionary rather than a positional tuple?
+//
+// Both are `type: 'tuple'` here, and `keys` is what tells them apart: `null`
+// for a positional tuple, an array for a dictionary. The array may be EMPTY —
+// `#()` is the empty dictionary, and it is not the empty tuple: one takes
+// `d["k"]$~ v` and the other answers "tuples are immutable" (GAP-ZYB-003).
+//
+// Twelve places asked this with `keys?.some(k => k)`, which reads "has at least
+// one key" and therefore called the empty dictionary a tuple. One rule, one
+// place.
+function isDict(v) { return v?.type === 'tuple' && v.keys != null; }
+
+// Where a key sits in a dictionary, by hash (GLB-132): `keys.indexOf` walked
+// the keys, so adding n of them cost n². The index is kept per keys ARRAY,
+// which is never changed in place — except by `dictPut` on a dictionary its
+// variable owns (ZYJS-014's mark), and that keeps the index with it.
+const DICT_INDEX = new WeakMap();
+function dictIndex(keys) {
+  let ix = DICT_INDEX.get(keys);
+  if (!ix) {
+    ix = new Map();
+    keys.forEach((k, i) => { if (!ix.has(k)) ix.set(k, i); });
+    DICT_INDEX.set(keys, ix);
+  }
+  return ix;
+}
+function keyIndex(dict, k) {
+  const i = dictIndex(dict.keys).get(k);
+  return i === undefined ? -1 : i;
+}
+// Add a key at the end of a dictionary this edit owns, in place.
+function dictPut(dict, k, val) {
+  const ix = dictIndex(dict.keys);
+  dict.v.push(val);
+  dict.keys.push(k);
+  ix.set(k, dict.keys.length - 1);
+}
+
+// ─── Signal types ─────────────────────────────────────────────────────────────
+
+const OUTPUT_STOP_OPS = {
+  EQ: '==', NEQ: '<>', LT: '<', GT: '>', LTE: '<=', GTE: '>=',
+  AND: '&&', OR: '||', PIPE: '|>',
+};
+
+// The guidance for a comparison written bare in an output argument. `>>` has a
+// narrower grammar than the rest of the language (REFERENCE.md L39), and this
+// is by far the commonest way to meet that edge.
+//
+// Held here, beside the operators it is about, rather than at the throw site:
+// `zyquality/messages/` reads both engines' sources and compares the prose, and
+// this text has to be findable as prose, not buried in a parser method.
+const OUTPUT_GRAMMAR_HELP = op =>
+  `'>>' takes arithmetic; parenthesise a comparison  →  >> (a ${op} b) ¶`;
+
+class ZyReturn  { constructor(value) { this.value = value; } }
+class ZyBreak    { constructor(label = null) { this.label = label; } }
+class ZyContinue { constructor(label = null) { this.label = label; } }
+class ZyErrorPropagate { constructor(errVal) { this.errVal = errVal; } }
+/** Read a position out of a token, a node, or a bare line number.
+ *
+ * Both Rust engines carry a span on every token and print `file:line:col`; this
+ * engine carried a line alone, so every diagnostic out of a module said column
+ * 0 and no editor could jump to the character (ZYJS-024). A caller that has a
+ * token passes the token.
+ */
+function zyPosOf(at) {
+  if (at && typeof at === 'object') return { line: at.line ?? null, col: at.col ?? null };
+  return { line: at ?? null, col: null };
+}
+class ZyError extends Error {
+  // The line goes in `zyLine`, never into the message. The Rust engines put it
+  // on its own `-->` line and keep the message itself clean; baking `Line 2: `
+  // into the text made the same runtime error read differently here, and put
+  // the number in front of a message whose own `help:` line follows it.
+  constructor(msg, at) {
+    super(msg);
+    // `at` is a token, or anything else carrying `{line, col}` — a bare number
+    // is still accepted, and then there is no column to report.
+    const pos = zyPosOf(at);
+    this.zyLine = pos.line;
+    this.zyCol  = pos.col;
+  }
+}
+/** The `##` family of an error that carries only a message.
+ *
+ * The rule both Rust engines share (`zymbol_common::errkind`), word for word and
+ * in the same order: a filter `:! ##Type` is part of the language, so the same
+ * failure has to land in the same family everywhere. A native called with the
+ * wrong type raised a plain message, and it was ##Type in the tree-walker and
+ * ##_ here and in the VM (GLB-010).
+ */
+// How deep a program may call (D7, decided by the author 2026-10-16; GLB-133):
+// at most this many calls active at once, the same number in the three engines.
+// A call in tail position — `<~ f(…)` to the function itself, outside any `!?`
+// of its own — replaces the one that made it in the Rust engines, and is not
+// counted here either. This engine's calls live on the heap and would go on
+// far past it; the number is what makes a deep program answer the same.
+const MAX_ACTIVE_CALLS = 10000;
+const DEPTH_EXCEEDED = `call depth exceeded: more than ${MAX_ACTIVE_CALLS} calls active at once`;
+
+function errorKindOfMessage(message) {
+  const m = String(message ?? '').toLowerCase();
+  if (m.startsWith('call depth exceeded')) return '##Depth';
+  if (m.includes('overflow') || m.includes('out of range')) return '##Range';
+  if (m.includes('no key')) return '##Key';
+  if (m.includes('index') || m.includes('out of bounds')) return '##Index';
+  if (m.includes('type')) return '##Type';
+  if (m.includes('division') || m.includes('divide by zero') || m.includes('modulo')) return '##Div';
+  if (m.includes('parse')) return '##Parse';
+  return '##_';
+}
+class ZyRuntimeError extends ZyError {
+  constructor(msg, errType, line) {
+    super(msg, line);
+    this.errType = errType ?? '##_';
+    // A `##_` passed on purpose is a kind too, and the words of the message do
+    // not get to change it (GLB-099); one left out is read by the words.
+    this.kindDeclared = errType !== undefined;
+  }
+}
+class ZyStaticError extends Error {
+  // The line goes in `zyLine`, which is where `checkSource` reads it from —
+  // exactly as `ZyError` does. It used to be dropped: the constructor took one
+  // argument and three throw sites were already passing two, so a lexer error
+  // reached the user with no position at all and neither the playground nor an
+  // editor had anywhere to jump to (ZYJS-002).
+  //
+  // `help` is a field for the same reason it is one in Rust's `Diagnostic`: the
+  // `=` of `= help:` is what separates the guidance from the message, so a
+  // guidance concatenated onto the message is separated by nothing.
+  constructor(msg, at, help = null, more = []) {
+    super(msg);
+    const pos = zyPosOf(at);
+    this.zyLine = pos.line;
+    this.zyCol  = pos.col;
+    this.zyHelp = help;
+    // Further findings the lexer already knows at this same spot, reported
+    // alongside rather than lost. The lexer stops here either way — it does not
+    // resume — but `>> "a{b ¶` leaves TWO things open and the reader deserves
+    // both, in opening order (GLB-038, decided 2026-09-24). Each entry is
+    // `{ message, help, line, col }`, the shape `checkSource` turns into a
+    // diagnostic, and an empty list is the old behaviour exactly.
+    this.zyMore = more;
+  }
+}
+
+// Thin-space grouping for the execution-limit messages, so they quote the limit that was
+// actually configured. They used to hardcode "50 000 steps" and "32 KB", which is what the
+// defaults happen to be — a playground running a `.zyp` at 2 000 000 reported 50 000 and
+// sent whoever was debugging it looking in the wrong place.
+const grouped = n => (Number.isFinite(n) ? n.toLocaleString('en-US').replace(/,/g, ' ') : String(n));
+
+// ─── Lexer ────────────────────────────────────────────────────────────────────
+
+/**
+ * `std/random`'s generator: xoshiro256++, its state expanded from one 64-bit
+ * seed by splitmix64 — `zymbol_intrinsics::random` in Rust, step for step, in
+ * BigInt. `random::semilla(n)` gives one sequence in the three engines (G8,
+ * decided by the author on 2026-10-24); without it the first draw seeds from
+ * `Math.random()`, as the Rust engines seed from the clock.
+ */
+export const ZyRandom = {
+  state: null,
+  M: (1n << 64n) - 1n,
+  reset() { this.state = null; },
+  stateFrom(seed) {
+    let x = BigInt.asUintN(64, seed);
+    const out = [];
+    for (let i = 0; i < 4; i++) {
+      x = (x + 0x9E3779B97F4A7C15n) & this.M;
+      let z = x;
+      z = ((z ^ (z >> 30n)) * 0xBF58476D1CE4E5B9n) & this.M;
+      z = ((z ^ (z >> 27n)) * 0x94D049BB133111EBn) & this.M;
+      out.push(z ^ (z >> 31n));
+    }
+    return out;
+  },
+  seed(n) { this.state = this.stateFrom(BigInt(n)); },
+  rotl(x, k) { return ((x << BigInt(k)) | (x >> BigInt(64 - k))) & this.M; },
+  next() {
+    if (!this.state) {
+      const hi = BigInt(Math.floor(Math.random() * 2 ** 32)), lo = BigInt(Math.floor(Math.random() * 2 ** 32));
+      this.state = this.stateFrom((hi << 32n) | lo);
+    }
+    const s = this.state, M = this.M;
+    const result = (this.rotl((s[0] + s[3]) & M, 23) + s[0]) & M;
+    const t = (s[1] << 17n) & M;
+    s[2] ^= s[0]; s[3] ^= s[1]; s[1] ^= s[2]; s[0] ^= s[3];
+    s[2] ^= t; s[3] = this.rotl(s[3], 45);
+    return result;
+  },
+};
+
+/**
+ * `std/net`'s process-wide time limit, set by `net::timeout(s)` and kept as the
+ * value the program gave, so that `timeout` hands back an Int as an Int —
+ * `zymbol_common::net` in Rust (ZethyCLI G1). `null` is none. Each run starts
+ * without one, as a process does.
+ */
+export const ZyNet = { limit: null };
+
+export class Lexer {
+  constructor(src) {
+    this.src = [...src];
+    this.pos = 0;
+    this.line = 1;
+    // The column is 1-based and counts code points, which is what the Rust
+    // lexer's span counts too — `x = "éé" ]` with a combining accent puts the
+    // `]` at column 12 in both, not at the tenth grapheme.
+    this.col = 1;
+    // Where the token being read STARTS. A position is the start of the thing
+    // it names: an error that points past the token it is about points at the
+    // next one (ZYJS-024).
+    this.tokLine = 1;
+    this.tokCol = 1;
+  }
+
+  ch(offset = 0) { return this.src[this.pos + offset] ?? ''; }
+
+  /** The start of the token being read, for a token or for a diagnostic. */
+  at() { return { line: this.tokLine, col: this.tokCol }; }
+
+  /** Where the next token after `offset` characters of this one would start:
+   *  the position a Rust diagnostic names when it points at what stands where
+   *  something else was expected. Assumes the token so far is on one line. */
+  posAhead(offset) {
+    let line = this.tokLine, col = this.tokCol + offset, i = this.pos + offset;
+    while (i < this.src.length && /[ \t\r\n]/.test(this.src[i])) {
+      if (this.src[i] === '\n') { line++; col = 1; } else col++;
+      i++;
+    }
+    return { line, col };
+  }
+
+  consume() {
+    const c = this.src[this.pos++];
+    if (c === '\n') { this.line++; this.col = 1; } else this.col++;
+    return c;
+  }
+
+  tokenize() {
+    const toks = [];
+    const tok = (type, value) => toks.push({ type, value, line: this.tokLine, col: this.tokCol });
+    // A byte order mark opening the file is not part of the program (GLB-026 A);
+    // anywhere else it is an invisible character, refused below.
+    if (this.pos === 0 && this.ch() === '\uFEFF') this.consume();
+
+    while (this.pos < this.src.length) {
+      // Whatever this iteration produces starts HERE: the whitespace and the
+      // comments before it were consumed by iterations of their own, so the
+      // position at the top of the loop is the token's own first character.
+      this.tokLine = this.line;
+      this.tokCol  = this.col;
+      if (/[ \t\r\n]/.test(this.ch())) { this.consume(); continue; }
+
+      // comment
+      if (this.ch() === '/' && this.ch(1) === '/') {
+        while (this.pos < this.src.length && this.ch() !== '\n') this.consume();
+        continue;
+      }
+      // block comment /* ... */ — they NEST, as in the Rust lexer, and one
+      // left open is an error. It used to end at the first `*/` and swallow an
+      // unclosed one to the end of the file: `/* abierto` ran as an empty
+      // program, exit 0 (ZYJS-020).
+      if (this.ch() === '/' && this.ch(1) === '*') {
+        this.consume(); this.consume();
+        let depth = 1;
+        while (this.pos < this.src.length && depth > 0) {
+          if (this.ch() === '/' && this.ch(1) === '*') { this.consume(); this.consume(); depth++; }
+          else if (this.ch() === '*' && this.ch(1) === '/') { this.consume(); this.consume(); depth--; }
+          else this.consume();
+        }
+        if (depth > 0) {
+          throw new ZyStaticError('Unterminated multi-line comment', this.at(), 'add */ to close the comment');
+        }
+        continue;
+      }
+
+      // # — mode-switch, booleans, cast ops, data ops, error types
+      if (this.ch() === '#') {
+        const c1 = this.ch(1);
+        const dv1 = digitValue(c1);
+        if (dv1 >= 0) {
+          if (dv1 === 0) {
+            const c2 = this.ch(2);
+            const dv2 = digitValue(c2);
+            if (dv2 === 9 && digitBlockBase(c1) === digitBlockBase(c2) && this.ch(3) === '#') {
+              const base = digitBlockBase(c1);
+              this.consume(); this.consume(); this.consume(); this.consume();
+              tok('SET_NUMERAL_MODE', base); continue;
+            }
+          }
+          if (dv1 > 1) {
+            // `#2` used to vanish without a sound, and the parser then met the
+            // next token with nothing before it (ZYJS-020).
+            throw new ZyStaticError(
+              `invalid boolean literal: digit ${c1} is not valid after '#'`,
+              this.at(),
+              "use '#0' (or its Unicode equivalent) for false, '#1' for true");
+          }
+          this.consume(); this.consume();
+          if (dv1 === 0) { tok('BOOL', false); continue; }
+          if (dv1 === 1) { tok('BOOL', true);  continue; }
+          continue;
+        }
+        // `#(` opens a dictionary literal (GAP-ZYB-003/004). `(a: 1)` and
+        // `(1, 2)` shared the parentheses and not the semantics — the colon was
+        // the whole of what told them apart, and an EMPTY dictionary could not
+        // be written at all, because `()` would have to be both. `#` is the
+        // meta/type mark, the same one `#[` uses to declare an array's mix.
+        if (c1 === '(') {
+          this.consume(); this.consume(); // consume #(
+          tok('HASH_LPAREN', '#(');
+          continue;
+        }
+        if (c1 === '#') {
+          // ##. → CAST_FLOAT, ### → CAST_INT_ROUND, ##! → CAST_INT_TRUNC,
+          // ##" → CAST_TEXT, ##' → CAST_CHAR (input typespecs), else ##xxx IDENT
+          const c2 = this.ch(2);
+          this.consume(); this.consume(); // consume ##
+          if (c2 === '.') { this.consume(); tok('CAST_FLOAT',     '##.'); continue; }
+          if (c2 === '#') { this.consume(); tok('CAST_INT_ROUND', '###'); continue; }
+          if (c2 === '!') { this.consume(); tok('CAST_INT_TRUNC', '##!'); continue; }
+          if (c2 === '"') { this.consume(); tok('CAST_TEXT',      '##"'); continue; }
+          if (c2 === "'") { this.consume(); tok('CAST_CHAR',      "##'"); continue; }
+          // `##_` — the Unit literal, and the "any kind" mark in `:! ##_`.
+          // One token for both, because they are one reading: `_` is what is
+          // not specified (GAP-ZYB-009). The lookahead keeps `##_algo` an
+          // error kind, since a name may begin with an underscore.
+          if (c2 === '_' && !/[A-Za-z0-9_]/.test(this.ch(1))) {
+            this.consume(); tok('UNIT', '##_'); continue;
+          }
+          // The kind is a name like any other, in any script — `:! ##Κανόνας`
+          // and `##Κανόνας("…")` work in both Rust engines. It was ASCII here.
+          let name = '##';
+          while (isIdentContinue(this.ch()) && this.ch() !== '°') { name += this.ch(); this.consume(); }
+          // `##Kind(` written together builds an error value (GAP-GOL-003).
+          // Decided here, where a blank is still visible.
+          if (name.length > 2 && this.ch() === '(') { tok('ERRCON', name); continue; }
+          tok('IDENT', name); continue;
+        }
+        if (c1 === '?') {
+          this.consume(); this.consume();
+          tok('TYPE_QUERY', '#?'); continue;
+        }
+        {
+          let kind = null, prec = null, advance = 0, dynPrec = false;
+          // The count is an integer literal, so it is read as one: in any of
+          // the 69 digit blocks, one block per count. It read only [0-9], and
+          // `#.२|x|` — which both Rust engines accept — was refused here
+          // (ZYJS-072). `d` is the count in ASCII, for `parseInt`.
+          const readDigits = start => {
+            let d = '', i = start, block = -1;
+            while (this.ch(i) && digitValue(this.ch(i)) >= 0) {
+              const b = digitBlockBase(this.ch(i));
+              if (block < 0) block = b;
+              else if (b !== block) {
+                throw new ZyStaticError('mixed digit scripts in numeric literal', this.posAhead(start),
+                  'all digits in a literal must belong to the same numeral system (e.g. all ASCII or all Devanagari)');
+              }
+              d += String(digitValue(this.ch(i))); i++;
+            }
+            return { d, i };
+          };
+          // GAP-ZYB-001: the decimal count may be a NAME instead of digits —
+          // `#,.n|x|`. The count is lexed as part of this token, so the name is
+          // read here and handed to the parser, which turns it into an
+          // expression evaluated when the program runs. For money the count is
+          // configuration: it belongs to the currency, not to the source.
+          // A name by the rule of every other name: `n२` is one, and `1_0` is not.
+          const readName = start => {
+            let d = '', i = start;
+            if (!isIdentStart(this.ch(i))) return { d, i };
+            while (isIdentContinue(this.ch(i)) && this.ch(i) !== '°') { d += this.ch(i); i++; }
+            return { d, i };
+          };
+          if (c1 === '|') {
+            kind = 'eval'; advance = 2;
+          } else if (c1 === '.') {
+            const { d, i } = readDigits(2);
+            if (d.length > 0 && this.ch(i) === '|') { kind = 'round'; prec = parseInt(d); advance = i + 1; }
+            else {
+              const n = readName(2);
+              if (n.d.length > 0 && this.ch(n.i) === '|') { kind = 'round'; prec = n.d; dynPrec = true; advance = n.i + 1; }
+            }
+          } else if (c1 === '!') {
+            const { d, i } = readDigits(2);
+            if (d.length > 0 && this.ch(i) === '|') { kind = 'trunc'; prec = parseInt(d); advance = i + 1; }
+            else {
+              const n = readName(2);
+              if (n.d.length > 0 && this.ch(n.i) === '|') { kind = 'trunc'; prec = n.d; dynPrec = true; advance = n.i + 1; }
+            }
+          } else if (c1 === ',') {
+            const c2 = this.ch(2);
+            if (c2 !== '|' && c2 !== '.' && c2 !== '!') {
+              const prefix = '#,';
+              throw new ZyStaticError(`expected '|' after format operator '${prefix}'`, this.at(),
+                `format expression syntax: ${prefix}|expr| or ${prefix}.N|expr|`);
+            }
+            if (c2 === '|') { kind = 'comma'; advance = 3; }
+            else if (c2 === '.') {
+              const { d, i } = readDigits(3);
+              if (d.length > 0 && this.ch(i) === '|') { kind = 'comma_round'; prec = parseInt(d); advance = i + 1; }
+              else {
+                const n = readName(3);
+                if (n.d.length > 0 && this.ch(n.i) === '|') { kind = 'comma_round'; prec = n.d; dynPrec = true; advance = n.i + 1; }
+              }
+            }
+            else if (c2 === '!') {
+              const { d, i } = readDigits(3);
+              if (d.length > 0 && this.ch(i) === '|') { kind = 'comma_trunc'; prec = parseInt(d); advance = i + 1; }
+              else {
+                const n = readName(3);
+                if (n.d.length > 0 && this.ch(n.i) === '|') { kind = 'comma_trunc'; prec = n.d; dynPrec = true; advance = n.i + 1; }
+              }
+            }
+          } else if (c1 === '^') {
+            const c2 = this.ch(2);
+            if (c2 === '|') { kind = 'sci'; advance = 3; }
+            else if (c2 === '.') {
+              const { d, i } = readDigits(3);
+              if (d.length > 0 && this.ch(i) === '|') { kind = 'sci_round'; prec = parseInt(d); advance = i + 1; }
+              else {
+                const n = readName(3);
+                if (n.d.length > 0 && this.ch(n.i) === '|') { kind = 'sci_round'; prec = n.d; dynPrec = true; advance = n.i + 1; }
+              }
+            }
+            else if (c2 === '!') {
+              const { d, i } = readDigits(3);
+              if (d.length > 0 && this.ch(i) === '|') { kind = 'sci_trunc'; prec = parseInt(d); advance = i + 1; }
+              else {
+                const n = readName(3);
+                if (n.d.length > 0 && this.ch(n.i) === '|') { kind = 'sci_trunc'; prec = n.d; dynPrec = true; advance = n.i + 1; }
+              }
+            }
+          }
+          if (kind !== null) {
+            for (let i = 0; i < advance; i++) this.consume();
+            tok('DATA_OP', { kind, prec, dynPrec }); continue;
+          }
+          // `#,` and `#^` that did not form an operator are refused as the Rust
+          // parser refuses them (`parse_format_expr`): a `.` or `!` with no
+          // count after it, or a count with no `|` after it. The `#` used to be
+          // left on its own and refused as one — `expected expression, found
+          // Hash` (ZYJS-026). Each points where Rust points: at what stands
+          // where the count, or the `|`, should be.
+          if (c1 === ',' || c1 === '^') {
+            const prefix = '#' + c1;
+            const c2 = this.ch(2);
+            if (c2 === '.' || c2 === '!') {
+              const digits = readDigits(3);
+              const count = digits.d.length > 0 ? digits : readName(3);
+              if (count.d.length === 0) {
+                throw new ZyStaticError(`expected a decimal count after '${prefix}'`, this.posAhead(3),
+                  `write the count or the name of a variable holding it: ${prefix + c2}2|value| or ${prefix + c2}n|value|`);
+              }
+              throw new ZyStaticError(`expected '|' after format operator '${prefix}'`, this.posAhead(count.i),
+                `format expression syntax: ${prefix}|expr| or ${prefix}.N|expr|`);
+            }
+            throw new ZyStaticError(`expected '|' after format operator '${prefix}'`, this.posAhead(2),
+              `format expression syntax: ${prefix}|expr| or ${prefix}.N|expr|`);
+          }
+          // `#.` and `#!` are the round and truncate operators in both Rust
+          // lexers, whatever follows. Here an incomplete one fell to the
+          // old-header branch below, which swallowed the rest of the line
+          // (`#.2 5`, `#.|5|` were refused a line later), or lost its `#`
+          // (`#!2 5` became a logical NOT) (ZYJS-021).
+          if (c1 === '.' || c1 === '!') {
+            const digits = readDigits(2);
+            const count = digits.d.length > 0 ? digits : readName(2);
+            if (count.d.length > 0) {
+              throw new ZyStaticError("expected '|' after precision", this.posAhead(count.i),
+                c1 === '.' ? 'round expression syntax: #.N|expr|' : 'truncate expression syntax: #!N|expr|');
+            }
+            // The help repeats what was written before the count, as the Rust
+            // one does since GLB-021 was fixed — it used to teach `#..2|value|`,
+            // and this engine gave no help rather than copy that.
+            const prefix = '#' + c1;
+            const countOp = prefix;
+            throw new ZyStaticError(`expected a decimal count after '${prefix}'`, this.posAhead(2),
+              `write the count or the name of a variable holding it: ${countOp}2|value| or ${countOp}n|value|`);
+          }
+        }
+        // `#` followed by a space, a dot or the start of a name is the module
+        // declaration `# name { … }`, and nothing else: the parser takes it from
+        // here, and refuses what is not one with the Rust parser's words. Only
+        // `# name {` used to be a token — any other such line was an "old-style
+        // header" and vanished to the end of the line, so `# hola` ran in the
+        // browser and was refused by both Rust engines (ZYJS-025).
+        if (c1 === ' ' || c1 === '\t' || c1 === '.' || isIdentStart(c1)) {
+          this.consume(); // consume #
+          tok('HASH', '#'); continue;
+        }
+        // #> = export block declarator
+        if (c1 === '>') { this.consume(); this.consume(); tok('EXPORT_DECL', '#>'); continue; }
+        // `#[` opens a declared-mixed array literal (decision 15). It has to be
+        // emitted here because the fallback below DROPS an unrecognised `#`
+        // without a sound — which is why `#[…]` appeared to work in this engine
+        // while being a syntax error in both Rust ones: the `#` simply vanished
+        // and what ran was a plain `[…]`.
+        if (c1 === '[') { this.consume(); tok('HASH', '#'); continue; }
+        // Any other `#` is still a `#`, and the parser refuses it where it
+        // stands. It was consumed and forgotten: `x = 1 #` printed 1 here while
+        // both Rust engines refuse it (ZYJS-025 B).
+        this.consume(); tok('HASH', '#'); continue;
+      }
+
+      // Execute `</ path />` — the path is read raw up to `/>`, as both Rust
+      // lexers read it. This engine had no token for it at all, so a program
+      // with a subscript was refused as `expected expression, found '<'`, and
+      // so were the two malformed forms the Rust engines name.
+      if (this.ch() === '<' && this.ch(1) === '/') {
+        const at = this.at();
+        this.consume(); this.consume(); // consume </
+        let raw = '';
+        let closed = false;
+        while (this.pos < this.src.length) {
+          if (this.ch() === '/' && this.ch(1) === '>') { this.consume(); this.consume(); closed = true; break; }
+          raw += this.consume();
+        }
+        if (!closed) {
+          throw new ZyStaticError('unterminated execute expression', at,
+            'execute syntax: </ path.zy />');
+        }
+        tok('EXECUTE', raw.trim()); continue;
+      }
+
+      // BashExec <\ expr … \> — the content is ordinary Zymbol, tokenized
+      // normally (GLB-004, GLB-075): a bare word is a variable, not shell text.
+      // `\>` closes it only while one is open, as in the Rust lexer.
+      if (this.ch() === '<' && this.ch(1) === '\\') {
+        this.consume(); this.consume(); // consume <\
+        this.bashDepth = (this.bashDepth ?? 0) + 1;
+        tok('BASHOPEN'); continue;
+      }
+      if (this.bashDepth > 0 && this.ch() === '\\' && this.ch(1) === '>') {
+        this.consume(); this.consume();
+        this.bashDepth--;
+        tok('BASHCLOSE'); continue;
+      }
+
+      // TUI operators (3-4 chars) — must come before twoMap so >> and << aren't consumed first
+      if (this.ch() === '>' && this.ch(1) === '>') {
+        const c2 = this.ch(2);
+        if (c2 === '!') { this.consume(); this.consume(); this.consume(); tok('OUTPUT_CLEAR', '>>!'); continue; }
+        if (c2 === '?') { this.consume(); this.consume(); this.consume(); tok('OUTPUT_QUERY', '>>?'); continue; }
+        if (c2 === '~') { this.consume(); this.consume(); this.consume(); tok('OUTPUT_POS',   '>>~'); continue; }
+        if (c2 === '|') { this.consume(); this.consume(); this.consume(); tok('OUTPUT_GATE',  '>>|'); continue; }
+      }
+      if (this.ch() === '<' && this.ch(1) === '<' && this.ch(2) === '|') {
+        if (this.ch(3) === '?') {
+          this.consume(); this.consume(); this.consume(); this.consume();
+          tok('KEY_NONBLOCK', '<<|?'); continue;
+        }
+        this.consume(); this.consume(); this.consume();
+        tok('KEY_BLOCK', '<<|'); continue;
+      }
+
+      // two-char operators
+      const two = this.ch(0) + this.ch(1);
+      const twoMap = {
+        '>>': 'OUTPUT', '<<': 'INPUT',  '<~': 'RETURN',
+        '<#': 'IMPORT',
+        '@!': 'BREAK',  '@>': 'CONTINUE', '@~': 'ATSLEEP',
+        '??': 'MATCH',  '_?': 'ELSEIF', ':=': 'CONST_ASSIGN',
+        '..': 'RANGE',  '==': 'EQ',     '<>': 'NEQ',
+        '<=': 'LTE',    '>=': 'GTE',    '&&': 'AND',
+        '||': 'OR',     '++': 'INC',    '--': 'DEC',
+        '+=': 'PLUS_EQ',  '-=': 'MINUS_EQ', '*=': 'TIMES_EQ',
+        '/=': 'DIV_EQ',   '%=': 'MOD_EQ',   '^=': 'POW_EQ',
+        '->': 'ARROW',  '=>': 'FAT_ARROW',  '|>': 'PIPE',
+        '!?': 'TRY',    ':!': 'CATCH',  ':>': 'FINALLY',
+        '::': 'SCOPE',
+        '\\\\': 'NEWLINE_ESC',
+        '><': 'CLI_ARGS',
+      };
+      if (twoMap[two]) {
+        this.consume(); this.consume();
+        tok(twoMap[two], two);
+        continue;
+      }
+
+      const c = this.ch();
+
+      if (c === '_') {
+        if (isIdentContinue(this.ch(1)) && this.ch(1) !== '°') { this.readIdent(toks); }
+        else { this.consume(); tok('ELSE', '_'); }
+        continue;
+      }
+
+      if (c === '?') { this.consume(); tok('IF',     '?'); continue; }
+      if (c === '@') {
+        this.consume();
+        if (this.ch() === ':') {
+          // @:label — labeled loop, break, or continue
+          this.consume();
+          let label = '';
+          while (isIdentContinue(this.ch()) && this.ch() !== '°') label += this.consume();
+          if (this.ch() === '!') { this.consume(); tok('AT_BREAK', label); }
+          else if (this.ch() === '>') { this.consume(); tok('AT_CONT',  label); }
+          else tok('AT_LABEL', label);
+        } else if (isIdentStart(this.ch()) && this.ch() !== '°') {
+          // @label (legacy: label without colon)
+          let label = '';
+          while (isIdentContinue(this.ch()) && this.ch() !== '°') label += this.consume();
+          tok('AT_LABEL', label);
+        } else {
+          tok('AT', '@');
+        }
+        continue;
+      }
+      if (c === '¶') { this.consume(); tok('PILCROW','¶'); continue; }
+
+      // $ collection operators
+      if (c === '$') {
+        const a = this.ch(1), b = this.ch(2);
+        if (a === '+' && b === '+')         { this.consume(); this.consume(); this.consume(); tok('DCONCATBUILD','$++'); continue; }
+        if (a === '#')                      { this.consume(); this.consume();               tok('DLEN',        '$#');  continue; }
+        if (a === '?' && b === '?')         { this.consume(); this.consume(); this.consume(); tok('DFINDALL',  '$??'); continue; }
+        if (a === '?')                      { this.consume(); this.consume();               tok('DCONTAINS',  '$?');  continue; }
+        if (a === '-' && b === '-')         { this.consume(); this.consume(); this.consume(); tok('DREMOVEALL','$--'); continue; }
+        if (a === '-')                      { this.consume(); this.consume();               tok('DREMOVE',    '$-');  continue; }
+        // `$+[` with no space between them is the positional insert `$+[i] val`;
+        // a space makes it a plain append whose operand happens to be an array
+        // literal (`grid$+ [0, 0]`). Same split the Rust lexer makes with
+        // DollarPlusLBracket vs DollarPlus + LBracket — see
+        // crates/zymbol-lexer/src/collection_ops.rs.
+        if (a === '+' && b === '[')         { this.consume(); this.consume();               tok('DAPPEND_AT', '$+['); continue; }
+        if (a === '+')                      { this.consume(); this.consume();               tok('DAPPEND',    '$+');  continue; }
+        if (a === '*')                      { this.consume(); this.consume();               tok('DREPEAT',    '$*');  continue; }
+        if (a === '/' )                     { this.consume(); this.consume();               tok('DSPLIT',     '$/');  continue; }
+        if (a === '^' && b === '+')         { this.consume(); this.consume(); this.consume(); tok('DSORTASC', '$^+'); continue; }
+        if (a === '^' && b === '-')         { this.consume(); this.consume(); this.consume(); tok('DSORTDESC','$^-'); continue; }
+        if (a === '^')                      { this.consume(); this.consume();               tok('DSORT',      '$^');  continue; }
+        if (a === '>')                      { this.consume(); this.consume();               tok('DMAP',       '$>');  continue; }
+        if (a === '|')                      { this.consume(); this.consume();               tok('DFILTER',    '$|');  continue; }
+        if (a === '<')                      { this.consume(); this.consume();               tok('DREDUCE',    '$<');  continue; }
+        if (a === '~' && b === '~')         { this.consume(); this.consume(); this.consume(); tok('DREPLACE', '$~~'); continue; }
+        if (a === '~')                      { this.consume(); this.consume();               tok('DUPDATE',    '$~');  continue; }
+        if (a === '[')                      { this.consume();                               tok('DSLICE',     '$[');  continue; }
+        if (a === '!' && b === '!')         { this.consume(); this.consume(); this.consume(); tok('DERRORPROP','$!!'); continue; }
+        if (a === '!')                      { this.consume(); this.consume();               tok('DERROR',     '$!');  continue; }
+        this.consume(); continue;
+      }
+
+      if (/[0-9]/.test(c) || digitValue(c) >= 0) { this.readNumber(toks); continue; }
+      if (c === '"') { this.readString(toks); continue; }
+      if (c === "'") { this.readChar(toks); continue; }
+      // An identifier STARTS with a letter (never a digit — a digit here is a
+      // number, in any of the 69 scripts) and CONTINUES with `\p{N}` as well,
+      // because that is what the Rust lexer's `is_ident_continue` does:
+      // `is_alphanumeric()`, and `२`.is_alphanumeric() is true.
+      //
+      // It used to continue on `0-9` alone, so `कार्यस्थितिः२` lexed as an
+      // identifier, a NUMBER and then the `=` — and `parsePrimary`'s catch-all
+      // swallowed the `=` and left a statement that did nothing. Chaturanga is
+      // written in Sanskrit and names variables that way; the file ran here
+      // with a wrong parse and correctly under both Rust engines, and nothing
+      // said so. Closing ZYJS-001 is what turned it into a visible refusal.
+      if (isIdentStart(c)) { this.readIdent(toks); continue; }
+
+      const single = {
+        '=':'ASSIGN', '<':'LT', '>':'GT',
+        '+':'PLUS',   '-':'MINUS', '*':'TIMES', '/':'DIV', '%':'MOD', '^':'POW',
+        '!':'NOT',    '|':'VBAR',
+        '(':'LPAREN', ')':'RPAREN', '[':'LBRACKET', ']':'RBRACKET',
+        '{':'LBRACE', '}':'RBRACE',
+        ',':'COMMA',  ':':'COLON', '.':'DOT', ';':'SEMI', '\\':'BACKSLASH',
+      };
+      // `!=` is not a Zymbol operator, and letting it through is worse than
+      // refusing it: `n$| (x -> x % 2 != 0)` printed `[1, 3]#10` here, where
+      // the correct program prints `[1, 3]`. The `!` was read as logical NOT
+      // and the rest as two more values to juxtapose, so the answer came out
+      // with a tail nobody asked for. Both Rust engines refuse it in the lexer.
+      if (c === '!' && this.ch(1) === '=') {
+        throw new ZyStaticError(
+          "'!=' is not a valid Zymbol operator",
+          this.at(),
+          "use '<>' for not-equal  →  a <> b");
+      }
+      if (single[c]) { this.consume(); tok(single[c], c); continue; }
+
+      // `~` is a token, as in Rust (`TokenKind::Tilde`): the parameter mark
+      // `a~` consumes it, and anywhere else the parser refuses it. It used to
+      // vanish here, so `1 ~ 2` printed `12` (ZYJS-020, step P4.5).
+      if (c === '~') { this.consume(); tok('TILDE', '~'); continue; }
+
+      // A lone `&` is refused, as the Rust lexer refuses it; it used to vanish,
+      // and `1 & 2` printed `12` (ZYJS-020). It is the only operator character
+      // Rust has no token for.
+      // An invisible character outside a name is refused too, and is named by
+      // its code point (GLB-026 B) — quoting it would show the reader nothing.
+      // (`\s` in JavaScript counts U+FEFF as space; Rust's is_whitespace does not.)
+      const invisible = isInvisibleChar(c) && !/[\t\n\v\f\r]/.test(c);
+      if (c === '&' || c === '`' || invisible) {
+        const shown = invisible
+          ? `U+${c.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')}`
+          : `'${c}'`;
+        throw new ZyStaticError(`unexpected character: ${shown}`, this.at());
+      }
+      this.consume();
+    }
+
+    // End of file is where the file ENDS, not where the last token started:
+    // `#> { f,` with nothing after it is refused at 3:1, past the last newline,
+    // which is where both Rust engines point.
+    this.tokLine = this.line;
+    this.tokCol  = this.col;
+    tok('EOF', null);
+    return toks;
+  }
+
+  readNumber(toks) {
+    // Handle base literals: 0x (hex), 0b (binary), 0o (octal), 0d (decimal explicit)
+    //
+    // ZYJS-003: each of the four `while` loops can match nothing — `0x`, `0xZZ`
+    // — and `String.fromCodePoint(parseInt('', 16))` is `String.fromCodePoint(NaN)`,
+    // which throws `RangeError: Invalid code point NaN`. A JavaScript exception
+    // was reaching the user as the language's diagnostic. Each guard raises the
+    // refusal the two Rust engines raise, named for its own base.
+    // Lowercase only, as in the Rust lexer: `0X41` is the number `0` and then
+    // the name `X41`. It read as the character `A` here (step P4.5).
+    if (this.ch() === '0') {
+      const next = this.ch(1);
+      if (next === 'x') {
+        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 16 }, line: this.tokLine, col: this.tokCol }); return; }
+        this.consume(); this.consume();
+        let hex = '';
+        while (/[0-9a-fA-F]/.test(this.ch())) hex += this.consume();
+        if (!hex) throw new ZyStaticError(`expected ${'hexadecimal'} digits after base prefix`, this.at());
+        toks.push({ type: 'CHAR', value: this.codePointChar(hex, 16, 'hexadecimal'), line: this.tokLine, col: this.tokCol }); return;
+      }
+      if (next === 'b') {
+        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 2 }, line: this.tokLine, col: this.tokCol }); return; }
+        this.consume(); this.consume();
+        let bin = '';
+        while (this.ch() === '0' || this.ch() === '1') bin += this.consume();
+        if (!bin) throw new ZyStaticError(`expected ${'binary'} digits after base prefix`, this.at());
+        toks.push({ type: 'CHAR', value: this.codePointChar(bin, 2, 'binary'), line: this.tokLine, col: this.tokCol }); return;
+      }
+      if (next === 'o') {
+        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 8 }, line: this.tokLine, col: this.tokCol }); return; }
+        this.consume(); this.consume();
+        let oct = '';
+        while (/[0-7]/.test(this.ch())) oct += this.consume();
+        if (!oct) throw new ZyStaticError(`expected ${'octal'} digits after base prefix`, this.at());
+        toks.push({ type: 'CHAR', value: this.codePointChar(oct, 8, 'octal'), line: this.tokLine, col: this.tokCol }); return;
+      }
+      if (next === 'd') {
+        if (this.ch(2) === '|') { this.consume(); this.consume(); this.consume(); toks.push({ type: 'DATA_OP', value: { kind: 'base_conv', prec: 10 }, line: this.tokLine, col: this.tokCol }); return; }
+        this.consume(); this.consume();
+        let dec = '';
+        while (/[0-9]/.test(this.ch())) dec += this.consume();
+        if (!dec) throw new ZyStaticError(`expected ${'decimal'} digits after base prefix`, this.at());
+        toks.push({ type: 'CHAR', value: this.codePointChar(dec, 10, 'decimal'), line: this.tokLine, col: this.tokCol }); return;
+      }
+    }
+    let value = 0;
+    // The digits as ASCII, whatever script they were written in: a float is
+    // parsed from the literal rather than assembled from its parts, because
+    // `3 + 14159265/100000000` is 3.1415926499999998 while the literal
+    // 3.14159265 rounds to the nearest double exactly — which is the value the
+    // Rust engines read, and what `>>` then prints.
+    let intText = '';
+    let activeBlock = ASCII_BASE;
+    const MIXED_SCRIPTS = () => new ZyStaticError(
+      'mixed digit scripts in numeric literal', this.at(),
+      'all digits in a literal must belong to the same numeral system (e.g. all ASCII or all Devanagari)');
+    while (this.pos < this.src.length) {
+      const dv = digitValue(this.ch());
+      if (dv < 0) break;
+      if (intText === '') activeBlock = digitBlockBase(this.ch());
+      // One literal, one script: `1٢` used to read as 12 (ZYJS-020).
+      else if (digitBlockBase(this.ch()) !== activeBlock) throw MIXED_SCRIPTS();
+      value = value * 10 + dv;
+      intText += String(dv);
+      this.consume();
+    }
+    // The separator is ASCII `.` or the one the digits' own script encodes
+    // (`٣٫٥`): that is what an active numeral mode writes, and a number the
+    // program writes has to read back. `..` stays the range operator.
+    const ownSeparator = decimalSeparator(activeBlock);
+    if ((this.ch() === '.' || this.ch() === ownSeparator) && this.ch(1) !== '.') {
+      this.consume();
+      let fracText = '';
+      while (this.pos < this.src.length) {
+        const dv = digitValue(this.ch());
+        if (dv < 0) break;
+        if (intText !== '' && digitBlockBase(this.ch()) !== activeBlock) throw MIXED_SCRIPTS();
+        fracText += String(dv);
+        this.consume();
+      }
+      const sci = this.readExponentSuffix(`${intText}.${fracText}`);
+      const f = parseFloat(`${intText || '0'}.${fracText || '0'}${sci}`);
+      toks.push({ type: 'FLOAT', value: f, line: this.tokLine, col: this.tokCol });
+    } else {
+      // `1e10` with no decimal point is a Float too, exactly as the Rust engines
+      // read it (`1e10#?` is `##.`). This case used to fall through to the integer
+      // branch, and `e10` was then lexed as an identifier — "undefined variable 'e10'".
+      const sci = this.readExponentSuffix(intText);
+      if (sci) {
+        toks.push({ type: 'FLOAT', value: parseFloat(value + sci), line: this.tokLine, col: this.tokCol });
+        return;
+      }
+      if (!inIntRange(value))
+        // The guidance is a `= help:` line, not a parenthesis inside the
+        // message. The `=` is not decoration: it is what separates the guidance
+        // from the message, and everything downstream — the harness, the
+        // playground, `zyq` — reads that grafía.
+        throw new ZyStaticError(
+          `integer literal out of range: '${value}'`,
+          this.at(),
+          ZY_INT_RANGE_HELP);
+      toks.push({ type: 'NUM', value, line: this.tokLine, col: this.tokCol });
+    }
+  }
+
+  // The character a base literal names. A surrogate (`0xD800`) or a value past
+  // U+10FFFF is not one, and both Rust engines refuse it; this used to hand
+  // `String.fromCodePoint` whatever it got, and printed `�` (ZYJS-020).
+  codePointChar(digits, radix, baseName) {
+    const code = parseInt(digits, radix);
+    if (code > 0xFFFFFFFF) {
+      throw new ZyStaticError(`invalid ${baseName} literal: ${digits}`, this.at());
+    }
+    if (code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) {
+      throw new ZyStaticError(
+        `invalid Unicode code point: 0x${code.toString(16).toUpperCase()} (${baseName} ${digits})`,
+        this.at());
+    }
+    return String.fromCodePoint(code);
+  }
+
+  // The `e[+-]?digits` tail of a numeric literal, or '' when there is none.
+  //
+  // Requires at least one digit after the `e`, so `1 e|x|` — the data operator —
+  // keeps its meaning and only a real exponent is consumed.
+  readExponentSuffix(numberText) {
+    if (this.ch() !== 'e' && this.ch() !== 'E') return '';
+    let k = 1;
+    if (this.ch(k) === '+' || this.ch(k) === '-') k++;
+    if (!/[0-9]/.test(this.ch(k) ?? '')) {
+      // An `e` right against the digits opens an exponent in both Rust
+      // engines, digits or not, and `1.0e+` is refused there. Here the `e`
+      // used to be left for the next token (ZYJS-020).
+      throw new ZyStaticError(
+        `invalid float literal: '${numberText}${Array.from({ length: k }, (_, i) => this.ch(i)).join('')}'`,
+        this.at());
+    }
+    let sci = this.consume();
+    if (this.ch() === '+' || this.ch() === '-') sci += this.consume();
+    while (/[0-9]/.test(this.ch())) sci += this.consume();
+    return sci;
+  }
+
+  readString(toks) {
+    // A token belongs to the line it STARTS on, which for a string is the line
+    // of its opening quote — `this.line` has moved on by the time the closing
+    // one is read (HLZ-013). Every line-sensitive rule in the parser reads this
+    // field: `<~ "dos⏎líneas"` saw a value that began on a later line than the
+    // `<~`, decided the return had no value at all, and handed back Unit with
+    // nothing to say. Both Rust engines pass the start position into
+    // `lex_string` for exactly this reason.
+    const startLine = this.line;
+    this.consume(); // opening "
+    const parts = [];
+    let cur = '';
+    while (this.pos < this.src.length && this.ch() !== '"') {
+      if (this.ch() === '\\') {
+        this.consume();
+        const e = this.consume();
+        // \{ and \} produce literal braces (not interpolation delimiters)
+        cur += e === 'n' ? '\n' : e === 't' ? '\t' : e;
+      } else if (this.ch() === '{') {
+        if (cur) { parts.push({ t: 'lit', v: cur }); cur = ''; }
+        this.consume();
+        let depth = 1, inner = '';
+        while (depth > 0) {
+          // The closing quote or the end of the file before the `}`: the
+          // interpolation never closed, as the Rust lexer says (ZYJS-020).
+          if (this.pos >= this.src.length || this.ch() === '"') {
+            // Both are open here, and the quote opened FIRST. This engine's
+            // lexer throws on the first error rather than collecting them, so
+            // it reports the quote — the one the reader has to fix first — and
+            // the interpolation turns up on the next run. The two Rust engines
+            // report both (GLB-038, decided 2026-09-24).
+            if (!this.src.slice(this.pos).includes('"')) {
+              throw new ZyStaticError('unterminated string literal',
+                { line: startLine, col: this.tokCol }, 'add closing " to end the string',
+                [{ message: 'unterminated string interpolation',
+                   help: 'close the interpolation with }',
+                   line: startLine, col: this.tokCol }]);
+            }
+            throw new ZyStaticError('unterminated string interpolation', this.at(), 'close the interpolation with }');
+          }
+          const ch = this.consume();
+          if      (ch === '{') { depth++; inner += ch; }
+          else if (ch === '}') { depth--; if (depth > 0) inner += ch; }
+          else inner += ch;
+        }
+        // An interpolation is `{identifier}` and nothing else. Counting depth
+        // meant `{{…}}` opened two levels and passed, so the doubled-brace form
+        // — which is how Rust and Python spell a literal brace, and is NOT how
+        // Zymbol spells it — ran here and was a syntax error in both Rust
+        // engines. Zymbol's literal brace is `\{` and `\}`, symmetrically.
+        // `{}` is its own defect and says so. Falling into the message below
+        // said "invalid character" about a string that has no character in it,
+        // where both Rust engines name the empty interpolation and tell the
+        // reader what is missing (DM-10).
+        if (inner === '') {
+          throw new ZyStaticError(
+            `empty string interpolation {}`,
+            startLine,
+            `provide a variable name: {varname}`);
+        }
+        // An identifier, by the rule the checker and `readIdent` use: never a
+        // digit first. The old test only excluded operators, so `"a{1}"`
+        // passed and printed `a1` (ZYJS-020).
+        if (!isIdentName(inner)) {
+          // Same rule as the branch above: if the quote is open too, that is
+          // what the reader fixes first, because it opened first.
+          if (!this.src.slice(this.pos).includes('"')) {
+            throw new ZyStaticError('unterminated string literal',
+              { line: startLine, col: this.tokCol }, 'add closing " to end the string',
+              [{ message: 'invalid character in string interpolation',
+                 help: 'interpolation must be {identifier} — use \\{ for a literal brace',
+                 line: startLine, col: this.tokCol }]);
+          }
+          throw new ZyStaticError(
+            'invalid character in string interpolation',
+            startLine,
+            'interpolation must be {identifier} — use \\{ for a literal brace');
+        }
+        parts.push({ t: 'expr', v: inner });
+      } else if (this.ch() === '}') {
+        // A `}` that closes nothing. The escape is symmetric: `\{` and `\}` are
+        // the literal braces, and a bare one is an error on either side.
+        //
+        // Both engines accepted it, so `"\{\"n\":1}"` — the half-escaped form —
+        // printed happily while the same JSON with neither escape was refused.
+        // Two spellings of one string, one accepted and one not, with nothing to
+        // say why.
+        // Same line as the opening quote: the string is closed and the brace
+        // really is what is wrong. A LATER line means the quote never closed
+        // and the string ran on and ate a `}` that was closing a block — what
+        // the reader needs to hear is that this quote is open, not that a
+        // brace is loose (GLB-038, decided 2026-09-23).
+        if (this.line === startLine) {
+          throw new ZyStaticError(
+            `unmatched '}' in string`,
+            this.at(),
+            `the escape is symmetric — write \\} for a literal brace, as \\{ is for the opening one`);
+        }
+        throw new ZyStaticError(
+          'unterminated string literal',
+          { line: startLine, col: this.tokCol },
+          `the string opened here ran on and swallowed the closing brace on line ${this.line} — add the closing quote, or escape the brace to keep it inside the text`);
+      } else {
+        cur += this.consume();
+      }
+    }
+    // Running out of file with the quote still open is an error, not a string.
+    // This engine consumed nothing and handed back what it had, so `>> "abc`
+    // printed `abc` where both Rust engines refuse the file (GLB-038).
+    if (this.pos >= this.src.length) {
+      throw new ZyStaticError(
+        'unterminated string literal',
+        { line: startLine, col: this.tokCol },
+        'add closing " to end the string');
+    }
+    this.consume(); // closing "
+    if (cur) parts.push({ t: 'lit', v: cur });
+    toks.push({ type: 'STR', value: parts, col: this.tokCol, line: startLine, endLine: this.line });
+  }
+
+  readChar(toks) {
+    this.consume();
+    let ch = '';
+    // A quote with nothing after it, or a backslash with nothing after it:
+    // `c = '` at the end of the file only warned about `c` (ZYJS-020).
+    if (this.pos >= this.src.length) throw new ZyStaticError('unterminated char literal', this.at());
+    if (this.ch() === '\\') {
+      this.consume();
+      if (this.pos >= this.src.length) throw new ZyStaticError('unterminated char literal', this.at());
+      const e = this.consume();
+      if (!['n', 't', 'r', "'", '\\', '0'].includes(e)) {
+        // The Rust table and nothing else: `'\q'` used to be the letter q.
+        throw new ZyStaticError(`invalid escape sequence: '\\${e}'`, this.at());
+      }
+      // Escape table mirrors Lexer::lex_char in zymbol-lexer/src/literals.rs. This used to
+      // take the character after the backslash verbatim, so '\n' lexed as the letter "n" —
+      // a pattern like `'\n' => …` then silently never matched a real newline (and did match
+      // the letter n). That is why Enter did nothing in TUI programs under the web
+      // interpreter while working under the CLI: every arrow key is a literal glyph ('↑')
+      // and was unaffected, but Enter is delivered as '\n' and fell through to the wildcard.
+      ch = e === 'n' ? '\n'
+         : e === 't' ? '\t'
+         : e === 'r' ? '\r'
+         : e === '0' ? '\0'
+         : e;                 // \' \\ and anything else: the character itself
+    } else {
+      ch = this.consume();
+    }
+    // One character and its closing quote. `'ab'` used to close nothing and
+    // leave `b'` to be read as a name.
+    if (this.ch() !== "'") throw new ZyStaticError("expected closing ' for char literal", this.at());
+    this.consume();
+    toks.push({ type: 'CHAR', value: ch, line: this.tokLine, col: this.tokCol });
+  }
+
+  readIdent(toks) {
+    let s = '';
+    while (true) {
+      const c = this.ch();
+      if (!c) break;
+      if (c === '°') break; // hot-def suffix — consumed below, not part of name
+      // Mirrors Lexer::is_ident_continue: unlike the identifier-START check
+      // (readNumber is tried first, at the tokenize() dispatch site), a
+      // digit-block character does NOT end an identifier once it has begun —
+      // some Private Use Area scripts (e.g. Klingon pIqaD/CSUR) reuse the
+      // same PUA sub-range for both letters and that script's own digits, so
+      // breaking here would truncate real identifiers mid-word (HLZ-KL-001-
+      // adjacent parity gap, found via klingon_galaxy/HuD.zy).
+      if (isIdentContinue(c)) { s += this.consume(); continue; }
+      // `'` continues an identifier once one has begun — `Lexer::is_ident_continue`
+      // in Rust admits any non-whitespace, non-operator character, and the
+      // apostrophe is not an operator. Klingon needs it (`mI'`, `tlhIngan Hol`),
+      // and without it `_ { <~ mI' }` was read as an unterminated char literal
+      // that swallowed the rest of the file.
+      if (c === "'" && s.length > 0) { s += this.consume(); continue; }
+      // The zero-width joiners continue one for the same reason and by the same
+      // clause: they are not operators, so `is_ident_continue` admits them, and
+      // they are spelling rather than decoration. Sinhala writes the rakaransaya
+      // conjunct with U+200D, so `පළල්ප්‍රමාණය` is a single name; breaking there
+      // cut it into `පළල්ප්` + `රමාණය` and the browser reported four undefined
+      // variables in a file both Rust engines run and paint identically. U+200C
+      // rides along — Devanagari and Persian spell with it the same way.
+      if ((c === '\u200d' || c === '\u200c') && s.length > 0) { s += this.consume(); continue; }
+      break;
+    }
+    const hot = this.ch() === '°';
+    if (hot) this.consume();
+    // `°x°` — both markers on the same name, which asks for two lifetimes at
+    // once: `°x` anchors ABOVE the loop and `x°` anchors AT it, so there is
+    // nothing to choose between. A prefix `°` lexes as an IDENT with an empty
+    // name (the sentinel just below), so the pair is visible right here — which
+    // is where both Rust engines refuse it, and this engine used to run the
+    // program and print an answer.
+    if (hot && s) {
+      const prev = toks[toks.length - 1];
+      if (prev && prev.type === 'IDENT' && prev.hot === true && prev.value === '') {
+        throw new ZyStaticError(
+          `ambiguous hot-definition markers on '${s}': ` +
+          `use either '°${s}' (anchors above loop) or '${s}°' (anchors at loop), not both`,
+          this.at());
+      }
+    }
+    // A prefix `°` anchors the name above the loop, so the value outlives it,
+    // and `_` keeps the name inside its block: a value nothing could ever read.
+    // The suffix `_k°` is the form that means something — it lives through the
+    // iterations and dies with the loop (GLB-039, decided 2026-09-25). The
+    // prefix arrives as the empty sentinel just before this name.
+    if (s.startsWith('_')) {
+      const prev = toks[toks.length - 1];
+      if (prev && prev.type === 'IDENT' && prev.hot === true && prev.value === '') {
+        throw new ZyStaticError(
+          `'°${s}' anchors the name above the loop, where '_' makes it unreadable`,
+          prev, `write '${s}°' for a private value that lives through every iteration of the loop`);
+      }
+    }
+    toks.push({ type: 'IDENT', value: s, hot, line: this.tokLine, col: this.tokCol });
+  }
+}
+
+// ─── Parser ───────────────────────────────────────────────────────────────────
+
+export class Parser {
+  constructor(tokens) {
+    this.toks = tokens;
+    this.pos  = 0;
+  }
+
+  peek(n = 0) { return this.toks[Math.min(this.pos + n, this.toks.length - 1)]; }
+  adv() {
+    const t = this.toks[this.pos];
+    if (this.pos < this.toks.length - 1) this.pos++;
+    return t;
+  }
+  check(type) { return this.peek().type === type; }
+  match(...types) { return types.includes(this.peek().type) ? this.adv() : null; }
+  // `msg` and `help` are the Rust parser's words for this spot, when the call
+  // site has them. The fallback names this engine's token, and a STR token's
+  // value is its parts array — which is how `[object Object]` reached readers
+  // (ZYJS-021).
+  eat(type, msg, help = null) {
+    if (!this.check(type)) {
+      if (msg) throw new ZyStaticError(msg, this.peek(), help);
+      const v = this.peek().value;
+      const shown = (v !== null && typeof v === 'object') ? 'string' : (v ?? this.peek().type);
+      throw new ZyError(`Expected ${type}, got '${shown}'`, this.peek());
+    }
+    return this.adv();
+  }
+
+  parse() {
+    const body = this.parseStmtList();
+    // A module file is its block and nothing after it, as `Parser::parse`
+    // requires. `# extra { … }` followed by `x = 1` used to load, and what
+    // failed later was an unrelated "does not export" (ZYJS-021).
+    if (body[0]?.type === 'ModuleBlock') {
+      const extra = body.slice(1).find(st => st && st.type !== 'Noop');
+      if (extra) {
+        // The statement's own position, which `parseStmt` recorded as zyLine/zyCol.
+        throw new ZyStaticError('unexpected token after module block',
+          { line: extra.zyLine ?? extra.line, col: extra.zyCol ?? null },
+          'a module file must contain only: # name { ... }');
+      }
+    }
+    this.checkImportsFirst(body);
+    return { type: 'Program', body };
+  }
+
+  // Imports precede every statement in an executable file.
+  //
+  // Both Rust engines enforce this in the parser — the loop that reads the
+  // leading run of `<#` stops at the first statement, and anything after it is a
+  // parse error — while this one accepted an import anywhere, because it parses
+  // `Import` as an ordinary statement. `>> "antes" ¶` followed by
+  // `<# std/json => js` ran here and was `unexpected token: ModuleImport` there
+  // (DM-12). The rule was written in no document either, so the program that
+  // broke it worked in exactly one engine and no text said which was right.
+  //
+  // A module file is exempt: its body is a single ModuleBlock and its own rules
+  // are checked elsewhere.
+  checkImportsFirst(body) {
+    if (body[0]?.type === 'ModuleBlock') return;
+
+    // An export block belongs INSIDE a module block.
+    //
+    // `#> { … }` at file top level, with no enclosing `# name { … }`, is not
+    // Zymbol: both Rust parsers refuse it where they parse the module block, and
+    // so does `zymbol check`. This engine parsed `ExportDecl` as an ordinary
+    // statement and ran the file, so a module written in the playground worked
+    // there and failed to parse in the CLI — the permissive direction, which is
+    // the worse one. Of the 83 module files across the six LDV applications, 83
+    // write the block inside the module and none at file level.
+    //
+    // It is the other half of L48: while omitting `#>` said "does not export
+    // function", a reader would add the block where they could — here — and this
+    // engine let them.
+    for (const stmt of body) {
+      if (stmt?.type === 'ExportDecl')
+        throw new ZyStaticError(
+          'an export block belongs inside a module block',
+          stmt.line ?? null,
+          'move this `#>` inside `# name { … }` — ' +
+          'a module declares what it exports, and only a module can');
+    }
+
+    let seenStatement = false;
+    for (const stmt of body) {
+      if (stmt.type === 'Noop') continue;
+      if (stmt.type === 'Import') {
+        if (seenStatement)
+          throw new ZyStaticError(
+            'imports must come before any statement',
+            stmt.line,
+            'move this `<#` above the first statement in the file');
+        continue;
+      }
+      seenStatement = true;
+    }
+  }
+
+  parseStmtList() {
+    const stmts = [];
+    while (!this.check('EOF') && !this.check('RBRACE')) {
+      const s = this.parseStmt();
+      if (s) stmts.push(s);
+    }
+    return stmts;
+  }
+
+  parseBlock() {
+    this.eat('LBRACE', "expected '{' to start block", 'blocks must be enclosed in braces');
+    const stmts = this.parseStmtList();
+    this.eat('RBRACE');
+    // A function is free in a script or part of a module — never of a block.
+    // Both Rust engines refuse a declaration inside `? { }`, `@ { }` or a
+    // function body, and this one ran it, so a program written in the playground
+    // failed outside it (DM-23, decided 2026-08-19).
+    //
+    // Checked after the block is parsed rather than while: the shape is the same
+    // wherever the block came from, so one place covers every block form.
+    for (const s of stmts) {
+      if (s?.type === 'FuncDecl') {
+        throw new ZyError(
+          `a function cannot be declared inside a block: '${s.name}' is free in a ` +
+          `script or part of a module, not of a '?', '@' or function body`,
+          s.line);
+      }
+    }
+    return stmts;
+  }
+
+  parseModuleBlock() {
+    // The line of the `#` itself: E001 points at the declaration, which is
+    // where the reader has to edit, and it is the line both Rust engines
+    // report. The node carried none, so the browser engine's E001 arrived
+    // without a position (GLB-005).
+    const line = this.peek()?.line ?? null;
+    this.adv(); // consume HASH
+    let name = '';
+    if (this.check('DOT')) { this.adv(); name += '.'; }
+    name += this.eat('IDENT', "expected module name after '#'").value;
+    this.eat('LBRACE', "expected '{' after module name",
+      'module body must be enclosed in braces: # name { ... }');
+
+    // The body is read item by item, and each item is judged as it is read —
+    // the loop of `parse_module_block` in `zymbol-parser/src/modules.rs`, rule
+    // for rule. A module holds imports, one export block, constants, variables
+    // and function definitions, and a binding is initialised with a literal
+    // (E013). This engine used to parse the body as any block and leave E013 to
+    // its checker, so the same module failed here as `1 semantic error(s)`,
+    // with no help and at column 0, and as `1 parse error(s)` in Rust.
+    const E013_HELP = 'modules may only contain imports, exports, constants, variables, and function definitions';
+    const body = [];
+    let exported = false;
+    while (!this.check('RBRACE') && !this.check('EOF')) {
+      const t = this.peek();
+      if (t.type === 'IMPORT') { body.push(this.parseStmt()); continue; }
+      if (t.type === 'EXPORT_DECL') {
+        // One `#>` per module: a second one used to load, and the two lists
+        // merged (ZYJS-022).
+        if (exported) {
+          throw new ZyStaticError('duplicate export block in module', t,
+            'a module may only have one #> export block');
+        }
+        exported = true;
+        body.push(this.parseStmt());
+        continue;
+      }
+      if (t.type === 'IDENT') {
+        const next = this.peek(1).type;
+        if (next === 'CONST_ASSIGN' || next === 'ASSIGN') {
+          // Where the initialiser starts, which is where both Rust engines
+          // point: `C := 1 + 2` is refused at the `1`.
+          const valueTok = this.peek(2);
+          const stmt = this.parseStmt();
+          if (!Interpreter.isModuleLiteral(stmt?.value)) {
+            if (next === 'CONST_ASSIGN') {
+              throw new ZyStaticError('E013: constant initializer in module must be a literal', valueTok,
+                'module-level constants must use literal values, not expressions or function calls');
+            }
+            throw new ZyStaticError('E013: variable initializer in module must be a literal', valueTok,
+              'module-level variables must use literal values, not expressions or function calls');
+          }
+          body.push(stmt);
+          continue;
+        }
+        if (next === 'LPAREN') {
+          // `f(…) { … }` declares; `f(…)` alone would run something.
+          let j = 2, depth = 1;
+          while (depth > 0 && this.peek(j).type !== 'EOF') {
+            const k = this.peek(j).type;
+            if (k === 'LPAREN') depth++;
+            else if (k === 'RPAREN') depth--;
+            j++;
+          }
+          if (this.peek(j).type === 'LBRACE') { body.push(this.parseStmt()); continue; }
+        }
+      }
+      throw new ZyStaticError('E013: executable statement not allowed in module body', t, E013_HELP);
+    }
+    this.eat('RBRACE', "expected '}' to close module body");
+    return { type: 'ModuleBlock', name, body, line };
+  }
+
+  parseImport() {
+    const line = this.peek().line;
+    this.adv(); // consume <#
+    // Parse path: ./name, ../name, ./dir/name, or string literal
+    let path = '';
+    if (this.check('DOT')) {
+      this.adv(); this.eat('DIV'); // consume . and /
+      path = './' + this.eat('IDENT').value;
+      while (this.check('DIV')) { this.adv(); path += '/' + this.eat('IDENT').value; }
+    } else if (this.check('RANGE')) {
+      this.adv(); this.eat('DIV'); // consume .. and /
+      let ups = 1;
+      while (this.check('RANGE')) { this.adv(); this.eat('DIV'); ups++; }
+      path = '../'.repeat(ups) + this.eat('IDENT').value;
+      while (this.check('DIV')) { this.adv(); path += '/' + this.eat('IDENT').value; }
+    } else if (this.check('STR')) {
+      path = this.adv().value;
+    } else {
+      path = this.eat('IDENT').value;
+      // Allow multi-segment bare paths: std/math, std/random, etc.
+      while (this.check('DIV')) { this.adv(); path += '/' + this.eat('IDENT').value; }
+    }
+    // The words of `parse_import_statement`. They used to be this engine's own
+    // token names — `Expected FAT_ARROW, got 'mat'` — which no reader can act on.
+    this.eat('FAT_ARROW', "expected '=>' for module alias", 'import syntax: <# path => alias');
+    const alias = this.eat('IDENT', "expected alias name after '=>'").value;
+    return { type: 'Import', path, alias, line };
+  }
+
+  // Every statement node carries the line it starts on, stamped here rather
+  // than at each of the ~60 `return { type: ... }` below. A runtime error is
+  // reported at the statement that raised it, and the alternative was passing a
+  // line into all 101 `throw new ZyError` sites — of which 7 did it.
+  // `@! nombre` reads as the labelled jump it is one character away from, and
+  // is not one: the label goes INSIDE the jump. Left alone the bare jump runs,
+  // the outer loop never ends, and the only warning talks about a useless read.
+  // The name must be on the SAME line — one on the next line is an ordinary
+  // statement with its own warning.
+  refuseLabelAfterJump(kw, line) {
+    const t = this.peek();
+    if (t?.type === 'IDENT' && t.line === line) {
+      throw new ZyStaticError(
+        `'${kw} ${t.value}' is a bare '${kw}' and a name that is read and discarded, not a labelled jump`,
+        t,
+        `the label goes inside the jump: write '@:${t.value}${kw[1]}' to target the loop labelled '${t.value}'`);
+    }
+  }
+
+  parseStmt() {
+    const line = this.peek()?.line ?? null;
+    const col  = this.peek()?.col ?? null;
+    const s = this._parseStmt();
+    if (s && s.zyLine == null) s.zyLine = line;
+    if (s && s.zyCol == null) s.zyCol = col;
+    return s;
+  }
+
+  _parseStmt() {
+    const t = this.peek();
+
+    // `°name` opens a statement only as the target of an assignment, as in
+    // `Parser::parse_statement`. The prefix lexes to an empty hot IDENT just
+    // before the name; without this `°x` alone parsed as two statements — the
+    // sentinel and a bare `x` — and was refused later, as `undefined variable`
+    // with a "does nothing" warning (step P4.4). A `[` goes through: `°x[1] = 5`
+    // is refused for what it is, like `x[1] = 5` (GLB-035).
+    if (t.type === 'IDENT' && t.hot === true && t.value === '' && this.peek(1)?.type === 'IDENT') {
+      const ASSIGNING = new Set(['ASSIGN', 'PLUS_EQ', 'MINUS_EQ', 'TIMES_EQ', 'DIV_EQ',
+                                 'MOD_EQ', 'POW_EQ', 'INC', 'DEC', 'LBRACKET']);
+      if (!ASSIGNING.has(this.peek(2)?.type)) {
+        throw new ZyStaticError("'°name' is only valid as an assignment target", t,
+          "use '°x += n' to anchor accumulation above the nearest loop");
+      }
+    }
+
+    // `s = s + 1  i = i + 1` on one line: the right-hand side of `=` takes
+    // juxtaposition, so the `i` was read as one more operand of `s + 1` and the
+    // statement that starts here starts at the second `=`. A name just before
+    // an assignment that opens a statement was consumed by the statement before
+    // it, so say that, in `Parser::parse_statement`'s words (GLB-111). It used
+    // to be `expected expression, found '='`, which named the token only.
+    const JOINING = new Set(['ASSIGN', 'PLUS_EQ', 'MINUS_EQ', 'TIMES_EQ', 'DIV_EQ',
+                             'MOD_EQ', 'POW_EQ', 'INC', 'DEC']);
+    const before = this.pos > 0 ? this.toks[this.pos - 1] : null;
+    if (JOINING.has(t.type) && before?.type === 'IDENT' && !before.hot) {
+      throw new ZyStaticError(
+        `unexpected ${Parser.tokenSpelling(t)}: '${before.value}' was read as part of the expression before it`,
+        t, "a new statement starts on a new line, or after ';'");
+    }
+
+    if (t.type === 'SET_NUMERAL_MODE') { this.adv(); return { type: 'SetNumeralMode', base: t.value }; }
+    if (t.type === 'IMPORT') return this.parseImport();
+    if (t.type === 'EXPORT_DECL') {
+      // The line of the `#>` itself: a refusal has to point at the block, which
+      // is what the reader edits, and it is the line both Rust engines report.
+      const exportLine = t.line ?? null;
+      this.adv();
+      const names = []; // { kind:'own'|'reexport', internal, alias?, member?, exported }
+      // The grammar and the refusals of `parse_export_block` in
+      // zymbol-parser/src/modules.rs, item by item. This loop used to skip any
+      // token it did not expect and fill a missing name with a default, so
+      // `#> { 5 }`, `#> { mat. }`, `#> { f => }` and the pre-v0.0.6 `:` rename
+      // loaded without a word (ZYJS-022).
+      const refuse = (msg, tok, help = null) => {
+        throw new ZyStaticError(msg, tok ?? { line: exportLine }, help);
+      };
+      const nameAfter = (msg) => {
+        const tok = this.peek();
+        if (tok.type !== 'IDENT') refuse(msg, tok);
+        return this.adv().value;
+      };
+      if (!this.check('LBRACE')) refuse("expected '{' after '#>'", this.peek());
+      this.adv();
+      while (!this.check('RBRACE') && !this.check('EOF')) {
+        const firstTok = this.peek();
+        if (firstTok.type === 'LTE' || firstTok.type === 'COLON') {
+          refuse('legacy export rename separator', firstTok,
+            "the rename separator is '=>': #> { alias::fn => new_name }");
+        }
+        if (firstTok.type !== 'IDENT') {
+          refuse('expected identifier in export item', firstTok,
+            'export syntax: #> { own_fn, alias::fn => new_name, alias.CONST => NEW }');
+        }
+        const first = this.adv().value;
+        if (this.check('SCOPE') || this.check('DOT')) {
+          // Re-export: alias::function or alias.CONSTANT
+          const viaScope = this.adv().type === 'SCOPE';
+          const member = nameAfter(viaScope ? "expected function name after '::'" : "expected constant name after '.'");
+          let exported = member;
+          if (this.check('FAT_ARROW')) { this.adv(); exported = nameAfter("expected new name after '=>'"); }
+          names.push({ kind: 'reexport', alias: first, member, exported });
+        } else {
+          let exported = first;
+          if (this.check('FAT_ARROW')) { this.adv(); exported = nameAfter("expected public name after '=>'"); }
+          // Its position, so a refusal about this name points at it (P4-3 E6).
+          names.push({ kind: 'own', internal: first, exported, line: firstTok.line, col: firstTok.col ?? null });
+        }
+        if (this.check('COMMA') || this.check('SEMI')) this.adv();
+      }
+      if (!this.check('RBRACE')) refuse("expected '}' to close export block", this.peek());
+      this.adv();
+      return { type: 'ExportDecl', names, line: exportLine, col: t.col ?? null };
+    }
+    if (t.type === 'OUTPUT')   return this.parseOutput();
+    if (t.type === 'INPUT')    return this.parseInput();
+    if (t.type === 'RETURN')   return this.parseReturn();
+    // SYM-8: modality goes last, so a label never follows the `!`. Taking an
+    // IDENT here accepted `@!outer` and ran it as if it were `@:outer!` — the
+    // form the premise exists to refuse — while both Rust engines rejected it.
+    // The labelled break is AT_BREAK, two lines down (ZYJS-015).
+    if (t.type === 'BREAK')    { this.adv(); this.refuseLabelAfterJump('@!', t.line); return { type: 'Break',    label: null }; }
+    // `@> nombre` used to be read HERE as a labelled continue, which no Rust
+    // engine does: there the name is a separate statement that is read and
+    // thrown away, and the loop spins. One form, one meaning — refused in all
+    // three now (GLB-041, decided 2026-09-23).
+    if (t.type === 'CONTINUE') { this.adv(); this.refuseLabelAfterJump('@>', t.line); return { type: 'Continue', label: null }; }
+    if (t.type === 'AT_BREAK') { const lbl = this.adv().value; return { type: 'Break',    label: lbl }; }
+    if (t.type === 'AT_CONT')  { const lbl = this.adv().value; return { type: 'Continue', label: lbl }; }
+    if (t.type === 'ATSLEEP')    { this.adv(); return { type: 'Sleep', duration: this.parseExpr() }; }
+    if (t.type === 'CLI_ARGS')    { this.adv(); return { type: 'CliArgs', variable: this.eat('IDENT', 'expected variable name after ><', 'CLI args capture syntax: ><variable_name').value }; }
+    if (t.type === 'OUTPUT_CLEAR') { this.adv(); return { type: 'ClearScreen' }; }
+    if (t.type === 'OUTPUT_GATE')  return this.parseTuiBlock();
+    if (t.type === 'OUTPUT_POS')   return this.parseOutputPos();
+    if (t.type === 'KEY_BLOCK')    return this.parseKeyInput(true);
+    if (t.type === 'KEY_NONBLOCK') return this.parseKeyInput(false);
+    if (t.type === 'IF')       return this.parseIf();
+    if (t.type === 'MATCH')    return { type: 'ExprStmt', expr: this.parseMatchExpr() };
+    if (t.type === 'AT')       { this.adv(); return this.parseLoop(); }
+    if (t.type === 'AT_LABEL') { return this.parseLabeledLoop(); }
+    if (t.type === 'TRY')      return this.parseTryCatch();
+    if (t.type === 'BACKSLASH') {
+      this.adv();
+      if (this.check('IDENT')) {
+        const name = this.adv().value;
+        // The `\`'s own position: a diagnostic about it points there, as in
+        // both Rust engines (GLB-055).
+        return { type: 'LifetimeEnd', name, line: t.line, col: t.col ?? null };
+      }
+      // `\ 5` destroyed nothing and said nothing (ZYJS-021).
+      throw new ZyStaticError('expected variable name after \\', this.peek() ?? t,
+        'syntax: \\variable to explicitly destroy a variable');
+    }
+    if (t.type === 'LBRACKET' && this.isDestructuring()) return this.parseArrayDestruct();
+    if (t.type === 'LPAREN'   && this.isDestructuring()) return this.parseTupleDestruct();
+    // `#(name: n) = …` — destructuring a dictionary. The pattern is written the
+    // way the literal is: `#(` says "this is a dictionary" on both sides of the
+    // `=`, so a reader never has to remember that they spell it differently.
+    if (t.type === 'HASH_LPAREN' && this.isDestructuring()) return this.parseTupleDestruct();
+    // A statement that OPENS with a bracket or a paren and is not a
+    // destructuring assignment is a mistake, and both Rust engines say so.
+    // Reaching the `ExprStmt` fallthrough instead let this engine run two kinds
+    // of typo that the CLI refuses:
+    //
+    //   ins = s$++[5:"!!!"]                    `$++` then a leftover `[…]`
+    //   by_age = people$^+ (a, b -> …)         `$^+` sorts; `$^` is the one
+    //                                          that takes a comparator
+    //
+    // In both, the parser finishes the expression early and what remains starts
+    // the next statement — which is exactly the shape a stray operator makes.
+    //
+    // Message and guidance in their own fields, the way Rust's `Diagnostic`
+    // carries them, and one whole message per case rather than a template: the
+    // diagnostic inventory compares the engines by the strings their SOURCES
+    // build, so `unexpected '${shown}'` is a message no other engine has, even
+    // when every rendering of it matches.
+    if (t.type === 'LBRACKET') {
+      throw new ZyStaticError("unexpected '[' at statement level", t,
+        "use '[a, b] = expr' for array destructuring");
+    }
+    if (t.type === 'LPAREN') {
+      throw new ZyStaticError("unexpected '(' at statement level", t,
+        "use '(a, b) = expr' for tuple destructuring");
+    }
+    if (t.type === 'HASH_LPAREN') {
+      throw new ZyStaticError("unexpected '#(' at statement level", t,
+        "use '#(name: n) = expr' to destructure a dictionary");
+    }
+    if (t.type === 'IDENT')    return this.parseIdentStmt();
+    if (t.type === 'SEMI')     { this.adv(); return null; }
+    if (t.type === 'PILCROW')  { this.adv(); return { type: 'Output', items: [], newline: true }; }
+    // `#` declares a module only as the first token of the file — the check at
+    // the top of `Parser::parse` in Rust. Anywhere else it starts no statement,
+    // and is refused where it stands, with the Rust parser's words: it used to
+    // be read as a module block wherever it appeared, and so refused one token
+    // late, on the next line (ZYJS-025 B).
+    if (t.type === 'HASH') {
+      if (this.pos === 0) return this.parseModuleBlock();
+      throw new ZyStaticError(`unexpected token: ${Parser.tokenSpelling(t)}`, t,
+        'expected statement (>>, <<, ?, ??, @, @!, @>, !?, <~, ¶, \\\\, or identifier)');
+    }
+    // A `~` starts nothing either, and neither does a literal: `x[1] 5` is the
+    // statement `x[1]` and then a `5` that starts nothing, which both Rust
+    // engines refuse and this one ran in silence (ZYJS-021, step P4.5).
+    // A sign, a `!` or a `{` starts none either: `-x` and `!b` are refused by
+    // both Rust engines and this one ran them as expressions, and a bare block
+    // was refused here in other words.
+    // Nor does any other value: `##_`, an error value `##Kind("…")`, `#|…|`, a
+    // rounding or format `#.2|…|` `#,|…|` `#^|…|`, a base conversion `0x|…|`, or
+    // a subscript `</ … />` written alone. Both Rust engines refuse them where
+    // the statement starts; this one ran them and threw the value away
+    // (ZYJS-050).
+    if (t.type === 'TILDE' || ['NUM', 'FLOAT', 'STR', 'CHAR', 'BOOL', 'MINUS', 'PLUS', 'NOT', 'LBRACE',
+                               'UNIT', 'ERRCON', 'DATA_OP', 'EXECUTE'].includes(t.type)) {
+      throw new ZyStaticError(`unexpected token: ${Parser.tokenSpelling(t)}`, t,
+        'expected statement (>>, <<, ?, ??, @, @!, @>, !?, <~, ¶, \\\\, or identifier)');
+    }
+
+    return { type: 'ExprStmt', expr: this.parseExpr() };
+  }
+
+  // The operators that cannot continue a `>>` argument, and are therefore a
+  // mistake rather than the start of the next one. Spelled as the source writes
+  // them, so the message can quote what the programmer typed.
+  //
+  // `<>` is Zymbol's inequality; `!=` is not an operator at all, which is why
+  // `>> 1 != 2 ¶` used to print `1#12` — `1`, then `!2` negated, then `2`.
+  // `>>` has a narrower grammar than the rest of the language, and this engine
+  // used to ignore that: it called `parseExpr`, so `>> 1 == 1` printed `#1` here
+  // and was `error: expected expression, found Eq` in both Rust engines (DM-06).
+  // A program written in the playground could fail to parse outside it.
+  //
+  // The limit is real and has a cause: arguments are juxtaposed, so the parser
+  // has to decide where one ends, and `<` and `>` are the same characters that
+  // open `<#`, `<~` and close `>>|`. `parseAdditive` is exactly the Rust cut —
+  // arithmetic and below, comparison and the logical operators above it — so
+  // `>> (1 == 1) ¶` is the form that works, in every engine.
+  // Where an output's argument list ENDS, other than at `¶`.
+  //
+  // A second `>>` on the same line is a chained output — `>> "a: " >> n ¶` is
+  // two statements, and both Rust engines break here (`parse_output`, io.rs).
+  // This engine had no such rule and got the right answer by accident: the `>>`
+  // fell through to `parsePrimary`'s catch-all, came back as a Unit literal, and
+  // Unit prints as nothing. Removing that catch-all (ZYJS-001) is what made the
+  // hole visible — 18 corpus files at once, all of them chained output.
+  //
+  // The rest are the statement initiators, spelled as `parse_output` spells
+  // them: a statement that begins on the same line ends the output.
+  // The operators after a name that make it the start of an assignment.
+  static ASSIGNING = new Set(['ASSIGN', 'PLUS_EQ', 'MINUS_EQ', 'TIMES_EQ', 'DIV_EQ',
+                              'MOD_EQ', 'POW_EQ', 'INC', 'DEC']);
+
+  static OUTPUT_END = new Set([
+    'OUTPUT', 'SEMI',
+    'IF', 'MATCH', 'AT', 'AT_LABEL', 'AT_BREAK', 'AT_CONT', 'ATSLEEP',
+    'INPUT', 'KEY_BLOCK', 'KEY_NONBLOCK',
+    'OUTPUT_CLEAR', 'OUTPUT_POS', 'OUTPUT_GATE',
+    'RETURN',
+  ]);
+
+  parseOutput() {
+    const outLine = this.adv().line;
+    const items = [];
+    // Where each item starts and ends, for the edit that starts a line inside
+    // the output (GLB-137): the checker warns there, as zymbol-semantic does.
+    const itemLines = [];
+    while (!this.check('PILCROW') && !this.check('NEWLINE_ESC') &&
+           !this.check('RBRACE') && !this.check('EOF')) {
+      // A line break does NOT end an output — decided 2026-09-25, the rule of
+      // `parse_output` in both Rust engines. It ends at `¶`, `\\`, `}`, `;`,
+      // another `>>`, or what starts a statement: a statement keyword
+      // (OUTPUT_END) or a name being assigned. Cutting at the line lost text in
+      // silence: `>> "valor: " x⏎   " unidades" ¶` printed `valor: 5`, and
+      // GoL's multi-line outputs came out short in the playground (step P4.5).
+      if (items.length > 0 && Parser.OUTPUT_END.has(this.peek().type)) break;
+      if (items.length > 0 && this.peek().type === 'IDENT' &&
+          Parser.ASSIGNING.has(this.peek(1)?.type)) break;
+      const startLine = this.peek().line;
+      items.push(this.parseAdditive());
+      itemLines.push([startLine, this.toks[this.pos - 1]?.line ?? startLine]);
+      // Refusing has to be explicit. Narrowing the call alone was worse than the
+      // bug: `>> 1 == 1 ¶` printed `11`, because the loop simply started a new
+      // argument and the leftover `==` fell through the primary parser without a
+      // sound. A silent wrong answer beats a parse error in no reading of
+      // anything.
+      // `>>` has a narrower grammar than the rest of the language: arithmetic
+      // and below, not comparison and not the logical operators (REFERENCE.md
+      // L39). Refusing has to be explicit — narrowing the call alone was worse
+      // than the bug: `>> 1 == 1 ¶` printed `11`, because the loop simply
+      // started a new argument and the leftover `==` fell through the primary
+      // parser without a sound. A silent wrong answer beats a parse error in no
+      // reading of anything.
+      //
+      // The message is the Rust parser's, naming the token as it names it, and
+      // the guidance is a `= help:` line rather than a clause folded into the
+      // message. Both engines gained the help in the same commit; this one had
+      // it and could not share it, they had the message and no guidance.
+      const stray = OUTPUT_STOP_OPS[this.peek().type];
+      if (stray) {
+        const named = Parser.tokenSpelling(this.peek());
+        throw new ZyStaticError(
+          `expected expression, found ${named}`,
+          this.peek(),
+          OUTPUT_GRAMMAR_HELP(stray));
+      }
+    }
+    const nl = this.match('PILCROW', 'NEWLINE_ESC');
+    return { type: 'Output', items, newline: !!nl, line: this.peek().line, outLine, itemLines };
+  }
+
+  parseInput() {
+    const line = this.peek().line;
+    this.adv();
+    // Optional leading typespec cast: ##. / ##.(t,d) / ### / ###(n) / ##! / ##!(n) / ##"(n) / ##'
+    const cast = this.parseInputTypespec();
+    let prompt = null;
+    if (this.check('STR')) {
+      const promptTok = this.adv();
+      prompt = { type: 'Literal', kind: 'str', value: promptTok.value, line: promptTok.line };
+    }
+    // Legacy `#|variable|` numeric cast — only when no typespec was given.
+    let typed = false;
+    if (!cast && this.check('DATA_OP') && this.peek().value?.kind === 'eval') {
+      this.adv(); typed = true;
+    }
+    const varTok = this.eat('IDENT', 'expected variable name in input statement',
+      'input syntax: << var  |  << #|var|  |  << "prompt" var  |  << ##.(5,2) "prompt" var');
+    if (typed && !this.match('VBAR')) {
+      // `<< #|n` with no closing bar was accepted and sat waiting for input
+      // (ZYJS-021); both Rust parsers refuse it before anything runs.
+      throw new ZyStaticError("expected '|' to close #|variable|", this.peek() ?? { line },
+        'numeric input syntax: << #|variable|');
+    }
+    const finalCast = cast ?? { kind: typed ? 'numeric' : 'string' };
+    return { type: 'Input', prompt, varName: varTok.value, cast: finalCast, line };
+  }
+
+  // Typed-input typespec after <<:
+  //   ##.(t,d) → decimal, ##. → float, ###(n)/##!(n) → int, ##"(n) → text, ##' → char
+  // Returns null when the next token is not a typespec.
+  parseInputTypespec() {
+    const t = this.peek().type;
+    if (t === 'CAST_FLOAT') {
+      this.adv();
+      if (this.check('LPAREN')) {
+        const [total, decimals] = this.parseTwoUintArgs();
+        return { kind: 'decimal', total, decimals };
+      }
+      return { kind: 'float' };
+    }
+    if (t === 'CAST_INT_ROUND' || t === 'CAST_INT_TRUNC') {
+      this.adv();
+      return { kind: 'int', maxDigits: this.parseOptOneUintArg() };
+    }
+    if (t === 'CAST_TEXT') {
+      this.adv();
+      return { kind: 'text', max: this.parseOptOneUintArg() };
+    }
+    if (t === 'CAST_CHAR') {
+      this.adv();
+      return { kind: 'char' };
+    }
+    return null;
+  }
+
+  parseOptOneUintArg() {
+    if (!this.check('LPAREN')) return null;
+    this.adv();
+    const n = this.eatSizeArg();
+    this.eat('RPAREN', "expected ')' to close the size argument list");
+    return n;
+  }
+
+  eatSizeArg() {
+    return this.eat('NUM', 'expected a non-negative integer size argument',
+      'input typespec sizes are non-negative integers, e.g. ##.(5,2) or ###(4)').value;
+  }
+
+  parseTwoUintArgs() {
+    this.eat('LPAREN');
+    const a = this.eatSizeArg();
+    this.eat('COMMA', "expected ',' between the two size arguments", 'decimal typespec syntax: ##.(total, decimals)');
+    const b = this.eatSizeArg();
+    this.eat('RPAREN', "expected ')' to close the size argument list");
+    return [a, b];
+  }
+
+  parseReturn() {
+    const opLine = this.adv().line;
+    if (this.check('RBRACE') || this.check('EOF') || this.peek().line > opLine)
+      return { type: 'Return', value: null };
+    const items = [];
+    // Same rule as `>>`: the returned value is what stands on the `<~`'s line,
+    // and a multiline string carries the line on with it — `<~ "a⏎b" "c"`
+    // returns "a\nbc" in both Rust engines.
+    while (!this.check('RBRACE') && !this.check('EOF') &&
+           (this.peek().line === opLine || this.peek().line === this.prevEndLine())) {
+      items.push(this.parseExpr());
+    }
+    const value = items.length === 1 ? items[0] : { type: 'JuxtaConcat', items };
+    return { type: 'Return', value };
+  }
+
+  parseTryCatch() {
+    this.adv();
+    const tryBody = this.parseBlock();
+    const catches = [];
+    while (this.check('CATCH')) {
+      this.adv();
+      // `##_` is its own token since it became the Unit literal, so the
+      // wildcard is matched before the `##Kind` identifier path.
+      if (this.check('UNIT')) { this.adv(); }
+      // `:! #Div` — one `#`. The help lists all eleven kinds, as the Rust one
+      // does since GLB-022 was fixed; it listed three.
+      if (this.check('HASH')) {
+        throw new ZyStaticError("expected '##' for error type (missing second #)", this.peek(),
+          'error types use ## prefix: ##Div, ##Index, ##Key, ##Range, ##Type, ##Parse, ##IO, ##Network, ##DB, ##Time, ##_');
+      }
+      // `:! ## { }` — the mark with no kind after it. It was taken as a filter
+      // named `##` that never matched, so the error went uncaught (ZYJS-021).
+      if (this.check('IDENT') && this.peek().value === '##') {
+        throw new ZyStaticError("expected error type name after '##'", this.peek(),
+          'valid error types: ##Div, ##Index, ##Key, ##Range, ##Type, ##Parse, ##IO, ##Network, ##DB, ##Time, ##_');
+      }
+      const errType = (this.check('IDENT') && this.peek().value.startsWith('##'))
+        ? this.adv().value : null;
+      catches.push({ errType, body: this.parseBlock() });
+    }
+    let finallyBody = null;
+    if (this.check('FINALLY')) {
+      this.adv();
+      finallyBody = this.parseBlock();
+    }
+    return { type: 'TryCatch', tryBody, catches, finallyBody };
+  }
+
+  // Like isDestructuring, but for a loop head: the pattern is followed by `:`
+  // rather than by `=`.
+  isLoopPattern() {
+    let i = 0, depth = 0;
+    const start = this.peek(0).type;
+    const close = start === 'LBRACKET' ? 'RBRACKET' : 'RPAREN';
+    // `#(` opens a paren as `(` does: `@ #(k: a):filas` (GLB-122).
+    const opens = start === 'LBRACKET' ? ['LBRACKET'] : ['LPAREN', 'HASH_LPAREN'];
+    while (this.pos + i < this.toks.length) {
+      const t = this.toks[this.pos + i++];
+      if (opens.includes(t.type)) depth++;
+      else if (t.type === close) { depth--; if (depth === 0) break; }
+    }
+    return this.peek(i).type === 'COLON';
+  }
+
+  isDestructuring() {
+    let i = 0, depth = 0;
+    const start = this.peek(0).type;
+    const close = start === 'LBRACKET' ? 'RBRACKET' : 'RPAREN';
+    // `#(` opens a paren as surely as `(` does, so it counts towards depth —
+    // a dictionary literal nested in the pattern must not close it early.
+    const opens = start === 'LBRACKET'
+      ? t => t === 'LBRACKET'
+      : t => t === 'LPAREN' || t === 'HASH_LPAREN';
+    while (this.pos + i < this.toks.length) {
+      const t = this.toks[this.pos + i++];
+      if (opens(t.type)) depth++;
+      else if (t.type === close) { depth--; if (depth === 0) break; }
+    }
+    return this.peek(i).type === 'ASSIGN';
+  }
+
+  // Two `*rest` in one pattern are ambiguous by definition: nothing says where
+  // the first ends and the second begins. No engine refused the form, and each
+  // invented a different split of `[a, *r, *s, z] = [1,2,3,4,5]` — `r=[2,3,4]
+  // s=[5]` in the tree-walker, `r=[2,3] s=[3]` in the register VM, which returns
+  // the 3 *twice*, and `r=[2,3] s=[4,5]` here. An answer that repeats an element
+  // cannot be right under any reading of what a rest is (DM-17, decision 26).
+  //
+  // Python refuses it too: `SyntaxError: multiple starred expressions in
+  // assignment`. Refusing while parsing means the static checker sees it, which
+  // is where a pattern mistake belongs.
+  rejectSecondRest(targets, line) {
+    if (targets.some(t => t.rest))
+      throw new ZyError(
+        "only one '*rest' is allowed in a destructure pattern — " +
+        'two rests cannot be told apart: nothing says where the first ends',
+        line);
+  }
+
+  // The pattern alone, without the `= value` an assignment adds. Split out so a
+  // loop head can use the very same pattern: `@ (k, v):pares` binds each element
+  // exactly as `(k, v) = par` binds one.
+  parseArrayDestructPattern() {
+    this.adv();
+    const targets = [];
+    while (!this.check('RBRACKET') && !this.check('EOF')) {
+      if (this.check('TIMES')) {
+        const line = this.peek().line;
+        this.adv();
+        this.rejectSecondRest(targets, line);
+        targets.push({ name: this.eat('IDENT').value, rest: true });
+      } else if (this.check('ELSE')) {
+        this.adv();
+        targets.push({ name: '_', rest: false });
+      } else {
+        targets.push({ name: this.eat('IDENT').value, rest: false });
+      }
+      this.match('COMMA');
+    }
+    this.eat('RBRACKET');
+    return { type: 'ArrayDestruct', targets };
+  }
+
+  parseTupleDestructPattern() {
+    // `@ (k: a):ps` — the same refusal the assignment gives (GLB-122).
+    if (this.check('LPAREN') && this.peek(1).type === 'IDENT' && this.peek(2).type === 'COLON') {
+      throw new ZyStaticError(
+        'a dictionary pattern is written `#(…)`', this.peek(0).line,
+        'write `#(` here: `#(name: n) = d`. A bare `(…)` takes a tuple apart, by position');
+    }
+    // `@ #(k: a, v: b):filas` — the dictionary pattern, as on the left of `=`.
+    if (this.check('HASH_LPAREN')) {
+      this.refusePositionalUnderTheMark();
+      this.adv();
+      const targets = [];
+      while (!this.check('RPAREN') && !this.check('EOF')) {
+        const field = this.eat('IDENT').value;
+        this.eat('COLON', "expected ':' after field name in named tuple destructure");
+        const name  = this.eat('IDENT', "expected variable name after ':' in named tuple destructure").value;
+        targets.push({ field, name });
+        this.match('COMMA');
+      }
+      this.eat('RPAREN');
+      return { type: 'NamedDestruct', targets };
+    }
+    this.adv();
+    const targets = [];
+    while (!this.check('RPAREN') && !this.check('EOF')) {
+      if (this.check('TIMES')) {
+        const line = this.peek().line;
+        this.adv();
+        this.rejectSecondRest(targets, line);
+        targets.push({ name: this.eat('IDENT').value, rest: true });
+      } else if (this.check('ELSE')) {
+        this.adv();
+        targets.push({ name: '_', rest: false });
+      } else {
+        targets.push({ name: this.eat('IDENT').value, rest: false });
+      }
+      this.match('COMMA');
+    }
+    this.eat('RPAREN');
+    return { type: 'TupleDestruct', targets };
+  }
+
+  parseArrayDestruct() {
+    this.adv();
+    const targets = [];
+    while (!this.check('RBRACKET') && !this.check('EOF')) {
+      if (this.check('TIMES')) {
+        const line = this.peek().line;
+        this.adv();
+        this.rejectSecondRest(targets, line);
+        targets.push({ name: this.eat('IDENT', "expected identifier after '*' in destructure").value, rest: true });
+      } else if (this.check('ELSE')) {
+        this.adv();
+        targets.push({ name: '_', rest: false });
+      } else {
+        targets.push({ name: this.eat('IDENT', "expected identifier, '*rest', or '_' in array destructure").value, rest: false });
+      }
+      this.match('COMMA');
+    }
+    this.eat('RBRACKET');
+    this.eat('ASSIGN');
+    return { type: 'ArrayDestruct', targets, value: this.parseExpr() };
+  }
+
+  /**
+   * At a `(` that has to open a lambda: refuse it when it does not, saying
+   * which of the two things is missing.
+   */
+  requireLambdaInParens() {
+    if (this.isLambdaStart()) return;
+    // An arrow inside the parens means the lambda is there and one of its
+    // parameters is not a name (`(1, 2 -> #1)`); no arrow means the arrow
+    // itself is what is missing.
+    let depth = 0, arrow = false, after = null;
+    for (let i = 0; this.pos + i < this.toks.length; i++) {
+      const tk = this.toks[this.pos + i].type;
+      if (tk === 'LPAREN') depth++;
+      else if (tk === 'RPAREN' && --depth === 0) { after = this.toks[this.pos + i + 1] ?? null; break; }
+      else if (tk === 'ARROW' && depth === 1) { arrow = true; break; }
+      else if (tk === 'EOF') break;
+    }
+    if (arrow) {
+      throw new ZyStaticError('expected parameter name in lambda', this.peek(),
+        'lambda parameters must be identifiers: (a, b) -> expr');
+    }
+    // Where the `->` was expected — the token after the `)`, as the Rust
+    // parser reports it — not the `(` (step P4.5).
+    throw new ZyStaticError("expected '->' in lambda expression", after ?? this.peek(),
+      'lambda syntax: x -> expr or (a, b) -> expr');
+  }
+
+  /**
+   * `#(a, b) = t`: the dictionary's mark over a positional pattern (GLB-123).
+   * This engine already refused it, with the words of a missing `:`; the two
+   * Rust engines ran it. One sentence in all three now.
+   */
+  refusePositionalUnderTheMark() {
+    if (!this.check('HASH_LPAREN')) return;
+    if (this.peek(1).type === 'IDENT' && this.peek(2).type === 'COLON') return;
+    throw new ZyStaticError('a dictionary pattern takes `key: name` pairs', this.peek(0).line,
+      '`#(name: n) = d` unpacks a dictionary; write `(a, b) = t` to take a tuple apart, by position');
+  }
+
+  parseTupleDestruct() {
+    const isNamed = this.peek(0).type === 'HASH_LPAREN'
+      || (this.peek(1).type === 'IDENT' && this.peek(2).type === 'COLON');
+    // A dictionary pattern is written `#(…)`, as the literal is (GLB-122): the
+    // bare `(name: n) = d` was the second spelling the mark had ended on the
+    // other side of `=`.
+    if (isNamed && this.peek(0).type !== 'HASH_LPAREN') {
+      throw new ZyStaticError(
+        'a dictionary pattern is written `#(…)`', this.peek(0).line,
+        'write `#(` here: `#(name: n) = d`. A bare `(…)` takes a tuple apart, by position');
+    }
+    // And the other half (GLB-123): under `#(` go `key: name` pairs.
+    this.refusePositionalUnderTheMark();
+    this.adv();
+    if (isNamed) {
+      const targets = [];
+      while (!this.check('RPAREN') && !this.check('EOF')) {
+        const field = this.eat('IDENT').value;
+        this.eat('COLON', "expected ':' after field name in named tuple destructure");
+        const name  = this.eat('IDENT', "expected variable name after ':' in named tuple destructure").value;
+        targets.push({ field, name });
+        this.match('COMMA');
+      }
+      this.eat('RPAREN');
+      this.eat('ASSIGN');
+      return { type: 'NamedDestruct', targets, value: this.parseExpr() };
+    } else {
+      const targets = [];
+      while (!this.check('RPAREN') && !this.check('EOF')) {
+        if (this.check('TIMES')) {
+          const line = this.peek().line;
+          this.adv();
+          this.rejectSecondRest(targets, line);
+          targets.push({ name: this.eat('IDENT', "expected identifier after '*' in destructure").value, rest: true });
+        } else if (this.check('ELSE')) {
+          // `_` discards a position — decision 23. It already worked in the
+          // ARRAY pattern and was an error here, which is an inconsistency
+          // between two patterns that say the same thing (DI-16).
+          this.adv();
+          targets.push({ name: '_', rest: false });
+        } else {
+          targets.push({ name: this.eat('IDENT', 'unexpected token in tuple destructure pattern').value, rest: false });
+        }
+        this.match('COMMA');
+      }
+      this.eat('RPAREN');
+      this.eat('ASSIGN');
+      return { type: 'TupleDestruct', targets, value: this.parseExpr() };
+    }
+  }
+
+  // A condition that opens with a prefix `°` — `? °n > 0 { … }` — parses the way
+  // the right-hand side of an assignment does, where the sentinel the prefix
+  // lexes to governs what follows it. `parseExpr` stopped at the sentinel and
+  // read the name as the start of the block (step P4.4; decided 2026-09-25: a
+  // `°` read inside an expression is allowed, it is the accumulator idiom).
+  parseCond() {
+    const t = this.peek();
+    return (t?.type === 'IDENT' && t.hot === true && t.value === '')
+      ? this.parseExprJuxt() : this.parseExpr();
+  }
+
+  parseIf() {
+    this.adv();
+    const cond = this.parseCond();
+    const then = this.parseBlock();
+    const elseifs = [];
+    let elseBranch = null;
+    while (this.check('ELSEIF')) {
+      this.adv();
+      // The Rust parser's words for this spot. Letting `parseExpr` fail gave
+      // `expected expression, found LBrace`, which names this engine's token
+      // and not the mistake: `_?` without a condition is `_`.
+      if (this.check('LBRACE'))
+        throw new ZyStaticError("'_?' requires a condition", this.peek(),
+          "use '_' (without '?') for an unconditional else branch");
+      elseifs.push({ cond: this.parseCond(), body: this.parseBlock() });
+    }
+    if (this.check('ELSE')) {
+      this.adv();
+      elseBranch = this.parseBlock();
+    }
+    return { type: 'If', cond, then, elseifs, else: elseBranch };
+  }
+
+  parseMatchExpr() {
+    const { line, col } = this.peek();
+    this.adv();
+    const expr = this.parseExpr();
+    this.eat('LBRACE', "expected '{' after match expression", 'match syntax: ?? expr { pattern => value }');
+    const arms = [];
+    while (!this.check('RBRACE') && !this.check('EOF')) {
+      arms.push(this.parseMatchArm());
+    }
+    this.eat('RBRACE', "expected '}' to close match expression", 'match expression must be enclosed in braces');
+    return { type: 'Match', expr, arms, line, col };
+  }
+
+  parseMatchArm() {
+    let pattern = this.parseMatchPattern();
+    this.eat('FAT_ARROW', "expected '=>' after pattern",
+      'match case syntax: pattern => [value] [{ block }]');
+    // The no-bare-comparison restriction (inMatchBody) only applies to the
+    // value form (pattern => expr) — there it would swallow the next arm's
+    // comparison pattern (e.g. "ice" < 20). A { block } body is unambiguously
+    // delimited, so comparisons inside it must parse normally.
+    let body;
+    if (this.check('LBRACE')) {
+      body = { type: 'block', stmts: this.parseBlock() };
+    } else {
+      this.inMatchBody = true;
+      body = { type: 'expr', value: this.parseExpr() };
+      this.inMatchBody = false;
+      // `pattern => value { block }`: a value AND a block run for its effect,
+      // as `MatchCase` has both in Rust (ZYJS-038, kept by the author on
+      // 2026-09-26). The value is computed first, then the block runs.
+      if (this.check('LBRACE')) body.effect = this.parseBlock();
+    }
+    return { pattern, body };
+  }
+
+  // Pattern with `||` alternatives: p1 || p2 || p3 (first match wins).
+  // Alternatives are top-level only — list elements stay primary patterns.
+  parseMatchPattern() {
+    const first = this.parseMatchPatternPrimary();
+    if (!this.check('OR')) return first;
+    const alts = [first];
+    while (this.match('OR')) alts.push(this.parseMatchPatternPrimary());
+    // A name bound in one alternative would not exist when another matched.
+    const bound = alts.find(a => a.type === 'errkind' && a.bind);
+    if (bound) {
+      throw new ZyStaticError("a pattern that names an error's message stands alone in its arm", bound.at,
+        'give it an arm of its own, or match the kind without naming the message: ##Kind(_)');
+    }
+    return { type: 'or', alts };
+  }
+
+  // `[ … ]` as a pattern: an element is `_`, a nested list pattern, a name
+  // whose value is compared, or a value.
+  parseListPattern() {
+    this.adv();
+    const elems = [];
+    while (!this.check('RBRACKET') && !this.check('EOF')) {
+      // `=>` cannot begin a pattern element, so reaching it means the `]` is
+      // missing — which is what the Rust parser says. Letting the element
+      // parser hit it gave `expected expression, found FatArrow`, naming the
+      // token this engine stopped on instead of the bracket never closed.
+      if (this.check('FAT_ARROW'))
+        throw new ZyStaticError("expected ']' to close list pattern", this.peek());
+      // An element is a value compared with an element of the array; an
+      // error pattern takes a value apart, and belongs to an arm.
+      if (this.check('ERRCON') || (this.check('IDENT') && this.peek().value.startsWith('##'))) {
+        throw new ZyStaticError('an error pattern is not an element of a list pattern', this.peek(),
+          'match the error in an arm of its own: ##Kind(m) => …');
+      }
+      if (this.check('TIMES')) {
+        // `??` compares; a list element does not bind. It names a *value* to
+        // compare against (`?? codigo { umbral => … }` tests `codigo` against
+        // the value of `umbral`) — `?? [1,2,3] { [a,b,c] => a }` is
+        // `undefined variable 'a'` in every engine, this one included. The
+        // one pattern that creates a name is `##Kind(m)`, standing alone in
+        // its arm (GAP-GOL-016).
+        //
+        // So `*x` has nothing to bind the rest to. All it could contribute is
+        // "and some more elements", which is a length test written in the
+        // notation of destructuring, and the length test already exists:
+        // `?? xs$# { >=3 => … }`. This engine was the only one that accepted
+        // the form, and it appeared to work only because an identifier inside
+        // a list pattern degraded to a wildcard here (DM-26) — so `[a, *x]`
+        // was measuring a named wildcard, not a rest (DM-25).
+        throw new ZyError(
+          "'*rest' has no meaning in a '??' pattern — a pattern compares, it " +
+          'does not bind; for a length test write `?? xs$# { >=3 => … }`',
+          this.peek());
+      } else if (this.check('LBRACKET')) {
+        // A list inside a list is a pattern too, with its own `_`: it was
+        // parsed as an array literal and `_` read as a variable (ZYJS-064).
+        elems.push({ kind: 'nested', pattern: this.parseListPattern() });
+      } else if (this.check('ELSE')) {
+        this.adv();
+        elems.push({ kind: 'wildcard' });
+      } else if (this.check('IDENT') && (this.peek(1).type === 'COMMA' || this.peek(1).type === 'RBRACKET')) {
+        elems.push({ kind: 'bind', name: this.adv().value });
+      } else if (['LT', 'GT', 'LTE', 'GTE', 'EQ', 'NEQ'].includes(this.peek().type)
+                 || this.peek(this.check('MINUS') ? 2 : 1)?.type === 'RANGE') {
+        // A comparison or a range is an element too, and means what it means
+        // in an arm (GLB-148, decided by the author on 2026-10-24): read as the
+        // arm reads it, with the same checks, and matched by `matchPattern`.
+        elems.push({ kind: 'nested', pattern: this.parseMatchPatternPrimary() });
+      } else {
+        // One token, two with a sign, as the Rust parser reads an element: what
+        // follows is `,` or `]`. Read as an expression, `[1 + 2] =>` ran here
+        // and both Rust engines refuse it (ZYJS-070).
+        const start = this.pos;
+        const at = this.peek();
+        const width = this.check('MINUS') && ['NUM', 'FLOAT'].includes(this.peek(1)?.type) ? 2 : 1;
+        const expr = this.parseAdditive();
+        if (this.pos !== start + width) {
+          this.pos = start + width;
+          throw new ZyStaticError("expected ']' to close list pattern", this.peek());
+        }
+        elems.push({ kind: 'literal', expr, line: at.line, col: at.col });
+      }
+      this.match('COMMA');
+    }
+    this.eat('RBRACKET', "expected ']' to close list pattern");
+    return { type: 'list', elems };
+  }
+
+  parseMatchPatternPrimary() {
+    let pattern;
+    // `##Kind`, `##Kind(_)`, `##Kind(name)` — an error of that kind, and the
+    // third form puts its message in `name` (GAP-GOL-016). ERRCON is the kind
+    // with its `(` touching; a bare IDENT `##Kind` matches the kind alone.
+    if (this.check('ERRCON')) {
+      const t = this.adv(); this.adv();             // ##Kind and (
+      const kind = t.value.slice(2);
+      let bind = null;
+      if (this.check('IDENT')) bind = this.adv().value;
+      else if (this.check('ELSE')) this.adv();      // `_`
+      else {
+        throw new ZyStaticError('an error pattern names its message, or ignores it with _', this.peek(),
+          `##${kind}(message) binds it for the arm; ##${kind}(_) or ##${kind} matches the kind alone`);
+      }
+      this.eat('RPAREN', "expected ')' to close the error pattern", `an error pattern is written ##${kind}(message)`);
+      return { type: 'errkind', kind: t.value, bind, at: t, line: t.line };
+    }
+    if (this.check('IDENT') && this.peek().value.startsWith('##')) {
+      const t = this.adv();
+      // `## A(m)`: the lexer stopped at the blank.
+      if (t.value.length === 2) {
+        const nx = this.peek();
+        throw new ZyStaticError(`an error kind is written together: ##${nx?.type === 'IDENT' ? nx.value : ''}`, t);
+      }
+      return { type: 'errkind', kind: t.value, bind: null, at: t, line: t.line };
+    }
+    if (this.check('ELSE')) {
+      this.adv();
+      pattern = { type: 'wildcard' };
+    } else if (this.check('LBRACKET')) {
+      pattern = this.parseListPattern();
+    } else if (['LT','GT','LTE','GTE','EQ','NEQ'].includes(this.peek().type)) {
+      const opTok = this.adv();
+      pattern = { type: 'comparison', op: opTok.value, value: this.parseAdditive(), line: opTok.line, col: opTok.col };
+    } else {
+      // What can start a pattern, as in `parse_pattern_primary`; anything else
+      // is refused with Rust's words rather than the expression parser's
+      // (ZYJS-033). A `-` only in front of a number — a negative literal is a
+      // pattern, `-x` is not — and a `(` never: a pattern is not an expression
+      // (GLB-062, decided 2026-09-26).
+      const PATTERN_START = ['STR', 'NUM', 'FLOAT', 'CHAR', 'BOOL', 'IDENT'];
+      const negativeNumber = this.check('MINUS') && ['NUM', 'FLOAT'].includes(this.peek(1)?.type);
+      if (!PATTERN_START.includes(this.peek().type) && !negativeNumber) {
+        const shown = Parser.tokenSpelling(this.peek());
+        throw new ZyStaticError(`expected pattern, found ${shown}`, this.peek());
+      }
+      // A hot name is not a pattern: `acc° =>` would create the name it is
+      // supposed to compare with. The Rust parser refuses it; this engine read
+      // it as an identifier pattern over a name it had just invented (ZYJS-062).
+      if (this.check('IDENT') && this.peek().hot && this.peek().value) {
+        throw new ZyStaticError(`expected pattern, found '${this.peek().value}°'`, this.peek());
+      }
+      // One token, two with a sign, as `parse_pattern_primary` reads it: what
+      // follows is `=>`, `..` after an Int or a Char, `||` or `,`. Reading an
+      // expression here let `1 + 2 =>`, `f(3) =>` and `a[1] =>` run where both
+      // Rust engines refuse them (ZYJS-070).
+      const start = this.pos;
+      const width = negativeNumber ? 2 : 1;
+      const at = this.peek();
+      const left = this.parseAdditive();
+      const notPattern = () => new ZyStaticError("expected '=>' after pattern", this.peek(),
+        'match case syntax: pattern => [value] [{ block }]');
+      if (this.pos !== start + width) { this.pos = start + width; throw notPattern(); }
+      const isLit = (e, kind) => e?.type === 'Literal' && e.kind === kind;
+      const isInt = (e) => isLit(e, 'int') || (e?.type === 'UnaryOp' && e.op === '-' && isLit(e.operand ?? e.expr ?? e.value, 'int'));
+      // A range is Int..Int or Char..Char: after anything else Rust does not
+      // read the `..`, and a Float, a String or a name before it ran here
+      // (ZYJS-070).
+      if (this.check('RANGE') && !isInt(left) && !isLit(left, 'char')) throw notPattern();
+      if (this.match('RANGE')) {
+        const endTok = this.peek();
+        const endStart = this.pos;
+        const endWidth = this.check('MINUS') && this.peek(1)?.type === 'NUM' ? 2 : 1;
+        const to = this.parseAdditive();
+        if (this.pos !== endStart + endWidth) { this.pos = endStart + endWidth; throw notPattern(); }
+        // The ends are one kind, as `parse_pattern_primary` requires: `'a'..5`
+        // and `1..'z'` used to parse, never match, and fall to `_` (ZYJS-021).
+        if (isInt(left) && !isInt(to)) {
+          throw new ZyStaticError("expected integer after '..' in range pattern", endTok ?? this.peek());
+        }
+        if (left?.type === 'Literal' && left.kind === 'char' && !(to?.type === 'Literal' && to.kind === 'char')) {
+          throw new ZyStaticError("expected char after '..' in range pattern", endTok ?? this.peek());
+        }
+        pattern = { type: 'range', from: left, to, line: at.line, col: at.col };
+      } else {
+        pattern = { type: 'literal', value: left, line: at.line, col: at.col };
+      }
+    }
+    return pattern;
+  }
+
+  parseLoop() {
+    const line = this.peek().line;
+    if (this.check('LBRACE')) {
+      return { type: 'Loop', kind: 'infinite', label: null, line, body: this.parseBlock() };
+    }
+    // `@ (k, v):pares { … }` — a destructuring pattern where a single name
+    // would go. It desugars to `@ __zy_par:pares { (k, v) = __zy_par; … }`,
+    // reusing the foreach and the destructure unchanged, so the loop stops
+    // needing a first line whose only job is to unpack.
+    //
+    // `@ (` is already taken — `@ (n + 1) { }` is a valid count loop — and the
+    // disambiguator is the `:` after the `)`, the same scan `isDestructuring`
+    // already does for `=`.
+    if ((this.check('LPAREN') || this.check('LBRACKET') || this.check('HASH_LPAREN')) && this.isLoopPattern()) {
+      const pat = this.check('LBRACKET') ? this.parseArrayDestructPattern()
+                                         : this.parseTupleDestructPattern();
+      this.eat('COLON');
+      const iterable = this.parseAdditive();
+      // D4: `@ (a, b):1..3` is refused for what it IS — a pattern over a range,
+      // which yields whole numbers and has nothing to take apart — and not for
+      // failing to parse. The range is read here so the refusal can be the
+      // sentence the two Rust engines give.
+      if (this.check('RANGE')) {
+        this.adv();
+        this.parseAdditive();
+        if (this.match('COLON')) this.parseAdditive();
+        throw new ZyStaticError("tuple pattern '( … )' requires a tuple, got Int",
+          { line },
+          "a range yields whole numbers; use '@ name:a..b' and no pattern");
+      }
+      const body = this.parseBlock();
+      const tmp = '__zy_par';
+      body.unshift({ ...pat, value: { type: 'Ident', name: tmp, line }, line });
+      return { type: 'Loop', kind: 'foreach', label: null, var: tmp, line,
+               iterable, pairs: true, body };
+    }
+
+    // @ IDENT COLON  → unlabeled range/foreach (@ var:start..end)
+    if (this.check('IDENT') && this.peek(1).type === 'COLON') {
+      const varName = this.adv().value;
+      this.adv();
+      const startTok = this.peek();
+      const startExpr = this.parseAdditive();
+      if (this.match('RANGE')) {
+        const endExpr = this.parseAdditive();
+        let stepExpr = null;
+        if (this.match('COLON')) stepExpr = this.parseAdditive();
+        // Where the range begins: the warning about its direction points
+        // there, as Rust's does (ZYJS-045). A literal carries no position.
+        return { type: 'Loop', kind: 'range', label: null, var: varName, line,
+                 rangeAt: { line: startTok.line, col: startTok.col ?? null },
+                 from: startExpr, to: endExpr, step: stepExpr, body: this.parseBlock() };
+      }
+      return { type: 'Loop', kind: 'foreach', label: null, var: varName, line,
+               iterable: startExpr, body: this.parseBlock() };
+    }
+    const cond = this.parseExpr();
+    return { type: 'Loop', kind: 'while', label: null, cond, line, body: this.parseBlock() };
+  }
+
+  parseLabeledLoop() {
+    const line = this.peek().line;
+    const label = this.adv().value; // consume AT_LABEL token
+    if (this.check('LBRACE')) {
+      return { type: 'Loop', kind: 'infinite', label, line, body: this.parseBlock() };
+    }
+    // @label var:start..end
+    if (this.check('IDENT') && this.peek(1).type === 'COLON') {
+      const varName = this.adv().value;
+      this.adv(); // consume ':'
+      const startTok = this.peek();
+      const startExpr = this.parseAdditive();
+      if (this.match('RANGE')) {
+        const endExpr = this.parseAdditive();
+        let stepExpr = null;
+        if (this.match('COLON')) stepExpr = this.parseAdditive();
+        return { type: 'Loop', kind: 'range', label, var: varName, line,
+                 rangeAt: { line: startTok.line, col: startTok.col ?? null },
+                 from: startExpr, to: endExpr, step: stepExpr, body: this.parseBlock() };
+      }
+      return { type: 'Loop', kind: 'foreach', label, var: varName, line,
+               iterable: startExpr, body: this.parseBlock() };
+    }
+    // @label cond { }
+    const cond = this.parseExpr();
+    return { type: 'Loop', kind: 'while', label, cond, line, body: this.parseBlock() };
+  }
+
+  isFuncDecl() {
+    if (this.peek(0).type !== 'IDENT' || this.peek(1).type !== 'LPAREN') return false;
+    let i = 2, depth = 1;
+    while (this.pos + i < this.toks.length && depth > 0) {
+      const t = this.toks[this.pos + i++];
+      if (t.type === 'LPAREN') depth++;
+      else if (t.type === 'RPAREN') depth--;
+    }
+    return this.peek(i).type === 'LBRACE';
+  }
+
+  parseFuncDecl() {
+    const nameTok = this.adv();
+    const name = nameTok.value;
+    const line = nameTok.line;
+    this.eat('LPAREN');
+    const params = [];
+    while (!this.check('RPAREN') && !this.check('EOF')) {
+      const pname = this.eat('IDENT', 'expected parameter name', 'parameters must be identifiers').value;
+      let isOut = false;
+      // `a~`, the working copy: nothing to record — every parameter is a copy
+      // here — but the mark is a token now and has to be consumed.
+      if (this.match('TILDE')) { /* mutable parameter */ }
+      else if (this.match('RETURN')) isOut = true;
+      params.push({ name: pname, isOut });
+      // `f(a b) { }` is not two parameters: both Rust parsers stop at the `b`,
+      // and this one declared two and failed at the call (ZYJS-021).
+      if (!this.match('COMMA') && !this.check('RPAREN')) {
+        throw new ZyStaticError("expected ')' after parameters", this.peek(), 'function syntax: name(params) { }');
+      }
+    }
+    this.eat('RPAREN');
+    return { type: 'FuncDecl', name, params, body: this.parseBlock(), line };
+  }
+
+  // Whether the bracket at the cursor has a `..` at its own depth.
+  bracketHasRange() {
+    let depth = 0;
+    for (let i = this.pos; i < this.toks.length; i++) {
+      const t = this.toks[i].type;
+      if (t === 'LBRACKET' || t === 'LPAREN') depth++;
+      else if (t === 'RBRACKET' || t === 'RPAREN') { depth--; if (depth === 0) return false; }
+      else if (t === 'RANGE' && depth === 1) return true;
+      else if (t === 'EOF') return false;
+    }
+    return false;
+  }
+
+  parseIdentStmt() {
+    if (this.isFuncDecl()) return this.parseFuncDecl();
+
+    const start = this.pos;
+    const tok0 = this.adv();
+    const name = tok0.value;
+    const hot  = tok0.hot ?? false;
+    const line = this.peek().line;
+
+    if (this.match('CONST_ASSIGN')) {
+      return { type: 'ConstAssign', name, value: this.parseRHS(), line };
+    }
+
+    const compound = { PLUS_EQ:'+', MINUS_EQ:'-', TIMES_EQ:'*', DIV_EQ:'/', MOD_EQ:'%', POW_EQ:'^' };
+    const cop = compound[this.peek().type];
+    if (cop) { this.adv(); return { type: 'CompoundAssign', name, hot, op: cop, value: this.parseExpr(), line }; }
+
+    if (this.match('INC')) return { type: 'Increment', name, hot, op: '++', line };
+    if (this.match('DEC')) return { type: 'Increment', name, hot, op: '--', line };
+
+    if (this.match('ASSIGN')) {
+      return { type: 'VarAssign', name, hot, value: this.parseRHS(), line };
+    }
+
+    // A bracket with a range in it — `a[1..2]$+ 5`, `m[1..2>1]$~ 9` — selects
+    // several places, and a write reaches one (GLB-077, decided 2026-10-03).
+    // The branch below reads the index as one expression and could not parse a
+    // range; the expression path reads it as the navigator does, and the edit
+    // is then refused with the Rust texts.
+    if (this.check('LBRACKET') && this.peek().line === this.prevEndLine() && this.bracketHasRange()) {
+      const left = { type: 'Ident', name, hot, line: tok0.line, col: tok0.col ?? null };
+      const stmtExpr = this.parsePostfixRest(left);
+      const RANGE_STEP = 'a write reaches one place, so its path has no ranges';
+      if (stmtExpr?.type === 'FuncUpdate' || stmtExpr?.type === 'DeepUpdate' || this.check('DUPDATE')) {
+        throw new ZyStaticError('collection update ($~) requires a place to write', line, RANGE_STEP);
+      }
+      return this.editStmtOrExpr(this.continueStmtExpr(stmtExpr, start), line);
+    }
+
+    // subscript assign: name[idx] = val
+    if (this.check('LBRACKET') && this.peek().line === this.prevEndLine()) {
+      this.adv();
+      let idx = this.parseExpr();
+      // `m[i>j>k]$~ v` — a nav path of three steps or more (ZYJS-012).
+      //
+      // At statement position the bracket is consumed before the nav parser
+      // sees it, so the path arrives here as a `>` COMPARISON and the branches
+      // below rebuild it with `flattenGtChain`. But `parseExpr` reads exactly
+      // ONE comparison — `>` does not chain — so `m[1>2>1]` left a `>` sitting
+      // in front of the `]` and the whole statement died on
+      // `Expected RBRACKET, got '>'`. The READ `>> m[1>2>1] ¶` was fine all
+      // along: it goes through `parseNavContent`, which loops over `>` itself.
+      //
+      // Keep folding to the left, which is the shape `flattenGtChain` already
+      // flattens, so the rebuild below is unchanged. `parseAdditive` for the
+      // operand, for the reason `parseNavAtom` gives: at this position `>` is a
+      // separator and not an operator, so a full comparison would swallow it.
+      while (this.check('GT')) {
+        this.adv();
+        idx = { type: 'BinOp', op: '>', left: idx, right: this.parseAdditive() };
+      }
+      // One text per failure: a bracket opened for an index and never closed is
+      // the same failure here as in any expression, so it gets `closeNav`'s
+      // words and not a third private set. This branch used to have its own
+      // — "expected ']' after index expression", with no help at all — and it
+      // agreed with nothing but the Rust statement path that said the same and
+      // is gone (GLB-027). Which of the two helps is `is_nav_index`'s choice in
+      // Rust; here the `>` fold above has already answered it.
+      this.eat('RBRACKET', "expected ']' after index",
+        (idx?.type === 'BinOp' && idx.op === '>')
+          ? 'array indexing must use brackets: arr[index] or arr[i>j]'
+          : 'array indexing must use brackets: arr[index]');
+      // A hot name opening a statement with `[` used to be read as an
+      // assignment by both Rust parsers, where nothing but `=` could follow,
+      // and this engine copied the refusal (ZYJS-021). The message it copied
+      // was the last caller of the withdrawn indexed assignment and its help
+      // taught `arr[i] = val`, a form that does not exist (COL-2), so the help
+      // was never copied — GLB-027. The refusal itself is gone now: the gate
+      // that routed `x°[` there was the asymmetry, not the wording. `x°[1]$~ 5`
+      // and the bare read `x°[1]` are the same forms as their cold twins and
+      // take the same branches below, so nothing here asks about `hot` any
+      // more — it rides along on the receiver instead.
+      // Decision 6: the indexed assignment is withdrawn, in all three
+      // collections. `=` means "this NAME now holds this value", and
+      // `u["k"] = v` names nothing — it reaches inside a structure and changes a
+      // part. Two different operations under one sign. Modifying is `$~`, which
+      // says so.
+      //
+      // It could not be withdrawn until `u["k"]$~ v` worked as a statement
+      // (decision 12), which landed first: prohibiting the old form while the
+      // new one did nothing would have left no way to change an element at all.
+      if (this.check('ASSIGN') || compound[this.peek().type]) {
+        throw new ZyError(
+          `indexed assignment does not exist: '${name}[…] =' is not a form of Zymbol\n` +
+          `= help: use '${name}[i]$~ value' to modify in place — ` +
+          `'=' gives a value to a NAME, '$~' changes part of a collection`,
+          line);
+      }
+      // `m[1][2] = 77` — chained brackets. The indexed assignment does not exist
+      // at ANY depth, and nesting is navigated with `>`: `m[1>2]`. This engine
+      // ran the line and changed nothing — a silent no-op, which is worse than a
+      // program that does not compile, and it is the oldest red in the gate.
+      //
+      // Both halves belong in the message: a reader who wrote this needs the
+      // notation as well as the rule.
+      if (this.check('LBRACKET')) {
+        let i = 0, depth = 0;
+        while (this.pos + i < this.toks.length) {
+          const t = this.toks[this.pos + i++];
+          if (t.type === 'LBRACKET') depth++;
+          else if (t.type === 'RBRACKET') { depth--; if (depth === 0 && this.toks[this.pos + i]?.type !== 'LBRACKET') break; }
+        }
+        const after = this.peek(i)?.type;
+        if (after === 'ASSIGN' || compound[after]) {
+          throw new ZyError(
+            `indexed assignment does not exist: '${name}[…] =' is not a form of Zymbol\n` +
+            `= help: nesting is navigated with '>', so this is '${name}[i>j]$~ value' — ` +
+            `'=' gives a value to a NAME, '$~' changes part of a collection`,
+            line);
+        }
+      }
+      // `name[i]$~ v` as a statement. The bracket was consumed above, so the
+      // `$~` never reached the nav-index parser that builds FuncUpdate — which
+      // is why this form was a silent no-op here while neither Rust engine
+      // could even parse it. Build the node directly (decision 12).
+      if (this.check('DUPDATE')) {
+        this.adv();
+        /* BUG-ZYB-002: the value is a whole expression, juxtaposition included — the
+           same thing the right-hand side of `=` accepts, because `d[k]$~ v` IS an
+           assignment. `parseUnary` took one operand and left the rest of the line to
+           be parsed as its own statement, where a bare identifier is a statement with
+           no effect and no diagnostic, so `d["a"]$~ "" v` assigned `""` and dropped
+           `v` in silence. */
+        const val = this.parseExprJuxt();
+        const obj = { type: 'Ident', name, hot, line: tok0.line, col: tok0.col ?? null };
+        // `m[i>j]$~ v` — the deep form. `parseExpr` above read `i>j` as a
+        // COMPARISON, because at statement position the bracket is consumed
+        // before the nav parser ever sees it, so `m[1>2]$~ 77` indexed with the
+        // boolean and raised "index out of bounds" while both Rust engines
+        // navigated two levels. Rebuild the path from the comparison.
+        if (idx?.type === 'BinOp' && idx.op === '>') {
+          return this.editStmtOrExpr(
+            { type: 'DeepUpdate', obj, path: Parser.flattenGtChain(idx), value: val }, line);
+        }
+        return this.editStmtOrExpr({ type: 'FuncUpdate', obj, index: idx, value: val }, line);
+      }
+      // `m[i>j]` at STATEMENT position, followed by anything other than `$~`:
+      // `parseExpr` above read `i>j` as a COMPARISON, because the bracket is
+      // consumed before the nav parser ever sees it. The `$~` branch already
+      // rebuilt the path from it; every other edit fell through here with a
+      // boolean for an index, so `d["n">"l"]$+ 9` raised "a navigation step is
+      // a position or a key, got bool" while both Rust engines navigated two
+      // levels. Same rebuild, one branch earlier.
+      const spec = (idx?.type === 'BinOp' && idx.op === '>')
+        ? { kind: 'path', path: Parser.flattenGtChain(idx) }
+        : { kind: 'simple', index: idx };
+      let left = { type: 'NavIndex', obj: { type: 'Ident', name, hot, line: tok0.line, col: tok0.col ?? null }, spec };
+      return this.editStmtOrExpr(this.continueStmtExpr(this.parsePostfixRest(left), start), line);
+    }
+
+    let left = { type: 'Ident', name, hot, line: tok0.line, col: tok0.col ?? null };
+    const stmtExpr = this.parsePostfixRest(left);
+    // A statement that opens with a call is that call and nothing more, as
+    // `parse_function_call_statement` requires. `f(1) + 2` used to end at the
+    // `)` and leave `+ 2` for a statement of its own (ZYJS-021). On the next
+    // line too, as Rust reads it: no binary operator starts a statement.
+    const BINARY = ['PLUS', 'MINUS', 'TIMES', 'DIV', 'MOD', 'POW', 'EQ', 'NEQ', 'LT', 'GT', 'LTE', 'GTE', 'AND', 'OR'];
+    if ((stmtExpr?.type === 'Call' || stmtExpr?.type === 'CallExpr')
+        && BINARY.includes(this.peek().type)) {
+      throw new ZyStaticError('expected function call', line, 'only function calls can be used as statements');
+    }
+    return this.editStmtOrExpr(this.continueStmtExpr(stmtExpr, start), line);
+  }
+
+  // A statement that opens with a name is a whole expression, as Rust's
+  // `parse_expr_or_edit_statement` reads it: `x > 1` is one statement, valid,
+  // and the checker warns that it does nothing (decided 2026-09-26, ZYJS-035).
+  // This engine stopped after the postfix, so `x > 1` was refused at the `>`
+  // and `x + 1` ran as `x` and then `+1`. When a binary operator follows, the
+  // statement is read again from its name with the full expression grammar —
+  // across a line break too, as Rust does: no binary operator starts a
+  // statement, so nothing that follows could have been one.
+  static STMT_CONTINUES = new Set([
+    'PLUS', 'MINUS', 'TIMES', 'DIV', 'MOD', 'POW',
+    'EQ', 'NEQ', 'LT', 'GT', 'LTE', 'GTE', 'AND', 'OR', 'PIPE',
+  ]);
+
+  continueStmtExpr(expr, start) {
+    // A call is the whole statement (`parse_function_call_statement`), and
+    // one followed by an operator is refused above.
+    if (expr?.type === 'Call' || expr?.type === 'CallExpr') return expr;
+    if (!Parser.STMT_CONTINUES.has(this.peek().type)) return expr;
+    this.pos = start;
+    return this.parseExpr();
+  }
+
+  // The editing half of the `$` family. The consulting half — `$#`, `$?`, `$[..]`,
+  // `$>`, `$|`, `$<`, … — never modifies anything, so discarding its result is
+  // dead code (decision 19) and not a modification.
+  // `i>j>k` read as a chain of `>` comparisons, rebuilt as a navigation path.
+  // Path atoms are `{kind, expr}`, the shape `parseNavContent` produces.
+  static flattenGtChain(e) {
+    return (e?.type === 'BinOp' && e.op === '>')
+      ? [...Parser.flattenGtChain(e.left), ...Parser.flattenGtChain(e.right)]
+      : [{ kind: 'index', expr: e }];
+  }
+
+  // The CONSULTING half. It always builds and never modifies, so discarding one
+  // as a statement is dead code — COLLECTIONS.md § 1, decision 19. It was
+  // documented and enforced nowhere: `s$~~["a":"X"]` on its own line ran and
+  // changed nothing, in all three engines, with no diagnostic.
+  //
+  // A list rather than "everything that is not an edit", so a new operator has
+  // to be classified deliberately instead of falling into a default. `$!` and
+  // `$!!` are not here: propagating an error is an effect.
+  static CONSULT_OPS = new Set([
+    '$#', '$?', '$??', '$[i..j]', '$[i:n]', '$>', '$|', '$<', '$/', '$*', '$~~',
+  ]);
+
+  static EDIT_OPS = new Set([
+    '$+', '$++', '$-', '$--', '$+[i]', '$-[i]', '$-[i..j]', '$-[i:n]',
+    '$^', '$^+', '$^-',
+  ]);
+
+  // Decision 12, the rule of the result: a `$` edit whose result is the whole
+  // statement modifies in place; one whose result is used builds and leaves the
+  // original alone. Before it, `arr$+ 3` on its own line ran and did nothing at
+  // all, with no warning (DI-01).
+  //
+  // It desugars to `name = <the same expression>`, which is observably identical
+  // because collections assign by value and there is no aliasing (DI-04). What
+  // the marker carries is the source form, and the tuple guard needs it: `t$+ 3`
+  // written as a statement means "modify this tuple", and a tuple does not change.
+  //
+  // A receiver that is not a plain name yields no statement — `f()[1]$~ 5` would
+  // modify a temporary nobody holds (decision 20).
+  // The editing `$` operators, by node shape — shared by the in-place rule and
+  // by the refusal of an edit that has nowhere to land.
+  static isEditNode(e) {
+    return (e?.type === 'CollectionOp' && Parser.EDIT_OPS.has(e.op)) ||
+           e?.type === 'FuncUpdate' || e?.type === 'DeepUpdate';
+  }
+
+  editStmtOrExpr(expr, line) {
+    const isEdit =
+      (expr?.type === 'CollectionOp' && Parser.EDIT_OPS.has(expr.op)) ||
+      expr?.type === 'FuncUpdate' || expr?.type === 'DeepUpdate';
+    // In-place editing desugars to `name = <the same expression>`, and the
+    // expression returns the RECEIVER it edited. That is exact only when the
+    // receiver IS the name. When the receiver lives inside it — `d.x$+ 3`,
+    // `d.x["y"]$~ 5` — assigning the inner collection to the outer name
+    // replaces the whole thing, which was a silent data-destruction bug:
+    // `d["x"]["y"]$~ 9` left `d` holding `(y: 9)` with every other key gone,
+    // exit 0, no diagnostic. So a receiver with a path becomes a deep write at
+    // that path, which is machinery this engine already has.
+    //
+    // A bracket directly after a bracket never reaches here: it is refused when
+    // it is READ (GLB-072), so the `CHAINED` help this had was deleted with its
+    // Rust twin (GLB-077). The dot composes freely.
+    const RANGE_STEP = 'a write reaches one place, so its path has no ranges';
+    // Two causes, two headlines — the Rust engines distinguish them and this
+    // engine gave the bracket-after-bracket message to both, so `f()[1]$~ 5`
+    // was reported as a path problem it does not have.
+    const NO_NAME = 'this edits whatever the call returned, and nothing holds it — assign the result first, or edit a named collection';
+    const NO_NAME_HEAD = 'modifying requires a destination with a name';
+    // An edit of an edit — `x$+ 1 $+ 2` — has an expression for a receiver,
+    // not a call: `classify_edit` answers it with its own NO_NAME text.
+    const EXPR_NO_NAME = 'this edits what the expression produced, and nothing holds it — assign the result to a name first';
+    // `°` is not decoration on the receiver: it says which scope the name lives
+    // in. The desugaring assigns to that name, so it has to assign with the
+    // same anchoring or `x°[1]$~ 5` would write somewhere else than `x°` reads.
+    let rootHot = false;
+    const flatten = (e) => {
+      const steps = [];
+      const go = (n) => {
+        if (!n) return { err: NO_NAME };
+        if (n.type === 'Ident') { rootHot = n.hot ?? false; return n.name; }
+        if (n.type === 'NavIndex') {
+          const root = go(n.obj);
+          if (typeof root !== 'string') return root;
+          if (n.spec.kind === 'simple') steps.push({ kind: 'index', expr: n.spec.index });
+          else if (n.spec.kind === 'path') {
+            for (const a of n.spec.path) {
+              if (a.kind === 'range') return { err: RANGE_STEP };
+              steps.push(a);
+            }
+          } else if (n.spec.kind === 'flat' && n.spec.paths.length === 1
+                     && n.spec.paths[0].some(a => a.kind === 'range')) {
+            // `a[1..2]`: one bracket whose path has a range (GLB-077).
+            return { err: RANGE_STEP };
+          } else return { err: NO_NAME };
+          return root;
+        }
+        if (n.type === 'FieldAccess' && !n.scoped) {
+          const root = go(n.obj);
+          if (typeof root !== 'string') return root;
+          steps.push({ kind: 'index', key: n.field });
+          return root;
+        }
+        if (n.type === 'Call' || n.type === 'CallExpr') return { err: NO_NAME };
+        return { err: EXPR_NO_NAME };
+      };
+      const r = go(e);
+      return typeof r === 'string' ? { root: r, steps } : r;
+    };
+
+    if (isEdit) {
+      const f = flatten(expr.obj);
+      // Decision 20: an edit with nowhere to write is refused, rather than run
+      // for a result nothing holds.
+      if (f.err) {
+        throw new ZyStaticError(f.err === NO_NAME ? NO_NAME_HEAD : 'this edit has nothing to write into', line, f.err);
+      }
+      if (f.steps.length === 0) return { type: 'InPlaceEdit', name: f.root, hot: rootHot, expr, line };
+
+      // The receiver is inside the name. `$~` carries its own final step, so it
+      // moves onto the whole path; every other edit keeps its shape and is put
+      // back where it came from.
+      const obj = { type: 'Ident', name: f.root, hot: rootHot, line };
+      if (expr.type === 'FuncUpdate') {
+        const last = expr.key !== undefined
+          ? { kind: 'index', key: expr.key }
+          : { kind: 'index', expr: expr.index };
+        const deep = { type: 'DeepUpdate', obj, path: [...f.steps, last], value: expr.value };
+        return { type: 'InPlaceEdit', name: f.root, hot: rootHot, expr: deep, line };
+      }
+      if (expr.type === 'DeepUpdate') {
+        const deep = { type: 'DeepUpdate', obj, path: [...f.steps, ...expr.path], value: expr.value };
+        return { type: 'InPlaceEdit', name: f.root, hot: rootHot, expr: deep, line };
+      }
+      const deep = { type: 'DeepUpdate', obj, path: f.steps, value: expr };
+      return { type: 'InPlaceEdit', name: f.root, hot: rootHot, expr: deep, line };
+    }
+    return { type: 'ExprStmt', expr };
+  }
+
+  // Parse an expression in a delimited position — a call argument, an array
+  // element, a tuple element or a grouped expression — allowing implicit
+  // concatenation there too: f(" " label(k) value)  [a " " b]  (a " " b)
+  // Unlike parseRHS, a following '(' never continues the chain here: it is
+  // ambiguous with a lambda, a tuple and a grouped expression (HLZ-007).
+  parseExprJuxt() {
+    const first = this.parseExpr();
+    const juxtStart = new Set(['STR', 'IDENT', 'NUM', 'FLOAT', 'CHAR', 'BOOL']);
+    const items = [first];
+    while (this.peek().line === this.prevEndLine() && juxtStart.has(this.peek().type)) {
+      items.push(this.parseExpr());
+    }
+    if (items.length === 1) return first;
+    return { type: 'ImplicitConcat', items };
+  }
+
+  parseRHS() {
+    const first = this.parseExpr();
+    if (this.check('COMMA')) {
+      const items = [first];
+      while (this.match('COMMA')) items.push(this.parseExpr());
+      return { type: 'CommaJoin', items };
+    }
+    // Implicit string concatenation: collect multiple expressions on the same line
+    const implicitExprStart = new Set(['STR','IDENT','NUM','FLOAT','CHAR','BOOL','LPAREN','LBRACKET','MINUS','NOT','CAST_FLOAT','CAST_INT_ROUND','CAST_INT_TRUNC','CAST_CHAR','DATA_OP','MATCH','ELSE']);
+    const items = [first];
+    while (this.peek().line === this.prevEndLine() && implicitExprStart.has(this.peek().type)) {
+      items.push(this.parseExpr());
+    }
+    if (items.length === 1) return first;
+    return { type: 'ImplicitConcat', items };
+  }
+
+  // ─── Expression grammar ──────────────────────────────────────────────────
+
+  parseExpr() {
+    if (this.isLambdaStart()) return this.parseLambda();
+    return this.parsePipe();
+  }
+
+  isLambdaStart() {
+    if (this.peek(0).type === 'IDENT' && this.peek(1).type === 'ARROW') return true;
+    if (this.peek(0).type !== 'LPAREN') return false;
+    let i = 1, depth = 1;
+    while (depth > 0 && this.pos + i < this.toks.length) {
+      const t = this.toks[this.pos + i++];
+      if (t.type === 'LPAREN') depth++;
+      else if (t.type === 'RPAREN') depth--;
+    }
+    if (this.peek(i).type === 'ARROW') return true;
+    i = 1;
+    while (this.pos + i < this.toks.length) {
+      const t = this.toks[this.pos + i];
+      if (t.type === 'ARROW') return true;
+      if (t.type === 'RPAREN' || t.type === 'EOF') return false;
+      if (t.type !== 'IDENT' && t.type !== 'COMMA') return false;
+      i++;
+    }
+    return false;
+  }
+
+  parseLambda() {
+    const params = [];
+    let parensWrapped = false;
+    if (this.check('LPAREN')) {
+      this.adv();
+      while (!this.check('RPAREN') && !this.check('ARROW') && !this.check('EOF')) {
+        params.push(this.eat('IDENT').value);
+        // Two names with no comma between them are not two parameters: both
+        // Rust parsers stop here, and `(x y -> #1)` used to take both (ZYJS-021).
+        if (!this.match('COMMA') && !this.check('RPAREN') && !this.check('ARROW')) {
+          throw new ZyStaticError("expected ')' after lambda parameters", this.peek(), 'lambda syntax: (a, b) -> expr');
+        }
+      }
+      if (this.check('RPAREN')) {
+        // (params) -> body form: consume ')' before '->'
+        this.adv();
+      } else {
+        // (params -> body) form: closing ')' comes after body. It takes one
+        // parameter or more — the thunk is `() -> body`. `(-> 1)` was read as
+        // one with none, and ran here while both Rust parsers refused it
+        // (ZYJS-056).
+        if (params.length === 0) {
+          throw new ZyStaticError(
+            `expected expression, found ${Parser.tokenSpelling(this.peek())}`, this.peek());
+        }
+        parensWrapped = true;
+      }
+    } else {
+      params.push(this.adv().value);
+    }
+    this.eat('ARROW');
+    const body = this.check('LBRACE')
+      ? { type: 'block', stmts: this.parseBlock() }
+      : { type: 'expr',  value: this.parseExpr() };
+    if (parensWrapped) this.match('RPAREN');
+    return { type: 'Lambda', params, body };
+  }
+
+  parsePipe() {
+    let left = this.parseOr();
+    while (this.match('PIPE')) {
+      const saved = this.inPipeTarget;
+      this.inPipeTarget = true;
+      let rhs;
+      try { rhs = this.parseOr(); } finally { this.inPipeTarget = saved; }
+      left = { type: 'Pipe', value: left, rhs };
+    }
+    return left;
+  }
+
+  parseOr()             { return this.parseBinLeft(['OR'],  () => this.parseAnd()); }
+  parseAnd()            { return this.parseBinLeft(['AND'], () => this.parseComparison()); }
+  parseComparison() {
+    const line = this.peek()?.line ?? null;
+    let left = this.parseAdditive();
+    if (this.inMatchBody) return left;
+    const cmp = { EQ:'==', NEQ:'<>', LT:'<', GT:'>', LTE:'<=', GTE:'>=' };
+    const op  = cmp[this.peek().type];
+    if (op) { this.adv(); left = { type:'BinOp', op, left, right: this.parseAdditive(), line }; }
+    return left;
+  }
+  parseAdditive()       { return this.parseBinLeft(['PLUS','MINUS'], () => this.parseMultiplicative()); }
+  parseMultiplicative() { return this.parseBinLeft(['TIMES','DIV','MOD'], () => this.parseExponent()); }
+  // `^` is right-associative, so `2 ^ 3 ^ 2` is 2^(3^2) = 512, not (2^3)^2 = 64.
+  // Recursing on the right is what makes that so; the `if` this replaced parsed
+  // exactly one `^` and then failed on the second ("Expected RPAREN, got '^'").
+  parseExponent() {
+    const line = this.peek()?.line ?? null;
+    const left = this.parseUnary();
+    if (this.match('POW')) return { type:'BinOp', op:'^', left, right: this.parseExponent(), line };
+    return left;
+  }
+
+  parseBinLeft(tokenTypes, sub) {
+    const opMap = { OR:'||', AND:'&&', PLUS:'+', MINUS:'-', TIMES:'*', DIV:'/', MOD:'%' };
+    // The line the LEFT operand starts on. The node had no line at all, so
+    // `warnBinaryOperandType` had none to report and its warnings arrived
+    // positionless — the same defect ZYJS-002 fixed for the lexer, one layer up.
+    const line = this.peek()?.line ?? null;
+    let left = sub();
+    while (tokenTypes.includes(this.peek().type)) {
+      const op = opMap[this.adv().type] ?? this.toks[this.pos - 1].value;
+      left = { type: 'BinOp', op, left, right: sub(), line };
+    }
+    return left;
+  }
+
+  // The operand of a unary is parsed with its postfix: `-v[1]` is `-(v[1])`
+  // (GLB-145, decided 2026-10-21; this engine already read it so, the Rust ones
+  // did not). The operand keeps the caller's `noCollectionChain`: as the
+  // argument of `$+`, `[1] $+ -4 $+ 5` is `([1] $+ -4) $+ 5`, and dropping the
+  // flag here made it `[1] $+ -(4 $+ 5)` — an append to an Int.
+  parseUnary(noCollectionChain) {
+    const uline = this.peek()?.line ?? null;
+    if (this.match('MINUS')) return { type: 'UnaryOp', op: '-', operand: this.parseUnary(noCollectionChain), line: uline };
+    // `+x` — a form of the language (decided 2026-09-15, GLB-019 B). Both Rust
+    // parsers read it and this one said `expected expression, found Plus`.
+    if (this.match('PLUS'))  return { type: 'UnaryOp', op: '+', operand: this.parseUnary(noCollectionChain), line: uline };
+    if (this.match('NOT'))   return { type: 'UnaryOp', op: '!', operand: this.parseUnary(noCollectionChain), line: uline };
+    if (noCollectionChain && this.isLambdaStart()) return this.parseLambda();
+    return noCollectionChain ? this.parsePostfixNoChain() : this.parsePostfix();
+  }
+
+  // The line the last consumed token ENDED on. Only a string can end on a line
+  // other than the one it started on, and `line` is where it starts (HLZ-013),
+  // so the rules that ask "does this continue the expression before it?" ask
+  // here. Both Rust engines spell the same question
+  // `peek().span.start.line != expr.span().end.line`.
+  prevEndLine() {
+    const t = this.toks[this.pos - 1];
+    if (!t) return this.peek().line;
+    return t.endLine ?? t.line;
+  }
+
+  // Refuse `arr[i][j]` — chained brackets, at any depth.
+  //
+  // Nesting is navigated with `>`: `arr[i>j]`. The write form went first
+  // (`m[i][j] = v`, and `d["x"]["y"]$~ v` — see CHAINED above); the read was
+  // left parsing and called deprecated in the guide, which put the rule in the
+  // prose and in no engine. Both Rust engines refuse it in their parser with
+  // this wording.
+  //
+  // Only `simple` and `path` specs: those reach into a collection, while
+  // `arr[[i>j]]` and `arr[p ; q]` build a new one out of it.
+  rejectChainedIndex(left, line) {
+    if (left?.type !== 'NavIndex') return;
+    if (left.spec?.kind !== 'simple' && left.spec?.kind !== 'path') return;
+    const name = this.indexRootName(left);
+    throw new ZyError(
+      `chained index does not exist: '${name}[…][…]' is not a form of Zymbol\n` +
+      `= help: nesting is navigated with '>', so this is '${name}[i>j]' — one bracket group addresses one element, however deep it lies`,
+      line);
+  }
+
+  // The name the chained access hangs off. Anything but an identifier at the
+  // root has no name to quote, and the rule is about the notation anyway.
+  indexRootName(n) {
+    if (!n) return '…';
+    if (n.type === 'Ident') return n.name;
+    if (n.type === 'NavIndex') return this.indexRootName(n.obj);
+    return '…';
+  }
+
+  parsePostfix() {
+    return this.parsePostfixRest(this.parsePrimary());
+  }
+
+  parsePostfixNoChain() {
+    const primary = this.parsePrimary();
+    const sameLine = () => this.peek().line === this.prevEndLine();
+    let left = primary;
+    while (true) {
+      if (this.check('LBRACKET') && sameLine()) {
+        this.rejectChainedIndex(left, this.peek().line);
+        const navAhead = this.isNavIndexAhead();
+        this.adv(); const spec = this.parseNavContent(); this.closeNav(spec, navAhead);
+        left = { type: 'NavIndex', obj: left, spec };
+      } else if (this.check('DOT') || this.check('SCOPE')) {
+        // Record which operator produced this node. `::` and `.` build the same shape but
+        // are not interchangeable: `alias::fn` and `alias.CONST` address the module
+        // namespace, while `tuple.field` addresses a value. Collapsing them lost that
+        // distinction, so a local variable sharing a module alias's name shadowed the
+        // module and any `alias::fn(...)` after it failed — see eval's FieldAccess case.
+        const scoped = this.check('SCOPE');
+        this.adv(); const ft = this.peek(); const field = this.eatMemberName(scoped);
+        left = { type: 'FieldAccess', obj: left, field, scoped, fieldLine: ft.line, fieldCol: ft.col ?? null };
+      } else if (this.check('LPAREN') && sameLine() && left.type === 'Ident') {
+        this.adv(); const args = this.parseArgList(); this.closeCallArgs(left);
+        left = { type: 'Call', callee: left.name, args, line: left.line ?? this.peek()?.line ?? null };
+      } else if (this.check('LPAREN') && sameLine() && left.type !== 'Ident') {
+        this.adv(); const args = this.parseArgList(); this.closeCallArgs(left);
+        left = { type: 'CallExpr', callee: left, args, line: left.line ?? this.peek()?.line ?? null };
+      } else break;
+    }
+    return left;
+  }
+
+  parsePostfixRest(left) {
+    const COL_TOKENS = new Set(['DLEN','DAPPEND','DAPPEND_AT','DREMOVEALL','DREMOVE',
+      'DFINDALL','DCONTAINS','DSORTASC','DSORTDESC','DSORT',
+      'DMAP','DFILTER','DREDUCE','DSLICE','DERROR','DERRORPROP','DREPLACE',
+      'DSPLIT','DCONCATBUILD','DREPEAT']);
+
+    while (true) {
+      const sameLine = () => this.peek().line === this.prevEndLine();
+
+      if (this.check('LBRACKET') && sameLine()) {
+        // Before the group is read, so it lands whatever follows: a chained
+        // access is refused for reading and for every action alike. Asking
+        // after the `$~` branch left `arr[1][1]$~ 0` and `x = arr[1][1]$~ 0`
+        // running, because those have somewhere to put the result and so never
+        // reached the edit refusal that was supposed to catch them.
+        this.rejectChainedIndex(left, this.peek().line);
+        const navAhead = this.isNavIndexAhead();
+        this.adv();
+        const spec = this.parseNavContent();
+        this.closeNav(spec, navAhead);
+        if ((spec.kind === 'simple' || spec.kind === 'path') && this.check('DUPDATE')) {
+          this.adv();
+          // See BUG-ZYB-002 above: the value is a full expression.
+          const val = this.parseExprJuxt();
+          if (spec.kind === 'simple') {
+            // arr[i]$~ val — single-level functional update
+            left = { type: 'FuncUpdate', obj: left, index: spec.index, value: val };
+          } else {
+            // arr[i>j]$~ val — deep functional update (G1)
+            left = { type: 'DeepUpdate', obj: left, path: spec.path, value: val };
+          }
+        } else {
+          left = { type: 'NavIndex', obj: left, spec };
+        }
+
+      } else if (this.check('DOT') || this.check('SCOPE')) {
+        const scoped = this.check('SCOPE');
+        this.adv();
+        const ft = this.peek();
+        const field = this.eatMemberName(scoped);
+        // `alias::fn` is only ever called. Both Rust parsers want the `(`; here
+        // `m::sqrt 4` read the function as a value and printed `<funct/0>4`
+        // (ZYJS-021).
+        if (scoped && !this.check('LPAREN')) {
+          throw new ZyStaticError("expected '(' for module function call", this.peek(),
+            'module function call syntax: module::function(args)');
+        }
+        // `d.k$~ v` writes exactly as `d["k"]$~ v` does. The dot is how
+        // COLLECTIONS.md spells reaching a key that is an identifier, and
+        // nothing ever said it could only read — the asymmetry was inherited.
+        // `::` addresses a module namespace, which is not a place, so it is out.
+        // Carrying the key as a plain string rather than a synthesised literal
+        // node keeps it out of the checker's expression walk.
+        if (!scoped && this.check('DUPDATE')) {
+          this.adv();
+          const val = this.parseExprJuxt();
+          left = { type: 'FuncUpdate', obj: left, key: field, value: val };
+        } else {
+          // Where the name after the operator is: the `std/` refusals point at
+          // it, as `check_stdlib_access` does (ZYVM-008).
+          left = { type: 'FieldAccess', obj: left, field, scoped, fieldLine: ft.line, fieldCol: ft.col ?? null };
+        }
+
+      } else if (this.check('LPAREN') && sameLine() && left.type === 'Ident') {
+        this.adv();
+        const args = this.parseArgList();
+        this.closeCallArgs(left);
+        left = { type: 'Call', callee: left.name, args, line: left.line ?? this.peek()?.line ?? null };
+
+      } else if (this.check('LPAREN') && sameLine() && left.type !== 'Ident' && left.type !== 'Literal') {
+        this.adv();
+        const args = this.parseArgList();
+        this.closeCallArgs(left);
+        left = { type: 'CallExpr', callee: left, args, line: left.line ?? this.peek()?.line ?? null };
+
+      } else if (COL_TOKENS.has(this.peek().type)) {
+        left = this.parseCollectionOp(left);
+
+      } else if (this.check('TYPE_QUERY')) {
+        this.adv();
+        left = { type: 'TypeMetadata', obj: left };
+
+      } else if (this.check('DUPDATE') && !['NavIndex', 'FieldAccess'].includes(left?.type)) {
+        // An index or a key is built into an edit above; anything else has no
+        // place to write, and `5$~ 9` said "expected expression" (ZYJS-021).
+        throw new ZyStaticError('collection update ($~) requires a place to write', this.peek(),
+          'use: arr[i]$~ value, arr[i>j]$~ value, or d.key$~ value');
+      } else {
+        break;
+      }
+    }
+    return left;
+  }
+
+  // ─── Navigation index parsing ─────────────────────────────────────────────
+
+  // Whether the `[` at the cursor opens a navigation rather than a plain index:
+  // `is_nav_index` in crates/zymbol-parser/src/index_nav.rs, token for token. It
+  // looks ahead BEFORE the bracket is read, and that is what decides which help
+  // an unclosed bracket gets — not what the content turned out to be (GLB-036).
+  // A hot name and an interpolated string are other tokens in Rust, so neither
+  // starts a path there.
+  isNavIndexAhead() {
+    const t1 = this.peek(1), t2 = this.peek(2);
+    const sep = t => t && (t.type === 'GT' || t.type === 'SEMI' || t.type === 'RANGE');
+    switch (t1?.type) {
+      case 'LBRACKET': return true;
+      case 'NUM': return sep(t2);
+      case 'IDENT': return !t1.hot && sep(t2);
+      case 'STR': return (Array.isArray(t1.value) ? t1.value.every(p => p.t === 'lit') : true) && sep(t2);
+      case 'MINUS': return t2?.type === 'NUM' && sep(this.peek(3));
+      case 'LPAREN': {
+        // `arr[(expr)>(expr)]`: a `>` right after a `)` that closes at depth 0.
+        let depth = 0;
+        for (let k = 1; ; k++) {
+          const t = this.peek(k);
+          if (!t || t.type === 'EOF' || t.type === 'RBRACKET') return false;
+          if (t.type === 'LPAREN') depth++;
+          else if (t.type === 'RPAREN') {
+            if (depth === 0) return false;
+            depth--;
+            if (depth === 0 && this.peek(k + 1)?.type === 'GT') return true;
+          }
+          if (this.pos + k >= this.toks.length - 1) return false;
+        }
+      }
+      default: return false;
+    }
+  }
+
+  // The `]` that closes an index, in the Rust words for what it closes. Which
+  // words is decided the way Rust decides them: a plain index (`navAhead`
+  // false) gets the plain help whatever was read inside it; a navigation gets
+  // the navigator's, and only a `;` makes it a flat extraction — a range alone
+  // does not, though this engine builds the same node for both (GLB-036).
+  closeNav(spec, navAhead = true) {
+    if (spec?.kind === 'structured') {
+      return this.eat('RBRACKET', "expected ']' to close structured extraction",
+        'structured extraction: arr[[row>col] ; [row>col]]');
+    }
+    if (this.inPipeTarget || !navAhead) {
+      return this.eat('RBRACKET', "expected ']' after index", 'array indexing must use brackets: arr[index]');
+    }
+    if (spec?.kind === 'flat' && (spec.paths?.length ?? 0) > 1) {
+      return this.eat('RBRACKET', "expected ']' after flat extraction");
+    }
+    return this.eat('RBRACKET', "expected ']' after index", 'array indexing must use brackets: arr[index] or arr[i>j]');
+  }
+
+  // Called after consuming '['. Returns a spec object for NavIndex.
+  parseNavContent() {
+    // Structured nav: [[g1] ; [g2]] — starts with '['
+    if (this.check('LBRACKET')) {
+      return this.parseNavStructured();
+    }
+
+    // A parenthesised first step whose `)` is followed by `>` is a computed
+    // step, as `is_nav_index` decides in Rust, and takes one expression and its
+    // `)`. Parsed as a general operand, `m[(a 1)>1]` was the juxtaposition 11
+    // and failed at run time (ZYJS-021).
+    if (this.check('LPAREN') && !this.isLambdaStart() && this.parenThenGt()) {
+      return this.parseNavContinue(this.parseNavStep());
+    }
+    // What makes the content a navigation path is decided on its first tokens,
+    // as `is_nav_index` decides in Rust: an integer, a name or a string
+    // followed by `>`, `;` or `..`, or `-integer` followed by one of them.
+    // Anything else is an ordinary expression, whatever comes later in it:
+    // `m[f()>2]` indexes with the comparison `f() > 2`. The first step used to
+    // be any additive expression, so that was a path here and a `Bool` index in
+    // both Rust engines (ZYJS-057).
+    if (!this.navPathAhead()) {
+      return { kind: 'simple', index: this.parseExpr() };
+    }
+    const firstAtom = this.parseNavAtom();
+
+    // nav path or flat extraction?
+    if (this.check('GT') || this.check('SEMI')) {
+      return this.parseNavContinue(firstAtom);
+    }
+
+    // Simple subscript: single index, no nav ops
+    if (firstAtom.kind === 'index') {
+      return { kind: 'simple', index: firstAtom.expr };
+    }
+    // Single range at top level (unusual) → flat
+    return { kind: 'flat', paths: [[firstAtom]] };
+  }
+
+  // An atom and then `>`, `;` or `..`, from the current token — the lookahead
+  // of `is_nav_index` in zymbol-parser/src/index_nav.rs.
+  navPathAhead() {
+    const sep = t => !!t && (t.type === 'GT' || t.type === 'SEMI' || t.type === 'RANGE');
+    const t0 = this.peek(0);
+    if (t0.type === 'NUM' || t0.type === 'IDENT' || t0.type === 'STR') return sep(this.peek(1));
+    if (t0.type === 'MINUS') return this.peek(1)?.type === 'NUM' && sep(this.peek(2));
+    return false;
+  }
+
+  // Parse a nav atom: additive expr, optionally followed by '..' range
+  parseNavAtom() {
+    const expr = this.parseAdditive();
+    if (this.match('RANGE')) {
+      const to = this.parseNavStepAtom();
+      return { kind: 'range', from: expr, to };
+    }
+    return { kind: 'index', expr };
+  }
+
+  // `(` … `)` `>` from the current token, at paren depth — Rust's
+  // `scan_nav_gt_after_paren`.
+  parenThenGt() {
+    let depth = 0;
+    for (let i = 0; this.pos + i < this.toks.length; i++) {
+      const t = this.toks[this.pos + i];
+      if (t.type === 'LPAREN') depth++;
+      else if (t.type === 'RPAREN') {
+        depth--;
+        if (depth === 0) return this.toks[this.pos + i + 1]?.type === 'GT';
+      } else if (t.type === 'RBRACKET' || t.type === 'EOF') return false;
+    }
+    return false;
+  }
+
+  // A step of a navigation path once it is one — after `>`, `;` or `..` — is
+  // what `parse_nav_atom` in zymbol-parser/src/index_nav.rs takes and nothing
+  // else: an integer, `-integer`, a name, a string key or `( expr )`. A general
+  // expression used to be taken, so `m[1>1.5]` and `m[1>-a]` parsed (ZYJS-021).
+  parseNavStepAtom() {
+    const t = this.peek();
+    if (t.type === 'MINUS') {
+      this.adv();
+      const n = this.peek();
+      if (n.type !== 'NUM') {
+        throw new ZyStaticError("expected integer after '-' in nav index", n ?? t,
+          'negative indices: arr[-1], arr[-2>-1]');
+      }
+      this.adv();
+      return { type: 'Literal', kind: 'int', value: -n.value };
+    }
+    if (t.type === 'NUM' || t.type === 'IDENT' || t.type === 'STR') return this.parsePrimary();
+    if (t.type === 'LPAREN' && !this.isLambdaStart()) {
+      this.adv();
+      const e = this.parseExpr();
+      if (!this.check('RPAREN')) {
+        throw new ZyStaticError("expected ')' after computed index", this.peek(),
+          'computed indices: arr[(expr)>(expr)]');
+      }
+      this.adv();
+      return e;
+    }
+    throw new ZyStaticError(
+      'expected navigation step: a position (integer or variable) or a dictionary key (string)',
+      t, 'valid nav index: arr[1>2], arr[n>m], arr[(a)>(b)], arr[1>2..4]');
+  }
+
+  // A whole step after `>` or `;`: a strict atom, optionally a range.
+  parseNavStep() {
+    const expr = this.parseNavStepAtom();
+    if (this.match('RANGE')) return { kind: 'range', from: expr, to: this.parseNavStepAtom() };
+    return { kind: 'index', expr };
+  }
+
+  // Continue parsing after the first atom — GT means nav path, SEMI means flat
+  parseNavContinue(firstAtom) {
+    // Build first path (starting with firstAtom)
+    const firstPath = [firstAtom];
+    while (this.match('GT')) firstPath.push(this.parseNavStep());
+
+    if (!this.check('SEMI')) {
+      // Single nav path
+      return { kind: 'path', path: firstPath };
+    }
+
+    // Multiple paths separated by ';' — flat extraction
+    const paths = [firstPath];
+    while (this.match('SEMI')) {
+      const path = [this.parseNavStep()];
+      while (this.match('GT')) path.push(this.parseNavStep());
+      paths.push(path);
+    }
+    return { kind: 'flat', paths };
+  }
+
+  // Parse structured nav: [[g1,g2] ; [g3,g4]] — already past outer '['
+  parseNavStructured() {
+    const groups = [];
+    do {
+      this.eat('LBRACKET');
+      const paths = [];
+      do {
+        const path = [this.parseNavAtom()];
+        while (this.match('GT')) path.push(this.parseNavAtom());
+        paths.push(path);
+      } while (this.match('COMMA'));
+      this.eat('RBRACKET', "expected ']' to close extraction group", 'each group must be wrapped: [path] or [path1, path2]');
+      groups.push({ paths });
+    } while (this.match('SEMI'));
+    return { kind: 'structured', groups };
+  }
+
+  // ─── Collection ops ───────────────────────────────────────────────────────
+
+  // A `(` or `[` on the same line right after an operator that takes no
+  // operand — `$#`, `$^+`, `$^-`, and `$++` with no item — is refused at parse
+  // time, as in the Rust parser and with its text (GLB-076, decided
+  // 2026-10-03). This engine used to call or index the result.
+  refuseAfterOperandless(op) {
+    const opTok = this.toks[this.pos - 1], next = this.peek();
+    if (next.line !== opTok.line) return;
+    const table = {
+      DLEN: {
+        LBRACKET: ["unexpected '[' after '$#'", 'to index the result, put the operation in parentheses: (c$#)[i]'],
+        LPAREN:   ["unexpected '(' after '$#'", "'$#' takes nothing; to use its result, put the operation in parentheses: (c$#)"],
+      },
+      DSORTASC: {
+        LBRACKET: ["unexpected '[' after '$^+'", 'to index the result, put the operation in parentheses: (c$^+)[i]'],
+        LPAREN:   ["unexpected '(' after '$^+'", "'$^+' sorts in natural order and takes no comparator; to sort with one, use c$^ (a, b -> a < b)"],
+      },
+      DSORTDESC: {
+        LBRACKET: ["unexpected '[' after '$^-'", 'to index the result, put the operation in parentheses: (c$^-)[i]'],
+        LPAREN:   ["unexpected '(' after '$^-'", "'$^-' sorts in natural order and takes no comparator; to sort with one, use c$^ (a, b -> a > b)"],
+      },
+      DCONCATBUILD: {
+        LBRACKET: ["unexpected '[' after '$++'", "'$++' appends the items written after it; to insert at a position, use c$+[i] value"],
+      },
+    };
+    const hit = table[op]?.[next.type];
+    if (hit) throw new ZyStaticError(hit[0], next, hit[1]);
+  }
+
+  parseCollectionOp(left) {
+    const op = this.adv().type;
+
+    switch (op) {
+      case 'DLEN':
+        this.refuseAfterOperandless(op);
+        return { type: 'CollectionOp', op: '$#', obj: left };
+
+      case 'DAPPEND_AT': {
+        // `$+[i] val` — the '[' was glued to the '$+', so this is the insert.
+        this.eat('LBRACKET');
+        const idx = this.parseExpr();
+        this.eat('RBRACKET', "expected ']' after index in $+[index]", 'insert syntax: collection$+[index] element');
+        return { type: 'CollectionOp', op: '$+[i]', obj: left, index: idx, arg: this.parseUnary(true) };
+      }
+
+      case 'DAPPEND':
+        // Use parseUnary(true) to prevent right-nesting: arr$+4$+5 → (arr$+4)$+5 not arr$+(4$+5)
+        return { type: 'CollectionOp', op: '$+', obj: left, arg: this.parseUnary(true) };
+
+      case 'DREMOVEALL':
+        // `$--[position:count]` was removed in v0.0.2, and both Rust parsers
+        // still name it — a bracket here reads as that form, not as a value.
+        if (this.check('LBRACKET')) {
+          throw new ZyStaticError('$--[position:count] is retired — use $-[start..end] instead', this.peek(),
+            'v0.0.2: s$--[0:6] → s$-[0..6]');
+        }
+        return { type: 'CollectionOp', op: '$--', obj: left, arg: this.parseUnary() };
+
+      case 'DREMOVE':
+        if (this.check('LBRACKET')) {
+          this.adv();
+          // Open-start: $-[..N]
+          if (this.match('RANGE')) {
+            const to = this.parseExpr();
+            this.eat('RBRACKET', "expected ']' after range", 'range syntax: $-[..end] or $-[..]');
+            return { type: 'CollectionOp', op: '$-[i..j]', obj: left, range: { from: null, to } };
+          }
+          const from = this.parseExpr();
+          if (this.match('RANGE')) {
+            // Open-end: $-[N..]  or  $-[N..M]
+            const toNode = (!this.check('RBRACKET')) ? this.parseExpr() : null;
+            this.eat('RBRACKET', "expected ']' after range", 'range syntax: $-[start..end] or $-[start..]');
+            return { type: 'CollectionOp', op: '$-[i..j]', obj: left, range: { from, to: toNode } };
+          }
+          if (this.match('COLON')) {
+            // Count-based: $-[start:count]
+            const count = this.parseExpr();
+            this.eat('RBRACKET', "expected ']' after count", 'count-based range syntax: $-[start:count]');
+            return { type: 'CollectionOp', op: '$-[i:n]', obj: left, start: from, count };
+          }
+          this.eat('RBRACKET', "expected ']', '..', or ':' after index",
+            'remove syntax: $-[index], $-[start..end], or $-[start:count]');
+          return { type: 'CollectionOp', op: '$-[i]', obj: left, index: from };
+        }
+        return { type: 'CollectionOp', op: '$-', obj: left, arg: this.parseUnary() };
+
+      case 'DFINDALL':
+        return { type: 'CollectionOp', op: '$??', obj: left, arg: this.parseUnary() };
+
+      case 'DCONTAINS':
+        return { type: 'CollectionOp', op: '$?', obj: left, arg: this.parseUnary() };
+
+      case 'DUPDATE':
+        this.eat('LBRACKET');
+        { const idx = this.parseExpr(); this.eat('RBRACKET');
+          // See BUG-ZYB-002 above: the value is a full expression.
+          return { type: 'CollectionOp', op: '$~', obj: left, index: idx, arg: this.parseExprJuxt() }; }
+
+      case 'DSORTASC':   this.refuseAfterOperandless(op); return { type: 'CollectionOp', op: '$^+', obj: left };
+      case 'DSORTDESC':  this.refuseAfterOperandless(op); return { type: 'CollectionOp', op: '$^-', obj: left };
+      case 'DSORT':
+        // The comparator is a lambda written here, as both Rust parsers require:
+        // `a$^ f` with `f` holding one sorted in this engine alone (ZYJS-021).
+        if (!this.check('LPAREN')) {
+          throw new ZyStaticError("expected comparator lambda after '$^', e.g. $^ (a, b -> a < b)", this.peek());
+        }
+        // An opening paren is a lambda being written, so what is missing is its
+        // arrow — `a$^ (v)` parsed here and failed at run time (ZYJS-021).
+        this.requireLambdaInParens();
+        return { type: 'CollectionOp', op: '$^',  obj: left, arg: this.parseUnary() };
+
+      // `nums$> (double)`: the same rule (ZYJS-061). A named function goes
+      // without parentheses — `nums$> double` — because `(` opens a lambda.
+      // This engine alone read the parenthesised name as a grouping and ran it.
+      case 'DMAP':
+        if (this.check('LPAREN')) this.requireLambdaInParens();
+        return { type: 'CollectionOp', op: '$>',  obj: left, arg: this.parseUnary(true) };
+      case 'DFILTER':
+        if (this.check('LPAREN')) this.requireLambdaInParens();
+        return { type: 'CollectionOp', op: '$|',  obj: left, arg: this.parseUnary(true) };
+
+      case 'DREDUCE':
+        this.eat('LPAREN');
+        { const init = this.parseExpr();
+          this.eat('COMMA', "expected ',' after initial value", 'reduce syntax: collection$< (initial, lambda)');
+          const fn   = this.parseExpr();
+          this.eat('RPAREN', "expected ')' after lambda", 'reduce syntax: collection$< (initial, lambda)');
+          return { type: 'CollectionOp', op: '$<', obj: left, init, arg: fn }; }
+
+      case 'DSLICE':
+        this.eat('LBRACKET');
+        // $[start..end], $[..end] (open-start), $[start..] (open-end), $[start:count]
+        { const from = this.check('RANGE') ? null : this.parseExpr();
+          if (this.match('RANGE')) {
+            const to = this.check('RBRACKET') ? null : this.parseExpr();
+            this.eat('RBRACKET', "expected ']' after slice range");
+            return { type: 'CollectionOp', op: '$[i..j]', obj: left, range: { from, to } };
+          }
+          this.eat('COLON', "expected '..', or ':' in slice",
+            'slice syntax: $[start..end], $[..end], $[start..], or $[start:count]');
+          const count = this.parseExpr();
+          this.eat('RBRACKET', "expected ']' after count", 'count-based slice syntax: $[start:count]');
+          return { type: 'CollectionOp', op: '$[i:n]', obj: left, range: { from, count } }; }
+
+      case 'DERROR':
+        return { type: 'CollectionOp', op: '$!', obj: left };
+
+      case 'DERRORPROP':
+        return { type: 'CollectionOp', op: '$!!', obj: left };
+
+      case 'DREPLACE':
+        this.eat('LBRACKET', "expected '[' after $~~",
+          'syntax: string$~~[pattern:replacement] or string$~~[pattern:replacement:count]');
+        { const from = this.parseExpr();
+          this.eat('COLON', "expected ':' after pattern", 'syntax: string$~~[pattern:replacement:count?]');
+          const to   = this.parseExpr();
+          const count = this.match('COLON') ? this.parseExpr() : null;
+          this.eat('RBRACKET', "expected ']' after replacement or count", 'syntax: string$~~[pattern:replacement:count?]');
+          return { type: 'CollectionOp', op: '$~~', obj: left, from, to, count }; }
+
+      case 'DSPLIT':
+        return { type: 'CollectionOp', op: '$/', obj: left, arg: this.parseUnary() };
+
+      case 'DREPEAT':
+        return { type: 'CollectionOp', op: '$*', obj: left, arg: this.parseUnary() };
+
+      case 'DCONCATBUILD': {
+        const opLine = this.toks[this.pos - 1].line;
+        const items = [];
+        // What can START another operand. `LBRACKET` is deliberately absent:
+        // both Rust engines stop before a `[`, so `s$++[5:"!!!"]` leaves the
+        // bracket at statement level and is refused there. Accepting it here
+        // made this engine RUN two programs the CLI rejects — `"hola"$++[5:"!!"]`
+        // printed `hola[5, !!]`, an answer nobody could get from the CLI.
+        //
+        // A variable holding an array is fine, in every engine: `a$++ b`. The
+        // rule is about the literal, which is where a stray bracket shows up.
+        const canStart = () => {
+          const t = this.peek().type;
+          return ['NUM','FLOAT','BOOL','CHAR','STR','IDENT','LPAREN','ELSE',
+                  'CAST_FLOAT','CAST_INT_ROUND','CAST_INT_TRUNC','CAST_CHAR'].includes(t);
+        };
+        while (this.peek().line === opLine && !this.check('PILCROW') &&
+               !this.check('RBRACE') && !this.check('EOF') && canStart()) {
+          items.push(this.parsePostfix());
+        }
+        if (items.length === 0) this.refuseAfterOperandless(op);
+        return { type: 'CollectionOp', op: '$++', obj: left, items };
+      }
+
+      default:
+        return left;
+    }
+  }
+
+  parseKeyInput(blocking) {
+    this.adv(); // consume <<| or <<|?
+    const v = this.eat('IDENT', 'expected variable name after key input operator', 'syntax: <<| var');
+    return { type: 'KeyInput', variable: v.value, blocking };
+  }
+
+  parseTuiBlock() {
+    this.adv(); // consume >>|
+    if (!this.check('LBRACE')) {
+      throw new ZyStaticError("expected '{' after >>|", this.peek(), 'TUI block syntax: >>| { statements }');
+    }
+    const body = this.parseBlock();
+    return { type: 'TuiBlock', body };
+  }
+
+  parseOutputPos() {
+    const opLine = this.adv().line; // consume >>~
+    let slots;
+    if (this.check('LPAREN')) {
+      this.adv(); // consume (
+      slots = [];
+      while (!this.check('RPAREN') && !this.check('EOF')) {
+        const slotTok = this.peek();
+        if (this.check('COMMA')) { slots.push(null); this.adv(); }
+        else { slots.push(this.parseExpr()); if (this.check('COMMA')) this.adv(); }
+        // Rust's words, on the sixth slot; it was a bare JavaScript Error, with
+        // other words and no position (step P4.5).
+        if (slots.length > 5) {
+          throw new ZyStaticError('>>~ position tuple has at most 5 slots: (fila, col, BKS, fg, bg)', slotTok);
+        }
+      }
+      this.eat('RPAREN');
+    } else {
+      const name = this.eat('IDENT', "expected '(' or variable after >>~", 'syntax: >>~ (fila, col [, BKS [, fg [, bg]]]) > items').value;
+      slots = [{ type: 'Ident', name, hot: false }]; // sentinel: variable mode
+    }
+    this.eat('GT'); // consume >
+    const items = [];
+    while (!this.check('PILCROW') && !this.check('RBRACE') &&
+           !this.check('EOF') && this.peek().line === opLine) {
+      items.push(this.parseExpr());
+    }
+    return { type: 'OutputPos', slots, items };
+  }
+
+  // Returns the arguments, with the indices written `x<~` recorded on the array
+  // as `outArgs` — the call-site output mark (REFERENCE.md L36). Carried beside
+  // the list rather than wrapping each argument, so every existing reader of
+  // `args` keeps working unchanged.
+  // The name after `.` or `::`, with the Rust words when it is missing.
+  eatMemberName(scoped) {
+    return scoped
+      ? this.eat('IDENT', "expected function name after '::'").value
+      : this.eat('IDENT', "expected field name after '.'", 'member access requires a field name: object.field').value;
+  }
+
+  // Rust says it differently for each callee: a name, a module function, any
+  // other expression, a parenthesised one, or the target of `|>`.
+  closeCallArgs(callee) {
+    if (this.inPipeTarget) {
+      return this.eat('RPAREN', "expected ')' after pipe arguments", 'pipe syntax: value |> func(_)');
+    }
+    if (callee?.paren) return this.eat('RPAREN', "expected ')' after arguments");
+    if (callee?.type === 'Ident') {
+      return this.eat('RPAREN', "expected ')' after function arguments", 'function call syntax: name(arg1, arg2, ...)');
+    }
+    if (callee?.type === 'FieldAccess' && callee.scoped) {
+      return this.eat('RPAREN', "expected ')' after function arguments",
+        'module function call syntax: module::function(arg1, arg2, ...)');
+    }
+    return this.eat('RPAREN', "expected ')' after function arguments", 'function call syntax: expr(arg1, arg2, ...)');
+  }
+
+  parseArgList() {
+    const args = [];
+    const outArgs = [];
+    while (!this.check('RPAREN') && !this.check('EOF')) {
+      args.push(this.parseExprJuxt());
+      if (this.check('RETURN')) { this.adv(); outArgs.push(args.length - 1); }
+      // An argument not followed by a comma is the last one, as in Rust; the
+      // caller then asks for the `)`. Reading on turned `f(1 ¶` into
+      // "expected expression, found PILCROW" (ZYJS-021).
+      if (!this.match('COMMA')) break;
+    }
+    args.outArgs = outArgs;
+    return args;
+  }
+
+  // The token as a refusal quotes it: `'='`, `'}'`, `'5'`, `"texto"`, `end of
+  // file` — what the program HAS WRITTEN (GLB-028, decided 2026-09-25). It used
+  // to be the Rust parser's variant name, `found Assign`, mirrored here so the
+  // engines agreed; they now agree on the spelling, which both can give. Same
+  // table as `TokenKind::quoted` in crates/zymbol-lexer: canonical spellings,
+  // and a char or string literal keeps its own quotes rather than gaining more.
+  static tokenSpelling(t) {
+    if (!t || t.type === 'EOF') return 'end of file';
+    switch (t.type) {
+      // As `TokenKind::quoted` spells them in Rust: a value operator by the
+      // mark it opens with, an error value by its `#`, a subscript whole.
+      case 'UNIT': return "'##_'";
+      case 'ERRCON': return "'#'";
+      case 'EXECUTE': return `'</ ${t.value} />'`;
+      case 'DATA_OP': {
+        const k = t.value?.kind ?? '';
+        if (k === 'base_conv') return `'${{ 16: '0x', 2: '0b', 8: '0o', 10: '0d' }[t.value.prec] ?? '0d'}'`;
+        if (k === 'eval') return "'#|'";
+        if (k === 'round') return "'#.'";
+        if (k === 'trunc') return "'#!'";
+        if (k.startsWith('comma')) return "'#,'";
+        if (k.startsWith('sci')) return "'#^'";
+        break;
+      }
+      case 'CHAR': return `'${t.value}'`;
+      case 'STR':
+        return `"${(t.value ?? []).map(p => (p.t === 'lit' ? p.v : `{${p.v}}`)).join('')}"`;
+      case 'BOOL': return t.value ? "'#1'" : "'#0'";
+    }
+    return `'${typeof t.value === 'string' || typeof t.value === 'number' ? t.value : t.type}'`;
+  }
+
+  parsePrimary() {
+    if (this.peek().type === 'LPAREN' && this.isLambdaStart()) return this.parseLambda();
+
+    const t = this.peek();
+
+    if (t.type === 'NUM')   { this.adv(); return { type: 'Literal', kind: 'int',   value: t.value }; }
+    if (t.type === 'FLOAT') { this.adv(); return { type: 'Literal', kind: 'float', value: t.value }; }
+    if (t.type === 'BOOL')  { this.adv(); return { type: 'Literal', kind: 'bool',  value: t.value }; }
+    if (t.type === 'CHAR')  { this.adv(); return { type: 'Literal', kind: 'char',  value: t.value }; }
+    if (t.type === 'STR')   { this.adv(); return { type: 'Literal', kind: 'str',   value: t.value, line: t.line }; }
+    // `##_` — the Unit literal (GAP-ZYB-009). The evaluator already had the
+    // `unit` case; the value was reachable long before it could be written.
+    if (t.type === 'UNIT')  { this.adv(); return { type: 'Literal', kind: 'unit' }; }
+    // With its column, so a diagnostic about the name points where Rust's does
+    // — `mira.zy:3:16`, not `mira.zy:3:0` (ZYJS-024, step P4.1).
+    // `##Kind("message")` — an error value (GAP-GOL-003). The lexer emitted
+    // ERRCON only when the `(` touches the name.
+    if (t.type === 'ERRCON') {
+      this.adv(); this.adv();                       // ##Kind and (
+      const at = this.peek();                       // where the message starts
+      const value = this.parseExprJuxt();
+      const kind = t.value.slice(2);                // the name, as Rust holds it
+      if (!this.check('RPAREN')) {
+        throw new ZyStaticError("expected ')' to close the error's message", this.peek(),
+          `an error value is written ##${kind}("message")`);
+      }
+      this.adv();
+      return { type: 'ErrorConstruct', kind: t.value, value, line: t.line, col: t.col ?? null,
+               valueLine: at.line, valueCol: at.col ?? null };
+    }
+    // A kind anywhere else in an expression is the constructor missing its
+    // message, or written apart — the Rust parser's wording.
+    if (t.type === 'IDENT' && t.value.startsWith('##')) {
+      // `## Parse(…)`: the lexer stopped at the blank, and the name follows.
+      const nx = this.peek(1);
+      const kind = t.value.length > 2 ? t.value.slice(2)
+                 : (nx?.type === 'IDENT' && nx.line === t.line ? nx.value : null);
+      if (kind) {
+        throw new ZyStaticError(
+          `an error kind in an expression builds an error value, and needs its message: ##${kind}("…")`, t,
+          `write it together, with the message in parentheses: ##${kind}("what went wrong") — \`:! ##${kind}\` is where a kind stands alone`);
+      }
+    }
+    if (t.type === 'IDENT')        { this.adv(); return { type: 'Ident',       name: t.value, hot: t.hot ?? false, line: t.line, col: t.col ?? null }; }
+    if (t.type === 'ELSE')         { this.adv(); return { type: 'Ident',       name: '_'      }; }
+    if (t.type === 'OUTPUT_QUERY') { this.adv(); return { type: 'TerminalSize' }; }
+    if (t.type === 'BASHOPEN') {
+      const open = this.adv();
+      const args = [];
+      while (this.peek().type !== 'BASHCLOSE' && this.peek().type !== 'EOF') args.push(this.parseExpr());
+      if (this.peek().type !== 'BASHCLOSE') {
+        throw new ZyStaticError('unterminated bash execute expression', open,
+          'bash execute syntax: <\\ expr1 expr2 ... \\>');
+      }
+      this.adv();
+      return { type: 'BashExec', args, line: open.line };
+    }
+    if (t.type === 'EXECUTE') {
+      const tok = this.adv();
+      if (tok.value === '') {
+        throw new ZyStaticError('expected file path after </', tok, 'execute syntax: </ path.zy />');
+      }
+      const quoted = tok.value.length > 1 && tok.value.startsWith('"') && tok.value.endsWith('"');
+      return { type: 'Execute', path: quoted ? tok.value.slice(1, -1) : tok.value, line: tok.line };
+    }
+    if (t.type === 'MATCH') { return this.parseMatchExpr(); }
+
+    // Cast operators: ##. ### ##!
+    if (t.type === 'CAST_FLOAT')     { this.adv(); return { type: 'CastOp', op: '##.', operand: this.parseUnary() }; }
+    if (t.type === 'CAST_INT_ROUND') { this.adv(); return { type: 'CastOp', op: '###', operand: this.parseUnary() }; }
+    if (t.type === 'CAST_INT_TRUNC') { this.adv(); return { type: 'CastOp', op: '##!', operand: this.parseUnary() }; }
+    // `##'` — an Int code point to its Char, the pair of `##!` on a Char
+    // (GLB-109). `<< ##' "msg" c` reads it as a typespec before any expression.
+    if (t.type === 'CAST_CHAR')      { this.adv(); return { type: 'CastOp', op: "##'", operand: this.parseUnary() }; }
+
+    // `#[…]` — an array whose mix of element types is DECLARED (decision 15).
+    // Same collection and same type as `[…]`: `#?` answers `##]` for both. What
+    // changes is that the checker below does not compare the elements — and
+    // that it warns when the mix turns out not to be one (decision 18).
+    if (t.type === 'HASH' && this.peek(1).type === 'LBRACKET') {
+      this.adv();
+      const arr = this.parsePrimary();
+      return { ...arr, declaredMixed: true };
+    }
+
+    if (t.type === 'LBRACKET') {
+      this.adv();
+      const items = [];
+      const line = t.line;
+      while (!this.check('RBRACKET') && !this.check('EOF')) {
+        items.push(this.parseExprJuxt());
+        if (!this.match('COMMA')) break;
+      }
+      this.eat('RBRACKET', "expected ']' to close array literal", 'array literals must be enclosed in brackets');
+      return { type: 'Array', items, line };
+    }
+
+    // `#(…)` — dictionary literal. The mark says which of the two things the
+    // parentheses open, so `#()` is the empty dictionary and no lookahead
+    // decides anything. Keys may be strings as well as bare names:
+    // `d["gasto.alimentación"]$~ v` always added such a key and only the
+    // literal could not spell it.
+    if (t.type === 'HASH_LPAREN') {
+      this.adv();
+      const line = t.line;
+      const items = [], keys = [];
+      if (this.check('RPAREN')) {
+        this.adv();
+        return { type: 'Tuple', items, keys, line };
+      }
+      for (;;) {
+        if (!(this.check('IDENT') || this.check('STR'))) {
+          throw new ZyStaticError('expected a key in the dictionary', this.peek(),
+            'a key is a name or a string: #(nombre: valor) or #("gasto.alimentación": valor)');
+        }
+        if (this.peek(1).type !== 'COLON') {
+          throw new ZyStaticError("expected ':' after the key", this.peek(1) ?? this.peek());
+        }
+        const keyTok = this.adv();
+        if (keyTok.type === 'IDENT') {
+          keys.push(keyTok.value);
+        } else {
+          // A string key is lexed as interpolation parts. A key is a constant,
+          // so only literal parts are accepted — `#("{n}": v)` would give the
+          // literal a different shape on every run.
+          const parts = keyTok.value ?? [];
+          if (parts.some(pt => pt.t !== 'lit')) {
+            throw new ZyStaticError(
+              'a dictionary key cannot interpolate — use `d[…]$~ value` to add a computed key',
+              keyTok);
+          }
+          keys.push(parts.map(pt => pt.v).join(''));
+        }
+        // A key appears once (GLB-131, decided 2026-10-16): the literal kept
+        // both, and every read and write went to the first.
+        if (keys.indexOf(keys[keys.length - 1]) !== keys.length - 1) {
+          throw new ZyStaticError(`key '${keys[keys.length - 1]}' appears twice in the dictionary`, keyTok,
+            'a dictionary holds each key once: keep the one you mean, or rename the other');
+        }
+        this.adv(); // consume ':'
+        items.push(this.parseExprJuxt());
+        if (!this.match('COMMA')) break;
+        if (this.check('RPAREN')) break;   // trailing comma
+      }
+      this.eat('RPAREN', "expected ')' to close the dictionary", 'a dictionary is written #(key: value, key2: value2)');
+      return { type: 'Tuple', items, keys, line };
+    }
+
+    if (t.type === 'LPAREN') {
+      this.adv();
+      // `()` is nothing at all: there is no empty tuple in Zymbol (REFERENCE.md,
+      // GUIDE.md), and the two Rust parsers refuse it. This one read it as Unit,
+      // so `<~ ()` ran here and nowhere else (ZYJS-063). Unit is `##_`.
+      if (this.check('RPAREN'))
+        throw new ZyStaticError(`expected expression, found ${Parser.tokenSpelling(this.peek())}`, this.peek());
+
+      // A dictionary is written `#(…)`. The bare form was how it was written
+      // until v0.0.9, when the colon was the whole of what told `(a: 1)` from
+      // `(1, 2)` — and the empty dictionary could not be written at all,
+      // because `()` would have to be both. Refused rather than accepted
+      // quietly: two spellings for one thing is what the mark ended.
+      if (this.check('IDENT') && this.peek(1).type === 'COLON') {
+        throw new ZyStaticError(
+          'a dictionary is written `#(…)`: write `#(` here, as in #(nombre: valor). ' +
+          'A bare `(…)` is a positional tuple, and `#()` is the empty dictionary — ' +
+          'which `()` cannot be, since it would have to be the empty tuple as well',
+          t.line);
+      }
+      const firstKey = null;
+      const firstVal = this.parseExprJuxt();
+      if (this.check('COMMA') || firstKey !== null) {
+        const items = [firstVal];
+        const keys  = [firstKey];
+        while (this.match('COMMA')) {
+          if (this.check('RPAREN')) break;
+          let key = null;
+          if (this.check('IDENT') && this.peek(1).type === 'COLON') {
+            key = this.adv().value;
+            this.adv();
+          }
+          items.push(this.parseExprJuxt());
+          keys.push(key);
+        }
+        this.eat('RPAREN', "expected ')' to close tuple", 'tuples must be enclosed in parentheses: (expr, expr, ...)');
+        const named = keys.some(k => k !== null);
+        return { type: 'Tuple', items, keys: named ? keys : null };
+      }
+      if (this.inPipeTarget) this.eat('RPAREN', "expected ')' after expression");
+      else this.eat('RPAREN', "expected ')' to close grouped expression",
+        'grouped expressions must be enclosed in parentheses: (expr)');
+      // Only for the wording of a call on it: `(f)(1` and `f(1` are told
+      // apart by the Rust parser, and the node alone cannot say which it was.
+      if (firstVal && typeof firstVal === 'object') firstVal.paren = true;
+      return firstVal;
+    }
+
+    if (t.type === 'DATA_OP') {
+      this.adv();
+      const arg = this.parseExpr();
+      // The operator as written, as the Rust parser fills its templates.
+      const fmtPrefix = '#,';
+      const baseOpPrefix = '0' + ({ 16: 'x', 2: 'b', 8: 'o', 10: 'd' }[t.value.prec] ?? 'x');
+      const CLOSE = {
+        base_conv: ["expected '|' to close base conversion expression", `base conversion syntax: ${baseOpPrefix}|expr|`],
+        comma:     ["expected '|' to close format expression", `format expression syntax: ${fmtPrefix}|expr|`],
+        eval:      ["expected '|' to close numeric evaluation", 'numeric evaluation syntax: #|expr|'],
+        round:     ["expected '|' to close round expression", 'round expression syntax: #.N|expr|'],
+        trunc:     ["expected '|' to close truncate expression", 'truncate expression syntax: #!N|expr|'],
+      }[t.value.kind];
+      if (CLOSE) this.eat('VBAR', CLOSE[0], CLOSE[1]);
+      else this.eat('VBAR');
+      // GAP-ZYB-001: a count written as a name is kept as an expression and
+      // evaluated when the program runs; a written count stays a number.
+      const precExpr = t.value.dynPrec
+        ? { type: 'Ident', name: String(t.value.prec), line: t.line }
+        : null;
+      return { type: 'DataOp', kind: t.value.kind, prec: t.value.prec, precExpr, arg };
+    }
+
+    // ZYJS-001: this used to be `this.adv(); return Literal unit` — a catch-all
+    // that consumed ANY token no branch above recognised and handed back a Unit
+    // literal. It built nothing: `##_` has its own explicit branch some fifty
+    // lines up. All it did was swallow, so `x = =`, `x = ,`, `x = )` and their
+    // family parsed cleanly here and were refused by both Rust engines. It is,
+    // very probably, the mechanism under the whole family of "the browser
+    // engine accepts a wider grammar than the other two" — DM-06 was narrowed
+    // at `parseOutput`, which decides which grammar is invoked and cannot reach
+    // this, at the bottom of `parsePrimary`.
+    //
+    // The refusal names the token the way the Rust parser names it, so the
+    // three engines refuse the same program with the same sentence.
+    const shown = Parser.tokenSpelling(t);
+    // D4: a range is only an iterable. Reaching the expression parser with a
+    // `..` in hand means one was written where it cannot be, and that has a
+    // sentence of its own in the two Rust engines — `expected expression, found
+    // DotDot` named the token and not the mistake.
+    if ((t ?? this.peek())?.type === 'RANGE') {
+      throw new ZyStaticError('ranges can only be used in for-each loops',
+        t ?? this.peek(),
+        "write '@ name:a..b { … }'; a range is not a value");
+    }
+    throw new ZyStaticError(`expected expression, found ${shown}`, t ?? this.peek());
+  }
+}
+
+// ─── Environment ──────────────────────────────────────────────────────────────
+
+class Env {
+  constructor(parent = null, funcBoundary = false, isModuleScope = false) {
+    this.vars          = new Map();
+    this.consts        = new Set();
+    this.parent        = parent;
+    this.funcBoundary  = funcBoundary;
+    this.isModuleScope = isModuleScope;
+  }
+
+  // ── Who owns an array (ZYJS-014) ──────────────────────────────────────────
+  //
+  // A collection assigns by value, and this engine honoured that by copying the
+  // array on EVERY edit: `a$+ x` in a loop cost the square of its length, and
+  // `t[i]$~ v` the size of `t`. An edit can write where the array is when the
+  // variable is its only holder — and that is what `own` on the wrapper says.
+  //
+  // The rule is conservative and has one direction. Only an edit of a variable,
+  // stored back into that variable, produces an owned array. Any READ of the
+  // variable that hands the wrapper to someone — another name, an argument, an
+  // element of something else, a capture, a loop — goes through `get`, which
+  // takes the mark away for good. `peek` reads without touching it, and is for
+  // the few readers that keep nothing: the edit itself, `$#`, `$?`, one index.
+  // An array nobody marked is shared, so a path this missed copies, as before.
+  get(name) {
+    const v = this._lookup(name);
+    if (v.own) v.own = false;
+    return v;
+  }
+
+  peek(name) {
+    return this._lookup(name);
+  }
+
+  _lookup(name) {
+    if (this.vars.has(name)) return this.vars.get(name);
+    // The mark sits in the frame the name lived in — a block, a function, a
+    // lambda — so it is looked for at every level the lookup passes, not only
+    // at the root (ZYJS-030): `y` ended inside a function's `?` block said
+    // "'y' is undefined — did you mean 'y°'".
+    // `##_`, declared: the words of the name chose the family — a variable
+    // called `index` was an `##Index` (GLB-099).
+    if (this.destroyed?.has(name)) {
+      throw new ZyRuntimeError(
+        `use after destruction: variable '${name}' was destroyed after its last use`, '##_');
+    }
+    if (!this.parent) {
+      // GLB-008: the wording of both Rust engines, verbatim — `zyq consensus`
+      // compares text, and more to the point a reader who wrote `\` needs to be
+      // told that is what happened rather than sent to look for a definition.
+      if (this.wasDestroyed(name)) {
+        throw new ZyRuntimeError(
+          `use after destruction: variable '${name}' was destroyed after its last use`, '##_');
+      }
+      throw new ZyError(`'${name}' is undefined — did you mean '${name}°' (hot definition)?`);
+    }
+    if (this.funcBoundary) {
+      const v = this.parent._getFuncOnly(name);
+      if (v !== undefined) return v;
+      throw new ZyError(`'${name}' is undefined — did you mean '${name}°' (hot definition)?`);
+    }
+    if (name.startsWith('_')) {
+      // _ vars can't escape block scopes — but _ names defined at module scope
+      // (past any funcBoundary) are module-private and accessible from within the module.
+      const v = this._findPastBoundary(name);
+      if (v !== undefined) return v;
+      const h = this._findHotAnchored(name);
+      if (h !== undefined) return h;
+      // The rule is over variables (GUIDE § 4). A function declaration is not
+      // one: both Rust engines call a file-level `_f()` from any block, and so
+      // does this one (BUG-GOL-002).
+      const f = this.parent._getFuncOnly(name);
+      if (f !== undefined && f.type === 'func') return f;
+      throw new ZyRuntimeError(`cannot access underscore variable '${name}' from inner scope`, '##Scope');
+    }
+    return this.parent._lookup(name);
+  }
+
+  // True when `name` is bound inside a function — the case where, behind a
+  // `.`, the variable hides an import alias of the same name (GLB-070). A
+  // variable of the file lives in the environment the `<#` did, and there the
+  // alias keeps the dot.
+  hidesAlias(name) {
+    for (let e = this; e; e = e.parent) {
+      if (e.vars.has(name)) {
+        for (let x = e; x; x = x.parent) if (x.funcBoundary) return true;
+        return false;
+      }
+      if (e.funcBoundary) return false;
+    }
+    return false;
+  }
+
+  _findPastBoundary(name) {
+    // Module scope: _ names here are module-private, accessible from within the module
+    if (this.isModuleScope && this.vars.has(name)) return this.vars.get(name);
+    if (this.funcBoundary) return this.parent ? this.parent._findUnrestricted(name) : undefined;
+    return this.parent ? this.parent._findPastBoundary(name) : undefined;
+  }
+
+  _findUnrestricted(name) {
+    if (this.vars.has(name)) return this.vars.get(name);
+    return this.parent ? this.parent._findUnrestricted(name) : undefined;
+  }
+
+  _getFuncOnly(name) {
+    if (this.vars.has(name)) {
+      const v = this.vars.get(name);
+      if (v.type === 'func' || v.type === 'module') return v;
+      // Root-scope constants resolve at any call depth (MM-9, settled for the
+      // Rust engines in v0.0.8): `K := 5` is readable inside a function called
+      // from a function. Only constants, and only where the chain ends — a plain
+      // variable still cannot be seen across a function boundary.
+      if (this.consts.has(name) && !this.parent) return v;
+      return undefined;
+    }
+    if (this.parent) return this.parent._getFuncOnly(name);
+    return undefined;
+  }
+
+  set(name, value) {
+    if (this.vars.has(name)) {
+      if (this.consts.has(name)) throw new ZyError(`Cannot reassign constant '${name}'`);
+      this.vars.set(name, value);
+      return true;
+    }
+    // A name that a `\` ended here: assigning it gives it back to THIS
+    // environment, from whichever block the assignment is in (GLB-147, decided
+    // 2026-10-23: `\` keeps the name's place). It is the rule GLB-120 decided on
+    // 2026-10-11 for a variable of the module, where the assignment used to find
+    // nothing and define a local in the function that made it, so the module
+    // never had its variable again. A block did the same with a file or
+    // function variable, and the VM did not.
+    if (this.destroyed?.has(name)) {
+      this.vars.set(name, value);
+      this.destroyed.delete(name);
+      return true;
+    }
+    // A `_` name does not reach its parent — except the one anchored on purpose,
+    // which `get` already lets its loop read. Without the same exception here
+    // `_k° += 1` read the value and then lost the write in silence, because
+    // CompoundAssign does not look at what `set` returns: `_k` stayed 0 and a
+    // loop waiting for it to reach 5 never ended.
+    if (name.startsWith('_')) return this.parent ? this.parent._setHotAnchored(name, value) : false;
+    if (this.funcBoundary) return false;
+    if (this.parent && this.parent.set(name, value)) return true;
+    return false;
+  }
+
+  _setHotAnchored(name, value) {
+    if (this.vars.has(name) && this.hotNames?.has(name)) { this.vars.set(name, value); return true; }
+    if (this.funcBoundary || !this.parent) return false;
+    return this.parent._setHotAnchored(name, value);
+  }
+
+  def(name, value, isConst = false) {
+    this.vars.set(name, value);
+    if (isConst) this.consts.add(name);
+    // `\` ends a life; it does not burn the name. Assigning revives it — in the
+    // environment that holds the mark, which `set` finds first (GLB-147). A
+    // definition here is a name of THIS environment, and leaves a parent's mark
+    // alone: clearing it made a loop's iterator, defined in each turn's scope,
+    // erase the `\` of the name outside, so the loop could not give it back.
+    this.destroyed?.delete(name);
+  }
+
+  hotDef(name, value) {
+    // Walk to nearest function boundary or root so hot-def vars survive loop iterations
+    let scope = this;
+    while (scope.parent && !scope.funcBoundary) scope = scope.parent;
+    scope.vars.set(name, value);
+    // Remembered, so the `_` rule in `get` can tell a value anchored ON PURPOSE
+    // from one that escaped its block: see `_findHotAnchored`.
+    (scope.hotNames ??= new Set()).add(name);
+  }
+
+  // A `_k°` is stored where every hot value is — at the function or the root —
+  // because that is what lets it survive each iteration. Its block is still the
+  // loop's, and the loop body reads it every turn. The `_` rule below refused
+  // that read as "from inner scope", so `_k°` could be written and never used
+  // (GLB-039, decided 2026-09-25). Reading it from a block NESTED in the loop is
+  // refused before anything runs, by the checker, as in both Rust engines.
+  _findHotAnchored(name) {
+    if (this.vars.has(name) && this.hotNames?.has(name)) return this.vars.get(name);
+    if (this.funcBoundary || !this.parent) return undefined;
+    return this.parent._findHotAnchored(name);
+  }
+
+  has(name) {
+    return this.vars.has(name) || (this.parent ? this.parent.has(name) : false);
+  }
+
+  destroy(name) {
+    if (this.vars.has(name)) {
+      this.vars.delete(name);
+      this.consts.delete(name);
+      // Remembered so a later read can say WHAT happened. Without this the
+      // message was `'x' is undefined — did you mean 'x°'`, which sends the
+      // reader to look for a definition that was there and suggests a hot
+      // definition, a loop-scope mechanism that has nothing to do with it.
+      // Assigning the name again revives it (`destroyed.delete` in `def`), so
+      // this records a state, not a tombstone.
+      this.destroyed ??= new Set();
+      this.destroyed.add(name);
+      return true;
+    }
+    // A `\` ends a name in its own strong environment and never past it,
+    // exactly as `set` never writes past it.
+    if (this.parent && !this.funcBoundary) return this.parent.destroy(name);
+    return false;
+  }
+
+  /** Was this name destroyed by `\` and not assigned since? */
+  wasDestroyed(name) {
+    if (this.destroyed?.has(name)) return true;
+    return this.parent ? this.parent.wasDestroyed(name) : false;
+  }
+}
+
+// ─── Checker ──────────────────────────────────────────────────────────────────
+
+function formatDiagnostic(d) {
+  // `= help:` on its own line, which is the spelling the whole tool chain
+  // agreed on and what the Rust engines print. The guidance lives in `d.help`,
+  // never inside `d.message` — see the note on `ZyStaticError`.
+  return `${d.severity}: ${d.message}` + (d.help ? `\n  = help: ${d.help}` : '');
+}
+
+/**
+ * Does this block assign to `name` anywhere inside it?
+ *
+ * Walks statements structurally rather than by a name list, so a nested loop or
+ * branch counts. Used by `lifetimeWarnForIterator` to tell a loop variable that
+ * is merely read from one whose value the body changes.
+ */
+function assignsWithin(node, name) {
+  let found = false;
+  const walk = (n) => {
+    if (found || !n || typeof n !== 'object') return;
+    if (Array.isArray(n)) { for (const x of n) walk(x); return; }
+    // Every form that can write a name: plain assignment, compound assignment,
+    // ++/--, an in-place edit, and a destructuring target.
+    if ((n.type === 'Assign' || n.type === 'CompoundAssign' || n.type === 'IncDec'
+         || n.type === 'InPlaceEdit') && n.name === name) { found = true; return; }
+    if (n.type === 'Destructure' || n.type === 'NamedDestruct') {
+      for (const t of (n.targets ?? [])) {
+        if ((t?.name ?? t) === name) { found = true; return; }
+      }
+    }
+    for (const k of Object.keys(n)) {
+      if (k === 'type' || k === 'line') continue;
+      walk(n[k]);
+    }
+  };
+  walk(node);
+  return found;
+}
+
+/**
+ * A stable key for the expressions that turn up as range bounds, so a guard can
+ * be matched against the bound it protects. `null` for anything more complex
+ * than a name, a field, an index or a `$#` over one of those — an unrecognized
+ * shape is simply not treated as guarded.
+ *
+ * Mirrors `TypeChecker::expr_key` in zymbol-semantic.
+ */
+function exprKey(e) {
+  if (!e) return null;
+  if (e.type === 'Group')  return exprKey(e.expr ?? e.inner);
+  if (e.type === 'Ident')  return e.name || null;
+  if (e.type === 'CollectionOp' && e.op === '$#') {
+    const k = exprKey(e.obj); return k === null ? null : `${k}$#`;
+  }
+  if (e.type === 'FieldAccess' && !e.scoped) {
+    const k = exprKey(e.obj); return k === null ? null : `${k}.${e.field}`;
+  }
+  if (e.type === 'Index' || e.type === 'NavIndex') {
+    const k = exprKey(e.obj ?? e.array); if (k === null) return null;
+    const ie = e.index ?? e.spec?.index;
+    const ik = exprKey(ie) ?? (ie?.type === 'Literal' ? String(ie.value) : null);
+    return ik === null ? null : `${k}[${ik}]`;
+  }
+  return null;
+}
+
+/**
+ * The range bounds a condition vouches for: both sides of any comparison it
+ * contains, including the operands of `&&`/`||` chains.
+ *
+ * Mirrors `TypeChecker::guarded_bounds`.
+ */
+function guardedBoundsOf(cond) {
+  const out = [];
+  const walk = (e) => {
+    const n = (e && e.type === 'Group') ? (e.expr ?? e.inner) : e;
+    if (!n || n.type !== 'BinOp') return;
+    if (['<', '>', '<=', '>=', '==', '<>'].includes(n.op)) {
+      for (const k of [exprKey(n.left), exprKey(n.right)]) if (k !== null) out.push(k);
+    } else if (n.op === '&&' || n.op === '||') {
+      walk(n.left); walk(n.right);
+    }
+  };
+  walk(cond);
+  return out;
+}
+
+class Checker {
+  // The guidance the two Rust engines attach to `undefined variable`
+  // (`type_check.rs`, `.with_help(...)`). This engine emitted the message and
+  // not the help, so the same refusal read as two different diagnostics.
+  static HELP_UNDEFINED = 'variables must be defined before use';
+
+  /** An integer written in the source, or `-`/`+` one. */
+  static isIntLiteral(e) {
+    const n = (e && e.type === 'Group') ? (e.expr ?? e.inner) : e;
+    if (n?.type === 'Literal') return n.kind === 'int';
+    return n?.type === 'UnaryOp' && (n.op === '-' || n.op === '+')
+      && n.operand?.type === 'Literal' && n.operand.kind === 'int';
+  }
+  // The guidance both Rust engines give with each of these refusals, verbatim
+  // (GLB-040, decided 2026-09-25: zyjs gives the same help, not less).
+  static HELP_CONST = "constants declared with ':=' cannot be modified";
+  static HELP_UNDEFINED_INTERP = 'variables must be defined before use; a literal brace is written \\{';
+
+  constructor(ast) {
+    this.ast         = ast;
+    this.diagnostics = [];
+    this.stack       = [];
+    this.pendingHot  = false; // prefix hot-def sentinel (°name)
+    this.funcDepth   = 0;     // >0 inside a function or lambda body — see lifetimeWarnForIterator
+    this.guardedBounds = [];  // range bounds an enclosing `?` vouches for
+    this.lifetimeWarned = new Set();
+    // One entry per enclosing @ loop, innermost last; null for an unlabelled
+    // loop. Emptied at a function or lambda boundary, because a callee does not
+    // see the caller's loops. See checkLoopControl.
+    this.loopLabels  = [];
+    // Argument-count tables, filled by collectArities() before any statement is
+    // checked, so a call may precede the declaration it names.
+    //   funcArity : local function name  → parameter count
+    //   aliasPath : import alias         → module path ('std/math', './lib')
+    //   reassigned: names later bound to something else, so `f(…)` is no longer
+    //               known to be that function and is left unchecked
+    this.funcArity  = new Map();
+    //   funcOutSlots : local function name → indices of its `<~` parameters
+    this.funcOutSlots = new Map();
+    // Constants declared with an integer written in the source (W_RANGE_DIR).
+    this.literalIntConsts = new Set();
+    this.aliasPath  = new Map();
+    this.reassigned = new Set();
+    // alias → (function → arity) for user modules. Empty unless a caller
+    // supplies it; a qualified call is left unchecked rather than guessed at,
+    // exactly as TypeChecker::set_module_arities does in Rust.
+    this.moduleArities = new Map();
+    //   moduleOutSlots : alias → (function → indices of its `<~` parameters)
+    this.moduleOutSlots = new Map();
+    //   moduleExports : alias → { constants, functions } for user modules
+    //                   (ZYVM-008); built by `moduleExportsFor`
+    this.moduleExports = new Map();
+  }
+
+  /**
+   * Argument counts, checked the way `zymbol check` has checked them since
+   * v0.0.9 (crates/zymbol-semantic/src/type_check.rs).
+   *
+   * The browser engine had no such check, so `math::sqrt(4.0, 9.0)` printed `2`
+   * in the playground and was refused outright by the CLI — the same program,
+   * two answers, on the tool people reach for first.
+   *
+   * A variadic function (arity -1, e.g. `math::log`) accepts any count.
+   */
+  checkArity(name, expected, actual, line, params = null) {
+    if (expected < 0 || expected === actual) return;
+    this.error('E016',
+      `function '${name}' expects ${expected} argument(s), but ${actual} were provided`,
+      line, { name, expected, actual },
+      params === null ? null : `expected signature: ${name}(${params})`);
+  }
+
+  /**
+   * A `<~` parameter writes its change back into the caller's variable, so the
+   * argument has to be a name. An expression gives it nowhere to write and the
+   * write is silently lost — `g(2 + 3)` against `g(b<~)` used to be accepted by
+   * every engine (REFERENCE.md L34).
+   *
+   * Worded exactly as `check_output_arguments` in
+   * crates/zymbol-semantic/src/type_check.rs: the two are compared by
+   * web/tests/test_check.mjs.
+   */
+  checkOutputArgs(name, args, line) {
+    const slots = this.funcOutSlots.get(name);
+    if (!slots) return;
+    for (const i of slots) {
+      const arg = args[i];
+      if (arg === undefined) continue;
+      const node = arg.value ?? arg;
+      if (node?.type === 'Ident') continue;
+      this.error('E017',
+        `argument ${i + 1} of '${name}' is an output parameter '<~' and needs a variable, not an expression`,
+        line, { name, index: i + 1 },
+        "'<~' writes the change back into the caller's variable; there is nowhere to write an expression back to — assign it to a variable first");
+    }
+  }
+
+  /**
+   * The call site must spell `<~` on exactly the arguments the callee declares
+   * as outputs (REFERENCE.md L36). The mark is redundant with the signature on
+   * purpose — it states the same contract where the consequence lands — and
+   * being required is what stops it drifting out of date.
+   *
+   * `slots` is null when the callee's signature is unknown (an unresolvable
+   * module), and the call is then left alone rather than guessed at. Worded as
+   * `check_out_marks` in crates/zymbol-semantic/src/type_check.rs.
+   */
+  checkOutMarks(name, slots, args, line) {
+    if (slots === null) return;
+    const marked = args.outArgs ?? [];
+    for (let i = 0; i < args.length; i++) {
+      const declared = slots.includes(i);
+      if (declared === marked.includes(i)) continue;
+      if (declared) {
+        this.error('E018',
+          `argument ${i + 1} of '${name}' is an output parameter and must be marked '<~' at the call site`,
+          line, { name, index: i + 1 },
+          "write the argument as 'name<~' — the mark says the value comes back changed, so a reader does not have to open the function to find out");
+      } else {
+        this.error('E019',
+          `argument ${i + 1} of '${name}' is marked '<~' but the function does not declare it as an output parameter`,
+          line, { name, index: i + 1 },
+          "drop the '<~', or declare the parameter as an output in the signature");
+      }
+    }
+    // The same variable as two output arguments (GLB-117, S2). An output
+    // parameter IS the caller's variable for as long as the call lasts, and one
+    // variable cannot be two parameters at once. It used to be copied into
+    // both, and the second write-back discarded the first in silence:
+    // `h(e<~, e<~)` kept only what the second parameter wrote.
+    const seen = new Set();
+    for (const i of marked) {
+      const a = args[i];
+      if (a?.type !== 'Ident') continue;
+      if (seen.has(a.name)) {
+        this.error('E020',
+          `'${a.name}' is given to '${name}' as an output argument twice`,
+          line, { variable: a.name, name },
+          "an output parameter is the caller's own variable while the call lasts, so one variable cannot be two of them — what one wrote would be lost to the other; give each '<~' a variable of its own");
+      } else {
+        seen.add(a.name);
+      }
+    }
+  }
+
+  /** Arity of `alias::field`, or null when nothing reliable is known. */
+  qualifiedArity(alias, field) {
+    const path = this.aliasPath.get(alias);
+    if (path === undefined) return null;
+    const std = STDLIB_ARITIES.get(path);
+    if (std) return std.has(field) ? std.get(field) : null;
+    const user = this.moduleArities.get(alias);
+    return user && user.has(field) ? user.get(field) : null;
+  }
+
+  /**
+   * Walk the whole program once for declarations, before checking anything.
+   *
+   * Two passes' worth of information in one: what each function's arity is, and
+   * which of those names are later rebound to something else. A rebound name is
+   * dropped rather than checked — `f = (x) -> x` after `f(a, b) { }` means a
+   * call to `f` is no longer known to reach the declaration.
+   */
+  /**
+   * MEM-7 of zymbol-design/PREMISES.md — one name, one thing, inside one strong
+   * environment. A module, a named function and a lambda are strong; every block
+   * is light. Between strong environments the same name is free, which is the
+   * half that makes the rule sustainable: four imported modules that could not
+   * reuse a name would not be. So this walks the file's own level and does not
+   * descend — a parameter reusing a file-level name is two environments, not a
+   * collision.
+   *
+   * Ported from crates/zymbol-semantic/src/type_check.rs `check_name_collisions`.
+   * `f(a, a)` is why these are errors: called as `f(1, 2)` it answered 2 here and
+   * in the tree-walker and 1 in the VM, so the program's value depended on which
+   * engine ran it.
+   */
+  checkNameCollisions(stmts) {
+    if (!Array.isArray(stmts)) return;
+    const functions = new Map();     // name -> line
+    const fileVars = new Map();      // name -> line
+
+    for (const s of stmts) {
+      if (!s) continue;
+      if (s.type === 'FuncDecl') {
+        if (functions.has(s.name)) {
+          this.error('E_NAME', `'${s.name}' is defined twice in this file`, s,
+            { name: s.name },
+            `inside one strong environment a name designates one thing (first defined at line ${functions.get(s.name)}) — rename one, or delete the definition this one replaces`);
+        } else {
+          functions.set(s.name, s.line);
+        }
+        const seen = new Map();
+        for (const param of (s.params ?? [])) {
+          const pn = param.name ?? param;
+          if (pn === s.name) {
+            this.error('E_NAME',
+              `parameter '${pn}' has the same name as the function it belongs to`,
+              s, { name: pn },
+              'a function and its parameters share one strong environment, so inside the body the name would designate two things');
+          }
+          if (seen.has(pn)) {
+            this.error('E_NAME',
+              `'${pn}' is declared twice in the parameters of '${s.name}'`,
+              s, { name: pn },
+              `which argument the name refers to is undefined (first declared at line ${seen.get(pn)}) — the three engines answered differently, so the program's value depended on which one ran it`);
+          } else {
+            seen.set(pn, s.line);
+          }
+        }
+      } else if (s.type === 'VarAssign' && s.name && !fileVars.has(s.name)) {
+        fileVars.set(s.name, s.line);
+      }
+    }
+
+    // A variable and a function under one name. They live in separate tables and
+    // never meet, so both work and a reader cannot tell which a bare name is.
+    for (const [name, fnLine] of functions) {
+      if (!fileVars.has(name)) continue;
+      const varLine = fileVars.get(name);
+      const first = Math.min(varLine, fnLine), second = Math.max(varLine, fnLine);
+      this.error('E_NAME', `'${name}' is both a variable and a function in this file`,
+        second, { name },
+        `a file is one strong environment and a name designates one thing in it (the other is at line ${first}) — they do not collide today only because they are looked up in different tables`);
+    }
+  }
+
+  collectArities(stmts) {
+    if (!Array.isArray(stmts)) return;
+    for (const s of stmts) {
+      if (!s) continue;
+      switch (s.type) {
+        case 'FuncDecl': {
+          this.funcArity.set(s.name, (s.params ?? []).length);
+          // The parameters as the caller writes them, for the arity help
+          // (GLB-040): the names, and `<~` where the call has to spell it.
+          if (!this.funcParamList) this.funcParamList = new Map();
+          this.funcParamList.set(s.name,
+            (s.params ?? []).map(p => (p.isOut ? `${p.name}<~` : p.name)).join(', '));
+          // Kept whole, so a call's type can be read off the function's `<~`s
+          // (GLB-043). Only the declaration is stored; its type is worked out
+          // the first time a call asks for it.
+          if (!this.funcDecls) this.funcDecls = new Map();
+          this.funcDecls.set(s.name, s);
+          // Which slots are `<~` outputs, so a call can be checked against them
+          // (REFERENCE.md L34). Functions without one — nearly all — store nothing.
+          const outs = (s.params ?? [])
+            .map((p, i) => (p.isOut ? i : -1))
+            .filter(i => i >= 0);
+          if (outs.length) this.funcOutSlots.set(s.name, outs);
+          this.collectArities(s.body);
+          break;
+        }
+        case 'Import':
+          if (s.alias && s.path) this.aliasPath.set(s.alias, s.path);
+          if (s.alias) (this.aliasLine ??= new Map()).set(s.alias, s.line ?? '?');
+          break;
+        case 'VarAssign':
+        case 'ConstAssign':
+          if (s.name) this.reassigned.add(s.name);
+          break;
+        case 'Loop':      this.collectArities(s.body); break;
+        case 'TuiBlock':  this.collectArities(s.body); break;
+        case 'ModuleBlock': this.collectArities(s.body); break;
+        case 'If':
+          this.collectArities(s.then);
+          for (const b of (s.elifs ?? [])) this.collectArities(b.body ?? b.then);
+          this.collectArities(s.else ?? s.elseBody);
+          break;
+        case 'TryCatch':
+          this.collectArities(s.tryBody ?? s.try);
+          for (const c of (s.catches ?? [])) this.collectArities(c.body);
+          this.collectArities(s.finallyBody ?? s.finally);
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  /**
+   * `@!` / `@>` and their labelled forms, checked the way `zymbol check` checks
+   * them since v0.0.9 (crates/zymbol-semantic/src/loop_context.rs).
+   *
+   * This used to be unchecked here, and the four engines gave four different
+   * answers to `@:nope!`: the Rust tree-walker unwound every enclosing loop and
+   * carried on, the register VM refused to compile, zyml raised at run time,
+   * and this engine unwound every loop and then terminated the program — all of
+   * them silently except the VM. It is decidable statically, so it is decided
+   * statically, and the branch that never runs is checked too.
+   */
+  checkLoopControl(stmt, sym, verb) {
+    const label = stmt.label ?? null;
+    if (label === null || label === '') {
+      if (this.loopLabels.length === 0) {
+        this.error('E014', `'${sym}' outside a loop`, stmt, { sym, verb });
+      }
+      return;
+    }
+    if (!this.loopLabels.includes(label)) {
+      this.error('E015', `no enclosing loop is labelled '${label}'`, stmt, { label, sym });
+    }
+  }
+
+  push(funcBoundary = false, moduleScope = false, isLoop = false,
+       strong = null) {
+    // `strong` is MEM-2's boundary and is NOT funcBoundary: that one already
+    // means something else here (it is what lets `_name` be read across a call
+    // frame). 'function' or 'lambda' when this frame opens a strong
+    // environment, null otherwise.
+    this.stack.push({ vars: new Map(), funcBoundary, moduleScope, isLoop, strong });
+  }
+
+  pop() {
+    const frame = this.stack.pop();
+    for (const [name, info] of frame.vars) {
+      // Neither Rust analyser warns about a module alias nobody used or a
+      // lambda parameter the lambda ignores — a lambda takes what the operation
+      // hands it (decided 2026-09-15). This one did, and a module alias was
+      // called a "variable" as well. Nor about a function nobody calls, which
+      // this one also named a variable (ZYJS-043).
+      if (!info.used && !name.startsWith('_') && !info.isConst && !info.isAlias && !info.isParam && !info.isFn) {
+        // Written again and never read is its own warning, as in Rust's
+        // `is_write_only`: the second write counted as a read here, so
+        // `x = 1  x = 2` said nothing at all (ZYJS-052).
+        if (info.assigned) {
+          this.warn('W_WRITE_ONLY', `variable '${name}' is assigned but never read`, info, { name },
+            'consider removing this variable or using its value');
+        } else {
+          this.warn('W_UNUSED',
+            `unused variable '${name}'\n` +
+            `= help: consider removing this variable or prefixing with '_' if intentionally unused`,
+            info, { name });
+        }
+      }
+      // A constant nobody reads warns too, named as what it is — as both Rust
+      // engines do (GLB-061, decided 2026-09-25).
+      if (!info.used && !name.startsWith('_') && info.isConst && !info.isFn && !info.isAlias) {
+        this.warn('W_UNUSED_CONST', `unused constant '${name}'`, info, { name },
+          'consider removing this constant');
+      }
+    }
+  }
+
+  define(name, at, isConst = false, isFn = false, isAlias = false) {
+    if (this.stack.length === 0 || !name) return;
+    if (!isAlias) this.refuseAliasName(name, at, isFn ? 'function' : isConst ? 'constant' : 'variable');
+    // `at` is the declaring node, or a line: the record keeps the column too, so
+    // an unused name is reported where Rust reports it (ZYJS-024).
+    const { line, col } = Checker.posOf(at);
+    // `isFn` because functions share this map with variables here, and MEM-2 is
+    // about VARIABLES: calling a function defined in the file is not reaching
+    // out of scope, it is what a file of functions is for. The Rust analyser
+    // keeps the two in separate tables and never had to say so.
+    this.stack[this.stack.length - 1].vars.set(name, { line, col, isConst, used: false, isFn, isAlias });
+  }
+
+  /**
+   * Assignment to a name that already exists: keep the record it already has.
+   *
+   * `define` writes into the INNERMOST frame with `used: false`, which is right
+   * for a name being introduced and wrong for one being assigned again. Two
+   * false `unused variable` warnings came out of that, and neither Rust engine
+   * has ever raised them:
+   *
+   *     c = 0                     inc(x<~) {
+   *     @ 3 { c = c + 1 }             x = x + 1
+   *     >> c ¶      // prints 3   }   // x's value flows back to the caller
+   *
+   * In the first, `c = c + 1` created a SECOND `c` inside the loop frame — a
+   * shadow, in a language whose blocks do not create scope (`DI-10`) — and that
+   * shadow died unused when the frame popped. In the second, the assignment
+   * reset the parameter's record, throwing away the read on its own right-hand
+   * side.
+   *
+   * So: if the name is visible, leave it alone. A variable that is assigned and
+   * never read still warns, because the record from its FIRST definition is the
+   * one that survives and nothing ever marks it used.
+   */
+  /**
+   * `? 1 { … }` — a condition that is not a Bool is refused (GLB-121).
+   *
+   * It was a warning (`DM-05`), and under that one warning the three engines
+   * each took their own branch: nine of thirteen types diverged. Only what is
+   * decided without inference is refused here, which is the limit the Rust
+   * analyser works under too — it stays quiet on `Any` or `Unknown` rather
+   * than guessing, and the engine raises a `##Type` when the value arrives.
+   *
+   * The wording is the Rust one, word for word — `zyq consensus` compares text.
+   */
+  /**
+   * The lambda of `$>`, `$|` and `$<` takes 1, 1 and 2 parameters. Decided the
+   * way `type_check.rs` decides it — on a lambda written in place or a variable
+   * holding one; a named function is not checked there either (ZYJS-039).
+   */
+  checkHofArity(expr) {
+    const RULE = {
+      '$>': [1, n => `map lambda must have exactly 1 parameter, got ${n}`],
+      '$|': [1, n => `filter lambda must have exactly 1 parameter, got ${n}`],
+      '$<': [2, n => `reduce lambda must have exactly 2 parameters (acc, elem), got ${n}`],
+    }[expr.op];
+    if (!RULE || !expr.arg) return;
+    const arg = expr.arg;
+    const n = arg.type === 'Lambda' ? (arg.params ?? []).length
+            : arg.type === 'Ident' ? this.peekVar(arg.name)?.lambdaArity
+            : undefined;
+    if (n === undefined || n === RULE[0]) return;
+    this.error('E_HOF_ARITY', RULE[1](n), { line: arg.line ?? expr.obj?.line, col: arg.col ?? null }, { n });
+  }
+
+  refuseNonBoolCondition(cond) {
+    const name = this.staticTypeName(cond);
+    if (!name) return;                       // Bool, or a type this pass cannot decide
+    this.error('E_COND_TYPE', `a condition must be a Bool, got ${name}`,
+               { line: cond.line ?? null, col: cond.col ?? null }, { type: name });
+  }
+
+  /** The type of an expression when it is decided without inference, else null. */
+  staticTypeName(e) {
+    const OF = { int: 'Int', float: 'Float', str: 'String', char: 'Char' };
+    if (e?.type === 'Literal') return OF[e.kind] ?? null;   // bool → null: it is fine
+    if (e?.type === 'Ident' && e.name) {
+      for (let i = this.stack.length - 1; i >= 0; i--) {
+        const info = this.stack[i].vars.get(e.name);
+        // `Bool` is what a condition is SUPPOSED to be. `noteLiteralType` records
+        // it like any other so that a later `n = 1` can clear the record on
+        // conflict; returning it here produced `if condition should be Bool, got
+        // Bool`, which says nothing and is plainly a bug.
+        // What the name holds after its LAST assignment, as the Rust type
+        // environment keeps it — `x = 1` then `x = ##_` is Unit, which the
+        // agreeing-literals record (`litType`) had cleared to "unknown" and so
+        // warned nothing (ZYJS-036, step P4.4).
+        if (info) {
+          const now = info.infType ?? info.litType;
+          return now && now !== 'Bool' && now !== 'Any' ? now : null;
+        }
+        if (this.stack[i].funcBoundary && !e.name.startsWith('_')) break;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Read a variable's record WITHOUT marking it used and without diagnosing.
+   *
+   * `lookup` does both, which is right where a name is being read and wrong
+   * where the checker is only consulting what it already knows about a type.
+   */
+  peekVar(name) {
+    if (!name) return null;
+    for (let i = this.stack.length - 1; i >= 0; i--) {
+      const info = this.stack[i].vars.get(name);
+      if (info) return info;
+    }
+    return null;
+  }
+
+  /**
+   * The type of an expression, when it can be decided without inference.
+   *
+   * Scalar literals, an array literal whose elements agree (`[Int]`, and
+   * recursively `[[Int]]`), and a variable whose last assignment was one of
+   * those. `null` everywhere else — this is a checker, not a type system, and
+   * saying nothing is always allowed.
+   *
+   * Mirrors what the Rust analyser decides statically, which is what makes the
+   * two agree on which programs are refused.
+   */
+  staticKind(e) {
+    const OF = { int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool' };
+    if (!e) return null;
+    if (e.type === 'Literal') return OF[e.kind] ?? null;
+    if (e.type === 'Ident') {
+      const info = this.peekVar(e.name);
+      return info?.elemKind ? `[${info.elemKind}]` : (info?.litType ?? null);
+    }
+    if (e.type === 'Array') {
+      const k = this.arrayElemKind(e);
+      return k ? `[${k}]` : null;
+    }
+    // A unary keeps the kind of an operand it applies to: `!` a Bool, `-`/`+`
+    // a number. Without this, `[1] $+ !#1` and `[#1] $+ -3` ran here while both
+    // Rust analysers refuse them (ZYJS-069) — a refusal, not a warning, so the
+    // engines stopped running the same programs. Any other operand: say nothing.
+    if (e.type === 'UnaryOp') {
+      const k = this.staticKind(e.operand);
+      if (e.op === '!') return k === 'Bool' ? 'Bool' : null;
+      return k === 'Int' || k === 'Float' ? k : null;
+    }
+    return null;
+  }
+
+  /**
+   * The COLLECTION SHAPE of a value as a type symbol — `##]`, `##)` or `##(` —
+   * or `null` when this pass cannot decide it.
+   *
+   * A literal decides it in place; a variable decides it when its last
+   * assignment was one (recorded by `noteLiteralType`). Nothing else: a
+   * parameter, an element of a collection and the result of a call are all
+   * `null` here, and saying nothing is always allowed.
+   *
+   * The Rust analyser decides two more, because it has a type system and this
+   * pass does not: the return of a function declared in the same file, and an
+   * element of an array literal (`a = [(1,2)]` then `[x, y] = a[1]`). Both
+   * engines say the same thing where both decide; where only Rust decides,
+   * `zymbol check` warns and the playground does not. Neither refuses the
+   * program, so the two still RUN every program identically — which is the
+   * property the three engines are held to.
+   */
+  shapeOf(e) {
+    if (!e) return null;
+    if (e.type === 'Array') return '##]';
+    if (e.type === 'Tuple') return e.keys ? '##(' : '##)';
+    if (e.type === 'Ident') return this.peekVar(e.name)?.shape ?? null;
+    return null;
+  }
+
+  /**
+   * `[a, b] = (1, 2)` — the pattern is typed (REFERENCE.md L32) and this one
+   * fails at run time. Warned rather than refused: the failure is catchable
+   * with `!?`, and this pass knows the shape of a value in only some of the
+   * places one comes from.
+   *
+   * Same wording as `type_check.rs`, down to the type symbol — the two engines
+   * are compared on the text of what they say.
+   */
+  warnDestructShape(stmt, want, accepts) {
+    const got = this.shapeOf(stmt.value);
+    if (!got) return;
+    const OK = { "array '[ … ]'": '##]', "tuple '( … )'": '##)', "dictionary '#( … )'": '##(' };
+    if (OK[want] === got) return;
+    const PATTERN = { '##]': '[ … ]', '##)': '( … )', '##(': '#( … )' };
+    this.warn('W_DESTRUCT_SHAPE',
+      `${want} pattern requires ${accepts}, got ${got}`, stmt.zyLine ?? stmt.line ?? null, null,
+      `unpack ${got} with ${PATTERN[got]} — the pattern is typed, and this one fails at run time`);
+  }
+
+  /**
+   * `-"a"` and `!7` — the unary counterpart of `warnBinaryOperandType`, with
+   * the wording `type_check.rs` uses: `unary - on non-numeric type: String`,
+   * `logical not on non-boolean type: Int`.
+   */
+  warnUnaryOperandType(expr) {
+    const operand = expr.operand ?? expr.value;
+    const name = this.operandTypeName(operand);
+    if (!name) return;
+    if (expr.op === '-' || expr.op === '+') {
+      if (name === 'Int' || name === 'Float' || name === 'Number') return;
+      this.warn('W_UNARY_TYPE', `unary ${expr.op} on non-numeric type: ${name}`,
+                operand?.line ?? expr.line ?? null, { op: expr.op, type: name });
+    } else if (expr.op === '!') {
+      if (name === 'Bool') return;
+      this.warn('W_UNARY_TYPE', `logical not on non-boolean type: ${name}`,
+                operand?.line ?? expr.line ?? null, { op: expr.op, type: name });
+    }
+  }
+
+  /**
+   * The type of a binary operand as `zymbol-semantic`'s `ZymbolType::name()`
+   * spells it — `Int`, `[Int]`, `(Int, Int)`, `(x: Int)`, `Unit` — or `null`
+   * when this pass cannot decide it, which is always allowed.
+   *
+   * Separate from `staticKind` on purpose: that one feeds the array-element and
+   * `$+` checks, and teaching it about tuples would change what those decide.
+   * This one exists only for `warnBinaryOperandType`.
+   */
+  operandTypeName(e) {
+    if (!e) return null;
+    if (e.type === 'Literal' && e.kind === 'unit') return 'Unit';
+    // `[]` is `[Any]`, as Rust names it: `staticKind` takes the type the
+    // elements share, and an empty array has none to share (ZYJS-049). Held in a
+    // name it was already `[Any]`, through `argType`.
+    if (e.type === 'Array' && (e.items ?? e.elements ?? []).length === 0) return '[Any]';
+    // A name is read for what it holds NOW, as Rust reads it from its type
+    // environment: `x = 1`, `x = "a"`, then `x - 1` warns there. This read the
+    // literal type the name was given (`staticKind`), which a change of type
+    // clears to "cannot tell", so it warned only while the name never changed
+    // (GLB-096, decided 2026-10-06; GLB-089 had decided it for Unit, which
+    // leaves no literal type at all). `infType` is what the name holds now, as
+    // `argType` names it — `null`, and Rust's `Any`, are "cannot tell", and
+    // cannot-tell never warns. A name nothing assigned here, a parameter, has
+    // no `infType`, and is read as before.
+    if (e.type === 'Ident') {
+      const info = this.peekVar(e.name);
+      if (info && info.infType !== undefined) return info.infType === 'Any' ? null : info.infType;
+    }
+    // `x#?` is always the triple (symbol, count, display), and Rust's analyser
+    // names it so: `-x#?`, which is `-(x#?)` since GLB-145, warned there and
+    // not here.
+    if (e.type === 'TypeMetadata') return '(String, Int, Any)';
+    if (e.type === 'Tuple') {
+      const items = e.items ?? [];
+      if (items.length === 0) return null;
+      const kinds = items.map(x => this.staticKind(x));
+      if (kinds.some(k => k === null)) return null;
+      return e.keys
+        // `#(k: Int)`, as a dictionary is written (GLB-033).
+        ? `#(${e.keys.map((k, i) => `${k}: ${kinds[i]}`).join(', ')})`
+        : `(${kinds.join(', ')})`;
+    }
+    return this.staticKind(e);
+  }
+
+  /**
+   * `"a" - 3` and `7 && #1` — an operand whose type the operator cannot take.
+   *
+   * Both Rust engines warn here, from the semantic analyser, with a span. This
+   * engine warned only for arithmetic, only at RUN time, and wrote it through
+   * `outputFn` — so the text landed in the program's own stdout (ZYJS-004), it
+   * carried no line, and `&&` had no check at all (ZYJS-005). Emitting it here
+   * fixes all three at once: it is a static diagnostic like every other, and it
+   * goes wherever the caller sends diagnostics.
+   *
+   * Only the LEFT operand, and only for these operators, because that is what
+   * `type_check.rs` does — `+` is silent and so is every comparison.
+   */
+  warnBinaryOperandType(expr) {
+    const ARITH   = new Set(['-', '*', '/', '%', '^']);
+    const LOGICAL = new Set(['&&', '||']);
+    if (!ARITH.has(expr.op) && !LOGICAL.has(expr.op)) return;
+    const name = this.operandTypeName(expr.left);
+    if (!name) return;
+    if (ARITH.has(expr.op)) {
+      // `Number` is Int-or-Float undetermined, numeric as in Rust's `is_numeric`;
+      // a name holds one after `x = a`, with `a` a parameter inferred numeric.
+      if (name === 'Int' || name === 'Float' || name === 'Number') return;
+      this.warn('W_ARITH_TYPE', `arithmetic operation on non-numeric type: ${name}`,
+                expr.left.line ?? expr.line ?? null, { type: name });
+    } else {
+      if (name === 'Bool') return;
+      this.warn('W_LOGIC_TYPE', `logical operation on non-boolean type: ${name}`,
+                expr.left.line ?? expr.line ?? null, { type: name });
+    }
+  }
+
+  /**
+   * The single element type of an array literal, or `null` when it cannot be
+   * decided — including when the elements disagree, which the `Array` check
+   * reports separately.
+   *
+   * Int and Float mix freely, as they do in every arithmetic position and as
+   * both Rust engines allow: `[1, 2] $+ 3.5` is not a mix.
+   */
+  arrayElemKind(e) {
+    const items = e.items ?? e.elements ?? [];
+    if (items.length === 0) return null;
+    const kinds = items.map(x => this.staticKind(x));
+    if (kinds.some(k => k === null)) return null;
+    const norm = (k) => k.replace(/Float/g, 'Int');
+    const first = kinds[0];
+    return kinds.every(k => norm(k) === norm(first)) ? first : null;
+  }
+
+  // ─── Type of an expression, the way the Rust type checker infers it ────────
+  //
+  // Used by the reassignment warning, and nothing else (GLB-043, decided
+  // 2026-09-24). This engine used to warn only literal-against-literal, so
+  // `marca = "@"` then `marca = trazo[1]` — String then Char — was flagged by
+  // both Rust engines and passed in silence here, in 110 programs.
+  //
+  // `null` is Rust's Any/Unknown: "cannot tell", and cannot-tell never warns.
+  // Each branch is `infer_expr` in crates/zymbol-semantic/src/type_check.rs,
+  // including where it is NOT conservative — `n / 4` is Int even when `n` is
+  // unknown, because that is what Rust answers.
+  inferType(e, locals = null) {
+    if (!e) return null;
+    const isNum = t => t === 'Int' || t === 'Float';
+    switch (e.type) {
+      case 'Literal':
+        return { int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool', unit: 'Unit' }[e.kind] ?? null;
+      case 'Ident': {
+        // Inside a function body the names are the body's own; a parameter is
+        // unknown, as it is in Rust. A lambda's body also reads the names
+        // around it — it is a light environment (MEM-6) — which its `locals`
+        // say with `seesOuter`.
+        if (locals) {
+          if (locals.has(e.name)) return locals.get(e.name);
+          if (!locals.seesOuter) return null;
+        }
+        return this.peekVar(e.name)?.infType ?? null;
+      }
+      case 'UnaryOp': {
+        const t = this.inferType(e.operand ?? e.expr ?? e.value, locals);
+        return e.op === '!' ? 'Bool' : t;
+      }
+      case 'BinOp': {
+        const l = this.inferType(e.left, locals), r = this.inferType(e.right, locals);
+        switch (e.op) {
+          case '+':
+            // `+` only when both sides are known numbers: it does not
+            // concatenate, and with an unknown side Rust says Any. Said here
+            // only when a side IS `Any` — a lambda's parameter — so that
+            // `(a, b) -> a + b` is named `(Any, Any) -> Any` as in Rust, and
+            // nothing outside a lambda's body changes.
+            if (isNum(l) && isNum(r)) return l === 'Float' || r === 'Float' ? 'Float' : 'Int';
+            return l === 'Any' || r === 'Any' ? 'Any' : null;
+          case '-': case '*': case '/': case '%': case '^':
+            return l === 'Float' || r === 'Float' ? 'Float' : 'Int';
+          case '==': case '<>': case '<': case '<=': case '>': case '>=':
+          case '&&': case '||':
+            return 'Bool';
+          default:
+            return null;
+        }
+      }
+      // A cast's type is its target, whatever the operand — as `infer_expr`
+      // answers it in Rust. Not knowing it here left every reassignment through
+      // a cast without the type-change warning the CLI gives (GLB-109).
+      case 'CastOp':
+        return { '##.': 'Float', '###': 'Int', '##!': 'Int', "##'": 'Char' }[e.op];
+      case 'NavIndex': {
+        // A navigation path is Any in Rust; only a single step is typed.
+        if (e.spec?.kind !== 'simple') return null;
+        const obj = e.obj;
+        if (this.inferType(obj, locals) === 'String') return 'Char';
+        // An array hands over its element type, when it is known.
+        if (obj?.type === 'Array') return this.arrayElemKind(obj) ?? null;
+        if (obj?.type === 'Ident' && !locals) {
+          const k = this.peekVar(obj.name)?.elemKind ?? null;
+          return k && !k.startsWith('[') ? k : null;
+        }
+        return null;
+      }
+      case 'Call':
+        return typeof e.callee === 'string' ? this.funcReturnType(e.callee) : null;
+      case 'CollectionOp':
+        return e.op === '$#' ? 'Int' : null;
+      case 'Lambda':
+        return this.lambdaType(e, locals);
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * The type of a lambda as `infer_expr` names it in Rust: `(Any, …) -> R` —
+   * every parameter `Any`, and `R` what the body gives with them, an expression
+   * or the `<~` of a block (Unit when it has none). The body reads the names
+   * around it (MEM-6). `null` when this pass cannot tell what the body gives:
+   * naming it otherwise than Rust would be worse than saying nothing (ZYJS-049).
+   */
+  lambdaType(e, outer = null) {
+    const params = (e.params ?? []).map(p => (typeof p === 'string' ? p : p?.name));
+    const locals = new Map(outer ?? []);
+    for (const p of params) locals.set(p, 'Any');
+    locals.seesOuter = outer ? outer.seesOuter === true : true;
+    const body = e.body;
+    const ret = body?.type === 'block'
+      ? this.returnTypeOfBlock(body.stmts, locals)
+      : this.valueType(body?.type === 'expr' ? body.value : body, locals);
+    if (!ret) return null;
+    return `(${params.map(() => 'Any').join(', ')}) -> ${ret}`;
+  }
+
+  /** `inferType`, naming a collection literal the way `argType` does. */
+  valueType(e, locals) {
+    if (e?.type === 'Array') {
+      const items = e.items ?? [];
+      if (items.length === 0) return '[Any]';
+      const t = this.valueType(items[0], locals);
+      return t ? `[${t}]` : null;
+    }
+    if (e?.type === 'Tuple') {
+      const ts = (e.items ?? []).map(it => this.valueType(it, locals));
+      if (ts.some(t => !t)) return null;
+      return e.keys
+        ? `#(${ts.map((t, i) => `${e.keys[i]}: ${t}`).join(', ')})`
+        : `(${ts.join(', ')})`;
+    }
+    return this.inferType(e, locals);
+  }
+
+  // The type a call returns: every `<~` in the body, through its blocks and
+  // loops but not into a nested function or lambda. None is Unit, one is itself,
+  // several unify — equal stays, Int with Float is Float, anything else is Any.
+  // `infer_return_type_from_block` and `unify_types_static` in Rust.
+  funcReturnType(name) {
+    const decl = this.funcDecls?.get(name);
+    if (!decl) return null;
+    if (!this.retTypes) { this.retTypes = new Map(); this.retBusy = new Set(); }
+    if (this.retTypes.has(name)) return this.retTypes.get(name);
+    if (this.retBusy.has(name)) return null;          // recursion: cannot tell
+    this.retBusy.add(name);
+    const locals = new Map();
+    for (const p of (decl.params ?? [])) locals.set(p.name, null);
+    // A local of a named function has no type for its return: Rust defines
+    // every one as `Any` before reading the `<~` (`define_local_vars_from_block`).
+    // Typed by the last assignment walked, whatever the path, `f(c) { r = 5
+    // ? c > 0 { r = "a" } <~ r }` was a function of String, and `g(f(0))` —
+    // 6 in the Rust engines — was refused here before it ran (ZYJS-053).
+    const t = this.returnTypeOfBlock(decl.body, locals, { localsUnknown: true });
+    this.retBusy.delete(name);
+    this.retTypes.set(name, t);
+    return t;
+  }
+
+  /**
+   * What the `<~` of a block give, unified; Unit when there is none. A lambda's
+   * locals keep the type of their assignment, as Rust checks a block body
+   * before it reads it; a named function's do not (`localsUnknown`, ZYJS-053).
+   */
+  returnTypeOfBlock(body, locals, { localsUnknown = false } = {}) {
+    const found = [];
+    // The blocks `collect_return_types` descends into, and no others: the
+    // branches of a `?`, a loop's body, the `!?` block and each `:!` (not the
+    // `:>`), and the arms of a `??` written as a statement — their blocks, not
+    // their values, which the statement discards (GLB-102).
+    // The `!?` and the `??` were missing here, so `risky(a) { !? { <~ a[1] } :!
+    // { <~ _err } }` was taken to return Unit (GLB-089).
+    const walk = stmts => {
+      for (const st of (stmts ?? [])) {
+        if (!st) continue;
+        if (st.type === 'FuncDecl' || st.type === 'Lambda') continue;
+        if (st.type === 'VarAssign' && st.name) {
+          locals.set(st.name, localsUnknown ? null : this.inferType(st.value, locals));
+        }
+        if (st.type === 'Return') { found.push(st.value ? this.inferType(st.value, locals) : 'Unit'); continue; }
+        if (st.type === 'TryCatch') {
+          walk(st.tryBody ?? st.try);
+          for (const c of (st.catches ?? [])) walk(c.body);
+          continue;
+        }
+        // An arm's value is not a return: the statement discards it, as the
+        // engines run it; a `<~` inside an arm's block — or the block after a
+        // value, `pattern => value { … }` — does return (GLB-102).
+        if (st.type === 'ExprStmt' && st.expr?.type === 'Match' && !st.expr.paren) {
+          for (const arm of (st.expr.arms ?? [])) {
+            if (arm?.body?.type === 'block') walk(arm.body.stmts);
+            else if (arm?.body?.effect) walk(arm.body.effect);
+          }
+          continue;
+        }
+        walk(st.then); walk(st.else); walk(st.body);
+        for (const b of (st.elseifs ?? [])) walk(b.body);
+      }
+    };
+    walk(body);
+    if (found.length === 0) return 'Unit';
+    return found.reduce((a, b) => {
+      if (a === null || b === null) return null;
+      if (a === b) return a;
+      if ((a === 'Int' && b === 'Float') || (a === 'Float' && b === 'Int')) return 'Float';
+      return null;
+    });
+  }
+
+  // ─── Parameter types inferred from the body (ZYJS-048, decided 2026-10-05) ──
+  //
+  // What a parameter must be is decided by how the body uses it, and a call
+  // that passes something else is refused before the program runs — the rule
+  // the Rust engines already had and this engine did not, so `f(v) { <~ v + 1 }`
+  // with `f("a")` ran every effect before it and failed at the `+`.
+  //
+  // A mirror, rule by rule, of `infer_function_signature` and
+  // `collect_constraints_*` in crates/zymbol-semantic/src/type_check.rs —
+  // including what it does NOT look at: a parenthesized expression is a Group
+  // there and is not descended into, `==` and juxtaposition constrain nothing,
+  // an ordering constrains only against a literal, and a function declared
+  // later contributes nothing, because signatures are inferred in order.
+  //
+  // `null` is Rust's Any: cannot tell, and cannot-tell never refuses.
+  inferParamTypes(body) {
+    this.paramTypes = new Map();
+    const decls = [];
+    for (const st of (body ?? [])) {
+      if (st?.type === 'FuncDecl') decls.push(st);
+      else if (st?.type === 'ModuleBlock') {
+        for (const m of (st.body ?? [])) if (m?.type === 'FuncDecl') decls.push(m);
+      }
+    }
+    this.sigDecls = new Set(decls);
+    // First pass: every top-level function, its parameters unknown.
+    for (const d of decls) this.paramTypes.set(d.name, (d.params ?? []).map(() => null));
+    // Second pass, in order: each signature sees the ones before it.
+    for (const d of decls) this.paramTypes.set(d.name, this.inferSignatureParams(d));
+  }
+
+  inferSignatureParams(decl) {
+    const params = (decl.params ?? []).map(p => (typeof p === 'string' ? p : p.name));
+    const constraints = new Map(params.map(p => [p, []]));
+    const kinds = new Map();
+    this.collectIndexReceiverKinds(decl.body, kinds);
+    const ctx = { params, constraints, kinds };
+    this.collectConstraintsBlock(decl.body, ctx);
+    return params.map(p => Checker.constraintType(constraints.get(p)));
+  }
+
+  // `unify` and `to_type` of `TypeConstraint`, folded left in the order the
+  // constraints were found.
+  static constraintType(list) {
+    if (!list || list.length === 0) return null;
+    const unify = (a, b) => {
+      if (a.k === 'exact') return a;
+      if (b.k === 'exact') return b;
+      if ((a.k === 'num' && b.k === 'compat' && b.t === 'Int') ||
+          (a.k === 'compat' && a.t === 'Int' && b.k === 'num')) return { k: 'exact', t: 'Int' };
+      if ((a.k === 'num' && b.k === 'compat' && b.t === 'Float') ||
+          (a.k === 'compat' && a.t === 'Float' && b.k === 'num')) return { k: 'exact', t: 'Float' };
+      if (a.k === 'num' || b.k === 'num') return { k: 'num' };
+      if (a.k === 'bool' || b.k === 'bool') return { k: 'bool' };
+      if (a.k === 'compat') return a;
+      return b;
+    };
+    const c = list.reduce(unify);
+    return c.k === 'num' ? 'Number' : c.k === 'bool' ? 'Bool' : (c.t ?? null);
+  }
+
+  // A name bound in the body to a collection literal says what a bracket on it
+  // indexes — a position or a key. Bound twice to different kinds, it is
+  // dropped (`collect_index_receiver_kinds`).
+  collectIndexReceiverKinds(stmts, kinds) {
+    for (const st of (stmts ?? [])) {
+      if (!st) continue;
+      if (st.type === 'VarAssign' && st.name) {
+        const k = Checker.receiverLiteralKind(st.value);
+        if (k) {
+          if (!kinds.has(st.name)) kinds.set(st.name, k);
+          else if (kinds.get(st.name) !== k) kinds.delete(st.name);
+        }
+      } else if (st.type === 'If') {
+        this.collectIndexReceiverKinds(st.then, kinds);
+        for (const b of (st.elseifs ?? [])) this.collectIndexReceiverKinds(b.body, kinds);
+        this.collectIndexReceiverKinds(st.else, kinds);
+      } else if (st.type === 'Loop') {
+        this.collectIndexReceiverKinds(st.body, kinds);
+      }
+    }
+  }
+
+  static receiverLiteralKind(e) {
+    if (!e) return null;
+    if (e.type === 'Array') return 'position';
+    if (e.type === 'Tuple') return e.keys ? 'key' : 'position';
+    if (e.type === 'Literal' && e.kind === 'str') return 'position';
+    return null;
+  }
+
+  // A constraint reaches a parameter only when every path through the body
+  // requires it (GLB-101, decided 2026-10-06), as `collect_constraints_from_block`
+  // in Rust. The language is variant: `f(v) { t = v#?  ? t[1] == "###" { <~ v + 1 }
+  // _? t[1] == "##\"" { <~ v "1" } }` treats each type its own way, and collecting
+  // every branch into one set refused `f("a")`, the call it was written for. Each
+  // path keeps what it evaluated, a `<~` closes it, and a parameter is required to
+  // be what all of them agree on. Only how the constraints combine changed, not
+  // what is read: a block that was not read (`!?`, the block arm of a `??`) still
+  // contributes nothing, and is walked only to see where its paths end.
+  collectConstraintsBlock(stmts, ctx) {
+    const paths = this.constraintPaths(stmts, ctx, new Map());
+    const every = Checker.meetPaths(paths.returned, paths.falls) ?? new Map();
+    for (const p of ctx.params) ctx.constraints.set(p, every.get(p) ?? []);
+  }
+
+  // What a path requires is a Map from parameter to its constraints, in the
+  // order they were found. `null` is "no path".
+  static meetPaths(a, b) {
+    if (!a) return b;
+    if (!b) return a;
+    const same = (x, y) => x.k === y.k && x.t === y.t;
+    const out = new Map();
+    for (const [name, cs] of a) {
+      const theirs = b.get(name);
+      if (!theirs) continue;
+      const both = cs.filter(c => theirs.some(t => same(c, t)));
+      if (both.length) out.set(name, both);
+    }
+    return out;
+  }
+
+  static joinPaths(path, more) {
+    const out = new Map(path);
+    for (const [name, cs] of more) {
+      if (cs.length) out.set(name, [...(out.get(name) ?? []), ...cs]);
+    }
+    return out;
+  }
+
+  // The same paths, with what they required replaced by `at`.
+  static requiringPaths(paths, at) {
+    return { returned: paths.returned ? at : null, falls: paths.falls ? at : null };
+  }
+
+  // What these expressions require of the parameters, apart from the rest.
+  constraintsOf(exprs, ctx) {
+    const found = new Map(ctx.params.map(p => [p, []]));
+    const local = { ...ctx, constraints: found };
+    for (const e of exprs) this.collectConstraintsExpr(e, local);
+    for (const [name, cs] of found) if (!cs.length) found.delete(name);
+    return found;
+  }
+
+  constraintPaths(stmts, ctx, start) {
+    let returned = null;
+    let here = start;
+    for (const st of (stmts ?? [])) {
+      if (!here) break;              // every path has left the block
+      const paths = this.constraintPathsOfStmt(st, ctx, here);
+      returned = Checker.meetPaths(returned, paths.returned);
+      here = paths.falls;
+    }
+    return { returned, falls: here };
+  }
+
+  constraintPathsOfStmt(st, ctx, at) {
+    const through = (more) => ({ returned: null, falls: Checker.joinPaths(at, this.constraintsOf(more, ctx)) });
+    if (!st) return { returned: null, falls: at };
+    const ident = name => ({ type: 'Ident', name });
+    switch (st.type) {
+      case 'VarAssign': case 'ConstAssign':
+        return through([st.value]);
+      // `x += v` and `v++` are an assignment of a binary expression in Rust.
+      case 'CompoundAssign':
+        return through([{ type: 'BinOp', op: st.op, left: ident(st.name), right: st.value }]);
+      case 'Increment':
+        return through([{ type: 'BinOp', op: st.op === '--' ? '-' : '+',
+                          left: ident(st.name), right: { type: 'Literal', kind: 'int', value: 1 } }]);
+      case 'Output':
+        return through(st.items ?? []);
+      case 'InPlaceEdit':
+        return through([st.expr]);
+      // A `<~` closes its path.
+      case 'Return':
+        return { returned: Checker.joinPaths(at, this.constraintsOf(st.value ? [st.value] : [], ctx)), falls: null };
+      // The first condition is read on every path through the `?`; a `_?`
+      // condition only on the paths that reach it. With no `_`, one path enters
+      // no branch at all.
+      case 'If': {
+        let reached = Checker.joinPaths(at, this.constraintsOf([st.cond], ctx));
+        const then = this.constraintPaths(st.then, ctx, reached);
+        let { returned, falls } = then;
+        for (const b of (st.elseifs ?? [])) {
+          reached = Checker.joinPaths(reached, this.constraintsOf([b.cond], ctx));
+          const paths = this.constraintPaths(b.body, ctx, reached);
+          returned = Checker.meetPaths(returned, paths.returned);
+          falls = Checker.meetPaths(falls, paths.falls);
+        }
+        if (st.else) {
+          const paths = this.constraintPaths(st.else, ctx, reached);
+          returned = Checker.meetPaths(returned, paths.returned);
+          falls = Checker.meetPaths(falls, paths.falls);
+        } else {
+          falls = Checker.meetPaths(falls, reached);
+        }
+        return { returned, falls };
+      }
+      // The header is read on every path; the body may not run at all.
+      case 'Loop': {
+        const header = [];
+        if (st.kind === 'while') header.push(st.cond);
+        if (st.kind === 'foreach') header.push(st.iterable);
+        const reached = Checker.joinPaths(at, this.constraintsOf(header, ctx));
+        const body = this.constraintPaths(st.body, ctx, reached);
+        return { returned: body.returned, falls: reached };
+      }
+      // Nothing under `!?` is required: a failure anywhere in it goes to a `:!`.
+      // A `<~` in it still closes its path.
+      case 'TryCatch': {
+        let { returned, falls } = Checker.requiringPaths(this.constraintPaths(st.tryBody, ctx, at), at);
+        for (const c of (st.catches ?? [])) {
+          const paths = Checker.requiringPaths(this.constraintPaths(c.body, ctx, at), at);
+          returned = Checker.meetPaths(returned, paths.returned);
+          falls = Checker.meetPaths(falls, paths.falls);
+        }
+        return { returned, falls };
+      }
+      case 'Break': case 'Continue':
+        return { returned: null, falls: null };
+      case 'ExprStmt': {
+        const e = st.expr;
+        // A `??` written as a statement is `Statement::Match` in Rust: the
+        // scrutinee is read on every path, and each arm is one path. A value
+        // arm's value is read and the path goes on — the statement discards it.
+        // A block arm was never read, and still ends the paths that return in
+        // it. A value no arm matches fails there (`no pattern matched`), so it
+        // is no path. As a value, a `??` is not read.
+        if (e?.type === 'Match' && !e.paren) {
+          const reached = Checker.joinPaths(at, this.constraintsOf([e.expr], ctx));
+          let returned = null, falls = null;
+          for (const arm of (e.arms ?? [])) {
+            let paths = { returned: null, falls: reached };
+            if (arm?.body?.type === 'block') {
+              paths = Checker.requiringPaths(this.constraintPaths(arm.body.stmts, ctx, reached), reached);
+            } else if (arm?.body?.type === 'expr' && paths.falls) {
+              paths = { returned: null, falls: Checker.joinPaths(paths.falls, this.constraintsOf([arm.body.value], ctx)) };
+            }
+            returned = Checker.meetPaths(returned, paths.returned);
+            falls = Checker.meetPaths(falls, paths.falls);
+          }
+          return { returned, falls };
+        }
+        return through([e]);
+      }
+      default:
+        return { returned: null, falls: at };
+    }
+  }
+
+  collectConstraintsExpr(e, ctx) {
+    // A parenthesized expression is a Group in Rust, which this walk does not
+    // enter, and a grouped name is not a parameter to it.
+    if (!e || e.paren) return;
+    const { params, constraints, kinds } = ctx;
+    const paramOf = n => (n && !n.paren && n.type === 'Ident' && params.includes(n.name)) ? n.name : null;
+    const add = (name, c) => { if (name) constraints.get(name).push(c); };
+    const litType = n => {
+      if (!n || n.paren || n.type !== 'Literal') return null;
+      return { int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool', unit: 'Unit' }[n.kind] ?? null;
+    };
+    switch (e.type) {
+      case 'BinOp': {
+        const l = paramOf(e.left), r = paramOf(e.right);
+        switch (e.op) {
+          case '+': case '-': case '*': case '/': case '%': case '^':
+            add(l, { k: 'num' }); add(r, { k: 'num' }); break;
+          // The left side only: the right one runs when the left does not
+          // decide, so it is not on every path (TYP-2, GLB-103).
+          case '&&': case '||':
+            add(l, { k: 'bool' }); break;
+          case '<': case '<=': case '>': case '>=': {
+            const rt = litType(e.right), lt = litType(e.left);
+            if (l && rt) add(l, { k: 'compat', t: rt });
+            if (r && lt) add(r, { k: 'compat', t: lt });
+            break;
+          }
+          default: break;   // `==`, `<>`: nothing — `==` never coerces
+        }
+        this.collectConstraintsExpr(e.left, ctx);
+        // Nor anything inside the right side of `&&` and `||` (GLB-103).
+        if (e.op !== '&&' && e.op !== '||') this.collectConstraintsExpr(e.right, ctx);
+        return;
+      }
+      // Juxtaposition constrains nothing (every value has a string form), but
+      // its parts are read.
+      case 'JuxtaConcat': case 'ImplicitConcat': case 'CommaJoin':
+        for (const it of (e.items ?? [])) this.collectConstraintsExpr(it, ctx);
+        return;
+      case 'UnaryOp': {
+        const operand = e.operand ?? e.expr ?? e.value;
+        const p = paramOf(operand);
+        if (e.op === '-' || e.op === '+') add(p, { k: 'num' });
+        else if (e.op === '!') add(p, { k: 'bool' });
+        this.collectConstraintsExpr(operand, ctx);
+        return;
+      }
+      case 'Call': {
+        const sig = typeof e.callee === 'string' ? this.paramTypes?.get(e.callee) : null;
+        (e.args ?? []).forEach((a, i) => {
+          const node = a;
+          const p = paramOf(node);
+          const t = sig?.[i];
+          if (p && t) add(p, { k: 'compat', t });
+        });
+        for (const a of (e.args ?? [])) this.collectConstraintsExpr(a, ctx);
+        return;
+      }
+      case 'CallExpr':
+        for (const a of (e.args ?? [])) this.collectConstraintsExpr(a, ctx);
+        return;
+      case 'NavIndex': {
+        if (e.spec?.kind !== 'simple') return;
+        const p = paramOf(e.spec.index);
+        if (p) {
+          const obj = e.obj;
+          let kind = Checker.receiverLiteralKind(obj);
+          if (!kind && obj?.type === 'Ident' && !params.includes(obj.name)) kind = kinds.get(obj.name) ?? null;
+          if (kind) add(p, { k: 'exact', t: kind === 'key' ? 'String' : 'Int' });
+        }
+        this.collectConstraintsExpr(e.obj, ctx);
+        this.collectConstraintsExpr(e.spec.index, ctx);
+        return;
+      }
+      case 'Array':
+        for (const it of (e.items ?? [])) this.collectConstraintsExpr(it, ctx);
+        return;
+      case 'CollectionOp':
+        if (e.op === '$+' || e.op === '$?') {
+          this.collectConstraintsExpr(e.obj, ctx);
+          this.collectConstraintsExpr(e.arg, ctx);
+        }
+        return;
+      default:
+        return;
+    }
+  }
+
+  // The type `infer_expr` gives an argument, as far as the message has to name
+  // it. Kept apart from `inferType`, which the reassignment warning reads and
+  // which this must not change. `null`: cannot tell, and nothing is refused.
+  argType(e) {
+    if (!e) return null;
+    switch (e.type) {
+      case 'Literal':
+        return { int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool', unit: 'Unit' }[e.kind] ?? null;
+      case 'Array': {
+        const items = e.items ?? [];
+        if (items.length === 0) return '[Any]';
+        const t = this.argType(items[0]);
+        return t ? `[${t}]` : null;
+      }
+      case 'Tuple': {
+        const items = e.items ?? [];
+        const ts = items.map(it => this.argType(it));
+        if (ts.some(t => !t)) return null;
+        return e.keys
+          ? `#(${ts.map((t, i) => `${e.keys[i]}: ${t}`).join(', ')})`
+          : `(${ts.join(', ')})`;
+      }
+      case 'JuxtaConcat': case 'ImplicitConcat': {
+        // `°x + 1` and `°l$+ v` arrive as the prefix hot-def sentinel — an
+        // unnamed hot Ident — followed by the expression it governs: the value
+        // is that expression, not a juxtaposition. Taking every one of these for
+        // a String turned an accumulator into a type change and an indexed read
+        // of it into a Char (GLB-093).
+        const items = e.items ?? [];
+        if (items[0]?.type === 'Ident' && items[0].hot && items[0].name === '') {
+          return items.length === 2 ? this.argType(items[1]) : 'String';
+        }
+        return 'String';
+      }
+      case 'Ident': {
+        const info = this.peekVar(e.name);
+        if (!info) return null;
+        if (info.isParam) return info.paramType ?? null;
+        if (info.elemKind) return `[${info.elemKind}]`;
+        return info.infType ?? null;
+      }
+      default:
+        return this.inferType(e);
+    }
+  }
+
+  // `types_compatible_static`: cannot-tell is compatible, Int and Float are,
+  // and Number is either of them and nothing else.
+  static argCompatible(a, p) {
+    return Checker.typesCompatibleStatic(a, p);
+  }
+
+  /**
+   * `types_compatible_static` in Rust, over the names this pass gives types —
+   * the relation an argument and an array element are checked with. Cannot-tell
+   * (`null`, `?`) and `Any` fit anything, at any depth; Int and Float fit each
+   * other, and Number fits either; arrays, tuples, dictionaries and functions
+   * fit part by part. A change of type, `typesCompatible` (`is_compatible_with`),
+   * is this same relation since GLB-104.
+   *
+   * Part by part matters since a lambda has a type (ZYJS-049): the elements of
+   * `[(x) -> x + 1, (x) -> x * 2]` are `(Any) -> Any` and `(Any) -> Int`, the
+   * same function to Rust, and comparing the names refused the array.
+   */
+  static typesCompatibleStatic(a, b) {
+    return Checker.fitStatic(Checker.parseTypeName(a), Checker.parseTypeName(b));
+  }
+
+  static fitStatic(A, B) {
+    if (!A || !B || A.k === 'any' || B.k === 'any') return true;
+    if (A.k === 'prim' && B.k === 'prim') {
+      if (A.n === B.n) return true;
+      const num = n => n === 'Int' || n === 'Float';
+      if (num(A.n) && num(B.n)) return true;
+      return (A.n === 'Number' && num(B.n)) || (num(A.n) && B.n === 'Number');
+    }
+    if (A.k !== B.k) return false;
+    const all = (xs, ys) => xs.length === ys.length && xs.every((x, i) => Checker.fitStatic(x, ys[i]));
+    switch (A.k) {
+      case 'array': return Checker.fitStatic(A.e, B.e);
+      case 'tuple': return all(A.items, B.items);
+      case 'dict':  return A.fields.length === B.fields.length &&
+                           A.fields.every((f, i) => f.name === B.fields[i].name && Checker.fitStatic(f.t, B.fields[i].t));
+      case 'fn':    return all(A.params, B.params) && Checker.fitStatic(A.ret, B.ret);
+      default:      return false;
+    }
+  }
+
+  /**
+   * A type name as this pass writes it — `Int`, `[Int]`, `(Int, String)`,
+   * `#(k: Int)`, `(Any) -> Int`, `?` — read back into its parts. `null` for
+   * cannot-tell, and for anything it cannot read, which fits everything.
+   */
+  static parseTypeName(name) {
+    if (name === null || name === undefined) return null;
+    const src = String(name);
+    let i = 0;
+    const eat = t => { if (src.startsWith(t, i)) { i += t.length; return true; } return false; };
+    const list = (close, item) => {
+      const out = [];
+      if (eat(close)) return out;
+      for (;;) {
+        const x = item();
+        if (x === undefined) return undefined;
+        out.push(x);
+        if (eat(close)) return out;
+        if (!eat(', ')) return undefined;
+      }
+    };
+    const type = () => {
+      if (eat('[')) { const e = type(); return e !== undefined && eat(']') ? { k: 'array', e } : undefined; }
+      if (eat('#(')) {
+        const fields = list(')', () => {
+          const m = /^[^:,()]+/.exec(src.slice(i));
+          if (!m) return undefined;
+          i += m[0].length;
+          if (!eat(': ')) return undefined;
+          const t = type();
+          return t === undefined ? undefined : { name: m[0], t };
+        });
+        return fields === undefined ? undefined : { k: 'dict', fields };
+      }
+      if (eat('(')) {
+        const items = list(')', type);
+        if (items === undefined) return undefined;
+        if (eat(' -> ')) { const ret = type(); return ret === undefined ? undefined : { k: 'fn', params: items, ret }; }
+        return { k: 'tuple', items };
+      }
+      if (eat('?')) return { k: 'any' };
+      const m = /^[A-Za-z]+/.exec(src.slice(i));
+      if (!m) return undefined;
+      i += m[0].length;
+      return m[0] === 'Any' ? { k: 'any' } : { k: 'prim', n: m[0] };
+    };
+    const t = type();
+    return t === undefined || i !== src.length ? null : t;
+  }
+
+  checkArgTypes(name, args, line) {
+    const sig = this.paramTypes?.get(name);
+    if (!sig || sig.length !== (args ?? []).length) return;
+    args.forEach((a, i) => {
+      const node = a;
+      const expected = sig[i];
+      const got = this.argType(node);
+      if (!Checker.argCompatible(got, expected)) {
+        this.error('E_ARG_TYPE',
+          `argument ${i + 1} has type ${got}, but function '${name}' expects ${expected}`,
+          node?.line ?? line, { index: i + 1, got, name, expected });
+      }
+    });
+  }
+
+  // `is_compatible_with` in Rust, which is `types_compatible_static` since
+  // GLB-104 (decided 2026-10-07): a change of type is the relation an argument
+  // and an element are checked with, at every depth. Cannot-tell fits anything,
+  // Int and Float fit each other and Number fits either, and an array, a tuple,
+  // a dictionary or a function fits part by part — `(1, 2)` then `(1, 2.5)` is
+  // no more a change than `1` then `2.5`, and `[1]` then `[1.5]` is none either.
+  // A name this pass cannot parse is compared as written.
+  typesCompatible(a, b) {
+    if (a === null || b === null || a === undefined || b === undefined) return true;
+    const A = Checker.parseTypeName(a), B = Checker.parseTypeName(b);
+    if (A && B) return Checker.fitStatic(A, B);
+    return a === b;
+  }
+
+  noteLiteralType(name, value, line) {
+    const OF = { int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool' };
+    const t = value?.type === 'Literal' ? (OF[value.kind] ?? null) : null;
+    // The collection shape travels with the record, so `t = (1, 2)` on one line
+    // and `[a, b] = t` on the next is decided here rather than at run time. A
+    // reassignment to something whose shape is not known clears it — after two
+    // assignments this pass does not know which one ran.
+    const shape = value?.type === 'Array' ? '##]'
+                : value?.type === 'Tuple' ? (value.keys ? '##(' : '##)')
+                : null;
+    let crossedLambda = false;
+    for (let i = this.stack.length - 1; i >= 0; i--) {
+      const found = this.stack[i].vars.get(name);
+      if (!found) {
+        if (this.stack[i].lambda) crossedLambda = true;
+        if (this.stack[i].funcBoundary && !name.startsWith('_')) break;
+        continue;
+      }
+      // A name from outside a lambda, written inside it: the write stays in the
+      // lambda (MEM-6), so the type change is warned against the name outside
+      // — as Rust does — but recorded on a copy in the current frame, and the
+      // name outside keeps its type (GLB-092). Reading the copy is reading the
+      // name, so it counts as a use of both.
+      let info = found;
+      if (crossedLambda) {
+        info = { ...found, shadowOf: found.shadowOf ?? found, used: true, isParam: false };
+        this.stack[this.stack.length - 1].vars.set(name, info);
+      }
+      // Reassigning a value of a different type. It used to be decided only
+      // literal against literal; it is decided now the way the Rust type
+      // checker decides it, from the inferred type of the right-hand side
+      // (GLB-043). `infType` is that record, kept apart from `litType` because
+      // the condition check reads `litType` and this step does not change it.
+      //
+      // Unit on either side is not a change of type (GLB-043, decided
+      // 2026-09-25): the new value is compared with the last type that was not
+      // Unit, `realType`, while `infType` keeps saying what the name holds now.
+      // Collections included, as `infer_expr` names them — `[Int]`, `(Int, Int)`,
+      // `#(k: Int)`: `inferType` knows scalars only, so a change to or from a
+      // collection passed in silence here and not in Rust (GLB-093, decided
+      // 2026-10-05). `argType` is that naming.
+      const inferred = this.argType(value);
+      const was = info.infType === 'Unit' ? info.realType : info.infType;
+      if (was !== undefined && inferred !== 'Unit' && !this.typesCompatible(was, inferred)) {
+        this.warn('W_TYPE_CHANGE',
+          `type mismatch: '${name}' was ${was} but assigned ${inferred}`,
+          line ?? null, { name, was, now: inferred });
+      }
+      // Overwritten, as `define_var` overwrites it: after `x = 5`, `x` IS an Int.
+      info.infType = inferred;
+      // How many parameters the lambda it holds takes, for `$>`/`$|`/`$<`.
+      info.lambdaArity = value?.type === 'Lambda' ? (value.params ?? []).length : undefined;
+      if (inferred !== 'Unit') info.realType = inferred;
+      info.litType = (info.litType === undefined || info.litType === t) ? t : null;
+      // And the element type when the value is an array literal, which is what
+      // lets `a = [1, 2]` then `a $+ "x"` be caught — the shape real code has.
+      // Anything else clears it rather than guessing: after `a = [1,2]` then
+      // `a = f()` the elements are whatever `f` returned.
+      info.elemKind = (value?.type === 'Array' && !value.declaredMixed)
+        ? this.arrayElemKind(value)
+        : null;
+      info.shape = shape;
+      return;
+    }
+  }
+
+  /**
+   * Walk a `??` pattern, marking the identifiers it names as used.
+   *
+   * A pattern COMPARES — it never binds — so every identifier in it is a
+   * variable being read. `corpus/match/13_ident_scalar.zy` records that at the
+   * top level and `20_list_pattern_compares.zy` inside a list.
+   */
+  /**
+   * `check_pattern_type` in `type_check.rs`, with its words: a literal or a
+   * range of another type than the scrutinee, and a comparison against a
+   * scrutinee that is not a scalar, are refused before anything runs. This
+   * engine checked none of it, so `?? (1, 2) { 1 => … _ => … }` took the `_`
+   * and `?? "x" { 1..5 => … }` failed only when it ran, where both Rust
+   * engines refuse the program (ZYJS-071). Where `argType` cannot name the
+   * scrutinee nothing is said, as Rust says nothing about `Unknown`.
+   */
+  checkPatternType(p, scrut) {
+    if (!p || !scrut) return;
+    const OF = { int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool', unit: 'Unit' };
+    const litType = (e) => e?.type === 'Literal' ? (OF[e.kind] ?? null)
+      : e?.type === 'UnaryOp' ? litType(e.operand ?? e.expr ?? e.value) : null;
+    const fits = (t) => Checker.typesCompatibleStatic(t, scrut);
+    switch (p.type) {
+      case 'literal': {
+        const t = litType(p.value);
+        if (t && !fits(t)) this.error('E_PATTERN_TYPE', `pattern type ${t} does not match scrutinee type ${scrut}`, p.line ? p : p.value);
+        return;
+      }
+      case 'range': {
+        const t = litType(p.from);
+        if (t && !fits(t)) this.error('E_PATTERN_TYPE', `range pattern type ${t} does not match scrutinee type ${scrut}`, p.line ? p : p.from);
+        return;
+      }
+      case 'comparison': {
+        const T = Checker.parseTypeName(scrut);
+        if (T && T.k !== 'any' && !(T.k === 'prim' && ['Int', 'Float', 'Char', 'String', 'Number'].includes(T.n))) {
+          this.error('E_PATTERN_TYPE', `comparison pattern requires scalar scrutinee, got ${scrut}`, p.line ? p : p.value);
+        }
+        return;
+      }
+      case 'or': for (const a of (p.alts ?? [])) this.checkPatternType(a, scrut); return;
+      case 'list': {
+        const T = Checker.parseTypeName(scrut);
+        const elem = T?.k === 'array' && /^\[.*\]$/.test(scrut) ? scrut.slice(1, -1) : scrut;
+        for (const el of (p.elems ?? [])) {
+          if (el.kind === 'literal') this.checkPatternType({ type: 'literal', value: el.expr, line: el.line, col: el.col }, elem);
+          else if (el.kind === 'nested') this.checkPatternType(el.pattern, elem);
+        }
+        return;
+      }
+      default: return;
+    }
+  }
+
+  checkMatchPattern(p, line = null) {
+    if (!p) return;
+    const at = p.line ?? line;
+    // A name in a pattern is READ like any other identifier: it has to exist,
+    // and from inside a function it cannot be a variable of the file (MEM-2).
+    // It was only marked used, so `?? s { tope => … }` in a function read the
+    // file's `tope` here while the Rust engines failed, each its own way
+    // (GLB-124).
+    if (p.type === 'Ident' && p.name) { this.checkExpr(p); return; }
+    // `umbral =>` arrives as a literal pattern whose value is the name: the
+    // arm compares the scrutinee with what `umbral` holds, so the pattern
+    // reads it. Unread here, the name was reported unused (ZYJS-055).
+    if (p.type === 'literal' && p.value?.type === 'Ident' && p.value.name) {
+      this.checkExpr({ ...p.value, line: p.value.line ?? p.line });
+      return;
+    }
+    // `< tope =>` reads `tope`: the comparison's value is an expression, and it
+    // was never looked at here, so the name was reported unused (GLB-148).
+    if (p.type === 'comparison') { this.checkExpr(p.value); return; }
+    for (const e of (p.elems ?? p.items ?? [])) {
+      if (e?.kind === 'literal') this.checkExpr(e.expr);
+      else if (e?.kind === 'bind' && e.name) this.checkExpr({ type: 'Ident', name: e.name, line: at });
+      else if (e?.kind === 'nested') this.checkMatchPattern(e.pattern, at);
+      else if (e?.name && e.name !== '_') this.checkExpr({ type: 'Ident', name: e.name, line: at });
+    }
+    for (const alt of (p.alts ?? [])) this.checkMatchPattern(alt, at);
+  }
+
+  /**
+   * Mark a visible name written, the way `lookup(…, true)` does, without its
+   * `_name` check — a destructuring target never had it (ZYJS-052).
+   */
+  markWritten(name) {
+    const info = this.visibleRecord(name);
+    if (info) info.assigned = true;
+  }
+
+  /** The record a name reaches from here, within the function — `lookup`'s search, marking nothing. */
+  visibleRecord(name) {
+    for (let i = this.stack.length - 1; i >= 0; i--) {
+      const info = this.stack[i].vars.get(name);
+      if (info) return info;
+      if (this.stack[i].funcBoundary && !name.startsWith('_')) break;
+    }
+    return null;
+  }
+
+  /** Mark a name used if it is in scope; say nothing if it is not. */
+  markUsedIfPresent(name) {
+    for (let i = this.stack.length - 1; i >= 0; i--) {
+      const info = this.stack[i].vars.get(name);
+      if (info) { info.used = true; return; }
+      if (this.stack[i].funcBoundary && !name.startsWith('_')) break;
+    }
+  }
+
+  // MEM-7 reaches the import alias (GLB-070, decided 2026-09-26): the file is
+  // one strong environment, and a variable, constant or function of it that
+  // takes an alias's name is refused — once per name, at its first binding.
+  // Inside a function the name is free. `check_alias_name` in Rust.
+  refuseAliasName(name, at, kind) {
+    if (this.funcDepth !== 0 || !this.aliasPath.has(name)) return;
+    if (this.aliasRefused?.has(name)) return;
+    (this.aliasRefused ??= new Set()).add(name);
+    const importLine = this.aliasLine?.get(name) ?? '?';
+    this.error('E_NAME', `'${name}' is both a module alias and a ${kind} in this file`,
+      at, { name },
+      `a file is one strong environment and a name designates one thing in it (the import is at line ${importLine}) — rename the ${kind}; inside a function the name is free`);
+  }
+
+  defineOrKeep(name, at, isConst = false) {
+    if (this.stack.length === 0 || !name) return;
+    this.refuseAliasName(name, at, isConst ? 'constant' : 'variable');
+    if (this.has(name) && !this.onlyVisibleAcrossStrong(name)) return;
+    this.define(name, at, isConst);
+  }
+
+  /**
+   * Is this name visible ONLY on the other side of a strong environment?
+   *
+   * `defineOrKeep` leaves a visible name alone because a block does not create
+   * scope (`DI-10`), so `@ 3 { c = c + 1 }` must not shadow the `c` outside it.
+   * That is right for a block and wrong across a function boundary: under MEM-2
+   * a write inside a function makes a LOCAL and never reaches out, so assigning
+   * there introduces a name rather than touching the outer one.
+   *
+   * Without this, a file with `s = ""` at the top and `s = ""` inside a function
+   * never gave the function its own `s`, and the next read of it was reported as
+   * reaching out of scope — which is how corpus/bugs/bug_vm_string_append.zy
+   * found this.
+   */
+  onlyVisibleAcrossStrong(name) {
+    let crossed = false;
+    for (let k = this.stack.length - 1; k >= 0; k--) {
+      // Found: across a strong environment it is out of reach — unless it is a
+      // module's own state, which its functions do reach (MEM-4), as
+      // `crossesStrongBoundary` already says. Treated as out of reach, a module
+      // function's `estado = "listo"` made a local and the module's `estado`
+      // never saw the change (GLB-093).
+      if (this.stack[k].vars.has(name)) return crossed && !this.stack[k].moduleScope;
+      if (this.stack[k].strong) crossed = true;
+    }
+    return false;
+  }
+
+  // Mirror Env.hotDef: walk to nearest funcBoundary or root, define there
+  /**
+   * Define a hot variable where its marker says it lives.
+   *
+   * The two markers anchor in different places, which is the whole reason the
+   * language has two — and why `°x°` is refused:
+   *
+   *   `°x`  prefix   anchors at the nearest function boundary or the root, so
+   *                  it OUTLIVES the loop it was written in
+   *   `x°`  postfix  anchors at the nearest enclosing `@`, so it dies when that
+   *                  loop ends
+   *
+   * This engine walked to the boundary for both, so a postfix `x°` survived its
+   * loop and a later `>> x` printed a number where both Rust engines said
+   * `undefined variable 'x'`. Two loops each accumulating into their own `x°`
+   * silently shared one.
+   */
+  hotDefine(name, at, postfix = false) {
+    const { line, col } = Checker.posOf(at);
+    if (this.stack.length === 0 || !name) return;
+    let i = this.stack.length - 1;
+    if (postfix) {
+      while (i > 0 && !this.stack[i].isLoop && !this.stack[i].funcBoundary) i--;
+    } else {
+      while (i > 0 && !this.stack[i].funcBoundary) i--;
+    }
+    // `isHot`: the marker's whole purpose is to place the name at a boundary
+    // and read it from inside, so reaching it is not a MEM-2 crossing. The Rust
+    // analyser sidesteps this earlier — `ident.hot` never reaches the check.
+    this.stack[i].vars.set(name, { line, col, isConst: false, used: false, isHot: true });
+  }
+
+  /**
+   * `@ m:…` over a visible `m` writes that `m` — a block has no namespace of
+   * its own (MEM-7) — so the loop is an assignment to it and not a second `m`
+   * in the loop's frame. What `noteLiteralType` does for `m = …`: the change of
+   * type warns with the same words, and the record says what `m` holds now.
+   * Not marked used: being an iterator is not a read (ERROR-GOL-017).
+   */
+  assignIterator(name, type, at) {
+    let info = null;
+    for (let i = this.stack.length - 1; i >= 0 && !info; i--) {
+      info = this.stack[i].vars.get(name) ?? null;
+      if (!info && this.stack[i].funcBoundary && !name.startsWith('_')) break;
+    }
+    if (!info) { this.define(name, at, false); return; }
+    const was = info.infType === 'Unit' ? info.realType : info.infType;
+    if (was !== undefined && type !== 'Unit' && !this.typesCompatible(was, type)) {
+      this.warn('W_TYPE_CHANGE',
+        `type mismatch: '${name}' was ${was} but assigned ${type}`,
+        at, { name, was, now: type });
+    }
+    info.infType = type;
+    if (type !== 'Unit') info.realType = type;
+    info.litType = null;
+    info.lambdaArity = undefined;
+    info.elemKind = null;
+    info.shape = null;
+  }
+
+  /**
+   * What a for-each hands its iterator, as `type_check.rs` infers it: an
+   * array's element type, a Char from a String, and cannot-tell otherwise.
+   */
+  iteratorElemType(iterable) {
+    if (!iterable) return null;
+    if (this.inferType(iterable) === 'String') return 'Char';
+    const k = iterable.type === 'Array' ? this.arrayElemKind(iterable)
+            : iterable.type === 'Ident' ? (this.peekVar(iterable.name)?.elemKind ?? null)
+            : null;
+    return k && !k.startsWith('[') ? k : null;
+  }
+
+  /** Is this name in scope? Unlike lookup(), it does not mark it used. */
+  has(name) {
+    if (!name) return false;
+    for (let i = this.stack.length - 1; i >= 0; i--) {
+      if (this.stack[i].vars.has(name)) return true;
+      if (this.stack[i].funcBoundary && !name.startsWith('_')) break;
+    }
+    return false;
+  }
+
+  /**
+   * `zymbol check`'s "ambiguous lifetime" warning, as the CLI actually emits it.
+   *
+   * The message says "variable is modified inside a loop", but the binary's behaviour is
+   * narrower, and this mirrors the behaviour rather than the sentence — measured against
+   * zymbol 0.0.8, and matching what CHANGELOG GAP-003 describes as deliberate:
+   *
+   *   `@ i:1..3 { … }`               warns about `i`
+   *   `@ v:arr { … }`                warns about `v`
+   *   `x = 5  @ i:1..3 { x = x+i }`  warns about `i` only — not about `x`
+   *   `@ x < 10 { x = x + 1 }`       says nothing: a while loop has no iterator
+   *   `@ _i:1..3 { … }`              says nothing: the `_` prefix means "on purpose"
+   *   `x = 0  @ x:arr { … }`         says nothing: reusing a defined name is deliberate
+   *   the same range loop inside a function — says nothing
+   *
+   * That last one is why `funcDepth` is consulted: the CLI's def-use analysis runs over
+   * the top-level control-flow graph, and a loop inside a function body is not in it.
+   *
+   * This is the single noisiest thing `zymbol check` says — it fires on 122 of the 216
+   * programs in examples/ — which is why the playground keeps warnings behind a toggle
+   * that starts off. Leaving the rule out entirely would have been quieter and wrong: the
+   * playground would then disagree with the CLI on the most common diagnostic in the
+   * language, and a visitor comparing the two would trust neither.
+   */
+  lifetimeWarnForIterator(stmt, preexisting) {
+    const name = stmt.var;
+    if (!name) return;                       // while / infinite loop: no iterator
+    if (this.funcDepth > 0) return;
+    if (name.startsWith('_')) return;
+    if (preexisting) return;
+    // The iterator has to be MODIFIED inside the body. Measured 2026-08-26 over
+    // examples/: the CLI warned about 0 of 222 files and this warned about 121,
+    // because it fired on every top-level loop instead of on the condition the
+    // Rust analyzer actually tests (`AmbiguityReason::LoopVariant` — a variable
+    // assigned inside the loop, which is what makes its value ambiguous after
+    // the pass). A read-only `@ i:1..3 { >> i ¶ }` is not ambiguous and neither
+    // engine should say it is.
+    //
+    // The Rust analyzer has two further reasons — `ConditionalUse` and
+    // `MultipleExitPaths` — that are not detected here, so this UNDER-reports
+    // rather than over-reports. That is the right way round for a diagnostic
+    // that was firing on more than half the corpus.
+    if (!assignsWithin(stmt.body, name)) return;
+    // Once per name, not once per loop. The CLI's analysis is a def-use chain *per
+    // variable*, so a program that walks `i` through four separate loops is told about
+    // `i` once, at the first one — measured on examples/tour/control.zy, where warning
+    // per loop instead produced six warnings against the binary's three.
+    if (this.lifetimeWarned.has(name)) return;
+    this.lifetimeWarned.add(name);
+    this.warn('W_LIFETIME', `ambiguous lifetime for '${name}'`, stmt, { name });
+  }
+
+  /**
+   * MEM-2 of zymbol-design/PREMISES.md — a variable is visible only inside its
+   * own scope, and a function body is a different scope. Ported from
+   * crates/zymbol-semantic/src/type_check.rs `check_reach_out_of_scope`.
+   *
+   * Error for a named function, warning for a lambda, decided 2026-09-13 with
+   * the measurement in hand: across 1251 files the named function accounted for
+   * four hits and all four were corpus files testing this very rule, while the
+   * lambda accounted for 68 of code that is written and taught.
+   *
+   * `i` is the frame the name was found in. Crossing into it from a strong
+   * environment is the violation; a constant (MEM-1) and a module's own state
+   * (MEM-4) are not crossings at all.
+   */
+  checkReachOutOfScope(name, usageLine) {
+    if (!this.crossesStrongBoundary(name)) return;
+    // A code of its own: the playground renders `chk.<code>`, and under
+    // E_SCOPE it showed the underscore sentence for this one (ZYJS-031).
+    this.error('E_SCOPE_FN', `'${name}' is read from outside this function`, usageLine,
+      { name },
+      `a function is a self-contained space: a value crosses into it as a parameter, never by being in view — pass '${name}' as one`);
+  }
+
+  /** Whether `name` belongs to a scope outside the innermost strong environment. */
+  crossesStrongBoundary(name) {
+    let i = -1;
+    for (let k = this.stack.length - 1; k >= 0; k--) {
+      if (this.stack[k].vars.has(name)) { i = k; break; }
+    }
+    if (i < 0) return false;
+    const frame = this.stack[i];
+    if (frame.moduleScope) return false;           // MEM-4: the module's state
+    const rec = frame.vars.get(name);
+    if (rec?.isConst) return false;                // MEM-1: constants are global
+    if (rec?.isFn) return false;                   // a function, not a variable
+    if (rec?.isAlias) return false;                // a module alias, not a variable
+    if (rec?.isHot) return false;                  // `°name` lives at a boundary by design
+    // The innermost strong environment between the use and the definition.
+    for (let k = this.stack.length - 1; k > i; k--) {
+      if (this.stack[k].strong) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Find a visible name and mark it read — or, with `write`, written: a write is
+   * not a use, and a name written and never read is reported (ZYJS-052).
+   */
+  lookup(name, usageLine, write = false) {
+    if (!name) return null;
+    for (let i = this.stack.length - 1; i >= 0; i--) {
+      const frame = this.stack[i];
+      if (frame.vars.has(name)) {
+        // Found — check underscore scope violation: _name cannot be read from inner scope
+        // that crosses at least one non-funcBoundary scope to reach the definition.
+        // The rule is over variables (GUIDE § 4): a function declaration is not one,
+        // and both Rust engines call a file-level `_f()` from any block (BUG-GOL-002).
+        if (name.startsWith('_') && i < this.stack.length - 1 && !frame.moduleScope
+            && !frame.vars.get(name)?.isFn) {
+          const crossedNonBoundary = this.stack.slice(i + 1).some(f => !f.funcBoundary);
+          if (crossedNonBoundary) {
+            const rec = frame.vars.get(name);
+            this.error('E_SCOPE', `cannot access underscore variable '${name}' from inner scope`, usageLine, { name },
+              `underscore variables are strictly local to their declaration block: '${name}' was declared in an outer scope and cannot be accessed from nested blocks`,
+              rec?.line != null ? [`'${name}' was declared at ${rec.line}:${rec.col ?? '?'}`] : null);
+            return { used: true, isConst: false, isScope: true }; // sentinel: suppress follow-up E_VAR
+          }
+        }
+        const rec = frame.vars.get(name);
+        if (write) {
+          rec.assigned = true;
+        } else {
+          rec.used = true;
+          if (rec.shadowOf) rec.shadowOf.used = true;
+        }
+        return rec;
+      }
+      if (frame.funcBoundary && !name.startsWith('_')) break;
+    }
+    return null;
+  }
+
+  // `params` is what makes a diagnostic translatable: the playground renders it from its
+  // own catalogue keyed by `code`, and `message` stays as the English fallback for callers
+  // that have no catalogue (runZymbol's own output, and any embedder).
+  // `help` is a FIELD, never text appended to `message`.
+  //
+  // The `=` of `= help:` is what separates the guidance from the message, so a
+  // guidance folded into the message is not separated by anything — and the
+  // diagnostic inventory (`zyquality/messages/`) reads the two engines' sources
+  // and would see one string here against a message plus a `.with_help(…)`
+  // there, i.e. a difference that is not one. Rust keeps them apart; so does
+  // this (ZYJS-002).
+  // `notes` are the `= …` lines Rust's `Diagnostic::with_note` prints between
+  // the location and the help — a list of plain sentences (GLB-040).
+  error(code, msg, at = null, params = null, help = null, notes = null) {
+    const { line, col } = Checker.posOf(at);
+    const d = { severity: 'error', code, message: msg, line, col, params, help };
+    if (notes?.length) d.notes = notes;
+    this.diagnostics.push(d);
+  }
+
+  // ZYVM-008, decided 2026-09-26: a member a module does not export is refused
+  // before the program runs. `fa` is a FieldAccess on a name; `asCall` says it
+  // is the callee of a call.
+  //
+  // A `std/` alias is judged by the operator, `::` a function and `.` a
+  // constant, with the words of `check_stdlib_access`. A user module is judged
+  // by use, as Rust's type checker does: a call needs a function, a `.` read
+  // needs a constant, and a variable that shares the alias's name hides it.
+  checkModuleMember(fa, asCall) {
+    if (fa?.type !== 'FieldAccess' || fa.obj?.type !== 'Ident' || !fa.field) return;
+    const alias = fa.obj.name;
+    const path = this.aliasPath.get(alias);
+    if (path === undefined) return;
+    if (path.startsWith('std/')) { this.checkStdMember(fa, alias, path); return; }
+    // Only behind a `.`: `m::f` names the module whatever the scope holds (GLB-070).
+    if (!fa.scoped && !this.isAliasHere(alias)) return;
+    const exports = this.moduleExports.get(alias);
+    if (!exports) return;
+    const name = fa.field;
+    if (asCall) {
+      if (!exports.functions.has(name)) {
+        this.error('E_MOD_FN', `module '${alias}' does not export function '${name}'`,
+          fa.obj, { alias, name },
+          exports.constants.has(name) ? `read it with '.': ${alias}.${name}` : null);
+      }
+    } else if (!fa.scoped && !exports.constants.has(name)) {
+      const list = exports.constants.size ? [...exports.constants].sort().join(', ') : 'none';
+      this.error('E_MOD_CONST',
+        `Module '${alias}' has no constant '${name}'. Available constants: ${list}`,
+        fa.obj, { alias, name, list },
+        exports.functions.has(name) ? `call it with '::': ${alias}::${name}(…)` : null);
+    }
+  }
+
+  // The nearest record of `name` is the import, not a variable that hides it.
+  isAliasHere(name) {
+    for (let i = this.stack.length - 1; i >= 0; i--) {
+      const rec = this.stack[i].vars.get(name);
+      if (rec) return rec.isAlias === true;
+    }
+    return false;
+  }
+
+  checkStdMember(fa, alias, path) {
+    const fns = STDLIB_ARITIES.get(path);
+    if (!fns) return;
+    const consts = STDLIB_CONSTANTS.get(path) ?? [];
+    const name = fa.field;
+    const at = { line: fa.fieldLine ?? fa.obj.line, col: fa.fieldCol ?? null };
+    if (fa.scoped) {
+      if (fns.has(name)) return;
+      if (consts.includes(name)) {
+        this.error('E_STD_NOT_FN', `'${name}' is a constant of ${path}, not a function`,
+          at, { name, path }, `read it with '.': ${alias}.${name}`);
+        return;
+      }
+      const near = Checker.closestName(name, [...fns.keys()]);
+      this.error('E_STD_FN', `${path} does not export a function '${name}'`, at, { name, path },
+        near !== null ? `did you mean '${alias}::${near}'?` : `${path} exports: ${[...fns.keys()].join(', ')}`);
+      return;
+    }
+    if (consts.includes(name)) return;
+    if (fns.has(name)) {
+      this.error('E_STD_NOT_CONST', `'${name}' is a function of ${path}, not a constant`,
+        at, { name, path }, `call it with '::': ${alias}::${name}(…)`);
+      return;
+    }
+    this.error('E_STD_CONST', `${path} does not export a constant '${name}'`, at, { name, path });
+  }
+
+  // The candidate within edit distance 2 of `name`, closest first and the
+  // first of equals — `closest` in stdlib_access.rs.
+  static closestName(name, candidates) {
+    const dist = (a, b) => {
+      const A = [...a], B = [...b];
+      let prev = Array.from({ length: B.length + 1 }, (_, j) => j);
+      for (let i = 0; i < A.length; i++) {
+        const cur = [i + 1];
+        for (let j = 0; j < B.length; j++) {
+          cur[j + 1] = Math.min(prev[j] + (A[i] !== B[j] ? 1 : 0), prev[j + 1] + 1, cur[j] + 1);
+        }
+        prev = cur;
+      }
+      return prev[B.length];
+    };
+    let best = null, bestD = 3;
+    for (const c of candidates) {
+      const d = dist(name, c);
+      if (d < bestD) { best = c; bestD = d; }
+    }
+    return best;
+  }
+
+  // `name = °name …`: the prefix marker's sentinel first, then an expression
+  // whose leftmost name is the one being assigned.
+  static isSelfAccumulator(value, name) {
+    if (!['ImplicitConcat', 'JuxtaConcat', 'CommaJoin'].includes(value?.type)) return false;
+    const items = value.items ?? [];
+    if (items.length < 2) return false;
+    if (items[0]?.type !== 'Ident' || items[0]?.hot !== true || items[0]?.name) return false;
+    let e = items[1];
+    while (e && (e.type === 'BinOp' || e.type === 'ImplicitConcat')) e = e.left ?? e.items?.[0];
+    return e?.type === 'Ident' && e.name === name;
+  }
+
+  // The operator of a statement that computes a value out of names and
+  // literals alone — `x > 1`, `a + b * 2` — or null. Rust's `pure_statement_op`.
+  static PURE_OPS = new Set(['+', '-', '*', '/', '%', '^',
+    '==', '<>', '<', '>', '<=', '>=', '&&', '||']);
+
+  static pureStatementOp(expr) {
+    const pure = (e) => {
+      if (!e) return false;
+      if (e.type === 'Ident' || e.type === 'Literal') return true;
+      if (e.type === 'UnaryOp') return pure(e.operand);
+      if (e.type === 'BinOp') return Checker.PURE_OPS.has(e.op) && pure(e.left) && pure(e.right);
+      return false;
+    };
+    return expr?.type === 'BinOp' && pure(expr) ? expr.op : null;
+  }
+
+  warn(code, msg, at = null, params = null, help = null) {
+    const { line, col } = Checker.posOf(at);
+    this.diagnostics.push({ severity: 'warning', code, message: msg, line, col, params, help });
+  }
+
+  // Where a diagnostic points: a node, or a bare line number. The LINE is the
+  // node's own `line`, exactly what these call sites passed before; the column
+  // is the one the parser stamped on the statement (`zyCol`), and only when it
+  // belongs to that same line — a node whose `line` names an inner token would
+  // otherwise get a column from somewhere else. An expression node carries no
+  // column yet, and says so with null rather than a guess (ZYJS-024).
+  static posOf(at) {
+    if (at === null || at === undefined) return { line: null, col: null };
+    if (typeof at !== 'object') return { line: at, col: null };
+    // A statement node that carries no `line` of its own still has the
+    // position `parseStmt` stamped on it: a destructuring into a constant came
+    // out with no line at all (ZYJS-032, step P4.3).
+    const line = at.line ?? at.zyLine ?? null;
+    const col = at.col ?? ((at.zyCol != null && at.zyLine === line) ? at.zyCol : null);
+    return { line, col };
+  }
+
+  // GAP-ZYB-006: walk the statements a top-level `<~` can be reached from —
+  // everything but a function body, which returns to its caller and not to the
+  // operating system — and require its value to be a whole number.
+  //
+  // Only a literal is judged, which is what this checker can see: it has no
+  // type inference, and the Rust one lets an inferred `Any` through for the
+  // same reason. A wrong literal is the case worth catching and the one a
+  // reader writes by mistake.
+  // Rust's help, word for word: without it the two analysers refused the same
+  // `<~` in different words (GLB-107).
+  static HELP_EXIT = '`<~ 0` for success and `<~ 1` (or another number) for failure; ' +
+    'to print something before leaving, use `>>` on the line above';
+
+  checkTopLevelExit(stmt) {
+    if (!stmt || stmt.type === 'FuncDecl') return;
+    const walk = (block) => {
+      if (!block) return;
+      for (const st of (Array.isArray(block) ? block : block.body ?? [])) {
+        this.checkTopLevelExit(st);
+      }
+    };
+    switch (stmt.type) {
+      case 'Return': {
+        const v = stmt.value;
+        if (v?.type === 'Literal' && v.kind !== 'int' && v.kind !== 'unit') {
+          const named = { str: 'String', float: 'Float', bool: 'Bool', char: 'Char' };
+          this.error(
+            'E-EXIT-TYPE',
+            `a top-level \`<~\` ends the program, so its value is the exit status ` +
+            `and must be a whole number — this one is ${named[v.kind] ?? v.kind}`,
+            stmt, null, Checker.HELP_EXIT);
+        } else if (v?.type === 'ArrayLit' || v?.type === 'TupleLit' || v?.type === 'NamedTuple') {
+          this.error(
+            'E-EXIT-TYPE',
+            'a top-level `<~` ends the program, so its value is the exit status ' +
+            'and must be a whole number — this one is a collection',
+            stmt, null, Checker.HELP_EXIT);
+        }
+        return;
+      }
+      case 'If':
+        walk(stmt.then ?? stmt.thenBody);
+        for (const b of stmt.elifs ?? []) walk(b.body ?? b.block);
+        walk(stmt.else ?? stmt.elseBody);
+        return;
+      case 'Loop':   walk(stmt.body); return;
+      case 'TryCatch':
+        walk(stmt.tryBody ?? stmt.try);
+        for (const c of stmt.catches ?? []) walk(c.body ?? c.block);
+        walk(stmt.finallyBody ?? stmt.finally);
+        return;
+      case 'TuiBlock': walk(stmt.body); return;
+      default: break;
+    }
+    // A `??` — written as a statement or inside an expression of this
+    // statement — runs its arms' blocks here, at the top level: their `<~` end
+    // the program too. A lambda's body returns to its caller and is not entered.
+    // The `case 'Match'` this replaced read `stmt.cases`, a shape the parser
+    // never builds, so `?? v { 1 => { <~ "b" } }` was not refused here (GLB-107).
+    const seen = new Set();
+    const scan = (node) => {
+      if (!node || typeof node !== 'object' || seen.has(node)) return;
+      seen.add(node);
+      if (Array.isArray(node)) { for (const x of node) scan(x); return; }
+      if (node.type === 'Lambda' || node.type === 'FuncDecl') return;
+      if (node.type === 'Match' && Array.isArray(node.arms)) {
+        scan(node.scrutinee);
+        for (const arm of node.arms) {
+          if (arm?.body?.type === 'block') walk(arm.body.stmts);
+          else {
+            scan(arm?.body?.value);
+            if (arm?.body?.effect) walk(arm.body.effect);
+          }
+        }
+        return;
+      }
+      for (const [k, v] of Object.entries(node)) {
+        if (k === 'line' || k === 'col' || k === 'zyLine' || k === 'zyCol') continue;
+        if (v && typeof v === 'object') scan(v);
+      }
+    };
+    if (stmt.type !== 'If' && stmt.type !== 'Loop' && stmt.type !== 'TryCatch' && stmt.type !== 'TuiBlock') {
+      scan(stmt);
+    }
+  }
+
+  _leftmostIdent(expr) {
+    if (!expr) return null;
+    if (expr.type === 'Ident') return expr.name || null;
+    if (expr.type === 'BinOp')       return this._leftmostIdent(expr.left);
+    if (expr.type === 'CollectionOp') return this._leftmostIdent(expr.obj);
+    if (expr.type === 'NavIndex')     return this._leftmostIdent(expr.obj);
+    if (expr.type === 'UnaryOp')      return this._leftmostIdent(expr.operand ?? expr.value);
+    return null;
+  }
+
+  check() {
+    this.collectArities(this.ast.body);
+    this.inferParamTypes(this.ast.body);
+    this.checkNameCollisions(this.ast.body);
+    this.push(false);
+    for (const stmt of this.ast.body) {
+      if (stmt.type === 'FuncDecl') this.define(stmt.name, stmt, false, true);
+    }
+    for (const stmt of this.ast.body) this.checkStmt(stmt);
+    // GAP-ZYB-006: a `<~` at the top level ends the program, and its value is
+    // the exit status the operating system receives — a whole number.
+    for (const stmt of this.ast.body) this.checkTopLevelExit(stmt);
+    this.pop();
+    return this.diagnostics;
+  }
+
+  checkBlock(stmts) {
+    if (!Array.isArray(stmts)) return;
+    for (const s of stmts) {
+      if (s?.type === 'FuncDecl') this.define(s.name, s, false);
+    }
+    for (const s of stmts) this.checkStmt(s);
+  }
+
+  checkStmt(stmt) {
+    if (!stmt) return;
+    const wasHot = this.pendingHot;
+    this.pendingHot = false;
+
+    switch (stmt.type) {
+
+      case 'VarAssign': {
+        // What the name was before this statement: a record the statement
+        // itself brings into being (a hot definition, an accumulator) is the
+        // declaration, and its own write is not a second one (ZYJS-052).
+        const prior = stmt.name ? this.visibleRecord(stmt.name) : null;
+        // Prefix hot-def (°name = expr): define target before checking RHS so self-references are valid
+        if (wasHot && stmt.name) {
+          const info = this.lookup(stmt.name, stmt.line);
+          if (!info) this.hotDefine(stmt.name, stmt);
+        }
+        // `s = °s i` — an accumulator that this statement brings into being.
+        // Its own `s` on the right, and the assignment, are not a use of it;
+        // only a later read is. Counted as one, `zyjs` never said what both
+        // Rust engines say when nobody reads the result: `unused variable`
+        // (ZYJS-046). Defined here, at the statement, so the warning points
+        // where Rust points: the assignment.
+        let accumulator = null;
+        if (!wasHot && stmt.name && Checker.isSelfAccumulator(stmt.value, stmt.name)
+            && !this.has(stmt.name)) {
+          this.hotDefine(stmt.name, stmt);
+          for (let i = this.stack.length - 1; i >= 0 && !accumulator; i--) {
+            accumulator = this.stack[i].vars.get(stmt.name) ?? null;
+          }
+        }
+        this.checkExpr(stmt.value);
+        // Check for reassignment of a constant
+        if (stmt.name) {
+          // `peekVar`, not `lookup`: writing a constant is not reading it, and
+          // `lookup` marked it used, so an unused constant never warned
+          // (GLB-061). Constants are global (MEM-1), so no boundary matters here.
+          if (this.peekVar(stmt.name)?.isConst) {
+            this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt, { name: stmt.name }, Checker.HELP_CONST);
+            return;
+          }
+          // The lookup still refuses a `_name` written from an inner block;
+          // what it marks is a write, not a read (ZYJS-052): it marked the
+          // name used, so a variable written twice and never read was silent.
+          const rec = this.lookup(stmt.name, stmt.line, true);
+          if (rec && rec !== prior) rec.assigned = false;
+        }
+        if (stmt.hot && wasHot) {
+          // See CompoundAssign: `°x° = …` asks for two lifetimes at once.
+          this.error('E_HOT_AMBIG',
+            `ambiguous hot-definition markers on '${stmt.name}': ` +
+            `use either '°${stmt.name}' (anchors above loop) or '${stmt.name}°' (anchors at loop), not both`,
+            stmt, { name: stmt.name });
+          return;
+        }
+        if (!wasHot) this.defineOrKeep(stmt.name, stmt, false);
+        // Remember the type when the value is a literal, which is the only case
+        // decided without inference — enough for `n = 1  ? n { … }`, and the
+        // same limit the Rust analyser works under when it cannot infer.
+        // A second assignment of a different kind clears it rather than
+        // guessing, because after `n = 1` then `n = #1` the type is whichever
+        // ran last and this pass does not know which.
+        if (!wasHot && stmt.name) this.noteLiteralType(stmt.name, stmt.value, stmt.line);
+        if (accumulator) accumulator.used = false;
+        return;
+      }
+
+      case 'ConstAssign': {
+        // A constant is declared once. This engine printed the second value and
+        // said nothing; the rule lives in the analyzer, where `check` sees it,
+        // the same place `C = 2` is refused (D5, GLB-019 C).
+        const prior = this.lookup(stmt.name, stmt.line);
+        if (prior?.isConst) {
+          this.error('E_CONST_REDECL', `constant '${stmt.name}' already declared`, stmt, { name: stmt.name },
+            'a constant is declared once; use a different name');
+          return;
+        }
+        this.checkExpr(stmt.value);
+        this.define(stmt.name, stmt, true);
+        if (Checker.isIntLiteral(stmt.value)) this.literalIntConsts.add(stmt.name);
+        return;
+      }
+
+      case 'CompoundAssign': {
+        // postfix hot: name° +=  → stmt.hot = true
+        // prefix hot:  °name +=  → wasHot = true (from ExprStmt sentinel)
+        const isHot = stmt.hot || wasHot;
+        // `°x°` — both markers on the same name is ambiguous, and the two
+        // anchor in DIFFERENT places: `°x` above the loop, `x°` at it. Asking
+        // for both asks for two lifetimes, so there is nothing to choose.
+        //
+        // Both Rust engines refuse it in the lexer; this engine ran the program
+        // and printed an answer, which is the shape that matters — a program
+        // that works in the playground and fails when it is installed.
+        if (stmt.hot && wasHot) {
+          this.error('E_HOT_AMBIG',
+            `ambiguous hot-definition markers on '${stmt.name}': ` +
+            `use either '°${stmt.name}' (anchors above loop) or '${stmt.name}°' (anchors at loop), not both`,
+            stmt, { name: stmt.name });
+          return;
+        }
+        if (!isHot) {
+          const info = this.lookup(stmt.name, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt, { name: stmt.name }, Checker.HELP_UNDEFINED);
+          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt, { name: stmt.name }, Checker.HELP_CONST);
+        } else {
+          const info = this.lookup(stmt.name, stmt.line);
+          if (!info) this.hotDefine(stmt.name, stmt, stmt.hot === true);
+        }
+        this.checkExpr(stmt.value);
+        return;
+      }
+
+      case 'Increment': {
+        const isHot = stmt.hot || wasHot;
+        if (!isHot) {
+          const info = this.lookup(stmt.name, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${stmt.name}'`, stmt, { name: stmt.name }, Checker.HELP_UNDEFINED);
+          else if (info.isConst) this.error('E_CONST', `cannot reassign constant '${stmt.name}'`, stmt, { name: stmt.name }, Checker.HELP_CONST);
+        } else {
+          const info = this.lookup(stmt.name, stmt.line);
+          if (!info) this.hotDefine(stmt.name, stmt);
+        }
+        return;
+      }
+
+      case 'IndexAssign': {
+        // obj is a string (the variable name being indexed)
+        const obj = stmt.obj ?? stmt.name;
+        if (obj) {
+          const info = this.lookup(obj, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${obj}'`, stmt, { name: obj }, Checker.HELP_UNDEFINED);
+        }
+        this.checkExpr(stmt.index);
+        this.checkExpr(stmt.value);
+        return;
+      }
+
+      case 'IndexedAssign': {
+        const name = stmt.name ?? stmt.obj;
+        if (name) {
+          const info = this.lookup(name, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${name}'`, stmt, { name }, Checker.HELP_UNDEFINED);
+        }
+        for (const idx of (stmt.indices ?? [])) this.checkExpr(idx);
+        this.checkExpr(stmt.value);
+        return;
+      }
+
+      case 'LifetimeEnd': {
+        if (stmt.name) {
+          // MEM-8, decided 2026-09-25 (GLB-055): whether a name is visible here
+          // is decided the way a read decides it, and only a variable can be
+          // destroyed. Same order as `check_lifetime_end` in the Rust analyser.
+          // Codes of their own: the playground renders a diagnostic from its
+          // catalogue by code, so reusing E_CONST or E_SCOPE would show the
+          // wording of a different failure.
+          const name = stmt.name;
+          const info = this.lookup(name, stmt.line);
+          if (!info) this.error('E_VAR', `undefined variable '${name}'`, stmt, { name }, Checker.HELP_UNDEFINED);
+          else if (info.isConst) this.error('E_DESTROY_CONST', `cannot destroy constant '${name}'`, stmt, { name },
+            'a constant lives as long as the program; only a variable can be destroyed');
+          else if (info.isFn) this.error('E_DESTROY_FN', `cannot destroy function '${name}'`, stmt, { name },
+            'a function lives as long as the program; only a variable can be destroyed');
+          else if (info.isAlias) this.error('E_DESTROY_ALIAS', `cannot destroy module alias '${name}'`, stmt, { name },
+            'a module alias lives as long as the program; only a variable can be destroyed');
+          else if (this.crossesStrongBoundary(name)) this.error('E_DESTROY_SCOPE', `'${name}' is destroyed from outside this function`, stmt, { name },
+            'a function is a self-contained space: it can end the life of its own names, never of one it cannot see');
+          // GLB-008: the name is NOT removed here. Deleting it made every later
+          // use an `undefined variable`, which refuses correct programs — a `\`
+          // inside a branch that never runs destroys nothing, and this pass
+          // cannot tell a destruction that HAPPENED from one that was merely
+          // written down. `? #0 { \ x }` then `>> x` prints 1 in both Rust
+          // engines and was refused here.
+          //
+          // So the use-after-destruction check is where the Rust engines have
+          // it: at run time, in Env, which knows what actually ran.
+        }
+        return;
+      }
+
+      case 'Import': {
+        // A module alias is not a variable — the Rust analyser keeps aliases in
+        // their own set, so MEM-2 never sees one. `m::f()` inside a function is
+        // not reaching out of scope.
+        if (stmt.alias) this.define(stmt.alias, stmt, false, false, true);
+        return;
+      }
+
+      case 'Output':
+      case 'OutputPos': {
+        // An edit that starts a line inside a `>>` is printed, not made
+        // (GLB-137, decided 2026-10-16) — the words of zymbol-semantic.
+        if (stmt.type === 'Output' && stmt.itemLines) {
+          let prevLine = stmt.outLine;
+          (stmt.items ?? []).forEach((item, k) => {
+            const [start, end] = stmt.itemLines[k];
+            const unwrapped = item?.type === 'Group' ? (item.expr ?? item.inner) : item;
+            if (Parser.isEditNode(unwrapped) && start > prevLine) {
+              this.warn('W_OUTPUT_EDIT',
+                'this line continues the `>>` above: an edit here is printed, not made — end the output with ¶ to make it a statement',
+                start);
+            }
+            prevLine = end;
+          });
+        }
+        // `>> x°` — the marker initializes, it does not read, so in an output
+        // position it says nothing and hides the fact that `x` may not exist.
+        // Both Rust engines refuse it; this engine printed `5` and carried on.
+        const outItems = stmt.items ?? [];
+        for (let k = 0; k < outItems.length; k++) {
+          const item = outItems[k];
+          // Both spellings: `>> x°` is a hot Ident, and `>> °x` is the
+          // empty-name sentinel the prefix lexes to. Rust refuses both.
+          if (item?.type === 'Ident' && item.hot === true) {
+            // The NAME, not a literal `x`: the two Rust engines print the name
+            // the reader wrote, so the correction can be copied as it stands.
+            // A prefix `°` leaves the name on the NEXT item, because the
+            // sentinel it lexes to carries none — see `readIdent`.
+            let shown = item.name;
+            if (!shown) {
+              const next = outItems[k + 1];
+              shown = (next?.type === 'Ident' && next.name) ? next.name
+                    : (next?.obj?.type === 'Ident' && next.obj.name) ? next.obj.name
+                    : shown;
+            }
+            this.error('E_HOT_OUTPUT',
+              `\`°\` has no effect in output context — use \`>> ${shown} ¶\``,
+              item.line ?? stmt.line, { name: shown });
+          }
+        }
+        for (const item of (stmt.items ?? [])) this.checkExpr(item);
+        // The position slots are read too — the `v` of `>>~ (v, 1)` was
+        // reported unused (GLB-018 B, family ZYJS-018).
+        for (const slot of (stmt.slots ?? [])) if (slot) this.checkExpr(slot);
+        return;
+      }
+
+      case 'Input': {
+        if (stmt.prompt) this.checkExpr(stmt.prompt);
+        const varName = stmt.varName ?? stmt.name;
+        // `<< C` writes what was read into the name, so a constant refuses it
+        // exactly as `C = 2` does (D5).
+        if (varName && this.peekVar(varName)?.isConst) {
+          this.error('E_CONST', `cannot reassign constant '${varName}'`, stmt, { name: varName }, Checker.HELP_CONST);
+          return;
+        }
+        if (varName) {
+          this.define(varName, stmt, false);
+          // What the marker reads, as GLB-098 settled it in Rust: `<<` and `##"`
+          // a String, `###` an Int, `##.` a Float, `##'` a Char — and `#|…|`
+          // cannot tell, since the line decides (ZYJS-049).
+          const READ = { string: 'String', text: 'String', int: 'Int', float: 'Float', decimal: 'Float', char: 'Char', numeric: null };
+          const kind = stmt.cast?.kind ?? 'string';
+          const rec = this.stack[this.stack.length - 1].vars.get(varName);
+          if (rec && kind in READ) rec.infType = READ[kind];
+        }
+        return;
+      }
+
+      case 'If': {
+        this.checkExpr(stmt.cond);
+        this.refuseNonBoolCondition(stmt.cond);
+        // A comparison in the condition guards the range bounds it names for the
+        // whole THEN block — `? n >= 2 { @ i:2..n … }` is the correct way to
+        // write that loop and must not be warned about. Only the then block, as
+        // `TypeChecker::check_statement` does: an else-if guards nothing here.
+        const guardDepth = this.guardedBounds.length;
+        this.guardedBounds.push(...guardedBoundsOf(stmt.cond));
+        this.push(); this.checkBlock(stmt.then); this.pop();
+        this.guardedBounds.length = guardDepth;
+        for (const elif of (stmt.elseifs ?? [])) {
+          this.checkExpr(elif.cond);
+          this.refuseNonBoolCondition(elif.cond);
+          this.push(); this.checkBlock(elif.body ?? elif.then); this.pop();
+        }
+        if (stmt.else) { this.push(); this.checkBlock(stmt.else); this.pop(); }
+        return;
+      }
+
+      case 'Loop': {
+        // An iterator that already existed before the loop is a deliberate reuse, so the
+        // lifetime warning below must not fire for it. Asked before push(), because after
+        // it the name is defined either way. `lookup` would mark the outer name used, and
+        // a variable that only appears as a loop's iterator is not "used" — hence has().
+        const preexisting = stmt.var ? this.has(stmt.var) : false;
+        // The iterator is written on every turn, so a constant refuses to be
+        // one (D5). This engine left the constant alone and iterated a copy,
+        // which is a third answer to a question that has one.
+        if (stmt.var && this.peekVar(stmt.var)?.isConst) {
+          this.error('E_CONST', `cannot reassign constant '${stmt.var}'`, stmt, { name: stmt.var }, Checker.HELP_CONST);
+          return;
+        }
+        // The header — the iterable, the range's bounds, the condition — is
+        // read where the loop stands, and only the body is inside its frame, as
+        // in both Rust engines. Checked inside, `_xs = [1, 2]  @ x:_xs { … }`
+        // was refused as reading `_xs` from an inner scope (ZYJS-047).
+        //
+        // The frame is marked as a loop so a POSTFIX `x°` can anchor here —
+        // see `hotDefine`.
+        if (stmt.kind === 'foreach' || stmt.iterable || stmt.iter) {
+          this.checkExpr(stmt.iterable ?? stmt.iter);
+          // Asked before push(), like `preexisting`: the type of what the
+          // loop hands its iterator.
+          const elemType = stmt.var ? this.iteratorElemType(stmt.iterable ?? stmt.iter) : null;
+          this.push(false, false, true);
+          if (stmt.var) {
+            if (preexisting) this.assignIterator(stmt.var, elemType, stmt);
+            else {
+              this.define(stmt.var, stmt, false);
+              // A new iterator holds the element too, as Rust defines it; only
+              // a reused name used to learn it, so `@ c:"ab" { c - 1 }` warned
+              // in Rust and not here (ZYJS-049) — as the range loop below does.
+              const rec = this.stack[this.stack.length - 1].vars.get(stmt.var);
+              if (rec && elemType) rec.infType = elemType;
+            }
+          }
+        } else if (stmt.kind === 'range' || stmt.from !== undefined) {
+          this.checkExpr(stmt.from);
+          this.checkExpr(stmt.to);
+          if (stmt.step) this.checkExpr(stmt.step);
+          // A range infers its DIRECTION from its endpoints, so `i:2..n` is not
+          // an empty range when n is 1 — it counts down, from 2 to 1, which is
+          // how "walk the rest of the list" walks off the front of a
+          // one-element list. Say so when the direction cannot be read off the
+          // source, and say nothing when an enclosing `?` already vouches for
+          // the end. Mirrors zymbol-semantic's TypeChecker.
+          //
+          // A bound is read off the source when it is an integer written there,
+          // `-1` included, or a constant declared with one (decided 2026-09-25).
+          const known = (e) => {
+            const n = (e && e.type === 'Group') ? (e.expr ?? e.inner) : e;
+            if (Checker.isIntLiteral(n)) return true;
+            return n?.type === 'Ident' && this.literalIntConsts.has(n.name)
+              && this.lookup(n.name, stmt.line)?.isConst === true;
+          };
+          const endKey = exprKey(stmt.to);
+          const guarded = endKey !== null && this.guardedBounds.includes(endKey);
+          if (!guarded && !(known(stmt.from) && known(stmt.to))) {
+            this.warn('W_RANGE_DIR',
+              'range direction is decided at runtime: if the end turns out to be ' +
+              'lower than the start, this loop counts down instead of not running. ' +
+              'Guard the empty case.',
+              stmt.rangeAt ?? stmt.line ?? null);
+          }
+          this.push(false, false, true);
+          if (stmt.var && preexisting) {
+            this.assignIterator(stmt.var, 'Int', stmt);
+          } else if (stmt.var) {
+            this.define(stmt.var, stmt, false);
+            // The iterator of a range is an Int, which a type change from it
+            // needs to know (ZYJS-034, step P4.4).
+            const rec = this.stack[this.stack.length - 1].vars.get(stmt.var);
+            if (rec) rec.infType = 'Int';
+          }
+        } else if (stmt.cond) {
+          this.checkExpr(stmt.cond);
+          this.push(false, false, true);
+        } else {
+          this.push(false, false, true);
+        }
+        this.lifetimeWarnForIterator(stmt, preexisting);
+        this.loopLabels.push(stmt.label ?? null);
+        this.checkBlock(stmt.body);
+        this.loopLabels.pop();
+        this.pop();
+        return;
+      }
+
+      case 'CliArgs': {
+        // >< name: captures CLI args into a variable
+        if (stmt.variable) this.define(stmt.variable, stmt, false);
+        return;
+      }
+
+      case 'KeyInput': {
+        if (stmt.varName ?? stmt.variable) this.define(stmt.varName ?? stmt.variable, stmt, false);
+        return;
+      }
+
+      case 'Break':
+        this.checkLoopControl(stmt, '@!', 'break');
+        return;
+
+      case 'Continue':
+        this.checkLoopControl(stmt, '@>', 'continue');
+        return;
+
+      // `Sleep` (@~) is deliberately absent from the two cases above: it pauses
+      // execution without acting on the loop's control flow, so it carries no
+      // loop requirement. Every engine has always accepted it at top level.
+      case 'SetNumeralMode':
+      case 'Noop':
+      case 'ExportDecl':
+      case 'Sleep':
+        // Its operand is read like any expression — the `v` of `@~ v` was
+        // reported unused (GLB-014 E, family ZYJS-018).
+        this.checkExpr(stmt.duration);
+        return;
+      case 'ClearScreen':
+        return;
+
+      case 'ModuleBlock': {
+        // What a module body may hold (E013) is the parser's to refuse, as it is
+        // in Rust — `Parser.parseModuleBlock`. It was checked here, and the same
+        // module failed as a semantic error in this engine and a parse error in
+        // the other two (ZYJS-022).
+        // And then analyse it. Only the *shape* of the body was checked here, so
+        // a module function reassigning the module's own `:=` constant went
+        // unreported and the module simply ran — MM-4, which the Rust engines
+        // settled in v0.0.8 by giving a module the same gate as the entry file.
+        // Analysed in the current frame, not a nested one: the module body *is*
+        // the module's root scope, and its `_private` helpers are visible to the
+        // module's own functions. Pushing a frame here put a non-boundary scope
+        // between a `_name` and its use, which is exactly what the underscore
+        // rule refuses.
+        // `moduleScope`: a `_name` declared here is module-private, not
+        // block-local, so the module's own functions may read it — the same
+        // distinction `Env` makes with `isModuleScope` at run time.
+        //
+        // Warnings raised inside are dropped: what MM-4 asks for is the error
+        // gate, and this engine's `unused variable` analysis reports a false
+        // positive for a name reassigned inside a branch and then returned
+        // (`nueva = dir / ? … { nueva = 1 } / <~ nueva`) — a pre-existing defect
+        // that has nothing to do with modules, and that keeping would have
+        // buried every module file in warnings the CLI does not raise.
+        const mark = this.diagnostics.length;
+        this.push(false, true);
+        this.checkBlock(stmt.body ?? []);
+        // A `#>` block names constants and functions; a variable is the module's
+        // own state (P4-3 E6, decided 2026-09-26), refused here as in
+        // `check_exported_variables`. It failed only where the name was read.
+        const moduleVars = new Set((stmt.body ?? [])
+          .filter(st => st?.type === 'VarAssign').map(st => st.name));
+        for (const st of (stmt.body ?? [])) {
+          if (st?.type !== 'ExportDecl') continue;
+          for (const it of (st.names ?? [])) {
+            if (it.kind === 'own' && moduleVars.has(it.internal)) {
+              const name = it.internal;
+              this.error('E_EXPORT_VAR', `'${name}' is a variable: a module exports constants and functions`,
+                { line: it.line, col: it.col }, { name },
+                "declare it with ':=' if it never changes, or export a function that returns it");
+            }
+          }
+        }
+        this.pop();
+        const raised = this.diagnostics.splice(mark);
+        // Except the type-change warning, which the Rust analyser gives for a
+        // module and which this engine now reads as it does — the module's own
+        // state changed inside one of its functions included (GLB-093). The rest
+        // stay dropped: kept, the unused-variable analysis here flags every
+        // exported name of 224 module files, which the CLI does not.
+        for (const d of raised) if (d.severity !== 'warning' || d.code === 'W_TYPE_CHANGE') this.diagnostics.push(d);
+        return;
+      }
+
+      case 'Match': {
+        this.checkExpr(stmt.subject ?? stmt.expr);
+        // The type of every pattern against the scrutinee's, where this pass can
+        // name it (ZYJS-071).
+        const scrutType = this.argType(stmt.subject ?? stmt.expr);
+        if (scrutType) for (const arm of (stmt.arms ?? [])) this.checkPatternType(arm.pattern, scrutType);
+        for (const arm of (stmt.arms ?? [])) {
+          // An identifier in a pattern is a VALUE that gets compared, so it is a
+          // use of that variable — at the top of the pattern and, equally,
+          // inside a LIST pattern. Only the top level was looked up here, so
+          // `uno = 1  ?? [1] { [uno] => … }` reported `unused variable 'uno'`
+          // while both Rust engines said nothing.
+          this.checkMatchPattern(arm.pattern, arm.line ?? stmt.line ?? null);
+          // `##Kind(m) =>` is a birth like `m = …`: a visible `m` is kept and
+          // assigned, a new one lives in the arm (MEM-7, no shadowing).
+          const bind = arm.pattern?.type === 'errkind' ? arm.pattern.bind : null;
+          if (bind) { this.push(); this.defineOrKeep(bind, arm.pattern.at ?? arm.pattern, false); }
+          // The arm's body is `{type:'block', stmts}` or `{type:'expr', value}`,
+          // never the array this looked for, so a block arm was never analysed:
+          // `>> nada` inside one failed only at run time, or not at all when the
+          // arm did not run, where both Rust engines refuse it (step P4.8).
+          const b = arm.body;
+          if (b?.type === 'block') { this.push(); this.checkBlock(b.stmts ?? []); this.pop(); }
+          else if (b?.type === 'expr') this.checkExpr(b.value);
+          else if (Array.isArray(b)) { this.push(); this.checkBlock(b); this.pop(); }
+          else if (b) this.checkExpr(b);
+          if (b?.effect) { this.push(); this.checkBlock(b.effect); this.pop(); }
+          if (bind) this.pop();
+        }
+        return;
+      }
+
+      case 'FuncDecl': {
+        // MEM-2: a named function is a strong environment. It still reaches
+        // module aliases and functions — those are not variables — but not the
+        // file's variables. The comment here used to read 'named fns can access
+        // outer scope', which was the rule between 2026-08-24 and 2026-09-13.
+        this.push(false, false, false, 'function');
+        this.funcDepth++;
+        // A function body is a loop-context boundary: the caller's loops are
+        // not in scope, so `f() { @! }` is an error even when every call site
+        // sits inside a loop.
+        const outerLoops = this.loopLabels;
+        this.loopLabels = [];
+        for (const p of (stmt.params ?? [])) {
+          const pname = typeof p === 'string' ? p : p.name;
+          if (pname) {
+            this.define(pname, stmt, false);
+            // A signature may fix a parameter an implementation does not use;
+            // neither Rust analyser warns, and the author decided none does
+            // (2026-09-15), as for a lambda's.
+            this.stack[this.stack.length - 1].vars.get(pname).isParam = true;
+          }
+        }
+        // Inside the body a parameter has its inferred type, as Rust defines it
+        // for the third pass: a Number passed on where a Bool is expected is
+        // refused there too (ZYJS-048).
+        if (this.sigDecls?.has(stmt)) {
+          const sig = this.paramTypes.get(stmt.name) ?? [];
+          (stmt.params ?? []).forEach((p, i) => {
+            const info = this.stack[this.stack.length - 1].vars.get(typeof p === 'string' ? p : p.name);
+            if (info) info.paramType = sig[i] ?? null;
+          });
+        }
+        this.checkBlock(stmt.body);
+        this.loopLabels = outerLoops;
+        this.funcDepth--;
+        this.pop();
+        return;
+      }
+
+      case 'Return': {
+        if (stmt.value) this.checkExpr(stmt.value);
+        return;
+      }
+
+      case 'TryCatch': {
+        this.push(); this.checkBlock(stmt.tryBody ?? stmt.try); this.pop();
+        for (const catch_ of (stmt.catches ?? [])) {
+          this.push();
+          this.define('_err', stmt, false);
+          this.checkBlock(catch_.body);
+          this.pop();
+        }
+        const fin = stmt.finallyBody ?? stmt.finally;
+        if (fin) { this.push(); this.checkBlock(fin); this.pop(); }
+        return;
+      }
+
+      case 'TupleDestruct':
+      case 'ArrayDestruct':
+      case 'NamedDestruct': {
+        this.checkExpr(stmt.value);
+        if (stmt.type === 'ArrayDestruct')      this.warnDestructShape(stmt, "array '[ … ]'", 'an array');
+        else if (stmt.type === 'TupleDestruct') this.warnDestructShape(stmt, "tuple '( … )'", 'a tuple');
+        else                                    this.warnDestructShape(stmt, "dictionary '#( … )'", 'a dictionary');
+        for (const t of (stmt.targets ?? [])) {
+          if (t.name && t.name !== '_') {
+            // L14 (mirrors type_check.rs): destructuring into a `:=` constant
+            // is an error, same as direct reassignment.
+            const info = this.peekVar(t.name);
+            if (info?.isConst) {
+              this.error('E_CONST', `cannot reassign constant '${t.name}'`, stmt, { name: t.name },
+                "constants declared with ':=' cannot be modified — use a different name in the destructuring pattern");
+              continue;
+            }
+            // A name already in view is written, not shadowed — the way `x = …`
+            // is. `define` put a second `x` in the block's frame, which died
+            // unread and warned `unused variable` (ZYJS-042). Written, so it
+            // is `assigned but never read` if nothing reads it (ZYJS-052).
+            this.markWritten(t.name);
+            this.defineOrKeep(t.name, stmt, false);
+          }
+        }
+        return;
+      }
+
+      case 'InPlaceEdit': {
+        this.checkExpr(stmt.expr);
+        return;
+      }
+
+      case 'ExprStmt': {
+        const expr = stmt.expr ?? stmt.value;
+        // Prefix hot-def sentinel: ExprStmt with empty hot Ident (°name produces this)
+        if (expr?.type === 'Ident' && expr.hot === true && expr.name === '') {
+          this.pendingHot = true;
+          return;
+        }
+        // A statement that is only a NAME does nothing (ERROR-ZYB-001). It is
+        // the mechanism that made BUG-ZYB-002 silent: when a parse split in
+        // two, the remainder landed in a statement with no effect and vanished.
+        if (expr?.type === 'Ident' && expr.name && !expr.hot) {
+          this.warn('W_NO_EFFECT',
+            `this statement does nothing: '${expr.name}' is read and discarded`,
+            expr.line ?? stmt.line, { name: expr.name });
+        }
+        // Decision 19, the other half of the rule of the result: a consulting
+        // `$` builds a value, so a statement that is only one throws it away.
+        // The operator is pure, so this holds even with a call inside it — the
+        // call's effect still happens and the `$#` around it is still pointless.
+        // A `??` alone on a line whose arms give values throws them away — the
+        // warning the Rust analyzer gives (GLB-016).
+        if (expr?.type === 'Match' && (expr.arms ?? []).some(a => a.body?.type === 'expr')) {
+          this.warn('W_UNUSED_MATCH', 'match expression returns values but result is unused',
+            expr.line ?? stmt.line, null,
+            'assign it — `r = ?? v { … }` — or give each arm a block: `pattern => { … }`');
+        }
+        // A value computed out of names and literals and thrown away: `x > 1`.
+        // Valid, and it does nothing (decided 2026-09-26, ZYJS-035). A call
+        // anywhere inside may be there for its effect, and `|>` is a call.
+        const pureOp = Checker.pureStatementOp(expr);
+        if (pureOp) {
+          const branches = ['==', '<>', '<', '>', '<=', '>=', '&&', '||'].includes(pureOp);
+          this.warn('W_NO_EFFECT',
+            `this statement does nothing: \`${pureOp}\` computes a value and it is discarded`,
+            expr.line ?? stmt.line, { name: pureOp },
+            branches
+              ? 'to branch on it, write `? condition { … }` — otherwise remove it, or use the result'
+              : 'remove it, or use the result — assign it, print it, or pass it on');
+        }
+        if (expr?.type === 'CollectionOp' && Parser.CONSULT_OPS.has(expr.op)) {
+          this.warn('W_NO_EFFECT',
+            `this statement does nothing: \`${expr.op}\` builds a value and it is discarded`,
+            expr.line ?? stmt.line, { name: expr.op });
+        }
+        this.checkExpr(expr);
+        return;
+      }
+
+      default:
+        if (stmt.value) this.checkExpr(stmt.value);
+        if (stmt.body)  this.checkBlock(stmt.body);
+    }
+  }
+
+  // Every step of a nav spec is an expression, and the checker has to descend
+  // into all of them. It used to look at `spec.index`, `spec.from` and
+  // `spec.to` — but `from`/`to` live on an ATOM, never on the spec, so only
+  // `kind: 'simple'` was ever walked and `m[i>j]` reported `unused variable
+  // 'i'` while both Rust engines saw the use (ZYJS-013).
+  //
+  // The four shapes, from `parseNavContent`/`parseNavStructured`:
+  //   simple      { index }
+  //   path        { path:   [atom, …] }
+  //   flat        { paths:  [[atom, …], …] }
+  //   structured  { groups: [{ paths: [[atom, …], …] }, …] }
+  // and an atom is `{ kind:'index', expr }` or `{ kind:'range', from, to }`.
+  //
+  // Written over the shapes rather than over `kind`, so a spec that grows a
+  // field is walked by whichever branch matches it instead of falling silently
+  // through a `switch` — the failure being fixed here is precisely a step that
+  // nothing looked at.
+  checkNavSpec(spec) {
+    if (!spec) return;
+    const atom = (a) => {
+      if (!a) return;
+      if (a.expr) this.checkExpr(a.expr);
+      if (a.from) this.checkExpr(a.from);
+      if (a.to)   this.checkExpr(a.to);
+    };
+    const path = (p) => (p || []).forEach(atom);
+    if (spec.index) this.checkExpr(spec.index);
+    if (spec.path)  path(spec.path);
+    (spec.paths || []).forEach(path);
+    (spec.groups || []).forEach((g) => (g.paths || []).forEach(path));
+  }
+
+  checkExpr(expr) {
+    if (!expr) return;
+    switch (expr.type) {
+
+      case 'Ident': {
+        if (!expr.name) return; // empty sentinel
+        if (expr.name === '_') return; // wildcard placeholder — never an error
+        // hot Ident (name°): auto-initializes at function/root boundary
+        if (expr.hot) {
+          const info = this.lookup(expr.name, expr.line);
+          if (!info) this.hotDefine(expr.name, expr.line);
+          return;
+        }
+        const info = this.lookup(expr.name, expr.line);
+        if (!info) this.error('E_VAR', `undefined variable '${expr.name}'`, expr, { name: expr.name }, Checker.HELP_UNDEFINED);
+        // A module alias standing alone is not a value (GLB-125): `M.NAME` and
+        // `M::f()` reach into a module and never come through here. This engine
+        // ran `x = M`, `M == M` and a `??` pattern `M =>`; the Rust engines
+        // failed, each its own way, and `check` said nothing in any of them.
+        else if (info.isAlias) this.error('E_MODULE_VALUE', `'${expr.name}' is a module, not a value`, expr, { name: expr.name },
+          `a module is reached through its members: ${expr.name}::name(…) calls a function, ${expr.name}.NAME reads a constant`);
+        // MEM-2, at the same place the Rust analyser checks it: reading an
+        // identifier. Not in `lookup`, which assignments also go through —
+        // writing inside a function makes a local and never reaches out, so it
+        // is not a crossing. Putting it there reported every `x = 1` written in
+        // a function whose name also existed in the file.
+        else this.checkReachOutOfScope(expr.name, expr.line);
+        return;
+      }
+
+      case 'BinOp': {
+        this.checkExpr(expr.left);
+        this.checkExpr(expr.right);
+        this.warnBinaryOperandType(expr);
+        return;
+      }
+
+      case 'UnaryOp': {
+        this.checkExpr(expr.operand ?? expr.value);
+        this.warnUnaryOperandType(expr);
+        return;
+      }
+
+      case 'CastOp': {
+        this.checkExpr(expr.operand ?? expr.value ?? expr.obj);
+        return;
+      }
+
+      // `x#?` — asking a value its type is a USE of it. The node was not walked
+      // here, so `d = js::decode(…)  >> d#? ¶` reported `unused variable 'd'`
+      // while both Rust engines said nothing: the one operator whose whole job
+      // is to inspect a value did not count as reading it.
+      //
+      // The operand is checked like any other expression, so an undefined name
+      // in it is reported. Asking a variable its type is not an exception to
+      // "defined before use": decided 2026-08-19, and it makes the CLI agree
+      // with the LSP, which had been flagging it all along while
+      // `zymbol check` said "No errors or warnings".
+      case 'TypeMetadata': {
+        this.checkExpr(expr.obj ?? expr.operand ?? expr.value);
+        return;
+      }
+
+      case 'Call': {
+        // Mirrors zymbol-semantic type_check: a bare-identifier call must name a
+        // hoisted function, a variable holding a callable, or a module alias —
+        // otherwise the function does not exist (e.g. `cos(x)` without `math::cos`).
+        if (typeof expr.callee === 'string' && expr.callee) {
+          const info = this.lookup(expr.callee, expr.line);
+          if (!info) this.error('E_FUNC', `undefined function: '${expr.callee}'`, expr, { name: expr.callee });
+          else if (this.funcArity.has(expr.callee) && !this.reassigned.has(expr.callee)) {
+            this.checkArity(expr.callee, this.funcArity.get(expr.callee),
+                            (expr.args ?? []).length, expr.line,
+                            this.funcParamList?.get(expr.callee) ?? null);
+            this.checkArgTypes(expr.callee, expr.args ?? [], expr.line);
+            this.checkOutputArgs(expr.callee, expr.args ?? [], expr.line);
+            // A locally declared function always has a known signature: no
+            // recorded slots means it declares no output parameter.
+            this.checkOutMarks(expr.callee, this.funcOutSlots.get(expr.callee) ?? [],
+                               expr.args ?? [], expr.line);
+          }
+        } else if (expr.callee && typeof expr.callee === 'object') {
+          this.checkExpr(expr.callee);
+        }
+        // Each argument is an expression node — the `<~` mark is kept apart, in
+        // `args.outArgs`. `a.value ?? a` handed a string literal's own parts to
+        // `checkExpr` instead of the literal, so the name read by `f("{t}")`
+        // was never marked: 28 false `unused variable` in GO's 棋戦.zy (ZYJS-054).
+        for (const a of (expr.args ?? [])) this.checkExpr(a);
+        return;
+      }
+
+      case 'CallExpr': {
+        // `alias::func(…)` arrives as a FieldAccess callee. Checked against the
+        // std/ table, or against a user-module table if one was supplied.
+        const callee = expr.callee ?? expr.fn;
+        const memberBefore = this.diagnostics.length;
+        this.checkModuleMember(callee, true);
+        const memberRefused = this.diagnostics.length > memberBefore;
+        if (!memberRefused && callee?.type === 'FieldAccess' && callee.obj?.type === 'Ident' && callee.field) {
+          const expected = this.qualifiedArity(callee.obj.name, callee.field);
+          if (expected !== null) {
+            this.checkArity(`${callee.obj.name}::${callee.field}`, expected,
+                            (expr.args ?? []).length, expr.line);
+            // The signature is known, so the call-site mark can be checked too.
+            const slots = this.moduleOutSlots.get(callee.obj.name)?.get(callee.field) ?? [];
+            this.checkOutMarks(`${callee.obj.name}::${callee.field}`, slots,
+                               expr.args ?? [], expr.line);
+          }
+        }
+        // The callee's own walk, without the `.` read check: a call is judged
+        // by what it calls, and that was asked just above.
+        if (callee?.type === 'FieldAccess') {
+          // `M::f(…)`: the alias is the way in, not a value read (GLB-125).
+          if (callee.obj?.type === 'Ident' && this.isAliasHere(callee.obj.name)) this.lookup(callee.obj.name, callee.obj.line);
+          else this.checkExpr(callee.obj);
+        }
+        else this.checkExpr(callee);
+        for (const a of (expr.args ?? [])) this.checkExpr(a);
+        return;
+      }
+
+      case 'Lambda': {
+        // MEM-6, 2026-09-13: a lambda is a LIGHT environment and opens no
+        // boundary of its own, so the isolation is inherited instead of
+        // excepted — at file level it reads the file because it IS that scope,
+        // and inside a function it reads that function, which cannot read the
+        // file. Nothing is global to it at any depth, and nothing here has to
+        // say so: not pushing a boundary IS the rule.
+        this.push(false);
+        // But what it WRITES stays in it (MEM-6): marked, so an assignment in
+        // here to a name from outside changes the type of a copy, not of the
+        // name outside (GLB-092, as the Rust analyser's lambda floor).
+        this.stack[this.stack.length - 1].lambda = true;
+        this.funcDepth++;
+        // Loop context does not close over, though: a `@!` in a lambda body
+        // cannot break the loop the lambda was written inside, so the stack is
+        // emptied here exactly as it is for a named function.
+        const outerLoops = this.loopLabels;
+        this.loopLabels = [];
+        for (const p of (expr.params ?? [])) {
+          const pname = typeof p === 'string' ? p : p.name;
+          if (pname) {
+            this.define(pname, expr, false);
+            this.stack[this.stack.length - 1].vars.get(pname).isParam = true;
+          }
+        }
+        const body = expr.body;
+        if (Array.isArray(body))         this.checkBlock(body);
+        else if (body?.type === 'expr')  this.checkExpr(body.value);
+        else if (body?.type === 'block') this.checkBlock(body.stmts ?? body.body ?? []);
+        else                             this.checkExpr(body);
+        this.loopLabels = outerLoops;
+        this.funcDepth--;
+        this.pop();
+        return;
+      }
+
+      case 'Array': {
+        const items = expr.items ?? expr.elements ?? [];
+        for (const el of items) this.checkExpr(el);
+        // Decision 15: `[…]` is homogeneous and gets checked; `#[…]` declares
+        // the mix and does not. This engine checked nothing at all, so
+        // `[1, "dos", 3.0]` ran here and was `array element 2 has type String`
+        // in both Rust engines — a program written in the playground failed
+        // outside it (DM-04).
+        // `staticKind` and not a local literal-only rule: it recurses into
+        // nested array literals and reads a variable's remembered type, which
+        // is what the Rust analyser does. Without the recursion
+        // `[[1], ["x"]]` was accepted here and `array element 2 has type
+        // [String], but expected [Int]` in both Rust engines.
+        // `staticKind` knows literals and arrays; `inferType` is the mirror of
+        // `infer_expr` for everything else it decides — `k[1]`, a call to a
+        // function of this file, `a$#`. `Any` is a type Rust names but cannot
+        // compare, so here it is "cannot tell".
+        const kindOf = (el) => {
+          const k = this.staticKind(el) ?? this.inferType(el);
+          return k === 'Any' ? null : k;
+        };
+        const kinds = items.map(kindOf);
+        if (kinds.length > 1) {
+          // Int and Float mix freely, as they do in every arithmetic position —
+          // at any depth, so `[[1], [2.5]]` is not a mix either. The elements
+          // are compared as Rust compares them, part by part
+          // (`typesCompatibleStatic`): two lambdas of the same arity are the
+          // same function when one of them returns `Any` (ZYJS-049).
+          const first = kinds[0];
+          // Each element against the FIRST, as `type_check.rs` does, and an
+          // element this pass cannot type is compatible with anything. This
+          // used to compare only when every kind was known, so one untyped
+          // element switched the whole check off: `[9, "x", p]` ran here and
+          // was refused by both Rust engines (Depurando_GO.md DG-05, a
+          // remainder of DM-04). One error per element, as there.
+          const bad = first === null ? [] : kinds
+            .map((k, i) => (i > 0 && k !== null && !Checker.typesCompatibleStatic(k, first)) ? i : -1)
+            .filter(i => i > 0);
+          if (bad.length && !expr.declaredMixed) {
+            // The guidance goes on its own `help:` line, not folded into the
+            // headline with an em dash: the Rust engines emit two lines and
+            // `zyq consensus` compares the text.
+            for (const b of bad) {
+              this.error('E_ARRAY_MIX',
+                `array element ${b + 1} has type ${kinds[b]}, but expected ${first} ` +
+                `(same as first element)\n` +
+                `= help: all array elements must have the same type — write \`#[…]\` if the mix is deliberate`,
+                expr);
+            }
+          } else if (!bad.length && expr.declaredMixed && kinds.every(k => k !== null)) {
+            // Decision 18: the escape hatch used where it is not needed.
+            this.warn('W_MIX_UNNEEDED',
+              `this \`#[…]\` has no mixed types: every element is ${first}\n` +
+              `= help: use \`[…]\` — \`#[…]\` is for declaring a mix that is deliberate`,
+              expr);
+          }
+        }
+        return;
+      }
+
+      case 'Tuple': {
+        for (const f of (expr.items ?? expr.fields ?? [])) this.checkExpr(f.value ?? f);
+        return;
+      }
+
+      case 'NavIndex': {
+        this.checkExpr(expr.obj);
+        this.checkNavSpec(expr.spec);
+        return;
+      }
+
+      case 'FieldAccess': {
+        this.checkModuleMember(expr, false);
+        // `M.NAME` reaches INTO a module: the alias is used, and it is not
+        // being read as a value — the one place it may stand (GLB-125).
+        if (expr.obj?.type === 'Ident' && this.isAliasHere(expr.obj.name)) this.lookup(expr.obj.name, expr.obj.line);
+        else this.checkExpr(expr.obj);
+        return;
+      }
+
+      case 'CollectionOp': {
+        this.checkExpr(expr.obj);
+        if (expr.arg)  this.checkExpr(expr.arg);
+        this.checkHofArity(expr);
+        if (expr.arg2) this.checkExpr(expr.arg2);
+        // ZYJS-018: the parser puts operands in more places than `arg`, and a
+        // field not visited here is a use nobody counts — `a$[n..2]` and
+        // `"" $++ m` both warned `unused variable`. Every field the parser
+        // builds a CollectionOp with is listed, so one added later has a line
+        // to be added to.
+        for (const sub of [expr.index, expr.start, expr.count, expr.init,
+                           expr.from, expr.to,
+                           expr.range?.from, expr.range?.to, expr.range?.count,
+                           ...(expr.items ?? [])]) {
+          if (sub) this.checkExpr(sub);
+        }
+        // Putting something INTO a `[…]` keeps it homogeneous (decision 15),
+        // and that is the whole edit family, not one member of it (L46).
+        // Until v0.0.9 only the literal and `$+` were checked — in every engine
+        // — so `$++`, `$+[i]` and `[i]$~` each turned a `[…]` heterogeneous
+        // with nobody declaring it, and `#?` then answered `##[`: a list nobody
+        // wrote. A `[…]` was not homogeneous, it was homogeneous when written.
+        //
+        // The verb matches the analyser's, because the two messages are read
+        // side by side when somebody moves a program between them.
+        const VERBS = { '$+': 'append', '$++': 'append', '$+[i]': 'insert', '$~': 'write' };
+        const verb = VERBS[expr.op];
+        if (verb) {
+          const want = expr.obj?.type === 'Ident'
+            ? this.peekVar(expr.obj.name)?.elemKind ?? null
+            : (expr.obj?.type === 'Array' && !expr.obj.declaredMixed
+                ? this.arrayElemKind(expr.obj)
+                : null);
+          // `$++` takes several; the others take one.
+          const given = expr.op === '$++' ? (expr.items ?? []) : [expr.arg];
+          const norm = (k) => k.replace(/Float/g, 'Int');
+          for (const g of given) {
+            const got = this.staticKind(g);
+            if (want && got && norm(want) !== norm(got)) {
+              // Where, and the help on its own line, as the literal's check
+              // above does: this one said neither, because a CollectionOp
+              // carries no line and the guidance was folded in with a dash
+              // (ZYJS-069). The element is where Rust points; failing that,
+              // the receiver.
+              const at = [g, expr, expr.obj].find(n => n && (n.line ?? n.zyLine) != null) ?? null;
+              this.error('E_ARRAY_MIX',
+                `cannot ${verb} ${got} to [${want}]: type mismatch\n` +
+                `= help: expected element of type ${want}`,
+                at);
+            }
+          }
+        }
+        return;
+      }
+
+      // `arr[i]$~ v` — a node of its own, not a CollectionOp, because the
+      // bracket is consumed before the `$~` is seen. It writes an element, so
+      // the element has to fit (L46). The deep form `m[i>j]$~ v` is
+      // `DeepUpdate` and is not decided here: the outer type says nothing about
+      // what lands two levels down, which is what the analyser also concludes.
+      // A deep write's PATH holds expressions, and each one is a use: without
+      // this case `config[step>"port"]$~ 9` never visited `step`, so a variable
+      // that the program plainly reads was reported as unused. The Rust
+      // analyzer walks the path and says nothing.
+      case 'DeepUpdate': {
+        this.checkExpr(expr.obj);
+        for (const atom of (expr.path ?? [])) {
+          if (atom.expr)  this.checkExpr(atom.expr);
+          if (atom.from)  this.checkExpr(atom.from);
+          if (atom.to)    this.checkExpr(atom.to);
+        }
+        if (expr.value !== undefined) this.checkExpr(expr.value);
+        return;
+      }
+
+      case 'FuncUpdate': {
+        this.checkExpr(expr.obj);
+        if (expr.index !== undefined) this.checkExpr(expr.index);
+        this.checkExpr(expr.value);
+        const want = expr.obj?.type === 'Ident'
+          ? this.peekVar(expr.obj.name)?.elemKind ?? null
+          : null;
+        const got = this.staticKind(expr.value);
+        const norm = (k) => k.replace(/Float/g, 'Int');
+        if (want && got && norm(want) !== norm(got)) {
+          const at = [expr.value, expr, expr.obj].find(n => n && (n.line ?? n.zyLine) != null) ?? null;
+          this.error('E_ARRAY_MIX',
+            `cannot write ${got} to [${want}]: type mismatch\n` +
+            `= help: expected element of type ${want}`,
+            at);
+        }
+        return;
+      }
+
+      case 'Pipe': {
+        this.checkExpr(expr.value);
+        this.checkExpr(expr.rhs ?? expr.fn);
+        return;
+      }
+
+      case 'ImplicitConcat':
+      case 'JuxtaConcat':
+      case 'CommaJoin': {
+        const items = expr.items ?? [];
+        // Prefix hot-def in expression context: °name op expr
+        // Parsed as ImplicitConcat[{Ident name:'' hot:true}, <expr starting with name>]
+        if (items.length >= 2 &&
+            items[0]?.type === 'Ident' && items[0]?.hot === true && !items[0]?.name) {
+          // Only when the name is not in view yet, as the interpreter does
+          // (`if (!exists) env.hotDef(…)`). A name that exists — `v = °m` on
+          // the loop's own `m` — is a read; defining it again put an unread
+          // `m` at the boundary and warned `unused variable` (ZYJS-044).
+          const hotName = this._leftmostIdent(items[1]);
+          if (hotName && !this.has(hotName)) this.hotDefine(hotName, items[1]?.line ?? expr.line);
+        }
+        for (const item of items) this.checkExpr(item);
+        return;
+      }
+
+      case 'TypeMetadata': {
+        // #? is safe access — target may be undefined, don't emit E_VAR
+        return;
+      }
+
+      case 'DataOp': {
+        this.checkExpr(expr.obj ?? expr.value);
+        if (expr.arg) this.checkExpr(expr.arg);
+        // A computed decimal count reads a name like anything else.
+        if (expr.precExpr) this.checkExpr(expr.precExpr);
+        return;
+      }
+
+      case 'Match': {
+        this.checkStmt(expr);
+        return;
+      }
+
+      case 'Literal': {
+        // String literals may embed interpolated identifier names: {varname}
+        if (expr.kind === 'str' && Array.isArray(expr.value)) {
+          for (const part of expr.value) {
+            if (part.t === 'expr' && typeof part.v === 'string') {
+              const name = part.v.trim();
+              // Only look up simple identifiers (no operators/spaces). Character
+              // classes mirror readIdent's lexer rule (HLZ-KL-001 parity) — a
+              // narrower rule here would under-mark PUA-script (e.g. pIqaD)
+              // identifiers as used, producing a false W_UNUSED.
+              if (isIdentName(name)) {
+                // A name that is nothing is a static error, and a name that is
+                // something is read like an identifier, MEM-2 included — the
+                // author's decision on GLB-018 A, as `check_interpolated_name`
+                // in the Rust analyser. It used to print `{name}` as text.
+                const info = this.lookup(name, expr.line);
+                if (!info) this.error('E_VAR_INTERP', `undefined variable '${name}' in string interpolation`, expr, { name }, Checker.HELP_UNDEFINED_INTERP);
+                else this.checkReachOutOfScope(name, expr.line);
+              }
+            }
+          }
+        }
+        return;
+      }
+
+      // `##Kind("message")`: the message is text — refused here when its type
+      // is known and is not a String, as the Rust analyser refuses it.
+      case 'ErrorConstruct': {
+        this.checkExpr(expr.value);
+        const t = this.inferType(expr.value);
+        if (t && t !== 'String') {
+          const kind = expr.kind.slice(2);
+          this.error('E_TYPE', `an error's message is a String, got ${t}`,
+            { line: expr.valueLine ?? expr.line, col: expr.valueCol ?? null }, { type: t, kind },
+            `build the text first: ##${kind}("…"), or ##${kind}("" x) to turn a value into it`);
+        }
+        return;
+      }
+
+      // Every argument of `<\ … \>` is an expression, so it is checked as one
+      case 'BashExec':
+        for (const a of expr.args) this.checkExpr(a);
+        return;
+
+      // Terminals — nothing to check
+      case 'BoolLiteral':
+      case 'IntLiteral':
+      case 'FloatLiteral':
+      case 'StringLiteral':
+      case 'CharLiteral':
+      case 'Numeral':
+      case 'CliArgs':
+      case 'TerminalSize':
+      case 'KeyInput':
+        return;
+
+      default:
+        if (expr.left)    this.checkExpr(expr.left);
+        if (expr.right)   this.checkExpr(expr.right);
+        if (expr.value)   this.checkExpr(expr.value);
+        if (expr.obj)     this.checkExpr(expr.obj);
+        if (expr.operand) this.checkExpr(expr.operand);
+    }
+  }
+}
+
+// ─── Value constructors ───────────────────────────────────────────────────────
+
+// ─── The integer range (mirrors zymbol-common/src/num.rs) ────────────────────
+//
+// A Zymbol integer is a *safe* integer: +-(2^53 - 1), the widest range all four
+// engines hold exactly. It is the range this engine could always represent and
+// the other three could not stay inside of -- `10 ^ 20` printed a correct-looking
+// 100000000000000000000 here (exact only because 10^20 = 2^20 * 5^20), wrapped
+// to two different values in the Rust and OCaml engines, and raised in a fourth.
+// Now every engine raises, and this one has to check what it used to assume:
+// past 2^53 a Number silently rounds, so `9007199254740993` printed ...992.
+const ZY_INT_MAX = 9007199254740991;
+const ZY_INT_MIN = -9007199254740991;
+// Spelled out rather than built from the two constants above, because that is
+// how `zymbol_common::num::ZY_INT_RANGE_HELP` spells it, and the diagnostic
+// inventory compares the engines' prose: `from § to §` and `from -9007…` are
+// two different messages however identically they print.
+const ZY_INT_RANGE_HELP = 'integers range from -9007199254740991 to 9007199254740991 (±2⁵³−1)';
+const inIntRange = v => Number.isSafeInteger(v);
+
+// An integer result, or the overflow every engine words identically.
+// Number arithmetic never wraps -- it rounds -- so a true result past 2^53 is
+// always a Number past 2^53, and this check cannot be fooled by a partial
+// product landing back in range the way a fixed-width accumulator can.
+const intResult = (v, a, op, b) => {
+  if (!inIntRange(v)) throw new ZyRuntimeError(`integer overflow: ${a} ${op} ${b}`, '##Range');
+  return mkInt(v);
+};
+
+const mkInt   = v => ({ type: 'int',   v: Math.trunc(v) });
+const mkFloat = v => ({ type: 'float', v });
+const mkBool  = v => ({ type: 'bool',  v: !!v });
+const mkStr   = v => ({ type: 'str',   v: String(v) });
+// The characters of a text value, split once and kept on the value: `s[i]`,
+// a slice and `s$#` used to spread `[...v]` on every call, so a loop over the
+// positions of a text was quadratic even in ASCII — 9.4 s for 32 000 (GLB-139,
+// corrected 2026-10-21). Safe because a text value is never changed in place:
+// every edit builds a new one with `mkStr`, which starts without `cps`.
+const strChars = s => s.cps ?? (s.cps = [...s.v]);
+const mkChar  = v => ({ type: 'char',  v: String(v) });
+// A navigation path yields ONE value, unless one of its steps is a range — then
+// it yields one per position walked, and an extraction takes them all. Whether a
+// path fans out is a property of the path, not of what it found: `m[1;2]` on an
+// array of rows is two rows. The extractions used to spread any array they were
+// handed, so that answered the four cells of both rows (ZYJS-058).
+function navPathFans(steps) {
+  return steps.some(s => s.kind === 'range');
+}
+
+// An operand that only reads — a literal, a name, arithmetic, one index, `$#`:
+// evaluating it runs none of the program's code, so it cannot write a variable.
+// An edit writes in place, and a read skips the copy, only beside operands like
+// these: left to right, the receiver is read BEFORE its operands, and one that
+// could write it has to find the value as it was (GLB-115). Anything not listed
+// is not "impure" — it simply takes the path that copies.
+function plainOperand(n) {
+  if (!n) return true;
+  switch (n.type) {
+    case 'Literal': case 'Ident': return true;
+    case 'UnaryOp': return plainOperand(n.operand ?? n.expr ?? n.arg);
+    case 'BinOp':   return plainOperand(n.left) && plainOperand(n.right);
+    case 'NavIndex':
+      return n.spec?.kind === 'simple' && plainOperand(n.obj) && plainOperand(n.spec.index);
+    case 'CollectionOp': return n.op === '$#' && plainOperand(n.obj);
+    // A collection literal runs no code of the program either, when what it
+    // holds does not: `m$+ [i, 0, 0]` copied `m` on every append (ZYJS-068).
+    case 'Array': case 'Tuple': return (n.items ?? []).every(plainOperand);
+    default: return false;
+  }
+}
+
+const mkArr   = v => ({ type: 'arr',   v });
+const mkTuple = v => ({ type: 'tuple', v, keys: null });
+const mkUnit  = () => ({ type: 'unit' });
+
+// ─── Typed input validation (mirrors execute_input in zymbol-interpreter/io.rs) ─
+
+// Human-readable description of what an input cast expects (re-prompt hints + EOF error).
+function describeInputCast(cast) {
+  switch (cast.kind) {
+    case 'numeric': case 'float': return 'a number';
+    case 'decimal': return `a number with up to ${cast.total} digits and ${cast.decimals} decimals`;
+    case 'int':     return cast.maxDigits != null ? `an integer of up to ${cast.maxDigits} digits` : 'an integer';
+    case 'text':    return cast.max != null ? `text of up to ${cast.max} characters` : 'text';
+    case 'char':    return 'a single character';
+    default:        return 'text';
+  }
+}
+
+// The ASCII form of a numeric string written in any of the 69 supported digit
+// scripts: "४२" → "42". Mirrors Rust `ascii_digits`. Every numeric cast goes
+// through this, so a number the program rendered under an active numeral mode
+// parses back exactly like its ASCII twin — an application that prints ४२ must
+// also accept ४२ back.
+function asciiDigits(s) {
+  return [...s].map(ch => {
+    const dv = digitValue(ch);
+    if (dv >= 0 && !(ch >= '0' && ch <= '9')) return String(dv);
+    // A script's own decimal separator reads as a decimal point, since that is
+    // what an active numeral mode writes: `٤٫٧٥` and `٤.٧٥` are one number.
+    // The callers still validate the whole shape with a regex, so `1٫2٫3` is
+    // rejected exactly as `1.2.3` is.
+    if (ch !== '.' && isDecimalSeparator(ch)) return '.';
+    return ch;
+  }).join('');
+}
+
+// Ordering comparison (`<`, `<=`, `>`, `>=`) — the single rule all three engines
+// share (mirrors Rust `cmp_order` / `compare_values`).
+//
+// Numeric when *both* sides are numbers, where a string counts as a number if
+// `#|…|` would convert it: digits from any of the 69 supported scripts, so
+// `"४२" > "९"` compares 42 against 9 exactly as `"42" > "9"` does. Two
+// The `@ <expr>` specifier is either a count (Int, handled by the caller) or a
+// condition (Bool). Anything else raises with the same message and the same
+// type names the Rust and OCaml engines use, so the form fails identically
+// everywhere instead of each engine inventing its own truthiness.
+const LOOP_TYPE_WORDS = {
+  int: 'integer', float: 'float', bool: 'bool', str: 'string', char: 'char',
+  arr: 'array', tuple: 'tuple', func: 'function', error: 'error', unit: 'unit',
+};
+function loopCond(val) {
+  if (val.type === 'bool') return val.v;
+  const got = LOOP_TYPE_WORDS[val.type] ?? val.type;
+  throw new ZyRuntimeError(`loop expects a count or a condition, got ${got}`, '##Type');
+}
+
+// non-numeric strings compare lexicographically. A number against non-numeric
+// text returns null and the caller raises.
+//
+// Equality (`==`) deliberately does not come through here: `"5" == 5` is false.
+// No ordering at all. Not a value whose sign the operators may read: an
+// ordering comparison against NaN must be false in all four directions, so the
+// callers test the code itself (see ordLt/ordLe/ordGt/ordGe).
+const INCOMPARABLE = 2;
+const ordLt = r => r === -1;
+const ordLe = r => r === -1 || r === 0;
+const ordGt = r => r === 1;
+const ordGe = r => r === 1 || r === 0;
+
+function orderValues(l, r) {
+  // `a < b ? -1 : a > b ? 1 : 0` answered 0 for NaN — both tests are false —
+  // so `nan <= 1.0` and `nan >= 1.0` were both true.
+  const cmp = (a, b) => {
+    if (typeof a === 'number' && Number.isNaN(a)) return INCOMPARABLE;
+    if (typeof b === 'number' && Number.isNaN(b)) return INCOMPARABLE;
+    return a < b ? -1 : a > b ? 1 : 0;
+  };
+  const strNum = v => {
+    if (v.type !== 'str') return null;
+    const a = asciiDigits(v.v.trim());
+    if (!/^[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)([eE][+-]?[0-9]+)?$/.test(a)) return null;
+    return Number(a);
+  };
+  const isNumV = v => v.type === 'int' || v.type === 'float';
+
+  if (isNumV(l) && isNumV(r)) return cmp(l.v, r.v);
+  if (l.type === 'str' && r.type === 'str') {
+    const a = strNum(l), b = strNum(r);
+    if (a !== null && b !== null) return cmp(a, b);
+    return cmp(l.v, r.v);
+  }
+  if (l.type === 'str' && isNumV(r)) { const a = strNum(l); return a === null ? null : cmp(a, r.v); }
+  if (isNumV(l) && r.type === 'str') { const b = strNum(r); return b === null ? null : cmp(l.v, b); }
+  if (l.type === r.type && (l.type === 'char' || l.type === 'bool')) return cmp(l.v, r.v);
+  return null;
+}
+
+// Legacy `#|v|` cast: best-effort numeric parse, falls back to String (never re-prompts).
+// Mirrors parse_numeric_string: int first, then float, with Unicode-digit normalization.
+function parseNumericInput(s) {
+  const ascii = asciiDigits(s);
+  // Text that spells an integer is judged by the integer rules alone: out of
+  // range it stays a String and is *not* retried as a float, which would answer
+  // 9007199254740992 for "9007199254740993".
+  if (/^[+-]?[0-9]+$/.test(ascii)) {
+    const n = Number(ascii);
+    return inIntRange(n) ? mkInt(n) : mkStr(s);
+  }
+  if (/^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/.test(ascii)) return mkFloat(Number(ascii));
+  return mkStr(s);
+}
+
+// Validate a trimmed input line against a cast; returns the typed value or null
+// (the caller re-prompts on null).
+function validateInput(s, cast) {
+  // The numeric casts accept digits from any script (see asciiDigits); the text
+  // casts keep the line exactly as typed.
+  const num = asciiDigits(s);
+  switch (cast.kind) {
+    case 'string':  return mkStr(s);
+    case 'numeric': return parseNumericInput(s);
+    case 'float':
+      return /^[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)([eE][+-]?[0-9]+)?$/.test(num) ? mkFloat(Number(num)) : null;
+    case 'decimal': {
+      const body = /^[+-]/.test(num) ? num.slice(1) : num;
+      if (!/^[0-9.]+$/.test(body) || (body.match(/\./g) ?? []).length > 1 || body === '.') return null;
+      const [intPart, fracPart = ''] = body.split('.');
+      if (fracPart.length > cast.decimals || intPart.length + fracPart.length > cast.total) return null;
+      return mkFloat(Number(num));
+    }
+    case 'int': {
+      if (!/^[+-]?[0-9]+$/.test(num)) return null;
+      const digits = (num.match(/[0-9]/g) ?? []).length;
+      if (cast.maxDigits != null && digits > cast.maxDigits) return null;
+      const n = Number(num);
+      if (!inIntRange(n)) return null;   // re-prompt: not an integer this language holds
+      return mkInt(n);
+    }
+    case 'text': {
+      if (cast.max != null && [...s].length > cast.max) return null;
+      return mkStr(s);
+    }
+    case 'char': {
+      const chars = [...s];
+      return chars.length === 1 ? mkChar(chars[0]) : null;
+    }
+    default: return mkStr(s);
+  }
+}
+
+// ─── Deep update helper (G1) ──────────────────────────────────────────────────
+
+// `inPlace`: this edit owns `col` (ZYJS-014), and the outermost level is
+// written where it is (GLB-140) — it was copied whole on every edit. The levels
+// below are copied as before: nothing marks them, and a row another name has
+// read out of `col` must not see the write.
+function deepUpdateValue(col, indices, newVal, inPlace = false) {
+  if (indices.length === 0) return newVal;
+  const i   = indices[0];
+  // A dictionary step addresses a KEY. Adds the key when it is not there, just
+  // as the single-level `d["k"]$~ v` does; refuses a position, because a
+  // positional write corrupts data rather than returning the wrong value.
+  if (isDict(col)) {
+    if (typeof i !== 'string')
+      throw new ZyRuntimeError(Interpreter.notPositionalMsg('d[n>…]$~ value', col.keys), '##Type');
+    const ki = keyIndex(col, i);
+    // Added only as the LAST step. A path that goes on past an absent key fails
+    // as reading it does (COLLECTIONS.md, "An absent key is `##Key`"); it walked
+    // on into a Unit and said "cannot index into Unit" (GLB-141).
+    if (ki < 0 && indices.length > 1)
+      throw new ZyRuntimeError(Interpreter.missingKeyMsg(i, col.keys), '##Key');
+    const sub = ki < 0 ? mkUnit() : col.v[ki];
+    const updatedSub = deepUpdateValue(sub, indices.slice(1), newVal);
+    if (inPlace) {
+      if (ki < 0) dictPut(col, i, updatedSub); else col.v[ki] = updatedSub;
+      return col;
+    }
+    if (ki < 0) return { type:'tuple', v:[...col.v, updatedSub], keys:[...col.keys, i] };
+    const r = [...col.v]; r[ki] = updatedSub;
+    return { type:'tuple', v:r, keys:col.keys };
+  }
+  // Checked BEFORE the length and the index are worked out: an Int here has no
+  // `.v`, so `len` fell to 0 and the reader was told `tuple index out of bounds:
+  // index 1 for tuple of length 0` — a tuple that is not there, a length that is
+  // not right and an index that exists. Writing through a step that lands on a
+  // non-collection fails for the same reason READING through it does, so it says
+  // what the read says (GLB-045, decided 2026-09-22).
+  if (col.type !== 'arr' && col.type !== 'tuple' && col.type !== 'str')
+    throw new ZyRuntimeError(
+      `cannot index into ${typeLabel(col)} — expected array, tuple, or string`, '##Type');
+  // A string is an array of characters here too: walked by position, written
+  // by position, and a LEAF — there is nothing inside a character to go into.
+  if (col.type === 'str') {
+    const cs = [...col.v];
+    const n  = i < 0 ? cs.length + i : i - 1;
+    if (n < 0 || n >= cs.length)
+      throw new ZyError(`string index out of bounds: index ${i} for string of length ${cs.length}`);
+    if (indices.length > 1)
+      throw new ZyRuntimeError(
+        `cannot index into Char — expected array, tuple, or string`, '##Type');
+    if (newVal?.type !== 'char' && newVal?.type !== 'str')
+      throw new ZyRuntimeError(
+        `$~ on string requires char or string value, got ${typeLabel(newVal)}`, '##Type');
+    cs[n] = newVal.v;
+    return mkStr(cs.join(''));
+  }
+  const len = col.v?.length ?? 0;
+  if (i === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
+  const idx = i < 0 ? len + i : i - 1;
+  // Name the container, as the read path does: one message that always said
+  // "collection" made the same overflow read differently depending on whether
+  // it was being read or written.
+  const container = col.type === 'arr' ? 'array' : col.type === 'str' ? 'string' : 'tuple';
+  if (idx < 0 || idx >= len)
+    throw new ZyError(`${container} index out of bounds: index ${i} for ${container} of length ${len}`);
+  const sub        = col.v[idx];
+  const updatedSub = deepUpdateValue(sub, indices.slice(1), newVal);
+  if (inPlace && col.type === 'arr') { col.v[idx] = updatedSub; return col; }
+  if (col.type === 'arr')   { const r = [...col.v]; r[idx] = updatedSub; return mkArr(r); }
+  if (col.type === 'tuple') { const r = [...col.v]; r[idx] = updatedSub; return { type:'tuple', v:r, keys:col.keys }; }
+  throw new ZyRuntimeError(`$~ writes into a collection, and this is ${typeLabel(col)}\nhelp: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
+}
+
+// ─── Terminal display width (mirrors unicode-width crate, backs std/term) ────
+// Width answers a screen question, not a content question: CJK ideographs,
+// kana, hangul and most emoji take two columns; combining marks and control
+// characters take zero. This is a practical subset of the East Asian Width /
+// zero-width tables, not the full Unicode database.
+const TERM_WIDE_RANGES = [
+  [0x1100,0x115F],[0x231A,0x231B],[0x2329,0x232A],[0x23E9,0x23EC],[0x23F0,0x23F0],
+  [0x23F3,0x23F3],[0x25FD,0x25FE],[0x2614,0x2615],[0x2648,0x2653],[0x267F,0x267F],
+  [0x2693,0x2693],[0x26A1,0x26A1],[0x26AA,0x26AB],[0x26BD,0x26BE],[0x26C4,0x26C5],
+  [0x26CE,0x26CE],[0x26D4,0x26D4],[0x26EA,0x26EA],[0x26F2,0x26F3],[0x26F5,0x26F5],
+  [0x26FA,0x26FA],[0x26FD,0x26FD],[0x2705,0x2705],[0x270A,0x270B],[0x2728,0x2728],
+  [0x274C,0x274C],[0x274E,0x274E],[0x2753,0x2755],[0x2757,0x2757],[0x2795,0x2797],
+  [0x27B0,0x27B0],[0x27BF,0x27BF],[0x2B1B,0x2B1C],[0x2B50,0x2B50],[0x2B55,0x2B55],
+  [0x2E80,0x303E],[0x3041,0x33FF],[0x3400,0x4DBF],[0x4E00,0x9FFF],
+  [0xA000,0xA4CF],[0xA960,0xA97F],[0xAC00,0xD7A3],[0xF900,0xFAFF],
+  [0xFE30,0xFE4F],[0xFF00,0xFF60],[0xFFE0,0xFFE6],
+  [0x16FE0,0x16FE4],[0x16FF0,0x16FF1],[0x17000,0x18D08],[0x1AFF0,0x1B16F],
+  [0x1B170,0x1B2FB],[0x1F004,0x1F004],[0x1F0CF,0x1F0CF],[0x1F18E,0x1F18E],
+  [0x1F191,0x1F19A],[0x1F200,0x1F320],[0x1F32D,0x1F335],[0x1F337,0x1F37C],
+  [0x1F37E,0x1F393],[0x1F3A0,0x1F3CA],[0x1F3CF,0x1F3D3],[0x1F3E0,0x1F3F0],
+  [0x1F3F4,0x1F3F4],[0x1F3F8,0x1F43E],[0x1F440,0x1F440],[0x1F442,0x1F4FC],
+  [0x1F4FF,0x1F53D],[0x1F54B,0x1F54E],[0x1F550,0x1F567],[0x1F57A,0x1F57A],
+  [0x1F595,0x1F596],[0x1F5A4,0x1F5A4],[0x1F5FB,0x1F64F],[0x1F680,0x1F6C5],
+  [0x1F6CC,0x1F6CC],[0x1F6D0,0x1F6D2],[0x1F6D5,0x1F6D7],[0x1F6DD,0x1F6DF],
+  [0x1F6EB,0x1F6EC],[0x1F6F4,0x1F6FC],[0x1F7E0,0x1F7EB],[0x1F7F0,0x1F7F0],
+  [0x1F90C,0x1F93A],[0x1F93C,0x1F945],[0x1F947,0x1F9FF],[0x1FA70,0x1FAFF],
+  [0x20000,0x2FFFD],[0x30000,0x3FFFD],
+];
+const TERM_ZERO_WIDTH_RANGES = [
+  [0x0300,0x036F],[0x0483,0x0489],[0x0591,0x05BD],[0x05BF,0x05BF],[0x05C1,0x05C2],
+  [0x05C4,0x05C5],[0x05C7,0x05C7],[0x0610,0x061A],[0x064B,0x065F],[0x0670,0x0670],
+  [0x06D6,0x06DC],[0x06DF,0x06E4],[0x06E7,0x06E8],[0x06EA,0x06ED],[0x0711,0x0711],
+  [0x0730,0x074A],[0x07A6,0x07B0],[0x07EB,0x07F3],[0x0816,0x0819],[0x081B,0x0823],
+  [0x0825,0x0827],[0x0829,0x082D],[0x0859,0x085B],[0x08E3,0x0902],[0x093A,0x093A],
+  [0x093C,0x093C],[0x0941,0x0948],[0x094D,0x094D],[0x0951,0x0957],[0x0962,0x0963],
+  [0x0981,0x0981],[0x09BC,0x09BC],[0x09C1,0x09C4],[0x09CD,0x09CD],[0x09E2,0x09E3],
+  [0x200B,0x200F],[0x202A,0x202E],[0x2060,0x2064],[0x2066,0x206F],
+  [0xFE00,0xFE0F],[0xFE20,0xFE2F],[0x1AB0,0x1AFF],[0x1DC0,0x1DFF],[0x20D0,0x20FF],
+  [0xE0100,0xE01EF],
+];
+
+function _inTermRanges(cp, ranges) {
+  for (const [lo, hi] of ranges) if (cp >= lo && cp <= hi) return true;
+  return false;
+}
+
+// Exported so the playground's canvas renderer measures characters with exactly the table
+// the layout engine (std/term, and therefore every program's own column arithmetic) uses.
+// BrowserTUI used to carry its own one-line approximation — `cp >= 0x1F000 || FF01..FFE6` —
+// which called ⚫/⚪ (U+26AA/U+26AB) narrow while this table correctly calls them wide. The
+// font then drew each stone two cells wide and the renderer clipped it to one, so every
+// stone on a GO board came out sliced in half. One rule, one place.
+export function codePointDisplayWidth(cp) {
+  if (cp === 0) return 0;
+  if (cp < 0x20 || (cp >= 0x7F && cp < 0xA0)) return 0; // control characters
+  if (_inTermRanges(cp, TERM_ZERO_WIDTH_RANGES)) return 0;
+  if (_inTermRanges(cp, TERM_WIDE_RANGES)) return 2;
+  return 1;
+}
+
+// Grapheme clusters, used only where a cut must not split one (truncate).
+// Width itself sums per-code-point, mirroring UnicodeWidthStr::width(&str).
+function graphemeClusters(s) {
+  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+    try {
+      return [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(s)].map(x => x.segment);
+    } catch (_) { /* fall through to code-point split */ }
+  }
+  return [...s];
+}
+
+function displayWidth(s) {
+  let w = 0;
+  for (const ch of s) w += codePointDisplayWidth(ch.codePointAt(0));
+  return w;
+}
+
+function clusterDisplayWidth(g) {
+  let w = 0;
+  for (const ch of g) w += codePointDisplayWidth(ch.codePointAt(0));
+  return w;
+}
+
+function termPad(s, cols, onLeft) {
+  const deficit = cols - displayWidth(s);
+  if (deficit <= 0) return s;
+  const spaces = ' '.repeat(deficit);
+  return onLeft ? spaces + s : s + spaces;
+}
+
+function termCenter(s, cols) {
+  const deficit = cols - displayWidth(s);
+  if (deficit <= 0) return s;
+  const left = Math.floor(deficit / 2);
+  return ' '.repeat(left) + s + ' '.repeat(deficit - left);
+}
+
+function termTruncate(s, cols) {
+  if (displayWidth(s) <= cols) return s;
+  let used = 0, out = '';
+  for (const g of graphemeClusters(s)) {
+    const w = clusterDisplayWidth(g);
+    if (used + w > cols) break;
+    out += g;
+    used += w;
+  }
+  return out;
+}
+
+// ─── std/time: the civil calendar ────────────────────────────────────────────
+//
+// A port of `crates/zymbol-intrinsics/src/time.rs`, function for function. The
+// browser has `Date`, which could answer most of this on its own — and would
+// answer it *differently* at the edges: `Date` rolls 2026-13-01 over into
+// January 2027 instead of refusing it, and its month is zero-based. An engine
+// that agrees with the other two only in the middle of the range is an engine
+// that diverges, so the calendar is computed here too. `Date` is used for one
+// thing the browser alone knows: the machine's own zone offset at an instant.
+//
+// Howard Hinnant's era algorithms (public domain), the same ones behind C++20's
+// <chrono>: exact over the proleptic Gregorian calendar with no tables.
+
+const MS_PER_SECOND = 1000;
+const MS_PER_MINUTE = 60 * MS_PER_SECOND;
+const MS_PER_HOUR   = 60 * MS_PER_MINUTE;
+const MS_PER_DAY    = 24 * MS_PER_HOUR;
+const MAX_SAFE_MS   = 9007199254740991;
+
+const floorDiv = (a, b) => Math.floor(a / b);
+const floorMod = (a, b) => a - floorDiv(a, b) * b;
+const truncDiv = (a, b) => Math.trunc(a / b);
+
+function daysFromCivil(year, month, day) {
+  const y = month <= 2 ? year - 1 : year;
+  const era = truncDiv(y >= 0 ? y : y - 399, 400);
+  const yoe = y - era * 400;
+  const mp = (month + 9) % 12;
+  const doy = truncDiv(153 * mp + 2, 5) + day - 1;
+  const doe = yoe * 365 + truncDiv(yoe, 4) - truncDiv(yoe, 100) + doy;
+  return era * 146097 + doe - 719468;
+}
+
+function civilFromDays(days) {
+  const z = days + 719468;
+  const era = truncDiv(z >= 0 ? z : z - 146096, 146097);
+  const doe = z - era * 146097;
+  const yoe = truncDiv(doe - truncDiv(doe, 1460) + truncDiv(doe, 36524) - truncDiv(doe, 146096), 365);
+  const y = yoe + era * 400;
+  const doy = doe - (365 * yoe + truncDiv(yoe, 4) - truncDiv(yoe, 100));
+  const mp = truncDiv(5 * doy + 2, 153);
+  const d = doy - truncDiv(153 * mp + 2, 5) + 1;
+  const m = mp < 10 ? mp + 3 : mp - 9;
+  return [m <= 2 ? y + 1 : y, m, d];
+}
+
+const isLeap = y => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+
+function daysInMonth(year, month) {
+  switch (month) {
+    case 1: case 3: case 5: case 7: case 8: case 10: case 12: return 31;
+    case 4: case 6: case 9: case 11: return 30;
+    case 2: return isLeap(year) ? 29 : 28;
+    default: return 0;
+  }
+}
+
+// A thrown ZyTimeError becomes a soft `##Time`; it never escapes the module.
+class ZyTimeError extends Error {}
+const timeFail = msg => { throw new ZyTimeError(msg); };
+
+// Units: one spelling each, in full. Duration below a day, calendar from a day up.
+const TIME_UNITS = new Map([
+  ['millisecond', ['duration', 1]],
+  ['second',      ['duration', MS_PER_SECOND]],
+  ['minute',      ['duration', MS_PER_MINUTE]],
+  ['hour',        ['duration', MS_PER_HOUR]],
+  ['day',         ['days', 1]],
+  ['week',        ['days', 7]],
+  ['month',       ['months', 1]],
+  ['year',        ['months', 12]],
+]);
+
+function parseUnit(name) {
+  const u = TIME_UNITS.get(name);
+  if (!u) timeFail(`unknown unit '${name}': one of millisecond, second, minute, hour, day, week, month, year`);
+  return u;
+}
+
+// A zone is 'UTC', 'local', or ±HHMM. `±HH:MM` is deliberately not a second
+// spelling — ±HHMM is what `%z` writes and what `date +%z` prints.
+function parseZone(spec) {
+  if (spec === 'UTC') return { kind: 'utc' };
+  if (spec === 'local') return { kind: 'local' };
+  const m = /^([+-])(\d{2})(\d{2})$/.exec(spec ?? '');
+  const bad = () => timeFail(`unknown zone '${spec}': use "UTC", "local", or an offset like "+1000" or "-0400"`);
+  if (!m) bad();
+  const hours = Number(m[2]), minutes = Number(m[3]);
+  if (hours > 23 || minutes > 59) bad();
+  return { kind: 'fixed', minutes: (m[1] === '-' ? -1 : 1) * (hours * 60 + minutes) };
+}
+
+const zoneOrUtc = spec => spec == null ? { kind: 'utc' } : parseZone(spec);
+
+/// The offset a zone means AT AN INSTANT: a zone with daylight saving is two
+/// different offsets in the same year.
+function offsetOf(zone, epochMs) {
+  if (zone.kind === 'utc') return 0;
+  if (zone.kind === 'fixed') return zone.minutes;
+  const d = new Date(epochMs);
+  if (Number.isNaN(d.getTime()))
+    timeFail(`instant ${epochMs} is outside the range a zone can be read at`);
+  return -d.getTimezoneOffset();   // getTimezoneOffset counts minutes WEST
+}
+
+function partsAt(epochMs, offsetMin) {
+  const shifted = epochMs + offsetMin * MS_PER_MINUTE;
+  const days = floorDiv(shifted, MS_PER_DAY);
+  const inDay = floorMod(shifted, MS_PER_DAY);
+  const [year, month, day] = civilFromDays(days);
+  return {
+    year, month, day,
+    hour:        truncDiv(inDay, MS_PER_HOUR),
+    minute:      truncDiv(inDay, MS_PER_MINUTE) % 60,
+    second:      truncDiv(inDay, MS_PER_SECOND) % 60,
+    millisecond: inDay % MS_PER_SECOND,
+    weekday:     floorMod(days + 3, 7) + 1,   // 1970-01-01 was a Thursday
+    offset:      offsetMin,
+  };
+}
+
+function guardMs(ms) {
+  if (Math.abs(ms) > MAX_SAFE_MS) timeFail('the result leaves the integer range, ±(2^53 − 1)');
+  return ms;
+}
+
+function epochFromCivil(year, month, day, hour, minute, second, millisecond, offsetMin) {
+  if (year < -9999 || year > 9999) timeFail(`year ${year} is outside -9999..9999`);
+  if (month < 1 || month > 12) timeFail(`month ${month} is outside 1..12`);
+  const last = daysInMonth(year, month);
+  if (day < 1 || day > last)
+    timeFail(`day ${day} is outside 1..${last} for ${year}-${String(month).padStart(2, '0')}`);
+  if (hour < 0 || hour > 23) timeFail(`hour ${hour} is outside 0..23`);
+  if (minute < 0 || minute > 59) timeFail(`minute ${minute} is outside 0..59`);
+  if (second < 0 || second > 59) timeFail(`second ${second} is outside 0..59`);
+  if (millisecond < 0 || millisecond > 999) timeFail(`millisecond ${millisecond} is outside 0..999`);
+  return guardMs(daysFromCivil(year, month, day) * MS_PER_DAY
+    + hour * MS_PER_HOUR + minute * MS_PER_MINUTE + second * MS_PER_SECOND + millisecond
+    - offsetMin * MS_PER_MINUTE);
+}
+
+// A local reading is circular — the offset depends on the instant and the
+// instant on the offset — so it is resolved twice. Around a daylight-saving
+// change the second pass is what moves the answer onto the right side.
+function epochFromCivilIn(year, month, day, hour, minute, second, millisecond, zone) {
+  let offset;
+  if (zone.kind === 'utc') offset = 0;
+  else if (zone.kind === 'fixed') offset = zone.minutes;
+  else offset = offsetOf(zone, epochFromCivil(year, month, day, hour, minute, second, millisecond, 0));
+  let ms = epochFromCivil(year, month, day, hour, minute, second, millisecond, offset);
+  if (zone.kind === 'local') {
+    const corrected = offsetOf(zone, ms);
+    if (corrected !== offset)
+      ms = epochFromCivil(year, month, day, hour, minute, second, millisecond, corrected);
+  }
+  return ms;
+}
+
+function timeAdd(epochMs, count, unit, zone) {
+  const [kind, per] = unit;
+  if (kind === 'duration') return guardMs(epochMs + count * per);
+  const p = partsAt(epochMs, offsetOf(zone, epochMs));
+  if (kind === 'days') {
+    const [year, month, day] = civilFromDays(daysFromCivil(p.year, p.month, p.day) + count * per);
+    return epochFromCivilIn(year, month, day, p.hour, p.minute, p.second, p.millisecond, zone);
+  }
+  const total = p.year * 12 + (p.month - 1) + count * per;
+  const year = floorDiv(total, 12);
+  const month = floorMod(total, 12) + 1;
+  // Clamping is what every calendar does: one month after the 31st of January
+  // is the 28th of February, because there is no 31st.
+  const day = Math.min(p.day, daysInMonth(year, month));
+  return epochFromCivilIn(year, month, day, p.hour, p.minute, p.second, p.millisecond, zone);
+}
+
+function timeDiff(a, b, unit, zone) {
+  const [kind, per] = unit;
+  if (kind === 'duration') return truncDiv(a - b, per);
+  const pa = partsAt(a, offsetOf(zone, a));
+  const pb = partsAt(b, offsetOf(zone, b));
+  if (kind === 'days')
+    return truncDiv(daysFromCivil(pa.year, pa.month, pa.day) - daysFromCivil(pb.year, pb.month, pb.day), per);
+  let months = (pa.year - pb.year) * 12 + (pa.month - pb.month);
+  const within = p => [p.day, p.hour, p.minute, p.second, p.millisecond];
+  const cmp = (x, y) => { for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i] < y[i] ? -1 : 1; return 0; };
+  const c = cmp(within(pa), within(pb));
+  // A whole month has not passed until the day-of-month is reached.
+  if (months > 0 && c < 0) months -= 1;
+  else if (months < 0 && c > 0) months += 1;
+  return truncDiv(months, per);
+}
+
+const pad2 = n => (n < 10 ? '0' : '') + n;
+const yearText = y => y < 0 ? '-' + String(-y).padStart(4, '0') : String(y).padStart(4, '0');
+const offsetText = m =>
+  (m < 0 ? '-' : '+') + pad2(truncDiv(Math.abs(m), 60)) + pad2(Math.abs(m) % 60);
+const dayOfYear = p => daysFromCivil(p.year, p.month, p.day) - daysFromCivil(p.year, 1, 1) + 1;
+
+// The digits are ALWAYS ASCII, whatever numeral mode the program is in. A date
+// is the one piece of text a program writes for a machine to read back, and
+// `२०२६-०८-२३` is not ISO 8601. Text for a person is built from `parts`, whose
+// numbers print in whatever script the mode selects.
+function timeFormat(epochMs, pattern, offsetMin) {
+  const p = partsAt(epochMs, offsetMin);
+  let out = '';
+  for (let i = 0; i < pattern.length; i++) {
+    const c = pattern[i];
+    if (c !== '%') { out += c; continue; }
+    if (i + 1 >= pattern.length) timeFail("pattern ends in a lone '%'");
+    switch (pattern[++i]) {
+      case 'Y': out += yearText(p.year); break;
+      case 'm': out += pad2(p.month); break;
+      case 'd': out += pad2(p.day); break;
+      case 'H': out += pad2(p.hour); break;
+      case 'M': out += pad2(p.minute); break;
+      case 'S': out += pad2(p.second); break;
+      case 'L': out += String(p.millisecond).padStart(3, '0'); break;
+      case 'j': out += String(dayOfYear(p)).padStart(3, '0'); break;
+      case 'u': out += String(p.weekday); break;
+      case 'z': out += offsetText(p.offset); break;
+      case 'F': out += `${yearText(p.year)}-${pad2(p.month)}-${pad2(p.day)}`; break;
+      case 'T': out += `${pad2(p.hour)}:${pad2(p.minute)}:${pad2(p.second)}`; break;
+      case '%': out += '%'; break;
+      default:
+        timeFail(`unknown pattern '%${pattern[i]}': one of %Y %m %d %H %M %S %L %j %u %z %F %T %%`);
+    }
+  }
+  return out;
+}
+
+const isoDate = (epochMs, offsetMin) => {
+  const p = partsAt(epochMs, offsetMin);
+  return `${yearText(p.year)}-${pad2(p.month)}-${pad2(p.day)}`;
+};
+
+// The order `parts` builds its dictionary in, which is the order it iterates in.
+const TIME_PART_NAMES = ['year', 'month', 'day', 'hour', 'minute', 'second', 'millisecond', 'weekday', 'offset'];
+
+// ─── What std/ exports, and with how many arguments ──────────────────────────
+//
+// Mirrors `crates/zymbol-common/src/stdlib.rs`, which is the canonical list —
+// the Rust engines, `zymbol check` and the LSP all read it, and it is what makes
+// `math::sqrt(4.0, 9.0)` a semantic error since v0.0.9. Without a copy here the
+// browser engine ran that call and printed `2`, so the playground disagreed with
+// the CLI on a program the CLI refuses outright.
+//
+// `-1` is variadic: `math::log(8.0)` and `math::log(8.0, 2.0)` are both correct.
+//
+// The functions themselves are built below by `buildStdlibModule`; this table is
+// only about how many arguments each takes, so adding a function means touching
+// both. `web/tests/test_check.mjs` compares this table against the Rust one.
+// The constants `std/` exports, read with `.` — `constants` in
+// crates/zymbol-common/src/stdlib.rs. Only `std/math` has any.
+export const STDLIB_CONSTANTS = new Map([
+  ['std/math', ['PI', 'E']],
+]);
+
+export const STDLIB_ARITIES = new Map([
+  ['std/math', new Map([
+    ['sqrt',1],['exp',1],['ln',1],['log',-1],['pow',2],['sin',1],['cos',1],['tan',1],
+    ['asin',1],['acos',1],['atan',1],['atan2',2],['tanh',1],['sinh',1],['cosh',1],
+    ['sigmoid',1],['abs',1],['max',2],['min',2],['floor',1],['ceil',1],['round',1],
+  ])],
+  ['std/random', new Map([['entero',2],['rango',1],['peso_f64',0],['semilla',1]])],
+  ['std/json',   new Map([['decode',1],['decode_map',2],['encode',1]])],
+  ['std/io',     new Map([['read',1],['write',2],['append',2],['exists',1],['delete',1],['list',1],['mkdir',1]])],
+  ['std/net',    new Map([['get',-1],['post',-1],['post_json',-1],['head',-1],['timeout',1]])],
+  ['std/term',   new Map([['width',1],['pad_left',2],['pad_right',2],['center',2],['truncate',2]])],
+  // Everything but `now` takes an optional trailing zone, so everything but
+  // `now` is variadic.
+  ['std/time',   new Map([['now',0],['today',-1],['parts',-1],['of',-1],['format',-1],['add',-1],['diff',-1]])],
+  ['std/db',     new Map([
+    ['connect',2],['disconnect',1],['exec',-1],['query',-1],['query_one',-1],['query_value',-1],
+    ['tx',2],['begin',1],['commit',1],['rollback',1],['savepoint',2],['release',2],
+    ['rollback_to',2],['exec_script',2],['table_exists',2],
+  ])],
+]);
+
+// ─── The type symbols ────────────────────────────────────────────────────────
+//
+// Mirrors `crates/zymbol-common/src/typesym.rs`, which is the canonical table —
+// ten spellings, each `##` plus one character. For the collections the rule is
+// that the unmarked one takes the CLOSING delimiter and the marked one the
+// OPENING one: `[…]` is `##]` and `#[…]` is `##[`, `(…)` is `##)` and `#(…)` is
+// `##(`.
+//
+// Two kinds of answer, and the difference matters:
+//
+//   typeSymbolBase   what a value IS. A dictionary is `##(` everywhere a type is
+//                    named, error messages included, because it really is a
+//                    different type from a tuple — it carries keys, it is
+//                    mutable, and `zyq consensus` compares those messages across
+//                    engines to the character.
+//   typeSymbol       what `#?` answers: the same, except an array whose elements
+//                    are not all one type is a list, `##[`. That is NOT a type —
+//                    `[…]` and `#[…]` are one type by decision 15 — it is read
+//                    from what the value holds when asked. So a heterogeneous
+//                    array out of `json::decode` answers `##[` with no mark
+//                    anywhere, and `#[1, "dos"]$-[2]` answers `##]`, because a
+//                    single Int is not a mix.
+const TYPESYM = {
+  INT: '###', FLOAT: '##.', STRING: '##"', CHAR: "##'", BOOL: '##?',
+  ARRAY: '##]', LIST: '##[', TUPLE: '##)', DICT: '##(', UNIT: '##_',
+  FUNCTION: '##()', LAMBDA: '##->',
+};
+
+const TYPESYM_BY_TAG = {
+  int: TYPESYM.INT, float: TYPESYM.FLOAT, str: TYPESYM.STRING,
+  char: TYPESYM.CHAR, bool: TYPESYM.BOOL, arr: TYPESYM.ARRAY,
+  unit: TYPESYM.UNIT,
+};
+
+function typeSymbolBase(v) {
+  if (v?.type === 'func') return v.name === '<lambda>' ? TYPESYM.LAMBDA : TYPESYM.FUNCTION;
+  if (v?.type === 'tuple') return isDict(v) ? TYPESYM.DICT : TYPESYM.TUPLE;
+  // An error names its OWN kind — `##Index`, `##IO` — not the generic `##_`.
+  // `typeMetadata` already knew that and this did not, so `#?` answered
+  // `##Index` while a diagnostic naming the same value answered `##_`.
+  if (v?.type === 'error') return v.errType ?? TYPESYM.UNIT;
+  return TYPESYM_BY_TAG[v?.type] ?? TYPESYM.UNIT;
+}
+
+// The type as a DIAGNOSTIC spells it — `Int`, `String`, `Dict` — as opposed to
+// `typeSymbolBase`, which gives the language's `##` symbol. It is the Rust
+// engines' `type_ident`/`type_name`, and it exists so that a message naming a
+// type is one text across the three engines (GLOBAL-001).
+//
+// A dictionary is `Dict`, never `Tuple`: the two are different types here, and
+// a diagnostic that calls `#(x: 1)` a tuple sends the reader to the wrong page
+// of the guide (ZYJS-006).
+const TYPEIDENT_BY_TAG = {
+  int: 'Int', float: 'Float', str: 'String', char: 'Char', bool: 'Bool',
+  arr: 'Array', unit: 'Unit', error: 'Error', func: 'Function',
+};
+
+// The tree-walker's `Value::type_name`, which some of its messages print. It is
+// an older spelling than `#?`'s (`##[]` where `#?` says `##]`); kept for those
+// messages so the texts match, until step 3.5 settles one spelling.
+function twTypeName(v) {
+  if (v?.type === 'tuple') return isDict(v) ? '##(name:)' : '##()';
+  return ({ int: '###', float: '##.', str: '##"', char: "##'", bool: '##?', arr: '##[]',
+            func: '##fn', lambda: '##fn', error: '##!', unit: '##_' })[v?.type] ?? '##_';
+}
+
+// The type as a diagnostic names it, the way the analyzer does: `Int`, `[Int]`,
+// `(Int, String)`, `#(k: Int)`, `Function` — `zymbol_common::typeword` in Rust,
+// and `Value::type_label` in both engines (decided 2026-09-16, GLB-033). A
+// message says what KIND of value arrived, never the value itself.
+function typeLabel(v) {
+  switch (v?.type) {
+    case 'int':    return 'Int';
+    case 'float':  return 'Float';
+    case 'str':    return 'String';
+    case 'char':   return 'Char';
+    case 'bool':   return 'Bool';
+    case 'error':  return 'Error';
+    case 'func':
+    case 'lambda': return 'Function';
+    case 'arr': {
+      const items = v.v ?? [];
+      if (items.length === 0) return '[?]';
+      const first = typeLabel(items[0]);
+      return items.every(x => typeLabel(x) === first) ? `[${first}]` : '[Any]';
+    }
+    case 'tuple':
+      return isDict(v)
+        ? `#(${(v.keys ?? []).map((k, i) => `${k}: ${typeLabel(v.v[i])}`).join(', ')})`
+        : `(${(v.v ?? []).map(typeLabel).join(', ')})`;
+    default:       return 'Unit';
+  }
+}
+
+function typeIdent(v) {
+  if (v?.type === 'tuple') return isDict(v) ? 'Dict' : 'Tuple';
+  return TYPEIDENT_BY_TAG[v?.type] ?? 'Unit';
+}
+
+// `##]` when the elements are all one type, `##[` when they are not. The
+// elements' BASE symbols are compared, so an array of arrays is uniform whatever
+// those inner arrays hold: this describes one level, and two arrays are the same
+// type as each other. An empty array is uniform — nothing in it can disagree.
+function typeSymbol(v) {
+  if (v?.type !== 'arr') return typeSymbolBase(v);
+  const items = v.v ?? [];
+  if (items.length === 0) return TYPESYM.ARRAY;
+  const first = typeSymbolBase(items[0]);
+  return items.every(x => typeSymbolBase(x) === first) ? TYPESYM.ARRAY : TYPESYM.LIST;
+}
+
+// ─── Standard library modules (std/math, std/random, std/json, std/net, std/io, std/term) ─
+
+function buildStdlibModule(name, vfs = null) {
+  const asF64 = v => v?.type === 'float' ? v.v : v?.type === 'int' ? v.v : null;
+  const typeErr = (fn, ...badArgs) => {
+    // The types in words, joined — as the Rust engines say them since GLB-033.
+    const names = (badArgs.length > 0 ? badArgs : [null]).map(typeLabel).join(', ');
+    throw new ZyError(`mat::${fn}: incompatible argument type(s) ${names}`);
+  };
+
+  if (name === 'std/math') {
+    const exports = new Map();
+    const unary = (fn, f) => ({ type: 'func', name: fn, native: true, call: args => {
+      const x = asF64(args[0]); if (x === null) typeErr(fn, args[0]); return mkFloat(f(x));
+    }});
+
+    exports.set('sqrt',    unary('sqrt',    x => Math.sqrt(x)));
+    exports.set('exp',     unary('exp',     x => Math.exp(x)));
+    exports.set('ln',      { type: 'func', name: 'ln', native: true, call: args => {
+      const x = asF64(args[0]); if (x === null) typeErr('ln', args[0]);
+      if (x <= 0) throw new ZyError('mat::ln: argument must be positive');
+      return mkFloat(Math.log(x));
+    }});
+    exports.set('sin',     unary('sin',     x => Math.sin(x)));
+    exports.set('cos',     unary('cos',     x => Math.cos(x)));
+    exports.set('tan',     unary('tan',     x => Math.tan(x)));
+    exports.set('asin',    { type: 'func', name: 'asin', native: true, call: args => {
+      const x = asF64(args[0]); if (x === null) typeErr('asin', args[0]);
+      if (x < -1 || x > 1) throw new ZyError('mat::asin: argument must be in [-1, 1]');
+      return mkFloat(Math.asin(x));
+    }});
+    exports.set('acos',    { type: 'func', name: 'acos', native: true, call: args => {
+      const x = asF64(args[0]); if (x === null) typeErr('acos', args[0]);
+      if (x < -1 || x > 1) throw new ZyError('mat::acos: argument must be in [-1, 1]');
+      return mkFloat(Math.acos(x));
+    }});
+    exports.set('atan',    unary('atan',    x => Math.atan(x)));
+    exports.set('tanh',    unary('tanh',    x => Math.tanh(x)));
+    exports.set('sinh',    unary('sinh',    x => Math.sinh(x)));
+    exports.set('cosh',    unary('cosh',    x => Math.cosh(x)));
+    exports.set('sigmoid', unary('sigmoid', x => 1 / (1 + Math.exp(-x))));
+    exports.set('floor',   unary('floor',   x => Math.floor(x)));
+    exports.set('ceil',    unary('ceil',    x => Math.ceil(x)));
+    // Half away from zero, which is the rule the `###` cast in this same engine
+    // already followed and the other three engines follow here. `Math.round`
+    // breaks ties toward +∞ instead: it answers -2 for -2.5 where Zymbol says
+    // -3, and -0 for -0.5 where Zymbol says -1.
+    exports.set('round',   unary('round',   x => (x >= 0 ? Math.floor(x + 0.5) : Math.ceil(x - 0.5))));
+    exports.set('abs',     { type: 'func', name: 'abs', native: true, call: args => {
+      if (args[0]?.type === 'int')   return mkInt(Math.abs(args[0].v));
+      const x = asF64(args[0]); if (x === null) typeErr('abs', args[0]);
+      return mkFloat(Math.abs(x));
+    }});
+    exports.set('atan2',   { type: 'func', name: 'atan2', native: true, call: args => {
+      const y = asF64(args[0]), x = asF64(args[1]);
+      if (y === null || x === null) typeErr('atan2', args[0], args[1]);
+      return mkFloat(Math.atan2(y, x));
+    }});
+    exports.set('log',     { type: 'func', name: 'log', native: true, call: args => {
+      const x = asF64(args[0]); if (x === null || x <= 0) throw new ZyError('mat::log: x and base must be positive; base ≠ 1');
+      if (args.length === 1) return mkFloat(Math.log(x));
+      const base = asF64(args[1]);
+      if (base === null || base <= 0 || base === 1) throw new ZyError('mat::log: x and base must be positive; base ≠ 1');
+      return mkFloat(Math.log(x) / Math.log(base));
+    }});
+    exports.set('pow',     { type: 'func', name: 'pow', native: true, call: args => {
+      const b = asF64(args[0]), e = asF64(args[1]);
+      if (b === null || e === null) typeErr('pow', args[0], args[1]);
+      return mkFloat(Math.pow(b, e));
+    }});
+    exports.set('max',     { type: 'func', name: 'max', native: true, call: args => {
+      if (args[0]?.type === 'int' && args[1]?.type === 'int') return mkInt(Math.max(args[0].v, args[1].v));
+      const a = asF64(args[0]), b = asF64(args[1]); if (a === null || b === null) typeErr('max', args[0], args[1]);
+      return mkFloat(Math.max(a, b));
+    }});
+    exports.set('min',     { type: 'func', name: 'min', native: true, call: args => {
+      if (args[0]?.type === 'int' && args[1]?.type === 'int') return mkInt(Math.min(args[0].v, args[1].v));
+      const a = asF64(args[0]), b = asF64(args[1]); if (a === null || b === null) typeErr('min', args[0], args[1]);
+      return mkFloat(Math.min(a, b));
+    }});
+    exports.set('PI', mkFloat(Math.PI));
+    exports.set('E',  mkFloat(Math.E));
+    return { type: 'module', exports };
+  }
+
+  if (name === 'std/random') {
+    // `ZyRandom`, the generator of both Rust engines step for step: a seed gives
+    // one sequence in the three (G8). `Math.random()` was used here, and no
+    // seed could reach it.
+    const exports = new Map();
+    exports.set('entero', { type: 'func', name: 'entero', native: true, call: args => {
+      if (args[0]?.type !== 'int' || args[1]?.type !== 'int' || args[1].v < args[0].v)
+        throw new ZyError('random::entero: expected (###, ###) with max >= min');
+      const lo = BigInt(args[0].v), range = BigInt(args[1].v) - lo + 1n;
+      return mkInt(Number(lo + ZyRandom.next() % range));
+    }});
+    exports.set('rango', { type: 'func', name: 'rango', native: true, call: args => {
+      if (args[0]?.type !== 'int' || args[0].v <= 0)
+        throw new ZyError('random::rango: expected positive ###');
+      return mkInt(Number(ZyRandom.next() % BigInt(args[0].v)));
+    }});
+    exports.set('peso_f64', { type: 'func', name: 'peso_f64', native: true, call: () =>
+      mkFloat((Number(ZyRandom.next() % 201n) - 100) / 1000)
+    });
+    exports.set('semilla', { type: 'func', name: 'semilla', native: true, call: args => {
+      if (args[0]?.type !== 'int') throw new ZyError('random::semilla: expected ###');
+      ZyRandom.seed(args[0].v);
+      return mkUnit();
+    }});
+    return { type: 'module', exports };
+  }
+
+  // std/json — mirrors stdlib/json.rs: decode/encode, soft ##Parse on malformed
+  // JSON, hard error on wrong argument type. Object↔NamedTuple, null↔Unit.
+  if (name === 'std/json') {
+    const exports = new Map();
+    const jsonToValue = j => {
+      if (j === null) return mkUnit();
+      if (typeof j === 'boolean') return mkBool(j);
+      if (typeof j === 'number') return Number.isSafeInteger(j) ? mkInt(j) : mkFloat(j);
+      if (typeof j === 'string') return mkStr(j);
+      if (Array.isArray(j)) return mkArr(j.map(jsonToValue));
+      return { type: 'tuple', v: Object.values(j).map(jsonToValue), keys: Object.keys(j) };
+    };
+    const valueToJson = v => {
+      switch (v?.type) {
+        case 'bool':  return v.v;
+        case 'int': case 'float': return v.v;
+        case 'str': case 'char':  return String(v.v);
+        case 'arr':   return v.v.map(valueToJson);
+        case 'tuple':
+          return isDict(v)
+            ? Object.fromEntries(v.v.map((item, i) => [v.keys[i], valueToJson(item)]))
+            : v.v.map(valueToJson);
+        default: return null; // unit, func, error
+      }
+    };
+    exports.set('decode', { type: 'func', name: 'decode', native: true, call: args => {
+      if (args[0]?.type !== 'str') throw new ZyError('json::decode: expected String');
+      try { return jsonToValue(JSON.parse(args[0].v)); }
+      catch (e) { return { type: 'error', errType: '##Parse', v: e.message }; }
+    }});
+    // decode_map — mirrors json_decode_map in stdlib/json.rs: decode + recursive
+    // key rename per a NamedTuple map (data-level i18n). Unit map = plain decode.
+    const buildRenameMap = map => {
+      if (map == null || map.type === 'unit') return new Map();
+      if (!isDict(map)) {
+        throw new ZyError('json::decode_map: expected a NamedTuple map as the second argument');
+      }
+      const table = new Map();
+      map.keys.forEach((k, i) => {
+        if (k === null) return;
+        const dst = map.v[i];
+        if (dst?.type !== 'str') {
+          throw new ZyError(`json::decode_map: map value for '${k}' must be a String (the new name)`);
+        }
+        table.set(k, String(dst.v));
+      });
+      return table;
+    };
+    const rekey = (value, table) => {
+      if (value?.type === 'tuple') {
+        const keys = value.keys?.map(k => (k !== null && table.has(k)) ? table.get(k) : k);
+        return { type: 'tuple', v: value.v.map(item => rekey(item, table)), keys };
+      }
+      if (value?.type === 'arr') return mkArr(value.v.map(item => rekey(item, table)));
+      return value;
+    };
+    exports.set('decode_map', { type: 'func', name: 'decode_map', native: true, call: args => {
+      if (args[0]?.type !== 'str') throw new ZyError('json::decode_map: expected String as the first argument');
+      const table = buildRenameMap(args[1]);
+      try { return rekey(jsonToValue(JSON.parse(args[0].v)), table); }
+      catch (e) { return { type: 'error', errType: '##Parse', v: e.message }; }
+    }});
+    exports.set('encode', { type: 'func', name: 'encode', native: true, call: args => {
+      try { return mkStr(JSON.stringify(valueToJson(args[0] ?? mkUnit()))); }
+      catch (e) { return { type: 'error', errType: '##Parse', v: e.message }; }
+    }});
+    return { type: 'module', exports };
+  }
+
+  // std/net — mirrors stdlib/net.rs over fetch(). Soft ##Network on failure
+  // (incl. non-2xx, like ureq), hard error on wrong argument type. Browser
+  // caveat: cross-origin requests need CORS support on the server.
+  if (name === 'std/net') {
+    const exports = new Map();
+    const netErr = msg => ({ type: 'error', errType: '##Network', v: msg });
+    const strOf  = v => v?.type === 'str' ? v.v : null;
+    const parseHeaders = (arg, fname) => {
+      if (arg == null || arg.type === 'unit') return [];
+      const bad = () => new ZyError(`${fname}: headers must be an Array of (String, String) tuples`);
+      if (arg.type !== 'arr') throw bad();
+      return arg.v.map(item => {
+        if (item?.type !== 'tuple' || item.v.length !== 2) throw bad();
+        const k = strOf(item.v[0]), v = strOf(item.v[1]);
+        if (k === null || v === null) throw bad();
+        return [k, v];
+      });
+    };
+    // A time limit in seconds, an Int or a Float, `0` or more, `0` being none
+    // (ZethyCLI G1, decided by the author on 2026-10-24): the rules and the words
+    // of `zymbol_common::net`. A request takes the one after its headers, and
+    // otherwise the run's own (`ZyNet.limit`, set by `net::timeout`); without
+    // either `fetch` waits as long as the server takes.
+    const limitOf = (arg, fname) => {
+      if ((arg?.type === 'int' || arg?.type === 'float') && arg.v >= 0 && Number.isFinite(arg.v)) return arg;
+      throw new ZyError(`${fname}: the time limit must be a number of seconds, 0 or more`);
+    };
+    const parseLimit = (arg, fname) => {
+      if (arg == null) return ZyNet.limit ? ZyNet.limit.v : null;
+      const own = limitOf(arg, fname);
+      return own.v === 0 ? null : own.v;
+    };
+    const timeoutMsg = secs => `timeout: no answer within ${secs} s`;
+    // An AbortController covers the whole request, the body included, as
+    // ureq's `timeout_global` does.
+    const limited = secs => {
+      if (secs == null) return { signal: undefined, done: () => {} };
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), secs * 1000);
+      return { signal: ctl.signal, done: () => clearTimeout(timer) };
+    };
+    const request = async (url, headerPairs, contentType, body, secs = null) => {
+      const headers = new Headers();
+      if (contentType) headers.set('Content-Type', contentType);
+      for (const [k, v] of headerPairs) headers.set(k, v);
+      const lim = limited(secs);
+      try {
+        const resp = await fetch(url, body == null
+          ? { headers, signal: lim.signal }
+          : { method: 'POST', headers, body, signal: lim.signal });
+        if (!resp.ok) return netErr(`${url}: status code ${resp.status}`);
+        return mkStr(await resp.text());
+      } catch (e) {
+        if (lim.signal?.aborted) return netErr(timeoutMsg(secs));
+        return netErr(e.message ?? String(e));
+      } finally {
+        lim.done();
+      }
+    };
+    exports.set('get', { type: 'func', name: 'get', native: true, call: args => {
+      const url = strOf(args[0]);
+      if (url === null) throw new ZyError('net::get: expected String url');
+      return request(url, parseHeaders(args[1], 'net::get'), null, null, parseLimit(args[2], 'net::get'));
+    }});
+    exports.set('post', { type: 'func', name: 'post', native: true, call: args => {
+      const url = strOf(args[0]), body = strOf(args[1]);
+      if (url === null || body === null) throw new ZyError('net::post: expected (String, String)');
+      return request(url, parseHeaders(args[2], 'net::post'), 'text/plain', body, parseLimit(args[3], 'net::post'));
+    }});
+    exports.set('post_json', { type: 'func', name: 'post_json', native: true, call: args => {
+      const url = strOf(args[0]), body = strOf(args[1]);
+      if (url === null || body === null) throw new ZyError('net::post_json: expected (String, String)');
+      return request(url, parseHeaders(args[2], 'net::post_json'), 'application/json', body, parseLimit(args[3], 'net::post_json'));
+    }});
+    exports.set('timeout', { type: 'func', name: 'timeout', native: true, call: args => {
+      const limit = limitOf(args[0], 'net::timeout');
+      const before = ZyNet.limit ?? mkInt(0);
+      ZyNet.limit = limit.v === 0 ? null : limit;
+      return before;
+    }});
+    exports.set('head', { type: 'func', name: 'head', native: true, call: async args => {
+      const url = strOf(args[0]);
+      if (url === null) throw new ZyError('net::head: expected String url');
+      const lim = limited(parseLimit(args[1], 'net::head'));
+      try { return mkBool((await fetch(url, { method: 'HEAD', signal: lim.signal })).ok); }
+      catch { return mkBool(false); }
+      finally { lim.done(); }
+    }});
+    return { type: 'module', exports };
+  }
+
+  // std/io — mirrors stdlib/io.rs over a per-run virtual filesystem (browser
+  // has no real FS). Soft ##IO on failure, hard error on wrong argument type.
+  if (name === 'std/io' && vfs) {
+    const exports = new Map();
+    const { files, dirs } = vfs;
+    const NOENT = 'No such file or directory (os error 2)';
+    const ioErr = msg => ({ type: 'error', errType: '##IO', v: msg });
+    const norm  = p => p.length > 1 ? p.replace(/\/+$/, '') : p;
+    const strArg = (a, msg) => {
+      if (a?.type !== 'str') throw new ZyError(msg);
+      return norm(a.v);
+    };
+    exports.set('read', { type: 'func', name: 'read', native: true, call: args => {
+      const p = strArg(args[0], 'io::read: expected String path');
+      return files.has(p) ? mkStr(files.get(p)) : ioErr(NOENT);
+    }});
+    exports.set('write', { type: 'func', name: 'write', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'str')
+        throw new ZyError('io::write: expected (String, String)');
+      files.set(norm(args[0].v), args[1].v);
+      return mkUnit();
+    }});
+    exports.set('append', { type: 'func', name: 'append', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'str')
+        throw new ZyError('io::append: expected (String, String)');
+      const p = norm(args[0].v);
+      files.set(p, (files.get(p) ?? '') + args[1].v);
+      return mkUnit();
+    }});
+    exports.set('exists', { type: 'func', name: 'exists', native: true, call: args => {
+      const p = strArg(args[0], 'io::exists: expected String path');
+      return mkBool(files.has(p) || dirs.has(p));
+    }});
+    exports.set('delete', { type: 'func', name: 'delete', native: true, call: args => {
+      const p = strArg(args[0], 'io::delete: expected String path');
+      if (dirs.has(p)) {
+        for (const d of [...dirs])       if (d === p || d.startsWith(p + '/')) dirs.delete(d);
+        for (const f of [...files.keys()]) if (f.startsWith(p + '/')) files.delete(f);
+        return mkUnit();
+      }
+      if (files.delete(p)) return mkUnit();
+      return ioErr(NOENT);
+    }});
+    exports.set('list', { type: 'func', name: 'list', native: true, call: args => {
+      const p = strArg(args[0], 'io::list: expected String path');
+      if (!dirs.has(p)) return ioErr(NOENT);
+      const names = new Set();
+      for (const f of files.keys())
+        if (f.startsWith(p + '/') && !f.slice(p.length + 1).includes('/'))
+          names.add(f.slice(p.length + 1));
+      for (const d of dirs)
+        if (d.startsWith(p + '/') && !d.slice(p.length + 1).includes('/'))
+          names.add(d.slice(p.length + 1));
+      return mkArr([...names].map(mkStr));
+    }});
+    exports.set('mkdir', { type: 'func', name: 'mkdir', native: true, call: args => {
+      const p = strArg(args[0], 'io::mkdir: expected String path');
+      const parts = p.split('/').filter(Boolean);
+      let acc = p.startsWith('/') ? '' : null;
+      for (const part of parts) {
+        acc = acc === null ? part : `${acc}/${part}`;
+        dirs.add(acc);
+      }
+      return mkUnit();
+    }});
+    return { type: 'module', exports };
+  }
+
+  // std/term — terminal display metrics (mirrors stdlib/term.rs). Answers a
+  // question about the screen, not about a string's content: split, slice,
+  // replace, repeat stay language symbols and never enter this module.
+  // std/time — the clock and the civil calendar. Mirrors
+  // `crates/zymbol-interpreter/src/stdlib/time.rs`; the calendar itself is
+  // ported above rather than delegated to `Date`, which rolls an impossible
+  // date over instead of refusing it.
+  //
+  // A wrong argument TYPE throws (the caller's bug); a wrong VALUE — month 13,
+  // an unknown zone, `%Q` — comes back as a soft `##Time`, catchable, because
+  // that is data and a program reading dates from outside must be able to
+  // handle it.
+  if (name === 'std/time') {
+    const exports = new Map();
+    const timeErr = msg => ({ type: 'error', errType: '##Time', v: msg });
+    // Every entry point funnels through here: anything the calendar refuses
+    // becomes a soft error, and nothing else is caught.
+    const soft = fn => { try { return fn(); } catch (e) {
+      if (e instanceof ZyTimeError) return timeErr(e.message);
+      throw e;
+    }};
+    const intArg = (a, msg) => { if (a?.type !== 'int') throw new ZyError(msg); return a.v; };
+    const strArg = (a, msg) => { if (a?.type !== 'str') throw new ZyError(msg); return a.v; };
+    // The optional trailing zone: absent, or present and text.
+    const zoneArg = (args, from, msg) => {
+      const a = args[from];
+      if (a === undefined) return null;
+      if (a.type !== 'str') throw new ZyError(msg);
+      return a.v;
+    };
+
+    exports.set('now', { type: 'func', name: 'now', native: true, call: () => mkInt(Date.now()) });
+
+    exports.set('today', { type: 'func', name: 'today', native: true, call: args => {
+      const zone = zoneArg(args, 0, 'time::today: expected an optional zone String');
+      return soft(() => {
+        const now = Date.now();
+        return mkStr(isoDate(now, offsetOf(zoneOrUtc(zone), now)));
+      });
+    }});
+
+    exports.set('parts', { type: 'func', name: 'parts', native: true, call: args => {
+      const msg = 'time::parts: expected (### epoch [, zone])';
+      const epoch = intArg(args[0], msg);
+      const zone = zoneArg(args, 1, msg);
+      return soft(() => {
+        const p = partsAt(epoch, offsetOf(zoneOrUtc(zone), epoch));
+        return { type: 'tuple', v: TIME_PART_NAMES.map(k => mkInt(p[k])), keys: [...TIME_PART_NAMES] };
+      });
+    }});
+
+    exports.set('of', { type: 'func', name: 'of', native: true, call: args => {
+      const msg = 'time::of: expected (year, month, day) or (year, month, day, hour, minute, second), each ###, plus an optional zone';
+      // The zone is text and every field is a number, so a trailing String is
+      // the zone and nothing else can be.
+      const last = args[args.length - 1];
+      const hasZone = last?.type === 'str';
+      const fields = hasZone ? args.slice(0, -1) : args;
+      const zone = hasZone ? last.v : null;
+      const n = fields.map(f => intArg(f, msg));
+      return soft(() => {
+        let y, mo, d, h = 0, mi = 0, sec = 0;
+        if (n.length === 3) [y, mo, d] = n;
+        else if (n.length === 6) [y, mo, d, h, mi, sec] = n;
+        else timeFail(`expected 3 numbers (year, month, day) or 6 (…, hour, minute, second), got ${n.length}`);
+        return mkInt(epochFromCivilIn(y, mo, d, h, mi, sec, 0, zoneOrUtc(zone)));
+      });
+    }});
+
+    exports.set('format', { type: 'func', name: 'format', native: true, call: args => {
+      const msg = 'time::format: expected (### epoch, "pattern" [, zone])';
+      const epoch = intArg(args[0], msg);
+      const pattern = strArg(args[1], msg);
+      const zone = zoneArg(args, 2, msg);
+      return soft(() => mkStr(timeFormat(epoch, pattern, offsetOf(zoneOrUtc(zone), epoch))));
+    }});
+
+    exports.set('add', { type: 'func', name: 'add', native: true, call: args => {
+      const msg = 'time::add: expected (### epoch, ### count, "unit" [, zone])';
+      const epoch = intArg(args[0], msg);
+      const count = intArg(args[1], msg);
+      const unit = strArg(args[2], msg);
+      const zone = zoneArg(args, 3, msg);
+      return soft(() => mkInt(timeAdd(epoch, count, parseUnit(unit), zoneOrUtc(zone))));
+    }});
+
+    exports.set('diff', { type: 'func', name: 'diff', native: true, call: args => {
+      const msg = 'time::diff: expected (### a, ### b, "unit" [, zone])';
+      const a = intArg(args[0], msg);
+      const b = intArg(args[1], msg);
+      const unit = strArg(args[2], msg);
+      const zone = zoneArg(args, 3, msg);
+      return soft(() => mkInt(timeDiff(a, b, parseUnit(unit), zoneOrUtc(zone))));
+    }});
+
+    return { type: 'module', exports };
+  }
+
+  if (name === 'std/term') {
+    const exports = new Map();
+    exports.set('width', { type: 'func', name: 'width', native: true, call: args => {
+      const v = args[0];
+      if (v?.type === 'str' || v?.type === 'char') return mkInt(displayWidth(v.v));
+      // The type it got, as both Rust engines say it (ZYJS-019).
+      throw new ZyError(`term::width: expected a String or Char, got ${v ? typeLabel(v) : 'nothing'}`);
+    }});
+    exports.set('pad_left', { type: 'func', name: 'pad_left', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'int') throw new ZyError('term::pad_left: expected (String, ###)');
+      return mkStr(termPad(args[0].v, args[1].v, true));
+    }});
+    exports.set('pad_right', { type: 'func', name: 'pad_right', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'int') throw new ZyError('term::pad_right: expected (String, ###)');
+      return mkStr(termPad(args[0].v, args[1].v, false));
+    }});
+    exports.set('center', { type: 'func', name: 'center', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'int') throw new ZyError('term::center: expected (String, ###)');
+      return mkStr(termCenter(args[0].v, args[1].v));
+    }});
+    exports.set('truncate', { type: 'func', name: 'truncate', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'int') throw new ZyError('term::truncate: expected (String, ###)');
+      return mkStr(termTruncate(args[0].v, args[1].v));
+    }});
+    return { type: 'module', exports };
+  }
+
+  return null;
+}
+
+// ─── Closure capture: the names a body reads from outside itself ─────────────
+//
+// Mirrors `collect_refs_in_body` + `capture_only` in the tree-walker. A lambda
+// takes a SNAPSHOT of those names when it is created, and each call gets a fresh
+// copy of it. Three consequences, and all three used to be wrong here:
+//
+//   base = 1 ; l = (x -> x + base) ; base = 50
+//   l(0)                     → 1, not 50: the snapshot is from creation time
+//
+//   cont = 0 ; esc = (x -> { cont = cont + x  <~ cont })
+//   esc(5) esc(5) esc(5)     → 5 5 5, not 5 10 15: each call copies the snapshot
+//   cont                     → 0: a write never escapes the call
+//
+// This engine kept a live reference to the defining scope instead, so it read
+// through to whatever the variable held later and wrote back out through it.
+// `corpus.toml` carried the divergence as "closure snapshot semantics … are not
+// implemented in the browser engine" for two files; it is implemented now.
+//
+// The walk is generic over the AST — every node is a plain object — so a node
+// shape added later is covered without being listed here. Over-collecting costs
+// nothing: a name the defining scope cannot resolve is simply not captured.
+function collectIdentNames(node, out) {
+  if (node === null || typeof node !== 'object') return out;
+  if (Array.isArray(node)) {
+    for (const n of node) collectIdentNames(n, out);
+    return out;
+  }
+  if (node.type === 'Ident' && typeof node.name === 'string') out.add(node.name);
+  // A call keeps its callee as a bare STRING (`{type:'Call', callee:'f'}`), not
+  // as an `Ident` node, so the walk above cannot see it. That name is read from
+  // the scope exactly like any other — it is how `compose(f, g) { <~ x -> f(g(x)) }`
+  // reaches its own parameters from inside the lambda it returns.
+  if (node.type === 'Call' && typeof node.callee === 'string') out.add(node.callee);
+  // `\ x` names a variable as a bare string too. A lambda that destroys `x`
+  // destroys ITS copy (MEM-6: it writes only what it declares), so the copy has
+  // to be taken — without it `\ x` walked up and ended the file's `x`.
+  if (node.type === 'LifetimeEnd' && typeof node.name === 'string') out.add(node.name);
+  // A name read inside a string — the `{log}` of `"{log}{s}"` — is a string
+  // PART, not an Ident node, and the walk passed over it. A lambda then did not
+  // capture it, `{log}` could not resolve at the call, and the evaluation of the
+  // interpolation fell back to the literal text: `log` held "{log}A" here and "A"
+  // in both Rust engines, invisibly, since the program never printed it
+  // (found with GLB-025, step 2.15).
+  if (node.t === 'expr' && typeof node.v === 'string') out.add(node.v.trim());
+  for (const k of Object.keys(node)) {
+    if (k === 'type' || k === 'line') continue;
+    collectIdentNames(node[k], out);
+  }
+  return out;
+}
+
+/**
+ * Snapshot what a lambda body reads from outside itself.
+ *
+ * Parameters are excluded: they are bound by the call, not captured. Anything
+ * the defining scope cannot resolve is skipped — a name introduced inside the
+ * body, or a function, which is reached through the global scope at call time.
+ */
+/**
+ * The next function identity. Mirrors `FnIdentity` in the tree-walker.
+ *
+ * A named function taken as a value is COPIED so the copy can carry its own
+ * captures, and object identity would then say `f == adder` is `#0` while both
+ * Rust engines say `#1` — they compare the definition, not the value built from
+ * it (BUG-ZYB-012). So identity is carried explicitly and the copy keeps it.
+ */
+let NEXT_FN_ID = 1;
+const nextFnId = () => NEXT_FN_ID++;
+
+function captureFor(params, body, env) {
+  const excluded = new Set(params.map(p => (typeof p === 'string' ? p : p?.name)));
+  const names = collectIdentNames(body, new Set());
+  const snap = new Map();
+  for (const name of names) {
+    if (excluded.has(name)) continue;
+    let v;
+    try { v = env.get(name); } catch { continue; }
+    if (v !== undefined) snap.set(name, v);
+  }
+  return snap;
+}
+
+// ─── Interpreter ──────────────────────────────────────────────────────────────
+
+// One COMPLETE template per higher-order operator, never one with a hole: the
+// message inventory pairs the engines by how a message is BUILT, so a shared
+// `${what} requires …` would leave a literal no Rust template matches, and the
+// gate would report new one-sided messages that are not new at all.
+//
+// Module scope rather than inside `evalCollectionOp`, because `evalCallable` is
+// a method of its own and needs the same sentences.
+// One COMPLETE template per container, for the same reason HOF_NEEDS has one
+// per operator: Rust writes three separate literals, and a shared
+// `${container} update index …` pairs with none of them.
+const UPDATE_INDEX = {
+  arr:   L => `array update index must be an integer, got ${L}`,
+  str:   L => `string update index must be an integer, got ${L}`,
+  tuple: L => `tuple update index must be an integer, got ${L}`,
+};
+
+const HOF_NEEDS = {
+  map:    L => `map requires array, tuple, string or dictionary, got ${L}`,
+  filter: L => `filter requires array, tuple, string or dictionary, got ${L}`,
+  reduce: L => `reduce requires array, tuple, string or dictionary, got ${L}`,
+};
+const HOF_LAMBDA = {
+  map:    `map requires lambda function`,
+  filter: `filter requires lambda function`,
+  reduce: `reduce requires lambda function`,
+};
+
+export class Interpreter {
+  // A module binding's initialiser must NAME a value, not compute one — the
+  // module body runs nothing, which is what E013 is for.
+  //
+  // Mirrors `Parser::is_literal_expr` in `zymbol-parser/src/modules.rs`: a
+  // scalar, a scalar carrying a sign, or a collection literal every one of
+  // whose elements is itself one of those. The rule is recursive, so a
+  // dictionary of dictionaries — a decoded JSON object's shape — qualifies,
+  // while `json::decode(raw)` does not, at any depth.
+  //
+  // A parenthesised expression needs no unwrapping here: this parser returns
+  // the inner value rather than a wrapper node.
+  static isModuleLiteral(e) {
+    if (!e) return false;
+    switch (e.type) {
+      case 'Literal': return true;
+      case 'UnaryOp': return e.op === '-' && e.operand?.type === 'Literal';
+      case 'Array':   return (e.items ?? []).every(Interpreter.isModuleLiteral);
+      case 'Tuple':   return (e.items ?? []).every(Interpreter.isModuleLiteral);
+      default:        return false;
+    }
+  }
+
+  // Default inputFn signals EOF (null): with no input source attached, << aborts
+  // like the CLI does on a closed stdin instead of looping on empty reads.
+  constructor(outputFn, inputFn = async () => null, moduleResolver = null, tuiContext = null) {
+    this.outputFn        = outputFn;
+    this.inputFn         = inputFn;
+    this.steps           = 0;
+    // Raised from 50 000 on 2026-08-31. That ceiling cut a program off after roughly
+    // 30 ms of work, which is less than any program that computes something: the
+    // 65x23 Mandelbrot in examples/graphics/ needs 605 920 steps and 355 ms, and died
+    // a third of the way down the first frame. 2 000 000 leaves that 3x of headroom
+    // and still stops a runaway loop inside a couple of seconds. The tab stays
+    // responsive throughout either way — the interpreter yields every 16 ms
+    // (maybeYield), so this ceiling bounds wasted work, not the page.
+    this.maxSteps        = 2_000_000;
+    this.maxInfiniteIter = 100_000;
+    // Calls active at once, and one frame per call saying which function runs
+    // and how many `!?` it has open — for the depth limit and the tail call
+    // (GLB-133). `_tailCallNode` is the Call a `<~` said is in tail position;
+    // `_tailNow` carries that answer the last step into `callFunc`.
+    this.activeCalls = 0;
+    this.callFrames = [];
+    this._tailCallNode = null;
+    this._tailNow = false;
+    this.outputBytes     = 0;
+    this.maxBytes        = 32_000;
+    this.lastYield       = performance.now();
+    this.yieldAt         = 0;
+    this.numeralMode     = 0x0030;
+    this.moduleResolver  = moduleResolver;
+    // The file whose statements this interpreter runs. Set by `run` for the
+    // entry file and by `loadModule` for a module, and stamped onto every
+    // function defined here — a module's function runs on the caller's
+    // interpreter, so the function has to carry its own file.
+    this.srcFile = null;
+    this.moduleCache     = new Map();
+    // Import aliases, kept out of the variable environment on purpose: `alias::fn(…)` must
+    // keep resolving even when a plain variable later takes the same name. Mirrors the
+    // tree-walker's `import_aliases`. Per interpreter, so a module's imports stay private
+    // to it (each module body runs in its own Interpreter — see loadModule).
+    this.moduleAliases   = new Map();
+    this.tui             = tuiContext;
+    this.cliArgs         = [];
+    this.loadingModules  = new Set();
+    // Virtual filesystem backing std/io (browser has no real FS); lives for one run.
+    this.vfs             = { files: new Map(), dirs: new Set() };
+  }
+
+  async loadModule(path) {
+    // Intercept stdlib modules (std/math, std/random, …)
+    if (path.startsWith('std/')) {
+      if (this.moduleCache.has(path)) return this.moduleCache.get(path);
+      if (path === 'std/db')
+        throw new ZyError(`standard library module 'std/db' is not available in the web playground (requires ODBC)`);
+      const modVal = buildStdlibModule(path, this.vfs);
+      if (!modVal) throw new ZyError(`standard library module '${path}' not found`);
+      this.moduleCache.set(path, modVal);
+      return modVal;
+    }
+
+    if (!this.moduleResolver)
+      throw new ZyError(`Cannot import '${path}': no module resolver available`);
+
+    const result = await this.moduleResolver(path);
+    if (result == null || result.notFound) {
+      const displayPath = result?.path ?? path;
+      throw new ZyError(`module not found: ${displayPath}`);
+    }
+    // Use resolved absolute path as canonical key so circular-import detection
+    // works even when the same file is imported via different relative paths.
+    const cacheKey = (typeof result === 'object' && result.resolvedPath) ? result.resolvedPath : path;
+
+    if (this.moduleCache.has(cacheKey)) return this.moduleCache.get(cacheKey);
+    if (this.loadingModules.has(cacheKey)) {
+      const modName = cacheKey.replace(/^.*\//, '').replace(/\.zy$/, '');
+      throw new ZyStaticError(`E004: Circular import detected: module '${modName}' is already being loaded`);
+    }
+    this.loadingModules.add(cacheKey);
+    const src      = typeof result === 'string' ? result : result.src;
+    const childRes = typeof result === 'string' ? this.moduleResolver : result.resolver;
+
+    // A module that does not read is reported as the Rust engines report it:
+    // `failed to parse module: 1 parse error(s) in '<file>'` and the error
+    // under it with its line. The parser's own error used to surface bare, as
+    // if it were the entry file's (ZYJS-022, GLB-017 D). This engine stops at
+    // the first error, so the count is always 1.
+    const whereOf = () => (typeof result === 'object' && result.displayPath) || cacheKey;
+    // The same three pieces as modules.rs builds, so the message inventory
+    // pairs them with their Rust twins: the prefix, the count line, the detail.
+    const moduleReadError = (e, stage) => {
+      if (!(e instanceof ZyStaticError || e instanceof ZyError)) return e;
+      const count = 1;
+      let detail = `  ${whereOf()}:${e.zyLine ?? 0}:${e.zyCol ?? 0}: ${e.message}`;
+      if (e.zyHelp) detail += `\n    help: ${e.zyHelp}`;
+      const body = stage === 'lexer'
+        ? `${count} lexer error(s) in '${whereOf()}'\n${detail}`
+        : `${count} parse error(s) in '${whereOf()}'\n${detail}`;
+      const err = new ZyError(`failed to parse module: ${body}`);
+      // Already located, twice over: the detail line names the module's file,
+      // line and column. The statement that imported it used to be appended as
+      // a `--> main.zy:4` the Rust engines never print, so the same failure
+      // read as two different errors (ZYJS-024).
+      err.zyLocated = true;
+      return err;
+    };
+    let tokens, ast;
+    try { tokens = new Lexer(src).tokenize(); }
+    catch (e) { this.loadingModules.delete(cacheKey); throw moduleReadError(e, 'lexer'); }
+    try { ast = new Parser(tokens).parse(); }
+    catch (e) { this.loadingModules.delete(cacheKey); throw moduleReadError(e, 'parse'); }
+
+    // A module loaded at run time passes the same analysis as the entry file
+    // (MM-4, settled for the Rust engines in v0.0.8). Without this, a module
+    // whose function reassigns its own `:=` constant simply ran, with the entry
+    // file and the module holding different ideas of the constant's value.
+    {
+      const modDiags = new Checker(ast).check().filter(d => d.severity === 'error');
+      if (modDiags.length) {
+        const where = (typeof result === 'object' && result.displayPath) || cacheKey;
+        const detail = modDiags
+          .map(d => `  ${where}:${d.line ?? 0}:${d.col ?? 0}: ${d.message}` +
+                    (d.help ? `\n    help: ${d.help}` : ''))
+          .join('\n');
+        const err = new ZyStaticError(
+          `failed to parse module: ${modDiags.length} semantic error(s) in '${where}'\n${detail}`);
+        err.zyLocated = true;
+        throw err;
+      }
+    }
+
+    const modInterp = new Interpreter(this.outputFn, this.inputFn, childRes);
+    // Named as the Rust engines name it: the path as written, so a golden
+    // recorded from one engine matches the others.
+    modInterp.srcFile        = (typeof result === 'object' && result.displayPath) || cacheKey;
+    modInterp.moduleCache    = this.moduleCache;
+    modInterp.loadingModules = this.loadingModules;
+    modInterp.vfs            = this.vfs; // share one virtual filesystem per run
+
+    const modEnv = new Env(null, false, true); // isModuleScope=true
+    modInterp.globalEnv = modEnv;
+
+    // Support both old-style (bare top-level statements) and new block syntax # name { ... }
+    const modBody = (ast.body.length === 1 && ast.body[0].type === 'ModuleBlock')
+      ? ast.body[0].body
+      : ast.body;
+
+    // Collect exported names from ExportDecl nodes before execution
+    const exportPairs = [];
+    for (const s of modBody) {
+      if (s.type === 'ExportDecl') for (const p of s.names) exportPairs.push(p);
+    }
+
+    await modInterp.execBlock(modBody, modEnv);
+
+    // Bind all module-level functions to modEnv so intra-module calls work
+    for (const val of modEnv.vars.values()) {
+      if (val.type === 'func' && !val.closureEnv) val.closureEnv = modEnv;
+    }
+
+    // Build module value with only exported names
+    const exports = new Map();
+    for (const p of exportPairs) {
+      if (p.kind === 'reexport') {
+        // alias::member or alias.member re-export
+        const aliasVal = modEnv.vars.get(p.alias);
+        if (aliasVal && aliasVal.type === 'module' && aliasVal.exports.has(p.member)) {
+          exports.set(p.exported, aliasVal.exports.get(p.member));
+        }
+      } else {
+        // own export (with optional rename)
+        //
+        // MEM-4 (GLB-009): only a CONSTANT or a FUNCTION leaves. A module's
+        // variables are its state, carried by its own functions, and the fence
+        // that keeps that from being a global variable is that the state cannot
+        // be exported. This used to hand out whatever the name held, so
+        // `#> { n }` with `n = 0` made the state readable from outside while
+        // `zymbol check` reported E005 and the tree-walker refused it.
+        const val = modEnv.vars.get(p.internal);
+        const exportable = val !== undefined
+          && (val.type === 'func' || modEnv.consts.has(p.internal));
+        if (exportable) exports.set(p.exported, val);
+      }
+    }
+
+    this.loadingModules.delete(cacheKey);
+    const modVal = { type: 'module', exports };
+    this.moduleCache.set(cacheKey, modVal);
+    return modVal;
+  }
+
+  tick() {
+    if (this.tui?.aborted) throw new ZyError('Program stopped.');
+    if (++this.steps > this.maxSteps)
+      throw new ZyError(`Execution limit reached (${grouped(this.maxSteps)} steps) — infinite loop?`);
+  }
+
+  // Every loop calls this once a turn, to hand the page its turn when 16 ms
+  // have gone by. Asking the clock each time was 13.5 % of a long loop with a
+  // small body — more than the body's own bookkeeping. `tick` already counts the
+  // work done, so the clock is asked once that count has moved by a thousand
+  // evaluations: a fraction of a millisecond of interpreting, whatever a turn
+  // costs, so the page waits no longer than it did. The count going BACKWARDS
+  // is the end of a `>>|` block, which restores it; that asks the clock too.
+  maybeYield() {
+    const done = this.steps - this.yieldAt;
+    if (done >= 0 && done < 1024) return;
+    this.yieldAt = this.steps;
+    const now = performance.now();
+    if (now - this.lastYield > 16) {
+      this.lastYield = now;
+      return new Promise(r => setTimeout(r, 0));
+    }
+  }
+
+  emit(text) {
+    this.outputBytes += text.length;
+    if (this.outputBytes > this.maxBytes)
+      throw new ZyError(`Output limit reached (${grouped(Math.round(this.maxBytes / 1000))} KB) — infinite loop?`);
+    if (this.tui && this.tui.active) this.tui.print(text);
+    else this.outputFn(text);
+  }
+
+  async run(program, filePath = null) {
+    if (this.srcFile == null) this.srcFile = filePath;
+    const env = new Env();
+    this.globalEnv = env;
+    if (program.body.length >= 1 && program.body[0].type === 'ModuleBlock') {
+      const mb = program.body[0];
+      const modName = mb.name; // preserve as declared (e.g. '.module' or 'matematicas')
+      const pathStr = filePath ? `'${filePath}'` : `'${modName}.zy'`;
+      // Use filename stem for import hint (matches CLI for mismatched names)
+      const importHint = filePath
+        ? filePath.replace(/^.*[/\\]/, '').replace(/\.zy$/, '')
+        : modName.replace(/^\./, '');
+      // Refusing to run is a failure, not output: the CLI writes this to stderr
+      // and exits 1. Recorded rather than emitted so `runZymbol` can route it to
+      // the error channel and report the failure to a caller that is a process.
+      this.moduleRefused =
+        `warning: ${pathStr} is a module file and cannot be run directly\n` +
+        `  = help: module '${modName}' is meant to be imported with <# ./${importHint} => alias`;
+      return;
+    }
+    // Hoisting: a function declared anywhere at the top level is callable from
+    // anywhere at the top level, including above its own declaration.
+    //
+    // Architecture used to decide this instead of anybody choosing: the register
+    // VM compiles the whole file before running it, so it registers every name
+    // first, while this engine and the Rust tree-walker bound each name as its
+    // statement executed. `>> f(2) ¶` above `f(x) { <~ x * 10 }` printed 20 under
+    // `--vm` and was "undefined" in the other two — the same program, two answers
+    // (DM-03). The static checker had already taken the hoisting side, so
+    // `zymbol check` passed a program only one of the three engines would run.
+    //
+    // Top level only, matching the VM. A function declared inside a block still
+    // appears when the block runs.
+    for (const stmt of program.body) {
+      if (stmt.type === 'FuncDecl')
+        env.def(stmt.name, { type: 'func', name: stmt.name, params: stmt.params, body: stmt.body, fnId: nextFnId(), moduleAliases: this.moduleAliases, homeEnv: this.globalEnv, srcFile: this.srcFile });
+    }
+    // GAP-ZYB-006: a `<~` that reaches the top level ends the program, and its
+    // value is the exit status. This engine already stopped here — the value
+    // was simply dropped. There is no exit status in a browser, but there is
+    // one in `tests/run_one.mjs`, which presents this engine to a shell as one
+    // more command-line engine; a runner that always reports 0 is a runner that
+    // lies about the contract it documents.
+    let signal;
+    try {
+      signal = await this.execBlock(program.body, env);
+    } catch (e) {
+      // A `$!!` that carries an error out of the top level ends the program
+      // saying which error it was, as a runtime error with its line — as both
+      // Rust engines now do. The propagation signal itself used to reach the
+      // host, and was printed as `Runtime error: [object Object]` (ZYJS-027,
+      // decided 2026-09-16).
+      if (e instanceof ZyErrorPropagate) {
+        throw new ZyRuntimeError(this.display(e.errVal), '##_', e.zyLine ?? null);
+      }
+      throw e;
+    }
+    if (signal instanceof ZyReturn) {
+      const v = signal.value;
+      this.exitCode = v?.type === 'int' ? v.v : (v?.type === 'unit' ? 0 : 1);
+    }
+  }
+
+  async execBlock(stmts, env) {
+    for (let i = 0; i < stmts.length; i++) {
+      const stmt = stmts[i];
+      // Prefix hot-def sentinel: ExprStmt{Ident{hot:true, name:''}} followed by the actual op.
+      // Pre-initialize the target variable in the enclosing function/root scope.
+      if (stmt.type === 'ExprStmt' &&
+          stmt.expr?.type === 'Ident' && stmt.expr.hot && stmt.expr.name === '') {
+        const next = stmts[i + 1];
+        const targetName = this._hotTargetName(next);
+        if (targetName) {
+          let exists = false;
+          try { env.get(targetName); exists = true; } catch (_) {}
+          if (!exists) env.hotDef(targetName, this._hotNeutralForStmt(next));
+        }
+        continue;
+      }
+      const sig = await this.exec(stmt, env);
+      if (sig instanceof ZyReturn || sig instanceof ZyBreak || sig instanceof ZyContinue)
+        return sig;
+    }
+  }
+
+  async exec(stmt, env) {
+    try {
+      return await this._exec(stmt, env);
+    } catch (e) {
+      // The innermost statement that knows the line wins: an error already
+      // carrying one travels out untouched. Control-flow signals (ZyReturn,
+      // ZyBreak, ZyErrorPropagate) are not errors and are never touched.
+      if (e instanceof ZyError && e.zyLine == null && !e.zyLocated && stmt.zyLine != null) {
+        e.zyLine = stmt.zyLine;
+      }
+      // The propagation signal is not an error and nothing else reads it here;
+      // it only remembers the innermost statement it left, for the one case in
+      // which it reaches the top level and becomes the error that ends the
+      // program (ZYJS-027). Inside a function the call returns its value first.
+      if (e instanceof ZyErrorPropagate && e.zyLine == null && stmt.zyLine != null) {
+        e.zyLine = stmt.zyLine;
+      }
+      // A `<~`, `@!` or `@>` thrown out of an expression — a `??` arm whose
+      // value is used — is this statement's own exit, and is returned the way
+      // a statement returns one, so the loop, the function or the program takes
+      // it. Thrown on, it reached the top level and the loops, which only read
+      // returned signals: `x = ?? v { 1 => { <~ 5 } }` ended the program with
+      // `Runtime error: [object Object]` (GLB-107).
+      if (e instanceof ZyReturn || e instanceof ZyBreak || e instanceof ZyContinue) return e;
+      throw e;
+    }
+  }
+
+  async _exec(stmt, env) {
+    this.tick();
+
+    switch (stmt.type) {
+      case 'Noop': return;
+      case 'ExportDecl': return;
+      case 'ModuleBlock': return;
+
+      case 'Import': {
+        const modVal = await this.loadModule(stmt.path);
+        if (!env.set(stmt.alias, modVal)) env.def(stmt.alias, modVal);
+        // Also record the alias in a namespace variables cannot reach. The tree-walker
+        // keeps import aliases in their own table (`import_aliases`), so `alias::fn(…)`
+        // still resolves after an ordinary variable takes the same name — which real
+        // programs do: zyKlingonGalaxy imports `Duj` as `duj` and then uses `duj` for the
+        // player's ship, calling `duj = duj::bIj(duj, …)` on every left/right move.
+        this.moduleAliases.set(stmt.alias, modVal);
+        return;
+      }
+
+      case 'SetNumeralMode': {
+        this.numeralMode = stmt.base;
+        return;
+      }
+
+      case 'Output': {
+        for (const item of stmt.items) this.emit(this.displayOutput(await this.eval(item, env)));
+        if (stmt.newline) this.emit('\n');
+        return;
+      }
+
+      case 'Input': {
+        // Build the prompt text once; it is re-printed on every (re-)prompt.
+        const promptText = stmt.prompt ? this.display(await this.eval(stmt.prompt, env)) : null;
+        const cast = stmt.cast ?? { kind: 'string' };
+        while (true) {
+          if (promptText !== null) this.emit(promptText);
+          const line = await this.inputFn();
+          // EOF contract: inputFn returns null/undefined when no more input is
+          // available — no constraint can be satisfied, abort instead of looping.
+          if (line == null) throw new ZyError(`end of input while waiting for ${describeInputCast(cast)}`);
+          const val = validateInput(String(line).trim(), cast);
+          if (val !== null) {
+            if (!env.set(stmt.varName, val)) env.def(stmt.varName, val);
+            return;
+          }
+          // Re-prompt: show what was expected, then loop and ask again.
+          this.emit(`  (${describeInputCast(cast)})\n`);
+        }
+      }
+
+      case 'VarAssign': {
+        // `t = t$+ x`, written in full, is the same edit as the statement
+        // `t$+ x`, and may write where the array is too (ZYJS-014).
+        const v0 = stmt.value;
+        if (!stmt.hot && (v0?.type === 'CollectionOp' || v0?.type === 'FuncUpdate' || v0?.type === 'DeepUpdate')
+            && v0.obj?.type === 'Ident' && v0.obj.name === stmt.name && !v0.obj.hot) {
+          this._ownEdit = v0;
+        }
+        const val = await this.eval(stmt.value, env);
+        this._ownEdit = null;
+        if (!env.set(stmt.name, val)) {
+          if (stmt.hot) env.hotDef(stmt.name, val);
+          else env.def(stmt.name, val);
+        }
+        return;
+      }
+
+      case 'ConstAssign': {
+        const val = await this.eval(stmt.value, env);
+        env.def(stmt.name, val, true);
+        return;
+      }
+
+      case 'CompoundAssign': {
+        let cur;
+        try { cur = env.get(stmt.name); }
+        catch (e) {
+          if (!stmt.hot) throw e;
+          cur = (stmt.op === '*' || stmt.op === '/') ? mkInt(1) : mkInt(0);
+          env.hotDef(stmt.name, cur);
+        }
+        const rhs = await this.eval(stmt.value, env);
+        env.set(stmt.name, this.applyOp(stmt.op, cur, rhs));
+        return;
+      }
+
+      case 'Increment': {
+        let cur;
+        try { cur = env.get(stmt.name); }
+        catch (e) {
+          if (!stmt.hot) throw e;
+          cur = mkInt(0);
+          env.hotDef(stmt.name, cur);
+        }
+        const one = cur.type === 'float' ? mkFloat(1) : mkInt(1);
+        env.set(stmt.name, this.applyOp(stmt.op === '++' ? '+' : '-', cur, one));
+        return;
+      }
+
+      case 'FuncDecl': {
+        env.def(stmt.name, { type: 'func', name: stmt.name, params: stmt.params, body: stmt.body, fnId: nextFnId(), moduleAliases: this.moduleAliases, homeEnv: this.globalEnv, srcFile: this.srcFile });
+        return;
+      }
+
+      case 'Return': {
+        // `<~ f(…)` to the function itself, with no `!?` of this frame open, is
+        // a tail call: the Call it evaluates first is told so (GLB-133).
+        const frame = this.callFrames[this.callFrames.length - 1];
+        if (frame && frame.tries === 0 && stmt.value?.type === 'Call'
+            && stmt.value.callee === frame.name) {
+          this._tailCallNode = stmt.value;
+        }
+        const val = stmt.value ? await this.eval(stmt.value, env) : mkUnit();
+        return new ZyReturn(val);
+      }
+
+      case 'Break':    return new ZyBreak(stmt.label ?? null);
+      case 'Continue': return new ZyContinue(stmt.label ?? null);
+
+      case 'CliArgs':
+        env.def(stmt.variable, { type: 'arr', v: this.cliArgs.map(s => mkStr(s)) });
+        return;
+
+      case 'Sleep': {
+        // A duration is a whole, non-negative number of milliseconds, as the
+        // tree-walker requires; `@~ "x"` and `@~ -1` used to sleep for nothing
+        // (GLB-014 E).
+        const dur = await this.eval(stmt.duration, env);
+        if (dur.type !== 'int') throw new ZyRuntimeError(`@~ requires integer milliseconds, got ${typeLabel(dur)}`, '##Type', stmt.line);
+        if (dur.v < 0) throw new ZyError(`@~ requires non-negative duration, got ${dur.v}`, stmt.line);
+        const ms = dur.v;
+        await new Promise(r => {
+          const id = setTimeout(r, Math.max(0, Math.trunc(ms)));
+          if (this.tui) this.tui._sleepCancel = () => { clearTimeout(id); r(); };
+        });
+        if (this.tui) this.tui._sleepCancel = null;
+        return;
+      }
+
+      case 'ClearScreen':
+        if (this.tui) this.tui.clear();
+        return;
+
+      case 'KeyInput': {
+        const ch = stmt.blocking
+          ? await (this.tui ? this.tui.readKey() : Promise.resolve('\0'))
+          : (this.tui ? this.tui.pollKey() : '\0');
+        const cur = { type: 'char', v: ch };
+        if (!env.set(stmt.variable, cur)) env.def(stmt.variable, cur);
+        return;
+      }
+
+      case 'OutputPos': {
+        const { slots, items } = stmt;
+        let row = null, col = null, bks = 0, fg = null, bg = null;
+        const lone = slots.length === 1 && slots[0]?.type === 'Ident' ? await this.eval(slots[0], env) : null;
+        if (lone?.type === 'tuple') {
+          const tv = lone;
+          const get = i => tv.v?.[i]?.v ?? null;
+          row = get(0); col = get(1); bks = get(2) ?? 0; fg = get(3); bg = get(4);
+        } else {
+          // A written slot is an Int, checked as soon as it is evaluated, as
+          // io.rs does; only a lone slot may carry the dense tuple. `("a", 1)`
+          // used to print `x1` here (GLB-018 B).
+          const vals = [];
+          for (const s of slots) {
+            const v = s ? (lone && s === slots[0] ? lone : await this.eval(s, env)) : null;
+            // Named by its type, and a `##Type` (GLB-033, D1; GLB-042).
+            if (v != null && v.type !== 'int') throw new ZyRuntimeError(`>>~ slot expects Int, got ${typeIdent(v)}`, '##Type', stmt.line);
+            vals.push(v);
+          }
+          if (vals[0] != null) row = vals[0].v;
+          if (vals[1] != null) col = vals[1].v;
+          if (vals[2] != null) bks = vals[2].v;
+          if (vals[3] != null) fg = vals[3].v;
+          if (vals[4] != null) bg = vals[4].v;
+        }
+        const parts = [];
+        for (const i of items) parts.push(await this.eval(i, env));
+        const text = parts.map(v => this.displayOutput(v)).join('');
+        if (this.tui) this.tui.printAt(row, col, text, bks, fg, bg);
+        else this.emit(text);
+        return;
+      }
+
+      case 'TuiBlock': {
+        // With no screen to take over there is no alternate screen, and both
+        // Rust engines stop there (LLM.md: `>>|` errors without a tty). This
+        // used to run the block as if it were plain code (GLB-018 C). The
+        // playground always provides one.
+        // The same sentence as both Rust engines (P4-3 E5, 2026-09-26).
+        if (!this.tui) {
+          throw new ZyError('failed to enable raw mode: not a terminal', stmt.line);
+        }
+        // A TUI program is interactive and legitimately long-running, so the block is
+        // exempt from the execution limits. Raising the ceilings is not enough: `steps`
+        // and `outputBytes` are monotonic counters for the whole program, so work done
+        // under the exemption used to stay on the tab and blow the restored limit on the
+        // very next statement outside the block, however trivial. Snapshot the counters
+        // too and put them back, so the exemption means what it says — the block's work
+        // does not count against the budget outside it. Restoring rather than zeroing
+        // keeps whatever was spent *before* the block on the tab, and nests correctly.
+        const savedMax   = this.maxSteps;
+        const savedByte  = this.maxBytes;
+        const savedIter  = this.maxInfiniteIter;
+        const savedSteps = this.steps;
+        const savedOut   = this.outputBytes;
+        this.maxSteps        = Infinity;
+        this.maxBytes        = Infinity;
+        this.maxInfiniteIter = Infinity;
+        // A context that cannot take the screen says so from `enter()`, the way
+        // crossterm fails without a tty; it reaches the program as the Rust
+        // engines' runtime error instead of an internal one (GLB-018 C).
+        try { this.tui.enter(); }
+        catch (e) {
+          this.maxSteps = savedMax; this.maxBytes = savedByte; this.maxInfiniteIter = savedIter;
+          if ((e?.message ?? e) === 'not a terminal') {
+            throw new ZyError('failed to enable raw mode: not a terminal', stmt.line);
+          }
+          throw new ZyError(`failed to enable raw mode: ${e?.message ?? e}`, stmt.line);
+        }
+        try {
+          await this.execBlock(stmt.body, new Env(env));
+        } finally {
+          this.tui.leave();
+          this.maxSteps        = savedMax;
+          this.maxBytes        = savedByte;
+          this.maxInfiniteIter = savedIter;
+          this.steps           = savedSteps;
+          this.outputBytes     = savedOut;
+        }
+        return;
+      }
+
+      case 'If': {
+        // A condition is a Bool and nothing else (GLB-121): no truthiness.
+        if (this.condition(await this.eval(stmt.cond, env), stmt.cond, stmt)) return await this.execBlock(stmt.then, new Env(env));
+        for (const ei of stmt.elseifs)
+          if (this.condition(await this.eval(ei.cond, env), ei.cond, stmt)) return await this.execBlock(ei.body, new Env(env));
+        if (stmt.else) return await this.execBlock(stmt.else, new Env(env));
+        return;
+      }
+
+      case 'Loop': return await this.execLoop(stmt, env);
+
+      // Decision 12: the edit modifies its receiver. Evaluating the expression
+      // already produces the edited collection — the operators are pure — so the
+      // whole of "modify in place" is storing the result back under the same
+      // name, which is exactly what assignment by value makes indistinguishable
+      // from mutation (DI-04).
+      case 'InPlaceEdit': {
+        // A positional tuple does not change, whatever the operator.
+        // Immutability is a property of the value, not of the operator, so this
+        // is one check rather than an exception inside each of `$+`, `$-`, `$^`…
+        let recv = null;
+        try { recv = env.peek(stmt.name); } catch { /* undefined: let eval report it */ }
+        if (recv?.type === 'tuple' && !isDict(recv))
+          throw new ZyError(
+            `cannot modify tuple '${stmt.name}': tuples are immutable\n` +
+            `help: use 'new = ${stmt.name}[i]$~ value' for a functional update`,
+            stmt.line);
+        // `name <edit> …` on a plain name: the edit may write into the array
+        // where it is, when this variable is its only holder (ZYJS-014). The
+        // evaluator is told which node that is, and consumes the note at once.
+        if (!stmt.hot && stmt.expr?.obj?.type === 'Ident' && stmt.expr.obj.name === stmt.name
+            && !stmt.expr.obj.hot) {
+          this._ownEdit = stmt.expr;
+        }
+        const edited = await this.eval(stmt.expr, env);
+        this._ownEdit = null;
+        if (!env.set(stmt.name, edited)) {
+          if (stmt.hot) env.hotDef(stmt.name, edited);
+          else env.def(stmt.name, edited);
+        }
+        return;
+      }
+
+      case 'ExprStmt': {
+        // A bare match statement (?? x { arm => { <~ v } }, no assignment) must
+        // propagate its arm's control-flow signal (<~, @!, @>) the same way an
+        // `if` block already does — going through eval() here would discard it,
+        // since eval() only ever returns plain Values.
+        if (stmt.expr.type === 'Match') {
+          const arm = await this.selectMatchArm(stmt.expr, env);
+          // No arm matched: that aborts here too, as it does for a `??` used as a
+          // value (GLB-016) and as both Rust engines do for either. Written as a
+          // statement, the program went on to the next line (ZYJS-051).
+          if (!arm) throw new ZyError('no pattern matched in match expression', stmt.expr.line);
+          const aenv = arm.runEnv;
+          if (arm.body.type === 'block') return await this.execBlock(arm.body.stmts, new Env(aenv));
+          await this.eval(arm.body.value, aenv);
+          if (arm.body.effect) return await this.execBlock(arm.body.effect, new Env(aenv));
+          return;
+        }
+        await this.eval(stmt.expr, env);
+        return;
+      }
+
+      case 'IndexAssign': {
+        const col = env.get(stmt.obj);
+        const i   = (await this.eval(stmt.index, env)).v;
+        if (i === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
+        const val = await this.eval(stmt.value, env);
+        const idx = i < 0 ? col.v.length + i : i - 1;
+        let updated;
+        if (col.type === 'arr') {
+          const r = [...col.v]; r[idx] = val; updated = mkArr(r);
+        } else if (col.type === 'tuple') {
+          throw new ZyError(
+            `cannot modify tuple '${stmt.obj}': tuples are immutable\n` +
+            `help: use 'new_var = ${stmt.obj}[${i}]$~ value' for a functional update`
+          );
+        } else {
+          throw new ZyError(`'${stmt.obj}' is not an array`);
+        }
+        if (!env.set(stmt.obj, updated)) env.def(stmt.obj, updated);
+        return;
+      }
+
+      case 'ArrayDestruct': {
+        const arr = await this.eval(stmt.value, env);
+        if (arr.type !== 'arr')
+          throw new ZyError(`array pattern '[ … ]' requires an array, got ${this.destructTypeName(arr)}`);
+        this.bindPositional(stmt.targets, arr.v, false, env);
+        return;
+      }
+
+      case 'TupleDestruct': {
+        const tup = await this.eval(stmt.value, env);
+        if (tup.type !== 'tuple' || tup.keys)
+          throw new ZyError(`tuple pattern '( … )' requires a tuple, got ${this.destructTypeName(tup)}`);
+        this.bindPositional(stmt.targets, tup.v, true, env);
+        return;
+      }
+
+      case 'NamedDestruct': {
+        const tup = await this.eval(stmt.value, env);
+        if (!isDict(tup))
+          throw new ZyError(
+            `the pattern #(…) requires a dictionary, got ${typeLabel(tup)}\n` +
+            `help: #(key: name) = d unpacks a dictionary; use (a, b) for a tuple, [a, b] for an array`);
+        for (const { field, name } of stmt.targets) {
+          const i = keyIndex(tup, field);
+          // ##Key, exactly as reading the key would raise: binding nothing made
+          // the pattern succeed with the name empty (the tree-walker did too,
+          // until v0.0.9 — decision 10 refuses the silent undefined).
+          if (i < 0) throw new ZyRuntimeError(
+            Interpreter.missingKeyMsg(field, tup.keys), '##Key');
+          const val = tup.v[i];
+          if (!env.set(name, val)) env.def(name, val);
+        }
+        return;
+      }
+
+      case 'TryCatch': {
+        // The whole `!?` — body, `:!` and `:>` — is open for the tail call, as
+        // the VM's try_stack has it: a `<~ f()` inside owes the handler or the
+        // `:>` (GLB-133, ZYTW-017).
+        const tryFrame = this.callFrames[this.callFrames.length - 1];
+        if (tryFrame) tryFrame.tries++;
+        try {
+          return await this.execTryCatch(stmt, env);
+        } finally {
+          if (tryFrame) tryFrame.tries--;
+        }
+      }
+
+      case 'LifetimeEnd': {
+        // A second `\` that runs is a use after the first (MEM-8, GLB-055).
+        if (!env.destroy(stmt.name) && env.wasDestroyed(stmt.name)) {
+          throw new ZyRuntimeError(
+            `use after destruction: variable '${stmt.name}' was destroyed after its last use`, '##_');
+        }
+        return;
+      }
+    }
+  }
+
+
+  // A `!?` statement: what `case 'TryCatch'` runs once it has counted the
+  // block as open for the tail call.
+  async execTryCatch(stmt, env) {
+    let result;
+    try {
+      result = await this.execBlock(stmt.tryBody, new Env(env));
+    } catch (err) {
+      if (err instanceof ZyErrorPropagate) throw err; // $!! propagates through try/catch
+      // An error raised with a kind keeps it; one that carries only a message
+      // is read by the words, as the Rust engines read it.
+      const errType = (err.errType && (err.errType !== '##_' || err.kindDeclared))
+        ? err.errType
+        : errorKindOfMessage(err.message ?? String(err));
+      const matched = stmt.catches.find(
+        c => !c.errType || c.errType === errType || c.errType === '##_'
+      );
+      if (matched) {
+        const catchEnv = new Env(env);
+        const errMsg = err.message ?? String(err);
+        // `_err` is born as `m = …` is (MEM-7, the rule `##Kind(m)` follows):
+        // one already visible — the `_err` of a `:!` this one is nested in —
+        // is assigned, and a new one lives in the clause. Defining it here
+        // every time made a second `_err` under the first, so after a nested
+        // `!?` the outer clause read its own error again where the two Rust
+        // engines read the inner one (ZYJS-066).
+        // The clause reads its own — a `_` name is not read through a parent
+        // here — and the visible one is written too, found by hand because
+        // `set` keeps a `_` name from reaching a parent.
+        const errVal = { type: 'error', errType, v: errMsg };
+        catchEnv.def('_err', errVal);
+        let holder = env;
+        while (holder && !holder.vars.has('_err')) holder = holder.funcBoundary ? null : holder.parent;
+        if (holder) holder.vars.set('_err', errVal);
+        result = await this.execBlock(matched.body, catchEnv);
+      } else {
+        throw err;
+      }
+    } finally {
+      if (stmt.finallyBody) await this.execBlock(stmt.finallyBody, new Env(env));
+    }
+    return result;
+  }
+
+  // What an iterator leaves behind (REFERENCE.md L24, MM-11).
+  //
+  // The value taken is whatever the name holds at the end of the last iteration
+  // that ran — not the loop's counter — because a body that writes to the iterator
+  // keeps that write (`@ w:1..3 { w = 100 }` leaves 100), while never altering the
+  // iteration itself: each pass re-publishes the counter into a fresh scope.
+  //
+  // `env.set` returns false for a name that does not exist outside the loop, which
+  // is exactly the case where the iterator stays loop-local — and every engine
+  // agrees on that: reading the iterator after the loop is `undefined variable`
+  // in all three, refused by static analysis before anything runs.
+  //
+  // `DM-20` claimed the two Rust engines left it alive (`zytw 3 · zyvm 3`). It is
+  // not reproducible: measured against `zymbol 0.0.9` on 2026-08-18, with the
+  // pre-change binary, both answer `error: undefined variable 'i'` from
+  // zymbol-semantic. The entry contradicted the *Descartadas* table of the same
+  // document, which said the opposite and was right.
+  publishIter(env, name, lastEnv) {
+    if (!lastEnv) return;
+    try { env.set(name, lastEnv.get(name)); } catch { /* iterator was destroyed */ }
+  }
+
+  async execLoop(loop, env) {
+    const outer = new Env(env);
+    const brk = sig => sig instanceof ZyBreak    && (sig.label === null || sig.label === loop.label);
+    const cnt = sig => sig instanceof ZyContinue && (sig.label === null || sig.label === loop.label);
+
+    if (loop.kind === 'infinite') {
+      let iter = 0;
+      while (true) {
+        if (++iter > this.maxInfiniteIter)
+          throw new ZyError(`Infinite loop limit reached (${this.maxInfiniteIter} iterations) — add @! to break`);
+        this.tick();
+        const sig = await this.execBlock(loop.body, new Env(outer));
+        if (brk(sig)) break;
+        if (cnt(sig)) continue;
+        if (sig instanceof ZyReturn) return sig;
+        if (sig instanceof ZyBreak) return sig;
+        if (sig instanceof ZyContinue) return sig;
+        await this.maybeYield();
+      }
+      return;
+    }
+
+    if (loop.kind === 'while') {
+      const firstVal = await this.eval(loop.cond, env);
+      if (firstVal.type === 'int') {
+        // Times loop: repeat N times
+        const n = firstVal.v;
+        for (let i = 0; i < n; i++) {
+          this.tick();
+          const sig = await this.execBlock(loop.body, new Env(outer));
+          if (brk(sig)) break;
+          // ZYJS-017: this was the one loop kind that never took its own `@>`,
+          // so the signal went up until nothing took it and the program ended
+          // with status 0 and the rest of it unrun.
+          if (cnt(sig)) { await this.maybeYield(); continue; }
+          if (sig instanceof ZyReturn) return sig;
+          if (sig instanceof ZyBreak || sig instanceof ZyContinue) return sig;
+          await this.maybeYield();
+        }
+      } else {
+        // While loop: re-evaluate condition each iteration. A specifier that is
+        // neither a count nor a condition is refused rather than read through
+        // truthiness — every engine used to invent a different answer for an
+        // array or a float here.
+        let cond = loopCond(firstVal);
+        while (cond) {
+          this.tick();
+          const sig = await this.execBlock(loop.body, new Env(outer));
+          if (brk(sig)) break;
+          if (cnt(sig)) { cond = loopCond(await this.eval(loop.cond, env)); continue; }
+          if (sig instanceof ZyReturn) return sig;
+          if (sig instanceof ZyBreak) return sig;
+          if (sig instanceof ZyContinue) return sig;
+          await this.maybeYield();
+          cond = loopCond(await this.eval(loop.cond, env));
+        }
+      }
+      return;
+    }
+
+    if (loop.kind === 'range') {
+      // The tree-walker's checks, in its order: start and end evaluated, then
+      // the step, then the bounds. Decimals are a ##Type (the author, 2026-09-15)
+      // and a step is positive — its sign never came from the program here:
+      // `-1` was turned round and ran forwards, and `1.5` counted in Floats
+      // (GLB-014 B, H).
+      const fromV = await this.eval(loop.from, env);
+      const toV   = await this.eval(loop.to,   env);
+      const stepV = loop.step ? await this.eval(loop.step, env) : null;
+      if (stepV) {
+        if (stepV.type !== 'int') throw new ZyRuntimeError(`step must be an integer, got ${typeIdent(stepV)}`, '##Type', loop.line);
+        if (stepV.v <= 0) throw new ZyError(`step must be positive, got ${stepV.v}`, loop.line);
+      }
+      if (fromV.type !== 'int' || toV.type !== 'int') {
+        throw new ZyRuntimeError(`range bounds must be integers, got ${typeIdent(fromV)} and ${typeIdent(toV)}`, '##Type', loop.line);
+      }
+      const from = fromV.v, to = toV.v;
+      const magnitude = stepV ? stepV.v : 1;
+      const step = from <= to ? magnitude : -magnitude;
+      // The iterator does not shadow a name that already exists outside: the loop
+      // writes to it, and it keeps the last value assigned — including when the
+      // loop ends early through `@!` (REFERENCE.md L24, settled for the Rust
+      // engines in v0.0.8). `env.set` reports false for a name that does not
+      // exist, which is exactly the case where the iterator stays loop-local.
+      // A loop variable that is the module's STATE is that state on every
+      // turn, as an assignment to it would be (GLB-119, decided 2026-10-10).
+      // It was bound in the turn's own scope and published when the loop
+      // ended, so a function of the module called from the body read the value
+      // from before the loop.
+      const isState = Interpreter.isModuleState(env, loop.var);
+      let lastEnv = null;
+      for (let i = from; step > 0 ? i <= to : i >= to; i += step) {
+        this.tick();
+        const iter = new Env(outer);
+        if (isState) env.set(loop.var, mkInt(i));
+        else iter.def(loop.var, mkInt(i));
+        lastEnv = isState ? null : iter;
+        const sig = await this.execBlock(loop.body, iter);
+        if (brk(sig)) break;
+        if (cnt(sig)) continue;
+        if (sig instanceof ZyReturn) { this.publishIter(env, loop.var, lastEnv); return sig; }
+        if (sig instanceof ZyBreak || sig instanceof ZyContinue) { this.publishIter(env, loop.var, lastEnv); return sig; }
+        await this.maybeYield();
+      }
+      this.publishIter(env, loop.var, lastEnv);
+      return;
+    }
+
+    if (loop.kind === 'foreach') {
+      const it = await this.eval(loop.iterable, env);
+      let items;
+      if      (it.type === 'arr')   items = it.v;
+      else if (it.type === 'str')   items = [...it.v].map(mkChar);
+      // The pattern form asks for both halves, so a dictionary is handed over as
+      // `(clave, valor)` pairs. `@ k:d` still yields keys (decision 8).
+      else if (loop.pairs && isDict(it))
+        items = it.keys.map((k, i) => ({ type:'tuple', v:[mkStr(k), it.v[i]], keys:null }));
+      // A DICTIONARY yields its KEYS, in insertion order — `for k in d` as
+      // Python spells it (decision 8). It used to yield the VALUES here, while
+      // the tree-walker refused to walk one at all: three engines, two answers,
+      // and neither was the decided one. With `d[k]` available the key is enough
+      // to reach the value, so no destructuring pattern has to enter `@`.
+      //
+      // A positional tuple still yields its elements (decision 21).
+      else if (isDict(it))
+        items = it.keys.map(k => mkStr(k));
+      else if (it.type === 'tuple') items = it.v;
+      else throw new ZyRuntimeError(`can only iterate over ranges, arrays, strings, tuples and dictionaries, got ${typeIdent(it)}`, '##Type', loop.line);
+
+      // Same rule as the range loop above: a pre-existing name keeps the last
+      // element the loop bound to it.
+      const isState = Interpreter.isModuleState(env, loop.var);
+      let lastEnv = null;
+      for (const item of items) {
+        this.tick();
+        const iter = new Env(outer);
+        if (isState) env.set(loop.var, item);
+        else iter.def(loop.var, item);
+        lastEnv = isState ? null : iter;
+        const sig = await this.execBlock(loop.body, iter);
+        if (brk(sig)) break;
+        if (cnt(sig)) continue;
+        if (sig instanceof ZyReturn) { this.publishIter(env, loop.var, lastEnv); return sig; }
+        if (sig instanceof ZyBreak || sig instanceof ZyContinue) { this.publishIter(env, loop.var, lastEnv); return sig; }
+        await this.maybeYield();
+      }
+      this.publishIter(env, loop.var, lastEnv);
+      return;
+    }
+  }
+
+  /** Evaluate `nodes` left to right, one at a time.
+   *
+   * ZYJS-016: every one of these sites used to be
+   * `await Promise.all(nodes.map(n => this.eval(n, env)))`, which does not
+   * evaluate in order — it STARTS every evaluation, and each runs to its first
+   * `await` before the next one gets a turn. The values came out right and the
+   * effects did not: `[p(1), p(2)]` with a `p` that prints twice printed
+   * `12a a 12b b`, where the other two engines print `1a 1b 2a 2b`. The engine
+   * runs on one thread, so there was no parallelism to lose.
+   */
+  async evalInOrder(nodes, env) {
+    const out = [];
+    for (const n of nodes) out.push(await this.eval(n, env));
+    return out;
+  }
+
+  async eval(expr, env) {
+    this.tick();
+
+    switch (expr.type) {
+      case 'Literal':
+        switch (expr.kind) {
+          case 'int':   return mkInt(expr.value);
+          case 'float': return mkFloat(expr.value);
+          case 'bool':  return mkBool(expr.value);
+          case 'char':  return mkChar(expr.value);
+          case 'str':   return await this.evalStr(expr.value, env);
+          case 'unit':  return mkUnit();
+        }
+        break;
+
+      case 'Ident': {
+        if (expr.hot) {
+          try { return env.get(expr.name); }
+          catch (_) { const n = mkInt(0); env.hotDef(expr.name, n); return n; }
+        }
+        const v = env.get(expr.name);
+        // A named function read AS A VALUE captures what its body reads from
+        // the scope it is being taken in, exactly as a lambda does and exactly
+        // as `func_def_to_value` does in the tree-walker. A direct call does
+        // not come through here — `case 'Call'` reads `env.get(expr.callee)` —
+        // so calling stays isolated, which is the asymmetry the two Rust
+        // engines have and this one did not.
+        //
+        // The copy keeps `fnId`, so `f = adder` is still the same function as
+        // `adder` when compared.
+        if (v?.type === 'func' && !v.native && !v.captures) {
+          return { ...v, captures: captureFor(v.params ?? [], v.body, env) };
+        }
+        return v;
+      }
+
+      case 'TerminalSize': {
+        if (!this.tui) return { type: 'tuple', v: [mkInt(24), mkInt(80)], keys: null };
+        const [rows, cols] = this.tui.getSize();
+        return { type: 'tuple', v: [mkInt(rows), mkInt(cols)], keys: null };
+      }
+
+      // `</ file />` runs another file as a process and captures what it
+      // prints. The browser has no process to start, so the form parses, is
+      // checked, and fails here, where it is reached.
+      case 'Execute':
+        // An `##IO`, declared, as the Rust engines raise a subscript they cannot
+        // run (GLB-099): the path's words chose the family before.
+        throw new ZyRuntimeError(`cannot run '${expr.path}': a subscript runs another file as a process, and the browser has none`, '##IO', expr.line);
+
+      case 'ErrorConstruct': {
+        // A soft error value, never a raise: `$!` is #1, `$!!` propagates it,
+        // no `:!` sees it — the same shape std/io's errors have here.
+        const m = await this.eval(expr.value, env);
+        if (m.type !== 'str') {
+          throw new ZyRuntimeError(`an error's message is a String, got ${typeLabel(m)}`, '##Type', expr.line);
+        }
+        return { type: 'error', errType: expr.kind, v: m.v };
+      }
+
+      case 'BashExec': {
+        // The browser has no shell. What it has is a short list of stand-ins,
+        // each for a command whose answer the page can give honestly: the
+        // clock, a literal `echo`, and the entropy a seed is built from. Any
+        // other command is REFUSED, as `</ … />` is refused just above.
+        //
+        // It used to answer every other command with a random nine-digit
+        // number (BUG-GOL-014): `<\ "exit 3" \>`, `whoami`, `cat file` and
+        // eight `sqlite3 … 'SELECT …'` in the corpus and the example pool all
+        // got one, and printed or parsed it as if the command had said it.
+        // The arguments are evaluated and concatenated, with no separator
+        // (GLB-004), and the stand-ins are matched against the result — so a
+        // command built from variables is recognised when it comes out as one
+        // of them, and refused otherwise.
+        const bashStr = v => v.type === 'bool' ? (v.v ? '#1' : '#0')
+          : (v.type === 'array' || v.type === 'tuple') ? v.v.map(bashStr).join(' ')
+          : String(v.v);
+        let raw = '';
+        for (const a of expr.args) raw += bashStr(await this.eval(a, env));
+        raw = raw.trim();
+        const _cmd = raw.replace(/['"]/g, ' ').replace(/\s+/g, ' ').trim();
+        const _rand = n => Math.trunc(Math.random() * n);
+        const _pad = n => String(n).padStart(2, '0');
+        // Named as it was written, without the quotes of a single literal.
+        const shown = /^"[^"]*"$/.test(raw) ? raw.slice(1, -1) : raw;
+        const refuse = () => {
+          throw new ZyError(`cannot run '${shown}': a shell command runs as a process, and the browser has none`, expr.line);
+        };
+
+        // date +FORMAT — every specifier the stand-in knows, in place; an
+        // unknown one is refused rather than left as text. `date +%Y-%m-%d`
+        // used to answer with the year alone.
+        const date = /^date \+(\S+)$/.exec(_cmd);
+        if (date) {
+          const now = new Date();
+          let bad = false;
+          const out = date[1].replace(/%(\d*)(.)/g, (_, w, c) => {
+            // A width is only meaningful on %N, where it keeps the leading
+            // digits — `%6N` is microseconds (GO's `date +%s%6N`).
+            if (w && c !== 'N') { bad = true; return ''; }
+            switch (c) {
+              case 'Y': return String(now.getFullYear());
+              case 'm': return _pad(now.getMonth() + 1);
+              case 'd': return _pad(now.getDate());
+              case 'H': return _pad(now.getHours());
+              case 'M': return _pad(now.getMinutes());
+              case 'S': return _pad(now.getSeconds());
+              case 'F': return `${now.getFullYear()}-${_pad(now.getMonth() + 1)}-${_pad(now.getDate())}`;
+              case 'T': return `${_pad(now.getHours())}:${_pad(now.getMinutes())}:${_pad(now.getSeconds())}`;
+              case 's': return String(Math.floor(Date.now() / 1000));
+              // Nanoseconds within the current second, never the epoch: v0.0.9's
+              // integer is ±(2^53−1), fail-closed, and a seed is multiplied on
+              // the next line — the epoch in ns is 199× over the ceiling.
+              case 'N': {
+                const ns = String(_rand(1e9)).padStart(9, '0');
+                return w ? ns.slice(0, Math.min(9, Number(w))) : ns;
+              }
+              case '%': return '%';
+              default: bad = true; return '';
+            }
+          });
+          if (!bad) return mkStr(out);
+          refuse();
+        }
+        // echo $$ — a plausible pid, under Linux's default pid_max
+        if (_cmd === 'echo $$') return mkStr(String(1 + _rand(4194304)));
+        // od … /dev/urandom — two bytes, so a uint16. The applications strip
+        // od's padding with `| tr -d ' \n'`, and the stand-in's answer has none.
+        // Whatever `tr -d` is given is optional here: quotes and whitespace are
+        // flattened above, so `' \n'` — a space and a newline, since `\n` became
+        // an escape — leaves nothing after `-d`. The pattern asked for something
+        // there, and the very command the published games seed from was refused
+        // (ZYJS-059).
+        if (/^od -An -N2 -tu2 \/dev\/urandom( \| tr -d( .*)?)?$/.test(_cmd)) return mkStr(String(_rand(65536)));
+        // echo of literal words, and nothing the shell would read as syntax:
+        // `echo x | bc` is a pipeline, not an echo. The backquote is written
+        // \x60 so the message inventory's extractor does not read it as the
+        // start of a template literal.
+        if (/^echo( |$)/.test(_cmd) && !/[|&;<>\x60$(){}\\*?]/.test(_cmd)) {
+          return mkStr(_cmd.slice(4).trim());
+        }
+        refuse();
+      }
+
+      case 'Array':
+        return mkArr(await this.evalInOrder(expr.items, env));
+
+      case 'Tuple': {
+        const items = await this.evalInOrder(expr.items, env);
+        return { type: 'tuple', v: items, keys: expr.keys ?? null };
+      }
+
+      case 'ImplicitConcat': {
+        const items = expr.items ?? [];
+        // Prefix hot-def sentinel in RHS: [Ident{hot:true, name:''}, <inner_expr>]
+        if (items.length >= 2 &&
+            items[0]?.type === 'Ident' && items[0]?.hot && items[0]?.name === '') {
+          // Everything after the sentinel is still a juxtaposition, and it used
+          // to return `items[1]` alone — so `s = °s "x"` evaluated to `s` and
+          // dropped the `"x"`, and the accumulator never grew. `ZyBank`'s
+          // `transliterar` is exactly that loop and came back empty, which is
+          // how a four-failure test in an application found it.
+          const rest = items.slice(1);
+          const inner = rest[0];
+          const hotName = this._leftmostIdentName(inner);
+          if (hotName) {
+            let exists = false;
+            try { env.get(hotName); exists = true; } catch (_) {}
+            // The neutral follows the OPERATOR, and here the operator is
+            // juxtaposition, whose neutral is the empty string — the same
+            // answer the LHS form `°s = s ch` already gives. Only when the
+            // sentinel governs a lone expression does the operator inside it
+            // decide.
+            if (!exists)
+              env.hotDef(hotName,
+                rest.length > 1 ? mkStr('') : this._hotNeutralForExpr(inner));
+          }
+          if (rest.length === 1) return await this.eval(inner, env);
+          const parts = [];
+          for (const item of rest) parts.push(await this.eval(item, env));
+          return mkStr(parts.map(v => this.displayOutput(v)).join(''));
+        }
+        const vals = [];
+        for (const item of items) vals.push(await this.eval(item, env));
+        // displayOutput: implicit concatenation is display text -> numeral mode applies.
+        return mkStr(vals.map(v => this.displayOutput(v)).join(''));
+      }
+      case 'CommaJoin': {
+        const vals = await this.evalInOrder(expr.items, env);
+        return mkStr(vals.map(v => this.displayOutput(v)).join(''));
+      }
+
+      case 'BinOp': {
+        // ZYJS-005: these read both operands through `truthy()`, so `7 && 3`
+        // answered `#1` with neither a warning nor a refusal, where the
+        // tree-walker refuses and the VM at least warned. There is no
+        // truthiness in Zymbol — the loop specifier settled that in v0.0.9 —
+        // so a logical operand is a Bool or the program is refused.
+        //
+        // The left operand is checked first and guards the right, which is what
+        // makes `#0 && f()` still not call `f()`: the short-circuit is kept,
+        // and the right operand is not even type-checked when it is not reached.
+        if (expr.op === '&&' || expr.op === '||') {
+          const isAnd = expr.op === '&&';
+          const name  = isAnd ? 'AND' : 'OR';
+          const l = await this.eval(expr.left, env);
+          if (l.type !== 'bool')
+            throw new ZyRuntimeError(`logical ${name} requires boolean operands, got ${typeIdent(l)}`, '##Type', expr.line);
+          if (l.v !== isAnd) return mkBool(l.v);
+          const r = await this.eval(expr.right, env);
+          if (r.type !== 'bool')
+            throw new ZyRuntimeError(`logical ${name} requires boolean operands, got ${typeIdent(r)}`, '##Type', expr.line);
+          return mkBool(r.v);
+        }
+        return this.applyOp(expr.op, await this.eval(expr.left, env), await this.eval(expr.right, env));
+      }
+
+      case 'UnaryOp': {
+        const val = await this.eval(expr.operand, env);
+        // The same rule as the binary operators, and for the same reason: there
+        // is no truthiness, and there is no arithmetic on a non-number. `-"a"`
+        // used to answer `NaN` here and `!7` used to answer `#0`, where both
+        // Rust engines refuse — a JavaScript coercion arriving as a Zymbol
+        // value, which is the family of ZYJS-003 and ZYJS-006.
+        if (expr.op === '-') {
+          if (val.type !== 'int' && val.type !== 'float')
+            throw new ZyRuntimeError(`negation requires numeric operand, got ${typeIdent(val)}`, '##Type', expr.line);
+          return val.type === 'float' ? mkFloat(-val.v) : mkInt(-val.v);
+        }
+        if (expr.op === '!') {
+          if (val.type !== 'bool')
+            throw new ZyRuntimeError(`logical NOT requires boolean operand, got ${typeIdent(val)}`, '##Type', expr.line);
+          return mkBool(!val.v);
+        }
+        if (expr.op === '+') {
+          if (val.type !== 'int' && val.type !== 'float')
+            throw new ZyRuntimeError(`unary plus requires numeric operand, got ${typeIdent(val)}`, '##Type', expr.line);
+          return val;
+        }
+        break;
+      }
+
+      case 'Call': {
+        // Read before the arguments: a call inside one is not the tail call.
+        const tail = expr === this._tailCallNode;
+        if (tail) this._tailCallNode = null;
+        const fn = env.get(expr.callee);
+        // A family, not a bare error: a name holding the wrong thing is a type
+        // mistake, and `!?` has to be able to sort it (GLB-034, D1).
+        if (!fn || fn.type !== 'func')
+          throw new ZyRuntimeError(`'${expr.callee}' is not a function`, '##Type');
+        const args = await this.evalArgs(fn, expr, env);
+        this.checkCallArity(fn, args);
+        this._tailNow = tail;
+        return await this.callFunc(fn, args, this.buildOutWriteback(fn, expr, env));
+      }
+
+      case 'CallExpr': {
+        // `m.f()` on a module alias CALLS: it asks for a function, and is told
+        // "does not export function" when there is none, as in both Rust
+        // engines. Evaluated as a read it said "has no constant" (ZYJS-040).
+        // Unless a variable of the function hides the alias behind the `.`
+        // (GLB-070, decided 2026-09-26).
+        const c = expr.callee;
+        let callee = c;
+        if (c?.type === 'FieldAccess' && !c.scoped && c.obj?.type === 'Ident'
+            && this.moduleAliases.has(c.obj.name) && !env.hidesAlias(c.obj.name)) {
+          callee = { ...c, scoped: true };
+        }
+        const fn = await this.eval(callee, env);
+        if (!fn || fn.type !== 'func')
+          throw new ZyRuntimeError(`expression is not callable`, '##Type');
+        const args = await this.evalArgs(fn, expr, env);
+        this.checkCallArity(fn, args);
+        // Output parameters must be written back here too, not just in 'Call'. A module
+        // call `alias::f(x)` parses as Ident(alias) → FieldAccess → CallExpr (the callee
+        // is not a bare Ident), so every cross-module call landed in this branch and
+        // silently dropped its `<~` out-params: the callee mutated its local copy and the
+        // caller's variable never changed. That is what made GO unplayable in the browser —
+        // 盤::着手(局面<~, …, 取数<~, コウ点<~) placed a stone and counted captures into
+        // parameters the caller never saw, so the board stayed empty forever.
+        return await this.callFunc(fn, args, this.buildOutWriteback(fn, expr, env));
+      }
+
+      case 'NavIndex': {
+        const spec = expr.spec;
+        // One element of an array, by a plain index: the reader keeps the
+        // element and nothing of the array, so the array stays its variable's
+        // own (ZYJS-014) — `t[i]$~ t[i] + 1` reads and writes without a copy.
+        let obj = (expr.obj?.type === 'Ident' && !expr.obj.hot
+                   && spec?.kind === 'simple' && plainOperand(spec.index))
+          ? env.peek(expr.obj.name) : null;
+        if (obj?.type !== 'arr') obj = await this.eval(expr.obj, env);
+
+        if (spec.kind === 'simple') {
+          const iVal = await this.eval(spec.index, env);
+          // A dictionary is addressed by KEY, and the key may be computed —
+          // `d[clave]`, not just `d.nombre`. Without this the named tuple was a
+          // record, not a dictionary: readable only when the program already
+          // knew what it held (decision 7, DM-09). This engine used to answer an
+          // empty line here, which was the worst of the three.
+          //
+          // The dot only reaches keys that are identifiers; the bracket reaches
+          // any key, which is what JSON needs — `d["mi clave"]` cannot be
+          // written any other way.
+          if (iVal.type === 'str' && obj.type === 'tuple' && obj.keys) {
+            const ki = keyIndex(obj, iVal.v);
+            if (ki < 0)
+              throw new ZyRuntimeError(
+                Interpreter.missingKeyMsg(iVal.v, obj.keys), '##Key');
+            return obj.v[ki];
+          }
+          // A position is an Int. `[1, 2][1.5]` used to read `v[0.5]`, which is
+          // nothing, and print an empty line (GLB-012 A).
+          // (A String key into a dictionary has already returned above.)
+          // A String reaches a dictionary KEY, so on anything else it says so —
+          // the same words as the navigation form since step 3.5b.
+          if (iVal.type === 'str') {
+            throw new ZyRuntimeError(`a String addresses a dictionary key, and this is ${typeLabel(obj)}`, '##Type', expr.line);
+          }
+          if (iVal.type !== 'int') {
+            throw new ZyRuntimeError(`index must be an integer, got ${typeLabel(iVal)}`, '##Type', expr.line);
+          }
+          // Decision 11: a dictionary is addressed by KEY, never by position.
+          // In a mutable dictionary a positional index is fragile — adding a key
+          // changes what sits at each position, and a program that depended on
+          // `d[2]` stops being correct with nothing to say so. The POSITIONAL
+          // tuple keeps `t[1]` in full: there the index is the only address
+          // there is, and the size is fixed.
+          if (iVal.type === 'int' && isDict(obj)) {
+            const first = obj.keys.find(k => k) ?? 'clave';
+            throw new ZyRuntimeError(
+              `a dictionary is addressed by key, not by position\n` +
+              `help: use d["${first}"] — adding a key changes what sits at each position`, '##Type');
+          }
+          return this.navGetAt(obj, iVal.v);
+        }
+
+        if (spec.kind === 'path') {
+          // Single nav path — may return scalar or flat array if path has ranges
+          const resolvedSteps = await this.resolveNavSteps(spec.path, env);
+          return await this.evalNavPath(obj, resolvedSteps);
+        }
+
+        if (spec.kind === 'flat') {
+          // Multiple nav paths — flat array result
+          const results = [];
+          for (const path of spec.paths) {
+            const resolvedSteps = await this.resolveNavSteps(path, env);
+            const val = await this.evalNavPath(obj, resolvedSteps);
+            if (navPathFans(resolvedSteps)) results.push(...val.v);
+            else results.push(val);
+          }
+          return mkArr(results);
+        }
+
+        if (spec.kind === 'structured') {
+          if (spec.groups.length === 1) {
+            // Single structured group → flat array of that group's values
+            const group = spec.groups[0];
+            const results = [];
+            for (const path of group.paths) {
+              const resolvedSteps = await this.resolveNavSteps(path, env);
+              const val = await this.evalNavPath(obj, resolvedSteps);
+              if (navPathFans(resolvedSteps)) results.push(...val.v);
+              else results.push(val);
+            }
+            return mkArr(results);
+          }
+          // Multiple groups → array of arrays
+          const groups = [];
+          for (const group of spec.groups) {
+            const results = [];
+            for (const path of group.paths) {
+              const resolvedSteps = await this.resolveNavSteps(path, env);
+              const val = await this.evalNavPath(obj, resolvedSteps);
+              if (navPathFans(resolvedSteps)) results.push(...val.v);
+              else results.push(val);
+            }
+            groups.push(mkArr(results));
+          }
+          return mkArr(groups);
+        }
+
+        throw new ZyError(`Unknown nav spec kind: ${spec.kind}`);
+      }
+
+      case 'JuxtaConcat': {
+        // displayOutput, not display: an active numeral mode has to reach every
+        // path that turns a number into text, not just `>>`. A number folded
+        // into a composed string used to revert to ASCII under #d0d9#.
+        const parts = [];
+        for (const it of expr.items) parts.push(this.displayOutput(await this.eval(it, env)));
+        return mkStr(parts.join(''));
+      }
+
+      case 'Lambda': {
+        const params = expr.params.map(p => ({ name: p }));
+        const body = expr.body.type === 'block'
+          ? expr.body.stmts
+          : [{ type: 'Return', value: expr.body.value }];
+        return {
+          type: 'func', name: '<lambda>', params, body, fnId: nextFnId(), moduleAliases: this.moduleAliases, homeEnv: this.globalEnv, srcFile: this.srcFile,
+          // A SNAPSHOT of what the body reads from outside, not the scope
+          // itself. `closureEnv: env` held a live reference, so the lambda read
+          // whatever the variable held later and wrote back out through it —
+          // neither of which the Rust engines do.
+          captures: captureFor(params, body, env),
+        };
+      }
+
+      case 'Pipe': {
+        const val = await this.eval(expr.value, env);
+        const pipeEnv = new Env(env);
+        pipeEnv.def('_', val);
+        const result = await this.eval(expr.rhs, pipeEnv);
+        if (result && result.type === 'func') return await this.callFunc(result, [val]);
+        // A call written in place — `f(_, 1)` — has already run with the value
+        // and this is its result. Anything else had to be a function: `5 |> v`
+        // with `v = 5` answered 5 (GLB-015 B).
+        if (expr.rhs?.type === 'Call' || expr.rhs?.type === 'CallExpr') return result;
+        throw new ZyRuntimeError('pipe operator requires a callable function or lambda', '##Type');
+      }
+
+      case 'FieldAccess': {
+        // `alias::name` addresses the module namespace and nothing else, so resolve it
+        // from the alias table rather than by evaluating `alias` as an expression. Without
+        // this, an ordinary variable that happens to share an alias's name shadowed the
+        // module and the call failed with a "requires a named tuple" error pointing at the
+        // wrong thing entirely. `.` keeps evaluating its object normally (it must: most
+        // uses are `tuple.field`) and only consults the alias table as a fallback, which is
+        // what makes `alias.CONST` survive the same shadowing.
+        const aliasName = expr.obj?.type === 'Ident' ? expr.obj.name : null;
+        const aliasMod  = aliasName ? this.moduleAliases.get(aliasName) : undefined;
+
+        const obj = aliasMod && (expr.scoped || !env.hidesAlias(aliasName))
+          ? aliasMod : await this.eval(expr.obj, env);
+        if (obj.type === 'module') {
+          if (!obj.exports.has(expr.field)) {
+            const modAlias = aliasName ?? 'module';
+            // Which of the two spellings was used decides the wording, because
+            // they ask for different things: `::` calls a FUNCTION and `.` reads
+            // a CONSTANT. Both engines in Rust word them apart and so does this
+            // one; getting it wrong sends the reader looking for the wrong kind
+            // of name. `.` also lists what the module does have, which is what
+            // turns the error into a correction — and after GLB-009 that is the
+            // message someone gets when they try to reach a module's state.
+            if (expr.scoped) {
+              throw new ZyError(
+                `module '${modAlias}' does not export function '${expr.field}'`);
+            }
+            const have = [...obj.exports.entries()]
+              .filter(([, v]) => v?.type !== 'func')
+              .map(([k]) => k).sort();
+            throw new ZyError(
+              `Module '${modAlias}' has no constant '${expr.field}'. ` +
+              `Available constants: ${have.length ? have.join(', ') : 'none'}`);
+          }
+          return obj.exports.get(expr.field);
+        }
+        // The wording family the Rust engines use, verbatim — `zyq consensus`
+        // compares the text, and "named tuple" is the retired vocabulary.
+        // A `##Type` (D1), declared: the words of the name chose the family —
+        // `t.index` was an `##Index` (GLB-099).
+        if (obj.type === 'tuple' && !obj.keys)
+          throw new ZyRuntimeError(
+            `a positional tuple is addressed by position, not by name: '${expr.field}'\n` +
+            `help: use t[1] — names live in a dictionary, #(key: value)`, '##Type');
+        if (!isDict(obj))
+          throw new ZyRuntimeError(
+            `the dot reaches a dictionary key, and this is ${typeLabel(obj)}\n` +
+            `help: use d.${expr.field} on a #(…) — for a position, use x[1]`, '##Type');
+        const i = keyIndex(obj, expr.field);
+        // ##Key, not ##_: an absent key is its own kind whichever way the
+        // reader arrived — through the dot or through the bracket (decision 10).
+        if (i < 0) throw new ZyRuntimeError(
+          Interpreter.missingKeyMsg(expr.field, obj.keys),
+          '##Key'
+        );
+        return obj.v[i];
+      }
+
+      case 'CollectionOp':
+        return await this.evalCollectionOp(expr, env);
+
+      case 'FuncUpdate': {
+        // `t[i]$~ v` for its own variable — see `Env.get` (ZYJS-014).
+        const own = this._ownEdit === expr;
+        if (own) this._ownEdit = null;
+        let arr = (own && expr.obj?.type === 'Ident' && !expr.obj.hot
+                   && plainOperand(expr.index) && plainOperand(expr.value))
+          ? env.peek(expr.obj.name) : null;
+        if (arr?.type !== 'arr' && !isDict(arr)) arr = await this.eval(expr.obj, env);
+        // `d.k$~ v` carries its key directly; `d[e]$~ v` evaluates one.
+        const iVal = expr.key !== undefined ? mkStr(expr.key) : await this.eval(expr.index, env);
+        const val  = await this.eval(expr.value, env);
+
+        // String field name — named tuple only (G2)
+        if (iVal.type === 'str') {
+          // An array IS a collection, so saying it is not was false. What is
+          // wrong is the kind of address: a positional collection takes a
+          // position. The two Rust engines' sentence.
+          if (!isDict(arr)) {
+            const t = UPDATE_INDEX[arr.type];
+            throw new ZyRuntimeError(
+              t ? t(typeLabel(iVal))
+                : `$~ writes into a collection, and this is ${typeLabel(arr)}\n` +
+                  `help: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
+          }
+          const fi = keyIndex(arr, iVal.v);
+          // A key that is not there gets ADDED, as `d[k] = v` does in Python.
+          // The array refuses the same move (decision 13) and the two are not
+          // inconsistent: an array is addressed by POSITION, so writing past the
+          // end leaves a hole — JavaScript's own `<3 empty items>` is what that
+          // looks like — while a dictionary is addressed by KEY and has none to
+          // leave. Without it, a JSON built piece by piece could not be built.
+          //
+          // Where it is, when this variable is its only holder — as an array is
+          // written (ZYJS-014): copying both lists on every write made building
+          // a dictionary cost n² whatever the lookup did (GLB-132).
+          if (own && arr.own) {
+            if (fi < 0) dictPut(arr, iVal.v, val); else arr.v[fi] = val;
+            return arr;
+          }
+          // A dictionary that will be owned gets keys of its own too: one it
+          // shared with the original would be pushed into in place later.
+          const r = fi < 0
+            ? { type: 'tuple', v: [...arr.v, val], keys: [...arr.keys, iVal.v] }
+            : { type: 'tuple', v: [...arr.v], keys: own ? [...arr.keys] : arr.keys };
+          if (fi >= 0) r.v[fi] = val;
+          if (own) r.own = true;
+          return r;
+        }
+
+        // A positional WRITE corrupts data rather than returning the wrong
+        // value: strictly worse than the positional read decision 11 withdrew.
+        if (isDict(arr))
+          throw new ZyRuntimeError(Interpreter.notPositionalMsg('d[n]$~ value', arr.keys), '##Type');
+
+        // What is written into has to be a collection. It used to fall through
+        // to the index arithmetic, where an Int read as a container of length 0
+        // and the reader was told `tuple index out of bounds` (step 3.5d).
+        if (arr.type !== 'arr' && arr.type !== 'str' && arr.type !== 'tuple')
+          throw new ZyRuntimeError(
+            `$~ writes into a collection, and this is ${typeLabel(arr)}\n` +
+            `help: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
+
+        // Integer 1-based index. Strict (D2 revoked, 2026-09-20): a Float came
+        // through and `[1, 2][1.5]$~ 9` answered the array unchanged, because
+        // 1.5 resolved to an offset that indexed nothing.
+        if (iVal?.type !== 'int')
+          throw new ZyRuntimeError(UPDATE_INDEX[arr.type](typeLabel(iVal)), '##Type');
+        const i = iVal.v;
+        if (i === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
+        const len = arr.type === 'str' ? strChars(arr).length : (arr.v?.length ?? 0);
+        const idx = i < 0 ? len + i : i - 1;
+        const container = arr.type === 'arr' ? 'array' : arr.type === 'str' ? 'string' : 'tuple';
+        if (idx < 0 || idx >= len)
+          throw new ZyError(`${container} index out of bounds: index ${i} for ${container} of length ${len}`);
+        if (arr.type === 'arr') {
+          if (own && arr.own) { arr.v[idx] = val; return arr; }
+          const r = mkArr([...arr.v]); r.v[idx] = val;
+          if (own) r.own = true;
+          return r;
+        }
+        if (arr.type === 'str') {
+          if (val?.type !== 'char' && val?.type !== 'str')
+            throw new ZyRuntimeError(
+              `$~ on string requires char or string value, got ${typeLabel(val)}`, '##Type');
+          const r = [...arr.v]; r[idx] = this.display(val); return mkStr(r.join(''));
+        }
+        if (arr.type === 'tuple') { const r = [...arr.v]; r[idx] = val; return { type:'tuple', v:r, keys:arr.keys }; }
+        throw new ZyRuntimeError(`$~ writes into a collection, and this is ${typeLabel(arr)}\nhelp: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
+      }
+
+      case 'DeepUpdate': {
+        // `m[i>j]$~ v` for its own variable — see `Env.get` (ZYJS-014) and
+        // `deepUpdateValue` (GLB-140). Peeked, as `FuncUpdate` peeks, only when
+        // no operand can write `m` (GLB-115).
+        const own = this._ownEdit === expr;
+        if (own) this._ownEdit = null;
+        let root = (own && expr.obj?.type === 'Ident' && !expr.obj.hot
+                    && expr.path.every(a => a.kind !== 'range' && (a.key !== undefined || plainOperand(a.expr)))
+                    && plainOperand(expr.value))
+          ? env.peek(expr.obj.name) : null;
+        if (root?.type !== 'arr' && !isDict(root)) root = await this.eval(expr.obj, env);
+        const indices = [];
+        for (const atom of expr.path) {
+          if (atom.kind === 'range') throw new ZyError('deep update ($~) does not support ranges in the path');
+          // A dot step carries its key directly; a bracket step has an expression.
+          const iv = atom.key !== undefined ? mkStr(atom.key) : await this.eval(atom.expr, env);
+          // Int → position, String → dictionary key. Same rule as the read.
+          if (iv.type !== 'int' && iv.type !== 'str')
+            throw new ZyRuntimeError(
+              `a navigation step is a position (Int) or a dictionary key (String), got ${typeIdent(iv)}`, '##Type');
+          indices.push(iv.v);
+        }
+        const newVal = await this.eval(expr.value, env);
+        const r = deepUpdateValue(root, indices, newVal, own && root.own === true);
+        // A copy this variable will hold alone is owned from now on; a
+        // dictionary gets keys of its own, or a later in-place add would push
+        // into the original's (as `FuncUpdate` does).
+        if (own && r !== root && (r.type === 'arr' || isDict(r))) {
+          if (isDict(r)) r.keys = [...r.keys];
+          r.own = true;
+        }
+        return r;
+      }
+
+      case 'TypeMetadata': {
+        // The operand is evaluated like any other expression. There used to be
+        // a special case here — an identifier that `env.get` could not find
+        // answered `("##_", 0, Unit)` instead of throwing — mirroring one in
+        // each Rust engine. All three are gone: an undefined name is refused
+        // before anything runs, so the case was unreachable, and in the Rust
+        // engines it reached a NAMED FUNCTION instead and called it Unit
+        // (GAP-ZYB-009 § 6, D-4). This engine never had that symptom, because
+        // here a named function IS in the environment.
+        return this.typeMetadata(await this.eval(expr.obj, env));
+      }
+
+      case 'Match': {
+        const arm = await this.selectMatchArm(expr, env);
+        // No arm matched: that aborts, as in both Rust engines and as LLM.md
+        // says. A `##_` nobody computed used to flow on (GLB-016).
+        if (!arm) throw new ZyError('no pattern matched in match expression', expr.line);
+        const aenv = arm.runEnv;
+        if (arm.body.type === 'block') {
+          const sig = await this.execBlock(arm.body.stmts, new Env(aenv));
+          if (sig === undefined) return mkUnit();
+          // A control-flow signal (<~, @!, @>) inside a match arm's block must
+          // unwind past this expression context to its real target (the
+          // enclosing function or loop) — eval() itself can only return plain
+          // Values, so throw it, mirroring how $!! (ZyErrorPropagate) already
+          // unwinds through eval() to callFunc's boundary.
+          throw sig;
+        }
+        const value = await this.eval(arm.body.value, aenv);
+        if (arm.body.effect) {
+          const sig = await this.execBlock(arm.body.effect, new Env(aenv));
+          if (sig !== undefined) throw sig;   // as the block form above does
+        }
+        return value;
+      }
+
+      case 'DataOp': {
+        const val = await this.eval(expr.arg, env);
+        // GAP-ZYB-001: resolve a computed decimal count before anything reads
+        // `expr.prec`, so every branch below sees a plain number.
+        if (expr.precExpr) {
+          const pv = await this.eval(expr.precExpr, env);
+          if (pv.type !== 'int') {
+            throw new ZyRuntimeError(
+              `decimal count must be a whole number, got ${typeLabel(pv)}`, '##Type', expr.line);
+          }
+          if (pv.v < 0) {
+            throw new ZyRuntimeError(
+              `decimal count must not be negative, got ${pv.v}`, '##Index', expr.line);
+          }
+          expr = { ...expr, prec: pv.v };
+        }
+        // `what` names the operation for the error message the CLI raises on a
+        // non-numeric string; digits in any script parse (see asciiDigits).
+        // `op` is 'round', 'trunc' or null for the formatting family; each has
+        // the tree-walker's words. Anything that is not a number used to become
+        // 0 here, so `#,|"x"|` and `#.2|#1|` printed a number nobody wrote
+        // (GLB-013 A). A string that reads as a number is taken: rounding and
+        // truncating take it in both Rust engines, formatting takes it in the
+        // VM and not in the tree-walker — undecided (GLB-029).
+        const toNum = (v, op = null) => {
+          if (v.type === 'int' || v.type === 'float') return v.v;
+          if (v.type === 'str') {
+            const n = parseFloat(asciiDigits(v.v.trim()));
+            if (!isNaN(n)) return n;
+            // Reading the text as a number is what failed: a `##Parse`, declared,
+            // because the words of the text chose the family (GLB-097).
+            if (op === 'round') throw new ZyRuntimeError(`cannot convert string '${v.v}' to number for rounding`, '##Parse', expr.line);
+            if (op === 'trunc') throw new ZyRuntimeError(`cannot convert string '${v.v}' to number for truncation`, '##Parse', expr.line);
+          }
+          if (op === 'round') throw new ZyRuntimeError(`round expressions only work with numbers or numeric strings, got ${typeIdent(v)}`, '##Type', expr.line);
+          if (op === 'trunc') throw new ZyRuntimeError(`truncate expressions only work with numbers or numeric strings, got ${typeIdent(v)}`, '##Type', expr.line);
+          throw new ZyRuntimeError(`format expressions only work with numbers, got ${typeIdent(v)}`, '##Type', expr.line);
+        };
+        const fmtSci = (num, prec, mode) => {
+          if (num === 0) return '0e0';
+          const neg = num < 0;
+          const abs = Math.abs(num);
+          let exp = Math.floor(Math.log10(abs));
+          let mant = abs / Math.pow(10, exp);
+          if (prec !== null) {
+            if (mode === 'round') mant = parseFloat(mant.toFixed(prec));
+            else { const f = Math.pow(10, prec); mant = Math.trunc(mant * f) / f; }
+            if (mant >= 10) { mant /= 10; exp += 1; }
+          }
+          let mantStr = parseFloat(mant.toPrecision(15)).toString().replace(/\.?0+$/, '');
+          if (prec !== null && !mantStr.includes('.')) mantStr += '.0';
+          return (neg ? '-' : '') + mantStr + 'e' + exp;
+        };
+        switch (expr.kind) {
+          case 'eval': {
+            // GAP-ZYB-012: a Char reads like the one-character string it is.
+            // `#|"७"|` gave 7 and `#|'७'|` gave back the glyph — the same
+            // operator, the same character, two answers depending on how it had
+            // been written. A Char that is not a digit comes back untouched,
+            // which is what "safe conversion" already meant for a string.
+            if (val.type === 'char') {
+              const a = asciiDigits(val.v);
+              const p = parseFloat(a);
+              if (!isNaN(p) && /^[0-9]+$/.test(a)) return mkInt(p);
+              return val;
+            }
+            if (val.type === 'str') {
+              const s = val.v.trim();
+              // Normalize Unicode digits to ASCII before parsing
+              const ascii = asciiDigits(s);
+              const p = parseFloat(ascii);
+              if (!isNaN(p) && /^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/.test(ascii)) {
+                if (Number.isInteger(p) && !ascii.includes('.') && !ascii.toLowerCase().includes('e')) return mkInt(p);
+                return mkFloat(p);
+              }
+            }
+            return val;
+          }
+          case 'round':       return mkFloat(parseFloat(toNum(val, 'round').toFixed(expr.prec)));
+          case 'trunc': {
+            const n = toNum(val, 'trunc');
+            const f = Math.pow(10, expr.prec);
+            return mkFloat(Math.trunc(n * f) / f);
+          }
+          // `#,` and `#^` write their digits in the ACTIVE numeral script, as
+          // `>>` and the precision operators do. They did not: the text came
+          // from `toLocaleString`/`fmtSci`, which write ASCII, so under `#०९#`
+          // a program printed `१२३४५६७.८९` with `>>` and `1,234,567.89` one line
+          // later with `#,` — two spellings of the digits in one output, and
+          // the same in all three engines, so no consensus run could see it.
+          //
+          // Only the digits map; the separators pass through.
+          case 'comma':       return mkStr(mapNumeralNumber(toNum(val).toLocaleString('en-US'), this.numeralMode));
+          case 'comma_round': {
+            const n = parseFloat(toNum(val).toFixed(expr.prec));
+            return mkStr(mapNumeralNumber(n.toLocaleString('en-US', { minimumFractionDigits: expr.prec, maximumFractionDigits: expr.prec }), this.numeralMode));
+          }
+          case 'comma_trunc': {
+            const raw = toNum(val);
+            const f = Math.pow(10, expr.prec);
+            const n = Math.trunc(raw * f) / f;
+            return mkStr(mapNumeralNumber(n.toLocaleString('en-US', { minimumFractionDigits: expr.prec, maximumFractionDigits: expr.prec }), this.numeralMode));
+          }
+          case 'sci':       return mkStr(mapNumeralNumber(fmtSci(toNum(val), null, null), this.numeralMode));
+          case 'sci_round': return mkStr(mapNumeralNumber(fmtSci(toNum(val), expr.prec, 'round'), this.numeralMode));
+          case 'sci_trunc': return mkStr(mapNumeralNumber(fmtSci(toNum(val), expr.prec, 'trunc'), this.numeralMode));
+          case 'base_conv': {
+            const base = expr.prec;
+            // A string is a code written in the operator's base and gives the
+            // character, as data_ops.rs reads it: `0x|"41"|` is 'A'. This
+            // engine read the string as a DECIMAL number and printed its hex
+            // (`0x0029`), and turned anything unreadable into 0 (GLB-013 A).
+            if (val.type === 'str') {
+              let digits = val.v;
+              for (const pre of ['0b', '0o', '0d', '0x', '0B', '0O', '0D', '0X']) {
+                while (digits.startsWith(pre)) digits = digits.slice(2);
+              }
+              const baseName = { 2: 'binary', 8: 'octal', 10: 'decimal', 16: 'hexadecimal' }[base];
+              const shape = { 2: /^\+?[01]+$/, 8: /^\+?[0-7]+$/, 10: /^\+?[0-9]+$/, 16: /^\+?[0-9a-fA-F]+$/ }[base];
+              const code = shape.test(digits) ? parseInt(digits, base) : NaN;
+              if (!Number.isFinite(code) || code > 0xFFFFFFFF) {
+                // `##Parse`, declared: the words of the text chose it (GLB-097).
+                throw new ZyRuntimeError(`failed to parse '${digits}' as ${baseName} number`, '##Parse', expr.line);
+              }
+              // A code with no character — past 0x10FFFF, or a surrogate — is
+              // `##Range`, as `##'` raises it, without the value (GLB-113).
+              if (code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) {
+                const pfx = { 2: '0b', 8: '0o', 10: '0d', 16: '0x' }[base];
+                throw new ZyRuntimeError(`character out of range: ${pfx}|…| cannot represent this code`, '##Range', expr.line);
+              }
+              return mkChar(String.fromCodePoint(code));
+            }
+            if (val.type !== 'char' && val.type !== 'int') {
+              throw new ZyRuntimeError(`base conversion expressions work with char, int, or string, got ${typeIdent(val)}`, '##Type', expr.line);
+            }
+            const n = val.type === 'char' ? val.v.codePointAt(0) : val.v;
+            // A negative one carries its sign in front, and the digits are those
+            // of its absolute value: `-0x00FF` (GLB-136). It was put inside the
+            // padding, `0x0-FF`.
+            const sg = n < 0 ? '-' : '', m = Math.abs(n);
+            if (base === 16) return mkStr(sg + '0x' + m.toString(16).toUpperCase().padStart(4, '0'));
+            if (base === 2)  return mkStr(sg + '0b' + m.toString(2));
+            if (base === 8)  return mkStr(sg + '0o' + m.toString(8));
+            if (base === 10) return mkStr(sg + '0d' + m.toString(10).padStart(4, '0'));
+            return val;
+          }
+        }
+        return val;
+      }
+
+      case 'CastOp': {
+        const val = await this.eval(expr.operand, env);
+        // `##'` (GLB-109): only an Int is a code — a whole Float is not one,
+        // `##'###f` writes the rounding — and a code with no character (past
+        // 0x10FFFF, or a surrogate) is `##Range`, as in data_ops.rs.
+        if (expr.op === "##'") {
+          if (val.type === 'char') return val;
+          if (val.type !== 'int') {
+            const _names = { str:'String', float:'Float', bool:'Bool', arr:'Array', tuple:'Tuple', unit:'Unit' };
+            const typeName = _names[val.type] ?? (val.type.charAt(0).toUpperCase() + val.type.slice(1));
+            throw new ZyRuntimeError(`##' requires an Int or Char, got ${typeName}`, '##Type');
+          }
+          const code = val.v;
+          if (!Number.isInteger(code) || code < 0 || code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) {
+            throw new ZyRuntimeError("character out of range: ##' cannot represent this Int", '##Range');
+          }
+          return mkChar(String.fromCodePoint(code));
+        }
+        // ##! also accepts a Char, casting it to its Unicode code point —
+        // the only direct Char→Int route (mirrors data_ops.rs CastKind::ToIntTrunc).
+        if (expr.op === '##!' && val.type === 'char') return mkInt(val.v.codePointAt(0));
+        if (val.type !== 'int' && val.type !== 'float') {
+          const _typeNames = { str:'String', int:'Integer', float:'Float', bool:'Bool', char:'Char', arr:'Array', tuple:'Tuple', unit:'Unit' };
+          const typeName = _typeNames[val.type] ?? (val.type.charAt(0).toUpperCase() + val.type.slice(1));
+          const reqSuffix = expr.op === '##!' ? ' or Char' : '';
+          throw new ZyRuntimeError(`${expr.op} requires a numeric value${reqSuffix}, got ${typeName}`, '##Type');
+        }
+        if (expr.op === '##.') return mkFloat(val.v);
+        // A float with no integer form in range is a ##Range error, not the
+        // nearest Number: `###1.0e300` used to answer 1e300 as an "int".
+        const castInt = (n, op) => {
+          if (!inIntRange(n)) throw new ZyRuntimeError(`integer overflow: ${op} cannot represent this float`, '##Range');
+          return mkInt(n);
+        };
+        if (expr.op === '###') {
+          // Round half away from zero
+          const n = val.v;
+          return castInt(n >= 0 ? Math.floor(n + 0.5) : Math.ceil(n - 0.5), '###');
+        }
+        if (expr.op === '##!') return castInt(Math.trunc(val.v), '##!');
+        return val;
+      }
+    }
+
+    return mkUnit();
+  }
+
+  // ─── Navigation helpers ───────────────────────────────────────────────────
+
+  // Resolve an AST nav step array to concrete { kind, val } or { kind, from, to } steps
+  async resolveNavSteps(steps, env) {
+    const resolved = [];
+    for (const step of steps) {
+      // The value decides how a step addresses — an Int a position, a String a
+      // key — and anything else is refused, as index_nav.rs refuses it. The raw
+      // `.v` went through before, so `v[1>1.5..2]` and `v[1>"a"]` on an array
+      // answered an empty value (GLB-012 A).
+      if (step.kind === 'index') {
+        const iv = await this.eval(step.expr, env);
+        if (iv.type !== 'int' && iv.type !== 'str') {
+          throw new ZyRuntimeError(`a navigation step is a position (Int) or a dictionary key (String), got ${typeIdent(iv)}`, '##Type');
+        }
+        resolved.push({ kind: 'index', val: iv.v });
+      } else {
+        const fromV = await this.eval(step.from, env);
+        const toV   = await this.eval(step.to,   env);
+        for (const b of [fromV, toV]) {
+          if (b.type !== 'int') throw new ZyRuntimeError(`index must be an integer, got ${typeLabel(b)}`, '##Type');
+        }
+        resolved.push({ kind: 'range', from: fromV.v, to: toV.v });
+      }
+    }
+    return resolved;
+  }
+
+  // Evaluate a nav path against an object; returns scalar or flat array
+  async evalNavPath(obj, resolvedSteps) {
+    if (resolvedSteps.length === 0) return obj;
+    const [step, ...rest] = resolvedSteps;
+
+    if (step.kind === 'index') {
+      const elem = this.navGetAt(obj, step.val);
+      return await this.evalNavPath(elem, rest);
+    }
+
+    // Range step — fan out.
+    //
+    // Both bounds are checked BEFORE the walk. Letting the loop ask for
+    // position 0 gave `index 0 is invalid`, which is true of a plain index and
+    // false here: `v[1>-1..2]` has no 0 in it. The tree-walker's order —
+    // a negative bound is its own failure, and only then is a zero one.
+    //
+    // D3: a nav range written from a higher position to a lower one BUILDS, by
+    // reversing — `v[1>3..1]` walks positions 3, 2 and 1 in that order, the
+    // same way `a$[3..1]` reads. It is the only way the language has to
+    // reverse; `$^-` SORTS descending, which is a different question.
+    //
+    // Only the direction is read this way. A position outside the collection
+    // is still refused, by `navGetAt` below.
+    const { from, to } = step;
+    if (from < 0 || to < 0)
+      throw new ZyRuntimeError(
+        'range indices in nav path must be positive integers', '##Index');
+    if (from < 1 || to < 1)
+      throw new ZyRuntimeError(
+        `invalid nav range ${from}..${to} — indices are 1-based`, '##Index');
+    const dir = from <= to ? 1 : -1;
+    const results = [];
+    for (let i = from; dir > 0 ? i <= to : i >= to; i += dir) {
+      const elem = this.navGetAt(obj, i);
+      const sub = await this.evalNavPath(elem, rest);
+      // One level is flattened when the REST of the path fans out too — then
+      // `sub` is the list of what it walked. A rest with no range found one
+      // value, and an array found that way is a value, not a list (ZYJS-058).
+      if (navPathFans(rest)) results.push(...sub.v);
+      else results.push(sub);
+    }
+    return mkArr(results);
+  }
+
+  // 1-based get with error on index 0 and out-of-bounds
+  navGetAt(obj, idx) {
+    // A navigation step is an ordinary expression, and its VALUE says how to
+    // address: a number is a position, a string is a dictionary key. Same rule
+    // as `d[clave]`, one level down, which is what makes `config[k1>k2]` work
+    // with `k1 = "servidor"`.
+    //
+    // It has to be the value and not the spelling: a bare identifier inside
+    // `[…]` is a VARIABLE, which is exactly what makes a computed key possible.
+    if (isDict(obj)) {
+      if (typeof idx === 'string') {
+        const ki = keyIndex(obj, idx);
+        if (ki < 0) throw new ZyRuntimeError(Interpreter.missingKeyMsg(idx, obj.keys), '##Key');
+        return obj.v[ki];
+      }
+      throw new ZyRuntimeError(Interpreter.notPositionalMsg('d[n>…]', obj.keys), '##Type');
+    }
+    if (typeof idx === 'string') {
+      throw new ZyRuntimeError(`a String addresses a dictionary key, and this is ${typeLabel(obj)}`, '##Type');
+    }
+    if (typeof idx === 'boolean') throw new ZyRuntimeError('Cannot use Bool as array index', '##Index');
+    if (idx === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
+    if (obj.type === 'arr') {
+      const i = idx < 0 ? obj.v.length + idx : idx - 1;
+      if (i < 0 || i >= obj.v.length) throw new ZyRuntimeError(`array index out of bounds: index ${idx} for array of length ${obj.v.length}`, '##Index');
+      return obj.v[i];
+    }
+    if (obj.type === 'tuple') {
+      const i = idx < 0 ? obj.v.length + idx : idx - 1;
+      if (i < 0 || i >= obj.v.length) throw new ZyRuntimeError(`tuple index out of bounds: index ${idx} for tuple of length ${obj.v.length}`, '##Index');
+      return obj.v[i] ?? mkUnit();
+    }
+    if (obj.type === 'str') {
+      const chars = strChars(obj);
+      const i = idx < 0 ? chars.length + idx : idx - 1;
+      if (i < 0 || i >= chars.length) throw new ZyRuntimeError(`string index out of bounds: index ${idx} for string of length ${chars.length}`, '##Index');
+      return mkChar(chars[i]);
+    }
+    throw new ZyRuntimeError(`cannot index into ${typeLabel(obj)} — expected array, tuple, or string`, '##Type');
+  }
+
+  // Resolve a 1-based index to JS 0-based; 0 is clamped to 0 (for slices)
+  resolve1Based(n, len) {
+    if (n === 0) return 0;
+    return n > 0 ? n - 1 : len + n;
+  }
+
+  // Type name as the Rust engines spell it in destructuring errors. `zyq consensus`
+  // compares the message text across all four engines, so this must match
+  // `value_type_name` (tree-walker) and `tw_type_name` (VM) to the character.
+  destructTypeName(val) {
+    // In words, as every other diagnostic names a type (GLB-033, step 3.5d).
+    return typeLabel(val);
+  }
+
+  // Bind an array or positional-tuple pattern — the mirror of the tree-walker's
+  // `bind_positional`. The last item absorbs whatever remains (REFERENCE.md L33):
+  // Unit when nothing is left, the bare value when one is, a collection of the
+  // container's own shape when several are. An explicit `*rest` opts out of
+  // absorption and always binds a collection.
+  bindPositional(targets, elements, isTuple, env) {
+    const wrap = (vals) => isTuple ? mkTuple(vals) : mkArr(vals);
+    const put = (name, val) => {
+      try { if (!env.set(name, val)) env.def(name, val); }
+      catch { env.destroy(name); env.def(name, val); }
+    };
+    const restAt = targets.findIndex(t => t.rest);
+    const trailing = restAt < 0 ? 0 : targets.length - restAt - 1;
+    let i = 0;
+
+    for (let pos = 0; pos < targets.length; pos++) {
+      const t = targets[pos];
+      const absorbs = restAt < 0 && pos === targets.length - 1;
+
+      if (t.rest) {
+        const end = (trailing > 0 && elements.length > i + trailing)
+          ? elements.length - trailing
+          : elements.length;
+        put(t.name, wrap(elements.slice(i, Math.max(i, end))));
+        i = Math.max(i, end);
+      } else if (t.name === '_') {
+        // In the last position `_` absorbs the remainder without binding it.
+        i = absorbs ? elements.length : i + 1;
+      } else if (absorbs) {
+        const rest = elements.slice(i);
+        put(t.name, rest.length === 0 ? mkUnit() : rest.length === 1 ? rest[0] : wrap(rest));
+        i = elements.length;
+      } else {
+        put(t.name, elements[i] ?? mkUnit());
+        i++;
+      }
+    }
+  }
+
+  typeMetadata(val) {
+    // An error answers with its own code (`##IO`, `##Time`, …); everything else
+    // goes through the shared table, which is where `##[` and `##(` come from.
+    const sym = val.type === 'error' ? typeSymbolBase(val) : typeSymbol(val);
+    let count;
+    switch (val.type) {
+      // A number counts the characters it is displayed with, sign and point
+      // included: `-3` is 2, `-2.5` is 4 (GLB-146, decided 2026-10-21). This
+      // dropped the sign, and counted a Float through `String()`, which writes
+      // `1e+22` where Zymbol displays 10000000000000000000000 — 5 against 23.
+      case 'int':   count = String(val.v).length; break;
+      case 'float': count = floatText(val.v).length; break;
+      case 'str':   count = strChars(val).length; break;
+      case 'char':  count = 1; break;
+      case 'bool':  count = 1; break;
+      case 'arr':   count = val.v.length; break;
+      case 'tuple': count = val.v.length; break;
+      case 'func':  count = val.params?.length ?? 0; break;
+      // An error counts its MESSAGE, as the tree-walker does (`data_ops.rs`);
+      // answering 0 made the same value report 57 under one engine and 0 here.
+      case 'error': count = [...(val.v ?? '')].length; break;
+      default:      count = 0;
+    }
+    return { type: 'tuple', v: [mkStr(sym), mkInt(count), val], keys: null };
+  }
+
+  // ─── Hot-def helpers ─────────────────────────────────────────────────────────
+
+  // Return the name of the variable targeted by a statement (for sentinel pre-init)
+  _hotTargetName(stmt) {
+    if (!stmt) return null;
+    if (stmt.type === 'CompoundAssign' || stmt.type === 'VarAssign' || stmt.type === 'Increment')
+      return stmt.name;
+    if (stmt.type === 'ExprStmt' && stmt.expr?.type === 'CollectionOp')
+      return stmt.expr.obj?.name ?? null;
+    return null;
+  }
+
+  // Return the neutral value for the first use of a hot-def variable (2-stmt prefix form)
+  _hotNeutralForStmt(stmt) {
+    if (!stmt) return mkInt(0);
+    if (stmt.type === 'CompoundAssign' && (stmt.op === '*' || stmt.op === '/')) return mkInt(1);
+    if (stmt.type === 'ExprStmt' && stmt.expr?.type === 'CollectionOp' && stmt.expr.op === '$+')
+      return mkArr([]);
+    if (stmt.type === 'VarAssign' && this._exprContainsOp(stmt.value, '$+')) return mkArr([]);
+    if (stmt.type === 'VarAssign') return mkStr('');
+    return mkInt(0);
+  }
+
+  // Return the neutral value for the first use of a hot-def variable (RHS ImplicitConcat form)
+  _hotNeutralForExpr(expr) {
+    if (!expr) return mkInt(0);
+    if (expr.type === 'CollectionOp' && expr.op === '$+') return mkArr([]);
+    return mkInt(0);
+  }
+
+  // Walk an expression and return the leftmost Ident name
+  _leftmostIdentName(expr) {
+    if (!expr) return null;
+    if (expr.type === 'Ident') return expr.name || null;
+    if (expr.type === 'CollectionOp') return this._leftmostIdentName(expr.obj);
+    if (expr.type === 'BinOp') return this._leftmostIdentName(expr.left);
+    return null;
+  }
+
+  // Check if an expression tree contains a CollectionOp with the given op
+  _exprContainsOp(expr, op) {
+    if (!expr) return false;
+    if (expr.type === 'CollectionOp' && expr.op === op) return true;
+    if (expr.type === 'ImplicitConcat') return (expr.items ?? []).some(i => this._exprContainsOp(i, op));
+    return false;
+  }
+
+  async evalCollectionOp(expr, env) {
+    // Hot array-accumulator: arr°$+ i initializes arr to [] instead of 0
+    // `own`: this node is the edit of a variable whose result goes straight
+    // back into it — see `Env.get`. Consumed here, so nothing evaluated below
+    // can take it for its own.
+    const own = this._ownEdit === expr;
+    if (own) this._ownEdit = null;
+    let col;
+    if (expr.op === '$+' && expr.obj?.type === 'Ident' && expr.obj?.hot) {
+      let existing = null;
+      try { existing = env.get(expr.obj.name); } catch (_) {}
+      if (existing === null) { col = mkArr([]); env.hotDef(expr.obj.name, col); }
+      else col = existing;
+    } else {
+      // The receiver is read without being marked shared when this operator
+      // keeps nothing of it — it edits it for its own variable, or only
+      // measures or searches it — and no operand could write it meanwhile.
+      const keepsNothing = expr.obj?.type === 'Ident' && !expr.obj.hot && (
+        expr.op === '$#'
+        || (expr.op === '$?' && plainOperand(expr.arg))
+        || (own && expr.op === '$+' && plainOperand(expr.arg))
+        || (own && expr.op === '$-[i]' && plainOperand(expr.index))
+        || (own && expr.op === '$++' && (expr.items ?? []).every(plainOperand)));
+      col = keepsNothing ? env.peek(expr.obj.name) : null;
+      if (col?.type !== 'arr') col = await this.eval(expr.obj, env);
+    }
+    const arg = () => this.eval(expr.arg, env);
+
+    // 1-based index resolution for collection ops
+    const resolveIdx = (n, len) => {
+      if (n === 0) throw new ZyRuntimeError('index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)', '##Index');
+      return n < 0 ? len + n : n - 1;
+    };
+    const idx = async () => {
+      const n = (await this.eval(expr.index, env)).v;
+      return resolveIdx(n, col.v.length);
+    };
+
+    // Strict (D2 revoked by the author, 2026-09-20): a collection asks for
+    // correct expressions of its values. These are the guards the two Rust
+    // engines have always had and this one did not — it read `"x"` as 0 and
+    // DELETED an element, wrote an Int into a string, and clamped every bound
+    // so a miscalculation came back as a plausible collection. Worded as the
+    // tree-walker words each operation.
+    const lenOf  = c => c.type === 'str' ? strChars(c).length : c.v.length;
+    const cname  = c => c.type === 'arr' ? 'array' : c.type === 'str' ? 'string' : 'tuple';
+    const needInt = (v, what) => {
+      if (v?.type !== 'int')
+        throw new ZyRuntimeError(`${what} must be an integer, got ${typeLabel(v)}`, '##Type');
+      return v.v;
+    };
+    const needCharStr = (v, msg) => {
+      if (v?.type !== 'char' && v?.type !== 'str') throw new ZyRuntimeError(msg, '##Type');
+      return v;
+    };
+    // `n` is 1-based as written; `at` is the resolved 0-based offset.
+    const needInBounds = (n, at, c) => {
+      if (at >= 0 && at < lenOf(c)) return at;
+      const L = lenOf(c);
+      if (c.type === 'arr')
+        throw new ZyRuntimeError(`index out of bounds: index ${n} for array of length ${L}`, '##Index');
+      if (c.type === 'str')
+        throw new ZyRuntimeError(`index out of bounds: index ${n} for string of length ${L}`, '##Index');
+      throw new ZyRuntimeError(`index out of bounds: index ${n} for tuple of length ${L}`, '##Index');
+    };
+    // The written pair, refused the way the tree-walker refuses it. The numbers
+    // in the message are the ones the reader WROTE (GLB-047).
+    const sliceSpan = (lo, hi, len) => {
+      const loPos = lo === 0 ? 1 : lo < 0 ? len + lo + 1 : lo;
+      const hiPos = hi < 0 ? len + hi + 1 : hi;
+      if (loPos > hiPos && hiPos >= 1 && loPos <= len) return { down: true, a: loPos, b: hiPos };
+      const [a, b] = rangeBounds(lo, hi, len, 'slice');
+      return { down: false, a, b };
+    };
+    const rangeBounds = (lo, hi, len, use) => {
+      const loN = lo === 0 ? 0 : lo < 0 ? len + lo : lo - 1;
+      const hiN = hi < 0 ? len + hi + 1 : hi;
+      if (loN < 0 || hiN < 0 || loN > len || hiN > len)
+        throw new ZyRuntimeError(use === 'slice'
+          ? `slice indices out of bounds: [${lo}..${hi}] for collection of length ${len}`
+          : `$-[${lo}..${hi}] out of bounds for collection of length ${len}`, '##Index');
+      if (loN > hiN)
+        throw new ZyRuntimeError(use === 'slice'
+          ? `slice start (${lo}) cannot be greater than end (${hi})`
+          : `$-[start..end]: start (${lo}) cannot be greater than end (${hi})`, '##Index');
+      return [loN, hiN];
+    };
+
+    // Each operator says what it needs, in the words the two Rust engines use
+    // (step 3.5c): `$+ not supported on int` named neither the type nor what
+    // would have worked. An operator with no twin keeps the old sentence.
+    const NOT_SUPPORTED = {
+      '$#':      L => `cannot get length of ${L} - only arrays, tuples, and strings have length`,
+      '$+':      L => `cannot append to ${L} - only arrays, tuples, and strings support $+`,
+      '$+[i]':   L => `$+[i] requires an array, tuple, or string, got ${L}`,
+      '$-':      L => `$- requires an array, tuple, or string, got ${L}`,
+      '$--':     L => `$-- requires an array, tuple, or string, got ${L}`,
+      '$-[i]':   L => `cannot remove from ${L} - only arrays, tuples, and strings support $-[i]`,
+      '$-[i..j]':L => `$-[..] requires an array, tuple, or string, got ${L}`,
+      '$-[i:n]': L => `$-[..] requires an array, tuple, or string, got ${L}`,
+      '$?':      L => `cannot search ${L} - only arrays, tuples, and strings support contains`,
+      '$??':     L => `$?? requires an array, tuple, or string, got ${L}`,
+      '$[i..j]': L => `cannot slice ${L} - only arrays, tuples, named tuples, and strings support slice`,
+      '$[i:n]':  L => `cannot slice ${L} - only arrays, tuples, named tuples, and strings support slice`,
+      '$^':      L => `sort requires an array, got ${L}`,
+      '$^+':     L => `sort requires an array, got ${L}`,
+      '$^-':     L => `sort requires an array, got ${L}`,
+      '$~~':     L => `$~~ requires a string, got ${L}`,
+      '$/':      L => `$/ requires a string on the left, got ${L}`,
+      '$*':      L => `$* requires a string, got ${L}`,
+      '$++':     L => `$++ requires a string or array as base, got ${L}`,
+    };
+    const notSupported = op => {
+      const say = NOT_SUPPORTED[op];
+      throw new ZyRuntimeError(say ? say(typeLabel(col)) : `${op} not supported on ${col.type}`, '##Type');
+    };
+    // What a higher-order operator walks: the loop's rule, so what `@ e:v` hands
+    // over is what `v$> (e -> …)` transforms. A DICTIONARY yields its KEYS,
+    // exactly as `@ k:d` does (decision 8) — it used to yield the VALUES here,
+    // which contradicted its own loop. `what` names the operator so the refusal
+    // is the two Rust engines' sentence and not a generic one.
+    const colItems = what => {
+      // isDict FIRST: a dictionary is a tuple carrying keys, so the tuple test
+      // would otherwise swallow it and hand back its values.
+      if (isDict(col))          return col.keys.map(k => mkStr(k));
+      if (col.type === 'arr')   return col.v;
+      if (col.type === 'tuple') return col.v;
+      if (col.type === 'str')   return [...col.v].map(mkChar);
+      throw new ZyRuntimeError(HOF_NEEDS[what](typeLabel(col)), '##Type');
+    };
+    // Rebuild the shape the elements came from. Keys walked out of a dictionary
+    // are a list once they are out, so that case answers an array. A text is
+    // rebuilt only from characters and texts: a lambda that turns them into
+    // something else has left the text behind, and the answer is an array, as
+    // in both Rust engines (ZYJS-067). It used to glue the numbers together.
+    const fromStr = items => (col.type === 'str'
+        && items.every(v => v.type === 'char' || v.type === 'str'))
+      ? mkStr(items.map(v => this.displayOutput(v)).join(''))
+      : (col.type === 'tuple' && !isDict(col))
+        ? { type:'tuple', v: items, keys: null }
+        : mkArr(items);
+
+    switch (expr.op) {
+      case '$#': {
+        if (col.type === 'arr')   return mkInt(col.v.length);
+        if (col.type === 'str')   return mkInt(strChars(col).length);
+        if (col.type === 'tuple') return mkInt(col.v.length);
+        notSupported('$#');
+      }
+
+      case '$+': {
+        const v = await arg();
+        if (col.type === 'arr') {
+          if (own && col.own) { col.v.push(v); return col; }
+          const r = mkArr([...col.v, v]);
+          if (own) r.own = true;
+          return r;
+        }
+        if (col.type === 'str') {
+          needCharStr(v, `$+ on string requires char or string element, got ${typeLabel(v)}`);
+          return mkStr(col.v + this.displayOutput(v));
+        }
+        if (isDict(col))
+          throw new ZyRuntimeError(
+            '$+ is not supported on named tuples — no field name available', '##Type');
+        if (col.type === 'tuple') return { type:'tuple', v:[...col.v,v], keys: null };
+        notSupported('$+');
+      }
+      case '$+[i]': {
+        if (isDict(col))
+          throw new ZyRuntimeError(
+            '$+[i] is not supported on named tuples — no field name available', '##Type');
+        const nRaw = needInt(await this.eval(expr.index, env), '$+[i] index');
+        // A position to insert AT is 1 or more, in the tree-walker's words
+        // (P4-3 E4, decided 2026-09-26). `-1` was read as "before the last" here
+        // and inserted, while both Rust engines refuse it.
+        if (nRaw <= 0) {
+          throw new ZyRuntimeError(
+            `$+[i] index must be positive (1-based, use 1 to insert at the beginning), got ${nRaw}`, '##Index');
+        }
+        const i = resolveIdx(nRaw, lenOf(col));
+        if (i < 0 || i > lenOf(col)) {
+          const L = lenOf(col);
+          if (col.type === 'arr')
+            throw new ZyRuntimeError(`$+[${nRaw}] index out of bounds for array of length ${L}`, '##Index');
+          if (col.type === 'str')
+            throw new ZyRuntimeError(`$+[${nRaw}] index out of bounds for string of length ${L}`, '##Index');
+          throw new ZyRuntimeError(`$+[${nRaw}] index out of bounds for tuple of length ${L}`, '##Index');
+        }
+        const v = await arg();
+        if (col.type === 'arr') { const r=[...col.v]; r.splice(i,0,v); return mkArr(r); }
+        if (col.type === 'str') {
+          needCharStr(v, `$+[i] on string requires char or string element, got ${typeLabel(v)}`);
+          const r=[...col.v]; r.splice(i,0,this.display(v)); return mkStr(r.join(''));
+        }
+        if (col.type === 'tuple') {
+          const nv=[...col.v]; nv.splice(i,0,v);
+          const nk=col.keys?[...col.keys]:null; if(nk)nk.splice(i,0,null);
+          return { type:'tuple', v:nv, keys:nk };
+        }
+        notSupported('$+[i]');
+      }
+
+      case '$-': {
+        const v = await arg();
+        if (col.type === 'arr') {
+          const i = col.v.findIndex(el => this.equals(el, v));
+          if (i < 0) return col;
+          const r = [...col.v]; r.splice(i,1); return mkArr(r);
+        }
+        if (col.type === 'str') {
+          needCharStr(v, `$- on string requires char or string value, got ${typeLabel(v)}`);
+          const c = this.display(v), i = col.v.indexOf(c);
+          return i < 0 ? col : mkStr(col.v.slice(0,i) + col.v.slice(i+c.length));
+        }
+        if (col.type === 'tuple') {
+          const i = col.v.findIndex(el => this.equals(el, v)); if (i<0) return col;
+          const nv=[...col.v], nk=col.keys?[...col.keys]:null; nv.splice(i,1); if(nk)nk.splice(i,1);
+          return { type:'tuple', v:nv, keys:nk };
+        }
+        notSupported('$-');
+      }
+      case '$--': {
+        const v = await arg();
+        if (col.type === 'arr')   return mkArr(col.v.filter(el => !this.equals(el,v)));
+        if (col.type === 'str') {
+          needCharStr(v, `$-- on string requires char or string value, got ${typeLabel(v)}`);
+          const c = this.display(v); return mkStr(col.v.split(c).join(''));
+        }
+        if (col.type === 'tuple') {
+          const kept = col.v.map((el,i)=>({el,k:col.keys?.[i]})).filter(({el})=>!this.equals(el,v));
+          return { type:'tuple', v:kept.map(x=>x.el), keys:col.keys?kept.map(x=>x.k):null };
+        }
+        notSupported('$--');
+      }
+      case '$-[i]': {
+        // In a DICTIONARY the address IS the key, so `$-[…]` — which already
+        // means "remove by address" for the array (`arr$-[1]`, by position) — is
+        // the same operator with the same sense (decision 9). That leaves
+        // `$- valor` free to keep meaning "by value" in both collections.
+        // Checked before the index is resolved as a position, which is what made
+        // `d$-["beta"]` delete the FIRST key here instead of the named one.
+        const rawIdx = await this.eval(expr.index, env);
+        if (rawIdx.type === 'str' && isDict(col)) {
+          const ki = keyIndex(col, rawIdx.v);
+          if (ki < 0)
+            throw new ZyRuntimeError(Interpreter.missingKeyMsg(rawIdx.v, col.keys), '##Key');
+          const nv = [...col.v], nk = [...col.keys];
+          nv.splice(ki, 1); nk.splice(ki, 1);
+          return { type: 'tuple', v: nv, keys: nk };
+        }
+        if (isDict(col))
+          throw new ZyRuntimeError(Interpreter.notPositionalMsg('d$-[n]', col.keys), '##Type');
+        if (col.type !== 'arr' && col.type !== 'str' && col.type !== 'tuple') notSupported('$-[i]');
+        const nRaw = needInt(rawIdx, 'remove index');
+        const i = needInBounds(nRaw, resolveIdx(nRaw, lenOf(col)), col);
+        if (col.type === 'arr') {
+          if (own && col.own) { col.v.splice(i, 1); return col; }
+          const r = mkArr([...col.v]); r.v.splice(i, 1);
+          if (own) r.own = true;
+          return r;
+        }
+        if (col.type === 'str')   { const r=[...col.v]; r.splice(i,1); return mkStr(r.join('')); }
+        if (col.type === 'tuple') {
+          const nv=[...col.v],nk=col.keys?[...col.keys]:null; nv.splice(i,1); if(nk)nk.splice(i,1);
+          return { type:'tuple', v:nv, keys:nk };
+        }
+        notSupported('$-[i]');
+      }
+      case '$-[i:n]': {
+        if (isDict(col))
+          throw new ZyRuntimeError(Interpreter.notPositionalMsg('d$-[a..b]', col.keys), '##Type');
+        const sv = needInt(await this.eval(expr.start, env), '$-[..] start');
+        const nv = needInt(await this.eval(expr.count, env), '$-[..] count');
+        if (sv <= 0)
+          throw new ZyRuntimeError(`$-[start..] start must be positive (1-based), got ${sv}`, '##Index');
+        if (nv < 0)
+          throw new ZyRuntimeError(`$-[..] count must be non-negative, got ${nv}`, '##Index');
+        const len = col.type === 'str' ? strChars(col).length : col.v.length;
+        // Strict (D2 revoked, GLB-046): a start or a count that runs past the
+        // end is refused, not clamped. `splice` trimmed in silence, so
+        // `[1,2,3]$-[2:3]` answered `[1]` and `$-[4:1]` answered the array
+        // untouched, where both Rust engines refuse. The message is spelled
+        // the way the reader spelled it — a count is `[i:n]`, a range is
+        // `[i..j]` — which is GLB-047 on the form it had not reached.
+        if (sv - 1 > len || sv - 1 + nv > len)
+          throw new ZyRuntimeError(
+            `$-[${sv}:${nv}] out of bounds for collection of length ${len}`, '##Index');
+        const si = resolveIdx(sv, len);
+        if (col.type === 'arr')   { const r=[...col.v]; r.splice(si, nv); return mkArr(r); }
+        if (col.type === 'str')   { const r=[...col.v]; r.splice(si, nv); return mkStr(r.join('')); }
+        if (col.type === 'tuple') { const r=[...col.v]; r.splice(si, nv); return { type:'tuple', v:r, keys:col.keys?[...col.keys].filter((_,i)=>i<si||i>=si+nv):null }; }
+        notSupported('$-[i:n]');
+      }
+      case '$-[i..j]': {
+        const len = col.type === 'str' ? strChars(col).length : col.v.length;
+        const fv = expr.range.from ? needInt(await this.eval(expr.range.from, env), '$-[..] start') : 1;
+        const tv = expr.range.to   ? needInt(await this.eval(expr.range.to,   env), '$-[..] end')   : len;
+        if (fv <= 0)
+          throw new ZyRuntimeError(`$-[start..] start must be positive (1-based), got ${fv}`, '##Index');
+        if (tv <= 0)
+          throw new ZyRuntimeError(`$-[..end] end must be positive (1-based), got ${tv}`, '##Index');
+        const [fi, tiEx] = rangeBounds(fv, tv, len, 'remove');
+        const ti = tiEx - 1;
+        const count = ti - fi + 1;
+        if (col.type === 'arr')   { const r=[...col.v]; r.splice(fi,count); return mkArr(r); }
+        if (col.type === 'str')   { const r=[...col.v]; r.splice(fi,count); return mkStr(r.join('')); }
+        if (isDict(col))
+          throw new ZyRuntimeError(Interpreter.notPositionalMsg('d$-[a..b]', col.keys), '##Type');
+        if (col.type === 'tuple') { const r=[...col.v]; r.splice(fi,count); const ks=col.keys?[...col.keys]:null; if(ks)ks.splice(fi,count); return {type:'tuple',v:r,keys:ks}; }
+        notSupported('$-[i..j]');
+      }
+
+      case '$?': {
+        const v = await arg();
+        if (col.type === 'arr')   return mkBool(col.v.some(el=>this.equals(el,v)));
+        if (col.type === 'str') {
+          needCharStr(v, `string contains only supports char or string search, got ${typeLabel(v)}`);
+          return mkBool(col.v.includes(this.display(v)));
+        }
+        // On a DICTIONARY the question is about the KEY, which is what `in`
+        // asks in Python and in JS. Decision 10 makes reading an absent key an
+        // error, so this is what lets a dictionary built piece by piece be
+        // consulted at all — without it there is no way to ask before reading.
+        // Asking about a value is a different operation and would need its own
+        // sign. On a POSITIONAL tuple it stays a value question: there are no
+        // keys to ask about.
+        if (isDict(col)) {
+          if (v?.type !== 'str')
+            throw new ZyRuntimeError(
+              `a dictionary is asked about a key, so \`$?\` needs a String, got ${typeLabel(v)}`, '##Type');
+          return mkBool(col.keys.some(k => k === this.display(v)));
+        }
+        if (col.type === 'tuple') return mkBool(col.v.some(el=>this.equals(el,v)));
+        notSupported('$?');
+      }
+      case '$??': {
+        const v = await arg(), target = this.display(v);
+        const result = [];
+        if (col.type === 'arr' || col.type === 'tuple') {
+          col.v.forEach((el,i) => { if (this.equals(el,v)) result.push(mkInt(i+1)); }); // 1-based
+        } else if (col.type === 'str') {
+          needCharStr(v, `$?? on string requires char or string value, got ${typeLabel(v)}`);
+          // An empty pattern is refused (GLB-078, decided 2026-10-03).
+          if (target === '') throw new ZyRuntimeError('$?? pattern must not be empty', '##Index', expr.line);
+          const chars = strChars(col);
+          for (let i=0; i<=chars.length-target.length; i++) {
+            if (chars.slice(i,i+target.length).join('')===target) result.push(mkInt(i+1)); // 1-based
+          }
+        } else notSupported('$??');
+        return mkArr(result);
+      }
+
+      case '$~': {
+        const i=await idx(), v=await arg();
+        if (col.type === 'arr')   { const r=[...col.v]; r[i]=v; return mkArr(r); }
+        if (col.type === 'str')   { const r=[...col.v]; r[i]=this.display(v); return mkStr(r.join('')); }
+        if (col.type === 'tuple') { const nv=[...col.v]; nv[i]=v; return {type:'tuple',v:nv,keys:col.keys}; }
+        notSupported('$~');
+      }
+
+      case '$[i..j]': {
+        const len = col.type === 'str' ? strChars(col).length : col.v.length;
+        const fRaw = expr.range.from == null ? 0 : needInt(await this.eval(expr.range.from, env), 'slice start');
+        const tRaw = expr.range.to   == null ? len : needInt(await this.eval(expr.range.to,   env), 'slice end');
+        if (isDict(col))
+          throw new ZyRuntimeError(Interpreter.notPositionalMsg('d$[a..b]', col.keys), '##Type');
+        const span = sliceSpan(fRaw, tRaw, len);
+        if (span.down) {
+          const back = (xs) => { const r = []; for (let p = span.a; p >= span.b; p--) r.push(xs[p - 1]); return r; };
+          if (col.type === 'arr')   return mkArr(back(col.v));
+          if (col.type === 'str')   return mkStr(back(strChars(col)).join(''));
+          if (col.type === 'tuple') return { type:'tuple', v:back(col.v), keys:null };
+          notSupported('$[i..j]');
+        }
+        const fi = span.a, ti = span.b;
+        if (col.type === 'arr')   return mkArr(col.v.slice(fi, ti));
+        if (col.type === 'str')   return mkStr(strChars(col).slice(fi,ti).join(''));
+        if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(fi,ti), keys:col.keys?col.keys.slice(fi,ti):null };
+        notSupported('$[i..j]');
+      }
+
+      case '$[i:n]': {
+        if (col.type !== 'arr' && col.type !== 'str' && col.type !== 'tuple') notSupported('$[i:n]');
+        const fv = needInt(await this.eval(expr.range.from, env), 'slice start');
+        const n  = needInt(await this.eval(expr.range.count, env), 'slice count');
+        if (isDict(col))
+          throw new ZyRuntimeError(Interpreter.notPositionalMsg('d$[a..b]', col.keys), '##Type');
+        const len = lenOf(col);
+        // Strict, as the two Rust engines are (GLB-129): a start or a count
+        // that runs past the end is refused, not clamped, and the message
+        // spells the count form as it was written — GLB-047's rule, which
+        // `$-[i:n]` already followed. `slice` used to trim in silence, and a
+        // non-integer bound was read as whatever `.v` held.
+        const fi = fv === 0 ? 0 : fv < 0 ? len + fv : fv - 1;
+        if (n < 0)
+          throw new ZyRuntimeError(`slice count must be non-negative, got ${n}`, '##Index');
+        if (fi < 0 || fi > len || fi + n > len)
+          throw new ZyRuntimeError(
+            `slice indices out of bounds: [${fv}:${n}] for collection of length ${len}`, '##Index');
+        if (col.type === 'arr')   return mkArr(col.v.slice(fi, fi+n));
+        if (col.type === 'str')   return mkStr(strChars(col).slice(fi,fi+n).join(''));
+        if (col.type === 'tuple') return { type:'tuple', v:col.v.slice(fi,fi+n), keys:col.keys?col.keys.slice(fi,fi+n):null };
+        notSupported('$[i:n]');
+      }
+
+      case '$^+': {
+        if (col.type !== 'arr') notSupported('$^+');
+        return mkArr([...col.v].sort((a,b)=> a.type==='str' ? a.v.localeCompare(b.v) : a.v-b.v));
+      }
+      case '$^-': {
+        if (col.type !== 'arr') notSupported('$^-');
+        return mkArr([...col.v].sort((a,b)=> a.type==='str' ? b.v.localeCompare(a.v) : b.v-a.v));
+      }
+      case '$^': {
+        if (col.type !== 'arr') notSupported('$^');
+        const cmpFn = await this.evalCallable(expr.arg, env);
+        const items = [...col.v];
+        // A comparator answers a Bool; truthiness stood in for one here and
+        // `a - b` sorted (GLB-024, decided a ##Type).
+        const says = async (x, y) => {
+          const r = await this.callFunc(cmpFn, [x, y]);
+          if (r.type !== 'bool') throw new ZyRuntimeError(`sort comparator must return a Bool, got ${typeIdent(r)}`, '##Type', expr.line);
+          return r.v;
+        };
+        // The Rust engines' bottom-up merge sort, call for call (GLB-108,
+        // decided 2026-10-09): runs of width 1, 2, 4, …, merged left to right.
+        // It was their bubble sort, which visited every pair. Stable by rule B
+        // (GLB-073): the left element is taken unless it does NOT go before the
+        // right one AND the right one goes before it — before GLB-073 this was
+        // an insertion sort that reversed a strict comparator's ties.
+        const n = items.length;
+        let src = items, merged = [];
+        for (let width = 1; width < n; width *= 2) {
+          merged = [];
+          for (let lo = 0; lo < n; lo += 2 * width) {
+            const mid = Math.min(lo + width, n), hi = Math.min(lo + 2 * width, n);
+            let i = lo, j = mid;
+            while (i < mid && j < hi) {
+              if (await says(src[i], src[j]) || !(await says(src[j], src[i]))) merged.push(src[i++]);
+              else merged.push(src[j++]);
+            }
+            while (i < mid) merged.push(src[i++]);
+            while (j < hi) merged.push(src[j++]);
+          }
+          src = merged;
+        }
+        return mkArr(src);
+      }
+
+      case '$>': {
+        const fn = await this.evalCallable(expr.arg, env, 'map');
+        const items = colItems('map');
+        const mapped = [];
+        for (const el of items) mapped.push(await this.callFunc(fn, [el]));
+        return fromStr(mapped);
+      }
+      case '$|': {
+        const fn = await this.evalCallable(expr.arg, env, 'filter');
+        const items = colItems('filter');
+        const kept = [];
+        for (const el of items) {
+          const keep = await this.callFunc(fn,[el]);
+          // A predicate answers a Bool; truthiness stood in for one here (GLB-080).
+          if (keep.type !== 'bool') throw new ZyRuntimeError(`filter lambda must return boolean, got ${typeLabel(keep)}`, '##Type', expr.line);
+          if (keep.v) kept.push(el);
+        }
+        return fromStr(kept);
+      }
+      case '$<': {
+        // The tree-walker's order — initial value, then the lambda — and its
+        // arity rule: a fold takes (accumulator, element). A one-parameter
+        // lambda was called anyway and answered the initial value (GLB-015 A,
+        // decided an arity error, not a collection edge).
+        let acc = await this.eval(expr.init, env);
+        const fn = await this.evalCallable(expr.arg, env, 'reduce');
+        if (!fn.native && Array.isArray(fn.params) && fn.params.length !== 2) {
+          throw new ZyError(`reduce lambda requires 2 parameters (accumulator, element), got ${fn.params.length}`);
+        }
+        for (const el of colItems('reduce')) acc = await this.callFunc(fn,[acc,el]);
+        return acc;
+      }
+
+      case '$!':
+        return mkBool(col.type === 'error');
+
+      case '$!!': {
+        if (col.type === 'error') throw new ZyErrorPropagate(col);
+        return col;
+      }
+
+      case '$~~': {
+        if (col.type !== 'str') notSupported('$~~');
+        const fromV = await this.eval(expr.from, env);
+        needCharStr(fromV, `$~~ pattern must be a string or char, got ${typeLabel(fromV)}`);
+        const toV = await this.eval(expr.to, env);
+        if (toV?.type !== 'str')
+          throw new ZyRuntimeError(`$~~ replacement must be a string, got ${typeLabel(toV)}`, '##Type');
+        const from = this.display(fromV);
+        const to   = this.display(toV);
+        let maxN = Infinity;
+        if (expr.count) {
+          maxN = needInt(await this.eval(expr.count, env), '$~~ count');
+          if (maxN < 0)
+            throw new ZyRuntimeError(
+              `replacement count must be non-negative, got ${maxN}`, '##Index');
+          if (maxN === 0) maxN = Infinity;   // 0 means "all", as both Rust engines read it
+        }
+        // An empty pattern is refused (GLB-078/079, decided 2026-10-03). Here it
+        // never ended: `indexOf('', i)` is always `i`, and the loop found the
+        // empty string again in front of the same character.
+        if (from === '') throw new ZyRuntimeError('$~~ pattern must not be empty', '##Index', expr.line);
+        let result = col.v, idx2 = 0, n = 0;
+        while (n < maxN) {
+          const p = result.indexOf(from, idx2);
+          if (p === -1) break;
+          result = result.slice(0, p) + to + result.slice(p + from.length);
+          idx2 = p + to.length;
+          n++;
+        }
+        return mkStr(result);
+      }
+
+      case '$/': {
+        if (col.type !== 'str') notSupported('$/');
+        const delimVal = await arg();
+        needCharStr(delimVal, `$/ delimiter must be a char or string, got ${typeLabel(delimVal)}`);
+        const delim = this.display(delimVal);
+        // An empty delimiter is refused (GLB-079, decided 2026-10-03): `split('')`
+        // gave the characters here and Rust gave them with an empty string at
+        // each end.
+        if (delim === '') throw new ZyRuntimeError('$/ delimiter must not be empty', '##Index', expr.line);
+        const parts = col.v.split(delim);
+        return mkArr(parts.map(p => mkStr(p)));
+      }
+
+      case '$*': {
+        // The count is a whole number that is not negative, as both Rust
+        // engines require: a Float used to be truncated and a negative one
+        // answered the empty string (ZYJS-028, decided 2026-09-18).
+        const nVal = await arg();
+        if (col.type !== 'str') notSupported('$*');
+        if (nVal.type !== 'int')
+          throw new ZyRuntimeError(`$* repetition count must be an integer, got ${typeLabel(nVal)}`, '##Type');
+        if (nVal.v < 0)
+          throw new ZyRuntimeError(`$* repetition count must be non-negative, got ${nVal.v}`, '##Index');
+        return mkStr(col.v.repeat(nVal.v));
+      }
+
+      case '$++': {
+        const evalItems = await this.evalInOrder(expr.items, env);
+        if (col.type === 'str') {
+          // displayOutput: $++ builds display text, so it follows the numeral mode.
+          let result = col.v;
+          for (const item of evalItems) result += this.displayOutput(item);
+          return mkStr(result);
+        }
+        if (col.type === 'arr') {
+          if (own && col.own) { for (const item of evalItems) col.v.push(item); return col; }
+          const r = mkArr([...col.v, ...evalItems]);
+          if (own) r.own = true;
+          return r;
+        }
+        notSupported('$++');
+      }
+    }
+
+    throw new ZyError(`Unknown collection operator: ${expr.op}`);
+  }
+
+  async evalCallable(argExpr, env, what) {
+    const v = await this.eval(argExpr, env);
+    if (v && v.type === 'func') return v;
+    // The two Rust engines name the operator: `map requires lambda function`.
+    // One generic sentence for all of them said neither which operator nor
+    // what it wanted.
+    throw new ZyRuntimeError(
+      what ? HOF_LAMBDA[what] : `Expected a function for collection operator`, '##Type');
+  }
+
+  // Evaluate a Match's subject and find the first arm whose pattern matches,
+  // running any pattern-binding side effects (env.def for list-pattern binds)
+  // exactly once. Returns null if no arm matches.
+  async selectMatchArm(matchExpr, env) {
+    const val = await this.eval(matchExpr.expr, env);
+    for (const arm of matchExpr.arms) {
+      // A fresh object per match, never a field written on the tree.
+      if (await this.matchPattern(arm.pattern, val, env)) return { ...arm, runEnv: this.armEnv(arm, val, env) };
+    }
+    return null;
+  }
+
+  // The environment an arm runs in. `##Kind(m) =>` is a birth like `m = …`:
+  // a visible `m` is assigned (no shadowing, MEM-7), and a new one lives in the
+  // arm's own environment. Every other arm runs where the match is.
+  armEnv(arm, subject, env) {
+    const p = arm.pattern;
+    if (p?.type !== 'errkind' || !p.bind || subject?.type !== 'error') return env;
+    const own = new Env(env);
+    const msg = mkStr(subject.v ?? '');
+    if (!own.set(p.bind, msg)) own.def(p.bind, msg);
+    return own;
+  }
+
+  async matchPattern(pattern, val, env) {
+    switch (pattern.type) {
+      case 'wildcard': return true;
+      case 'errkind':  return val?.type === 'error' && val.errType === pattern.kind;
+      case 'or': {
+        // Alternatives are tested left to right; first match wins
+        for (const alt of pattern.alts) {
+          if (await this.matchPattern(alt, val, env)) return true;
+        }
+        return false;
+      }
+      case 'range': {
+        const fromV = await this.eval(pattern.from, env);
+        const toV   = await this.eval(pattern.to,   env);
+        // Ints against an Int, Chars against a Char, as match_stmt.rs requires.
+        // A String used to be compared with the numbers and fall to `_`
+        // (GLB-014 F).
+        const kind = val.type;
+        if (!((kind === 'int' || kind === 'char') && fromV.type === kind && toV.type === kind)) {
+          throw new ZyError('range pattern type mismatch', pattern.line ?? null);
+        }
+        return val.v >= fromV.v && val.v <= toV.v;
+      }
+      case 'comparison': {
+        // Once: `== eco(7)` evaluated its operand a second time for `==` and
+        // `<>`, so each call in it ran twice (ZYJS-065).
+        const pval = await this.eval(pattern.value, env);
+        const pv = pval.v;
+        const sv = val.v;
+        switch (pattern.op) {
+          case '<':  return sv < pv;
+          case '>':  return sv > pv;
+          case '<=': return sv <= pv;
+          case '>=': return sv >= pv;
+          case '==': return this.equals(val, pval);
+          case '<>': return !this.equals(val, pval);
+        }
+        return false;
+      }
+      case 'literal': {
+        const pv = await this.eval(pattern.value, env);
+        if (pv.type === 'arr') return pv.v.some(el => this.equals(val, el));
+        return this.equals(val, pv);
+      }
+      case 'list': {
+        // Scalar scrutinee: list pattern means "value is one of these" (membership)
+        // Every element is tested as the same pattern is in an arm, as
+        // `match_stmt.rs` does: a nested pattern — a range, a comparison, a list
+        // (GLB-148) — and a name, whose value is compared (DM-26). Only `_` and
+        // a value were tested here, so `?? 3 { [a] => … }` with `a = 3` fell to `_`.
+        if (val.type !== 'arr') {
+          for (const elem of pattern.elems) {
+            if (elem.kind === 'wildcard') return true;
+            if (elem.kind === 'literal' && this.equals(val, await this.eval(elem.expr, env))) return true;
+            if (elem.kind === 'nested' && await this.matchPattern(elem.pattern, val, env)) return true;
+            if (elem.kind === 'bind' && await this.matchIdentInPattern(elem.name, val, env)) return true;
+          }
+          return false;
+        }
+        const elems = pattern.elems;
+        const restIdx = elems.findIndex(e => e.kind === 'rest');
+        const matchElem = async (elem, arrVal) => {
+          if (elem.kind === 'wildcard') return true;
+          if (elem.kind === 'nested') return this.matchPattern(elem.pattern, arrVal, env);
+          if (elem.kind === 'literal') return this.equals(arrVal, await this.eval(elem.expr, env));
+          // An identifier inside a list pattern is a *value to compare*, exactly
+          // as it is at the top of a pattern — not a name being created. This
+          // used to `env.def(elem.name, arrVal)` and return true, i.e. match
+          // anything and bind a name the arm could not even read, so
+          // `?? [9,8,7] { [a, b, c] => … }` took the branch with a, b and c
+          // undefined while the tree-walker refused it (DM-26).
+          //
+          // A pattern that matches when it should raise is the worst way to be
+          // wrong: a `??` with a typo in a constant's name takes that branch
+          // every time and says nothing.
+          if (elem.kind === 'bind') return this.matchIdentInPattern(elem.name, arrVal, env);
+          // Legacy format (name, rest)
+          if (elem.rest) return true;
+          if (elem.name === '_') return true;
+          return this.matchIdentInPattern(elem.name, arrVal, env);
+        };
+        if (restIdx < 0) {
+          if (val.v.length !== elems.length) return false;
+          for (let i = 0; i < elems.length; i++) {
+            if (!await matchElem(elems[i], val.v[i])) return false;
+          }
+          return true;
+        }
+        const minLen = elems.length - 1;
+        if (val.v.length < minLen) return false;
+        for (let i = 0; i < restIdx; i++) {
+          if (!await matchElem(elems[i], val.v[i])) return false;
+        }
+        const afterRest = elems.length - restIdx - 1;
+        const restElem = elems[restIdx];
+        if (restElem.name && restElem.name !== '_')
+          env.def(restElem.name, mkArr(val.v.slice(restIdx, val.v.length - afterRest)));
+        for (let i = 0; i < afterRest; i++) {
+          const elem = elems[restIdx + 1 + i];
+          if (!await matchElem(elem, val.v[val.v.length - afterRest + i])) return false;
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Pairs each `<~` output parameter with the caller variable that was passed to it, so
+   * `callFunc` can copy the final value back after the call returns. Only a bare identifier
+   * argument can receive a write-back — passing a literal or an expression to an out-param
+   * has nothing to assign to, and is simply skipped (matching the tree-walker).
+   *
+   * Shared by the `Call` and `CallExpr` branches: both need it, and having only one of them
+   * build the list is precisely the bug this helper exists to prevent recurring.
+   */
+  buildOutWriteback(fn, expr, env) {
+    if (!fn.params?.some(p => p.isOut)) return null;
+    // `isState`: the argument is module state, which is not LENT to the
+    // parameter — every function of the module can see it — but copied, and
+    // the copy is dropped if the call fails (GLB-117, S3). Anything else is the
+    // caller's own variable, and what the function wrote to it before failing
+    // stays written (S1).
+    return fn.params
+      .map((p, i) => p.isOut && expr.args[i]?.type === 'Ident'
+        ? { paramName: p.name, callerName: expr.args[i].name, callerEnv: env,
+            isState: Interpreter.isModuleState(env, expr.args[i].name) }
+        : null)
+      .filter(Boolean);
+  }
+
+  /** Whether `name`, looked up from `env`, is a module's own state. */
+  static isModuleState(env, name) {
+    for (let e = env; e; e = e.parent) {
+      if (e.vars.has(name)) return e.isModuleScope === true;
+      // Ended by a `\` and not assigned since: still the module's (GLB-120).
+      if (e.isModuleScope && e.destroyed?.has(name)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * The arguments of a call, left to right. An output argument that is the
+   * caller's own variable is LENT (GLB-117): it is read without being marked
+   * shared, so an array that variable owns arrives owned, and the function
+   * writes it where it is instead of copying it on its first edit. Module state
+   * is copied (S3), and so is a variable given as output twice in one call —
+   * the checker refuses that call (S2), and a program that got here without it
+   * must not end up with two parameters writing one array.
+   */
+  async evalArgs(fn, expr, env) {
+    const params = fn.params;
+    if (!params?.some?.(p => p.isOut)) return this.evalInOrder(expr.args, env);
+    const outNames = expr.args
+      .filter((a, i) => params[i]?.isOut && a?.type === 'Ident')
+      .map(a => a.name);
+    const out = [];
+    for (let i = 0; i < expr.args.length; i++) {
+      const a = expr.args[i];
+      const lent = params[i]?.isOut && a?.type === 'Ident' && !a.hot
+        && outNames.indexOf(a.name) === outNames.lastIndexOf(a.name)
+        && !Interpreter.isModuleState(env, a.name);
+      out.push(lent ? env.peek(a.name) : await this.eval(a, env));
+    }
+    return out;
+  }
+
+  /**
+   * A callable value called with the wrong number of arguments is refused, in
+   * the tree-walker's words (`lambda expects 2 arguments, got 1`). It ran: a
+   * missing argument arrived as Unit and failed later, somewhere else, and an
+   * extra one was dropped in silence (step P4.6). Natives keep their own rules.
+   */
+  checkCallArity(fn, args) {
+    if (fn.native || !Array.isArray(fn.params)) return;
+    if (args.length !== fn.params.length) {
+      throw new ZyError(`lambda expects ${fn.params.length} arguments, got ${args.length}`);
+    }
+  }
+
+  async callFunc(fn, args, outWriteback) {
+    if (fn.native) return fn.call(args);
+    // Counted in, or refused (D7, GLB-133). A tail call takes the place of the
+    // call that made it, so it adds nothing; it still gets a frame of its own,
+    // which only says which function is running and how many `!?` it has open.
+    const tail = this._tailNow === true;
+    this._tailNow = false;
+    if (!tail) {
+      if (this.activeCalls >= MAX_ACTIVE_CALLS)
+        throw new ZyRuntimeError(DEPTH_EXCEEDED, '##Depth');
+      this.activeCalls++;
+    }
+    this.callFrames.push({ name: fn.name, tries: 0 });
+    try {
+      return await this._callFuncCounted(fn, args, outWriteback);
+    } finally {
+      this.callFrames.pop();
+      if (!tail) this.activeCalls--;
+    }
+  }
+
+  async _callFuncCounted(fn, args, outWriteback) {
+    // The calls `$>`, `$|`, `$<`, `$^` and `|>` make go through here too, and
+    // check their count as a direct call does (GLB-063).
+    this.checkCallArity(fn, args);
+    // A qualified call inside a function resolves against the alias table of
+    // the MODULE THE FUNCTION WAS WRITTEN IN, never the caller's.
+    //
+    // `this.moduleAliases` is one map per interpreter, and a module's functions
+    // run on the interpreter that called them — so `A::saluda()` inside
+    // `medio.zy` looked up the caller's `A`. Chaturanga imports `आकलनम्` as `आ`
+    // inside `मूल/मतिः.zy` and its test file imports a DIFFERENT module under
+    // that same name, so the search died with "module 'आ' does not export
+    // function 'सारणी'". This is the tree-walker's rule — a function value
+    // carries the aliases visible where it was written (`ModuleAliases`) — and
+    // it is dynamic scoping without it.
+    const callerAliases = this.moduleAliases;
+    if (fn.moduleAliases) this.moduleAliases = fn.moduleAliases;
+    try {
+      return await this._callFuncBody(fn, args, outWriteback);
+    } finally {
+      this.moduleAliases = callerAliases;
+    }
+  }
+
+  async _callFuncBody(fn, args, outWriteback) {
+    // Every call gets a frame over the global scope, with `funcBoundary` set so
+    // only functions are reachable past it — the isolation a direct call has
+    // always had here and in both Rust engines.
+    //
+    // A closure's captures are COPIED into that frame, not chained to. Copying
+    // is what makes a write inside die with the call: `esc(5)` three times over
+    // `cont = cont + x` gives 5, 5, 5 in the Rust engines, not 5, 10, 15.
+    // Chaining to a captured scope would have accumulated.
+    // The frame sits over the globals of the file the function was WRITTEN in,
+    // never the caller's. A module's functions run on the interpreter that
+    // called them, so `this.globalEnv` here is the caller's — and a module that
+    // calls its own function by bare name found whatever the caller happened to
+    // have under that name. `klingon_galaxy` names a local array exactly as the
+    // module function that produces it, which is the ordinary thing to do, and
+    // the call died with "'…' is not a function".
+    //
+    // Same defect as ZYJS-009 one layer down: that one was the alias table,
+    // this one is the scope. Both are dynamic scoping, and both are answered
+    // the way the tree-walker answers them — on the value, not on the engine.
+    const home = fn.homeEnv ?? this.globalEnv;
+    // A function from ANOTHER file — a module's — is a different case from one
+    // written here, and the difference is module state.
+    //
+    // Its frame sits over that module's globals with NO boundary and NO copy,
+    // so `estado` is read and written live: `_asegurar()` builds the catalogue
+    // and the sibling `texto()` that called it sees it. Snapshotting instead
+    // made ZyBank's dispatcher read the `#0` the module starts with, for ever
+    // — `$? not supported on bool`, four locales down.
+    //
+    // A function written HERE keeps exactly what it had: a boundary, and the
+    // file's variables copied in, so a write inside dies with the call
+    // (ERROR-ZYB-002). Both Rust engines draw the line in the same place —
+    // module state is shared and mutable, a local is not.
+    const foreign = fn.homeEnv != null && fn.homeEnv !== this.globalEnv;
+    const funcEnv = new Env(fn.closureEnv ?? home, fn.closureEnv == null && !foreign);
+    if (fn.captures) {
+      for (const [name, value] of fn.captures) funcEnv.def(name, value);
+    } else if (fn.body && !foreign) {
+      // A NAMED function called directly captures the file's variables, exactly
+      // as a lambda captures the scope it was written in (ERROR-ZYB-002). The
+      // values are read HERE, at the call, from the scope the function was
+      // written in — the global one — and never from the caller's, which would
+      // be dynamic scoping: `f` called inside `g` would see `g`'s locals.
+      //
+      // Copied into the frame, so a write inside dies with the call. The set of
+      // names is cached on the function: the names cannot change, only what
+      // they hold.
+      if (!fn._freeNames) {
+        fn._freeNames = [...collectIdentNames(fn.body, new Set())]
+          .filter(n => !(fn.params ?? []).some(p => (p?.name ?? p) === n));
+      }
+      for (const name of fn._freeNames) {
+        let v;
+        try { v = home.get(name); } catch { continue; }
+        if (v !== undefined && v.type !== 'func') funcEnv.def(name, v);
+      }
+    }
+    for (let i = 0; i < fn.params.length; i++)
+      funcEnv.def(fn.params[i].name, args[i] ?? mkUnit());
+    // An output parameter goes back to the caller's variable on EVERY way out
+    // of the function. It used to be written back only when the body ran to
+    // its end: a failure left the caller's variable as it was before the call
+    // — a copy had been worked on — and so did a `$!!` and a `<~` thrown from
+    // inside a `??` used as a value. Since GLB-117 the parameter IS the
+    // caller's variable for as long as the call lasts (S1).
+    const giveBack = failed => {
+      if (!outWriteback) return;
+      for (const { paramName, callerName, callerEnv, isState } of outWriteback) {
+        if (failed && isState) continue;
+        const val = funcEnv.vars.get(paramName);
+        if (val !== undefined) callerEnv.set(callerName, val);
+      }
+    };
+    let sig;
+    try {
+      sig = await this.execBlock(fn.body, funcEnv);
+    } catch (e) {
+      // The file the function was WRITTEN in, not the caller's — a module's
+      // functions run on the caller's interpreter, so `this.srcFile` here is
+      // the wrong file. Already-named errors travel out untouched.
+      if (e instanceof ZyError && e.zyFile == null && fn.srcFile != null) {
+        e.zyFile = fn.srcFile;
+      }
+      // $!! (ZyErrorPropagate) exits the function and returns the error value to the caller
+      if (e instanceof ZyErrorPropagate) { giveBack(false); return e.errVal; }
+      // <~ inside a match arm, when the match is evaluated as a sub-expression
+      // (not a bare statement), unwinds here as a thrown ZyReturn — see eval()'s
+      // 'Match' case.
+      if (e instanceof ZyReturn) { giveBack(false); return e.value; }
+      giveBack(true);
+      throw e;
+    }
+    giveBack(false);
+    if (sig instanceof ZyReturn) return sig.value;
+    return mkUnit();
+  }
+
+  async evalStr(parts, env) {
+    let s = '';
+    for (const part of parts) {
+      if (part.t === 'lit') {
+        s += part.v;
+      } else {
+        try {
+          const toks = new Lexer(part.v).tokenize();
+          const expr = new Parser(toks).parseExpr();
+          // displayOutput: "{n}" renders in the active numeral script.
+          s += this.displayOutput(await this.eval(expr, env));
+        } catch (e) {
+          // A destroyed name is refused as `x` alone is — the catch used to
+          // swallow that too and leave `{x}` in the text (GLB-025). Inside a
+          // function the identifier's refusal is the "undefined" one, so both.
+          if (/^use after destruction|is undefined — did you mean/.test(String(e?.message ?? ''))) throw e;
+          s += `{${part.v}}`;
+        }
+      }
+    }
+    return mkStr(s);
+  }
+
+  applyOp(op, l, r) {
+    const isNum = v => v.type === 'int' || v.type === 'float';
+
+    if (op === '+' || op === '-' || op === '*' || op === '/' || op === '%' || op === '^') {
+      if (!isNum(l) || !isNum(r)) {
+        // The refusal is spelled per operator, exactly as the two Rust engines
+        // spell it (ZYVM-002 fixed the mirror-image defect there). It used to be
+        // one message for `-`, `*`, `/`, `%` and `^` alike, so `"ab" / "cd"` was
+        // refused without ever mentioning `$/`.
+        //
+        // It also used to interpolate the VALUES — `fmtArg` — which for a tuple
+        // or a dictionary produced `tuple([object Object])`, and for `##_`
+        // produced `undefined` (ZYJS-006). The family names types.
+        //
+        // A wrong TYPE is a `##Type` (D1; GLB-088). The guidance for `+` is for
+        // text on either side; with no text in sight `+` names the types like
+        // the rest of the family (GLB-059, decided 2026-10-05).
+        const text = l.type === 'str' || r.type === 'str';
+        if (op === '+' && text)
+          throw new ZyRuntimeError(`+ is arithmetic only — use juxtaposition to concatenate strings: "a" b "c"`, '##Type');
+        // The same for `/` and its guidance about `$/` (GLB-090).
+        if (op === '/' && text)
+          throw new ZyRuntimeError(`/ requires numeric operands — use $/ to split strings`, '##Type');
+        if (op === '^')
+          throw new ZyRuntimeError(`power operator requires numeric operands: ${typeIdent(l)}, ${typeIdent(r)}`, '##Type');
+        throw new ZyRuntimeError(`arithmetic requires numeric operands: ${typeIdent(l)}, ${typeIdent(r)}`, '##Type');
+      }
+    }
+
+    if (op === '<' || op === '>' || op === '<=' || op === '>=') {
+      const ord = orderValues(l, r);
+      if (ord === null) {
+        // GLOBAL-001: three engines wrote this refusal three ways — the value
+        // inside the type, the type alone, and this one's prose. The type alone
+        // is the form, because it is the only one an engine can always produce.
+        // The operator as the program writes it (GLB-028, decided 2026-09-25):
+        // it was the Rust enum's name, `'Lt'`, in all three engines.
+        const opName = op;
+        // A string against a number keeps its own wording in all three engines:
+        // that comparison is DEFINED when the string is a number in any script,
+        // so the refusal is about this particular text, not about the types.
+        // Four messages spelled out rather than one with the type word
+        // interpolated, because that is how `arithmetic_ops.rs` and the VM's
+        // `cmp_order_error` write them — and `zyquality/messages/` compares the
+        // engines' SOURCES, where `with integer §` and `with § §` are two
+        // different messages however identically they print.
+        // The kind is `##Parse` — reading the text as a number is what failed —
+        // and it is declared here, because the message carries the text and the
+        // words of the text decided the kind: `"index" < 10` was an `##Index`
+        // (GLB-094, decided 2026-10-06).
+        if (l.type === 'str' && r.type === 'int')
+          throw new ZyRuntimeError(`cannot compare string '${l.v}' with integer ${r.v} using operator '${opName}'`, '##Parse');
+        if (l.type === 'str' && r.type === 'float')
+          throw new ZyRuntimeError(`cannot compare string '${l.v}' with float ${r.v} using operator '${opName}'`, '##Parse');
+        if (l.type === 'int' && r.type === 'str')
+          throw new ZyRuntimeError(`cannot compare integer ${l.v} with string '${r.v}' using operator '${opName}'`, '##Parse');
+        if (l.type === 'float' && r.type === 'str')
+          throw new ZyRuntimeError(`cannot compare float ${l.v} with string '${r.v}' using operator '${opName}'`, '##Parse');
+        // Two types that never compare are a wrong TYPE: a `##Type` (D1; GLB-091).
+        throw new ZyRuntimeError(`cannot compare values with operator '${opName}': ${typeIdent(l)} and ${typeIdent(r)}`, '##Type');
+      }
+      switch (op) {
+        case '<':  return mkBool(ordLt(ord));
+        case '>':  return mkBool(ordGt(ord));
+        case '<=': return mkBool(ordLe(ord));
+        case '>=': return mkBool(ordGe(ord));
+      }
+    }
+
+    const isFloat = l.type === 'float' || r.type === 'float';
+    const mk = isFloat ? mkFloat : mkInt;
+    const lv = l.v, rv = r.v;
+    switch (op) {
+      case '+':  return isFloat ? mkFloat(lv + rv) : intResult(lv + rv, lv, '+', rv);
+      case '-':  return isFloat ? mkFloat(lv - rv) : intResult(lv - rv, lv, '-', rv);
+      case '*':  return isFloat ? mkFloat(lv * rv) : intResult(lv * rv, lv, '*', rv);
+      case '/':  if (rv === 0) throw new ZyRuntimeError('division by zero', '##Div');
+                 return isFloat ? mkFloat(lv / rv) : mkInt(Math.trunc(lv / rv));
+      case '%':  if (rv === 0) throw new ZyRuntimeError('modulo by zero', '##Div');
+                 return mk(lv % rv);
+      // A negative exponent is a float operation, as in every other engine;
+      // this used to truncate, so `2 ^ -2` was 0 here and 0.25 there.
+      case '^':  if (isFloat) return mkFloat(Math.pow(lv, rv));
+                 if (rv < 0)  return mkFloat(Math.pow(lv, rv));
+                 return intResult(Math.pow(lv, rv), lv, '^', rv);
+      case '==': return mkBool(this.equals(l, r));
+      case '<>': return mkBool(!this.equals(l, r));
+      case '<':  return mkBool(lv < rv);
+      case '>':  return mkBool(lv > rv);
+      case '<=': return mkBool(lv <= rv);
+      case '>=': return mkBool(lv >= rv);
+    }
+    throw new ZyError(`Unknown operator: ${op}`);
+  }
+
+  // Structural equality, recursive, and the same relation at every depth.
+  //
+  // Collections used to be compared with `JSON.stringify(a.v) === JSON.stringify(b.v)`,
+  // which is three bugs in one line:
+  //
+  //   - It compares the *encoding*, not the values, so `[1] == [1.0]` was #0
+  //     while `1 == 1.0` is #1: element equality was a different relation from
+  //     scalar equality. Both Rust engines promote at every depth.
+  //   - It reads only `v`, and a named tuple keeps its labels in `keys`, so the
+  //     labels were invisible: `(x: 1, y: 2) == (a: 1, b: 2)` was #1, and so was
+  //     `(1, 2) == (x: 1, y: 2)`. Neither is defensible under any reading of what
+  //     a record is.
+  //   - Two structurally equal values can serialize differently (key insertion
+  //     order), so it could answer #0 for values it should call equal.
+  //
+  // What is deliberately *not* settled here: two named tuples with the same
+  // labels and the same values are #1 in this engine and #0 in both Rust ones.
+  // That is dictionary equality, and decisions 7-11 of
+  // Divergente_ES/forma/README.md are what decides it (DM-22). This function
+  // keeps whichever answer its engine already gave for that one case, so
+  // implementing the dictionary does not have to undo a guess made here.
+  // The test an identifier performs inside a pattern: the same dual rule the
+  // scalar path uses — an array variable means containment, anything else means
+  // equality — and an identifier that names nothing raises, because a pattern
+  // element is a value and there is no value to compare against.
+  matchIdentInPattern(name, val, env) {
+    const pv = env.get(name);            // throws when the name is undefined
+    if (pv.type === 'arr') return pv.v.some(el => this.equals(val, el));
+    return this.equals(val, pv);
+  }
+
+  // The refusal of an absent dictionary key, spelled as the two Rust engines
+  // spell it. The three used to say it four different ways — and this one said
+  // the least of all through the bracket. `forma/diccionarios.zy` § 2b asked for
+  // one text with the available keys in all three.
+  //
+  // The vocabulary is the decision too: it is a **dictionary**, not a named
+  // tuple. A tuple is immutable by definition and this is not (decision 7).
+  // The refusal of a positional address on a dictionary, spelled as the two Rust
+  // engines spell it.
+  //
+  // Decision 11 withdrew `d[2]`, and the reasoning covers the whole family: in a
+  // mutable dictionary a position is not a stable address, because adding a key
+  // changes what sits at each one. There is no principled line between "the
+  // second key" and "the first two keys", and a positional WRITE is strictly
+  // worse than a positional read — it corrupts data rather than returning the
+  // wrong value. This is Python's position: `dict` has no indexing and no
+  // slicing, and the slice gets no key-based replacement.
+  static notPositionalMsg(op, keys) {
+    const k = (keys ?? []).find(x => x) ?? 'clave';
+    return `a dictionary is addressed by key, not by position: \`${op}\` has no meaning here\n` +
+      `help: use the key — d["${k}"], d["${k}"]$~ value, d$-["${k}"] — ` +
+      `because adding a key changes what sits at each position`;
+  }
+
+  static missingKeyMsg(key, keys) {
+    const avail = (keys ?? []).filter(k => k);
+    return avail.length === 0
+      ? `no key '${key}' in dictionary — it is empty`
+      : `no key '${key}' in dictionary — available: ${avail.join(', ')}`;
+  }
+
+  equals(a, b) {
+    if (a.type !== b.type) {
+      if ((a.type === 'int' || a.type === 'float') &&
+          (b.type === 'int' || b.type === 'float')) return a.v === b.v;
+      return false;
+    }
+    // Two functions are equal when they are THE SAME function (BUG-ZYB-012).
+    // A named function is one object, made once where it is declared, so two
+    // names for it are one reference; a lambda is a fresh object per
+    // evaluation, so one written twice is two closures — which is what object
+    // identity says, and it says it without anything being carried around.
+    //
+    // Without this arm the comparison fell through to `a.v === b.v`, and a
+    // function has no `v`: `undefined === undefined` made EVERY pair of
+    // functions equal, a named one to a lambda included. It looked right on the
+    // only case anybody had tried and was wrong on the rest, and nothing caught
+    // it because no corpus file compared two functions.
+    if (a.type === 'func') {
+      // By the definition, not the object: a named function taken as a value is
+      // a copy carrying its own captures, and `f == adder` is `#1` in both Rust
+      // engines. Natives have no id and fall back to object identity.
+      return (a.fnId != null || b.fnId != null) ? a.fnId === b.fnId : a === b;
+    }
+    if (a.type === 'arr' || a.type === 'tuple') {
+      if (a.v.length !== b.v.length) return false;
+      // `isDict`, not `keys.some(k => k)`: the empty dictionary has an empty
+      // key array and is still a dictionary.
+      const ka = a.keys ?? [], kb = b.keys ?? [];
+      const aIsDict = isDict(a), bIsDict = isDict(b);
+      // A positional tuple and a dictionary are different shapes even when their
+      // values match.
+      if (aIsDict !== bIsDict) return false;
+      // Two DICTIONARIES are equal when they hold the same keys with the same
+      // values. Key ORDER is not part of it: insertion order is preserved for
+      // walking, as in Python's dict, but two dictionaries built in a different
+      // order still hold the same thing. This engine compared position by
+      // position, so `(x:1,y:2) == (y:2,x:1)` was #0 here and #1 in both Rust
+      // engines (DM-22).
+      if (aIsDict) {
+        return ka.every((k, i) => {
+          const j = kb.indexOf(k);
+          return j >= 0 && this.equals(a.v[i], b.v[j]);
+        });
+      }
+      // A positional tuple keeps position-by-position comparison.
+      return a.v.every((el, i) => this.equals(el, b.v[i]));
+    }
+    return a.v === b.v;
+  }
+
+  /**
+   * The value of a `?` / `_?` condition: a Bool, or a `##Type` error — at the
+   * line of the STATEMENT, which for a `_?` is the line of its `?`, as every
+   * run-time error is placed.
+   */
+  condition(val, cond, stmt) {
+    if (val?.type === 'bool') return val.v;
+    throw new ZyRuntimeError(`a condition must be a Bool, got ${typeIdent(val)}`, '##Type', stmt?.zyLine ?? null);
+  }
+
+  truthy(val) {
+    if (!val || val.type === 'unit') return false;
+    if (val.type === 'bool')  return val.v;
+    if (val.type === 'int' || val.type === 'float') return val.v !== 0;
+    if (val.type === 'str')   return val.v.length > 0;
+    return true;
+  }
+
+  display(val) {
+    if (!val || val.type === 'unit') return '';
+    // Standalone Unit prints as nothing, but INSIDE a collection it renders
+    // as `()` — mirrors Rust `Value::to_display_string` (unified 2026-06-12).
+    const nested = (v) => (v && v.type === 'unit') ? '()' : this.display(v);
+    if (val.type === 'int')   return String(val.v);
+    if (val.type === 'float') return floatText(val.v);
+    if (val.type === 'str')  return val.v;
+    if (val.type === 'char') return val.v;
+    if (val.type === 'bool') return val.v ? '#1' : '#0';
+    if (val.type === 'arr')  return '[' + val.v.map(nested).join(', ') + ']';
+    if (val.type === 'tuple') {
+      // `#(…)`, the way the literal is written: a dictionary printed as
+      // `(a: 1)` could not be typed back in — that spelling is refused since
+      // v0.0.9 — and `()` would be the empty tuple as well. `isDict` and not
+      // `keys?.some(…)`: the empty dictionary has an empty `keys`, and the
+      // thirteenth site to ask the question by hand would have called it a tuple.
+      if (isDict(val))
+        return '#(' + val.v.map((item, i) => `${val.keys[i]}: ${nested(item)}`).join(', ') + ')';
+      return '(' + val.v.map(nested).join(', ') + ')';
+    }
+    if (val.type === 'func') {
+      const arity = val.params?.length ?? 0;
+      return val.name === '<lambda>' ? `<lambd/${arity}>` : `<funct/${arity}>`;
+    }
+    if (val.type === 'error') return `${val.errType ?? '##_'}(${val.v ?? ''})`;
+    return String(val.v ?? val);
+  }
+
+  // Display form under the active numeral mode. The mode reaches inside
+  // collections too — a number does not stop being a number by sitting in a
+  // list — mirroring Rust `Value::to_display_string_in`.
+  displayOutput(val) {
+    const m = this.numeralMode;
+    if (!val || val.type === 'unit') return '';
+    if (m === ASCII_BASE) return this.display(val);
+    const nested = (v) => (v && v.type === 'unit') ? '()' : this.displayOutput(v);
+    if (val.type === 'int')   return numeralInt(val.v, m);
+    if (val.type === 'float') return numeralFloat(val.v, m);
+    if (val.type === 'bool')  return numeralBool(val.v, m);
+    if (val.type === 'arr')   return '[' + val.v.map(nested).join(', ') + ']';
+    if (val.type === 'tuple') {
+      // `#(…)`, the way the literal is written: a dictionary printed as
+      // `(a: 1)` could not be typed back in — that spelling is refused since
+      // v0.0.9 — and `()` would be the empty tuple as well. `isDict` and not
+      // `keys?.some(…)`: the empty dictionary has an empty `keys`, and the
+      // thirteenth site to ask the question by hand would have called it a tuple.
+      if (isDict(val))
+        return '#(' + val.v.map((item, i) => `${val.keys[i]}: ${nested(item)}`).join(', ') + ')';
+      return '(' + val.v.map(nested).join(', ') + ')';
+    }
+    return this.display(val);
+  }
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
+
+/**
+ * Everything `zymbol check` would say about a program, without running a line of it.
+ *
+ * Returns `{ diagnostics, ast }`. A diagnostic is `{severity, code, message, line, params}`:
+ * `code` and `params` are what a caller with a translation catalogue renders from, and
+ * `message` is the English fallback for one without. A parse failure comes back as a
+ * diagnostic like any other (code `E_PARSE`) rather than as a thrown error, because "the
+ * program does not parse" is the single most useful thing to tell someone who is learning
+ * the syntax, and throwing it would make it the caller's problem to catch and phrase.
+ *
+ * Warnings are included. Whether to *show* them is the caller's decision — the playground
+ * keeps them behind a toggle, because `W_LIFETIME` alone fires on more than half of the
+ * programs in examples/ (see Checker.lifetimeWarnForIterator).
+ *
+ * @param {string} src
+ * @returns {{diagnostics: Array, ast: object|null}}
+ */
+/**
+ * Extract `function → parameter count` from a module's source.
+ *
+ * The browser counterpart of `zymbol_semantic::arities_of_module_file`. Callers
+ * that can resolve imports build one of these per alias and pass the lot to
+ * `checkSource`, which is how a qualified call gets checked at all — the checker
+ * itself has no filesystem and no resolver, so without a table it says nothing
+ * rather than guessing.
+ *
+ * Every function declared in the file is listed, exported or not: a call to a
+ * private one is already reported elsewhere, and leaving it out would silently
+ * skip the arity check on a name that does resolve.
+ *
+ * Returns an empty Map for a source that does not parse — a broken module is
+ * reported when it is imported, not by inventing arities for it here.
+ */
+export function moduleAritiesFrom(src) {
+  const out = new Map();
+  let ast;
+  try {
+    ast = new Parser(new Lexer(src).tokenize()).parse();
+  } catch {
+    return out;
+  }
+  const walk = stmts => {
+    for (const s of (stmts ?? [])) {
+      if (!s) continue;
+      if (s.type === 'FuncDecl') out.set(s.name, (s.params ?? []).length);
+      else if (s.type === 'ModuleBlock') walk(s.body);
+    }
+  };
+  walk(ast.body);
+  return out;
+}
+
+/**
+ * Which parameter slots of each function in `src` are `<~` outputs.
+ *
+ * The mirror of `out_slots_of_file` in crates/zymbol-semantic/src/call_arity.rs,
+ * and the table `m::f(x<~)` is checked against (REFERENCE.md L36). Functions
+ * without an output parameter are left out, so an empty Map means "nothing to
+ * check", not "unknown".
+ */
+export function moduleOutSlotsFrom(src) {
+  const out = new Map();
+  let ast;
+  try {
+    ast = new Parser(new Lexer(src).tokenize()).parse();
+  } catch {
+    return out;
+  }
+  const walk = stmts => {
+    for (const s of (stmts ?? [])) {
+      if (!s) continue;
+      if (s.type === 'FuncDecl') {
+        const slots = (s.params ?? []).map((p, i) => (p.isOut ? i : -1)).filter(i => i >= 0);
+        if (slots.length) out.set(s.name, slots);
+      } else if (s.type === 'ModuleBlock') walk(s.body);
+    }
+  };
+  walk(ast.body);
+  return out;
+}
+
+/**
+ * Build the alias → arity-table map for every module `ast` imports directly.
+ *
+ * Only the caller's resolver can reach a module's source, so this is where the
+ * two meet: `moduleAritiesFrom` knows how to read a module, the resolver knows
+ * where it is. Direct imports only — a wrong argument count written in *this*
+ * file can only name a module this file imports.
+ *
+ * A module that fails to resolve is skipped in silence: that is reported when
+ * the import runs, with a better message than this pass could produce.
+ *
+ * @param {object} ast          parsed program (needs `.body`)
+ * @param {Function|null} resolver  `(path, fromPath) => string | {src} | null`
+ * @param {string|null} filePath
+ * @returns {Promise<Map<string, Map<string, number>>>}
+ */
+/// The E001 the module-name convention asks for, over every import, BEFORE the
+/// program runs.
+///
+/// `DOT_CONVENTION`: a bare name is the file stem, a dotted one is the directory
+/// and the stem joined with `_`.
+///
+/// GLB-005 settled that the engines enforce this and not only `zymbol check`.
+/// It belongs in this pass and not in `loadModule` because a module is loaded
+/// while the program RUNS: raising there gives `error/runtime` where the two
+/// Rust engines give `error/static`, and a refusal that lands in a different
+/// category is a divergence even when the words match.
+export function moduleDeclErrorsFor(modParts, modSrc) {
+  const out = [];
+  let ast;
+  try { ast = new Parser(new Lexer(modSrc).tokenize()).parse(); } catch { return out; }
+  const block = (ast.body?.length === 1 && ast.body[0].type === 'ModuleBlock') ? ast.body[0] : null;
+  if (!block?.name) return out;
+
+  const parts = modParts.filter(Boolean);
+  const stem  = (parts[parts.length - 1] ?? '').replace(/\.zy$/, '');
+  const dir   = parts.length > 1 ? parts[parts.length - 2] : '';
+  const expected = block.name.startsWith('.') ? `${dir}_${stem}` : stem;
+  const declared = block.name.replace(/^\./, '');
+  if (declared !== expected) {
+    out.push({
+      severity: 'error',
+      code: 'E001',
+      message: `E001: module '${block.name}' should be named '${expected}' for its path`,
+      line: block.line ?? null,
+      params: { declared: block.name, expected },
+      help: "a bare name matches the file stem (`# util` in util.zy); a leading dot names the whole path, joined with `_` (`# .lib_util` in lib/util.zy). See DOT_CONVENTION.md",
+    });
+  }
+
+  // L48 — a module says what it exports.
+  //
+  // The grammar marks `#>` optional and never said what leaving it out meant,
+  // so the three engines answered three ways: the tree-walker exported
+  // everything, this one and the VM exported nothing, and `check` said nothing
+  // at all. A module whose every call dies at runtime is not "private", it is
+  // unusable, and it passed static analysis in all three. The rule now is that
+  // the omission is refused — an empty `#> { }` is how a module says it exports
+  // nothing, and says it out loud.
+  if (!block.body?.some(st => st?.type === 'ExportDecl')) {
+    out.push({
+      severity: 'error',
+      code: 'E014',
+      message: `E014: module '${block.name}' does not declare what it exports`,
+      line: block.line ?? null,
+      params: { module: block.name },
+      help: "add '#> { … }' inside the module block, naming what it exports — an empty '#> { }' says it exports nothing",
+    });
+  }
+
+  return out;
+}
+
+/// Where a module FILE sits, worked out from the importer and the import path.
+///
+/// Not from whatever the resolver calls the module: a display path is a label,
+/// and the rule is about the file's real location. Deriving the directory from a
+/// label is the same defect this finding is about, one layer over — measured on
+/// `GO/試験/盤試験.zy`, which imports `./図` and got `_図` where the file is
+/// `試験/図.zy` and the answer is `試験_図`.
+function modulePathParts(filePath, importPath) {
+  if (!filePath) return null;              // no anchor: say nothing rather than guess
+  const out = String(filePath).split('/').slice(0, -1);
+  for (const part of String(importPath).split('/')) {
+    if (part === '' || part === '.') continue;
+    if (part === '..') out.pop();
+    else out.push(part);
+  }
+  return out;
+}
+
+export async function moduleDeclErrors(ast, resolver, filePath = null) {
+  const out = [];
+  if (!resolver || !ast?.body) return out;
+  for (const imp of ast.body) {
+    if (imp?.type !== 'Import' || !imp.alias || !imp.path) continue;
+    if (imp.path.startsWith('std/')) continue;
+    const parts = modulePathParts(filePath, imp.path);
+    if (!parts) continue;
+    try {
+      const result = await resolver(imp.path, filePath);
+      if (result == null || result.notFound) continue;
+      const modSrc = typeof result === 'string' ? result : result.src;
+      if (typeof modSrc === 'string') {
+        out.push(...moduleDeclErrorsFor(parts, modSrc));
+      }
+    } catch {
+      // Reported at import time.
+    }
+  }
+  return out;
+}
+
+/**
+ * What each user-module alias exports, split into constants and functions —
+ * `module_exports` in crates/zymbol-semantic/src/call_arity.rs.
+ *
+ * ZYVM-008, decided 2026-09-26: `m.nada` and `m::nada()` on a module that does
+ * not export `nada` are refused before the program runs, in all three engines.
+ * A module whose export block cannot be resolved in full contributes nothing,
+ * and its members are left to run time instead of refused on a guess.
+ */
+export async function moduleExportsFor(ast, resolver, filePath = null) {
+  const out = new Map();
+  if (!resolver || !ast?.body) return out;
+  for (const imp of ast.body) {
+    if (imp?.type !== 'Import' || !imp.alias || !imp.path) continue;
+    if (imp.path.startsWith('std/')) continue;   // checked with its own words
+    const exports = await exportsOfImport(imp.path, resolver, filePath, 0);
+    if (exports) out.set(imp.alias, exports);
+  }
+  return out;
+}
+
+async function exportsOfImport(path, resolver, filePath, depth) {
+  if (path.startsWith('std/')) {
+    const fns = STDLIB_ARITIES.get(path);
+    if (!fns) return null;
+    return { constants: new Set(STDLIB_CONSTANTS.get(path) ?? []), functions: new Set(fns.keys()) };
+  }
+  // The re-export hops Rust follows before giving up (MAX_REEXPORT_DEPTH).
+  if (depth > 8) return null;
+  let result;
+  try { result = await resolver(path, filePath); } catch { return null; }
+  if (result == null || result.notFound) return null;
+  const src = typeof result === 'string' ? result : result.src;
+  if (typeof src !== 'string') return null;
+  const inner = (typeof result === 'object' && result.resolver) ? result.resolver : resolver;
+  let ast;
+  try { ast = new Parser(new Lexer(src).tokenize()).parse(); } catch { return null; }
+  const block = (ast.body ?? []).find(s => s?.type === 'ModuleBlock');
+  const exportDecl = (block?.body ?? []).find(s => s?.type === 'ExportDecl');
+  if (!exportDecl) return null;
+  const fns = new Set(), consts = new Set(), imports = new Map();
+  for (const s of [...(ast.body ?? []), ...(block.body ?? [])]) {
+    if (s?.type === 'FuncDecl') fns.add(s.name);
+    else if (s?.type === 'ConstAssign') consts.add(s.name);
+    else if (s?.type === 'Import' && s.alias) imports.set(s.alias, s.path);
+  }
+  const exports = { constants: new Set(), functions: new Set() };
+  for (const item of exportDecl.names) {
+    let from;
+    let name;
+    if (item.kind === 'own') {
+      from = { constants: consts, functions: fns };
+      name = item.internal;
+    } else {
+      const sourcePath = imports.get(item.alias);
+      if (!sourcePath) return null;
+      from = await exportsOfImport(sourcePath, inner, result.resolvedPath ?? filePath, depth + 1);
+      if (!from) return null;
+      name = item.member;
+    }
+    if (from.functions.has(name)) exports.functions.add(item.exported);
+    else if (from.constants.has(name)) exports.constants.add(item.exported);
+    else return null;
+  }
+  return exports;
+}
+
+export async function moduleAritiesFor(ast, resolver, filePath = null) {
+  const out = new Map();
+  if (!resolver || !ast?.body) return out;
+  for (const imp of ast.body) {
+    if (imp?.type !== 'Import' || !imp.alias || !imp.path) continue;
+    if (imp.path.startsWith('std/')) continue;   // shipped with the engine
+    try {
+      const result = await resolver(imp.path, filePath);
+      if (result == null || result.notFound) continue;
+      const modSrc = typeof result === 'string' ? result : result.src;
+      if (typeof modSrc === 'string') out.set(imp.alias, moduleAritiesFrom(modSrc));
+    } catch {
+      // Reported at import time; nothing useful to add here.
+    }
+  }
+  return out;
+}
+
+/**
+ * The same walk as `moduleAritiesFor`, collecting output slots instead of counts.
+ * @returns {Promise<Map<string, Map<string, number[]>>>}
+ */
+export async function moduleOutSlotsFor(ast, resolver, filePath = null) {
+  const out = new Map();
+  if (!resolver || !ast?.body) return out;
+  for (const imp of ast.body) {
+    if (imp?.type !== 'Import' || !imp.alias || !imp.path) continue;
+    if (imp.path.startsWith('std/')) continue;   // no std/ function takes an output param
+    try {
+      const result = await resolver(imp.path, filePath);
+      if (result == null || result.notFound) continue;
+      const modSrc = typeof result === 'string' ? result : result.src;
+      if (typeof modSrc === 'string') {
+        const slots = moduleOutSlotsFrom(modSrc);
+        if (slots.size) out.set(imp.alias, slots);
+      }
+    } catch {
+      // Reported at import time.
+    }
+  }
+  return out;
+}
+
+// Characters in a name that look like one of Zymbol's symbols, and what each is
+// taken for. Same table as crates/zymbol-analyzer/src/confusables.rs.
+//
+// Decided by the author on 2026-09-25: they all stay valid in a name — writing a
+// name in any script, even one that looks encrypted, is the developer's freedom —
+// and only an EDITOR says which symbol it may have meant: the language server,
+// and the playground's problems panel through `confusableHints`. Never
+// `checkSource`, which `tests/run_one.mjs` runs as a command-line engine: the
+// terminal says nothing, as `zymbol check` says nothing. `·` is left out because
+// it is a letter in Catalan; the Cyrillic `о` and the Greek `ο` warn only next
+// to a Latin letter, where they are mistaken for `o`.
+const CONFUSABLES = new Map([
+  ['º', '°'], ['ª', '°'], ['ᵒ', '°'], ['ₒ', '°'], ['∘', '°'], ['◦', '°'],
+  ['ⁿ', 'n'],
+  ['＠', '@'], ['？', '?'], ['！', '!'], ['＃', '#'],
+  ['¿', '?'], ['¡', '!'],
+  ['§', '$'],
+  ['•', '.'],
+  ['¹', '1'],
+  ['о', 'o'], ['ο', 'o'],
+]);
+const isLatinLetter = c => /^[A-Za-z\u00C0-\u024F\u1E00-\u1EFF]$/.test(c) && c !== '×' && c !== '÷';
+const hex4 = c => 'U+' + c.codePointAt(0).toString(16).toUpperCase().padStart(4, '0');
+
+/** One warning per confusable character in a name, for an editor to show. */
+export function confusableHints(src) {
+  let tokens;
+  try { tokens = new Lexer(src).tokenize(); } catch { return []; }
+  const out = [];
+  for (const t of tokens) {
+    if (t.type !== 'IDENT' || !t.value) continue;
+    const chars = [...t.value];
+    chars.forEach((c, i) => {
+      const want = CONFUSABLES.get(c);
+      if (!want) return;
+      if ((c === 'о' || c === 'ο') &&
+          !(i > 0 && isLatinLetter(chars[i - 1])) &&
+          !(i + 1 < chars.length && isLatinLetter(chars[i + 1]))) return;
+      const meant = chars.map((d, j) => (j === i ? want : d)).join('');
+      out.push({
+        severity: 'warning', code: 'W_CONFUSABLE',
+        message: `'${c}' (${hex4(c)}) looks like '${want}' (${hex4(want)}) — did you mean '${meant}'?`,
+        line: t.line, col: t.col != null ? t.col + i : null,
+        params: { char: c, code: hex4(c), want, wantCode: hex4(want), meant },
+        help: null,
+      });
+    });
+  }
+  return out;
+}
+
+/**
+ * `import 'b' is never used` — an alias the file never names again (HLZ-015).
+ * `check_unused_imports` in Rust, and the same reading: over tokens, because a
+ * re-export (`#> { es::saludo => saludo }`) is a use and is not an expression.
+ * An alias is used where it is followed by `::` or `.` and is not itself the
+ * end of a `.`/`::` chain; the import statement's own tokens, from `<#`
+ * through the alias, are not a use.
+ */
+function unusedImports(ast, tokens) {
+  if (!ast || !tokens) return [];
+  const imports = [];
+  const collect = (body) => {
+    for (const s of (body ?? [])) {
+      if (s?.type === 'Import') imports.push(s);
+      else if (s?.type === 'ModuleBlock') collect(s.body);
+    }
+  };
+  collect(ast.body);
+  if (imports.length === 0) return [];
+
+  const used = new Set();
+  let inImport = false, afterArrow = false;
+  tokens.forEach((t, i) => {
+    if (t.type === 'IMPORT') { inImport = true; afterArrow = false; return; }
+    if (inImport) {
+      if (t.type === 'FAT_ARROW') afterArrow = true;
+      else if (afterArrow) inImport = false;
+      return;
+    }
+    if (t.type !== 'IDENT') return;
+    const prev = tokens[i - 1]?.type, next = tokens[i + 1]?.type;
+    if (prev === 'DOT' || prev === 'SCOPE') return;
+    if (next === 'DOT' || next === 'SCOPE') used.add(t.value);
+  });
+
+  return imports.filter(im => !used.has(im.alias)).map(im => ({
+    severity: 'warning',
+    code: 'W_UNUSED_IMPORT',
+    message: `import '${im.alias}' is never used`,
+    line: im.zyLine ?? im.line ?? null,
+    col: im.zyCol ?? null,
+    params: { name: im.alias },
+    help: `remove the import, or call into it as ${im.alias}::name or ${im.alias}.NAME`,
+  }));
+}
+
+// A condition folded: `{b}` (Bool) or `{n}` (number), `null` when it is not a
+// constant. Shared by `unreachableCode` and `destroyedReads`, as Rust shares
+// `unreachable::fold`.
+function foldCondition(e) {
+  if (!e) return null;
+  if (e.type === 'Literal') {
+    if (e.kind === 'bool') return { b: e.value };
+    if (e.kind === 'int' || e.kind === 'float') return { n: Number(e.value) };
+    return null;
+  }
+  if (e.type === 'UnaryOp') {
+    const v = foldCondition(e.operand ?? e.expr ?? e.value);
+    if (!v) return null;
+    if (e.op === '!' && 'b' in v) return { b: !v.b };
+    if (e.op === '-' && 'n' in v) return { n: -v.n };
+    if (e.op === '+' && 'n' in v) return { n: v.n };
+    return null;
+  }
+  if (e.type === 'BinOp') {
+    const l = foldCondition(e.left), r = foldCondition(e.right);
+    if (!l || !r) return null;
+    const bb = 'b' in l && 'b' in r, nn = 'n' in l && 'n' in r;
+    switch (e.op) {
+      case '&&': return bb ? { b: l.b && r.b } : null;
+      case '||': return bb ? { b: l.b || r.b } : null;
+      case '==': return bb ? { b: l.b === r.b } : nn ? { b: l.n === r.n } : null;
+      case '<>': return bb ? { b: l.b !== r.b } : nn ? { b: l.n !== r.n } : null;
+      case '<':  return nn ? { b: l.n < r.n } : null;
+      case '<=': return nn ? { b: l.n <= r.n } : null;
+      case '>':  return nn ? { b: l.n > r.n } : null;
+      case '>=': return nn ? { b: l.n >= r.n } : null;
+      default: return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * A read of a name that `\ name` has certainly destroyed (G4, decided by the
+ * author on 2026-10-23): `check_destroyed_reads` in Rust
+ * (`zymbol-semantic/src/destroyed.rs`), with the same rules, the same message
+ * and the same positions — read that file for the why. A warning and not a
+ * refusal: MEM-8 keeps the error at run time.
+ */
+function destroyedReads(ast) {
+  if (!ast) return [];
+  const out = [];
+  const HELP = 'this read fails when it runs — move the destruction after it, or remove it';
+  // A state is a Map name → line of its `\`; `null` is a path that cannot get here.
+  const meet = (a, b) => {
+    if (a === null) return b;
+    if (b === null) return a;
+    return new Map([...a].filter(([n]) => b.has(n)));
+  };
+  const reads = (e, acc) => {
+    if (!e || typeof e !== 'object') return;
+    if (Array.isArray(e)) { for (const x of e) reads(x, acc); return; }
+    if (e.type === 'Ident') { acc.push({ name: e.name, line: e.line, col: e.col ?? null }); return; }
+    // `g(…)` keeps the name it calls as text: a read of `g`, as Rust's identifier is.
+    if (e.type === 'Call' && typeof e.callee === 'string') acc.push({ name: e.callee, line: e.line, col: null });
+    if (e.type === 'Lambda') return;            // runs later; its parameters may reuse the name
+    if (e.type === 'Match') { reads(e.expr, acc); return; }  // its arms can bind the name
+    if (e.type === 'Literal') {
+      if (e.kind === 'str' && Array.isArray(e.value)) {
+        for (const p of e.value) if (p?.t === 'expr') acc.push({ name: p.v, line: e.line, col: e.col ?? null });
+      }
+      return;
+    }
+    for (const k of Object.keys(e)) {
+      if (k === 'line' || k === 'col' || k === 'type') continue;
+      reads(e[k], acc);
+    }
+  };
+  const expr = (e, st) => {
+    if (!st || st.size === 0) return;
+    const acc = [];
+    reads(e, acc);
+    for (const r of acc) {
+      if (!st.has(r.name)) continue;
+      out.push({
+        severity: 'warning', code: 'W_DESTROYED_READ',
+        message: `'${r.name}' is read after '\\ ${r.name}' destroyed it (line ${st.get(r.name)})`,
+        line: r.line ?? null, col: r.col, params: { name: r.name }, help: HELP,
+      });
+    }
+  };
+  const armBound = (p) => p?.type === 'errkind' ? (p.bind ?? null)
+    : p?.type === 'or' ? ((p.alts ?? []).find(a => a?.type === 'errkind' && a.bind)?.bind ?? null) : null;
+  const destructNames = (s) => (s.targets ?? []).map(t => t.name).filter(n => n && n !== '_');
+  // Every name a block can assign, at any depth, functions aside.
+  const assignedIn = (stmts, acc = new Set()) => {
+    for (const s of (stmts ?? [])) {
+      if (!s || typeof s !== 'object') continue;
+      switch (s.type) {
+        case 'VarAssign': case 'Increment': case 'CompoundAssign': acc.add(s.name); break;
+        case 'TupleDestruct': case 'ArrayDestruct': case 'NamedDestruct': destructNames(s).forEach(n => acc.add(n)); break;
+        case 'Input': acc.add(s.varName); break;
+        case 'KeyInput': case 'CliArgs': acc.add(s.variable); break;
+        case 'If': assignedIn(s.then, acc); (s.elseifs ?? []).forEach(b => assignedIn(b.body, acc)); if (Array.isArray(s.else)) assignedIn(s.else, acc); break;
+        case 'Loop': assignedIn(s.body, acc); if (s.var) acc.add(s.var); break;
+        case 'TryCatch': assignedIn(s.tryBody, acc); (s.catches ?? []).forEach(c => assignedIn(c.body, acc)); if (s.finallyBody) assignedIn(s.finallyBody, acc); break;
+        case 'TuiBlock': assignedIn(s.body, acc); break;
+        case 'ExprStmt':
+          if (s.expr?.type === 'Match') for (const a of s.expr.arms ?? []) { if (a.body?.type === 'block') assignedIn(a.body.stmts, acc); if (a.body?.effect) assignedIn(a.body.effect, acc); }
+          break;
+      }
+    }
+    return acc;
+  };
+  const without = (st, names) => new Map([...st].filter(([n]) => !names.has(n)));
+  const funcNames = new Set();
+  const collectFuncs = (stmts) => {
+    for (const s of (stmts ?? [])) {
+      if (!s || typeof s !== 'object') continue;
+      if (s.type === 'FuncDecl') { funcNames.add(s.name); collectFuncs(s.body); }
+      if (s.type === 'ModuleBlock') collectFuncs(s.body);
+      if (s.type === 'Import' && s.alias) funcNames.add(s.alias);   // refused by `\` too
+    }
+  };
+  collectFuncs(ast.body);
+
+  const block = (stmts, st) => {
+    for (const s of (stmts ?? [])) {
+      if (st === null) { if (s?.type === 'FuncDecl') block(s.body, new Map()); continue; }
+      st = stmt(s, st);
+    }
+    return st;
+  };
+  const stmt = (s, st) => {
+    if (!s || typeof s !== 'object') return st;
+    st = new Map(st);
+    switch (s.type) {
+      case 'LifetimeEnd':
+        // `\ f` on a declared function is refused before anything runs, and
+        // destroys nothing: no read of `f` is warned about.
+        if (funcNames.has(s.name)) return st;
+        st.delete(s.name); st.set(s.name, s.line); return st;
+      case 'VarAssign': expr(s.value, st); st.delete(s.name); return st;
+      case 'Increment': expr({ type: 'Ident', name: s.name, line: s.line, col: s.col ?? null }, st); st.delete(s.name); return st;
+      // `x += v` reads `x` first, as Rust's `Assignment` of `x + v` does.
+      case 'CompoundAssign':
+        expr({ type: 'Ident', name: s.name, line: s.line, col: s.col ?? null }, st);
+        expr(s.value, st); st.delete(s.name); return st;
+      case 'TupleDestruct': case 'ArrayDestruct': case 'NamedDestruct': expr(s.value, st); destructNames(s).forEach(n => st.delete(n)); return st;
+      case 'Input': st.delete(s.varName); return st;
+      case 'KeyInput': case 'CliArgs': st.delete(s.variable); return st;
+      case 'Return': expr(s.value, st); return null;
+      case 'Break': case 'Continue': return null;
+      case 'FuncDecl': block(s.body, new Map()); return st;
+      case 'ModuleBlock': return block(s.body, st);
+      case 'If': {
+        const conds = [s.cond, ...(s.elseifs ?? []).map(b => b.cond)];
+        const blocks = [s.then, ...(s.elseifs ?? []).map(b => b.body)];
+        let outSt = null, decided = false;
+        for (let k = 0; k < conds.length; k++) {
+          expr(conds[k], st);
+          const v = foldCondition(conds[k]);
+          if (v && v.b === false) continue;
+          outSt = meet(outSt, block(blocks[k], new Map(st)));
+          if (v && v.b === true) { decided = true; break; }
+        }
+        if (!decided) outSt = meet(outSt, Array.isArray(s.else) ? block(s.else, new Map(st)) : st);
+        return outSt;
+      }
+      case 'Loop': {
+        if (s.kind === 'while') {
+          expr(s.cond, st);
+          const v = foldCondition(s.cond);
+          if (v && v.b === false) return st;
+        } else {
+          for (const k of Object.keys(s)) if (!['body', 'type', 'kind', 'label', 'var', 'line', 'col'].includes(k)) expr(s[k], st);
+        }
+        // A turn after the first starts where the last one ended: what the body
+        // assigns anywhere in it is alive there (GLB-147), so it is not certain
+        // inside the body either.
+        const assigned = assignedIn(s.body, new Set(s.var ? [s.var] : []));
+        block(s.body, without(st, assigned));
+        return without(st, assigned);
+      }
+      case 'TryCatch': {
+        const afterTry = block(s.tryBody, new Map(st));
+        const failed = without(st, assignedIn(s.tryBody));
+        let outSt = afterTry;
+        for (const c of (s.catches ?? [])) outSt = meet(outSt, block(c.body, new Map(failed)));
+        if (s.finallyBody) block(s.finallyBody, meet(failed, afterTry) ?? new Map());
+        return outSt;
+      }
+      case 'TuiBlock': return block(s.body, st);
+      case 'ExprStmt':
+        if (s.expr?.type === 'Match') {
+          const m = s.expr;
+          expr(m.expr, st);
+          let outSt = new Map(st);
+          for (const a of (m.arms ?? [])) {
+            const arm = new Map(st);
+            const b = armBound(a.pattern);
+            if (b) arm.delete(b);
+            let end = arm;
+            if (a.body?.type === 'expr') { expr(a.body.value, arm); if (a.body.effect) end = block(a.body.effect, arm); }
+            else if (a.body?.type === 'block') end = block(a.body.stmts, arm);
+            outSt = meet(outSt, end);
+          }
+          return outSt;
+        }
+        expr(s.expr, st); return st;
+      default:
+        // Output, OutputPos, Sleep, InPlaceEdit, FuncUpdate and the rest: what they read.
+        for (const k of Object.keys(s)) if (!['type', 'line', 'col'].includes(k)) expr(s[k], st);
+        return st;
+    }
+  };
+  block(ast.body, new Map());
+  return out;
+}
+
+/**
+ * A `??` that may find no arm (G5, decided by the author on 2026-10-24):
+ * `check_match_coverage` in Rust (`zymbol-semantic/src/match_coverage.rs`),
+ * with the same rules, the same message and the same positions — read that
+ * file for the why. A warning: the run-time error stays the error.
+ */
+function matchCoverage(ast) {
+  if (!ast) return [];
+  const out = [];
+  const complete = (m) => {
+    const alts = (m.arms ?? []).flatMap(a => a.pattern?.type === 'or' ? (a.pattern.alts ?? []) : [a.pattern]);
+    if (alts.some(p => p?.type === 'wildcard')) return true;
+    const bools = new Set(alts.filter(p => p?.type === 'literal' && p.value?.type === 'Literal' && p.value.kind === 'bool')
+      .map(p => p.value.value));
+    if (bools.size === 2) return true;
+    const cmps = alts.filter(p => p?.type === 'comparison')
+      .map(p => ({ op: p.op, k: foldCondition(p.value) }))
+      .filter(c => c.k && 'n' in c.k).map(c => ({ op: c.op, k: c.k.n }));
+    return cmps.some(lo => cmps.some(hi => {
+      if ((lo.op === '<' || lo.op === '<=') && (hi.op === '>' || hi.op === '>='))
+        return hi.k < lo.k || (hi.k === lo.k && (lo.op === '<=' || hi.op === '>='));
+      return lo.op === '==' && hi.op === '<>' && lo.k === hi.k;
+    }));
+  };
+  const seen = new Set();
+  const visit = (n) => {
+    if (!n || typeof n !== 'object' || seen.has(n)) return;
+    seen.add(n);
+    if (Array.isArray(n)) { for (const x of n) visit(x); return; }
+    if (n.type === 'Match' && Array.isArray(n.arms) && !complete(n)) {
+      out.push({
+        severity: 'warning', code: 'W_MATCH_NO_ARM',
+        message: "this '??' has no '_' arm: a value no arm matches stops the program",
+        line: n.line ?? null, col: n.col ?? null, params: {},
+        help: 'add `_ => …` for every other value — or, if no other value can arrive, catch the error where it matters with `!?`',
+      });
+    }
+    for (const k of Object.keys(n)) {
+      if (k === 'line' || k === 'col' || k === 'type' || k === 'at') continue;
+      visit(n[k]);
+    }
+  };
+  visit(ast);
+  return out.sort((a, b) => (a.line ?? 0) - (b.line ?? 0) || (a.col ?? 0) - (b.col ?? 0));
+}
+
+/**
+ * Code that cannot run (HLZ-016): `check_unreachable` in Rust
+ * (`zymbol-semantic/src/unreachable.rs`), with the same three shapes, the same
+ * folding and the same positions — read that file for the why.
+ *
+ * - after an exit: a statement following `<~`, `@!` or `@>` in its block;
+ * - every branch leaves: a statement after a `? … _ { }` whose branches all do;
+ * - constant condition: a branch whose condition folds to `#0`, the branches
+ *   after one that folds to `#1`, a `@ cond { }` whose condition folds to `#0`.
+ *
+ * `? #1 { … }` alone is the scope-block idiom and says nothing. A dead block
+ * that is empty says nothing either: the warning points at its first statement.
+ */
+function unreachableCode(ast) {
+  if (!ast) return [];
+  const out = [];
+  const seen = new Set();
+  const HELP_EXIT = 'delete it, or move it above the exit';
+  const HELP_CONST = 'remove the dead code, or make the condition depend on something that can change';
+  const warn = (stmt, code, message, help, params = {}) => out.push({
+    severity: 'warning', code, message,
+    line: stmt.zyLine ?? stmt.line ?? null, col: stmt.zyCol ?? null, params, help,
+  });
+
+  const fold = foldCondition;
+
+  const EXITS = { Return: "'<~'", Break: "'@!'", Continue: "'@>'" };
+  // How a statement always leaves its block: an exit's spelling, '' for an
+  // if/else whose every branch leaves, null otherwise.
+  const leaves = (s) => {
+    if (!s) return null;
+    if (EXITS[s.type]) return EXITS[s.type];
+    if (s.type === 'If' && Array.isArray(s.else)) {
+      const all = blockLeaves(s.then) && (s.elseifs ?? []).every(b => blockLeaves(b.body)) && blockLeaves(s.else);
+      return all ? '' : null;
+    }
+    return null;
+  };
+  const blockLeaves = (b) => (b ?? []).some(s => leaves(s) !== null);
+  const dead = (stmts, code, message) => { if (stmts?.length) warn(stmts[0], code, message, HELP_CONST); };
+
+  const block = (stmts) => {
+    if (!Array.isArray(stmts) || seen.has(stmts)) return;
+    seen.add(stmts);
+    const i = stmts.findIndex(s => leaves(s) !== null);
+    if (i >= 0 && i + 1 < stmts.length) {
+      const exit = leaves(stmts[i]);
+      if (exit === '') {
+        warn(stmts[i + 1], 'W_UNREACHABLE_BRANCHES',
+          "unreachable code: every branch of the '?' above leaves the block", HELP_EXIT);
+      } else {
+        warn(stmts[i + 1], 'W_UNREACHABLE',
+          `unreachable code: this statement comes after ${exit}, which always leaves the block`,
+          HELP_EXIT, { exit });
+      }
+    }
+    for (const s of stmts) stmt(s);
+  };
+
+  const stmt = (s) => {
+    if (!s || typeof s !== 'object') return;
+    switch (s.type) {
+      case 'If': {
+        const conds = [s.cond, ...(s.elseifs ?? []).map(b => b.cond)];
+        const blocks = [s.then, ...(s.elseifs ?? []).map(b => b.body)];
+        if (Array.isArray(s.else)) blocks.push(s.else);
+        for (let k = 0; k < conds.length; k++) {
+          const v = fold(conds[k]);
+          if (v && v.b === false) {
+            dead(blocks[k], 'W_DEAD_BRANCH', 'this branch never runs: its condition is always #0');
+          } else if (v && v.b === true) {
+            const later = blocks.slice(k + 1).find(b => b?.length);
+            if (later) dead(later, 'W_DEAD_AFTER_TRUE',
+              'this branch never runs: an earlier condition in the chain is always #1');
+            break;
+          }
+        }
+        blocks.forEach(block);
+        break;
+      }
+      case 'Loop':
+        if (s.kind === 'while') {
+          const v = fold(s.cond);
+          if (v && v.b === false) dead(s.body, 'W_DEAD_LOOP', 'this loop never runs: its condition is always #0');
+        }
+        block(s.body);
+        break;
+      case 'TryCatch':
+        block(s.tryBody);
+        for (const c of (s.catches ?? [])) block(c.body);
+        block(s.finallyBody);
+        break;
+      case 'FuncDecl':
+      case 'TuiBlock':
+        block(s.body);
+        break;
+      case 'ModuleBlock':
+        block(s.body);
+        break;
+      default:
+        break;
+    }
+    // Blocks that live inside expressions — a lambda's body, a `??` arm — and
+    // a `>>| { }` body, reached by walking every value the statement holds.
+    for (const [k, v] of Object.entries(s)) {
+      if (['then', 'else', 'body', 'tryBody', 'finallyBody'].includes(k) && Array.isArray(v)) continue;
+      exprs(v);
+    }
+  };
+
+  const exprs = (v) => {
+    if (Array.isArray(v)) { v.forEach(exprs); return; }
+    if (!v || typeof v !== 'object') return;
+    if (v.type === 'block' && Array.isArray(v.stmts)) { block(v.stmts); return; }
+    if (Array.isArray(v.body) && v.body.every(x => x && typeof x === 'object' && x.type)) block(v.body);
+    for (const x of Object.values(v)) if (x && typeof x === 'object') exprs(x);
+  };
+
+  block(ast.body);
+  return out;
+}
+
+/**
+ * @param {string} src
+ * @param {{moduleArities?: Map<string, Map<string, number>>}} [opts]
+ *   `moduleArities` maps an import alias to that module's `moduleAritiesFrom`
+ *   table — build it with `moduleAritiesFor` when a resolver is available.
+ *   Omitted, qualified calls to user modules go unchecked; `std/` calls are
+ *   checked either way, since that table ships with the engine.
+ */
+export function checkSource(src, opts = {}) {
+  let ast = null;
+  let tokens = null;
+  try {
+    tokens = new Lexer(src).tokenize();
+    ast = new Parser(tokens).parse();
+  } catch (e) {
+    // ZyError keeps the source line in `zyLine` and prefixes the message with it; older
+    // throw sites pass neither, so the prefix is the only thing left to read it from.
+    const raw  = e?.message ?? String(e);
+    const line = e?.zyLine ?? (/^Line (\d+): /.exec(raw)?.[1] ?? null);
+    const message = raw.replace(/^Line \d+: /, '');
+    const first = {
+      severity: 'error',
+      code: 'E_PARSE',
+      message,
+      line: line === null ? null : Number(line),
+      col: e?.zyCol ?? null,
+      params: { message },
+      help: e?.zyHelp ?? null,
+    };
+    // A refusal may carry more findings from the same spot (`zyMore`). They go
+    // out as ordinary diagnostics, in the order the lexer found them.
+    const rest = (e?.zyMore ?? []).map(m => ({
+      severity: 'error',
+      code: 'E_PARSE',
+      message: m.message,
+      line: m.line ?? null,
+      col: m.col ?? null,
+      params: { message: m.message },
+      help: m.help ?? null,
+    }));
+    return { ast: null, diagnostics: [first, ...rest] };
+  }
+
+  let diagnostics;
+  try {
+    const checker = new Checker(ast);
+    if (opts.moduleArities instanceof Map) checker.moduleArities = opts.moduleArities;
+    if (opts.moduleOutSlots instanceof Map) checker.moduleOutSlots = opts.moduleOutSlots;
+    if (opts.moduleExports instanceof Map) checker.moduleExports = opts.moduleExports;
+    diagnostics = checker.check();
+  } catch (e) {
+    // The checker walking a shape it did not expect must not look like a broken program.
+    // Report nothing rather than something wrong; running the program still reports for real.
+    console.warn('checkSource: analysis failed —', e?.message ?? e);
+    diagnostics = [];
+  }
+  // Outside the Checker on purpose: it drops every warning raised inside a
+  // module body (Depurando_GO.md DG-06), and Rust reports these there too.
+  diagnostics.push(...unusedImports(ast, tokens));
+  diagnostics.push(...unreachableCode(ast));
+  diagnostics.push(...destroyedReads(ast));
+  diagnostics.push(...matchCoverage(ast));
+  // A name reported as UNDEFINED must not also be reported as UNUSED.
+  //
+  // The two come from opposite ends of the same fact: `? #1 { v = 1 }  >> v ¶`
+  // defines `v` in the block frame, which pops — so the analyser says "unused"
+  // when the frame closes and "undefined" when the later line looks for it.
+  // Both are about a variable the program plainly meant to use, and Rust reports
+  // only the second. Saying both invites the reader to fix the wrong one.
+  const quiet = new Set(
+    diagnostics.filter(d => d.code === 'E_VAR' && d.params?.name).map(d => d.params.name));
+  if (quiet.size > 0) {
+    diagnostics = diagnostics.filter(
+      d => !((d.code === 'W_UNUSED' || d.code === 'W_WRITE_ONLY') && quiet.has(d.params?.name)));
+  }
+  return { ast, diagnostics };
+}
+
+/**
+ * What each name in a program is, for the editor's identifier hover.
+ *
+ * Maps a name to every place it is introduced: `{kind, line, type, value}`, where `type`
+ * and `value` are filled in only when the definition's right-hand side is a literal. A
+ * name bound to a call gets `kind` and nothing else — the alternative would be guessing a
+ * type, and a hover card that guesses is worse than one that stays quiet.
+ *
+ * Definitions are collected per name, in source order, because the lexer records a line
+ * but no column: a caller resolves a hover by taking the last definition at or above the
+ * hovered line. That is exact for ordinary code and wrong only under aggressive shadowing,
+ * which is a limit the playground states rather than papers over.
+ *
+ * @param {string} src
+ * @returns {Map<string, Array<{kind:string, line:number, type?:string, value?:string}>>}
+ */
+export function buildSymbolIndex(src) {
+  const index = new Map();
+  const add = (name, kind, line, extra = null) => {
+    if (!name || typeof name !== 'string') return;
+    if (!index.has(name)) index.set(name, []);
+    index.get(name).push({ kind, line: line ?? 0, ...(extra ?? {}) });
+  };
+
+  let ast;
+  try {
+    ast = new Parser(new Lexer(src).tokenize()).parse();
+  } catch {
+    return index;   // half-typed program: no index, and the operator hover still works
+  }
+
+  /**
+   * A literal right-hand side, and only a literal one, yields a type and a value to show.
+   *
+   * Type names are the engine's own — `Int`, `Float`, `Text` — even when the card around
+   * them is in another language, so that what the hover says matches what `#?` prints.
+   */
+  const describe = (expr) => {
+    if (!expr || typeof expr !== 'object') return null;
+    switch (expr.type) {
+      case 'Literal': {
+        switch (expr.kind) {
+          case 'int':   return { type: 'Int',   value: String(expr.value) };
+          case 'float': return { type: 'Float', value: String(expr.value) };
+          case 'bool':  return { type: 'Bool',  value: expr.value ? '#1' : '#0' };
+          case 'char':  return { type: 'Char',  value: `'${expr.value}'` };
+          case 'str': {
+            // A string literal is a list of parts; it only has a showable value when none
+            // of them is an interpolation, whose value depends on the run.
+            const parts = expr.value;
+            if (!Array.isArray(parts)) return { type: 'Text', value: JSON.stringify(String(parts)) };
+            if (!parts.every(p => p?.t === 'lit')) return { type: 'Text' };
+            return { type: 'Text', value: JSON.stringify(parts.map(p => p.v).join('')) };
+          }
+          default: return null;
+        }
+      }
+      case 'Array': return { type: 'Array', value: `${(expr.items ?? []).length} items` };
+      case 'Tuple': return { type: 'Tuple', value: `${(expr.items ?? []).length} fields` };
+      case 'Lambda': {
+        const n = (expr.params ?? []).length;
+        return { type: 'Lambda', value: `${n} parameter${n === 1 ? '' : 's'}` };
+      }
+      case 'UnaryOp': {
+        // `-3` parses as a negation around a literal, and reads as one to a human.
+        const inner = describe(expr.operand ?? expr.value);
+        if (inner && (expr.op === '-' || expr.op === 'neg')) {
+          return { type: inner.type, value: `${expr.op === '-' ? '-' : ''}${inner.value}` };
+        }
+        return null;
+      }
+      default: return null;
+    }
+  };
+
+  const walkBlock = (stmts) => { for (const s of stmts ?? []) walkStmt(s); };
+
+  const walkStmt = (stmt) => {
+    if (!stmt || typeof stmt !== 'object') return;
+    switch (stmt.type) {
+      case 'ConstAssign':
+        add(stmt.name, 'const', stmt.line, describe(stmt.value));
+        return;
+      case 'VarAssign':
+        add(stmt.name, 'var', stmt.line, describe(stmt.value));
+        return;
+      case 'FuncDecl': {
+        const n = (stmt.params ?? []).length;
+        add(stmt.name, 'func', stmt.line,
+            { value: `${n} parameter${n === 1 ? '' : 's'}` });
+        for (const p of (stmt.params ?? [])) {
+          add(typeof p === 'string' ? p : p.name, 'param', stmt.line);
+        }
+        walkBlock(stmt.body);
+        return;
+      }
+      case 'Import':
+        add(stmt.alias, 'import', stmt.line, { value: stmt.path });
+        return;
+      case 'Loop':
+        if (stmt.var) add(stmt.var, 'iterator', stmt.line);
+        walkBlock(stmt.body);
+        return;
+      case 'CliArgs':
+        add(stmt.variable, 'var', stmt.line);
+        return;
+      case 'KeyInput':
+        add(stmt.varName ?? stmt.variable, 'var', stmt.line);
+        return;
+      case 'Input':
+        add(stmt.name ?? stmt.variable, 'var', stmt.line);
+        return;
+      case 'ModuleDecl':
+        add(stmt.name, 'module', stmt.line);
+        walkBlock(stmt.body);
+        return;
+      default: {
+        // Everything else only matters for the blocks it may contain.
+        for (const key of ['body', 'tryBody', 'try', 'elseBody', 'else', 'thenBody', 'then']) {
+          if (Array.isArray(stmt[key])) walkBlock(stmt[key]);
+        }
+        for (const key of ['branches', 'catches', 'arms', 'elifs']) {
+          for (const b of (stmt[key] ?? [])) {
+            if (Array.isArray(b?.body)) walkBlock(b.body);
+          }
+        }
+        const fin = stmt.finallyBody ?? stmt.finally;
+        if (Array.isArray(fin)) walkBlock(fin);
+      }
+    }
+  };
+
+  walkBlock(ast.body);
+  return index;
+}
+
+export async function runZymbol(src, inputFn, onOutput, moduleResolver = null, filePath = null, tuiContext = null, cliArgs = [], opts = {}) {
+  // A run starts unseeded, as a process does: the playground runs one program
+  // after another in the same page, and a seed must not reach the next (G8).
+  ZyRandom.reset();
+  ZyNet.limit = null;
+  const tokens = new Lexer(src).tokenize();
+  const ast    = new Parser(tokens).parse();
+
+  // Argument counts for `alias::func(…)` need the imported module's source, so
+  // the table is built here, where the resolver is, and handed to the checker.
+  // Same split as Rust: `zymbol_semantic::module_arities` reads the files and
+  // `TypeChecker::set_module_arities` receives the result.
+  const checker = new Checker(ast);
+  checker.moduleArities = await moduleAritiesFor(ast, moduleResolver, filePath);
+  checker.moduleOutSlots = await moduleOutSlotsFor(ast, moduleResolver, filePath);
+  checker.moduleExports = await moduleExportsFor(ast, moduleResolver, filePath);
+  const diags   = checker.check();
+  // What an imported module DECLARES, before anything runs: its name against
+  // its path (E001, GLB-005) and the export block it must have (E014, L48).
+  //
+  // A caller that formats the static diagnostics itself — `tests/run_one.mjs`,
+  // which needs them in the CLI's layout — asks for them separately through
+  // `moduleDeclErrors` and passes `skipModuleNames` so they are not reported
+  // twice.
+  if (!opts.skipModuleNames)
+    diags.push(...await moduleDeclErrors(ast, moduleResolver, filePath));
+
+  // Where diagnostics go. The playground passes no `onError` and keeps today's
+  // behaviour — everything in the one output panel, which is all a browser has.
+  // A caller that is a process passes one and gets the CLI's split: the
+  // program's output on stdout, everything the engine has to say about the
+  // program on stderr. Mixing the two was ~63 of the 91 corpus divergences,
+  // because the Rust engines have always kept them apart.
+  const onError = typeof opts.onError === 'function' ? opts.onError : onOutput;
+  // Declared out here so the exit status survives the try (GAP-ZYB-006).
+  let interp = null;
+
+  for (const d of diags) if (d.severity === 'error') onError(formatDiagnostic(d) + '\n\n');
+  if (diags.some(d => d.severity === 'error'))
+    return { failed: true, message: diags.find(d => d.severity === 'error').message };
+
+  try {
+    interp = new Interpreter(onOutput, inputFn, moduleResolver, tuiContext);
+    interp.cliArgs = cliArgs;
+    if (opts.maxSteps        != null) interp.maxSteps        = opts.maxSteps;
+    if (opts.maxBytes        != null) interp.maxBytes        = opts.maxBytes;
+    if (opts.maxInfiniteIter != null) interp.maxInfiniteIter = opts.maxInfiniteIter;
+    await interp.run(ast, filePath);
+    // A module file run directly: refused, exactly as the CLI refuses it.
+    if (interp.moduleRefused) {
+      onError(interp.moduleRefused);
+      return { failed: true, message: interp.moduleRefused };
+    }
+  } catch (e) {
+    // The error is written through a callback rather than rethrown because the
+    // playground shows it in the output panel — an exception escaping here
+    // would take the page down with it. The return value is how a caller that
+    // *is* a process (tests/run_one.mjs) learns to exit non-zero: without it
+    // the CLI reported success for a program the engine had refused, and
+    // `zyq reject` read that as the form being accepted.
+    const message = e instanceof ZyStaticError ? e.message : (e.message ?? String(e));
+    // The entry file is this interpreter's own; an error out of a module is
+    // already named. Spelled exactly as the Rust engines spell it — `zyq
+    // consensus` compares the text, so a difference here is a divergence.
+    onError(`Runtime error: ${message}`);
+    // Where it happened, on its own line, as the Rust engines print it — two
+    // separate writes there, two here, so the message template is the one it
+    // always was and the location is its own. `opts.displayPath` is the entry
+    // file as a reader would type it; a host that does not supply one (the
+    // playground, where the name IS short) falls back to the path it gave.
+    const file = (e && e.zyFile) ?? opts.displayPath ?? filePath;
+    const line = e && e.zyLine;
+    if (file && line) onError(`\n  --> ${file}:${line}`);
+    return { failed: true, message };
+  }
+  // GAP-ZYB-006: the exit status a top-level `<~ n` asked for, so a caller that
+  // is a process can pass it on. Undefined when the program did not ask.
+  return { failed: false, exitCode: interp?.exitCode };
+}
