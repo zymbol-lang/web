@@ -217,24 +217,27 @@ had to change for that.
 
 ## 05 — The manual
 
-Below the sections above, the page renders the compact **v0.0.9** manual in the
-reader's own language, with every `zymbol` block coloured by the site's
-highlighter. It is fetched from `/data/manuals/v009/manual_<code>.md`.
+Below the sections above, the page renders the compact manual in the reader's own
+language, with every `zymbol` block coloured by the site's highlighter. It is fetched
+from `/data/manuals/v0011/manual_<code>.md` where the **v0.0.11** revision is written,
+and from `/data/manuals/v009/manual_<code>.md`, the **v0.0.9** one in the same language,
+where it is not yet.
 
-**It is written in 51 languages so far.** For every other language the section and
+**It is written in 51 languages**, all of them now at v0.0.11, brought up from the
+v0.0.9 text one batch at a time in order of speakers. For every other language the section and
 its nav item are **not shown at all**: no heading, no empty box, no English text
 under a translated title. A fallback would tell a reader their language was done
 when it is not; absent is honest where wrong is not. (The older 110-language manual, last
 revised for v0.0.5, is still published and still served by
 [/overview.md](overview.md) — that page is archived and its manual is of its time.)
 
-Every block of the v0.0.9 manual was run through `zymbol check` and every claimed
+Every block of both revisions was run through `zymbol check` and every claimed
 output compared against what the program really prints.
 
 ## Links
 
 - Run it in the browser: <https://zymbol-lang.org/playground.html>
-- The manual (English, v0.0.9): <https://zymbol-lang.org/data/manuals/v009/manual_en.md>
+- The manual (English, v0.0.11): <https://zymbol-lang.org/data/manuals/v0011/manual_en.md>
 - The former front page, archived: <https://zymbol-lang.org/overview.md>
 - Download and install: <https://zymbol-lang.org/install.html>
 - Interpreter (Rust): <https://github.com/zymbol-lang/interpreter>

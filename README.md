@@ -94,7 +94,7 @@ web/
 │
 ├── data/
 │   ├── i18n/                  languages.json, i18n.json, languages.xml
-│   ├── manuals/               manual_<lang>.md (110, v0.0.5) + v009/ (4, current)
+│   ├── manuals/               manual_<lang>.md (110, v0.0.5) + v009/ (51) + v0011/ (51, current)
 │   └── archive/               v004/, v005/ — superseded manual sets, kept for diffing
 │
 ├── examples/                  THE EXAMPLE POOL — the playground's only source of examples
@@ -113,8 +113,9 @@ web/
 │   ├── test_catalog.mjs       catalog.json ↔ examples/ integrity (dead refs, orphans)
 │   ├── test_filestore.mjs     The mounted-vs-open file model and its persistence
 │   ├── test_zyp.mjs           .zyp reader + module resolver (builds its own fixtures)
-│   ├── test_manual.mjs        Smoke-runs every ```zymbol block in v009/manual_en.md
+│   ├── test_manual.mjs        Smoke-runs every ```zymbol block in v0011/manual_en.md
 │   ├── test_manual_v009.mjs   V009_CODES ↔ the directory, both directions
+│   ├── test_manual_v0011.mjs  V0011_CODES ↔ the directory, and the same-language fallback
 │   ├── test_markdown.mjs      Page twins, llms.txt, robots.txt and the negotiation Worker
 │   ├── test_i18n_atlas.mjs    The front page's atlas blocks in i18n.json: complete, used, no dead key
 │   ├── test_atlas_dom.mjs     The front page at 360px and its language switch (headless Chrome)
@@ -330,24 +331,31 @@ stops being offered on half a site. For the same reason, `overview.html` carries
 pre-paint `<html lang>` tables verbatim from `index.html`, and `test_i18n_playground.mjs`
 checks both copies against `src/i18n/detect.js` rather than one.
 
-### The manual: two generations, and what each does when a language is missing
+### The manual: three generations, and what each does when a language is missing
 
 `src/site/manual.js` holds the language→file table and the fetch/render/highlight, shared by
 both pages — the third extraction out of `main.js`, after `langbar.js` and `highlight-zy.js`,
 and for the same reason. What is *not* shared is the fallback policy, and the difference is
 deliberate:
 
-| | `data/manuals/manual_<code>.md` | `data/manuals/v009/manual_<code>.md` |
-|---|---|---|
-| revision | v0.0.5 | **v0.0.9** |
-| languages | 110 | **4** — en, es, it, qu |
-| served by | `overview.html` | the front page |
-| language missing | falls back: Spanish, then English | **shows nothing at all** |
+| | `data/manuals/manual_<code>.md` | `data/manuals/v009/manual_<code>.md` | `data/manuals/v0011/manual_<code>.md` |
+|---|---|---|---|
+| revision | v0.0.5 | v0.0.9 | **v0.0.11** |
+| languages | 110 | 51 | 51 — `V0011_CODES` |
+| served by | `overview.html` | the front page | the front page |
+| language missing | falls back: Spanish, then English | **shows nothing at all** | falls back to v0.0.9, **same language only** |
 
 With 110 written, a gap is an accident and English is a reasonable floor. With four, a
 fallback would put English prose under a heading that says *ドキュメント*, which reads to
 that reader as "your language is finished" — so the section and its nav item are hidden
 outright. Absent is honest; wrong is not.
+
+The v0.0.11 revision is a copy of v009 brought up to date one batch of languages at a time,
+in the v009 queue's order (by speakers), through the same six gates — the tooling was copied
+into `v0011/` with it. Until a language's turn comes, its reader keeps the v0.0.9 manual **in
+their own language** (`manualUrl` in `manual.js`): the first lines of that manual say which
+version it was revised for, so nothing claims to be what it is not. The fallback never
+crosses into another language, and `tests/test_manual_v0011.mjs` holds it to that.
 
 Which languages have one is a **hand-written list** (`V009_CODES`), not a 404 probe: probing
 paints a heading and takes it away again, and it makes an offline reader look like an
@@ -563,8 +571,9 @@ node tests/test_limits.mjs            # step/output caps: the TUI exemption and 
 node tests/test_catalog.mjs [--check] # catalog.json ↔ examples/ (--check also compiles every .zy)
 node tests/test_runner.mjs            # parity: zymbol CLI vs the JS engine
 node tests/test_runner.mjs --dir examples   # …over the example pool
-node tests/test_manual.mjs            # smoke-runs every code block in v009/manual_en.md
+node tests/test_manual.mjs            # smoke-runs every code block in v0011/manual_en.md
 node tests/test_manual_v009.mjs       # the v0.0.9 manual list vs the directory it describes
+node tests/test_manual_v0011.mjs      # the v0.0.11 list vs its directory, and the fallback
 node tests/test_markdown.mjs          # page twins, llms.txt, robots.txt, negotiation Worker
 node tests/test_licenses.mjs          # SPDX headers on every source, CC BY-SA on every manual
 node tests/test_agents.mjs            # skill digest, SKILL.md blocks execute, WebMCP tools
