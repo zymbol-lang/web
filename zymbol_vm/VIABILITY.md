@@ -26,7 +26,7 @@ none yet.
 
 ## 2. The corpus
 
-```
+```text
 714 files under zyquality/corpus
   agree       552  (steps, calls and copied identical in 552)
   diverge     0
@@ -86,6 +86,28 @@ mostly Node's start-up.
 
 Not counted for zymbol_vm.js: compiling. The bytecode came from Rust (2–10 ms per
 program). A JavaScript compiler will add its own time to every run in the browser.
+
+### GO, a real program
+
+`tests/bench_go.mjs`: GO's fixed-seed self-play, `試験/自戦試験.zy` (seed 424242) — the
+workload `GO/BENCHMARK.md` measures releases on. Six files compiled into one program
+(105 KB of bytecode as JSON, 15 ms for Rust to compile). Median of 5 for the two VMs, the
+engines alternating within each round; one run of zymbol.js:
+
+| Board | Moves | native VM | zymbol_vm.js | zymbol.js | zymbol.js ÷ zymbol_vm.js |
+|---|---|---|---|---|---|
+| 9×9 | 103 | 80 ms | 406 ms (×5.1) | 5.55 s (×69.6) | 13.7 |
+| 13×13 | 217 | 255 ms | 961 ms (×3.8) | 20.74 s (×81.3) | 21.6 |
+| 19×19 | 454 | 1.03 s | 3.10 s (×3.0) | 86.54 s (×83.7) | 27.9 |
+
+**The same game in all three engines**, move for move, ending in the same scores; and
+zymbol_vm.js's `--count` equals the native one on every board — 19×19 is 122 805 747
+instructions, 2 077 200 calls and 16 110 794 elements copied in both. The native column
+agrees with GO's own record of 2026-10-27 (82 ms, 272 ms, 1.04 s). The gap to native
+narrows with the board because Node's start-up and V8's warm-up are a fixed cost.
+
+What GO's playground scripts need is more: `go.zy` and `観戦.zy` are full-screen programs
+(`>>|`, 51 `>>~` sites, `<<|`, `std/term`), and those hosts are not built — see §7.
 
 ## 4. The three risks of the roadmap's stage 4
 

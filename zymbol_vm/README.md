@@ -47,6 +47,7 @@ Today the copy still runs on `zymbol.js`: the VM has no compiler of its own yet.
 | `tests/run_zyb.mjs` | Run one compiled program, with the Rust CLI's output contract |
 | `tests/probe.mjs` | Grade the machine against the Rust VM on the whole corpus |
 | `tests/bench.mjs` | Elapsed time against the native VM and `zymbol.js` |
+| `tests/bench_go.mjs` | GO's fixed-seed self-play on the three engines: same game, same `--count`, time |
 | `tests/suspend.mjs` | `<<` and `@~` that have to wait, and time slices, as in a browser |
 
 ## How to run it
