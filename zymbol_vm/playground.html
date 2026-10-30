@@ -40,11 +40,13 @@
   <div id="pg-notice">
     <h2 id="pg-notice-title">
       Browser Playground
-      <span class="badge">zymbol.js v0.0.10</span>
+      <span class="badge">zymbol_vm.js · experimental</span>
     </h2>
     <p>
-      This playground runs <code>zymbol.js</code>, a hand-written JavaScript mirror of the Zymbol
-      tree-walker — not the Rust engine compiled for the browser. It tracks the native interpreter
+      This playground runs <code>zymbol_vm.js</code>, an experimental engine: Zymbol compiled to the
+      bytecode of the Rust register VM, by a JavaScript port of its compiler, and run by a JavaScript
+      port of the VM. Add <code>?engine=js</code> to the address to run <code>zymbol.js</code>, the
+      engine of the published playground, instead. Neither is the Rust engine compiled for the browser. It tracks the native interpreter
       closely enough to run real programs, including multi-file <code>.zyp</code> packages, but for
       the full language use the <a href="../install.html" style="color:var(--green)">native interpreter</a>.
     </p>

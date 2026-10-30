@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { runZymbol, codePointDisplayWidth } from '../zymbol/zymbol.js';
+import { runZymbol as runZymbolJs, codePointDisplayWidth } from '../zymbol/zymbol.js';
+import { runZymbolVM } from '../zymbol/zymbol_vm.js';
 import { highlightCode } from './highlight.js';
 import { readZyp } from '../zymbol/zyp.js';
 import { makeResolver } from '../zymbol/module-resolver.js';
@@ -937,6 +938,17 @@ function parseCliArgs(str) {
   return args;
 }
 
+// ─── Engine ───────────────────────────────────────────────────────────────────
+// This playground runs zymbol_vm.js: Zymbol compiled to the register VM's
+// bytecode and run by its JavaScript port. `?engine=js` runs zymbol.js instead,
+// the engine of the published playground, to compare the two on the same page.
+// The VM needs the mounted files by name, for the modules it compiles.
+const ENGINE = new URLSearchParams(location.search).get('engine') === 'js' ? 'js' : 'vm';
+const runZymbol = (src, inputFn, onOutput, resolver, filePath, tui = null, cliArgs = [], opts = {}) =>
+  ENGINE === 'js'
+    ? runZymbolJs(src, inputFn, onOutput, resolver, filePath, tui, cliArgs, opts)
+    : runZymbolVM(src, inputFn, onOutput, resolver, filePath, tui, cliArgs, { ...opts, readFile: name => store.codeOf(name) ?? null });
+
 // ─── Run ──────────────────────────────────────────────────────────────────────
 // Set below by the "Split panel + output toggle" block once it wires up the Output panel.
 // A plain closure bridge rather than a custom event: runCode only ever fires from a click,
@@ -944,7 +956,12 @@ function parseCliArgs(str) {
 // before this is ever called.
 let expandOutputPanel = () => {};
 
+// While a program runs, ▶ Run is ■ Stop: the VM has no step ceiling (zymbol.js
+// stops a loose program at 50 000 steps), so a loop that never ends is ended here.
+let running = null;   // { stop() } while a program runs
+
 async function runCode() {
+  if (running) { running.stop(); return; }
   expandOutputPanel();
   clearOutput();
   // A card left hanging over the editor while the program runs is stale by definition.
@@ -978,16 +995,27 @@ async function runCode() {
   const stopBtn = document.getElementById('tui-stop-btn');
   const onStop = () => tui.abort();
   stopBtn.addEventListener('click', onStop);
+  const runBtn = document.getElementById('run-btn');
+  const runLabel = runBtn.innerHTML;
+  let stopped = false;
+  running = { stop() { stopped = true; tui.abort(); } };
+  runBtn.innerHTML = '■ Stop';
   // Route << input through canvas bar when TUI is active
   const activeInputFn = () => tui.active ? tui.readLine() : inputFn();
+  const t0 = performance.now();
+  const engineName = ENGINE === 'vm' ? 'zymbol_vm.js' : 'zymbol.js';
   try {
-    await runZymbol(src, activeInputFn, text => appendOutput(text), resolver, displayPath, tui, cliArgs, execOpts);
-    if (!tui.aborted) appendOutput('\n— done —', 'out-meta');
+    await runZymbol(src, activeInputFn, text => appendOutput(text), resolver, displayPath, tui, cliArgs,
+      { ...execOpts, shouldStop: () => stopped });
+    if (stopped) appendOutput(`\n— stopped · ${engineName} —`, 'out-meta');
+    else if (!tui.aborted) appendOutput(`\n— done · ${engineName} · ${Math.round(performance.now() - t0)} ms —`, 'out-meta');
   } catch (err) {
     tui.leave();
     if (!tui.aborted) appendOutput('\n' + (err.message ?? String(err)), 'out-error');
   } finally {
     stopBtn.removeEventListener('click', onStop);
+    running = null;
+    runBtn.innerHTML = runLabel;
   }
 }
 

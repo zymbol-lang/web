@@ -145,6 +145,34 @@ copied=0`). Still a nested call: `$^` with a comparator — a `<<` inside one ca
 **Int against Float.** Int is a JS number, Float a box: every corpus file agrees on it,
 `mandelbrot` included. It is the likeliest place to win time back (×6.9 there).
 
+## 4b. The compiler, and the gate (2026-10-30)
+
+**The bytecode is Rust's.** `src/zymbol/vm/compiler.js` ports `zymbol-compiler` function
+for function, fed by zymbol.js's parser through an adapter that rebuilds zymbol-ast's tree
+(`rustast.js`). Both halves are held to Rust's own output:
+
+| | corpus | example pool | 12 applications |
+|---|---|---|---|
+| parser tree = `zyb_dump --ast` (`ast_diff.mjs`) | 711 / 711 | 332 / 332 | 263 / 263 files |
+| bytecode = `zyb_dump` (`compile_diff.mjs`) | 637 / 637 (16 refusals alike) | 321 / 321 | every runnable program |
+
+Not compared: the order inside a run of `LoadUnit` (Rust takes it from a `HashMap`) and a
+column (no output shows one). Everything else — registers, jumps, string pool, globals,
+source lines — is equal. Two Rust defects the port found are corrected in it and
+reproduced under `faithful` for this comparison (HALLAZGOS.md, BUG-VMJS-004, -005).
+
+**The gate, with zymbol_vm.js in zyjs's place** (`ZYJS_HARNESS=…/tests/run_one.mjs`):
+
+| | zymbol_vm.js | zymbol.js |
+|---|---|---|
+| `zyq consensus`, three engines | 708 / 714 agree, 0 diverge | 708 / 714, 0 diverge |
+| `zyq expect --engines zyjs` | 636 match | 635 match |
+| `zyq consensus --strict` | 26 differ | 29 differ (the 26 among them) |
+| example pool, against zytw | 216 agree, 0 diverge | 216, 0 |
+
+Every golden zymbol_vm.js misses, zymbol.js misses too: 29 goldens recorded in the Rust
+CLI's colour with a source excerpt, which neither JavaScript engine prints.
+
 ## 5. What a browser needs that a CLI does not
 
 **Time slices.** `fib(34)` with a slice every 1 000 000 instructions: 101 slices, the event
@@ -156,28 +184,18 @@ needs no cross-origin isolation, which GitHub Pages could not give.
 
 ## 6. Found on the way
 
-**zymbol.js formats `#^.N` differently from both Rust engines** — a live divergence the
-gate does not see, because no corpus file has a tie:
-
-```zymbol
->> #^.1|1.25| " " #^.0|2.5| " " #^.2|1.125| " " #^.0|0.5| ¶
-```
-
-Rust (VM and tree-walker): `1.2e0 2e0 1.12e0 5e-1` — ties to even, from the exact value.
-zymbol.js: `1.3e0 3.0e0 1.13e0 5.0e-1` — ties up, and a `.0` Rust never writes.
-zymbol_vm.js gives Rust's answer (`format.js`, exact decimal expansion). Not fixed in
-zymbol.js, not filed yet.
+Six findings, filed in [`HALLAZGOS.md`](HALLAZGOS.md) with their reproductions run on the
+four engines: zymbol.js's `#^.N` ties (BUG-VMJS-001), a `$-` that brings both Rust engines
+down (-002), a lone `\\` zymbol.js refuses (-003), the Rust VM's source table that shifts
+after a block (-004), a left operand the Rust VM evaluates twice (-005), and a module
+zymbol.js refuses that Rust runs — GoL does not start in the browser (-006).
 
 ## 7. What this does not show yet
 
-- **The compiler.** The playground receives source; the machine needs bytecode. Porting
-  `zymbol-compiler` (6 401 lines, plus `last_use.rs`, 1 386, for the auto-free schedule) is
-  the other half of the work, of about the machine's size. Until it exists, the playground
-  copy here still runs on zymbol.js. Whether it can give **byte-identical** bytecode — and
-  so `.zyb` files the native VM can trust — is unmeasured.
-- **The hosts.** json, io, net, time, term and the terminal: §2's table.
-- **A real browser.** Every figure is Node 24. V8 is the same engine in Chrome; Firefox and
-  Safari are not measured.
-- **`.zyb` interop.** The machine reads the Rust compiler's output today in JSON. A binary
-  `.zyb` needs, on the Rust side, a versioned header and a verifier at load (the Rust VM
-  reads registers unchecked), which is the roadmap's 3.3 for v0.0.12.
+- **Firefox and Safari.** Node 24 and headless Chrome are measured; the other two engines are not.
+- **`.zyb` interop.** zymbol_vm.js builds the bytecode Rust builds, in JSON. A binary `.zyb`
+  needs, on the Rust side, a versioned header and a verifier at load (the Rust VM reads
+  registers unchecked), which is the roadmap's 3.3 for v0.0.12.
+- **`<<` inside a `$^` comparator** cannot wait in a browser (GAP-VMJS-001).
+- **std/** is reached through zymbol.js's implementations (`vm/stdlib.js`); the day zymbol.js
+  goes, those functions move.

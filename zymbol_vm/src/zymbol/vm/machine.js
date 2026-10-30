@@ -485,6 +485,7 @@ export class Machine {
     this.destroyed = new Set();   // absolute register slots `\` ended (destroyed_slots)
     this.sleepMs = 0;
     this.tuiOpen = 0;
+    this.tuiCaptured = 0;
     this.awaiting = null;
     this.std = null;
   }
@@ -494,7 +495,7 @@ export class Machine {
 
   /** The run is over, however it ended: give the terminal back (`Terminal::release`). */
   release() {
-    if (this.tuiOpen > 0) { this.tuiOpen = 0; this.host.terminal?.release?.(); }
+    if (this.tuiOpen > 0) { this.tuiOpen = 0; this.tuiCaptured = 0; this.host.terminal?.release?.(); }
   }
 
   /** Rust's `forget_destroyed_from`: a new frame reuses the slots from `base` up. */
@@ -1222,6 +1223,8 @@ export class Machine {
           // ── Output ──────────────────────────────────────────────────────
           case 74: { // Print
             const v = R[base + ins.a], mode = this.mode;
+            // Inside `>>|` on a terminal that draws it (D11): the text is the terminal's.
+            if (this.tuiCaptured > 0) { this.term().write(this.numeralRepr(v)); break; }
             switch (typeof v) {
               case 'string': this.out.push(v); break;
               case 'number': this.out.push(numeralInt(v, mode)); break;
@@ -1235,7 +1238,7 @@ export class Machine {
             if (this.out.length > 4096) this.flush();
             break;
           }
-          case 75: this.out.push('\n'); break; // PrintNewline
+          case 75: if (this.tuiCaptured > 0) this.term().write('\n'); else this.out.push('\n'); break; // PrintNewline
           case 76: this.mode = ins.a; break;   // SetNumeralMode
 
           // ── Arrays ──────────────────────────────────────────────────────
@@ -2038,10 +2041,16 @@ export class Machine {
             const r = this.term().enterTui();
             if (typeof r === 'string') throw generic(r);
             this.tuiOpen++;
+            if (r === true) this.tuiCaptured++;
             break;
           }
           case 162: // ExitTui
-            if (this.tuiOpen > 0) { this.tuiOpen--; this.flush(); this.term().exitTui(); }
+            if (this.tuiOpen > 0) {
+              this.tuiOpen--;
+              if (this.tuiCaptured > 0) this.tuiCaptured--;
+              this.flush();
+              this.term().exitTui();
+            }
             break;
 
           // ── Other processes ─────────────────────────────────────────────

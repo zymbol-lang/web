@@ -4412,7 +4412,7 @@ class Env {
 
 // ─── Checker ──────────────────────────────────────────────────────────────────
 
-function formatDiagnostic(d) {
+export function formatDiagnostic(d) {
   // `= help:` on its own line, which is the spelling the whole tool chain
   // agreed on and what the Rust engines print. The guidance lives in `d.help`,
   // never inside `d.message` — see the note on `ZyStaticError`.

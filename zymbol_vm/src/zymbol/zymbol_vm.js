@@ -14,7 +14,10 @@
 // The static checks before both — warnings, refusals — are zymbol.js's
 // `checkSource`, which this engine keeps.
 
-import { Lexer, Parser } from './zymbol.js';
+import {
+  Lexer, Parser, Checker, ZyRandom, ZyNet, formatDiagnostic,
+  moduleAritiesFor, moduleOutSlotsFor, moduleExportsFor, moduleDeclErrors,
+} from './zymbol.js';
 import { toRustAst } from './vm/rustast.js';
 import { compile, CompileError } from './vm/compiler.js';
 import { makeHost, parent, stem } from './vm/modhost.js';
@@ -128,6 +131,132 @@ export async function runAsync(program, host, opts = {}) {
     else throw e;
   }
   return { code, stderr, count: m.count };
+}
+
+/**
+ * The playground's entry point, with runZymbol's signature so the page changes
+ * one import: zymbol.js checks the program exactly as before — the same
+ * diagnostics in the same words — and zymbol_vm.js compiles and runs it.
+ *
+ *   tuiContext  the page's BrowserTUI (enter, leave, clear, printAt, print,
+ *               readKey, pollKey, readLine, getSize, active, aborted)
+ *   opts        { readFile(name) → text | null  the mounted files, for modules
+ *                 onError, displayPath, sliceSteps, shouldStop() }
+ * Returns { failed, message?, exitCode? }, as runZymbol does.
+ */
+export async function runZymbolVM(src, inputFn, onOutput, moduleResolver = null, filePath = null, tuiContext = null, cliArgs = [], opts = {}) {
+  ZyRandom.reset();
+  ZyNet.limit = null;
+  const onError = typeof opts.onError === 'function' ? opts.onError : onOutput;
+
+  // ── The static half: zymbol.js's, unchanged ──
+  let ast;
+  try { ast = new Parser(new Lexer(src).tokenize()).parse(); }
+  catch (e) { onError(`error: ${e.message}`); return { failed: true, message: e.message }; }
+  const checker = new Checker(ast);
+  checker.moduleArities = await moduleAritiesFor(ast, moduleResolver, filePath);
+  checker.moduleOutSlots = await moduleOutSlotsFor(ast, moduleResolver, filePath);
+  checker.moduleExports = await moduleExportsFor(ast, moduleResolver, filePath);
+  const diags = checker.check();
+  if (!opts.skipModuleNames) diags.push(...await moduleDeclErrors(ast, moduleResolver, filePath));
+  for (const d of diags) if (d.severity === 'error') onError(formatDiagnostic(d) + '\n\n');
+  if (diags.some(d => d.severity === 'error')) return { failed: true, message: diags.find(d => d.severity === 'error').message };
+
+  // ── Compile ──
+  const path = filePath ?? 'main.zy';
+  const compiled = compileSource(src, { path, displayName: opts.displayPath ?? path, readFile: opts.readFile ?? (() => null) });
+  if (compiled.error) { onError(compiled.error); return { failed: true, message: compiled.error }; }
+
+  // ── Run, on the page ──
+  const tui = tuiContext;
+  let pendingKey = null;
+  const terminal = tui ? {
+    clear: () => tui.clear(),
+    size: () => { const [rows, cols] = tui.getSize(); return [cols, rows]; },
+    readKey(blocking) {
+      if (!blocking) return tui.pollKey();
+      if (pendingKey === null) return undefined;
+      const k = pendingKey; pendingKey = null; return k;
+    },
+    printAt: (at, style, text) => tui.printAt(at ? at[0] : null, at ? at[1] : null, text,
+      (style.bold ? 1 : 0) | (style.italic ? 2 : 0) | (style.underline ? 4 : 0), style.fg, style.bg),
+    enterTui() {
+      try { tui.enter(); return true; }
+      catch (e) { return `failed to enable raw mode: ${e?.message ?? e}`; }
+    },
+    exitTui: () => tui.leave(),
+    write: text => tui.print(text),
+    release: () => { if (tui.active) tui.leave(); },
+  } : undefined;
+  const bytes = new Uint8Array(8);
+  const host = {
+    write: text => { if (tui?.active) tui.print(text); else onOutput(text); },
+    readLine: () => undefined,                       // a page always waits for its line
+    waitLine: async () => { const v = await inputFn(); return v == null ? '' : `${v}\n`; },
+    inputHint: hint => host.write(`  (${hint})\n`),
+    sleep: () => false,
+    waitSleep: ms => new Promise(r => {
+      const id = setTimeout(r, ms);
+      if (tui) tui._sleepCancel = () => { clearTimeout(id); r(); };
+    }),
+    waitKey: async () => { pendingKey = await tui.readKey(); },
+    yieldSlice: () => new Promise(r => setTimeout(r, 0)),
+    entropy: () => { crypto.getRandomValues(bytes); return new DataView(bytes.buffer).getBigUint64(0, true); },
+    terminal,
+    shell: opts.shell ?? browserShell,
+  };
+  const r = await runAsync(compiled.program, host, {
+    cliArgs, sliceSteps: opts.sliceSteps ?? 200_000,
+    signal: { get aborted() { return !!(tui?.aborted || opts.shouldStop?.()); } },
+  });
+  if (r.stopped) return { failed: false, stopped: true };
+  if (r.code !== 0 && r.stderr) {
+    onError(r.stderr.replace(/\n$/, ''));
+    return { failed: true, message: r.stderr };
+  }
+  return { failed: false, exitCode: r.code === 0 ? undefined : r.code };
+}
+
+/**
+ * `<\ … \>` in a browser: no shell, only zymbol.js's stand-ins — each a command
+ * whose answer the page can give honestly (the clock, a literal `echo`, the
+ * entropy a seed is built from). Anything else is refused, in zymbol.js's words.
+ */
+export function browserShell(cmd) {
+  const raw = cmd.trim();
+  const c = raw.replace(/['"]/g, ' ').replace(/\s+/g, ' ').trim();
+  const rand = n => Math.trunc(Math.random() * n);
+  const pad = n => String(n).padStart(2, '0');
+  const ok = printed => ({ printed, code: 0 });
+  const shown = /^"[^"]*"$/.test(raw) || /^'[^']*'$/.test(raw) ? raw.slice(1, -1) : raw;
+  const refuse = () => ({ raise: null, message: `cannot run '${shown}': a shell command runs as a process, and the browser has none` });
+  const date = /^date \+(\S+)$/.exec(c);
+  if (date) {
+    const now = new Date();
+    let bad = false;
+    const out = date[1].replace(/%(\d*)(.)/g, (_, w, k) => {
+      if (w && k !== 'N') { bad = true; return ''; }
+      switch (k) {
+        case 'Y': return String(now.getFullYear());
+        case 'm': return pad(now.getMonth() + 1);
+        case 'd': return pad(now.getDate());
+        case 'H': return pad(now.getHours());
+        case 'M': return pad(now.getMinutes());
+        case 'S': return pad(now.getSeconds());
+        case 'F': return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+        case 'T': return `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        case 's': return String(Math.floor(Date.now() / 1000));
+        case 'N': { const ns = String(rand(1e9)).padStart(9, '0'); return w ? ns.slice(0, Math.min(9, Number(w))) : ns; }
+        case '%': return '%';
+        default: bad = true; return '';
+      }
+    });
+    return bad ? refuse() : ok(out);
+  }
+  if (c === 'echo $$') return ok(String(1 + rand(4194304)));
+  if (/^od -An -N2 -tu2 \/dev\/urandom( \| tr -d( .*)?)?$/.test(c)) return ok(String(rand(65536)));
+  if (/^echo( |$)/.test(c) && !/[|&;<>\x60$(){}\\*?]/.test(c)) return ok(c.slice(4).trim());
+  return refuse();
 }
 
 export { Machine, VmErr, NotYet, loadProgram, CompileError };
