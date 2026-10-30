@@ -26,10 +26,10 @@
 |----|------|--------|----------|--------|
 | [BUG-VMJS-001](#bug-vmjs-001) | BUG | zyjs · formato `#^` | `#^.N` redondea los empates hacia arriba y escribe un `.0` que los dos motores Rust no escriben: `1.3e0` donde Rust da `1.2e0` | **abierto** |
 | [BUG-VMJS-002](#bug-vmjs-002) | BUG | zytw y zyvm · `$-` sobre texto | quitar de un texto una subcadena **más larga que el texto** hace caer los dos motores Rust (código 101); zyjs y zymbol_vm.js no lo tocan | **abierto** |
-| [BUG-VMJS-003](#bug-vmjs-003) | BUG | zyjs · parser | un `\\` solo en su línea es una sentencia —un salto de línea— para los dos motores Rust; zyjs lo rechaza: `expected expression, found '\\'` | **abierto** |
+| [BUG-VMJS-003](#bug-vmjs-003) | BUG | zyjs · parser | un `\\` solo en su línea es una sentencia —un salto de línea— para los dos motores Rust; zyjs lo rechaza: `expected expression, found '\\'` | **corregido en la rama** (2026-10-30; entra con la v0.0.11) |
 | [BUG-VMJS-004](#bug-vmjs-004) | BUG | zyvm · compilador | después de un bloque que crea variables, un error de ejecución puede citar **la línea siguiente** a la suya: la tabla de posiciones del bytecode pierde una entrada por cada variable que muere al cerrar el bloque | **abierto** |
 | [BUG-VMJS-005](#bug-vmjs-005) | BUG | zyvm · compilador | `(f() + 0.5) + 1` llama a `f` **dos veces**: el atajo del operando inmediato compila el lado izquierdo, lo descarta si es Float o texto, y el camino general lo compila otra vez | **abierto** |
-| [BUG-VMJS-006](#bug-vmjs-006) | BUG | zyjs · verificador | dentro de un **módulo**, una función que asigna un nombre que también es alias de importación (`g = x * 2` con `<# ./util => g`) hace que zyjs rechace el módulo: `'g' is a module, not a value`; los dos motores Rust lo ejecutan (GLB-070). Deja a GoL sin arrancar en el navegador | **abierto** |
+| [BUG-VMJS-006](#bug-vmjs-006) | BUG | zyjs · verificador | dentro de un **módulo**, una función que asigna un nombre que también es alias de importación (`g = x * 2` con `<# ./util => g`) hace que zyjs rechace el módulo: `'g' is a module, not a value`; los dos motores Rust lo ejecutan (GLB-070). Deja a GoL sin arrancar en el navegador | **corregido en la rama** (2026-10-30; entra con la v0.0.11) |
 | [GAP-VMJS-001](#gap-vmjs-001) | GAP | zymbol_vm.js · `$^` con comparador | un `<<` dentro del comparador de `$^` no puede esperar a la entrada en el navegador: el comparador corre en una llamada anidada | **abierto** |
 
 ---
@@ -141,8 +141,9 @@ un `>>`.
 **Qué lo delimita.** Solo la sentencia `\\` aislada. Al final de un `>>` los tres
 motores coinciden.
 
-**En esta rama.** La copia del parser de zyjs que usa zymbol_vm.js
-(`src/zymbol/zymbol.js`) ya acepta las dos formas. La misma copia lleva corregido
+**En esta rama.** El parser de zyjs acepta las dos formas. Primero se corrigió la copia
+que usaba zymbol_vm.js; desde el 2026-10-30 los dos motores del playground comparten
+`src/zymbol/zymbol.js`, y la corrección es también la de zyjs. La misma copia lleva corregido
 también **BUG-ZYE-013** (ZyEdit): `"\r"` dentro de una cadena era la letra `r`; el
 adaptador lo encontró en `ZyEdit/src/buffer.zy`, y el hallazgo es de ZyEdit.
 
@@ -307,8 +308,9 @@ solo en los motores Rust.
 `modules_scope/alias_shadowed_by_variable.zy`, es la versión en un programa, no en
 un módulo.
 
-**En esta rama.** La copia del verificador trata un alias del ámbito del módulo
-como un nombre más, no como estado.
+**En esta rama.** El verificador trata un alias del ámbito del módulo como un nombre
+más, no como estado (`onlyVisibleAcrossStrong`). Desde el 2026-10-30 los dos motores
+del playground comparten `src/zymbol/zymbol.js`: GoL arranca en los dos.
 
 **Sugerido para el corpus:** los tres ficheros de arriba, en `modules_scope/`, con
 el golden `7`.
