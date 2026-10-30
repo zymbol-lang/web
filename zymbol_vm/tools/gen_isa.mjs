@@ -23,7 +23,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..');
 const INTERPRETER = process.env.ZYMBOL_INTERPRETER ?? resolve(ROOT, '../../interpreter');
 const SOURCE = join(INTERPRETER, 'crates/zymbol-bytecode/src/lib.rs');
-const TARGET = join(ROOT, 'src/zymbol/vm/isa.js');
+const TARGET = join(ROOT, '../src/zymbol/vm/isa.js');
 
 // The body of `pub enum Instruction { … }`, comments stripped.
 function enumBody(text) {
@@ -91,7 +91,7 @@ const generated = lines.join('\n');
 // so V8 builds a jump table. Every such label must still be the opcode Rust gives
 // that name, and the labels must be exactly the IMPLEMENTED set.
 function checkMachine() {
-  const text = readFileSync(join(ROOT, 'src/zymbol/vm/machine.js'), 'utf8');
+  const text = readFileSync(join(ROOT, '../src/zymbol/vm/machine.js'), 'utf8');
   const start = text.indexOf('switch (ins.op) {');
   // The dispatch's own default, not the first `default:` of a switch nested in a case.
   const end = text.indexOf('throw new NotYet(`instruction', start);

@@ -70,7 +70,9 @@ web/
 │
 ├── src/
 │   ├── zymbol/                THE ENGINE — no DOM, no site dependencies
-│   │   ├── zymbol.js          JS mirror of the Rust tree-walker (Lexer/Parser/Interpreter)
+│   │   ├── zymbol_vm.js       The playground's default engine: compile, then run on the VM
+│   │   ├── vm/                Rust's compiler and register VM ported to JS (bytecode = Rust's)
+│   │   ├── zymbol.js          JS mirror of the Rust tree-walker (Lexer/Parser/Checker/Interpreter)
 │   │   ├── zyp.js             .zyp package reader (ZIP central directory + DecompressionStream)
 │   │   └── module-resolver.js Path-normalizing module resolver (mirrors ModulePath::resolve_from)
 │   ├── playground/            Playground UI — consumes the engine
@@ -243,9 +245,23 @@ npx serve .
 Opening `index.html` via `file://` will not work: ES modules and `fetch()` of the i18n data
 both require an HTTP origin.
 
-## The engine (`src/zymbol/`)
+## The engines (`src/zymbol/`)
 
-`zymbol.js` is a hand-maintained JavaScript mirror of the Rust tree-walker. It is not
+The playground has two, chosen beside ▶ Run.
+
+**VM (default since v0.0.11): `zymbol_vm.js`.** The program is parsed by `zymbol.js`'s
+parser and checked by its checker, then compiled by `vm/compiler.js` — a function-for-function
+port of `zymbol-compiler` — to the register VM's bytecode, and run by `vm/machine.js`, a port of
+`zymbol-vm`. The bytecode is the one the Rust compiler builds: the branch that brought it in
+(`Zymbol_VM.js`) compared them instruction for instruction over the corpus, the example pool
+and the applications, with the tools and the evidence in `zymbol_vm/` (README, VIABILITY,
+HALLAZGOS). Entry points: `runZymbolVM` (with `runZymbol`'s signature), `compileSource`,
+`runAsync`. The machine never awaits inside its loop: it returns when it has to wait — a line,
+a key, a sleep, a `std/net` answer, the end of a time slice — and `resume` goes on.
+`zymbol_vm/tests/run_one.mjs` is its command-line twin; `zyq` grades it in zyjs's place with
+`ZYJS_HARNESS`.
+
+**TW: `zymbol.js`** is a hand-maintained JavaScript mirror of the Rust tree-walker. It is not
 generated and not compiled from the Rust — it is kept in parity by the test runner below, and
 its file header comment tracks which Rust version it mirrors.
 

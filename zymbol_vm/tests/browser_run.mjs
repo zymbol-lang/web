@@ -3,7 +3,7 @@
 // Drive the playground in a real (headless) Chrome: open an example by its deep
 // link, press ▶ Run, and print what the output panel shows when the run ends.
 //
-//   node tests/browser_run.mjs [--engine js|vm] [--base URL] PATH-UNDER-EXAMPLES...
+//   node tests/browser_run.mjs [--engine tw|vm] [--base URL] PATH-UNDER-EXAMPLES...
 //   node tests/browser_run.mjs --compare [--timeout MS] [--all | PATH...]
 //
 // --compare runs every path in both engines and reports where the output panels
@@ -17,8 +17,9 @@ import { spawn } from 'child_process';
 
 const argv = process.argv.slice(2);
 const opt = (n, d) => { const i = argv.indexOf(n); return i < 0 ? d : argv.splice(i, 2)[1]; };
-const engine = opt('--engine', 'vm');
-const base = opt('--base', 'http://127.0.0.1:8077/zymbol_vm/playground.html');
+const engineArg = opt('--engine', 'vm');
+const engine = engineArg === 'js' ? 'tw' : engineArg;
+const base = opt('--base', 'http://127.0.0.1:8077/playground.html');
 const timeoutMs = Number(opt('--timeout', 120000));
 const compare = argv.includes('--compare') && argv.splice(argv.indexOf('--compare'), 1);
 const all = argv.includes('--all') && argv.splice(argv.indexOf('--all'), 1);
@@ -70,7 +71,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 await send('Page.enable');
 async function runOne(p, eng) {
-  const url = `${base}?open=${encodeURIComponent(p)}${eng === 'js' ? '&engine=js' : ''}`;
+  const url = `${base}?open=${encodeURIComponent(p)}&engine=${eng}`;
   // A blank page first, so nothing of the previous one can be read as this one's.
   await send('Page.navigate', { url: 'about:blank' });
   await sleep(50);
@@ -92,7 +93,7 @@ async function runOne(p, eng) {
   }
   // Stop whatever still runs, so the next page starts clean.
   await evaluate(`(document.getElementById('run-btn').textContent.includes('Stop') && document.getElementById('run-btn').click(), true)`);
-  const ms = (/— done · [^·]+ · (\d+) ms —/.exec(text) ?? [])[1];
+  const ms = (/· (\d+) ms —/.exec(text) ?? [])[1];
   return { done: /— done/.test(text), text: text.replace(/\n?— (done|stopped)[^\n]*—\s*$/, '').trimEnd(), ms };
 }
 
@@ -106,7 +107,7 @@ for (const p of paths) {
     continue;
   }
   const vm = await runOne(p, 'vm');
-  const js = await runOne(p, 'js');
+  const js = await runOne(p, 'tw');
   const same = vm.text === js.text && vm.done === js.done;
   if (!same) failed++;
   rows.push({ p, same, vm, js });

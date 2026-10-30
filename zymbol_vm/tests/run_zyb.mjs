@@ -17,9 +17,9 @@
 
 import { readFileSync, writeSync } from 'fs';
 import { randomBytes } from 'crypto';
-import { loadProgram } from '../src/zymbol/vm/program.js';
-import { Machine, VmErr, NotYet, unsupportedIn } from '../src/zymbol/vm/machine.js';
-import { OPS } from '../src/zymbol/vm/isa.js';
+import { loadProgram } from '../../src/zymbol/vm/program.js';
+import { Machine, VmErr, NotYet, unsupportedIn } from '../../src/zymbol/vm/machine.js';
+import { OPS } from '../../src/zymbol/vm/isa.js';
 
 const argv = process.argv.slice(2);
 const dd = argv.indexOf('--');

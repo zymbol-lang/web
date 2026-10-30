@@ -13,8 +13,8 @@
 import { readdirSync, statSync, readFileSync } from 'fs';
 import { resolve, relative } from 'path';
 import { rustAst } from '../tools/rast.mjs';
-import { Lexer, Parser } from '../src/zymbol/zymbol.js';
-import { toRustAst } from '../src/zymbol/vm/rustast.js';
+import { Lexer, Parser } from '../../src/zymbol/zymbol.js';
+import { toRustAst } from '../../src/zymbol/vm/rustast.js';
 
 const args = process.argv.slice(2);
 const opt = (n, d) => { const i = args.indexOf(n); return i < 0 ? d : args.splice(i, 2)[1]; };

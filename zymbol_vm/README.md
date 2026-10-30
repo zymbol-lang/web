@@ -1,41 +1,30 @@
 # zymbol_vm/ — the web's next engine, built apart
 
-**Status: under evaluation (branch `Zymbol_VM.js`, opened 2026-10-29).** Nothing here
-is published, and nothing outside this directory was changed to build it.
+**Status: the playground's default engine from v0.0.11 (decided 2026-10-30), on branch
+`Zymbol_VM.js`, opened 2026-10-29, until it is merged for the release.**
 
 `zymbol_vm.js` is a JavaScript port of the Rust register VM (`interpreter/crates/zymbol-vm`):
 the same 172 instructions, the same opcode numbers, the same messages, the same `--count` —
 and of its compiler (`interpreter/crates/zymbol-compiler`), which builds, for every program
 of the corpus, the example pool and the applications, the bytecode the Rust compiler builds.
-The intent, stated by the author, is that it becomes **the only engine of the web** —
-`src/zymbol/zymbol.js`, the tree-walker the playground runs today, is to go once this one
-can replace it — **if, and only if, it proves viable**. Whether it does is recorded, with
-the measurements, in [`VIABILITY.md`](VIABILITY.md).
+The intent, stated by the author, is that it becomes **the only engine of the web**; until
+then the tree-walker, `src/zymbol/zymbol.js`, stays selectable. The evidence that it is
+viable is in [`VIABILITY.md`](VIABILITY.md).
 
-## Why a separate directory
+## Where it lives now
 
-The author asked for a fully separate environment: a copy of the playground in a folder of
-its own, to be moved into place if it works. So:
-
-- this directory only **adds** files — the branch can take every later change of `main`
-  without a conflict, and the current playground at the root keeps running beside the new
-  one for comparison;
-- the **code** is copied (`playground.html`, `src/playground/`, `src/css/playground.css`,
-  `src/i18n/`, `src/zymbol/`), as of `v0.0.11` at `8a8de5a`; the **data** is the site's own,
-  read one level up — the example catalog, the interface strings, the images and the fonts.
-  The copy differs from the original only by a `../` in front of those paths: three data
-  URLs (`catalog.js` ×2, `i18n.js`), the pIqaD fonts in `playground.css`, and the page's
-  links and icons. Moving this into place is taking that `../` away again;
-- `src/zymbol/zymbol.js` is here as the raw material the new engine takes from — its
-  lexer, parser and checker will be needed — not as a second engine to keep.
-
-The worktree's own playground (`/playground.html`) and this one (`/zymbol_vm/playground.html`)
-are served side by side from the worktree root by `node zymbol_vm/tools/serve.mjs`, which
-prints the addresses a phone on the same network opens. This one runs **zymbol_vm.js**;
-`?engine=js` runs zymbol.js on the same page, to compare. While a program runs, ▶ Run is
-■ Stop: the VM has no step ceiling, zymbol.js's 50 000-step cut-off included.
+It was built apart, in a copy of the playground inside this directory, as the author asked.
+On 2026-10-30 the author decided that it ships in **v0.0.11 as the playground's default
+engine**, with the tree-walker one click away, entering the release by merging this branch.
+So the engine moved to the site's own `src/zymbol/` (`zymbol_vm.js`, `vm/`), the copy of the
+playground was removed, and the site's playground gained the VM · TW picker. What stays here
+is the workbench: the tools, the tests that hold the engine to Rust, and the three documents.
+`src/zymbol/zymbol.js` is one file for both engines — the parser and checker the VM uses are
+its own.
 
 ## Layout
+
+Engine paths are relative to the site's root (`../`), tools and tests to this directory.
 
 | Path | What it is |
 |---|---|

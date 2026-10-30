@@ -15,8 +15,8 @@
 // how many timer ticks the event loop ran meanwhile: a page that kept answering.
 
 import { readFileSync, writeSync } from 'fs';
-import { loadProgram } from '../src/zymbol/vm/program.js';
-import { Machine, VmErr } from '../src/zymbol/vm/machine.js';
+import { loadProgram } from '../../src/zymbol/vm/program.js';
+import { Machine, VmErr } from '../../src/zymbol/vm/machine.js';
 
 const [file, inputFile] = process.argv.slice(2);
 const sliceAt = process.argv.indexOf('--slice');

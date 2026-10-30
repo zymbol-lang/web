@@ -25,7 +25,7 @@ import { resolve, dirname, relative } from 'path';
 import { homedir } from 'os';
 import { randomBytes } from 'crypto';
 import { spawnSync } from 'child_process';
-import { runAsync, compileSource } from '../src/zymbol/zymbol_vm.js';
+import { runAsync, compileSource } from '../../src/zymbol/zymbol_vm.js';
 
 const argv = process.argv.slice(2);
 const dashdash = argv.indexOf('--');
@@ -40,7 +40,7 @@ if (!file) {
 }
 
 const { checkSource, moduleAritiesFor, moduleOutSlotsFor, moduleExportsFor, moduleDeclErrors, Lexer, Parser } =
-  await import('../src/zymbol/zymbol.js');
+  await import('../../src/zymbol/zymbol.js');
 
 // ─── stdin, read up front, as web/tests/run_one.mjs reads it ────────────────
 let input = '';

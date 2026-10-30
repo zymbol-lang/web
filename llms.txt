@@ -54,7 +54,7 @@ authoritative over all three.
 
 - [Interpreter](https://github.com/zymbol-lang/interpreter): Rust workspace, 20 crates. `GUIDE.md` is the authoritative language reference, `REFERENCE.md` the complete symbol table and limitations, `ARCHITECTURE.md` the crate catalog.
 - [VS Code extension](https://github.com/zymbol-lang/vscode): TypeScript LSP client.
-- [This site](https://github.com/zymbol-lang/web): static HTML/CSS/JS, no build step; `src/zymbol/zymbol.js` is a hand-maintained JavaScript mirror of the tree-walker.
+- [This site](https://github.com/zymbol-lang/web): static HTML/CSS/JS, no build step; the playground's default engine is `src/zymbol/zymbol_vm.js` (the Rust compiler and register VM ported to JavaScript, `src/zymbol/vm/`); `src/zymbol/zymbol.js`, a hand-maintained JavaScript mirror of the tree-walker, is the other.
 
 ## Optional
 

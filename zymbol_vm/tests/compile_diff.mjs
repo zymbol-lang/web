@@ -18,10 +18,10 @@ import { spawnSync } from 'child_process';
 import { resolve, relative, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { homedir } from 'os';
-import { Lexer, Parser } from '../src/zymbol/zymbol.js';
-import { toRustAst } from '../src/zymbol/vm/rustast.js';
-import { compile } from '../src/zymbol/vm/compiler.js';
-import { makeHost, parent } from '../src/zymbol/vm/modhost.js';
+import { Lexer, Parser } from '../../src/zymbol/zymbol.js';
+import { toRustAst } from '../../src/zymbol/vm/rustast.js';
+import { compile } from '../../src/zymbol/vm/compiler.js';
+import { makeHost, parent } from '../../src/zymbol/vm/modhost.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DUMP = join(ROOT, 'tools/zyb_dump/target/release/zyb_dump');

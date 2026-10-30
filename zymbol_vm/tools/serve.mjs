@@ -4,10 +4,9 @@
 //
 //   node zymbol_vm/tools/serve.mjs [PORT]        (default 8077)
 //
-// Serves the worktree's root — the current site and zymbol_vm/ side by side — on
-// every interface, with caching off so a reload always takes the latest module,
-// and prints the addresses to open: the new playground, and the current one to
-// compare it with. Development only: nothing here is how the site is published.
+// Serves the worktree's root — the site — on every interface, with caching off
+// so a reload always takes the latest module, and prints the addresses to open:
+// the playground on the VM, and on the tree-walker to compare it with. Development only: nothing here is how the site is published.
 
 import { createServer } from 'http';
 import { createReadStream, statSync } from 'fs';
@@ -47,7 +46,7 @@ createServer((req, res) => {
   const ips = Object.values(networkInterfaces()).flat()
     .filter(a => a && a.family === 'IPv4' && !a.internal).map(a => a.address);
   for (const ip of ips.length ? ips : ['127.0.0.1']) {
-    console.log(`new playground:      http://${ip}:${PORT}/zymbol_vm/playground.html`);
-    console.log(`current playground:  http://${ip}:${PORT}/playground.html`);
+    console.log(`playground (VM):  http://${ip}:${PORT}/playground.html`);
+    console.log(`playground (TW):  http://${ip}:${PORT}/playground.html?engine=tw`);
   }
 });

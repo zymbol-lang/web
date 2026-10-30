@@ -13,8 +13,8 @@ import { readdirSync, statSync, mkdirSync, writeFileSync, readFileSync } from 'f
 import { spawnSync } from 'child_process';
 import { dirname, join, relative, resolve } from 'path';
 import { fileURLToPath } from 'url';
-import { OPS } from '../src/zymbol/vm/isa.js';
-import { IMPLEMENTED } from '../src/zymbol/vm/machine.js';
+import { OPS } from '../../src/zymbol/vm/isa.js';
+import { IMPLEMENTED } from '../../src/zymbol/vm/machine.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DUMP = join(ROOT, 'tools/zyb_dump/target/release/zyb_dump');
