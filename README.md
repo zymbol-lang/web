@@ -258,8 +258,8 @@ and the applications, with the tools and the evidence in `zymbol_vm/` (README, V
 HALLAZGOS). Entry points: `runZymbolVM` (with `runZymbol`'s signature), `compileSource`,
 `runAsync`. The machine never awaits inside its loop: it returns when it has to wait — a line,
 a key, a sleep, a `std/net` answer, the end of a time slice — and `resume` goes on.
-`zymbol_vm/tests/run_one.mjs` is its command-line twin; `zyq` grades it in zyjs's place with
-`ZYJS_HARNESS`.
+`tests/run_one_vm.mjs` is its command-line twin, as `tests/run_one.mjs` is the TW's; `zyq`
+grades it as the engine `zyjsvm`.
 
 **TW: `zymbol.js`** is a hand-maintained JavaScript mirror of the Rust tree-walker. It is not
 generated and not compiled from the Rust — it is kept in parity by the test runner below, and

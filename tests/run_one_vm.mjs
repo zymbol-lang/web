@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: AGPL-3.0-only
-// Run one .zy file through zymbol_vm.js and print what it produced: the
-// zymbol_vm.js twin of web/tests/run_one.mjs, with the same contract, so the
-// gate can grade it in the browser engine's place:
+// Run one .zy file through zymbol_vm.js — the playground's default engine, the
+// VM — and print what it produced. The twin of tests/run_one.mjs (the TW), with
+// the same contract; zyquality grades it as the engine `zyjsvm`.
 //
-//   ZYJS_HARNESS=$PWD/tests/run_one.mjs ./zyq consensus     (from zyquality/)
+//   node tests/run_one_vm.mjs FILE.zy [--input FILE] [--count] [-- ARG...]
 //
-//   node tests/run_one.mjs FILE.zy [--input FILE] [--count] [-- ARG...]
+// What it can reach is what the page can: std/io on a file system in memory, a
+// shell that only has the playground's stand-ins (`date`, `echo`, entropy), and
+// no subscripts — so the gate's exclusions for zyjs apply to it unchanged.
 //
 // The static half is zyjs's, unchanged — the same checker, the same layout of a
 // diagnostic — because zymbol_vm.js keeps zymbol.js's parser and checker. The
@@ -20,12 +22,11 @@
 //   - `--count` adds `count  steps=…  calls=…  copied=…` on stderr
 //   - something zymbol_vm.js cannot run yet: `zymbol_vm.js: not yet: …`, status 3
 
-import { readFileSync, writeSync, realpathSync, statSync, existsSync, mkdirSync, readdirSync, writeFileSync, appendFileSync, unlinkSync, rmdirSync } from 'fs';
+import { readFileSync, writeSync, realpathSync, statSync } from 'fs';
 import { resolve, dirname, relative } from 'path';
 import { homedir } from 'os';
 import { randomBytes } from 'crypto';
-import { spawnSync } from 'child_process';
-import { runAsync, compileSource } from '../../src/zymbol/zymbol_vm.js';
+import { runAsync, compileSource, browserShell } from '../src/zymbol/zymbol_vm.js';
 
 const argv = process.argv.slice(2);
 const dashdash = argv.indexOf('--');
@@ -35,12 +36,12 @@ const file = args.find(a => !a.startsWith('--') && args[args.indexOf(a) - 1] !==
 const inputArg = args.includes('--input') ? args[args.indexOf('--input') + 1] : null;
 const wantCount = args.includes('--count');
 if (!file) {
-  process.stderr.write('usage: node tests/run_one.mjs FILE.zy [--input FILE] [--count] [-- ARG...]\n');
+  process.stderr.write('usage: node tests/run_one_vm.mjs FILE.zy [--input FILE] [--count] [-- ARG...]\n');
   process.exit(2);
 }
 
 const { checkSource, moduleAritiesFor, moduleOutSlotsFor, moduleExportsFor, moduleDeclErrors, Lexer, Parser } =
-  await import('../../src/zymbol/zymbol.js');
+  await import('../src/zymbol/zymbol.js');
 
 // ─── stdin, read up front, as web/tests/run_one.mjs reads it ────────────────
 let input = '';
@@ -125,21 +126,8 @@ const host = {
   waitLine: async () => host.readLine(),
   waitSleep: async ms => { host.sleep(ms); },
   waitKey: async () => {},
-  // `</ file />`, as `zymbol run` runs a subscript: this same runner, another
-  // process. One that fails is raised with what it said (D2, D8).
-  subscript(path, subArgs) {
-    if (!existsSync(path)) return { raise: 'IO', message: `file not found: ${path}` };
-    const r = spawnSync(process.execPath, [process.argv[1], path, '--', ...(subArgs.length ? subArgs : programArgs)], { encoding: 'utf8' });
-    if (r.status !== 0 && /^(Runtime error|error):/m.test(r.stderr ?? '')) return { raise: null, message: r.stderr.trimEnd() };
-    return { printed: r.stdout ?? '', code: r.status ?? 1 };
-  },
-  // `<\ … \>`: the command to `sh -c`, stdout and stderr captured.
-  shell(cmd) {
-    const r = spawnSync('sh', ['-c', cmd], { encoding: 'utf8' });
-    if (r.error) return { raise: null, message: `failed to run \`sh\`: ${r.error.message}` };
-    const said = (r.stderr ?? '').trim() ? r.stderr : r.stdout;
-    return { printed: (r.stdout ?? '') + (r.stderr ?? ''), code: r.status, said };
-  },
+  // The page's shell, and no subscript runner: what the playground has.
+  shell: browserShell,
 };
 
 const r = await runAsync(compiled.program, host, { cliArgs: programArgs });

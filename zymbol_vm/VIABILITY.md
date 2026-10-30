@@ -161,7 +161,7 @@ column (no output shows one). Everything else — registers, jumps, string pool,
 source lines — is equal. Two Rust defects the port found are corrected in it and
 reproduced under `faithful` for this comparison (HALLAZGOS.md, BUG-VMJS-004, -005).
 
-**The gate, with zymbol_vm.js in zyjs's place** (`ZYJS_HARNESS=…/tests/run_one.mjs`):
+**The gate, with zymbol_vm.js in zyjs's place** (`ZYJS_HARNESS=…/run_one.mjs`, before it had an engine id of its own, `zyjsvm`):
 
 | | zymbol_vm.js | zymbol.js |
 |---|---|---|

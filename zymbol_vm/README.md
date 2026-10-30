@@ -46,7 +46,7 @@ Engine paths are relative to the site's root (`../`), tools and tests to this di
 | `tools/serve.mjs` | Serves the worktree on the local network, caching off |
 | `tests/ast_diff.mjs` | rustast.js against Rust's parser, node for node |
 | `tests/compile_diff.mjs` | compiler.js against Rust's compiler, instruction for instruction |
-| `tests/run_one.mjs` | web/tests/run_one.mjs's twin: what the gate runs in zyjs's place |
+| `../tests/run_one_vm.mjs` | The engine on the command line, as the page has it: zyquality's `zyjsvm` |
 | `tests/browser_run.mjs` | The playground in headless Chrome: run examples, compare the two engines |
 | `tools/isa_usage.mjs` | Which instructions a body of programs uses |
 | `tests/run_zyb.mjs` | Run one compiled program, with the Rust CLI's output contract |
@@ -68,7 +68,7 @@ node tests/bench.mjs --runs 3 --no-zyjs          # speed; drop --no-zyjs to time
 tools/zyb_dump/target/release/zyb_dump x.zy -o x.json && node tests/run_zyb.mjs x.json --count
 node tests/ast_diff.mjs                          # the parser's tree against Rust's
 node tests/compile_diff.mjs                      # the compiler against Rust's (also: ../examples, ../../GO …)
-node tests/run_one.mjs x.zy                      # compile and run, as `zymbol run` does
+node ../tests/run_one_vm.mjs x.zy                # compile and run, as the playground does
 node tools/serve.mjs                             # then tests/browser_run.mjs --compare --all
 ```
 
@@ -76,8 +76,8 @@ The gate, with zymbol_vm.js in the browser engine's place:
 
 ```bash
 cd ../../zyquality
-ZYJS_HARNESS=$PWD/../Zymbol_VM.js/zymbol_vm/tests/run_one.mjs ./zyq consensus
-ZYJS_HARNESS=$PWD/../Zymbol_VM.js/zymbol_vm/tests/run_one.mjs ./zyq expect --engines zyjs
+./zyq consensus                                   # zytw, zyvm, zyjs (TW) and zyjsvm (this engine)
+ZYJSVM_HARNESS=$PWD/../Zymbol_VM.js/tests/run_one_vm.mjs ./zyq expect --engines zyjsvm   # before the merge
 ```
 
 ## The reference compiler: `zyb_dump`
