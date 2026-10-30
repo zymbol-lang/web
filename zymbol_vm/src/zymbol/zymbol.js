@@ -454,7 +454,7 @@ function zyPosOf(at) {
   if (at && typeof at === 'object') return { line: at.line ?? null, col: at.col ?? null };
   return { line: at ?? null, col: null };
 }
-class ZyError extends Error {
+export class ZyError extends Error {
   // The line goes in `zyLine`, never into the message. The Rust engines put it
   // on its own `-->` line and keep the message itself clean; baking `Line 2: `
   // into the text made the same runtime error read differently here, and put
@@ -496,7 +496,7 @@ function errorKindOfMessage(message) {
   if (m.includes('parse')) return '##Parse';
   return '##_';
 }
-class ZyRuntimeError extends ZyError {
+export class ZyRuntimeError extends ZyError {
   constructor(msg, errType, line) {
     super(msg, line);
     this.errType = errType ?? '##_';
@@ -505,7 +505,7 @@ class ZyRuntimeError extends ZyError {
     this.kindDeclared = errType !== undefined;
   }
 }
-class ZyStaticError extends Error {
+export class ZyStaticError extends Error {
   // The line goes in `zyLine`, which is where `checkSource` reads it from —
   // exactly as `ZyError` does. It used to be dropped: the constructor took one
   // argument and three throw sites were already passing two, so a lexer error
@@ -4497,7 +4497,7 @@ function guardedBoundsOf(cond) {
   return out;
 }
 
-class Checker {
+export class Checker {
   // The guidance the two Rust engines attach to `undefined variable`
   // (`type_check.rs`, `.with_help(...)`). This engine emitted the message and
   // not the help, so the same refusal read as two different diagnostics.
@@ -6067,7 +6067,9 @@ class Checker {
       // `crossesStrongBoundary` already says. Treated as out of reach, a module
       // function's `estado = "listo"` made a local and the module's `estado`
       // never saw the change (GLB-093).
-      if (this.stack[k].vars.has(name)) return crossed && !this.stack[k].moduleScope;
+      // A module's import alias is not its state: inside a function the name is
+      // free (GLB-070), and assigning it there makes a local (BUG-VMJS-006).
+      if (this.stack[k].vars.has(name)) return crossed && (!this.stack[k].moduleScope || this.stack[k].vars.get(name).isAlias === true);
       if (this.stack[k].strong) crossed = true;
     }
     return false;
@@ -8472,7 +8474,7 @@ function typeSymbol(v) {
 
 // ─── Standard library modules (std/math, std/random, std/json, std/net, std/io, std/term) ─
 
-function buildStdlibModule(name, vfs = null) {
+export function buildStdlibModule(name, vfs = null) {
   const asF64 = v => v?.type === 'float' ? v.v : v?.type === 'int' ? v.v : null;
   const typeErr = (fn, ...badArgs) => {
     // The types in words, joined — as the Rust engines say them since GLB-033.

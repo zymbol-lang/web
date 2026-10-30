@@ -25,6 +25,7 @@ import {
 } from './values.js';
 import { asciiDigits, asciiNumber } from './digits.js';
 import { powi, roundHalfAway, fmtThousands, fmtScientific } from './format.js';
+import { makeStdlib, BRIDGED } from './stdlib.js';
 
 const NONE = 4294967295;               // u32::MAX: no handler armed
 export const MAX_ACTIVE_CALLS = 10000;   // zymbol_common::depth
@@ -352,9 +353,108 @@ function intStepOf(step, single, container) {
   throw typeMsg(`a navigation step is a position (Int) or a dictionary key (String), got ${typeLabel(step)}`);
 }
 
+// ── `$/` parts, the terminal, the shell ──────────────────────────────────────
+
+/** The parts of `s $/ sep`, as StrSplit makes them — the fused forms' first half. */
+function splitParts(sv, sep) {
+  if (typeof sv !== 'string') throw typeMsg(`$/ requires a string on the left, got ${typeLabel(sv)}`);
+  if (tagOf(sep) === T_CHAR) return sv.split(String.fromCodePoint(sep.cp));
+  if (typeof sep === 'string') {
+    if (sep === '') throw indexMsg('$/ delimiter must not be empty');
+    return sv.split(sep);
+  }
+  throw typeMsg(`$/ delimiter must be a char or string, got ${typeLabel(sep)}`);
+}
+
+/** `vm_extract_pos`: (row, column) and the style a `>>~` position tuple carries. */
+function extractPos(v) {
+  const none = { at: null, style: { bold: false, italic: false, underline: false, fg: null, bg: null } };
+  if (tagOf(v) !== T_TUPLE) return none;
+  let items = v.items;
+  // `>>~ pos > …` wraps the dense tuple in a tuple of one.
+  if (items.length === 1 && tagOf(items[0]) === T_TUPLE) return extractPos(items[0]);
+  const int = i => (typeof items[i] === 'number' ? items[i] : null);
+  const u16 = n => ((n % 65536) + 65536) % 65536;
+  const u8 = n => ((n % 256) + 256) % 256;
+  const row = int(0), col = int(1), bks = int(2) ?? 0, fg = int(3), bg = int(4);
+  return {
+    at: row !== null && col !== null ? [u16(row), u16(col)] : null,
+    style: { bold: (bks & 1) !== 0, italic: (bks & 2) !== 0, underline: (bks & 4) !== 0,
+      fg: fg === null ? null : u8(fg), bg: bg === null ? null : u8(bg) },
+  };
+}
+
+/** The bytes crossterm writes for a `>>~` (zymbol-host's NativeTerminal::print_at). */
+export function ansiPrintAt(at, style, text) {
+  let s = '';
+  if (at) s += `\x1b[${((at[0] - 1) & 0xFFFF) + 1};${((at[1] - 1) & 0xFFFF) + 1}H`;
+  if (style.bold) s += '\x1b[1m';
+  if (style.italic) s += '\x1b[3m';
+  if (style.underline) s += '\x1b[4m';
+  if (style.fg !== null) s += `\x1b[38;5;${style.fg}m`;
+  if (style.bg !== null) s += `\x1b[48;5;${style.bg}m`;
+  s += text;
+  if (style.bold || style.italic || style.underline || style.fg !== null || style.bg !== null) s += '\x1b[0m';
+  return s;
+}
+
+/**
+ * What a program run through a pipe has for a terminal — `zymbol run … | cat`:
+ * the escape sequences go into the output, the size is 80×24, and there is no
+ * raw mode. A host with a screen (the playground) gives its own as
+ * `host.terminal`, with the same methods.
+ */
+function pipeTerminal(host) {
+  return {
+    clear() { host.write('\x1b[2J\x1b[1;1H'); },
+    size() { return [80, 24]; },
+    readKey(blocking) {
+      if (!blocking) return 0;
+      const e = generic('No such device or address (os error 6)');
+      e.abort = true;
+      return e;
+    },
+    printAt(at, style, text) { host.write(ansiPrintAt(at, style, text)); },
+    enterTui() { return 'failed to enable raw mode: not a terminal'; },
+    exitTui() {},
+    release() {},
+  };
+}
+
+function holdsFunction(v) {
+  switch (tagOf(v)) {
+    case T_FUNC: case T_CLOSURE: return true;
+    case T_ARRAY: case T_TUPLE: return v.items.some(holdsFunction);
+    case T_DICT: return [...v.map.values()].some(holdsFunction);
+  }
+  return false;
+}
+
+/** The words a value becomes inside `<\ … \>`: a collection's elements, at any depth. */
+function shellWords(v, out) {
+  switch (tagOf(v)) {
+    case T_ARRAY: case T_TUPLE: for (const x of v.items) shellWords(x, out); return;
+    case T_DICT: for (const x of v.map.values()) shellWords(x, out); return;
+  }
+  out.push(repr(v));
+}
+
+/** zymbol_common::shell::exit_failure_message; a null code is a signal. */
+function exitFailureMessage(code, said) {
+  const head = code === null ? 'terminated by a signal' : `exit ${code}`;
+  said = said.replace(/[\n\r]+$/, '');
+  return said ? `${head}: ${said}` : head;
+}
+
+/** zymbol_common::shell::quote_word, for a POSIX shell. */
+function quoteWord(text) {
+  if (text !== '' && /^[A-Za-z0-9_./:@%+,-]+$/.test(text)) return text;
+  return `'${text.replace(/'/g, "'\\''")}'`;
+}
+
 // ── The machine ──────────────────────────────────────────────────────────────
 
-const DONE = 'done', INPUT = 'input', YIELD = 'yield', SLEEP = 'sleep';
+const DONE = 'done', INPUT = 'input', YIELD = 'yield', SLEEP = 'sleep', KEY = 'key', AWAIT = 'await';
 
 export class Machine {
   /**
@@ -384,6 +484,17 @@ export class Machine {
     this.rng = null;
     this.destroyed = new Set();   // absolute register slots `\` ended (destroyed_slots)
     this.sleepMs = 0;
+    this.tuiOpen = 0;
+    this.awaiting = null;
+    this.std = null;
+  }
+
+  /** The terminal the host gives, or the one a pipe gives (no host terminal at all). */
+  term() { return this.host.terminal ?? (this.pipe ??= pipeTerminal(this.host)); }
+
+  /** The run is over, however it ended: give the terminal back (`Terminal::release`). */
+  release() {
+    if (this.tuiOpen > 0) { this.tuiOpen = 0; this.host.terminal?.release?.(); }
   }
 
   /** Rust's `forget_destroyed_from`: a new frame reuses the slots from `base` up. */
@@ -405,6 +516,18 @@ export class Machine {
   /** Go on: with the line a waiting `<<` asked for, or after a time slice. */
   resume(line) {
     try {
+      if (this.awaiting) {
+        // What a native that answered later settled to: a value, or a VmErr to raise.
+        const a = this.awaiting;
+        this.awaiting = null;
+        if (line instanceof VmErr) {
+          const top = this.frames[this.frames.length - 1];
+          if (line.at === undefined) line.at = [top.ip - 1, top.ci];
+          if (!this.raise(line, kindOf(line), 0)) throw line;
+        } else {
+          put(this.R, a.abs, line);
+        }
+      }
       if (this.waiting !== null) {
         if (line === undefined) return { status: INPUT };
         const w = this.waiting;
@@ -426,9 +549,12 @@ export class Machine {
       const r = this.exec(0);
       this.flush();
       if (r === SLEEP) return { status: SLEEP, ms: this.sleepMs };
-      return { status: r === YIELD ? YIELD : r === INPUT ? INPUT : DONE };
+      if (r === AWAIT) return { status: AWAIT, promise: this.awaiting.promise };
+      if (r === DONE) this.release();
+      return { status: r === YIELD || r === INPUT || r === KEY ? r : DONE };
     } catch (e) {
       this.flush();
+      this.release();
       if (e instanceof VmErr) throw this.locate(e);
       throw e;
     }
@@ -1081,7 +1207,16 @@ export class Machine {
           }
           case 73: { // CallBuiltin
             const args = ins.c.map(r => R[base + r]);
-            put(R, base + ins.a, this.builtin(ins.b, args)); break;
+            const r = ins.b >= 200 ? (this.std ??= makeStdlib(this.host)).call(ins.b, args) : this.builtin(ins.b, args);
+            // std/net answers later: the machine waits, and resume() puts the answer in.
+            if (r !== null && typeof r === 'object' && typeof r.then === 'function') {
+              if (floor > 0) throw new NotYet('a request that has to wait, inside a sort comparator');
+              frame.ip = ip;
+              this.flush();
+              this.awaiting = { abs: base + ins.a, promise: r };
+              return AWAIT;
+            }
+            put(R, base + ins.a, r); break;
           }
 
           // ── Output ──────────────────────────────────────────────────────
@@ -1839,12 +1974,116 @@ export class Machine {
           case 171: // Halt
             return DONE;
 
+          // ── `$/` fused with what reads its parts ────────────────────────
+          case 95: { // StrSplitCount
+            const parts = splitParts(R[base + ins.b], R[base + ins.c]);
+            put(R, base + ins.a, parts.length); break;
+          }
+          case 96: case 97: case 98: { // StrSplitMap StrSplitFilter StrSplitReduce
+            const reduce = ins.op === 98;
+            const callable = R[base + (reduce ? ins.e : ins.d)];
+            const parts = splitParts(R[base + ins.b], R[base + ins.c]);
+            // The split first, then the function — the tree-walker's order.
+            const ct = tagOf(callable);
+            if (ct !== T_FUNC && ct !== T_CLOSURE) throw typeMsg(`${ins.op === 96 ? 'map' : ins.op === 97 ? 'filter' : 'reduce'} requires lambda function`);
+            frame.ip = ip;
+            if (reduce) {
+              let acc = retain(R[base + ins.d]);
+              for (const part of parts) acc = this.callCallable(callable, [acc, part]);
+              put(R, base + ins.a, acc); break;
+            }
+            const out = [];
+            try {
+              for (const part of parts) {
+                const r = this.callCallable(callable, [part]);
+                if (ins.op === 96) { out.push(r); continue; }
+                if (r === true) out.push(part);
+                else if (r !== false) { release(r); throw typeMsg(`filter lambda must return boolean, got ${typeLabel(r)}`); }
+              }
+            } catch (e) { for (const x of out) release(x); throw e; }
+            put(R, base + ins.a, new ZArray(out)); break;
+          }
+
+          // ── The terminal ────────────────────────────────────────────────
+          case 156: // ClearScreen
+            this.flush();
+            this.term().clear();
+            break;
+          case 157: { // QueryTerminalSize
+            const [cols, rows] = this.term().size();
+            put(R, base + ins.a, new ZTuple([rows, cols])); break;
+          }
+          case 158: { // ReadKey
+            frame.ip = ip;
+            this.flush();
+            const k = this.term().readKey(ins.b);
+            if (k === undefined) {
+              if (floor > 0) throw new NotYet('a `<<|` that has to wait, inside a sort comparator');
+              frame.ip = ip - 1;   // asked again on resume
+              return KEY;
+            }
+            if (k instanceof VmErr) throw k;
+            put(R, base + ins.a, mkChar(typeof k === 'number' ? k : k.codePointAt(0))); break;
+          }
+          case 160: { // PrintAt
+            const { at, style } = extractPos(R[base + ins.a]);
+            let text = '';
+            for (const r of ins.b) text += this.numeralRepr(R[base + r]);
+            this.flush();
+            this.term().printAt(at, style, text);
+            break;
+          }
+          case 161: { // EnterTui
+            this.flush();
+            const r = this.term().enterTui();
+            if (typeof r === 'string') throw generic(r);
+            this.tuiOpen++;
+            break;
+          }
+          case 162: // ExitTui
+            if (this.tuiOpen > 0) { this.tuiOpen--; this.flush(); this.term().exitTui(); }
+            break;
+
+          // ── Other processes ─────────────────────────────────────────────
+          case 135: { // BashExec
+            if (ins.b.some(part => part >= 0 && holdsFunction(R[base + part]))) throw generic('cannot use function in bash command interpolation');
+            // The text as written is the command; each value, its quoted words (G2).
+            let cmd = '';
+            for (const part of ins.b) {
+              if (part < 0) { cmd += strings[~part]; continue; }
+              const words = [];
+              shellWords(R[base + part], words);
+              cmd += words.map(quoteWord).join(' ');
+            }
+            frame.ip = ip;
+            this.flush();
+            // The host answers { printed, code, said } or { raise, message }; null has no shell.
+            const r = this.host.shell ? this.host.shell(cmd) : null;
+            if (r == null) throw generic(`cannot run '${cmd}': a shell command runs as a process, and the browser has none`);
+            if (r.raise !== undefined) throw new VmErr(r.raise, r.message);
+            // A status other than 0 is a soft ##IO error (GAP-GOL-011, D2).
+            put(R, base + ins.a, r.code === 0 ? r.printed.replace(/\n+$/, '') : new ZError(`##IO(${exitFailureMessage(r.code, r.said ?? r.printed)})`)); break;
+          }
+          case 136: { // Execute
+            const text = part => (part < 0 ? strings[~part] : repr(R[base + part]));
+            const path = ins.b.length ? text(ins.b[0]) : '';
+            const args = ins.b.slice(1).map(text);
+            frame.ip = ip;
+            this.flush();
+            // { printed, code } or { raise, message }; null: no way to run one here.
+            const r = this.host.subscript ? this.host.subscript(path, args) : null;
+            if (r == null) throw new VmErr('IO', `cannot run '${path}': a subscript runs another file as a process, and the browser has none`);
+            if (r.raise !== undefined) throw new VmErr(r.raise, r.message);
+            put(R, base + ins.a, r.code === 0 ? r.printed : new ZError(`##IO(${exitFailureMessage(r.code, r.printed)})`)); break;
+          }
+
           default:
             throw new NotYet(`instruction ${ins.op} is not implemented yet`);
         }
       } catch (e) {
         if (!(e instanceof VmErr)) throw e;
         if (e.at === undefined) e.at = [ip - 1, ci];
+        if (e.abort) throw e;   // Rust returns these from `run`, past every `!?`
         const kind = e.rethrowKind ?? kindOf(e);
         e.rethrowKind = undefined;
         if (!this.raise(e, kind, floor)) throw e;
@@ -2147,7 +2386,7 @@ function validateInput(s, kind) {
  * native — or null. Asked before running, so a program is never half run.
  */
 export function unsupportedIn(program, opsTable) {
-  const NATIVES = new Set([...Array(22).keys(), 100, 101, 102, 103]);
+  const NATIVES = new Set([...Array(22).keys(), 100, 101, 102, 103, ...BRIDGED]);
   for (const c of [program.main, ...program.functions]) {
     for (const ins of c.code) {
       const name = opsTable[ins.op][0];
@@ -2182,4 +2421,6 @@ export const IMPLEMENTED = new Set([
   'Revive', 'DestructureAbsorb', 'DestructureRest', 'DestructureTail', 'DestroyGlobal', 'NumericEval',
   'BaseConvert', 'FmtThousands', 'FmtScientific', 'RoundFloat', 'TruncFloat', 'FmtThousandsDyn',
   'FmtScientificDyn', 'RoundFloatDyn', 'TruncFloatDyn', 'Sleep',
+  'StrSplitCount', 'StrSplitMap', 'StrSplitFilter', 'StrSplitReduce',
+  'ClearScreen', 'QueryTerminalSize', 'ReadKey', 'PrintAt', 'EnterTui', 'ExitTui', 'BashExec', 'Execute',
 ]);
