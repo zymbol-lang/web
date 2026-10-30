@@ -22,6 +22,7 @@ fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let mut input = None;
     let mut output = None;
+    let mut ast_only = false;
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
@@ -29,6 +30,9 @@ fn main() {
                 i += 1;
                 output = args.get(i).cloned();
             }
+            // `--ast`: the parsed program as Rust's `{:#?}` prints it, and stop —
+            // the shape zymbol_vm.js's AST adapter has to produce.
+            "--ast" => ast_only = true,
             a if input.is_none() => input = Some(a.to_string()),
             _ => usage(),
         }
@@ -65,6 +69,10 @@ fn main() {
             std::process::exit(1);
         }
     };
+    if ast_only {
+        println!("{:#?}", program);
+        return;
+    }
     // `zymbol run` refuses a module file before compiling it, and so does this.
     if program.module_decl.is_some() {
         eprintln!("zyb_dump: '{}' is a module file and cannot be run directly", display_name);
