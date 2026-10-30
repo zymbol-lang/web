@@ -87,8 +87,8 @@ It builds against the sibling `interpreter/` checkout (path dependencies, its
 own `target/`), makes the call `zymbol run` makes — `Compiler::compile_named`, with the
 `http` and `db` features the reference binary has — and writes the CompiledProgram as JSON.
 JSON has no infinity and no NaN, so those three floats are written as Rust spells them.
-The compiler's `faithful` option reproduces the two Rust defects the port corrects
-(HALLAZGOS.md, BUG-VMJS-004 and -005), so the comparison is exact.
+The two Rust defects the port found (HALLAZGOS.md, BUG-VMJS-004 and -005) are corrected
+in both compilers since v0.0.11, so the comparison needs no mode of its own.
 
 ## Rules this code keeps
 

@@ -105,8 +105,6 @@ class FunctionCtx {
     /** Temporaries whose statement has ended. */
     this.freeTemps = [];
     this.poisonTemps = !!opts.poisonTemps;
-    /** With `faithful`, `zero_new_vars` pushes no source position, as Rust does (BUG-VMJS-004). */
-    this.rustSrcShift = !!opts.faithful;
     this.instructions = [];
     this.loopStack = [];
     this.tryStack = [];
@@ -205,10 +203,10 @@ class FunctionCtx {
     return pos;
   }
 
-  /** An instruction pushed past `emit`, as zero_new_vars does (BUG-VMJS-004). */
+  /** An instruction outside `emit`'s bookkeeping, still with its position (BUG-VMJS-004). */
   pushRaw(ins) {
     this.instructions.push(ins);
-    if (!this.rustSrcShift) this.src.push(this.curSrc);
+    this.src.push(this.curSrc);
   }
 
   currentLabel() { return this.instructions.length; }
@@ -1721,8 +1719,8 @@ export class Compiler {
           ctx.emit([{ Div: 'DivInt', Mod: 'ModInt', Pow: 'PowInt' }[bin.op], dst2, rL, dst]);
           return dst2;
         }
-        // BUG-VMJS-005: Rust compiles the left operand a second time below.
-        if (!this.opts.faithful) leftDone = rL;
+        // The general path below reuses it: compiled twice is run twice (BUG-VMJS-005).
+        leftDone = rL;
       }
     }
 
@@ -3140,7 +3138,7 @@ function eliminateDeadCode(instructions, src, oldNumRegs, numParams) {
     }
     out.push(ins);
   }
-  // The positions travel with their instructions, by index (BUG-VMJS-004 under `faithful`).
+  // The positions travel with their instructions, by index.
   const newSrc = [];
   for (let i = 0; i < src.length; i++) if (reachable[i]) newSrc.push(src[i]);
   const maxReg = maxRegUsed(out);
@@ -3325,7 +3323,7 @@ export function toSerde(p) {
  * Compile a Rust-shaped program (rustast.js) as `Compiler::compile_named` does.
  *   baseDir   the script's directory, where its imports and subscripts resolve
  *   mainName  the file name a runtime error reports
- *   opts      { host, features: { http, db }, faithful, poisonTemps }
+ *   opts      { host, features: { http, db }, poisonTemps }
  * Returns the program in serde's JSON shape; throws a CompileError.
  */
 export function compile(program, baseDir, mainName, opts = {}) {

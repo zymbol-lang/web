@@ -25,11 +25,11 @@
 | ID | Tipo | Módulo | Contexto | Estado |
 |----|------|--------|----------|--------|
 | [BUG-VMJS-001](#bug-vmjs-001) | BUG | zyjs · formato `#^` | `#^.N` redondea los empates hacia arriba y escribe un `.0` que los dos motores Rust no escriben: `1.3e0` donde Rust da `1.2e0` | **abierto** |
-| [BUG-VMJS-002](#bug-vmjs-002) | BUG | zytw y zyvm · `$-` sobre texto | quitar de un texto una subcadena **más larga que el texto** hace caer los dos motores Rust (código 101); zyjs y zymbol_vm.js no lo tocan | **abierto** |
-| [BUG-VMJS-003](#bug-vmjs-003) | BUG | zyjs · parser | un `\\` solo en su línea es una sentencia —un salto de línea— para los dos motores Rust; zyjs lo rechaza: `expected expression, found '\\'` | **corregido en la rama** (2026-10-30; entra con la v0.0.11) |
-| [BUG-VMJS-004](#bug-vmjs-004) | BUG | zyvm · compilador | después de un bloque que crea variables, un error de ejecución puede citar **la línea siguiente** a la suya: la tabla de posiciones del bytecode pierde una entrada por cada variable que muere al cerrar el bloque | **abierto** |
-| [BUG-VMJS-005](#bug-vmjs-005) | BUG | zyvm · compilador | `(f() + 0.5) + 1` llama a `f` **dos veces**: el atajo del operando inmediato compila el lado izquierdo, lo descarta si es Float o texto, y el camino general lo compila otra vez | **abierto** |
-| [BUG-VMJS-006](#bug-vmjs-006) | BUG | zyjs · verificador | dentro de un **módulo**, una función que asigna un nombre que también es alias de importación (`g = x * 2` con `<# ./util => g`) hace que zyjs rechace el módulo: `'g' is a module, not a value`; los dos motores Rust lo ejecutan (GLB-070). Deja a GoL sin arrancar en el navegador | **corregido en la rama** (2026-10-30; entra con la v0.0.11) |
+| [BUG-VMJS-002](#bug-vmjs-002) | BUG | zytw y zyvm · `$-` sobre texto | quitar de un texto una subcadena **más larga que el texto** hace caer los dos motores Rust (código 101); zyjs y zymbol_vm.js no lo tocan | **corregido** (2026-10-30, v0.0.11) |
+| [BUG-VMJS-003](#bug-vmjs-003) | BUG | zyjs · parser | un `\\` solo en su línea es una sentencia —un salto de línea— para los dos motores Rust; zyjs lo rechaza: `expected expression, found '\\'` | **corregido** (2026-10-30, v0.0.11) |
+| [BUG-VMJS-004](#bug-vmjs-004) | BUG | zyvm · compilador | después de un bloque que crea variables, un error de ejecución puede citar **la línea siguiente** a la suya: la tabla de posiciones del bytecode pierde una entrada por cada variable que muere al cerrar el bloque | **corregido** (2026-10-30, v0.0.11) |
+| [BUG-VMJS-005](#bug-vmjs-005) | BUG | zyvm · compilador | `(f() + 0.5) + 1` llama a `f` **dos veces**: el atajo del operando inmediato compila el lado izquierdo, lo descarta si es Float o texto, y el camino general lo compila otra vez | **corregido** (2026-10-30, v0.0.11) |
+| [BUG-VMJS-006](#bug-vmjs-006) | BUG | zyjs · verificador | dentro de un **módulo**, una función que asigna un nombre que también es alias de importación (`g = x * 2` con `<# ./util => g`) hace que zyjs rechace el módulo: `'g' is a module, not a value`; los dos motores Rust lo ejecutan (GLB-070). Deja a GoL sin arrancar en el navegador | **corregido** (2026-10-30, v0.0.11) |
 | [GAP-VMJS-001](#gap-vmjs-001) | GAP | zymbol_vm.js · `$^` con comparador | un `<<` dentro del comparador de `$^` no puede esperar a la entrada en el navegador: el comparador corre en una llamada anidada | **abierto** |
 
 ---
@@ -108,6 +108,13 @@ captura y el programa no puede defenderse.
 **Sugerido para el corpus:** el programa de arriba con el golden `[ab]`, una vez
 corregido en los dos motores Rust.
 
+**CORREGIDO (2026-10-30, v0.0.11).** Los dos motores Rust devuelven el texto tal
+cual cuando el patrón es más largo que él, antes de recorrerlo
+(`zymbol-interpreter/src/collection_ops.rs` y `zymbol-vm/src/lib.rs`). En el corpus:
+`strings/remove_longer_substring.zy`, con el programa de arriba y sus bordes (texto
+vacío, patrón igual al texto, caracteres de varios bytes, coincidencia que no está
+al principio, un char); los cuatro motores dan `[][][ab][ñü][ab][]`.
+
 ## BUG-VMJS-003
 
 **Un `\\` solo en su línea es un salto de línea para los dos motores Rust; zyjs no lo
@@ -148,6 +155,10 @@ también **BUG-ZYE-013** (ZyEdit): `"\r"` dentro de una cadena era la letra `r`;
 adaptador lo encontró en `ZyEdit/src/buffer.zy`, y el hallazgo es de ZyEdit.
 
 **Sugerido para el corpus:** el programa de arriba, con el golden de zytw.
+
+**En el corpus (2026-10-30):** `output/11_backslash_newline_alone.zy`. El golden no
+puede guardar la línea vacía —`zyq expect` borra las líneas en blanco—, pero zyjs
+rechazaba el programa entero, y eso sí lo ve.
 
 ## BUG-VMJS-004
 
@@ -198,6 +209,16 @@ zymbol_vm.js acepta la opción `faithful`, que reproduce el corrimiento.
 
 **Sugerido para el corpus:** el programa de arriba con el golden de zytw.
 
+**CORREGIDO (2026-10-30, v0.0.11).** `zero_new_vars` y
+`reset_postfix_hot_after_loop` emiten su `LoadUnit` por `FunctionCtx::emit`, que
+empuja la posición junto con la instrucción. En el corpus:
+`errors/runtime/location_after_block.zy`. Su golden no guarda la línea `-->`
+(`zyq expect` la borra); la que la compara es `zyq consensus`, entre los cuatro
+motores. Comprobado contra el compilador anterior: su bytecode tiene una posición
+menos que instrucciones y cita la línea 16 en vez de la 15. La opción `faithful`
+del compilador de zymbol_vm.js se quitó: `compile_diff.mjs` da el mismo bytecode
+sin ella (corpus 637/637, ejemplos 321/321, aplicaciones 118/118).
+
 ## BUG-VMJS-005
 
 **En zyvm, una operación con un entero literal a la derecha evalúa dos veces su lado
@@ -244,6 +265,13 @@ opción `faithful` del compilador reproduce la doble evaluación, para comparar
 bytecode con Rust.
 
 **Sugerido para el corpus:** el programa de arriba con el golden de zytw.
+
+**CORREGIDO (2026-10-30, v0.0.11).** `compile_binary` guarda el registro del lado
+izquierdo cuando el atajo lo descarta, y el camino general lo toma de ahí en vez de
+compilarlo otra vez —lo mismo que hace el puerto—. En el corpus:
+`arithmetic/imm_left_evaluated_once.zy`: `+`, `<`, `/` y `%` con un lado Float, el
+control `f() + 1` y el caso del texto dentro de `!?`; una `f` por línea en los cuatro
+motores.
 
 ## BUG-VMJS-006
 
@@ -314,6 +342,9 @@ del playground comparten `src/zymbol/zymbol.js`: GoL arranca en los dos.
 
 **Sugerido para el corpus:** los tres ficheros de arriba, en `modules_scope/`, con
 el golden `7`.
+
+**En el corpus (2026-10-30):** `modules_scope/alias_as_local_in_module_fn.zy`, con
+sus módulos en `modules_scope/vmjs/`; los cuatro motores dan `7`.
 
 ---
 

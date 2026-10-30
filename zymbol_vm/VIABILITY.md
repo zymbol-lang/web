@@ -158,8 +158,9 @@ for function, fed by zymbol.js's parser through an adapter that rebuilds zymbol-
 
 Not compared: the order inside a run of `LoadUnit` (Rust takes it from a `HashMap`) and a
 column (no output shows one). Everything else — registers, jumps, string pool, globals,
-source lines — is equal. Two Rust defects the port found are corrected in it and
-reproduced under `faithful` for this comparison (HALLAZGOS.md, BUG-VMJS-004, -005).
+source lines — is equal. Two Rust defects the port found (HALLAZGOS.md, BUG-VMJS-004, -005)
+were reproduced under a `faithful` option for this comparison until both compilers were
+corrected for v0.0.11; the option is gone.
 
 **The gate, with zymbol_vm.js in zyjs's place** (`ZYJS_HARNESS=…/run_one.mjs`, before it had an engine id of its own, `zyjsvm`):
 

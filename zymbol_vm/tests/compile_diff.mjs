@@ -7,8 +7,7 @@
 //
 //   node tests/compile_diff.mjs [DIR|FILE...] [--show N] [--path SUBSTR]
 //
-// It compiles in `faithful` mode, which reproduces the two Rust defects the port
-// corrects (BUG-VMJS-004, BUG-VMJS-005). Not compared: the order inside a run of
+// Not compared: the order inside a run of
 // consecutive LoadUnit (Rust takes it from a HashMap's iteration), and a source
 // position's column (zymbol.js does not count columns in graphemes; no output
 // shows one).
@@ -85,7 +84,7 @@ for (const f of files) {
   let mine, myErr = null;
   try {
     const program = toRustAst(new Parser(new Lexer(readFileSync(f, 'utf8')).tokenize()).parse());
-    mine = compile(program, parent(f), f, { host, faithful: true, features: { http: true, db: true } });
+    mine = compile(program, parent(f), f, { host, features: { http: true, db: true } });
   } catch (e) {
     myErr = `zyb_dump: compile error: ${e.message}`;
     if (!e.kind) myErr += `\n${e.stack.split('\n').slice(1, 4).join('\n')}`;
