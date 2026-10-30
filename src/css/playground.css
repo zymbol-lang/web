@@ -409,7 +409,7 @@
     /* The [[script]] picker had no styling at all — a default-chrome <select> in a dark
        toolbar. It also has to be shrinkable, since script names can be long (and are often
        CJK: 囲碁, 바둑, 围棋). */
-    #zyp-script-select {
+    #zyp-script-select, #engine-select {
       background: var(--bg4);
       border: 1px solid var(--line);
       border-radius: var(--radius);
@@ -423,8 +423,9 @@
       min-width: 6ch;
       outline: none;
     }
-    #zyp-script-select:hover { border-color: var(--dim); color: var(--hi); }
-    #zyp-script-select:focus { border-color: var(--green-mid); }
+    #engine-select { min-width: 5ch; }
+    #zyp-script-select:hover, #engine-select:hover { border-color: var(--dim); color: var(--hi); }
+    #zyp-script-select:focus, #engine-select:focus { border-color: var(--green-mid); }
 
     .btn-active {
       background: var(--green-dim);

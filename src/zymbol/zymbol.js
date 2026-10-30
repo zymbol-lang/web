@@ -454,7 +454,7 @@ function zyPosOf(at) {
   if (at && typeof at === 'object') return { line: at.line ?? null, col: at.col ?? null };
   return { line: at ?? null, col: null };
 }
-class ZyError extends Error {
+export class ZyError extends Error {
   // The line goes in `zyLine`, never into the message. The Rust engines put it
   // on its own `-->` line and keep the message itself clean; baking `Line 2: `
   // into the text made the same runtime error read differently here, and put
@@ -496,7 +496,7 @@ function errorKindOfMessage(message) {
   if (m.includes('parse')) return '##Parse';
   return '##_';
 }
-class ZyRuntimeError extends ZyError {
+export class ZyRuntimeError extends ZyError {
   constructor(msg, errType, line) {
     super(msg, line);
     this.errType = errType ?? '##_';
@@ -505,7 +505,7 @@ class ZyRuntimeError extends ZyError {
     this.kindDeclared = errType !== undefined;
   }
 }
-class ZyStaticError extends Error {
+export class ZyStaticError extends Error {
   // The line goes in `zyLine`, which is where `checkSource` reads it from —
   // exactly as `ZyError` does. It used to be dropped: the constructor took one
   // argument and three throw sites were already passing two, so a lexer error
@@ -1256,8 +1256,9 @@ export class Lexer {
       if (this.ch() === '\\') {
         this.consume();
         const e = this.consume();
-        // \{ and \} produce literal braces (not interpolation delimiters)
-        cur += e === 'n' ? '\n' : e === 't' ? '\t' : e;
+        // \{ and \} produce literal braces (not interpolation delimiters).
+        // `\r` is a carriage return, as in Rust's lexer (BUG-ZYE-013).
+        cur += e === 'n' ? '\n' : e === 't' ? '\t' : e === 'r' ? '\r' : e;
       } else if (this.ch() === '{') {
         if (cur) { parts.push({ t: 'lit', v: cur }); cur = ''; }
         this.consume();
@@ -1791,14 +1792,14 @@ export class Parser {
           // Re-export: alias::function or alias.CONSTANT
           const viaScope = this.adv().type === 'SCOPE';
           const member = nameAfter(viaScope ? "expected function name after '::'" : "expected constant name after '.'");
-          let exported = member;
-          if (this.check('FAT_ARROW')) { this.adv(); exported = nameAfter("expected new name after '=>'"); }
-          names.push({ kind: 'reexport', alias: first, member, exported });
+          let exported = member, renamed = false;
+          if (this.check('FAT_ARROW')) { this.adv(); exported = nameAfter("expected new name after '=>'"); renamed = true; }
+          names.push({ kind: 'reexport', alias: first, member, exported, viaScope, renamed });
         } else {
-          let exported = first;
-          if (this.check('FAT_ARROW')) { this.adv(); exported = nameAfter("expected public name after '=>'"); }
+          let exported = first, renamed = false;
+          if (this.check('FAT_ARROW')) { this.adv(); exported = nameAfter("expected public name after '=>'"); renamed = true; }
           // Its position, so a refusal about this name points at it (P4-3 E6).
-          names.push({ kind: 'own', internal: first, exported, line: firstTok.line, col: firstTok.col ?? null });
+          names.push({ kind: 'own', internal: first, exported, renamed, line: firstTok.line, col: firstTok.col ?? null });
         }
         if (this.check('COMMA') || this.check('SEMI')) this.adv();
       }
@@ -1882,7 +1883,10 @@ export class Parser {
     }
     if (t.type === 'IDENT')    return this.parseIdentStmt();
     if (t.type === 'SEMI')     { this.adv(); return null; }
-    if (t.type === 'PILCROW')  { this.adv(); return { type: 'Output', items: [], newline: true }; }
+    if (t.type === 'PILCROW' || t.type === 'NEWLINE_ESC') {
+      this.adv();
+      return { type: 'Output', items: [], newline: true, nlAt: { line: t.line, col: t.col ?? null }, nlBackslash: t.type === 'NEWLINE_ESC' };
+    }
     // `#` declares a module only as the first token of the file — the check at
     // the top of `Parser::parse` in Rust. Anywhere else it starts no statement,
     // and is refused where it stands, with the Rust parser's words: it used to
@@ -1999,7 +2003,8 @@ export class Parser {
       }
     }
     const nl = this.match('PILCROW', 'NEWLINE_ESC');
-    return { type: 'Output', items, newline: !!nl, line: this.peek().line, outLine, itemLines };
+    return { type: 'Output', items, newline: !!nl, line: this.peek().line, outLine, itemLines,
+             ...(nl ? { nlAt: { line: nl.line, col: nl.col ?? null }, nlBackslash: nl.type === 'NEWLINE_ESC' } : {}) };
   }
 
   parseInput() {
@@ -2714,12 +2719,13 @@ export class Parser {
     const params = [];
     while (!this.check('RPAREN') && !this.check('EOF')) {
       const pname = this.eat('IDENT', 'expected parameter name', 'parameters must be identifiers').value;
-      let isOut = false;
-      // `a~`, the working copy: nothing to record — every parameter is a copy
-      // here — but the mark is a token now and has to be consumed.
-      if (this.match('TILDE')) { /* mutable parameter */ }
+      let isOut = false, isMut = false;
+      // `a~`, the working copy. The tree-walker has nothing to do with the
+      // mark — every parameter is a copy here — but the compiler does: Rust's
+      // `ParameterKind::Mutable` keeps the parameter out of the auto-free.
+      if (this.match('TILDE')) isMut = true;
       else if (this.match('RETURN')) isOut = true;
-      params.push({ name: pname, isOut });
+      params.push({ name: pname, isOut, isMut });
       // `f(a b) { }` is not two parameters: both Rust parsers stop at the `b`,
       // and this one declared two and failed at the call (ZYJS-021).
       if (!this.match('COMMA') && !this.check('RPAREN')) {
@@ -3142,8 +3148,9 @@ export class Parser {
 
   parseLambda() {
     const params = [];
-    let parensWrapped = false;
+    let parensWrapped = false, sawParen = false;
     if (this.check('LPAREN')) {
+      sawParen = true;
       this.adv();
       while (!this.check('RPAREN') && !this.check('ARROW') && !this.check('EOF')) {
         params.push(this.eat('IDENT').value);
@@ -3175,7 +3182,9 @@ export class Parser {
       ? { type: 'block', stmts: this.parseBlock() }
       : { type: 'expr',  value: this.parseExpr() };
     if (parensWrapped) this.match('RPAREN');
-    return { type: 'Lambda', params, body };
+    // For zymbol_vm.js's compiler, Rust's shape: `(a, b) -> e` has its
+    // parameters in parentheses; `(a -> e)` is a lambda in a group.
+    return { type: 'Lambda', params, body, paramsParen: sawParen && !parensWrapped, ...(parensWrapped ? { paren: true } : {}) };
   }
 
   parsePipe() {
@@ -3308,7 +3317,7 @@ export class Parser {
         left = { type: 'FieldAccess', obj: left, field, scoped, fieldLine: ft.line, fieldCol: ft.col ?? null };
       } else if (this.check('LPAREN') && sameLine() && left.type === 'Ident') {
         this.adv(); const args = this.parseArgList(); this.closeCallArgs(left);
-        left = { type: 'Call', callee: left.name, args, line: left.line ?? this.peek()?.line ?? null };
+        left = { type: 'Call', callee: left.name, args, line: left.line ?? this.peek()?.line ?? null, ...(left.paren ? { calleeParen: true } : {}) };
       } else if (this.check('LPAREN') && sameLine() && left.type !== 'Ident') {
         this.adv(); const args = this.parseArgList(); this.closeCallArgs(left);
         left = { type: 'CallExpr', callee: left, args, line: left.line ?? this.peek()?.line ?? null };
@@ -3384,7 +3393,7 @@ export class Parser {
         this.adv();
         const args = this.parseArgList();
         this.closeCallArgs(left);
-        left = { type: 'Call', callee: left.name, args, line: left.line ?? this.peek()?.line ?? null };
+        left = { type: 'Call', callee: left.name, args, line: left.line ?? this.peek()?.line ?? null, ...(left.paren ? { calleeParen: true } : {}) };
 
       } else if (this.check('LPAREN') && sameLine() && left.type !== 'Ident' && left.type !== 'Literal') {
         this.adv();
@@ -3565,6 +3574,8 @@ export class Parser {
           'computed indices: arr[(expr)>(expr)]');
       }
       this.adv();
+      // For zymbol_vm.js's compiler: Rust keeps these parentheses as a group.
+      e.navParen = true;
       return e;
     }
     throw new ZyStaticError(
@@ -3830,8 +3841,9 @@ export class Parser {
 
   parseOutputPos() {
     const opLine = this.adv().line; // consume >>~
-    let slots;
+    let slots, opParen = false;
     if (this.check('LPAREN')) {
+      opParen = true;
       this.adv(); // consume (
       slots = [];
       while (!this.check('RPAREN') && !this.check('EOF')) {
@@ -3855,7 +3867,7 @@ export class Parser {
            !this.check('EOF') && this.peek().line === opLine) {
       items.push(this.parseExpr());
     }
-    return { type: 'OutputPos', slots, items };
+    return { type: 'OutputPos', slots, items, parenthesized: opParen };
   }
 
   // Returns the arguments, with the indices written `x<~` recorded on the array
@@ -3996,7 +4008,7 @@ export class Parser {
         throw new ZyStaticError('expected file path after </', tok, 'execute syntax: </ path.zy />');
       }
       const quoted = tok.value.length > 1 && tok.value.startsWith('"') && tok.value.endsWith('"');
-      return { type: 'Execute', path: quoted ? tok.value.slice(1, -1) : tok.value, line: tok.line };
+      return { type: 'Execute', path: quoted ? tok.value.slice(1, -1) : tok.value, raw: tok.value, line: tok.line };
     }
     if (t.type === 'MATCH') { return this.parseMatchExpr(); }
 
@@ -4400,7 +4412,7 @@ class Env {
 
 // ─── Checker ──────────────────────────────────────────────────────────────────
 
-function formatDiagnostic(d) {
+export function formatDiagnostic(d) {
   // `= help:` on its own line, which is the spelling the whole tool chain
   // agreed on and what the Rust engines print. The guidance lives in `d.help`,
   // never inside `d.message` — see the note on `ZyStaticError`.
@@ -4485,7 +4497,7 @@ function guardedBoundsOf(cond) {
   return out;
 }
 
-class Checker {
+export class Checker {
   // The guidance the two Rust engines attach to `undefined variable`
   // (`type_check.rs`, `.with_help(...)`). This engine emitted the message and
   // not the help, so the same refusal read as two different diagnostics.
@@ -6055,7 +6067,9 @@ class Checker {
       // `crossesStrongBoundary` already says. Treated as out of reach, a module
       // function's `estado = "listo"` made a local and the module's `estado`
       // never saw the change (GLB-093).
-      if (this.stack[k].vars.has(name)) return crossed && !this.stack[k].moduleScope;
+      // A module's import alias is not its state: inside a function the name is
+      // free (GLB-070), and assigning it there makes a local (BUG-VMJS-006).
+      if (this.stack[k].vars.has(name)) return crossed && (!this.stack[k].moduleScope || this.stack[k].vars.get(name).isAlias === true);
       if (this.stack[k].strong) crossed = true;
     }
     return false;
@@ -8460,7 +8474,7 @@ function typeSymbol(v) {
 
 // ─── Standard library modules (std/math, std/random, std/json, std/net, std/io, std/term) ─
 
-function buildStdlibModule(name, vfs = null) {
+export function buildStdlibModule(name, vfs = null) {
   const asF64 = v => v?.type === 'float' ? v.v : v?.type === 'int' ? v.v : null;
   const typeErr = (fn, ...badArgs) => {
     // The types in words, joined — as the Rust engines say them since GLB-033.

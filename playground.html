@@ -40,13 +40,16 @@
   <div id="pg-notice">
     <h2 id="pg-notice-title">
       Browser Playground
-      <span class="badge">zymbol.js v0.0.10</span>
+      <span class="badge">v0.0.11 · VM · TW</span>
     </h2>
     <p>
-      This playground runs <code>zymbol.js</code>, a hand-written JavaScript mirror of the Zymbol
-      tree-walker — not the Rust engine compiled for the browser. It tracks the native interpreter
-      closely enough to run real programs, including multi-file <code>.zyp</code> packages, but for
-      the full language use the <a href="install.html" style="color:var(--green)">native interpreter</a>.
+      Two engines, chosen in the picker beside ▶ Run. <strong>VM</strong>, the default as in the
+      native CLI since v0.0.11, is <code>zymbol_vm.js</code>: the program is compiled to the register
+      VM's bytecode — the bytecode the Rust compiler builds for it — and run by a JavaScript port of
+      the VM. <strong>TW</strong> is <code>zymbol.js</code>, the tree-walker this playground ran
+      until now. Neither is the Rust engine compiled for the browser; both run real programs,
+      multi-file <code>.zyp</code> packages included, and for the full language there is the
+      <a href="install.html" style="color:var(--green)">native interpreter</a>.
     </p>
 
     <h3>Not available here</h3>
@@ -54,9 +57,10 @@
       <li><code>std/db</code> — database access goes through an ODBC driver manager, which has no
           browser equivalent. Importing it fails with a message saying so.</li>
       <li><code>&lt;/ file.zy /&gt;</code> — script inclusion reads from a real filesystem.</li>
-      <li><code>&lt;\ cmd \&gt;</code> — there is no shell. <code>date</code> format specifiers
-          (<code>%Y %m %d %H %M %S %s</code>) and a plain <code>echo</code> are simulated; anything else
-          returns a high-resolution timestamp, which is what most programs use it for: a random seed.</li>
+      <li><code>&lt;\ cmd \&gt;</code> — there is no shell. <code>date</code> with its format specifiers,
+          a plain <code>echo</code>, <code>echo $$</code> and reading two bytes of
+          <code>/dev/urandom</code> — what programs use for a random seed — are simulated; any other
+          command is refused with a message saying so.</li>
     </ul>
 
     <h3>Works, but not the way it does natively</h3>
@@ -66,14 +70,11 @@
       <li><code>std/net</code> — <code>get</code>/<code>post</code>/<code>post_json</code>/<code>head</code>
           run over <code>fetch()</code>, so the browser's CORS rules apply: a server that sends no CORS
           headers is unreachable from here even though the same program works from the CLI.</li>
-      <li>A run stops after 2 000 000 statements or 32 KB of output, so a runaway loop cannot freeze the
-          tab. A loaded <code>.zyp</code> package runs at 2 000 000 of each instead: it is a real
-          multi-file program, not the single-statement snippet those defaults were sized for.
-          Statements inside a <code>&gt;&gt;|</code> block count against neither — a TUI program is
-          interactive and legitimately long-running — and on leaving the block the count returns to
-          what it was on entry, so the budget outside is neither consumed by the block nor reset by it.</li>
-      <li>Float literals lose precision — <code>3.14159265</code> prints as
-          <code>3.1415926499999998</code>. Known gap, not present in the native engines.</li>
+      <li>While a program runs, ▶ Run becomes <strong>■ Stop</strong>. On the VM a run has no step
+          limit — it hands the page back between slices of work, so the tab stays responsive — and
+          ■ Stop is how a loop that never ends is ended. On the TW a run stops by itself after
+          2 000 000 statements or 32 KB of output (a loaded <code>.zyp</code>: 2 000 000 of each);
+          statements inside a <code>&gt;&gt;|</code> block count against neither.</li>
     </ul>
 
     <h3>Fully supported</h3>
@@ -98,15 +99,17 @@
           language the interface stays English, and each symbol card still carries that language's
           own word for the concept.</li>
       <li>CLI arguments <code>&gt;&lt; args</code> — use the <strong>args…</strong> field next to ▶ Run.</li>
+      <li>The engine is remembered in this browser; <code>?engine=vm</code> or <code>?engine=tw</code>
+          in the address sets it for one visit. The last line of every run names the engine and the time.</li>
       <li>TUI mode (<code>&gt;&gt;|</code>) on a canvas renderer. On a touch device: <strong>swipe</strong>
           for the arrow keys, <strong>tap</strong> for Enter, <strong>⌨ Keys</strong> for any other single
           key — <code>p</code> to pass in GO, <code>q</code> to quit, digits. <strong>✕ Stop</strong> exits.</li>
     </ul>
     <h3>Source</h3>
     <p>
-      <code>zymbol.js</code> is free software under
+      <code>zymbol_vm.js</code> and <code>zymbol.js</code> are free software under
       <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener" style="color:var(--green)">AGPL-3.0</a>,
-      like the interpreter it mirrors. The complete source of everything running in this tab is at
+      like the interpreter they are ported from. The complete source of everything running in this tab is at
       <a href="https://github.com/zymbol-lang/web" target="_blank" rel="noopener" style="color:var(--green)">github.com/zymbol-lang/web</a>.
       The manuals and examples are <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener" style="color:var(--green)">CC BY-SA 4.0</a>.
     </p>
@@ -168,6 +171,10 @@
       <span>Editor</span>
       <div class="panel-actions">
         <button class="btn btn-run" id="run-btn" title="Run (Ctrl+Enter)">▶ Run</button>
+        <select id="engine-select" title="Engine: VM compiles to the register VM's bytecode and runs it (zymbol_vm.js); TW walks the tree (zymbol.js)">
+          <option value="vm">VM</option>
+          <option value="tw">TW</option>
+        </select>
         <button class="btn" id="check-btn" title="Check for errors without running (Ctrl+Shift+Enter)">✓ Check</button>
         <select id="zyp-script-select" title="Open a [[script]] of the loaded .zyp package — ▶ Run always runs the focused tab" style="display:none"></select>
         <input id="args-input" type="text" placeholder="args…" title="CLI arguments (space-separated, use quotes for spaces: &quot;hello world&quot;)" spellcheck="false" autocomplete="off">
