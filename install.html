@@ -345,8 +345,8 @@
 
     <!-- Verify instructions -->
     <div class="code-block" style="margin-top:1rem">
-      <span class="cmt"># Download SHA256SUMS into the same folder as the package, then:</span><br>
-      <span class="kw">sha256sum</span> --ignore-missing -c SHA256SUMS
+      <span class="cmt"># Download your architecture's checksum file into the same folder as the package, then:</span><br>
+      <span class="kw">sha256sum</span> --ignore-missing -c SHA256SUMS_x86_64_linux.txt   <span class="cmt"># or SHA256SUMS_aarch64_linux.txt</span>
     </div>
 
     <!-- Static binary usage -->

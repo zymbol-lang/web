@@ -5,7 +5,7 @@
 
 This is the Markdown representation of <https://zymbol-lang.org/install.html>.
 
-All assets and their `SHA256SUMS` files:
+All assets and their checksum files (`SHA256SUMS_*_linux.txt`, `SHA256_*.txt`):
 <https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.10>
 
 This is a concept validation release — Zymbol is in active development. APIs,
@@ -90,11 +90,12 @@ dependencies needed.
 | aarch64 | `.pkg.tar.zst` Arch Linux | [zymbol_lang_v0.0.10_aarch64.pkg.tar.zst](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.10/zymbol_lang_v0.0.10_aarch64.pkg.tar.zst) | `72ba2d571b3ccb1355e31649f183209422b87a40ac976bb52dedf22083fc321d` |
 | aarch64 | static binary, any Linux (musl) | [zymbol_lang_v0.0.10_aarch64_linux](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.10/zymbol_lang_v0.0.10_aarch64_linux) | `d4f72263cfd28b4a7a636e8732a29eba2971219e02ab0d5dcc725c7da5e09d99` |
 
-Verifying a download — put `SHA256SUMS` (from the release page) next to the
+Verifying a download — put your architecture's checksum file from the release
+page, `SHA256SUMS_x86_64_linux.txt` or `SHA256SUMS_aarch64_linux.txt`, next to the
 package, then:
 
 ```bash
-sha256sum --ignore-missing -c SHA256SUMS
+sha256sum --ignore-missing -c SHA256SUMS_x86_64_linux.txt   # or SHA256SUMS_aarch64_linux.txt
 ```
 
 Using the static binary, no installation needed:
