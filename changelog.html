@@ -289,11 +289,89 @@
 <!-- ═══ TIMELINE ═══ -->
 <div class="cl-timeline">
 
+  <!-- ── v0.0.11 ── -->
+  <div class="cl-entry">
+    <div class="cl-entry-head">
+      <span class="cl-version">v0.0.11</span>
+      <span class="cl-badge-latest">latest</span>
+      <span class="cl-date">November 1, 2026</span>
+    </div>
+    <div class="cl-title">The VM Is the Engine — in the CLI and the Playground — and What Each Thing Costs</div>
+
+    <div class="cl-groups">
+
+      <div class="cl-group">
+        <span class="cl-group-label added">Added</span>
+        <ul class="cl-change-list">
+          <li><strong>The playground runs the register VM</strong> — <code>zymbol_vm.js</code>, a JavaScript port of the Rust compiler and VM that builds the same bytecode, compared instruction for instruction over the corpus, the example pool and the applications. The tree-walker is one click away: <code>VM · TW</code> beside ▶ Run, <code>?engine=vm|tw</code> in the address. While a program runs, ▶ Run is ■ Stop</li>
+          <li><strong><code>zymbol run --deny &lt;effects&gt;</code></strong> — refuses a program, before any of it runs, if anything it can reach — every module it imports, every file it runs — uses a denied effect: <code>io</code>, <code>net</code>, <code>db</code>, <code>time</code>, <code>random</code>, <code>shell</code>, <code>sub</code>, <code>stdin</code>, <code>argv</code>. <code>zymbol check --effects</code> lists that surface with file and line</li>
+          <li><strong><code>zymbol run --timeout &lt;s&gt;</code></strong> — stops a program after so many seconds of wall clock, with exit status 124, and ends the commands <code>&lt;\ \&gt;</code> started</li>
+          <li><strong><code>random::semilla(n)</code></strong> — fixes <code>std/random</code>'s generator from that point: the same seed gives the same sequence in every engine</li>
+          <li><strong>A time limit for <code>std/net</code></strong> — per request, <code>net::get(url, [], 5)</code> and <code>net::head(url, 5)</code>, and for the process, <code>net::timeout(s)</code>, which returns the previous limit</li>
+          <li><strong>Three new warnings</strong> — a read that <code>\ x</code> has certainly destroyed; a <code>??</code> with no <code>_</code> arm that is not provably complete; and an edit that starts a line inside a <code>&gt;&gt;</code>, which makes it an output item. The run-time errors stay, and <code>!?</code> still catches them</li>
+          <li><strong>The compact build</strong> — <code>cargo build --release -p zymbol-cli --no-default-features</code> leaves out <code>zymbol lsp</code>, <code>zymbol repl</code> and <code>std/net</code>: 100 crates instead of 210, 6.6 MB instead of 12.3</li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label changed">Changed</span>
+        <ul class="cl-change-list">
+          <li><strong><code>zymbol run</code> runs the register VM</strong> — <code>--tw</code> asks for the tree-walker; <code>--vm</code> is still accepted and changes nothing. The REPL stays on the tree-walker</li>
+          <li><strong>A value placed in <code>&lt;\ … \&gt;</code> reaches the shell as one quoted word</strong> — what is written in the command goes as it is, and every value is one word — a collection, one per element. Quotes put around a value by hand are now passed along: write <code>&lt;\ "test -f " ruta \&gt;</code></li>
+          <li><strong>A unary applies to its operand with its postfix</strong> — <code>-v[1]</code> is <code>-(v[1])</code> and <code>!seen$? x</code> is <code>!(seen$? x)</code>; the Rust parsers negated the array. <code>&gt;&gt; +a</code> is accepted</li>
+          <li><strong>A dictionary literal that writes a key twice is refused</strong> — before the program runs: <code>key 'a' appears twice in the dictionary</code></li>
+          <li><strong>More than 10 000 active calls is a <code>##Depth</code> error</strong> — that <code>!?</code> catches, the same number in every engine; a tail call does not count. A deep recursion used to abort the process with <code>stack overflow</code> and no Zymbol error</li>
+          <li><strong>A negative integer written in a base carries its sign in front</strong> — <code>0x|(0 - 255)|</code> is <code>-0x00FF</code>, as Python's <code>hex(-255)</code>; the Rust engines printed a two's complement</li>
+          <li><strong>A range or a comparison inside a list pattern means what it means in an arm</strong> — <code>[1..5] =&gt;</code> against <code>[3]</code> matches. The three engines gave three answers</li>
+          <li><strong><code>std/db</code> is no longer a default feature</strong> — <code>cargo build --release --features db</code> turns it on. <em>The Linux and macOS downloads were already built without it; the Windows one keeps it</em></li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label changed">Performance</span>
+        <ul class="cl-change-list">
+          <li><strong>What grew with the size of the input no longer does</strong> — building a text with <code>s = s x y</code> appends in place; <code>@ ch:texto</code> walks the text with a cursor; a slice copies the piece, not the text; <code>s$#</code>, <code>s[i]</code> and a slice stop walking it. Each is held by a ratio in <code>zyquality/cost/</code></li>
+          <li><strong>The dictionary finds a key by hash</strong> — and keeps insertion order, so no output depends on the hash's seed</li>
+          <li><strong>The tree-walker's value is 24 bytes instead of 120</strong> — and <code>m[i&gt;j]$~ v</code> writes the path where it is, not into a copy of the receiver</li>
+          <li><strong>The VM lets go of a call's result when its statement ends</strong> — two such calls in a row no longer cost twice the memory</li>
+          <li><strong>The VM's dispatch</strong> — a counted loop and a for-each end each pass in one instruction, calls push their frame inline, a tail call inside a module is one, and <code>$&gt;</code>, <code>$|</code> and <code>$&lt;</code> call their lambda on the VM's own frames</li>
+          <li><strong>The static Linux download allocates with mimalloc</strong> — musl's own allocator made it 17× slower than the <code>.deb</code> at building a text in v0.0.10</li>
+          <li><strong>A <code>&gt;&gt;~</code> reaches the terminal in one write</strong> — a colored one used to be four, and the terminal showed the states in between: a clear and 23 rows go from 93 writes to 24</li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label fixed">Fixed</span>
+        <ul class="cl-change-list">
+          <li><strong><code>s$- "abc"</code> on a shorter text no longer crashes</strong> — it panicked both Rust engines with exit code 101, which <code>!?</code> cannot catch; the text now comes back as it was</li>
+          <li><strong><code>(f() + 0.5) + 1</code> calls <code>f</code> once</strong> — the VM compiled a Float or String left operand twice</li>
+          <li><strong>A run-time error cites its own line</strong> — after a block that creates variables, the VM could cite the line after it</li>
+          <li><strong><code>@ &lt;expr&gt;</code> reads its specifier once</strong> — a call in the condition ran one extra time in both Rust engines</li>
+          <li><strong><code>zymbol fmt</code> is idempotent again</strong> — on a <code>??</code> inside an expression</li>
+          <li><strong><code>zymbol build</code>'s executable has <code>std/net</code> and <code>std/db</code></strong> — as the compiler that built it does</li>
+          <li><strong>In the browser</strong> — <code>"\r"</code> is a carriage return and not the letter <code>r</code>, a lone <code>\\</code> is a statement, and GoL starts</li>
+        </ul>
+      </div>
+
+      <div class="cl-group">
+        <span class="cl-group-label removed">Known issues</span>
+        <ul class="cl-change-list">
+          <li>What is still open at this release is listed in one place, <a href="https://github.com/zymbol-lang/ZyDDT/blob/v0.0.11/PENDIENTES.md" target="_blank"><code>ZyDDT/PENDIENTES.md</code></a> (in Spanish), each row pointing at the record it comes from</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="cl-actions">
+      <a href="https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.11" target="_blank" class="btn-ghost">↗ GitHub</a>
+      <a href="install.html" class="btn-ghost">↓ Download</a>
+    </div>
+  </div>
+
   <!-- ── v0.0.10 ── -->
   <div class="cl-entry">
     <div class="cl-entry-head">
       <span class="cl-version">v0.0.10</span>
-      <span class="cl-badge-latest">latest</span>
       <span class="cl-date">October 12, 2026</span>
     </div>
     <div class="cl-title">The Premises as Source, a Matrix with No Red Cell, and Edits That Happen in Place</div>

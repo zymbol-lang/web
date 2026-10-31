@@ -6,7 +6,62 @@
 This is the Markdown representation of <https://zymbol-lang.org/changelog.html>.
 Downloads for the current release: [/install.md](install.md).
 
-## v0.0.10 — October 12, 2026 (latest)
+## v0.0.11 — November 1, 2026 (latest)
+
+**The VM Is the Engine — in the CLI and the Playground — and What Each Thing Costs**
+
+[Download and install](install.md) ·
+[Release](https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.11).
+The full text is in the interpreter repository:
+<https://github.com/zymbol-lang/interpreter/blob/v0.0.11/CHANGELOG.md>.
+
+### Added
+
+- **The playground runs the register VM** — `zymbol_vm.js`, a JavaScript port of the Rust compiler and VM that builds the same bytecode, compared instruction for instruction over the corpus, the example pool and the applications. The tree-walker is one click away: `VM · TW` beside ▶ Run, `?engine=vm|tw` in the address. While a program runs, ▶ Run is ■ Stop
+- **`zymbol run --deny <effects>`** — refuses a program, before any of it runs, if anything it can reach — every module it imports, every file it runs — uses a denied effect: `io`, `net`, `db`, `time`, `random`, `shell`, `sub`, `stdin`, `argv`. `zymbol check --effects` lists that surface with file and line
+- **`zymbol run --timeout <s>`** — stops a program after so many seconds of wall clock, with exit status 124, and ends the commands `<\ \>` started
+- **`random::semilla(n)`** — fixes `std/random`'s generator from that point: the same seed gives the same sequence in every engine
+- **A time limit for `std/net`** — per request, `net::get(url, [], 5)` and `net::head(url, 5)`, and for the process, `net::timeout(s)`, which returns the previous limit
+- **Three new warnings** — a read that `\ x` has certainly destroyed; a `??` with no `_` arm that is not provably complete; and an edit that starts a line inside a `>>`, which makes it an output item. The run-time errors stay, and `!?` still catches them
+- **The compact build** — `cargo build --release -p zymbol-cli --no-default-features` leaves out `zymbol lsp`, `zymbol repl` and `std/net`: 100 crates instead of 210, 6.6 MB instead of 12.3
+
+### Changed
+
+- **`zymbol run` runs the register VM** — `--tw` asks for the tree-walker; `--vm` is still accepted and changes nothing. The REPL stays on the tree-walker
+- **A value placed in `<\ … \>` reaches the shell as one quoted word** — what is written in the command goes as it is, and every value is one word — a collection, one per element. Quotes put around a value by hand are now passed along: write `<\ "test -f " ruta \>`
+- **A unary applies to its operand with its postfix** — `-v[1]` is `-(v[1])` and `!seen$? x` is `!(seen$? x)`; the Rust parsers negated the array. `>> +a` is accepted
+- **A dictionary literal that writes a key twice is refused** — before the program runs: `key 'a' appears twice in the dictionary`
+- **More than 10 000 active calls is a `##Depth` error** — that `!?` catches, the same number in every engine; a tail call does not count. A deep recursion used to abort the process with `stack overflow` and no Zymbol error
+- **A negative integer written in a base carries its sign in front** — `0x|(0 - 255)|` is `-0x00FF`, as Python's `hex(-255)`; the Rust engines printed a two's complement
+- **A range or a comparison inside a list pattern means what it means in an arm** — `[1..5] =>` against `[3]` matches. The three engines gave three answers
+- **`std/db` is no longer a default feature** — `cargo build --release --features db` turns it on. *The Linux and macOS downloads were already built without it; the Windows one keeps it*
+
+### Performance
+
+- **What grew with the size of the input no longer does** — building a text with `s = s x y` appends in place; `@ ch:texto` walks the text with a cursor; a slice copies the piece, not the text; `s$#`, `s[i]` and a slice stop walking it. Each is held by a ratio in `zyquality/cost/`
+- **The dictionary finds a key by hash** — and keeps insertion order, so no output depends on the hash's seed
+- **The tree-walker's value is 24 bytes instead of 120** — and `m[i>j]$~ v` writes the path where it is, not into a copy of the receiver
+- **The VM lets go of a call's result when its statement ends** — two such calls in a row no longer cost twice the memory
+- **The VM's dispatch** — a counted loop and a for-each end each pass in one instruction, calls push their frame inline, a tail call inside a module is one, and `$>`, `$|` and `$<` call their lambda on the VM's own frames
+- **The static Linux download allocates with mimalloc** — musl's own allocator made it 17× slower than the `.deb` at building a text in v0.0.10
+- **A `>>~` reaches the terminal in one write** — a colored one used to be four, and the terminal showed the states in between: a clear and 23 rows go from 93 writes to 24
+
+### Fixed
+
+- **`s$- "abc"` on a shorter text no longer crashes** — it panicked both Rust engines with exit code 101, which `!?` cannot catch; the text now comes back as it was
+- **`(f() + 0.5) + 1` calls `f` once** — the VM compiled a Float or String left operand twice
+- **A run-time error cites its own line** — after a block that creates variables, the VM could cite the line after it
+- **`@ <expr>` reads its specifier once** — a call in the condition ran one extra time in both Rust engines
+- **`zymbol fmt` is idempotent again** — on a `??` inside an expression
+- **`zymbol build`'s executable has `std/net` and `std/db`** — as the compiler that built it does
+- **In the browser** — `"\r"` is a carriage return and not the letter `r`, a lone `\\` is a statement, and GoL starts
+
+### Known issues
+
+What is still open at this release is listed in one place,
+[`ZyDDT/PENDIENTES.md`](https://github.com/zymbol-lang/ZyDDT/blob/v0.0.11/PENDIENTES.md) (in Spanish), each row pointing at the record it comes from.
+
+## v0.0.10 — October 12, 2026
 
 **The Premises as Source, a Matrix with No Red Cell, and Edits That Happen in Place**
 
