@@ -172,6 +172,15 @@
  * CLI flags of the Rust engines; its own step budget (2 000 000 steps, 100 000
  * iterations of `@ { }`) is lifted by tests/run_one.mjs, not by the playground.
  *
+ * Parity re-measured 2026-10-31 for the v0.0.11 release, through zyq, on a fresh
+ * clone of the v0.0.11 branches (interpreter 5a95444, web 22997b7):
+ *   ./zyq consensus --engines zytw,zyjs        → 722 files: 703 agree, 0 diverge
+ *   examples (zyq suite --only web)            → 332 files: 216 agree, 0 diverge
+ * The 19 in the difference are the same excuses (std/db, <\ cmd \>, TUI). Since
+ * v0.0.11 this engine is the playground's tree-walker, one click away from its
+ * default, zymbol_vm.js, which keeps this file's lexer, parser and checker and
+ * runs the register VM; zyq grades that one as zyjsvm, also 703 agree, 0 diverge.
+ *
  * Every gap this comment used to list is closed, and each was verified on its own
  * rather than inferred from the total:
  *   - arity            corpus/arity/ → 7 files, 3 engines, 7 agree. This engine no
