@@ -11,7 +11,7 @@ is an English word and identifiers can be written in any script — Spanish,
 Japanese, Arabic, Klingon pIqaD, emoji. `?` is if, `@` is loop, `<~` is return,
 `#1` is true, `¶` is newline.
 
-Version v0.0.10. Canonical reference: `GUIDE.md` in
+Version v0.0.11. Canonical reference: `GUIDE.md` in
 <https://github.com/zymbol-lang/interpreter>. Every code block below is executed
 by this project's CI, so it runs as written.
 
@@ -295,9 +295,8 @@ that does not exist is a soft `##Time`, testable with `$!`.
 ## Running it
 
 ```bash
-zymbol run file.zy          # tree-walker (default)
-zymbol run --vm file.zy     # register VM: 1.4-6x the tree-walker on microbenchmarks,
-                            #   40x+ on search-shaped programs
+zymbol run file.zy          # register VM (the default since v0.0.11)
+zymbol run --tw file.zy     # tree-walker: same output, slower; the REPL's engine
 zymbol check file.zy        # parse + semantic check, follows imports
 zymbol fmt file.zy --write  # format in place
 zymbol repl                 # interactive
@@ -306,14 +305,28 @@ zymbol package DIR --script main.zy -o app.zyp   # bundle a multi-file program
 zymbol run app.zyp                               # run the bundle
 ```
 
+Running a program you did not write — or one you just generated — ask first what
+it can reach, then let it run only with what it needs and only for so long:
+
+```bash
+zymbol check --effects file.zy          # every io, net, db, time, random, shell, sub,
+                                        #   stdin, argv it can reach, with file:line
+zymbol run --deny net,shell file.zy     # refused before anything runs if it can reach one
+zymbol run --timeout 10 file.zy         # stopped after 10 s of wall clock, exit status 124
+```
+
+`--deny` reads every module the program imports and every file it runs before
+running any of it. Neither flag can be caught or undone by the program.
+
 Install: <https://zymbol-lang.org/install.md>. No install needed to try code —
-<https://zymbol-lang.org/playground.html> runs a JavaScript mirror of the
-interpreter in the browser (no `std/db`, no shell, no script inclusion).
+<https://zymbol-lang.org/playground.html> runs the register VM, ported to
+JavaScript, in the browser, with the tree-walker one click away (no `std/db`, no
+shell, no script inclusion).
 
 ## Where to look next
 
 - Site map for agents: <https://zymbol-lang.org/llms.txt>
-- Manual, 110 languages: `https://zymbol-lang.org/data/manuals/manual_<code>.md`
+- Manual, v0.0.11, 51 languages: `https://zymbol-lang.org/data/manuals/v0011/manual_<code>.md`
 - Full symbol table and limitations: `REFERENCE.md` in the interpreter repository
 - Runnable examples by topic: <https://zymbol-lang.org/examples/catalog.json>
 

@@ -93,6 +93,7 @@
     "E_MODULE_VALUE_help": "a module is reached through its members: {name}::name(…) calls a function, {name}.NAME reads a constant",
     "W_LOGIC_TYPE": "logical operation on non-boolean type: {type}",
     "W_RANGE_DIR": "range direction is decided at runtime: if the end turns out to be lower than the start, this loop counts down instead of not running. Guard the empty case.",
+    "W_OUTPUT_EDIT": "this line continues the `>>` above: an edit here is printed, not made — end the output with ¶ to make it a statement",
     "W_TYPE_CHANGE": "type mismatch: '{name}' was {was} but assigned {now}",
     "W_LIFETIME": "ambiguous lifetime for '{name}'",
     "W_LIFETIME_note": "variable is modified inside a loop",

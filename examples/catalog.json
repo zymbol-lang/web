@@ -32,6 +32,25 @@
               ]
             },
             {
+              "id": "pkg-zytetris",
+              "icon": "🧱",
+              "title": "ТЕТРАИС — Tetris in Russian",
+              "desc": "Falling blocks with a Cyrillic core: three skins, Russian plurals, QWERTY and ЙЦУКЕН keys, high scores — 19 files, playable in Russian, English or Spanish",
+              "zyp": "games/arcade/zytetris.zyp",
+              "tags": [
+                "tetris",
+                "тетраис",
+                "russian",
+                "cyrillic",
+                "arcade",
+                "game",
+                "juego"
+              ],
+              "needs": [
+                "tui"
+              ]
+            },
+            {
               "id": "pkg-klingon-galaxy",
               "icon": "🚀",
               "title": "Hov veS — Klingon Galaxy",

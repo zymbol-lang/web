@@ -1,12 +1,12 @@
 # Download & Install Zymbol
 
 > Native binaries for Linux, Windows, and macOS. VS Code extension with LSP. Or
-> compile from source on any platform. Current release: v0.0.10 (public alpha).
+> compile from source on any platform. Current release: v0.0.11 (public alpha).
 
 This is the Markdown representation of <https://zymbol-lang.org/install.html>.
 
-All assets and their `SHA256SUMS` files:
-<https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.10>
+All assets and their checksum files (`SHA256SUMS_*_linux.txt`, `SHA256_*.txt`):
+<https://github.com/zymbol-lang/interpreter/releases/tag/v0.0.11>
 
 This is a concept validation release — Zymbol is in active development. APIs,
 syntax, and features may change between versions.
@@ -18,11 +18,11 @@ Syntax highlighting, semantic tokens, bracket matching, and LSP integration
 
 | Package | Version | Download | SHA256 |
 | --- | --- | --- | --- |
-| Zymbol-Lang VSIX | v0.1.7 | [zymbol-lang-0.1.7.vsix](https://github.com/zymbol-lang/vscode/releases/download/v0.1.7/zymbol-lang-0.1.7.vsix) | `f5251c8ebde4cfe7bec54c61bdf9e088d4976e82367976439f9deb11830f841b` |
+| Zymbol-Lang VSIX | v0.1.8 | [zymbol-lang-0.1.8.vsix](https://github.com/zymbol-lang/vscode/releases/download/v0.1.8/zymbol-lang-0.1.8.vsix) | `52cb76b93949766eb6c4fd50fd658d59f2b854967382e67988799e9def06a3c2` |
 
 ```bash
 # Install from the .vsix file:
-code --install-extension zymbol-lang-0.1.7.vsix
+code --install-extension zymbol-lang-0.1.8.vsix
 
 # Or in VS Code: Extensions (Ctrl+Shift+X) → ··· → Install from VSIX…
 ```
@@ -34,7 +34,7 @@ configuration needed.
 
 | Arch | Download | SHA256 |
 | --- | --- | --- |
-| x86_64 | [zymbol_lang_v0.0.10_x86_64_windows.msi](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.10/zymbol_lang_v0.0.10_x86_64_windows.msi) | `db08e8f07ec07c7fb7ab29feac266700cc1112b9ac63b59b5c4792005a5027c4` |
+| x86_64 | [zymbol_lang_v0.0.11_x86_64_windows.msi](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.11/zymbol_lang_v0.0.11_x86_64_windows.msi) | `3b60b6818297a8a430576b3b43718d1785cf9a02b2d9e74f348661443a584049` |
 
 ```bash
 # After installing, open a new terminal and verify:
@@ -54,21 +54,21 @@ Native binaries — no installer needed. Download, make executable, run.
 
 | Arch | Download | SHA256 |
 | --- | --- | --- |
-| aarch64 (Apple Silicon) | [zymbol_lang_v0.0.10_aarch64_macos](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.10/zymbol_lang_v0.0.10_aarch64_macos) | `4f945a0a888a17414519cb36b2cda17e0eed4412fcd279d79c7c25021b4c8046` |
-| x86_64 (Intel) | [zymbol_lang_v0.0.10_x86_64_macos](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.10/zymbol_lang_v0.0.10_x86_64_macos) | `3eb6bcfffb3dfadb7f56b7e25a0ead4f0169681a7e2833611167c79e5f0e7494` |
+| aarch64 (Apple Silicon) | [zymbol_lang_v0.0.11_aarch64_macos](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.11/zymbol_lang_v0.0.11_aarch64_macos) | `2eab488aa6439f6189869424a6ff8dcbb2b227d2788cf18600828b2eb09c227f` |
+| x86_64 (Intel) | [zymbol_lang_v0.0.11_x86_64_macos](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.11/zymbol_lang_v0.0.11_x86_64_macos) | `1b2b6d246df88353b1c0a060e8969d629d4a2e37d777189591f4de7d3a9d09c8` |
 
 ```bash
 # Make it executable and run (replace _aarch64_ with _x86_64_ for Intel)
-chmod +x zymbol_lang_v0.0.10_aarch64_macos
-./zymbol_lang_v0.0.10_aarch64_macos run hello.zy
+chmod +x zymbol_lang_v0.0.11_aarch64_macos
+./zymbol_lang_v0.0.11_aarch64_macos run hello.zy
 
 # (Optional) Install system-wide
-sudo install -m755 zymbol_lang_v0.0.10_aarch64_macos /usr/local/bin/zymbol
+sudo install -m755 zymbol_lang_v0.0.11_aarch64_macos /usr/local/bin/zymbol
 ```
 
 **First launch warning:** the binary is not signed with a Developer ID and not
 notarized, so Gatekeeper blocks it the first time. Clear the quarantine attribute
-with `xattr -d com.apple.quarantine ./zymbol_lang_v0.0.10_aarch64_macos`, or open
+with `xattr -d com.apple.quarantine ./zymbol_lang_v0.0.11_aarch64_macos`, or open
 *System Settings → Privacy & Security* and choose *Open Anyway* after the first
 refusal. The Finder's right-click → Open works for apps, not reliably for a
 command-line binary.
@@ -81,33 +81,34 @@ dependencies needed.
 
 | Arch | Format | Download | SHA256 |
 | --- | --- | --- | --- |
-| x86_64 | `.deb` Debian / Ubuntu | [zymbol_lang_v0.0.10_x86_64.deb](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.10/zymbol_lang_v0.0.10_x86_64.deb) | `965a4b57b7a6c0af42fd21b9633ee601b2c9d9f3cb944c0b7a608dff1fda3b5c` |
-| x86_64 | `.rpm` Fedora / RHEL | [zymbol_lang_v0.0.10_x86_64.rpm](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.10/zymbol_lang_v0.0.10_x86_64.rpm) | `5572c2b809bfdb741e71640d6c010ac43133686cf0d09c6d654d1403f3a7474d` |
-| x86_64 | `.pkg.tar.zst` Arch Linux | [zymbol_lang_v0.0.10_x86_64.pkg.tar.zst](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.10/zymbol_lang_v0.0.10_x86_64.pkg.tar.zst) | `537cfb9d5ddeb5ecd3c0aa32e8bdeb82d1ba3d22b180f94a9aa128f2d29c40b6` |
-| x86_64 | static binary, any Linux (musl) | [zymbol_lang_v0.0.10_x86_64_linux](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.10/zymbol_lang_v0.0.10_x86_64_linux) | `f17f98542dbb91de4e96fcd411e30f737a1525d10b150ea374375ac1bb532513` |
-| aarch64 | `.deb` Debian / Ubuntu | [zymbol_lang_v0.0.10_aarch64.deb](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.10/zymbol_lang_v0.0.10_aarch64.deb) | `1fe079538e8af714c6013d81c7569a7d511db638bf2a97cb55caf8659cf27ab1` |
-| aarch64 | `.rpm` Fedora / RHEL | [zymbol_lang_v0.0.10_aarch64.rpm](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.10/zymbol_lang_v0.0.10_aarch64.rpm) | `36eab9c93a2917f1e5cf5c73bd67f5e8850d39963bebf98c828c3c0d11212de1` |
-| aarch64 | `.pkg.tar.zst` Arch Linux | [zymbol_lang_v0.0.10_aarch64.pkg.tar.zst](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.10/zymbol_lang_v0.0.10_aarch64.pkg.tar.zst) | `72ba2d571b3ccb1355e31649f183209422b87a40ac976bb52dedf22083fc321d` |
-| aarch64 | static binary, any Linux (musl) | [zymbol_lang_v0.0.10_aarch64_linux](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.10/zymbol_lang_v0.0.10_aarch64_linux) | `d4f72263cfd28b4a7a636e8732a29eba2971219e02ab0d5dcc725c7da5e09d99` |
+| x86_64 | `.deb` Debian / Ubuntu | [zymbol_lang_v0.0.11_x86_64.deb](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.11/zymbol_lang_v0.0.11_x86_64.deb) | `eebe494de22d672b2c4c85fc7dd576ef9722ac71d327ffc06874e4206c27d630` |
+| x86_64 | `.rpm` Fedora / RHEL | [zymbol_lang_v0.0.11_x86_64.rpm](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.11/zymbol_lang_v0.0.11_x86_64.rpm) | `9afc0fe8220b9431d64cdc778495b7aecae7a00ccc8c588a29be85079c5300da` |
+| x86_64 | `.pkg.tar.zst` Arch Linux | [zymbol_lang_v0.0.11_x86_64.pkg.tar.zst](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.11/zymbol_lang_v0.0.11_x86_64.pkg.tar.zst) | `0c8248980bef2f6abf2aa63f85ac777ef34743908e841fc5d26618f8977e5f23` |
+| x86_64 | static binary, any Linux (musl) | [zymbol_lang_v0.0.11_x86_64_linux](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.11/zymbol_lang_v0.0.11_x86_64_linux) | `12e4430242eba59ee557d6a05f1b91c1b777db5cf6da91d52483fec8390c1930` |
+| aarch64 | `.deb` Debian / Ubuntu | [zymbol_lang_v0.0.11_aarch64.deb](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.11/zymbol_lang_v0.0.11_aarch64.deb) | `a2a25a8c0661e4985978e44dba284ffffd41e19d66543abf00126c0ec97d3fc4` |
+| aarch64 | `.rpm` Fedora / RHEL | [zymbol_lang_v0.0.11_aarch64.rpm](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.11/zymbol_lang_v0.0.11_aarch64.rpm) | `e13c72c458bdda223bd8526155be553c511cb2b02d96afb91d268aaa46e8a854` |
+| aarch64 | `.pkg.tar.zst` Arch Linux | [zymbol_lang_v0.0.11_aarch64.pkg.tar.zst](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.11/zymbol_lang_v0.0.11_aarch64.pkg.tar.zst) | `efcdc881c8f719268c4211dd8e3aa810e39288dbe1e16db1f6402aa39c05132c` |
+| aarch64 | static binary, any Linux (musl) | [zymbol_lang_v0.0.11_aarch64_linux](https://github.com/zymbol-lang/interpreter/releases/download/v0.0.11/zymbol_lang_v0.0.11_aarch64_linux) | `c5353be61c1d9e6ecc6fd3d7c2e719e2785f7379d706f593feed1e03cd860e14` |
 
-Verifying a download — put `SHA256SUMS` (from the release page) next to the
+Verifying a download — put your architecture's checksum file from the release
+page, `SHA256SUMS_x86_64_linux.txt` or `SHA256SUMS_aarch64_linux.txt`, next to the
 package, then:
 
 ```bash
-sha256sum --ignore-missing -c SHA256SUMS
+sha256sum --ignore-missing -c SHA256SUMS_x86_64_linux.txt   # or SHA256SUMS_aarch64_linux.txt
 ```
 
 Using the static binary, no installation needed:
 
 ```bash
 # Make it executable (x86_64)
-chmod +x zymbol_lang_v0.0.10_x86_64_linux
+chmod +x zymbol_lang_v0.0.11_x86_64_linux
 
 # Run a file
-./zymbol_lang_v0.0.10_x86_64_linux run hello.zy
+./zymbol_lang_v0.0.11_x86_64_linux run hello.zy
 
 # (Optional) Install system-wide
-sudo install -m755 zymbol_lang_v0.0.10_x86_64_linux /usr/local/bin/zymbol
+sudo install -m755 zymbol_lang_v0.0.11_x86_64_linux /usr/local/bin/zymbol
 ```
 
 ## Compile from source

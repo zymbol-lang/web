@@ -92,6 +92,7 @@
     "E_MODULE_VALUE_help": "a un módulo se llega por sus miembros: {name}::nombre(…) llama a una función, {name}.NOMBRE lee una constante",
     "W_LOGIC_TYPE": "operación lógica sobre un tipo no booleano: {type}",
     "W_RANGE_DIR": "la dirección del rango se decide al ejecutar: si el final resulta menor que el inicio, el bucle cuenta hacia atrás en vez de no correr. Protege el caso vacío.",
+    "W_OUTPUT_EDIT": "esta línea sigue el `>>` de arriba: la edición se imprime, no se hace — termina la salida con ¶ para que sea una sentencia",
     "W_TYPE_CHANGE": "tipos distintos: '{name}' era {was} y se le asigna {now}",
     "W_LIFETIME": "tiempo de vida ambiguo para '{name}'",
     "W_LIFETIME_note": "la variable se modifica dentro de un bucle",

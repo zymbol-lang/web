@@ -26,7 +26,7 @@
 import { LANG_STORAGE_KEY, bcp47Of, resolveInitialLang } from '../i18n/detect.js';
 import { loadLanguageData, createLangBar, fadeUpdate } from './langbar.js';
 import { highlightZymbol } from './highlight-zy.js';
-import { manualUrlV009, renderManual } from './manual.js';
+import { manualUrl, renderManual } from './manual.js';
 
 const data = await loadLanguageData();
 const { i18n } = data;
@@ -421,7 +421,7 @@ async function showManual(langId) {
   if (!section || !el) return;
 
   const token = ++manualToken;
-  const url   = manualUrlV009(langId);
+  const url   = manualUrl(langId);
   const show  = on => { section.hidden = !on; if (navItem) navItem.hidden = !on; };
 
   if (!url) { show(false); el.innerHTML = ''; return; }

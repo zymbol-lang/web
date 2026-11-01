@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img alt="version v0.0.8" src="https://img.shields.io/badge/version-v0.0.8-informational?style=flat-square"/>
+  <img alt="version v0.0.11" src="https://img.shields.io/badge/version-v0.0.11-informational?style=flat-square"/>
   <img alt="build: none by design" src="https://img.shields.io/badge/build-none%20by%20design-success?style=flat-square"/>
   <img alt="code: AGPL-3.0-only" src="https://img.shields.io/badge/code-AGPL--3.0--only-blue?style=flat-square"/>
   <img alt="docs: CC-BY-SA-4.0" src="https://img.shields.io/badge/docs-CC--BY--SA--4.0-blue?style=flat-square"/>
@@ -19,11 +19,12 @@
 
 ---
 
-> **Live at v0.0.9; v0.0.10 is prepared on the `v0.0.10` branch.** The `v0.0.10` tag and
-> all 17 of its release assets exist, and `index.html`, `install.html` and `changelog.html`
-> on the branch carry the real SHA256 digest of every published file, the Windows
-> installer included. The branch merges to `main` after the release is checked, because
-> `main` is what GitHub Pages serves.
+> **Live at v0.0.11.** `v0.0.11` was merged to `main` on 2026-11-01, with the real SHA256
+> digest of every published file — the twelve downloads, the `.msi` signed in SignPath and
+> the `.vsix` included — in `install.html` and its twin `install.md`, taken from the
+> release's own checksum files. *(Until 2026-11-01 this banner said "Live at v0.0.10;
+> v0.0.11 is in development on the `v0.0.11` branch", the state of the day before that
+> merge.)*
 >
 > **The rule this banner used to enforce still holds**, and is the reason it is rewritten
 > rather than deleted: `main` is what GitHub Pages serves, so a version bump merges to
@@ -69,7 +70,9 @@ web/
 │
 ├── src/
 │   ├── zymbol/                THE ENGINE — no DOM, no site dependencies
-│   │   ├── zymbol.js          JS mirror of the Rust tree-walker (Lexer/Parser/Interpreter)
+│   │   ├── zymbol_vm.js       The playground's default engine: compile, then run on the VM
+│   │   ├── vm/                Rust's compiler and register VM ported to JS (bytecode = Rust's)
+│   │   ├── zymbol.js          JS mirror of the Rust tree-walker (Lexer/Parser/Checker/Interpreter)
 │   │   ├── zyp.js             .zyp package reader (ZIP central directory + DecompressionStream)
 │   │   └── module-resolver.js Path-normalizing module resolver (mirrors ModulePath::resolve_from)
 │   ├── playground/            Playground UI — consumes the engine
@@ -93,7 +96,7 @@ web/
 │
 ├── data/
 │   ├── i18n/                  languages.json, i18n.json, languages.xml
-│   ├── manuals/               manual_<lang>.md (110, v0.0.5) + v009/ (4, current)
+│   ├── manuals/               manual_<lang>.md (110, v0.0.5) + v009/ (51) + v0011/ (51, current)
 │   └── archive/               v004/, v005/ — superseded manual sets, kept for diffing
 │
 ├── examples/                  THE EXAMPLE POOL — the playground's only source of examples
@@ -112,8 +115,9 @@ web/
 │   ├── test_catalog.mjs       catalog.json ↔ examples/ integrity (dead refs, orphans)
 │   ├── test_filestore.mjs     The mounted-vs-open file model and its persistence
 │   ├── test_zyp.mjs           .zyp reader + module resolver (builds its own fixtures)
-│   ├── test_manual.mjs        Smoke-runs every ```zymbol block in v009/manual_en.md
+│   ├── test_manual.mjs        Smoke-runs every ```zymbol block in v0011/manual_en.md
 │   ├── test_manual_v009.mjs   V009_CODES ↔ the directory, both directions
+│   ├── test_manual_v0011.mjs  V0011_CODES ↔ the directory, and the same-language fallback
 │   ├── test_markdown.mjs      Page twins, llms.txt, robots.txt and the negotiation Worker
 │   ├── test_i18n_atlas.mjs    The front page's atlas blocks in i18n.json: complete, used, no dead key
 │   ├── test_atlas_dom.mjs     The front page at 360px and its language switch (headless Chrome)
@@ -241,9 +245,23 @@ npx serve .
 Opening `index.html` via `file://` will not work: ES modules and `fetch()` of the i18n data
 both require an HTTP origin.
 
-## The engine (`src/zymbol/`)
+## The engines (`src/zymbol/`)
 
-`zymbol.js` is a hand-maintained JavaScript mirror of the Rust tree-walker. It is not
+The playground has two, chosen beside ▶ Run.
+
+**VM (default since v0.0.11): `zymbol_vm.js`.** The program is parsed by `zymbol.js`'s
+parser and checked by its checker, then compiled by `vm/compiler.js` — a function-for-function
+port of `zymbol-compiler` — to the register VM's bytecode, and run by `vm/machine.js`, a port of
+`zymbol-vm`. The bytecode is the one the Rust compiler builds: the branch that brought it in
+(`Zymbol_VM.js`) compared them instruction for instruction over the corpus, the example pool
+and the applications, with the tools and the evidence in `zymbol_vm/` (README, VIABILITY,
+HALLAZGOS). Entry points: `runZymbolVM` (with `runZymbol`'s signature), `compileSource`,
+`runAsync`. The machine never awaits inside its loop: it returns when it has to wait — a line,
+a key, a sleep, a `std/net` answer, the end of a time slice — and `resume` goes on.
+`tests/run_one_vm.mjs` is its command-line twin, as `tests/run_one.mjs` is the TW's; `zyq`
+grades it as the engine `zyjsvm`.
+
+**TW: `zymbol.js`** is a hand-maintained JavaScript mirror of the Rust tree-walker. It is not
 generated and not compiled from the Rust — it is kept in parity by the test runner below, and
 its file header comment tracks which Rust version it mirrors.
 
@@ -329,24 +347,31 @@ stops being offered on half a site. For the same reason, `overview.html` carries
 pre-paint `<html lang>` tables verbatim from `index.html`, and `test_i18n_playground.mjs`
 checks both copies against `src/i18n/detect.js` rather than one.
 
-### The manual: two generations, and what each does when a language is missing
+### The manual: three generations, and what each does when a language is missing
 
 `src/site/manual.js` holds the language→file table and the fetch/render/highlight, shared by
 both pages — the third extraction out of `main.js`, after `langbar.js` and `highlight-zy.js`,
 and for the same reason. What is *not* shared is the fallback policy, and the difference is
 deliberate:
 
-| | `data/manuals/manual_<code>.md` | `data/manuals/v009/manual_<code>.md` |
-|---|---|---|
-| revision | v0.0.5 | **v0.0.9** |
-| languages | 110 | **4** — en, es, it, qu |
-| served by | `overview.html` | the front page |
-| language missing | falls back: Spanish, then English | **shows nothing at all** |
+| | `data/manuals/manual_<code>.md` | `data/manuals/v009/manual_<code>.md` | `data/manuals/v0011/manual_<code>.md` |
+|---|---|---|---|
+| revision | v0.0.5 | v0.0.9 | **v0.0.11** |
+| languages | 110 | 51 | 51 — `V0011_CODES` |
+| served by | `overview.html` | the front page | the front page |
+| language missing | falls back: Spanish, then English | **shows nothing at all** | falls back to v0.0.9, **same language only** |
 
 With 110 written, a gap is an accident and English is a reasonable floor. With four, a
 fallback would put English prose under a heading that says *ドキュメント*, which reads to
 that reader as "your language is finished" — so the section and its nav item are hidden
 outright. Absent is honest; wrong is not.
+
+The v0.0.11 revision is a copy of v009 brought up to date one batch of languages at a time,
+in the v009 queue's order (by speakers), through the same six gates — the tooling was copied
+into `v0011/` with it. Until a language's turn comes, its reader keeps the v0.0.9 manual **in
+their own language** (`manualUrl` in `manual.js`): the first lines of that manual say which
+version it was revised for, so nothing claims to be what it is not. The fallback never
+crosses into another language, and `tests/test_manual_v0011.mjs` holds it to that.
 
 Which languages have one is a **hand-written list** (`V009_CODES`), not a 404 probe: probing
 paints a heading and takes it away again, and it makes an offline reader look like an
@@ -562,8 +587,9 @@ node tests/test_limits.mjs            # step/output caps: the TUI exemption and 
 node tests/test_catalog.mjs [--check] # catalog.json ↔ examples/ (--check also compiles every .zy)
 node tests/test_runner.mjs            # parity: zymbol CLI vs the JS engine
 node tests/test_runner.mjs --dir examples   # …over the example pool
-node tests/test_manual.mjs            # smoke-runs every code block in v009/manual_en.md
+node tests/test_manual.mjs            # smoke-runs every code block in v0011/manual_en.md
 node tests/test_manual_v009.mjs       # the v0.0.9 manual list vs the directory it describes
+node tests/test_manual_v0011.mjs      # the v0.0.11 list vs its directory, and the fallback
 node tests/test_markdown.mjs          # page twins, llms.txt, robots.txt, negotiation Worker
 node tests/test_licenses.mjs          # SPDX headers on every source, CC BY-SA on every manual
 node tests/test_agents.mjs            # skill digest, SKILL.md blocks execute, WebMCP tools
@@ -637,14 +663,15 @@ Pointed at the example pool (`--dir examples`) it audits every published example
 in its own first lines with `// @skip-parity: <reason>` rather than being listed here — the
 pool is not this runner's corpus, and duplicating its paths into the skip table would rot.
 
-**Re-measured 2026-08-31 on v0.0.9: zero divergences**, in the corpus and in the pool alike.
+**Re-measured 2026-10-25 on the v0.0.11 branch: zero divergences**, in the corpus and in the
+pool alike (first measured at zero on 2026-08-31, v0.0.9).
 
 ```
-node tests/test_runner.mjs                → 661 files: 631 agree, 0 diverge
-node tests/test_runner.mjs --dir examples → 282 files: 216 agree, 0 diverge
+node tests/test_runner.mjs                → 714 files: 695 agree, 0 diverge
+node tests/test_runner.mjs --dir examples → 332 files: 216 agree, 0 diverge
 ```
 
-The residue is *excused, not divergent*: 30 corpus files and 66 examples that `corpus.toml`
+The residue is *excused, not divergent*: 19 corpus files and 116 examples that `corpus.toml`
 excludes for `zyjs` with a written reason — `std/db` is ODBC, `<\ cmd \>` entropy differs by
 design, TUI needs a real TTY — plus the pool's own `@skip-parity` markers.
 

@@ -76,10 +76,11 @@ check('the playground offers the running source too',
 // ─── every manual carries CC BY-SA ───────────────────────────────────────────
 section('manuals: CC BY-SA 4.0');
 
-// Two generations, both published, both prose: the 110 of v0.0.5 and the v0.0.9 rewrite
-// under v009/. The rewrite was outside this gate until the front page started serving it —
-// a directory of manuals nothing audited, which is how the first unlicensed one gets in.
-const manualDirs = ['data/manuals', 'data/manuals/v009'];
+// Three generations, all published, all prose: the 110 of v0.0.5, the v0.0.9 rewrite under
+// v009/ and its v0.0.11 revision under v0011/. The rewrite was outside this gate until the
+// front page started serving it — a directory of manuals nothing audited, which is how the
+// first unlicensed one gets in.
+const manualDirs = ['data/manuals', 'data/manuals/v009', 'data/manuals/v0011'];
 const manuals = manualDirs.flatMap(dir =>
   readdirSync(join(WEB_DIR, dir))
     .filter(f => f.startsWith('manual_') && f.endsWith('.md'))

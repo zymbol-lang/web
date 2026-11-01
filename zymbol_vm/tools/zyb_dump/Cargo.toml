@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# A stand-in for `zymbol compile` (interpreter/ROADMAP_V0011_ES.md § 3.3, moved
+# to v0.0.12): it compiles a .zy file with the Rust compiler — the same call
+# `zymbol run` makes — and writes the CompiledProgram as JSON, which is what
+# zymbol_vm.js executes while it has no compiler of its own.
+#
+# It builds against the `interpreter/` checkout that sits beside this
+# repository's checkout, and changes nothing in it. Delete this directory the
+# day `zymbol compile` exists.
+
+[package]
+name = "zyb_dump"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+zymbol-span = { path = "../../../../interpreter/crates/zymbol-span" }
+zymbol-lexer = { path = "../../../../interpreter/crates/zymbol-lexer" }
+zymbol-parser = { path = "../../../../interpreter/crates/zymbol-parser" }
+# std/net and std/db as the reference binary has them (`cargo build --release --features db`).
+zymbol-compiler = { path = "../../../../interpreter/crates/zymbol-compiler", features = ["http", "db"] }
+zymbol-bytecode = { path = "../../../../interpreter/crates/zymbol-bytecode" }
+serde_json = "1.0"
+
+# Its own workspace: not a member of the interpreter's, and not inside any other.
+[workspace]

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import { runZymbol, codePointDisplayWidth } from '../zymbol/zymbol.js';
+import { runZymbol as runZymbolTw, codePointDisplayWidth } from '../zymbol/zymbol.js';
+import { runZymbolVM } from '../zymbol/zymbol_vm.js';
 import { highlightCode } from './highlight.js';
 import { readZyp } from '../zymbol/zyp.js';
 import { makeResolver } from '../zymbol/module-resolver.js';
@@ -937,6 +938,32 @@ function parseCliArgs(str) {
   return args;
 }
 
+// ─── Engine ───────────────────────────────────────────────────────────────────
+// Two engines, one language. VM (the default since v0.0.11, as in the CLI):
+// zymbol_vm.js compiles the program to the register VM's bytecode — the bytecode
+// the Rust compiler builds — and runs it on a JavaScript port of the VM. TW:
+// zymbol.js walks the tree, as the playground did before. The choice is kept per
+// browser; `?engine=tw` or `?engine=vm` in the address sets it for that visit
+// (`js` is read as `tw`). The VM needs the mounted files by name, for modules.
+const ENGINE_KEY = 'zymbol.playground.engine';
+const engineSelectEl = document.getElementById('engine-select');
+let ENGINE = (() => {
+  const asked = new URLSearchParams(location.search).get('engine');
+  if (asked === 'vm') return 'vm';
+  if (asked === 'tw' || asked === 'js') return 'tw';
+  try { return localStorage.getItem(ENGINE_KEY) === 'tw' ? 'tw' : 'vm'; } catch { return 'vm'; }
+})();
+engineSelectEl.value = ENGINE;
+engineSelectEl.addEventListener('change', () => {
+  ENGINE = engineSelectEl.value === 'tw' ? 'tw' : 'vm';
+  try { localStorage.setItem(ENGINE_KEY, ENGINE); } catch { /* private mode: this visit only */ }
+});
+const engineName = () => (ENGINE === 'vm' ? 'VM · zymbol_vm.js' : 'TW · zymbol.js');
+const runZymbol = (src, inputFn, onOutput, resolver, filePath, tui = null, cliArgs = [], opts = {}) =>
+  ENGINE === 'tw'
+    ? runZymbolTw(src, inputFn, onOutput, resolver, filePath, tui, cliArgs, opts)
+    : runZymbolVM(src, inputFn, onOutput, resolver, filePath, tui, cliArgs, { ...opts, readFile: name => store.codeOf(name) ?? null });
+
 // ─── Run ──────────────────────────────────────────────────────────────────────
 // Set below by the "Split panel + output toggle" block once it wires up the Output panel.
 // A plain closure bridge rather than a custom event: runCode only ever fires from a click,
@@ -944,7 +971,12 @@ function parseCliArgs(str) {
 // before this is ever called.
 let expandOutputPanel = () => {};
 
+// While a program runs, ▶ Run is ■ Stop: the VM has no step ceiling (zymbol.js
+// stops a loose program at 50 000 steps), so a loop that never ends is ended here.
+let running = null;   // { stop() } while a program runs
+
 async function runCode() {
+  if (running) { running.stop(); return; }
   expandOutputPanel();
   clearOutput();
   // A card left hanging over the editor while the program runs is stale by definition.
@@ -978,16 +1010,28 @@ async function runCode() {
   const stopBtn = document.getElementById('tui-stop-btn');
   const onStop = () => tui.abort();
   stopBtn.addEventListener('click', onStop);
+  const runBtn = document.getElementById('run-btn');
+  const runLabel = runBtn.innerHTML;
+  let stopped = false;
+  running = { stop() { stopped = true; tui.abort(); } };
+  runBtn.innerHTML = '■ Stop';
+  engineSelectEl.disabled = true;
   // Route << input through canvas bar when TUI is active
   const activeInputFn = () => tui.active ? tui.readLine() : inputFn();
+  const t0 = performance.now();
   try {
-    await runZymbol(src, activeInputFn, text => appendOutput(text), resolver, displayPath, tui, cliArgs, execOpts);
-    if (!tui.aborted) appendOutput('\n— done —', 'out-meta');
+    await runZymbol(src, activeInputFn, text => appendOutput(text), resolver, displayPath, tui, cliArgs,
+      { ...execOpts, shouldStop: () => stopped });
+    if (stopped) appendOutput(`\n— stopped · ${engineName()} —`, 'out-meta');
+    else if (!tui.aborted) appendOutput(`\n— done · ${engineName()} · ${Math.round(performance.now() - t0)} ms —`, 'out-meta');
   } catch (err) {
     tui.leave();
     if (!tui.aborted) appendOutput('\n' + (err.message ?? String(err)), 'out-error');
   } finally {
     stopBtn.removeEventListener('click', onStop);
+    running = null;
+    runBtn.innerHTML = runLabel;
+    engineSelectEl.disabled = false;
   }
 }
 

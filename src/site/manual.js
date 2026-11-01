@@ -7,7 +7,7 @@
  * copy of the language→file table on the second page is how a language quietly stops having
  * a manual on half a site.
  *
- * TWO GENERATIONS LIVE SIDE BY SIDE, on purpose:
+ * THREE GENERATIONS LIVE SIDE BY SIDE, on purpose:
  *
  *   data/manuals/manual_<code>.md        110 languages, last revised for v0.0.5. Served by
  *                                        overview.html, which is archived at v0.0.8 and
@@ -16,13 +16,20 @@
  *                                        through the four gates in that directory
  *                                        (structure, `zymbol check`, claimed outputs,
  *                                        untranslated residue). Served by the front page.
+ *   data/manuals/v0011/manual_<code>.md  the v0.0.11 revision, copied from v009 and brought
+ *                                        up to date language by language, through the same
+ *                                        gates. Served by the front page where it exists.
  *
- * The two directories differ in what they do when the reader's language is missing, and
+ * The directories differ in what they do when the reader's language is missing, and
  * that difference is the point. The old one falls back — Spanish, then English — because
- * 110 languages are written and a gap is an accident. The new one shows NOTHING: with four
- * written, a fallback would hand a Japanese reader an English manual under a heading that
- * says Documentation in Japanese, which reads as "your language is done" and is a lie.
+ * 110 languages are written and a gap is an accident. The v009 one shows NOTHING: a
+ * fallback would hand a Japanese reader an English manual under a heading that says
+ * Documentation in Japanese, which reads as "your language is done" and is a lie.
  * Absent is honest; wrong is not.
+ *
+ * v0011 falls back to v009, and only to v009 IN THE SAME LANGUAGE. That fallback keeps the
+ * promise above: the reader gets their own language, and the manual's first lines say which
+ * version it was revised for. What never happens is crossing into another language.
  */
 
 import { highlightZymbol } from './highlight-zy.js';
@@ -171,8 +178,16 @@ export const MANUAL_MAP = {
  */
 export const V009_CODES = ['en', 'es', 'it', 'qu', 'zh', 'hi', 'ar', 'fr', 'bn', 'pt', 'ru', 'ur', 'sw', 'id', 'de', 'pa', 'ja', 'te', 'tr', 'vi', 'ta', 'mr', 'ko', 'jv', 'ha', 'fa', 'th', 'gu', 'kn', 'yo', 'my', 'uk', 'ps', 'pl', 'tl', 'af', 'az', 'cs', 'el', 'ig', 'km', 'ku', 'lo', 'ml', 'ms', 'ne', 'nl', 'ro', 'si', 'su', 'zu'];
 
+/**
+ * The languages the v0.0.11 manual is written in, by manual code, in the order they were
+ * brought up to date — the v009 queue's order, by number of speakers. Same rule as
+ * V009_CODES: a list, not a probe, and tests/test_manual_v0011.mjs holds it to the directory.
+ */
+export const V0011_CODES = ['en', 'es', 'zh', 'hi', 'ar', 'fr', 'bn', 'pt', 'ru', 'ur', 'sw', 'id', 'de', 'pa', 'ja', 'te', 'tr', 'vi', 'ta', 'mr', 'ko', 'jv', 'ha', 'fa', 'it', 'th', 'gu', 'kn', 'yo', 'tl', 'my', 'uk', 'ps', 'pl', 'ml', 'ms', 'su', 'ne', 'lo', 'ku', 'ig', 'az', 'zu', 'nl', 'ro', 'si', 'km', 'af', 'el', 'cs', 'qu'];
+
 export const MANUAL_DIR_V005 = 'data/manuals';
 export const MANUAL_DIR_V009 = 'data/manuals/v009';
+export const MANUAL_DIR_V0011 = 'data/manuals/v0011';
 
 /** The manual code for a language id, or null if the site has no manual for it at all. */
 export const manualCode = langId => MANUAL_MAP[langId] ?? null;
@@ -184,6 +199,20 @@ export const manualCode = langId => MANUAL_MAP[langId] ?? null;
 export function manualUrlV009(langId) {
   const code = manualCode(langId);
   return code && V009_CODES.includes(code) ? `${MANUAL_DIR_V009}/manual_${code}.md` : null;
+}
+
+/** Where a language's v0.0.11 manual is, or null if it has not been brought up to date yet. */
+export function manualUrlV0011(langId) {
+  const code = manualCode(langId);
+  return code && V0011_CODES.includes(code) ? `${MANUAL_DIR_V0011}/manual_${code}.md` : null;
+}
+
+/**
+ * The manual the front page shows: v0.0.11 where it is written, else v0.0.9 in the same
+ * language, else null — never another language's.
+ */
+export function manualUrl(langId) {
+  return manualUrlV0011(langId) ?? manualUrlV009(langId);
 }
 
 /** Where a language's v0.0.5 manual is. Always a URL: English is the floor. */

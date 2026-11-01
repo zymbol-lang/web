@@ -5,20 +5,23 @@
 > this Markdown twin documents what it is and what it can do, because the
 > playground is an application, not a document.
 
-The playground runs `zymbol.js` (v0.0.10), a hand-written JavaScript mirror of the
-Zymbol tree-walker — **not** the Rust engine compiled for the browser. It tracks
-the native interpreter closely enough to run real programs, including multi-file
-`.zyp` packages, but for the full language use the [native
-interpreter](install.md).
+The playground (v0.0.11) has two engines, chosen in the picker beside ▶ Run.
+**VM**, the default as in the native CLI since v0.0.11, is `zymbol_vm.js`: the
+program is compiled to the register VM's bytecode — the bytecode the Rust compiler
+builds for it — and run by a JavaScript port of the VM. **TW** is `zymbol.js`, the
+tree-walker the playground ran until now. Neither is the Rust engine compiled for
+the browser; both run real programs, multi-file `.zyp` packages included, and for
+the full language there is the [native interpreter](install.md).
 
 ## Not available here
 
 - **`std/db`** — database access goes through an ODBC driver manager, which has no
   browser equivalent. Importing it fails with a message saying so.
 - **`</ file.zy />`** — script inclusion reads from a real filesystem.
-- **`<\ cmd \>`** — there is no shell. `date` format specifiers (`%Y %m %d %H %M
-  %S %s`) and a plain `echo` are simulated; anything else returns a
-  high-resolution timestamp, which is what most programs use it for: a random seed.
+- **`<\ cmd \>`** — there is no shell. `date` with its format specifiers, a plain
+  `echo`, `echo $$` and reading two bytes of `/dev/urandom` — what programs use for
+  a random seed — are simulated; any other command is refused with a message
+  saying so.
 
 ## Works, but not the way it does natively
 
@@ -27,15 +30,11 @@ interpreter](install.md).
 - **`std/net`** — `get` / `post` / `post_json` / `head` run over `fetch()`, so the
   browser's CORS rules apply: a server that sends no CORS headers is unreachable
   from here even though the same program works from the CLI.
-- A run stops after 2 000 000 statements or 32 KB of output, so a runaway loop cannot
-  freeze the tab. A loaded `.zyp` package runs at 2 000 000 of each instead: it is a
-  real multi-file program, not the single-statement snippet those defaults were sized
-  for. Statements inside a `>>|` block count against neither — a TUI program is
-  interactive and legitimately long-running — and on leaving the block the count
-  returns to what it was on entry, so the budget outside is neither consumed by the
-  block nor reset by it.
-- Float literals lose precision — `3.14159265` prints as `3.1415926499999998`.
-  Known gap, not present in the native engines.
+- While a program runs, ▶ Run becomes **■ Stop**. On the VM a run has no step
+  limit — it hands the page back between slices of work, so the tab stays
+  responsive — and ■ Stop is how a loop that never ends is ended. On the TW a run
+  stops by itself after 2 000 000 statements or 32 KB of output (a loaded `.zyp`:
+  2 000 000 of each); statements inside a `>>|` block count against neither.
 
 ## Fully supported
 
@@ -83,6 +82,9 @@ interpreter](install.md).
   the home page translates into 111 languages: `?` is labelled もし in Japanese,
   *si* in Spanish, *hoặc* in Vietnamese.
 - CLI arguments `>< args` — use the `args…` field next to ▶ Run.
+- The engine is remembered in this browser; `?engine=vm` or `?engine=tw` in the
+  address sets it for one visit. The last line of every run names the engine and
+  the time.
 - TUI mode (`>>|`) on a canvas renderer. On a touch device: swipe for the arrow
   keys, tap for Enter, ⌨ Keys for any other single key — `p` to pass in GO, `q` to
   quit, digits. ✕ Stop exits.
@@ -138,8 +140,8 @@ To write Zymbol correctly first, load the published skill:
 
 ## Source and license
 
-`zymbol.js` is free software under **AGPL-3.0-only**, like the Rust interpreter it
-mirrors — it is a derivative work of it. The complete corresponding source of
+`zymbol_vm.js` and `zymbol.js` are free software under **AGPL-3.0-only**, like the
+Rust interpreter they are ported from — each is a derivative work of it. The complete corresponding source of
 everything running in the playground tab is at
 <https://github.com/zymbol-lang/web>, which is what AGPL section 13 asks of code
 executed over a network. The manuals and examples are CC BY-SA 4.0.
@@ -148,6 +150,7 @@ executed over a network. The manuals and examples are CC BY-SA 4.0.
 
 - **Ctrl+Enter** or ▶ Run — execute the open file.
 - **Ctrl+Shift+Enter** or ✓ Check — look for problems without running.
+- ■ Stop (the ▶ Run button while a program runs) — interrupt a run.
 - ✕ Stop — interrupt a TUI program.
 
 Related: [/index.md](index.md) · [/install.md](install.md) · [/llms.txt](llms.txt)

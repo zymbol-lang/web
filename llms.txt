@@ -3,9 +3,10 @@
 > Zymbol is a symbolic programming language with no words in its grammar. Every construct is a
 > symbol — `?` is if, `@` is loop, `<~` is return, `#1` is true — so identifiers can
 > be written in any human language and the program reads the same everywhere. It
-> ships as a Rust interpreter (tree-walker plus a register VM), an LSP server and a
-> VS Code extension. Current release: v0.0.10, public alpha (the Windows installer is
-> published once it is signed; every other download is on the install page).
+> ships as a Rust interpreter (a register VM, the default, and a tree-walker), an
+> LSP server and a VS Code extension. Current release: v0.0.11, public alpha (the
+> Windows installer is published once it is signed; every other download is on the
+> install page).
 > Code is AGPL-3.0-only; manuals, examples and documentation are CC BY-SA 4.0.
 
 Every page of this site is also served as Markdown: send `Accept: text/markdown`,
@@ -16,27 +17,29 @@ or swap the extension — `/install.html` → `/install.md`.
 - [Home](https://zymbol-lang.org/index.md): the fourteen marks one at a time, how they join into operators, and a Mandelbrot written in symbols.
 - [Install](https://zymbol-lang.org/install.md): binaries for Linux/Windows/macOS with SHA256, VS Code extension, build from source.
 - [Playground](https://zymbol-lang.org/playground.md): the browser engine's exact capabilities and limits, deep-link format, example groups.
-- [Releases](https://zymbol-lang.org/changelog.md): full changelog, v0.0.1 through v0.0.10.
+- [Releases](https://zymbol-lang.org/changelog.md): full changelog, v0.0.1 through v0.0.11.
 - [pIqaD reference](https://zymbol-lang.org/piqad-reference.md): Klingon script, CSUR block U+F8D0–U+F8FF.
 - [Overview](https://zymbol-lang.org/overview.md): the former front page — the showcase, the operator table, FizzBuzz in any human language, the manuals. Archived: accurate as of v0.0.8 and no longer updated.
 
 ## Language manual
 
-Two generations are published, and the current one is the shorter list.
+Three generations are published, and the current one is the shortest list.
 
-The v0.0.9 manual is at `/data/manuals/v009/manual_<code>.md`, written so far in
-four languages — English, Spanish, Italian and Quechua. Every code block in it was
-run through `zymbol check` and every claimed output verified against what the
-program actually prints. This is the one the front page shows, and only to readers
-whose language is among the four.
+The v0.0.11 manual is at `/data/manuals/v0011/manual_<code>.md`, in all 51
+languages. It is the v0.0.9 manual brought up to date, language by language, in
+order of speakers. The v0.0.9 manual is at `/data/manuals/v009/manual_<code>.md`, in
+51 languages. Every code block in both was run through `zymbol check` and every
+claimed output verified against what the program actually prints. The front page
+shows the v0.0.11 manual where it exists and the v0.0.9 one in the same language
+where it does not, and nothing to a reader whose language has neither.
 
 The older generation is at `/data/manuals/manual_<code>.md`, in 110 languages. It
 was last revised for v0.0.5 and is not being updated; `overview.html` still serves
-it. Where the two disagree, v009 is right, and the interpreter repository is
-authoritative over both.
+it. Where they disagree, the newest is right, and the interpreter repository is
+authoritative over all three.
 
-- [Manual (English, v0.0.9)](https://zymbol-lang.org/data/manuals/v009/manual_en.md): variables, control flow, collections, functions, modules, errors.
-- [Manual (Spanish, v0.0.9)](https://zymbol-lang.org/data/manuals/v009/manual_es.md): the same manual in Spanish.
+- [Manual (English, v0.0.11)](https://zymbol-lang.org/data/manuals/v0011/manual_en.md): variables, control flow, collections, functions, modules, errors, running a program safely.
+- [Manual (Spanish, v0.0.11)](https://zymbol-lang.org/data/manuals/v0011/manual_es.md): the same manual in Spanish.
 - [Manual (Italian, v0.0.9)](https://zymbol-lang.org/data/manuals/v009/manual_it.md) · [Manual (Quechua, v0.0.9)](https://zymbol-lang.org/data/manuals/v009/manual_qu.md)
 - [Manual (English, v0.0.5)](https://zymbol-lang.org/data/manuals/manual_en.md): the older generation, one of 110 languages.
 
@@ -50,9 +53,9 @@ authoritative over both.
 
 ## Source
 
-- [Interpreter](https://github.com/zymbol-lang/interpreter): Rust workspace, 19 crates. `GUIDE.md` is the authoritative language reference, `REFERENCE.md` the complete symbol table and limitations, `ARCHITECTURE.md` the crate catalog.
+- [Interpreter](https://github.com/zymbol-lang/interpreter): Rust workspace, 20 crates. `GUIDE.md` is the authoritative language reference, `REFERENCE.md` the complete symbol table and limitations, `ARCHITECTURE.md` the crate catalog.
 - [VS Code extension](https://github.com/zymbol-lang/vscode): TypeScript LSP client.
-- [This site](https://github.com/zymbol-lang/web): static HTML/CSS/JS, no build step; `src/zymbol/zymbol.js` is a hand-maintained JavaScript mirror of the tree-walker.
+- [This site](https://github.com/zymbol-lang/web): static HTML/CSS/JS, no build step; the playground's default engine is `src/zymbol/zymbol_vm.js` (the Rust compiler and register VM ported to JavaScript, `src/zymbol/vm/`); `src/zymbol/zymbol.js`, a hand-maintained JavaScript mirror of the tree-walker, is the other.
 
 ## Optional
 
