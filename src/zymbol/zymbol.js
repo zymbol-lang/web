@@ -9597,6 +9597,8 @@ export class Interpreter {
         if (dur.type !== 'int') throw new ZyRuntimeError(`@~ requires integer milliseconds, got ${typeLabel(dur)}`, '##Type', stmt.line);
         if (dur.v < 0) throw new ZyError(`@~ requires non-negative duration, got ${dur.v}`, stmt.line);
         const ms = dur.v;
+        // A wait: the screen gets the frame — `@~ 0` is "show it now" (GAP-ZYE-015, D-09).
+        this.tui?.show?.();
         await new Promise(r => {
           const id = setTimeout(r, Math.max(0, Math.trunc(ms)));
           if (this.tui) this.tui._sleepCancel = () => { clearTimeout(id); r(); };

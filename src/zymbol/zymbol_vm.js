@@ -195,7 +195,9 @@ export async function runZymbolVM(src, inputFn, onOutput, moduleResolver = null,
     waitLine: async () => { const v = await inputFn(); return v == null ? '' : `${v}\n`; },
     inputHint: hint => host.write(`  (${hint})\n`),
     sleep: () => false,
+    // A wait: the screen gets the frame — `@~ 0` is "show it now" (GAP-ZYE-015, D-09).
     waitSleep: ms => new Promise(r => {
+      tui?.show?.();
       const id = setTimeout(r, ms);
       if (tui) tui._sleepCancel = () => { clearTimeout(id); r(); };
     }),

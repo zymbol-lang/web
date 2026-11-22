@@ -425,7 +425,10 @@ class BrowserTUI {
     this.keysBtn      = document.getElementById('tui-keys-btn');
     this.keyCloseBtn  = document.getElementById('tui-key-close');
     this.outputDiv    = outputDiv;
-    this.ctx          = null;
+    this.ctx          = null;   // the frame being drawn: an offscreen canvas (GAP-ZYE-015)
+    this.screen       = null;   // the canvas the user sees
+    this.back         = null;
+    this.dirty        = false;
     this.rows         = 0;
     this.cols         = 0;
     this.cellW        = 0;
@@ -467,7 +470,13 @@ class BrowserTUI {
     this.outputDiv.style.display = 'none';
     this.wrap.classList.add('active');
 
-    this.ctx = this.canvas.getContext('2d');
+    // The frame (GAP-ZYE-015, D-09): a program draws on `back`, offscreen, and the user
+    // sees it when the program waits — `<<|`, `<<|?`, `@~`, `<<` — through `show()`. The
+    // interpreter hands the page its turn every 16 ms while it computes, so drawing on the
+    // visible canvas showed a screen half drawn, as a terminal does without a frame.
+    this.screen = this.canvas.getContext('2d');
+    this.back   = document.createElement('canvas');
+    this.ctx    = this.back.getContext('2d');
 
     const w   = this.wrap.clientWidth  || 600;
     const h   = this.wrap.clientHeight || 400;
@@ -478,6 +487,8 @@ class BrowserTUI {
     this.canvas.height       = Math.round(h * dpr);
     this.canvas.style.width  = w + 'px';
     this.canvas.style.height = h + 'px';
+    this.back.width          = this.canvas.width;
+    this.back.height         = this.canvas.height;
     this.ctx.scale(dpr, dpr);
 
     this.ctx.font = canvasFont();
@@ -500,6 +511,8 @@ class BrowserTUI {
 
     this.ctx.fillStyle = this._bg;
     this.ctx.fillRect(0, 0, w, h);
+    this.dirty = true;
+    this.show();
 
     this.printRow = 1;
     this.printCol = 1;
@@ -682,7 +695,17 @@ class BrowserTUI {
     this.keyField.blur();
   }
 
+  // The program waits: the user sees the frame, whole. Nothing drawn since the last
+  // wait copies nothing.
+  show() {
+    if (!this.dirty || !this.screen) return;
+    this.dirty = false;
+    this.screen.setTransform(1, 0, 0, 1, 0, 0);
+    this.screen.drawImage(this.back, 0, 0);
+  }
+
   leave() {
+    this.show();
     if (!this.active) return;
     this._removeKeypad();
     document.removeEventListener('keydown', this.keyListener);
@@ -714,6 +737,7 @@ class BrowserTUI {
   }
 
   readLine() {
+    this.show();
     return new Promise(resolve => {
       // Two fields cannot share one device keyboard: whichever was focused last wins and the
       // other keeps a caret that no longer receives anything.
@@ -751,6 +775,7 @@ class BrowserTUI {
 
   clear() {
     if (!this.ctx) return;
+    this.dirty = true;
     this.ctx.fillStyle = this._bg;
     this.ctx.fillRect(0, 0, this.cols * this.cellW, this.rows * this.cellH);
     this.printRow = 1;
@@ -773,6 +798,7 @@ class BrowserTUI {
 
   _drawChar(row, col, ch, bks, fg, bg) {
     if (!this.ctx || row < 1 || row > this.rows || col < 1 || col > this.cols) return;
+    this.dirty = true;
     // Snap cell boundaries to integers to avoid sub-pixel accumulation
     const x  = Math.round((col - 1) * this.cellW);
     const y  = Math.round((row - 1) * this.cellH);
@@ -830,11 +856,13 @@ class BrowserTUI {
   }
 
   async readKey() {
+    this.show();
     if (this.keyQueue.length > 0) return this.keyQueue.shift();
     return new Promise(resolve => this.keyWaiters.push(resolve));
   }
 
   pollKey() {
+    this.show();
     return this.keyQueue.length > 0 ? this.keyQueue.shift() : '\0';
   }
 
