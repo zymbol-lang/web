@@ -474,6 +474,28 @@ export function naturalCmp(a, b) {
     return x < y ? -1 : x > y ? 1 : 0;
   }
   if (ta === T_STR && tb === T_STR) return cmpStr(a, b);
+  if (ta === T_CHAR && tb === T_CHAR) return ord(a.cp, b.cp);
   if (ta === T_BOOL && tb === T_BOOL) return ord(a ? 1 : 0, b ? 1 : 0);
   return 0;
+}
+
+/** `vm_natural_kind`: the kinds `$^+`/`$^-` order among themselves. */
+function naturalKind(v) {
+  switch (tagOf(v)) {
+    case T_INT: case T_FLOAT: return 0;
+    case T_STR: return 1;
+    case T_CHAR: return 2;
+    case T_BOOL: return 3;
+    default: return null;
+  }
+}
+
+/** `vm_natural_unordered`: the first pair with no natural order between them,
+ *  the pair every engine names (D-08, v0.0.12), or `null`. */
+export function naturalUnordered(items) {
+  if (items.length === 0) return null;
+  const kind = naturalKind(items[0]);
+  for (let i = 1; i < items.length; i++)
+    if (kind === null || naturalKind(items[i]) !== kind) return [items[0], items[i]];
+  return null;
 }

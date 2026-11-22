@@ -7849,11 +7849,59 @@ function orderValues(l, r) {
   if (l.type === 'str' && r.type === 'str') {
     const a = strNum(l), b = strNum(r);
     if (a !== null && b !== null) return cmp(a, b);
-    return cmp(l.v, r.v);
+    return cmpCodePoint(l.v, r.v);
   }
   if (l.type === 'str' && isNumV(r)) { const a = strNum(l); return a === null ? null : cmp(a, r.v); }
   if (isNumV(l) && r.type === 'str') { const b = strNum(r); return b === null ? null : cmp(l.v, b); }
-  if (l.type === r.type && (l.type === 'char' || l.type === 'bool')) return cmp(l.v, r.v);
+  if (l.type === 'char' && r.type === 'char') return cmpCodePoint(l.v, r.v);
+  if (l.type === 'bool' && r.type === 'bool') return cmp(l.v, r.v);
+  return null;
+}
+
+// Two texts by code point, as Rust compares `str` (D-05, v0.0.12). JavaScript's
+// own `<` compares UTF-16 code units, and a character outside the BMP is a
+// surrogate pair whose first unit (U+D800–U+DBFF) is below U+E000–U+FFFF: so
+// `"😀" < "～"` was `#1` here and `#0` in the other three engines. The same
+// remapping as `cmpStr` in `vm/values.js`.
+function cmpCodePoint(a, b) {
+  const n = Math.min(a.length, b.length);
+  for (let i = 0; i < n; i++) {
+    let x = a.charCodeAt(i), y = b.charCodeAt(i);
+    if (x === y) continue;
+    if (x >= 0xD800) x += x >= 0xE000 ? -0x800 : 0x2000;
+    if (y >= 0xD800) y += y >= 0xE000 ? -0x800 : 0x2000;
+    return x < y ? -1 : 1;
+  }
+  return a.length === b.length ? 0 : (a.length < b.length ? -1 : 1);
+}
+
+// The kinds `$^+`/`$^-` order among themselves — numbers, texts, characters,
+// booleans — and the order: the Rust engines' `natural_kind` and `natural_cmp`.
+// Never the numeric reading of `<` ("10" > "9"), which is not a total order
+// mixed with texts that are not numbers (D-07, v0.0.12).
+function naturalKind(v) {
+  switch (v.type) {
+    case 'int': case 'float': return 0;
+    case 'str': return 1;
+    case 'char': return 2;
+    case 'bool': return 3;
+    default: return null;
+  }
+}
+function naturalCmp(a, b) {
+  if (a.type === 'str' || a.type === 'char') return cmpCodePoint(a.v, b.v);
+  const x = Number(a.v), y = Number(b.v);   // a Bool is #0 < #1
+  return x < y ? -1 : x > y ? 1 : 0;
+}
+// The first pair with no natural order between them — the first element and the
+// first one not of its kind, or the first two when the kind has none — the pair
+// the Rust engines name (D-08, v0.0.12). `$^+` used to sort such pairs as equal,
+// and return the array untouched, with no error.
+function naturalUnordered(items) {
+  if (items.length === 0) return null;
+  const kind = naturalKind(items[0]);
+  for (let i = 1; i < items.length; i++)
+    if (kind === null || naturalKind(items[i]) !== kind) return [items[0], items[i]];
   return null;
 }
 
@@ -11517,13 +11565,21 @@ export class Interpreter {
         notSupported('$[i:n]');
       }
 
-      case '$^+': {
-        if (col.type !== 'arr') notSupported('$^+');
-        return mkArr([...col.v].sort((a,b)=> a.type==='str' ? a.v.localeCompare(b.v) : a.v-b.v));
-      }
-      case '$^-': {
-        if (col.type !== 'arr') notSupported('$^-');
-        return mkArr([...col.v].sort((a,b)=> a.type==='str' ? b.v.localeCompare(a.v) : b.v-a.v));
+      // Natural order, as the Rust engines sort: ascending, then reversed for
+      // `$^-` — so equal elements come out in the same places too. Texts by
+      // code point (D-05, v0.0.12): `localeCompare` sorted by the browser's
+      // language, so `["b","A","a","B"]` gave `[a, A, b, B]` here and
+      // `[A, B, a, b]` everywhere else (BUG-TET-001).
+      case '$^+': case '$^-': {
+        if (col.type !== 'arr') notSupported(expr.op);
+        const unordered = naturalUnordered(col.v);
+        if (unordered)
+          throw new ZyRuntimeError(
+            `${expr.op} cannot order ${typeIdent(unordered[0])} and ${typeIdent(unordered[1])}\n` +
+            `help: give the order with a comparator: $^ (a, b -> …)`, '##Type');
+        const items = [...col.v].sort(naturalCmp);
+        if (expr.op === '$^-') items.reverse();
+        return mkArr(items);
       }
       case '$^': {
         if (col.type !== 'arr') notSupported('$^');

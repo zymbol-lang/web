@@ -21,7 +21,7 @@ import {
   retain, release, cloneItems, cloneMap, charLen, codePoints,
   ASCII_BASE, ZY_INT_MAX, repr, displayIn, numeralInt, numeralFloat, numeralBool, floatText,
   typeName, typeWord, typeLabel, typeSymbolOwned, refinedTypeSymbol, typeCount, errorMessageLen,
-  cmpDirect, cmpOrder, equals, naturalCmp, parseNum, parseF64, display, mapNumeralNumber,
+  cmpDirect, cmpOrder, equals, naturalCmp, naturalUnordered, parseNum, parseF64, display, mapNumeralNumber,
 } from './values.js';
 import { asciiDigits, asciiNumber } from './digits.js';
 import { powi, roundHalfAway, fmtThousands, fmtScientific } from './format.js';
@@ -1337,6 +1337,11 @@ export class Machine {
             if (tagOf(src) !== T_ARRAY) throw typeMsg(`sort requires an array, got ${typeLabel(src)}`);
             let items = cloneItems(src.items);
             if (ins.d === 65535) {
+              const unordered = naturalUnordered(items);
+              if (unordered) {
+                for (const v of items) release(v);
+                throw typeMsg(`${ins.c ? '$^+' : '$^-'} cannot order ${typeName(unordered[0])} and ${typeName(unordered[1])}\nhelp: give the order with a comparator: $^ (a, b -> …)`);
+              }
               items.sort(naturalCmp);   // stable, as Rust's sort_by is
               if (!ins.c) items.reverse();
             } else {
