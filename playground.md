@@ -38,7 +38,7 @@ the full language there is the [native interpreter](install.md).
 
 ## Fully supported
 
-- `std/math`, `std/random`, `std/json`, `std/term`.
+- `std/math`, `std/random`, `std/json`, `std/term`, `std/text`.
 - Line numbers down the left of the editor. Every diagnostic names a line — the
   problems strip says "line 6", a failed run prints `Line 6:` into the output — and
   the numbers a message points at are tinted red for an error and amber for a

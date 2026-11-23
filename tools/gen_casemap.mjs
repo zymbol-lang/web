@@ -1,0 +1,207 @@
+#!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-only
+// Generate src/zymbol/casemap.js — the case tables of `std/text` (D-18) for the
+// two browser engines — from the Unicode Character Database.
+//
+//   node tools/gen_casemap.mjs <ucd-dir>           # write src/zymbol/casemap.js
+//   node tools/gen_casemap.mjs <ucd-dir> --check   # exit 1 if it is not current
+//
+// <ucd-dir> holds UnicodeData.txt, SpecialCasing.txt, CaseFolding.txt and
+// DerivedCoreProperties.txt of one Unicode version, from
+// https://www.unicode.org/Public/<version>/ucd/. Use the version of the Rust
+// toolchain the interpreter is built with — `char::UNICODE_VERSION`, 18.0.0 on
+// 2026-11-23 — so the four engines answer alike. A browser's own toUpperCase
+// follows the Unicode its engine shipped with: Node 24 and Rust 1.100 differed
+// on 41 letters, which is why the browser engines carry a table at all.
+//
+// What Rust does, and so what the table holds:
+// - upper/lower: SpecialCasing's unconditional mappings, else UnicodeData's
+//   simple ones. The one context rule applied is the final sigma, which needs
+//   the Cased and Case_Ignorable properties: they are in the table too.
+// - fold: CaseFolding's simple folding, statuses C and S.
+
+import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const OUT = join(HERE, '..', 'src', 'zymbol', 'casemap.js');
+const [ucd, flag] = process.argv.slice(2);
+if (!ucd || !existsSync(join(ucd, 'UnicodeData.txt'))) {
+  console.error('usage: node tools/gen_casemap.mjs <ucd-dir> [--check]');
+  process.exit(2);
+}
+const read = f => readFileSync(join(ucd, f), 'utf8');
+const lines = t => t.split('\n').filter(l => l.trim() && !l.startsWith('#'));
+const hex = h => parseInt(h, 16);
+const version = /-(\d+\.\d+\.\d+)\.txt/.exec(read('CaseFolding.txt').split('\n')[0])?.[1] ?? '?';
+
+// ── the mappings, as arrays of code points ───────────────────────────────────
+const upper = new Map(), lower = new Map(), fold = new Map();
+for (const l of lines(read('UnicodeData.txt'))) {
+  const f = l.split(';');
+  const cp = hex(f[0]);
+  if (f[12]) upper.set(cp, [hex(f[12])]);
+  if (f[13]) lower.set(cp, [hex(f[13])]);
+}
+for (const l of lines(read('SpecialCasing.txt'))) {
+  const f = l.split('#')[0].split(';').map(s => s.trim());
+  if (f[4]) continue;                       // conditional: language or context
+  const cp = hex(f[0]);
+  const seq = s => s.split(/\s+/).filter(Boolean).map(hex);
+  const lo = seq(f[1]), up = seq(f[3]);
+  if (!(lo.length === 1 && lo[0] === cp)) lower.set(cp, lo); else lower.delete(cp);
+  if (!(up.length === 1 && up[0] === cp)) upper.set(cp, up); else upper.delete(cp);
+}
+for (const l of lines(read('CaseFolding.txt'))) {
+  const f = l.split(';').map(s => s.trim());
+  if (f[1] === 'C' || f[1] === 'S') fold.set(hex(f[0]), hex(f[2]));
+}
+
+// ── Cased and Case_Ignorable, as ranges ──────────────────────────────────────
+function property(name) {
+  const r = [];
+  for (const l of lines(read('DerivedCoreProperties.txt'))) {
+    const [range, prop] = l.split('#')[0].split(';').map(s => s.trim());
+    if (prop !== name) continue;
+    const [a, b] = range.split('..').map(hex);
+    r.push([a, b ?? a]);
+  }
+  r.sort((x, y) => x[0] - y[0]);
+  const merged = [];
+  for (const [a, b] of r) {
+    const last = merged[merged.length - 1];
+    if (last && a <= last[1] + 1) last[1] = Math.max(last[1], b); else merged.push([a, b]);
+  }
+  return merged;
+}
+
+// ── compact encodings ────────────────────────────────────────────────────────
+// A one-to-one map as runs `start,count,stride,delta` in base 36: consecutive
+// letters whose mapping is the same distance away, every `stride` code points
+// (1 for ranges like A–Z, 2 for the alternating Latin Extended pairs).
+function runs(map) {
+  const single = [...map].filter(([, v]) => !Array.isArray(v) || v.length === 1)
+    .map(([k, v]) => [k, Array.isArray(v) ? v[0] : v]).sort((a, b) => a[0] - b[0]);
+  const out = [];
+  let i = 0;
+  while (i < single.length) {
+    const [s, t] = single[i];
+    const delta = t - s;
+    let best = 1, bestStride = 1;
+    for (const stride of [1, 2]) {
+      let n = 1;
+      while (i + n < single.length && single[i + n][0] === s + n * stride && single[i + n][1] - single[i + n][0] === delta) n++;
+      if (n > best) { best = n; bestStride = stride; }
+    }
+    out.push([s, best, bestStride, delta].map(x => x.toString(36)).join(','));
+    i += best;
+  }
+  return out.join(' ');
+}
+// The mappings to more than one code point: `cp:a.b.c`, base 36.
+function multi(map) {
+  return [...map].filter(([, v]) => Array.isArray(v) && v.length > 1).sort((a, b) => a[0] - b[0])
+    .map(([k, v]) => `${k.toString(36)}:${v.map(x => x.toString(36)).join('.')}`).join(' ');
+}
+const ranges = r => r.map(([a, b]) => `${a.toString(36)}-${(b - a).toString(36)}`).join(' ');
+
+const src = `// SPDX-License-Identifier: AGPL-3.0-only
+// GENERATED by tools/gen_casemap.mjs from the Unicode Character Database ${version}
+// — do not edit. Regenerate with: node tools/gen_casemap.mjs <ucd-dir>
+//
+// The case tables of \`std/text\` (D-18) for both browser engines: upper,
+// lower (with the final sigma) and the simple case folding, the rules of
+// \`zymbol_intrinsics::text\` in Rust, whose Unicode is the same version. A
+// browser's own toUpperCase follows the Unicode it shipped with, so it is not
+// used: the four engines must answer alike on every machine.
+
+export const UNICODE_VERSION = '${version}';
+
+const UPPER_RUNS = '${runs(upper)}';
+const UPPER_MULTI = '${multi(upper)}';
+const LOWER_RUNS = '${runs(lower)}';
+const LOWER_MULTI = '${multi(lower)}';
+const FOLD_RUNS = '${runs(fold)}';
+const CASED = '${ranges(property('Cased'))}';
+const CASE_IGNORABLE = '${ranges(property('Case_Ignorable'))}';
+
+function decodeRuns(text) {
+  const m = new Map();
+  for (const run of text.split(' ')) {
+    if (!run) continue;
+    const [s, n, stride, d] = run.split(',').map(x => parseInt(x, 36));
+    for (let k = 0; k < n; k++) m.set(s + k * stride, String.fromCodePoint(s + k * stride + d));
+  }
+  return m;
+}
+function decodeMulti(text, m) {
+  for (const e of text.split(' ')) {
+    if (!e) continue;
+    const [k, v] = e.split(':');
+    m.set(parseInt(k, 36), String.fromCodePoint(...v.split('.').map(x => parseInt(x, 36))));
+  }
+  return m;
+}
+function decodeRanges(text) {
+  return text.split(' ').filter(Boolean).map(r => { const [a, n] = r.split('-').map(x => parseInt(x, 36)); return [a, a + n]; });
+}
+function inRanges(ranges, cp) {
+  let lo = 0, hi = ranges.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (cp < ranges[mid][0]) hi = mid - 1; else if (cp > ranges[mid][1]) lo = mid + 1; else return true;
+  }
+  return false;
+}
+
+let tables = null;
+function t() {
+  return tables ??= {
+    upper: decodeMulti(UPPER_MULTI, decodeRuns(UPPER_RUNS)),
+    lower: decodeMulti(LOWER_MULTI, decodeRuns(LOWER_RUNS)),
+    fold: decodeRuns(FOLD_RUNS),
+    cased: decodeRanges(CASED),
+    ignorable: decodeRanges(CASE_IGNORABLE),
+  };
+}
+
+/** The upper case of one character, which may be more than one: 'ß' → 'SS'. */
+export function upperChar(c) { return t().upper.get(c.codePointAt(0)) ?? c; }
+/** The lower case of one character, alone — a sigma alone is not word-final. */
+export function lowerChar(c) { return t().lower.get(c.codePointAt(0)) ?? c; }
+/** The simple case folding of one code point. */
+export function foldChar(c) { return t().fold.get(c.codePointAt(0)) ?? c; }
+
+export function upper(s) { let o = ''; for (const c of s) o += upperChar(c); return o; }
+export function fold(s) { let o = ''; for (const c of s) o += foldChar(c); return o; }
+
+// Rust's str::to_lowercase: Σ is final (ς) when a cased letter comes before it,
+// past any case-ignorable ones, and none comes after it.
+export function lower(s) {
+  const cps = [...s].map(c => c.codePointAt(0));
+  const { cased, ignorable } = t();
+  const casedThen = (from, step) => {
+    for (let k = from; k >= 0 && k < cps.length; k += step) {
+      if (inRanges(ignorable, cps[k])) continue;
+      return inRanges(cased, cps[k]);
+    }
+    return false;
+  };
+  let o = '';
+  for (let i = 0; i < cps.length; i++) {
+    if (cps[i] === 0x3A3) o += (casedThen(i - 1, -1) && !casedThen(i + 1, 1)) ? 'ς' : 'σ';
+    else o += lowerChar(String.fromCodePoint(cps[i]));
+  }
+  return o;
+}
+`;
+
+if (flag === '--check') {
+  const now = existsSync(OUT) ? readFileSync(OUT, 'utf8') : '';
+  if (now !== src) { console.error(`casemap.js is not what Unicode ${version} gives: regenerate it`); process.exit(1); }
+  console.log(`casemap.js is current (Unicode ${version})`);
+} else {
+  writeFileSync(OUT, src);
+  console.log(`wrote ${OUT}: Unicode ${version}, ${src.length} bytes`);
+}

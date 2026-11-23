@@ -6,7 +6,7 @@
       "type": "skill-md",
       "description": "Write, read and run Zymbol: a language with no words in its grammar, where every construct is a symbol (? if, @ loop, <~ return, #1 true) and identifiers may be in any human language. Covers syntax, the traps that parse but behave wrong, modules, errors and the CLI.",
       "url": "https://zymbol-lang.org/.well-known/agent-skills/write-zymbol/SKILL.md",
-      "digest": "sha256:e16362268807df78bd91409e851fc9a2c47767adf5d3701ee1614ddb5ea6e937",
+      "digest": "sha256:cc62021da6209ac928f9a840d22cc37ed47c3669d2379413ae50b17efc923de6",
       "license": "CC-BY-SA-4.0",
       "version": "0.0.11"
     }

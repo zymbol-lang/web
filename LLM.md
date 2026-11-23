@@ -73,10 +73,12 @@ supply. With `tuiContext = null`:
   hang under Node. See §4.
 
 Two things that are *not* on this list, because they agree: `std/math`, `std/random`,
-`std/json`, `std/term` and `std/time` are all present and match the Rust engines
+`std/json`, `std/term`, `std/time` and `std/text` are all present and match the Rust engines
 (`std/time` included — `of`/`parts`/`format`/`add`/`diff`, the calendar ported by
 hand rather than delegated to `Date`, which would roll an impossible date over
-instead of refusing it).
+instead of refusing it; and `std/text`, from a table generated out of the Unicode
+version Rust uses, never the browser's own `toUpperCase`, so a letter newer than the
+browser still answers alike).
 
 ### Diagnostics: what matches to the character, and what does not
 

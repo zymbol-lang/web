@@ -269,7 +269,7 @@ are not executed here because each needs its own file.
 
 An import path is relative (`./math`, `../lib/math`) or a stdlib name
 (`std/math`, `std/json`, `std/io`, `std/net`, `std/random`, `std/term`,
-`std/time`, `std/db`). A re-export layer is how a module is translated: export
+`std/time`, `std/text`, `std/db`). A re-export layer is how a module is translated: export
 `m::add => sumar` and the caller writes `sumar`.
 
 Dates come from `std/time`, never from the shell. An instant is milliseconds

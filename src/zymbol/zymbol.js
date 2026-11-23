@@ -203,6 +203,8 @@
 
 // The cursor inside `>>|` (D-16): one rule for both browser engines.
 import { caretOf, CARET_RANGE, CARET_SHAPE, CARET_OUTSIDE } from './screen.js';
+// std/text (D-18): Unicode's case tables, generated from the version Rust uses.
+import * as casemap from './casemap.js';
 
 // ─── Unicode digit blocks (mirrors DIGIT_BLOCKS in zymbol-lexer) ─────────────
 const DIGIT_BLOCKS = [
@@ -8430,6 +8432,7 @@ export const STDLIB_ARITIES = new Map([
   ['std/io',     new Map([['read',1],['write',2],['append',2],['exists',1],['delete',1],['list',1],['mkdir',1]])],
   ['std/net',    new Map([['get',-1],['post',-1],['post_json',-1],['head',-1],['timeout',1]])],
   ['std/term',   new Map([['width',1],['pad_left',2],['pad_right',2],['center',2],['truncate',2]])],
+  ['std/text',   new Map([['upper',1],['lower',1],['fold',1]])],
   // Everything but `now` takes an optional trailing zone, so everything but
   // `now` is variadic.
   ['std/time',   new Map([['now',0],['today',-1],['parts',-1],['of',-1],['format',-1],['add',-1],['diff',-1]])],
@@ -8986,6 +8989,34 @@ export function buildStdlibModule(name, vfs = null) {
       return soft(() => mkInt(timeDiff(a, b, parseUnit(unit), zoneOrUtc(zone))));
     }});
 
+    return { type: 'module', exports };
+  }
+
+  // std/text — upper case, lower case and case folding (D-18; mirrors
+  // stdlib/text.rs). The tables are casemap.js, never the browser's own
+  // toUpperCase: that one follows whatever Unicode the browser shipped with.
+  if (name === 'std/text') {
+    const exports = new Map();
+    const wrong = (fname, v) => new ZyError(`text::${fname}: argument type must be String or Char, got ${v ? typeLabel(v) : 'nothing'}`);
+    exports.set('upper', { type: 'func', name: 'upper', native: true, call: args => {
+      const v = args[0];
+      if (v?.type === 'str') return mkStr(casemap.upper(v.v));
+      if (v?.type === 'char') return mkStr(casemap.upperChar(v.v));
+      throw wrong('upper', v);
+    }});
+    exports.set('lower', { type: 'func', name: 'lower', native: true, call: args => {
+      const v = args[0];
+      if (v?.type === 'str') return mkStr(casemap.lower(v.v));
+      if (v?.type === 'char') return mkStr(casemap.lowerChar(v.v));
+      throw wrong('lower', v);
+    }});
+    // A Char folds to a Char: one code point for one.
+    exports.set('fold', { type: 'func', name: 'fold', native: true, call: args => {
+      const v = args[0];
+      if (v?.type === 'str') return mkStr(casemap.fold(v.v));
+      if (v?.type === 'char') return mkChar(casemap.foldChar(v.v));
+      throw wrong('fold', v);
+    }});
     return { type: 'module', exports };
   }
 
