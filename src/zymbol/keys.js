@@ -8,11 +8,16 @@
 //   ⇞ Page Up, ⇟ Page Down, ⌦ Delete, ⇤ Shift+Tab, ①–⑫ F1–F12.
 // - The modifiers are a number, read with `<<| k, m` (D-14): Shift 1, Alt 2,
 //   Ctrl 4. Ctrl+letter arrives as its control character, with m = 4.
+// - A change of the window's size is `⤢` (D-17), queued by the screen, not
+//   read from a key event: see RESIZE.
 // - Shift is not reported on text (D-15): 'A' says it already. Ctrl+Alt on a
 //   printable character is AltGr — which is how a browser on Windows reports
 //   it — and gives m = 0.
 
 export const SHIFT = 1, ALT = 2, CTRL = 4;
+
+/** The window changed size (D-17): what `<<|` is woken by, with m = 0. */
+export const RESIZE = '\u2922'; // ⤢
 
 const NAMED = {
   ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→',

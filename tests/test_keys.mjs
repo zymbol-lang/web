@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: AGPL-3.0-only
-// What `<<| k, m` hands a program in the browser (D-13, D-14, D-15), and where
-// `>>~ (row, col)` shows the cursor (D-16).
+// What `<<| k, m` hands a program in the browser (D-13, D-14, D-15), where
+// `>>~ (row, col)` shows the cursor (D-16), and what wakes `<<|` when the
+// window changes size (D-17).
 //
 //   node tests/test_keys.mjs
 //
@@ -24,7 +25,7 @@ import { dirname, join, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const { keyOf } = await import('../src/zymbol/keys.js');
+const { keyOf, RESIZE } = await import('../src/zymbol/keys.js');
 const { runZymbol } = await import('../src/zymbol/zymbol.js');
 const { runZymbolVM } = await import('../src/zymbol/zymbol_vm.js');
 
@@ -149,18 +150,29 @@ for (const [name, run] of [['zyjs', runZymbol], ['zyjsvm', runZymbolVM]]) {
 // is read on, and the block's last frame is printed when it ends.
 console.log('\noutput/cursor_pantalla.zy');
 function virtualTui(script, sink) {
-  const ROWS = 24, COLS = 80;
   const queue = [];
   for (const line of script.split('\n')) {
     const t = line.trim();
     if (!t || t.startsWith('#')) continue;
+    const rs = /^RESIZE (\d+) (\d+)$/.exec(t);
     if (t === 'SHOW') queue.push('SHOW');
+    else if (rs) queue.push({ resize: [+rs[1], +rs[2]] });
     else queue.push(keyOf({ key: t }));
   }
   return {
     active: false, aborted: false, lastMods: 0, _sleepCancel: null,
-    cells: null, row: 0, col: 0, caret: null,
-    blank() { this.cells = Array.from({ length: ROWS }, () => Array(COLS).fill(' ')); this.row = 0; this.col = 0; },
+    rows: 24, cols: 80, cells: null, row: 0, col: 0, caret: null,
+    blank() { this.cells = Array.from({ length: this.rows }, () => Array(this.cols).fill(' ')); this.row = 0; this.col = 0; },
+    // The window changed size (D-17): what was drawn keeps its place, what no
+    // longer fits is cut, and the program is woken by `⤢` — RESIZE's own key.
+    resize(rows, cols) {
+      const old = this.cells;
+      this.rows = rows; this.cols = cols;
+      this.cells = Array.from({ length: rows }, (_, r) =>
+        Array.from({ length: cols }, (_, c) => old[r]?.[c] ?? ' '));
+      this.row = Math.min(this.row, rows - 1); this.col = Math.min(this.col, cols);
+      return [RESIZE, 0];
+    },
     frame() {
       const rows = this.cells.map(r => r.join('').replace(/\s+$/, ''));
       while (rows.length && rows[rows.length - 1] === '') rows.pop();
@@ -174,35 +186,46 @@ function virtualTui(script, sink) {
     setCaret(c) { this.caret = c; },
     print(s) {
       for (const ch of s) {
-        if (ch === '\n') { this.row++; this.col = 0; continue; }
-        if (this.row < ROWS && this.col < COLS) this.cells[this.row][this.col] = ch;
+        if (ch === '\n') { this.row = Math.min(this.row + 1, this.rows - 1); this.col = 0; continue; }
+        if (this.row < this.rows && this.col < this.cols) this.cells[this.row][this.col] = ch;
         this.col++;
       }
     },
     printAt(r, c, text) { if (r !== null && c !== null) { this.row = r - 1; this.col = c - 1; } this.print(text); },
-    getSize() { return [ROWS, COLS]; },
+    getSize() { return [this.rows, this.cols]; },
     next() {
       while (queue[0] === 'SHOW') { queue.shift(); sink(this.frame() + '\n'); }
-      return queue.shift() ?? ['\0', 0];
+      const k = queue.shift() ?? ['\0', 0];
+      return k.resize ? this.resize(...k.resize) : k;
     },
     pollKey() { const [ch, m] = this.next(); this.lastMods = m; return ch; },
     async readKey() { const [ch, m] = this.next(); this.lastMods = m; return ch; },
   };
 }
-const cursorZy = join(CORPUS, 'cursor_pantalla.zy');
-const cursorSrc = readFileSync(cursorZy, 'utf8');
-const cursorKeys = readFileSync(join(CORPUS, 'cursor_pantalla.keys'), 'utf8');
-const cursorGolden = readFileSync(join(CORPUS, 'cursor_pantalla.expected'), 'utf8');
-for (const [name, run] of [['zyjs', runZymbol], ['zyjsvm', runZymbolVM]]) {
-  let out = '';
-  const sink = s => { out += s; };
-  const tui = virtualTui(cursorKeys, sink);
-  await run(cursorSrc, async () => null, sink, null, 'cursor_pantalla.zy', tui, [], {});
-  // zyq compares with the blank lines left out, and records the golden so.
-  const lines = t => t.split('\n').filter(l => l.trim() !== '').join('\n');
-  check(`${name} prints the Rust engines' golden`, lines(out) === lines(cursorGolden),
-        `\n--- got\n${out}\n--- want\n${cursorGolden}`);
+// A golden is recorded without blank lines and without lines that start with
+// three spaces (zyquality/src/golden.ml, `strip_warnings`); compare it so.
+const lines = t => t.split('\n').filter(l => l.trim() !== '' && !l.startsWith('   ')).join('\n');
+async function againstGolden(base) {
+  const src = readFileSync(join(CORPUS, base + '.zy'), 'utf8');
+  const keys = readFileSync(join(CORPUS, base + '.keys'), 'utf8');
+  const golden = readFileSync(join(CORPUS, base + '.expected'), 'utf8');
+  for (const [name, run] of [['zyjs', runZymbol], ['zyjsvm', runZymbolVM]]) {
+    let out = '';
+    const sink = s => { out += s; };
+    const tui = virtualTui(keys, sink);
+    await run(src, async () => null, sink, null, base + '.zy', tui, [], {});
+    check(`${name} prints the Rust engines' golden`, lines(out) === lines(golden),
+          `\n--- got\n${out}\n--- want\n${golden}`);
+  }
 }
+await againstGolden('cursor_pantalla');
+
+// ─── the window's size (D-17), through both browser engines ──────────────────
+// `output/redimensionar.zy`: the `RESIZE rows cols` steps wake `<<|` with `⤢`,
+// and `>>?` must answer the new size — an engine that kept the size it read on
+// entering `>>|` would draw the old screen.
+console.log('\noutput/redimensionar.zy');
+await againstGolden('redimensionar');
 
 console.log(failures ? `\n${failures} failed` : '\nall passed');
 process.exit(failures ? 1 : 0);

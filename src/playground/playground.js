@@ -4,7 +4,7 @@ import { runZymbolVM } from '../zymbol/zymbol_vm.js';
 import { highlightCode } from './highlight.js';
 import { readZyp } from '../zymbol/zyp.js';
 import { makeResolver } from '../zymbol/module-resolver.js';
-import { keyOf } from '../zymbol/keys.js';
+import { keyOf, RESIZE } from '../zymbol/keys.js';
 import { createStore, dirOf, baseOf, USER } from './filestore.js';
 import { createSidebar } from './sidebar.js';
 import { loadCatalog, mountEntry, collectPackage, resolveDeepLink, deepLinkOf } from './catalog.js';
@@ -449,6 +449,7 @@ class BrowserTUI {
     this._keypadOpen      = false;
     this._keypadHandlers  = null;
     this.caret            = null;   // `>>~ (row, col)`: where the cursor is shown (D-16)
+    this._resizeObs       = null;   // the panel's size, while `>>|` is open (D-17)
     this.caretEl          = null;
     // Pre-compute dimensions so >>? works even before >>| is entered
     this._measureCells();
@@ -598,6 +599,45 @@ class BrowserTUI {
     this.canvas.addEventListener('touchcancel', this._touchCancel, { passive: true });
 
     this.active = true;
+    // The panel changing size is `⤢` at `<<|` (D-17), as a terminal's window is.
+    if (typeof ResizeObserver === 'function') {
+      this._resizeObs = new ResizeObserver(() => this._onResize());
+      this._resizeObs.observe(this.wrap);
+    }
+  }
+
+  // The panel changed size. When the grid of cells changes, the canvases are
+  // remade at the new size with what was drawn kept in its place — what no longer
+  // fits is cut, as on a terminal's alternate screen — `>>?` answers the new size,
+  // and the program is woken by `⤢`, once however many resizes it has not read.
+  _onResize() {
+    if (!this.active || !this.ctx) return;
+    const w = this.wrap.clientWidth, h = this.wrap.clientHeight;
+    if (!w || !h) return;                 // a collapsed panel has no size to report
+    const cols = Math.max(10, Math.floor(w / this.cellW));
+    const rows = Math.max(5,  Math.floor(h / this.cellH));
+    if (rows === this.rows && cols === this.cols) return;
+    const dpr = window.devicePixelRatio || 1;
+    const old = this.back;
+    this.back = document.createElement('canvas');
+    this.back.width  = Math.round(w * dpr);
+    this.back.height = Math.round(h * dpr);
+    this.ctx = this.back.getContext('2d');
+    this.ctx.fillStyle = this._bg;
+    this.ctx.fillRect(0, 0, this.back.width, this.back.height);
+    this.ctx.drawImage(old, 0, 0);
+    this.ctx.scale(dpr, dpr);
+    this.ctx.font = canvasFont();
+    this.canvas.width        = this.back.width;
+    this.canvas.height       = this.back.height;
+    this.canvas.style.width  = w + 'px';
+    this.canvas.style.height = h + 'px';
+    this.rows = rows;
+    this.cols = cols;
+    this.dirty = true;
+    this.show();
+    const last = this.keyQueue[this.keyQueue.length - 1];
+    if (!(last && last[0] === RESIZE)) this._pushKey(RESIZE, 0);
   }
 
   /** Queues one keypress and its modifiers (Shift 1, Alt 2, Ctrl 4), as the document-level key listener does. */
@@ -748,6 +788,7 @@ class BrowserTUI {
 
   leave() {
     this.show();
+    if (this._resizeObs) { this._resizeObs.disconnect(); this._resizeObs = null; }
     this.caret = null;
     if (this.caretEl) this.caretEl.style.display = 'none';
     if (!this.active) return;
