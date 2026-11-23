@@ -4,7 +4,7 @@
 `Zymbol_VM.js`, opened 2026-10-29, until it is merged for the release.**
 
 `zymbol_vm.js` is a JavaScript port of the Rust register VM (`interpreter/crates/zymbol-vm`):
-the same 172 instructions, the same opcode numbers, the same messages, the same `--count` —
+the same 173 instructions, the same opcode numbers, the same messages, the same `--count` —
 and of its compiler (`interpreter/crates/zymbol-compiler`), which builds, for every program
 of the corpus, the example pool and the applications, the bytecode the Rust compiler builds.
 The intent, stated by the author, is that it becomes **the only engine of the web**; until

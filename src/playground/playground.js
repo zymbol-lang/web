@@ -4,6 +4,7 @@ import { runZymbolVM } from '../zymbol/zymbol_vm.js';
 import { highlightCode } from './highlight.js';
 import { readZyp } from '../zymbol/zyp.js';
 import { makeResolver } from '../zymbol/module-resolver.js';
+import { keyOf } from '../zymbol/keys.js';
 import { createStore, dirOf, baseOf, USER } from './filestore.js';
 import { createSidebar } from './sidebar.js';
 import { loadCatalog, mountEntry, collectPackage, resolveDeepLink, deepLinkOf } from './catalog.js';
@@ -517,6 +518,7 @@ class BrowserTUI {
     this.printRow = 1;
     this.printCol = 1;
     this.keyQueue        = [];
+    this.lastMods        = 0;
     this.keyWaiters      = [];
     this.aborted         = false;
     this._sleepCancel    = null;
@@ -527,10 +529,10 @@ class BrowserTUI {
       // would be delivered twice: once by this document-level listener and once by the
       // field's own handler.
       if (this.inputBar.classList.contains('active') || this._keypadOpen) return;
+      const key = keyOf(e);
+      if (key === null) return;        // a modifier on its own is not a key
       e.preventDefault();
-      const ch = this._mapKey(e);
-      if (this.keyWaiters.length > 0) this.keyWaiters.shift()(ch);
-      else this.keyQueue.push(ch);
+      this._pushKey(key[0], key[1]);
     };
     document.addEventListener('keydown', this.keyListener);
     this._installKeypad();
@@ -595,10 +597,10 @@ class BrowserTUI {
     this.active = true;
   }
 
-  /** Queues one keypress, exactly as the document-level key listener does. */
-  _pushKey(ch) {
-    if (this.keyWaiters.length > 0) this.keyWaiters.shift()(ch);
-    else this.keyQueue.push(ch);
+  /** Queues one keypress and its modifiers (Shift 1, Alt 2, Ctrl 4), as the document-level key listener does. */
+  _pushKey(ch, mods = 0) {
+    if (this.keyWaiters.length > 0) this.keyWaiters.shift()([ch, mods]);
+    else this.keyQueue.push([ch, mods]);
   }
 
   // ─── Keypad ────────────────────────────────────────────────────────────────
@@ -634,16 +636,18 @@ class BrowserTUI {
       for (const ch of v) this._pushKey(ch);
     };
     // Keys that produce no text: these DO arrive reliably as keydown, on soft keyboards too.
+    // Read through the same rule as a physical key (keys.js, D-13): a named key that is
+    // not text — Unidentified, a lone modifier and anything the language does not name
+    // are left to the input events.
     const onKeyDown = e => {
-      const map = { Enter: '\n', Escape: '\x1b', Backspace: '\x7f', Tab: '\t',
-                    ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' };
-      if (e.key in map) {
-        e.preventDefault();
-        // Escape closes the keypad rather than reaching the program: with the OS keyboard
-        // covering half the screen, getting out has to be possible from the keyboard itself.
-        if (e.key === 'Escape') { close(); return; }
-        this._pushKey(map[e.key]);
-      }
+      if ([...e.key].length === 1) return;
+      const key = keyOf(e);
+      if (key === null || key[0] === '\0') return;
+      e.preventDefault();
+      // Escape closes the keypad rather than reaching the program: with the OS keyboard
+      // covering half the screen, getting out has to be possible from the keyboard itself.
+      if (e.key === 'Escape') { close(); return; }
+      this._pushKey(key[0], key[1]);
     };
 
     this._keypadHandlers = { open, close, onBeforeInput, onInput, onKeyDown };
@@ -855,29 +859,26 @@ class BrowserTUI {
     }
   }
 
+  // `readKey` and `pollKey` answer with the character; the modifiers of the
+  // key they last handed back are `lastMods`, which `<<| k, m` reads (D-14).
   async readKey() {
     this.show();
-    if (this.keyQueue.length > 0) return this.keyQueue.shift();
-    return new Promise(resolve => this.keyWaiters.push(resolve));
+    const [ch, mods] = this.keyQueue.length > 0
+      ? this.keyQueue.shift()
+      : await new Promise(resolve => this.keyWaiters.push(resolve));
+    this.lastMods = mods;
+    return ch;
   }
 
   pollKey() {
     this.show();
-    return this.keyQueue.length > 0 ? this.keyQueue.shift() : '\0';
+    const [ch, mods] = this.keyQueue.length > 0 ? this.keyQueue.shift() : ['\0', 0];
+    this.lastMods = mods;
+    return ch;
   }
 
   getSize() { return [this.rows, this.cols]; }
 
-  _mapKey(e) {
-    if (e.key === 'ArrowUp')    return '↑';
-    if (e.key === 'ArrowDown')  return '↓';
-    if (e.key === 'ArrowLeft')  return '←';
-    if (e.key === 'ArrowRight') return '→';
-    if (e.key === 'Enter')      return '\n';
-    if (e.key === 'Escape')     return '\x1b';
-    if (e.key.length === 1)     return e.key;
-    return '\0';
-  }
 }
 
 // ─── Interactive input ────────────────────────────────────────────────────────

@@ -3833,10 +3833,18 @@ export class Parser {
     }
   }
 
+  // `<<| k` and `<<| k, m` — `m` receives the modifiers held, as an Int (D-14).
   parseKeyInput(blocking) {
     this.adv(); // consume <<| or <<|?
-    const v = this.eat('IDENT', 'expected variable name after key input operator', 'syntax: <<| var');
-    return { type: 'KeyInput', variable: v.value, blocking };
+    const syntax = blocking ? 'syntax: <<| var  or  <<| var, mods' : 'syntax: <<|? var  or  <<|? var, mods';
+    const v = this.eat('IDENT', 'expected variable name after key input operator', syntax);
+    if (!this.check('COMMA')) return { type: 'KeyInput', variable: v.value, modifiers: null, blocking };
+    this.adv(); // consume ,
+    const m = this.eat('IDENT', "expected the modifiers' variable name after ','", syntax);
+    if (m.value === v.value) {
+      throw new ZyStaticError(`'${v.value}' cannot receive both the key and its modifiers`, m, syntax);
+    }
+    return { type: 'KeyInput', variable: v.value, modifiers: m.value, blocking };
   }
 
   parseTuiBlock() {
@@ -6961,6 +6969,7 @@ export class Checker {
 
       case 'KeyInput': {
         if (stmt.varName ?? stmt.variable) this.define(stmt.varName ?? stmt.variable, stmt, false);
+        if (stmt.modifiers) this.define(stmt.modifiers, stmt, false);
         return;
       }
 
@@ -9617,6 +9626,11 @@ export class Interpreter {
           : (this.tui ? this.tui.pollKey() : '\0');
         const cur = { type: 'char', v: ch };
         if (!env.set(stmt.variable, cur)) env.def(stmt.variable, cur);
+        if (stmt.modifiers) {
+          // The modifiers of the key just read (Shift 1, Alt 2, Ctrl 4; D-14).
+          const mods = mkInt(this.tui?.lastMods ?? 0);
+          if (!env.set(stmt.modifiers, mods)) env.def(stmt.modifiers, mods);
+        }
         return;
       }
 
@@ -12899,7 +12913,8 @@ function destroyedReads(ast) {
         case 'VarAssign': case 'Increment': case 'CompoundAssign': acc.add(s.name); break;
         case 'TupleDestruct': case 'ArrayDestruct': case 'NamedDestruct': destructNames(s).forEach(n => acc.add(n)); break;
         case 'Input': acc.add(s.varName); break;
-        case 'KeyInput': case 'CliArgs': acc.add(s.variable); break;
+        case 'KeyInput': acc.add(s.variable); if (s.modifiers) acc.add(s.modifiers); break;
+        case 'CliArgs': acc.add(s.variable); break;
         case 'If': assignedIn(s.then, acc); (s.elseifs ?? []).forEach(b => assignedIn(b.body, acc)); if (Array.isArray(s.else)) assignedIn(s.else, acc); break;
         case 'Loop': assignedIn(s.body, acc); if (s.var) acc.add(s.var); break;
         case 'TryCatch': assignedIn(s.tryBody, acc); (s.catches ?? []).forEach(c => assignedIn(c.body, acc)); if (s.finallyBody) assignedIn(s.finallyBody, acc); break;
@@ -12947,7 +12962,8 @@ function destroyedReads(ast) {
         expr(s.value, st); st.delete(s.name); return st;
       case 'TupleDestruct': case 'ArrayDestruct': case 'NamedDestruct': expr(s.value, st); destructNames(s).forEach(n => st.delete(n)); return st;
       case 'Input': st.delete(s.varName); return st;
-      case 'KeyInput': case 'CliArgs': st.delete(s.variable); return st;
+      case 'KeyInput': st.delete(s.variable); if (s.modifiers) st.delete(s.modifiers); return st;
+      case 'CliArgs': st.delete(s.variable); return st;
       case 'Return': expr(s.value, st); return null;
       case 'Break': case 'Continue': return null;
       case 'FuncDecl': block(s.body, new Map()); return st;
@@ -13371,6 +13387,7 @@ export function buildSymbolIndex(src) {
         return;
       case 'KeyInput':
         add(stmt.varName ?? stmt.variable, 'var', stmt.line);
+        if (stmt.modifiers) add(stmt.modifiers, 'var', stmt.line);
         return;
       case 'Input':
         add(stmt.name ?? stmt.variable, 'var', stmt.line);

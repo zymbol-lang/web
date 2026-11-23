@@ -125,7 +125,7 @@ function scanStmt(stmt, m) {
     case 'CliArgsCapture': m.mention(stmt.variable_name); break;
     case 'SetNumeralMode': break;
     case 'Sleep': scanExpr(stmt.duration, m); break;
-    case 'KeyInput': m.mention(stmt.variable); break;
+    case 'KeyInput': m.mention(stmt.variable); if (stmt.modifiers) m.mention(stmt.modifiers); break;
     case 'ClearScreen': break;
     case 'OutputPos':
       for (const slot of stmt.slots) if (slot) scanExpr(slot, m);
@@ -171,7 +171,7 @@ function creations(stmt, out) {
     case 'Assignment': if (!stmt.hot && !stmt.pre_hot) out.push(stmt.name); break;
     case 'DestructureAssign': destructureNames(stmt.pattern, n => out.push(n)); break;
     case 'Input': out.push(stmt.variable); break;
-    case 'KeyInput': out.push(stmt.variable); break;
+    case 'KeyInput': out.push(stmt.variable); if (stmt.modifiers) out.push(stmt.modifiers); break;
     case 'CliArgsCapture': out.push(stmt.variable_name); break;
   }
 }

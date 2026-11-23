@@ -5,8 +5,8 @@
 // An opcode is the position of its variant in Rust's `Instruction` enum, which
 // is also the variant index bincode writes for it.
 
-export const ISA_FINGERPRINT = '41d5522955e4960e';
-export const ISA_SIZE = 172;
+export const ISA_FINGERPRINT = 'e2f1a9bec762b66b';
+export const ISA_SIZE = 173;
 
 // [name, operand types], in declaration order.
 export const OPS = [
@@ -181,7 +181,8 @@ export const OPS = [
   ["SetOneInPlace", ["Reg","Reg","Reg","StrIdx"]], // 168
   ["IterPairs", ["Reg","Reg"]], // 169
   ["AssertMutable", ["Reg","StrIdx"]], // 170
-  ["Halt", []], // 171
+  ["ReadKeyMods", ["Reg","Reg","bool"]], // 171
+  ["Halt", []], // 172
 ];
 
 export const OP = Object.freeze(Object.fromEntries(OPS.map(([n], i) => [n, i])));

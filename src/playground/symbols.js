@@ -53,7 +53,7 @@ export const SYMBOLS = {
   '>>~':  { id:'out_pos',   group:'io', example:'>>~ (2, 5) > "placed text"' },
   '>>|':  { id:'tui',       group:'io', example:'>>| {\n    >>!\n    >>~ (1, 1) > "TUI mode"\n    @~ 800\n}' },
   '<<|':  { id:'key',       group:'io', example:'>>| {\n    >>~ (1, 1) > "press a key"\n    <<| k\n}' },
-  '<<|?': { id:'key_nb',    group:'io', example:'>>| {\n    <<|? k\n    ? k <> "" { >>~ (1, 1) > k }\n}' },
+  '<<|?': { id:'key_nb',    group:'io', example:'>>| {\n    <<|? k\n    ? k <> \'\\0\' { >>~ (1, 1) > k }\n}' },
   '@~':   { id:'sleep',     group:'io', example:'>> "wait" ¶\n@~ 500\n>> "done" ¶' },
   '><':   { id:'cli_args',  group:'io', example:'>< args\n>> "arguments: " >> args$# ¶' },
 

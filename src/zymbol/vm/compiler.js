@@ -817,7 +817,9 @@ export class Compiler {
       case 'ClearScreen': ctx.emit(['ClearScreen']); return;
       case 'KeyInput': {
         const dst = ctx.regOf(stmt.variable) ?? ctx.allocReg(stmt.variable);
-        ctx.emit(['ReadKey', dst, stmt.blocking]);
+        if (stmt.modifiers == null) { ctx.emit(['ReadKey', dst, stmt.blocking]); return; }
+        const mods = ctx.regOf(stmt.modifiers) ?? ctx.allocReg(stmt.modifiers);
+        ctx.emit(['ReadKeyMods', dst, mods, stmt.blocking]);
         return;
       }
       case 'OutputPos': {
@@ -3237,7 +3239,7 @@ const REG_SLOTS = (() => {
     + ' RoundFloatDyn TruncFloatDyn', [1, 2, 3]);
   set('RangeStep StrSplitMap StrSplitFilter StrInsert StrRemove StrReplace', [1, 2, 3, 4]);
   set('StrSplitReduce StrReplaceN', [1, 2, 3, 4, 5]);
-  set('IterStep', [1, 2]);
+  set('IterStep ReadKeyMods', [1, 2]);
   set('HofNext', [2, 3, 4, 5, 6, 7]);
   set('FmtThousandsDyn FmtScientificDyn', [1, 2, 4]);
   set('MakeError', [1, 3]);

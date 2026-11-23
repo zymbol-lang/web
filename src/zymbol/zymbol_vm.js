@@ -178,6 +178,8 @@ export async function runZymbolVM(src, inputFn, onOutput, moduleResolver = null,
       if (pendingKey === null) return undefined;
       const k = pendingKey; pendingKey = null; return k;
     },
+    // The modifiers of the key `readKey` last handed back (D-14).
+    mods: () => tui.lastMods ?? 0,
     printAt: (at, style, text) => tui.printAt(at ? at[0] : null, at ? at[1] : null, text,
       (style.bold ? 1 : 0) | (style.italic ? 2 : 0) | (style.underline ? 4 : 0), style.fg, style.bg),
     enterTui() {

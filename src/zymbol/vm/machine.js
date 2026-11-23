@@ -409,7 +409,7 @@ function pipeTerminal(host) {
     clear() { host.write('\x1b[2J\x1b[1;1H'); },
     size() { return [80, 24]; },
     readKey(blocking) {
-      if (!blocking) return 0;
+      if (!blocking) return 0;   // and no modifiers: `mods` is absent
       const e = generic('No such device or address (os error 6)');
       e.abort = true;
       return e;
@@ -1979,7 +1979,7 @@ export class Machine {
           case 170: // AssertMutable
             if (tagOf(R[base + ins.a]) === T_TUPLE) throw generic(tupleImmutableMsg(strings[ins.b]));
             break;
-          case 171: // Halt
+          case 172: // Halt
             return DONE;
 
           // ── `$/` fused with what reads its parts ────────────────────────
@@ -2032,6 +2032,19 @@ export class Machine {
             }
             if (k instanceof VmErr) throw k;
             put(R, base + ins.a, mkChar(typeof k === 'number' ? k : k.codePointAt(0))); break;
+          }
+          case 171: { // ReadKeyMods — `<<| k, m` (D-14)
+            frame.ip = ip;
+            this.flush();
+            const k = this.term().readKey(ins.c);
+            if (k === undefined) {
+              if (floor > 0) throw new NotYet('a `<<|` that has to wait, inside a sort comparator');
+              frame.ip = ip - 1;   // asked again on resume
+              return KEY;
+            }
+            if (k instanceof VmErr) throw k;
+            put(R, base + ins.a, mkChar(typeof k === 'number' ? k : k.codePointAt(0)));
+            put(R, base + ins.b, this.term().mods?.() ?? 0); break;
           }
           case 160: { // PrintAt
             const { at, style } = extractPos(R[base + ins.a]);
@@ -2428,7 +2441,7 @@ export const IMPLEMENTED = new Set([
   'TryBegin', 'TryEnd', 'TryLand', 'LoadErrorKind', 'TryHandled', 'TryRethrow', 'IsError', 'MakeError',
   'ErrorKindIs', 'ErrorMessage', 'RaiseError', 'SetupOutputWriteback', 'DetachGlobal', 'LoadGlobal',
   'StoreGlobal', 'ReadLine', 'HotInit', 'LoadCliArgs', 'DeepSet', 'DeepSetInPlace', 'SetOne', 'SetOneInPlace',
-  'IterPairs', 'AssertMutable', 'Halt',
+  'IterPairs', 'AssertMutable', 'ReadKeyMods', 'Halt',
   'StrContains', 'StrSlice', 'StrFindPos', 'StrInsert', 'StrRemove', 'StrReplace', 'StrReplaceN',
   'ArrayRemove', 'ArrayRemoveValue', 'ArrayRemoveAll', 'ArrayInsert', 'ArrayRemoveRange', 'ArrayRemoveCount',
   'ArraySlice', 'ArraySliceCount', 'StrSliceCount', 'OutputSlotCheck', 'Pos', 'DestroyLocal', 'CheckAlive',
