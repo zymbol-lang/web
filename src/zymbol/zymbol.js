@@ -205,6 +205,9 @@
 import { caretOf, CARET_RANGE, CARET_SHAPE, CARET_OUTSIDE } from './screen.js';
 // std/text (D-18): Unicode's case tables, generated from the version Rust uses.
 import * as casemap from './casemap.js';
+// Extended grapheme clusters (D-19): UAX #29 from the Unicode version of the
+// Rust engines' `unicode-segmentation`, for `std/text` and `std/term` alike.
+import { graphemes as segmentGraphemes } from './graphemes.js';
 
 // ─── Unicode digit blocks (mirrors DIGIT_BLOCKS in zymbol-lexer) ─────────────
 const DIGIT_BLOCKS = [
@@ -8117,13 +8120,11 @@ export function codePointDisplayWidth(cp) {
 
 // Grapheme clusters, used only where a cut must not split one (truncate).
 // Width itself sums per-code-point, mirroring UnicodeWidthStr::width(&str).
+// They were Intl.Segmenter's until D-19, whose clusters are those of the ICU
+// the browser shipped with, and the code points themselves without it; now they
+// are graphemes.js's, the Rust engines' Unicode version.
 function graphemeClusters(s) {
-  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
-    try {
-      return [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(s)].map(x => x.segment);
-    } catch (_) { /* fall through to code-point split */ }
-  }
-  return [...s];
+  return segmentGraphemes(s);
 }
 
 function displayWidth(s) {
@@ -8432,7 +8433,7 @@ export const STDLIB_ARITIES = new Map([
   ['std/io',     new Map([['read',1],['write',2],['append',2],['exists',1],['delete',1],['list',1],['mkdir',1]])],
   ['std/net',    new Map([['get',-1],['post',-1],['post_json',-1],['head',-1],['timeout',1]])],
   ['std/term',   new Map([['width',1],['pad_left',2],['pad_right',2],['center',2],['truncate',2]])],
-  ['std/text',   new Map([['upper',1],['lower',1],['fold',1]])],
+  ['std/text',   new Map([['upper',1],['lower',1],['fold',1],['graphemes',1]])],
   // Everything but `now` takes an optional trailing zone, so everything but
   // `now` is variadic.
   ['std/time',   new Map([['now',0],['today',-1],['parts',-1],['of',-1],['format',-1],['add',-1],['diff',-1]])],
@@ -9009,6 +9010,13 @@ export function buildStdlibModule(name, vfs = null) {
       if (v?.type === 'str') return mkStr(casemap.lower(v.v));
       if (v?.type === 'char') return mkStr(casemap.lowerChar(v.v));
       throw wrong('lower', v);
+    }});
+    // An Array of Strings, one extended grapheme cluster each (D-19).
+    exports.set('graphemes', { type: 'func', name: 'graphemes', native: true, call: args => {
+      const v = args[0];
+      if (v?.type === 'str') return mkArr(segmentGraphemes(v.v).map(mkStr));
+      if (v?.type === 'char') return mkArr([mkStr(v.v)]);
+      throw wrong('graphemes', v);
     }});
     // A Char folds to a Char: one code point for one.
     exports.set('fold', { type: 'func', name: 'fold', native: true, call: args => {

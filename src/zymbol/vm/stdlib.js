@@ -31,7 +31,7 @@ const IDS = new Map([
   [603, ['std/term', 'center']], [604, ['std/term', 'truncate']],
   [700, ['std/time', 'now']], [701, ['std/time', 'today']], [702, ['std/time', 'parts']], [703, ['std/time', 'of']],
   [704, ['std/time', 'format']], [705, ['std/time', 'add']], [706, ['std/time', 'diff']],
-  [800, ['std/text', 'upper']], [801, ['std/text', 'lower']], [802, ['std/text', 'fold']],
+  [800, ['std/text', 'upper']], [801, ['std/text', 'lower']], [802, ['std/text', 'fold']], [803, ['std/text', 'graphemes']],
 ]);
 export const BRIDGED = new Set(IDS.keys());
 
