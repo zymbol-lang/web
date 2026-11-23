@@ -717,6 +717,19 @@
     }
     #tui-wrap.active { display: flex; flex-direction: column; }
 
+    /* The terminal's cursor inside `>>|`, shown by `>>~ (row, col)` (D-16): a block that
+       inverts the cell under it and blinks, as a terminal's does. */
+    #tui-caret {
+      display: none;
+      position: absolute;
+      pointer-events: none;
+      background: #fff;
+      mix-blend-mode: difference;
+      animation: tui-caret-blink 1.06s steps(1) infinite;
+    }
+    @keyframes tui-caret-blink { 50% { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { #tui-caret { animation: none; } }
+
     #tui-canvas {
       display: block;
       background: var(--bg);

@@ -26,6 +26,7 @@ import {
 import { asciiDigits, asciiNumber } from './digits.js';
 import { powi, roundHalfAway, fmtThousands, fmtScientific } from './format.js';
 import { makeStdlib, BRIDGED } from './stdlib.js';
+import { caretOf, CARET_RANGE, CARET_SHAPE, CARET_OUTSIDE } from '../screen.js';
 
 const NONE = 4294967295;               // u32::MAX: no handler armed
 export const MAX_ACTIVE_CALLS = 10000;   // zymbol_common::depth
@@ -416,6 +417,7 @@ function pipeTerminal(host) {
     },
     printAt(at, style, text) { host.write(ansiPrintAt(at, style, text)); },
     enterTui() { return 'failed to enable raw mode: not a terminal'; },
+    setCaret() {},
     exitTui() {},
     release() {},
   };
@@ -1979,7 +1981,7 @@ export class Machine {
           case 170: // AssertMutable
             if (tagOf(R[base + ins.a]) === T_TUPLE) throw generic(tupleImmutableMsg(strings[ins.b]));
             break;
-          case 172: // Halt
+          case 173: // Halt
             return DONE;
 
           // ── `$/` fused with what reads its parts ────────────────────────
@@ -2045,6 +2047,19 @@ export class Machine {
             if (k instanceof VmErr) throw k;
             put(R, base + ins.a, mkChar(typeof k === 'number' ? k : k.codePointAt(0)));
             put(R, base + ins.b, this.term().mods?.() ?? 0); break;
+          }
+          case 172: { // ShowCursor — `>>~ (row, col)` with nothing to print (D-16)
+            const v = R[base + ins.a];
+            let place;
+            if (tagOf(v) === T_TUPLE && v.items.length === 2) {
+              for (const it of v.items) if (typeof it !== 'number') throw typeMsg(`>>~ slot expects Int, got ${typeName(it)}`);
+              place = v.items;
+            } else throw typeMsg(`${CARET_SHAPE}, got ${typeName(v)}`);
+            const caret = caretOf(place[0], place[1]);
+            if (caret === undefined) throw generic(CARET_RANGE);
+            if (this.tuiOpen === 0) throw generic(CARET_OUTSIDE);
+            this.term().setCaret?.(caret);
+            break;
           }
           case 160: { // PrintAt
             const { at, style } = extractPos(R[base + ins.a]);
@@ -2449,5 +2464,5 @@ export const IMPLEMENTED = new Set([
   'BaseConvert', 'FmtThousands', 'FmtScientific', 'RoundFloat', 'TruncFloat', 'FmtThousandsDyn',
   'FmtScientificDyn', 'RoundFloatDyn', 'TruncFloatDyn', 'Sleep',
   'StrSplitCount', 'StrSplitMap', 'StrSplitFilter', 'StrSplitReduce',
-  'ClearScreen', 'QueryTerminalSize', 'ReadKey', 'PrintAt', 'EnterTui', 'ExitTui', 'BashExec', 'Execute',
+  'ClearScreen', 'QueryTerminalSize', 'ReadKey', 'ShowCursor', 'PrintAt', 'EnterTui', 'ExitTui', 'BashExec', 'Execute',
 ]);

@@ -823,6 +823,26 @@ export class Compiler {
         return;
       }
       case 'OutputPos': {
+        // `>>~ (row, col)` with nothing to print: the cursor (D-16). As Rust
+        // compiles it: the written slots checked, a lone one checked by
+        // `ShowCursor` itself.
+        if (stmt.caret) {
+          let rPos;
+          if (stmt.slots.length === 1 && stmt.slots[0]) rPos = this.compileExpr(stmt.slots[0], ctx);
+          else {
+            const regs = [];
+            for (const slot of stmt.slots) {
+              if (!slot) continue;
+              const r = this.compileExpr(slot, ctx);
+              ctx.emit(['OutputSlotCheck', r, false]);
+              regs.push(r);
+            }
+            rPos = ctx.allocTemp();
+            ctx.emit(['MakeTuple', rPos, regs]);
+          }
+          ctx.emit(['ShowCursor', rPos]);
+          return;
+        }
         const slotRegs = [];
         const lone = stmt.slots.length === 1;
         for (const slot of stmt.slots) {
@@ -3223,7 +3243,7 @@ const REG_SLOTS = (() => {
   const t = {};
   const set = (names, slots) => { for (const n of names.split(' ')) t[n] = slots; };
   set('LoadInt LoadFloat LoadBool LoadStr LoadChar LoadUnit MakeFunc MakeLambda NewArray LoadErrorKind LoadGlobal'
-    + ' Sleep QueryTerminalSize ReadKey LoadCliArgs HotInit BashExec BuildStr Execute Return Print JumpIf JumpIfNot'
+    + ' Sleep QueryTerminalSize ReadKey ShowCursor LoadCliArgs HotInit BashExec BuildStr Execute Return Print JumpIf JumpIfNot'
     + ' JumpIfNotCond MatchInt MatchRange MatchCharRange MatchStr MatchBool DestructureCheck LoopStepCheck'
     + ' CallableCheck CallableCheckNamed NavRangeCheck OutputSlotCheck DestroyLocal CheckAlive Revive AssertMutable'
     + ' RequireDict RequireBool TryEnd TryHandled TryRethrow', [1]);

@@ -186,6 +186,8 @@ export async function runZymbolVM(src, inputFn, onOutput, moduleResolver = null,
       try { tui.enter(); return true; }
       catch (e) { return `failed to enable raw mode: ${e?.message ?? e}`; }
     },
+    // `>>~ (row, col)` with nothing to print (D-16): `[row, col]`, or `null` to hide it.
+    setCaret: caret => tui.setCaret?.(caret),
     exitTui: () => tui.leave(),
     write: text => tui.print(text),
     release: () => { if (tui.active) tui.leave(); },

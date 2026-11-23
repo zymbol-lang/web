@@ -397,7 +397,7 @@ function stmt(s, preHot = false) {
     case 'Sleep': return { k: 'Sleep', duration: expr(s.duration), span };
     case 'KeyInput': return { k: 'KeyInput', variable: s.variable, modifiers: s.modifiers ?? null, blocking: !!s.blocking, span };
     case 'ClearScreen': return { k: 'ClearScreen', span };
-    case 'OutputPos': return { k: 'OutputPos', slots: s.slots.map(x => (x ? expr(x) : null)), items: s.items.map(expr), parenthesized: !!s.parenthesized, span };
+    case 'OutputPos': return { k: 'OutputPos', slots: s.slots.map(x => (x ? expr(x) : null)), items: s.items.map(expr), parenthesized: !!s.parenthesized, caret: !!s.caret, span };
     case 'TuiBlock': return { k: 'TuiBlock', body: block(s.body), span };
   }
   return fail('statement', s);

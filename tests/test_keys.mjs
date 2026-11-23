@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: AGPL-3.0-only
-// What `<<| k, m` hands a program in the browser (D-13, D-14, D-15).
+// What `<<| k, m` hands a program in the browser (D-13, D-14, D-15), and where
+// `>>~ (row, col)` shows the cursor (D-16).
 //
 //   node tests/test_keys.mjs
 //
@@ -139,6 +140,68 @@ for (const [name, run] of [['zyjs', runZymbol], ['zyjsvm', runZymbolVM]]) {
   const got = asFrame(tui.text);
   check(`${name} prints the Rust engines' golden`, got === asFrame(golden) && out.trim() === '',
         `\n--- got\n${got}\n--- out\n${out}`);
+}
+
+// ─── the cursor (D-16), through both browser engines ─────────────────────────
+// `output/cursor_pantalla.zy` on a virtual screen that keeps what is drawn cell
+// by cell, as `zymbol run --keys` does, with the cursor a line after the frame:
+// `[cursor row,col]`. A SHOW in the `.keys` script prints the frame the next key
+// is read on, and the block's last frame is printed when it ends.
+console.log('\noutput/cursor_pantalla.zy');
+function virtualTui(script, sink) {
+  const ROWS = 24, COLS = 80;
+  const queue = [];
+  for (const line of script.split('\n')) {
+    const t = line.trim();
+    if (!t || t.startsWith('#')) continue;
+    if (t === 'SHOW') queue.push('SHOW');
+    else queue.push(keyOf({ key: t }));
+  }
+  return {
+    active: false, aborted: false, lastMods: 0, _sleepCancel: null,
+    cells: null, row: 0, col: 0, caret: null,
+    blank() { this.cells = Array.from({ length: ROWS }, () => Array(COLS).fill(' ')); this.row = 0; this.col = 0; },
+    frame() {
+      const rows = this.cells.map(r => r.join('').replace(/\s+$/, ''));
+      while (rows.length && rows[rows.length - 1] === '') rows.pop();
+      if (this.caret) rows.push(`[cursor ${this.caret[0]},${this.caret[1]}]`);
+      return rows.join('\n');
+    },
+    enter() { this.active = true; this.blank(); this.caret = null; },
+    leave() { sink(this.frame() + '\n'); this.active = false; this.caret = null; },
+    show() {},
+    clear() { this.blank(); },
+    setCaret(c) { this.caret = c; },
+    print(s) {
+      for (const ch of s) {
+        if (ch === '\n') { this.row++; this.col = 0; continue; }
+        if (this.row < ROWS && this.col < COLS) this.cells[this.row][this.col] = ch;
+        this.col++;
+      }
+    },
+    printAt(r, c, text) { if (r !== null && c !== null) { this.row = r - 1; this.col = c - 1; } this.print(text); },
+    getSize() { return [ROWS, COLS]; },
+    next() {
+      while (queue[0] === 'SHOW') { queue.shift(); sink(this.frame() + '\n'); }
+      return queue.shift() ?? ['\0', 0];
+    },
+    pollKey() { const [ch, m] = this.next(); this.lastMods = m; return ch; },
+    async readKey() { const [ch, m] = this.next(); this.lastMods = m; return ch; },
+  };
+}
+const cursorZy = join(CORPUS, 'cursor_pantalla.zy');
+const cursorSrc = readFileSync(cursorZy, 'utf8');
+const cursorKeys = readFileSync(join(CORPUS, 'cursor_pantalla.keys'), 'utf8');
+const cursorGolden = readFileSync(join(CORPUS, 'cursor_pantalla.expected'), 'utf8');
+for (const [name, run] of [['zyjs', runZymbol], ['zyjsvm', runZymbolVM]]) {
+  let out = '';
+  const sink = s => { out += s; };
+  const tui = virtualTui(cursorKeys, sink);
+  await run(cursorSrc, async () => null, sink, null, 'cursor_pantalla.zy', tui, [], {});
+  // zyq compares with the blank lines left out, and records the golden so.
+  const lines = t => t.split('\n').filter(l => l.trim() !== '').join('\n');
+  check(`${name} prints the Rust engines' golden`, lines(out) === lines(cursorGolden),
+        `\n--- got\n${out}\n--- want\n${cursorGolden}`);
 }
 
 console.log(failures ? `\n${failures} failed` : '\nall passed');

@@ -201,6 +201,9 @@
  * correction applied, is interpreter/IMPL_V008.md § E.3.
  */
 
+// The cursor inside `>>|` (D-16): one rule for both browser engines.
+import { caretOf, CARET_RANGE, CARET_SHAPE, CARET_OUTSIDE } from './screen.js';
+
 // ─── Unicode digit blocks (mirrors DIGIT_BLOCKS in zymbol-lexer) ─────────────
 const DIGIT_BLOCKS = [
   [0x0030,'ASCII'],[0x0660,'Arabic-Indic'],[0x06F0,'Ext. Arabic-Indic'],
@@ -3857,7 +3860,8 @@ export class Parser {
   }
 
   parseOutputPos() {
-    const opLine = this.adv().line; // consume >>~
+    const opTok = this.adv(); // consume >>~
+    const opLine = opTok.line;
     let slots, opParen = false;
     if (this.check('LPAREN')) {
       opParen = true;
@@ -3878,7 +3882,16 @@ export class Parser {
       const name = this.eat('IDENT', "expected '(' or variable after >>~", 'syntax: >>~ (fila, col [, BKS [, fg [, bg]]]) > items').value;
       slots = [{ type: 'Ident', name, hot: false }]; // sentinel: variable mode
     }
-    this.eat('GT'); // consume >
+    // Nothing to print: `>>~ (row, col)` shows the terminal's cursor there, and
+    // `>>~ (0, 0)` hides it (D-16, DIS-ZYE-004) — the Rust parser's words.
+    if (!this.check('GT')) {
+      if (opParen && (slots.length !== 2 || slots.some(s => s === null))) {
+        throw new ZyStaticError('a cursor is placed by a row and a column only: >>~ (row, col)', opTok,
+          "to print, add '>' and what to print: >>~ (fila, col [, BKS [, fg [, bg]]]) > items");
+      }
+      return { type: 'OutputPos', slots, items: [], parenthesized: opParen, caret: true };
+    }
+    this.adv(); // consume >
     const items = [];
     while (!this.check('PILCROW') && !this.check('RBRACE') &&
            !this.check('EOF') && this.peek().line === opLine) {
@@ -9446,6 +9459,34 @@ export class Interpreter {
     }
   }
 
+  // `>>~ (row, col)` with nothing to print: the terminal's cursor is shown
+  // there, and `>>~ (0, 0)` hides it (D-16). In the order and the words of
+  // io.rs's `execute_caret`: the slots, the place's range, then `>>|`.
+  async execCaret(stmt, env) {
+    const place = [];
+    const lone = stmt.slots.length === 1;
+    for (const s of stmt.slots) {
+      if (!s) continue;
+      const v = await this.eval(s, env);
+      if (!lone) {
+        if (v?.type !== 'int') throw new ZyRuntimeError(`>>~ slot expects Int, got ${typeIdent(v)}`, '##Type', stmt.line);
+        place.push(v.v);
+      } else if (v?.type === 'tuple' && v.v.length === 2) {
+        for (const it of v.v) {
+          if (it?.type !== 'int') throw new ZyRuntimeError(`>>~ slot expects Int, got ${typeIdent(it)}`, '##Type', stmt.line);
+          place.push(it.v);
+        }
+      } else {
+        throw new ZyRuntimeError(`${CARET_SHAPE}, got ${typeIdent(v)}`, '##Type', stmt.line);
+      }
+    }
+    const caret = caretOf(Number(place[0]), Number(place[1]));
+    if (caret === undefined) throw new ZyRuntimeError(CARET_RANGE, '##Range', stmt.line);
+    if (!this.tui || !(this.tuiDepth > 0)) throw new ZyError(CARET_OUTSIDE, stmt.line);
+    this.caret = caret;
+    this.tui.setCaret?.(caret);
+  }
+
   async exec(stmt, env) {
     try {
       return await this._exec(stmt, env);
@@ -9635,6 +9676,7 @@ export class Interpreter {
       }
 
       case 'OutputPos': {
+        if (stmt.caret) return await this.execCaret(stmt, env);
         const { slots, items } = stmt;
         let row = null, col = null, bks = 0, fg = null, bg = null;
         const lone = slots.length === 1 && slots[0]?.type === 'Ident' ? await this.eval(slots[0], env) : null;
@@ -9703,10 +9745,17 @@ export class Interpreter {
           }
           throw new ZyError(`failed to enable raw mode: ${e?.message ?? e}`, stmt.line);
         }
+        // A `>>|` begins with the cursor hidden; an outer one gets its own back (D-16).
+        const outerCaret = this.caret ?? null;
+        this.caret = null;
+        this.tuiDepth = (this.tuiDepth ?? 0) + 1;
         try {
           await this.execBlock(stmt.body, new Env(env));
         } finally {
           this.tui.leave();
+          this.tuiDepth--;
+          this.caret = outerCaret;
+          if (this.tuiDepth > 0) this.tui.setCaret?.(outerCaret);
           this.maxSteps        = savedMax;
           this.maxBytes        = savedByte;
           this.maxInfiniteIter = savedIter;

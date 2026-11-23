@@ -448,6 +448,8 @@ class BrowserTUI {
     this._touchCancel     = null;
     this._keypadOpen      = false;
     this._keypadHandlers  = null;
+    this.caret            = null;   // `>>~ (row, col)`: where the cursor is shown (D-16)
+    this.caretEl          = null;
     // Pre-compute dimensions so >>? works even before >>| is entered
     this._measureCells();
   }
@@ -517,6 +519,7 @@ class BrowserTUI {
 
     this.printRow = 1;
     this.printCol = 1;
+    this.caret    = null;           // `>>|` begins with the cursor hidden (D-16)
     this.keyQueue        = [];
     this.lastMods        = 0;
     this.keyWaiters      = [];
@@ -706,10 +709,47 @@ class BrowserTUI {
     this.dirty = false;
     this.screen.setTransform(1, 0, 0, 1, 0, 0);
     this.screen.drawImage(this.back, 0, 0);
+    this._placeCaret();
+  }
+
+  // `>>~ (row, col)` with nothing to print shows the cursor there, `null` hides it
+  // (D-16). Like a terminal's, it moves when the user next sees the screen.
+  setCaret(caret) {
+    this.caret = caret;
+    this.dirty = true;
+  }
+
+  // The cursor is an element over the canvas, not pixels in it: it blinks without
+  // the frame being redrawn, and inverts whatever cell it stands on, as a block
+  // cursor does in a terminal.
+  _placeCaret() {
+    if (!this.caretEl) {
+      this.caretEl = document.createElement('div');
+      this.caretEl.id = 'tui-caret';
+      this.caretEl.setAttribute('aria-hidden', 'true');
+      this.wrap.appendChild(this.caretEl);
+    }
+    const c = this.caret;
+    if (!c || !this.active || c[0] > this.rows || c[1] > this.cols) {
+      this.caretEl.style.display = 'none';
+      return;
+    }
+    const st = this.caretEl.style;
+    st.display = 'block';
+    st.left   = (this.canvas.offsetLeft + Math.round((c[1] - 1) * this.cellW)) + 'px';
+    st.top    = (this.canvas.offsetTop  + Math.round((c[0] - 1) * this.cellH)) + 'px';
+    st.width  = Math.round(this.cellW) + 'px';
+    st.height = Math.round(this.cellH) + 'px';
+    // Restart the blink, so a cursor that moves is seen at once.
+    this.caretEl.style.animation = 'none';
+    void this.caretEl.offsetWidth;
+    this.caretEl.style.animation = '';
   }
 
   leave() {
     this.show();
+    this.caret = null;
+    if (this.caretEl) this.caretEl.style.display = 'none';
     if (!this.active) return;
     this._removeKeypad();
     document.removeEventListener('keydown', this.keyListener);
