@@ -82,6 +82,8 @@
     "E019": "argument {index} of '{name}' is marked '<~' but the function does not declare it as an output parameter",
     "E020": "'{variable}' is given to '{name}' as an output argument twice",
     "E020_help": "an output parameter is the caller's own variable while the call lasts, so one variable cannot be two of them — what one wrote would be lost to the other; give each '<~' a variable of its own",
+    "E021": "'##!' does not take a Char since v0.0.12: it truncates a Float",
+    "E021_help": "a character becomes its code with 0d|c|, and a code its character with 0d|n|",
     "E_ARG_TYPE": "argument {index} has type {got}, but function '{name}' expects {expected}",
     "E_TYPE": "an error's message is a String, got {type}",
     "E_TYPE_help": "build the text first: ##{kind}(\"…\"), or ##{kind}(\"\" x) to turn a value into it",
@@ -422,19 +424,19 @@
     },
     "to_int_tr": {
       "concept": "To whole number, cutting",
-      "summary": "Converts to a whole number by dropping the decimals. On a character, yields its code point."
+      "summary": "Converts a number to a whole number by dropping the decimals. A character is not a number: its code is 0d|c|."
     },
     "typed_str": {
       "concept": "Checked text input",
       "summary": "Reads text and rejects anything longer than the stated limit, asking again."
     },
     "typed_chr": {
-      "concept": "Character, from a code or as input",
-      "summary": "In an expression, turns a code point (an Int) into its character: ##'65 is A. After <<, reads exactly one character, asking again if given more."
+      "concept": "Character, as input",
+      "summary": "After <<, reads exactly one character, asking again if given more. A code becomes its character with 0d|n|."
     },
     "base_lit": {
-      "concept": "Base literal",
-      "summary": "A number written in hexadecimal, binary, octal or decimal: 0x 0b 0o 0d."
+      "concept": "Character by its code",
+      "summary": "0x41, 0b01000001, 0o101 and 0d65 all write the character A, by its code in four bases. With bars they convert: 0d|65| is A and 0d|'A'| is 65; 0x|'A'| writes \"0x41\", and 0x|\"41\"| reads it back."
     },
     "true": {
       "concept": "True",

@@ -880,8 +880,8 @@ t = ##!3.7        // Tam sayıya, kesilmiş  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   güvenli: girdiyi olduğu gibi döndürür
->> ##!'A' ¶        // → 65    bir Karakterin kod noktası
->> ##'65 ¶         // → A     bir tamsayı kod noktasının Karakteri
+>> 0d|'A'| ¶       // → 65    bir Karakterin kod noktası
+>> 0d|65| ¶        // → A     bir tamsayı kod noktasının Karakteri
 ```
 
 ```zymbol

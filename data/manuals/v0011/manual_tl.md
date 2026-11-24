@@ -880,8 +880,8 @@ t = ##!3.7        // sa Integer, ni-truncate  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   fail-safe: ibinabalik ang input nang hindi nagbabago
->> ##!'A' ¶        // → 65    code point ng isang Char
->> ##'65 ¶         // → A     Char mula sa isang integer na code point
+>> 0d|'A'| ¶       // → 65    code point ng isang Char
+>> 0d|65| ¶        // → A     Char mula sa isang integer na code point
 ```
 
 ```zymbol

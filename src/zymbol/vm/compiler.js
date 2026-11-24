@@ -1523,7 +1523,6 @@ export class Compiler {
           case 'ToFloat': ctx.emit(['IntToFloat', dst, rSrc]); ctx.setRegType(dst, T.Float); break;
           case 'ToIntRound': ctx.emit(['FloatToIntRound', dst, rSrc]); ctx.setRegType(dst, T.Int); break;
           case 'ToIntTrunc': ctx.emit(['FloatToIntTrunc', dst, rSrc]); ctx.setRegType(dst, T.Int); break;
-          case 'ToChar': ctx.emit(['IntToChar', dst, rSrc]); ctx.setRegType(dst, T.Char); break;
         }
         return dst;
       }

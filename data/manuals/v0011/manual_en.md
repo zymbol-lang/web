@@ -934,8 +934,8 @@ t = ##!3.7        // to Int, truncated  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   fail-safe: it returns the input unchanged
->> ##!'A' ¶        // → 65    a Char's code point
->> ##'65 ¶         // → A     an Int code point's Char
+>> 0d|'A'| ¶       // → 65    a Char's code point
+>> 0d|65| ¶        // → A     an Int code point's Char
 ```
 
 ```zymbol

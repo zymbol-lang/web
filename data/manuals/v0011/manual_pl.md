@@ -880,8 +880,8 @@ t = ##!3.7        // do liczby całkowitej, obcięte  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   bezpieczne: zwraca wejście niezmienione
->> ##!'A' ¶        // → 65    punkt kodowy Znaku
->> ##'65 ¶         // → A     Znak z całkowitego punktu kodowego
+>> 0d|'A'| ¶       // → 65    punkt kodowy Znaku
+>> 0d|65| ¶        // → A     Znak z całkowitego punktu kodowego
 ```
 
 ```zymbol

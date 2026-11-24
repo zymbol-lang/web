@@ -64,7 +64,6 @@ const divZero = () => new VmErr('Div', 'division by zero');
 const modZero = () => new VmErr('Div', 'modulo by zero');
 const intOverflow = (a, op, b) => new VmErr('Range', `integer overflow: ${a} ${op} ${b}`);
 const castOverflow = op => new VmErr('Range', `integer overflow: ${op} cannot represent this float`);
-const charOutOfRange = () => new VmErr('Range', "character out of range: ##' cannot represent this Int");
 const indexOutOfBounds = (index, length, container) =>
   new VmErr('Index', `${container} index out of bounds: index ${index} for ${container} of length ${length}`);
 const indexZero = () => new VmErr('Index', 'index 0 is invalid — Zymbol uses 1-based indexing (use 1 for the first element, -1 for the last)');
@@ -331,8 +330,16 @@ function baseConvert(v, radix) {
   const digits = n => (radix === 2 ? n.toString(2).padStart(8, '0') : radix === 8 ? n.toString(8).padStart(3, '0')
     : radix === 10 ? String(n) : n.toString(16).toUpperCase().padStart(2, '0'));
   switch (tagOf(v)) {
-    case T_CHAR: return prefix + digits(v.cp);
-    case T_INT: return (v < 0 ? '-' : '') + prefix + digits(Math.abs(v));
+    // `0d` is the door between a character and its code (D-24): the element
+    // of a character in decimal is the number.
+    case T_CHAR: return radix === 10 ? v.cp : prefix + digits(v.cp);
+    case T_INT:
+      if (radix === 10) {
+        if (v < 0 || v > 0x10FFFF || (v >= 0xD800 && v <= 0xDFFF))
+          throw new VmErr('Range', 'character out of range: 0d|…| cannot represent this code');
+        return mkChar(v);
+      }
+      return (v < 0 ? '-' : '') + prefix + digits(Math.abs(v));
     case T_STR: {
       let s = v;
       for (const p of ['0b', '0B', '0o', '0O', '0d', '0D', '0x', '0X']) while (s.startsWith(p)) s = s.slice(2);
@@ -975,18 +982,13 @@ export class Machine {
             const x = R[base + ins.b];
             if (isFloat(x)) { const n = fromF64(Math.trunc(x.v)); if (n === null) throw castOverflow('##!'); put(R, base + ins.a, n); }
             else if (typeof x === 'number') put(R, base + ins.a, x);
-            else if (tagOf(x) === T_CHAR) put(R, base + ins.a, x.cp);
-            else throw typeMsg(`##! requires a numeric value or Char, got ${typeName(x)}`);
+            // A Char is not a number: its code is `0d|c|` (D-24).
+            else if (tagOf(x) === T_CHAR) throw typeMsg("##! requires a numeric value, got Char: a character's code is 0d|c|");
+            else throw typeMsg(`##! requires a numeric value, got ${typeName(x)}`);
             break;
           }
-          case 36: { // IntToChar
-            const x = R[base + ins.b];
-            if (tagOf(x) === T_CHAR) put(R, base + ins.a, x);
-            else if (typeof x === 'number') {
-              if (x < 0 || x > 0x10FFFF || (x >= 0xD800 && x <= 0xDFFF)) throw charOutOfRange();
-              put(R, base + ins.a, mkChar(x));
-            } else throw typeMsg(`##' requires an Int or Char, got ${typeName(x)}`);
-            break;
+          case 36: { // IntToChar — retired with `##'` (D-24), never emitted
+            throw typeMsg('IntToChar is retired: a code becomes its character with 0d|n|');
           }
 
           // ── Strings ─────────────────────────────────────────────────────

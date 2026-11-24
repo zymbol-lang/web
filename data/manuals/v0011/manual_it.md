@@ -883,8 +883,8 @@ t = ##!3.7        // a Int, troncato  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   fail-safe: ritorna l'ingresso invariato
->> ##!'A' ¶        // → 65    punto di codice di un Char
->> ##'65 ¶         // → A     Char da un punto di codice intero
+>> 0d|'A'| ¶       // → 65    punto di codice di un Char
+>> 0d|65| ¶        // → A     Char da un punto di codice intero
 ```
 
 ```zymbol

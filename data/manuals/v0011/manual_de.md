@@ -880,8 +880,8 @@ t = ##!3.7        // zu Ganzzahl, abgeschnitten  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   abgesichert: gibt die Eingabe unverändert zurück
->> ##!'A' ¶        // → 65    der Codepunkt eines Zeichens
->> ##'65 ¶         // → A     das Zeichen zu einem ganzzahligen Codepunkt
+>> 0d|'A'| ¶       // → 65    der Codepunkt eines Zeichens
+>> 0d|65| ¶        // → A     das Zeichen zu einem ganzzahligen Codepunkt
 ```
 
 ```zymbol

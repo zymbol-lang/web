@@ -880,8 +880,8 @@ t = ##!3.7        // la Întreg, trunchiat  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   sigur la eșec: returnează intrarea neschimbată
->> ##!'A' ¶        // → 65    punctul de cod al unui Caracter
->> ##'65 ¶         // → A     Caracter dintr-un punct de cod întreg
+>> 0d|'A'| ¶       // → 65    punctul de cod al unui Caracter
+>> 0d|65| ¶        // → A     Caracter dintr-un punct de cod întreg
 ```
 
 ```zymbol

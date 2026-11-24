@@ -880,8 +880,8 @@ t = ##!3.7        // kuya ku-Inombolo ephelele, kusikwe  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   ephephile: ibuyisela okokufaka kungashintshiwe
->> ##!'A' ¶        // → 65    iphoyinti lekhodi lika-Uhlamvu
->> ##'65 ¶         // → A     Uhlamvu kusuka kuphoyinti lekhodi eliyinombolo ephelele
+>> 0d|'A'| ¶       // → 65    iphoyinti lekhodi lika-Uhlamvu
+>> 0d|65| ¶        // → A     Uhlamvu kusuka kuphoyinti lekhodi eliyinombolo ephelele
 ```
 
 ```zymbol

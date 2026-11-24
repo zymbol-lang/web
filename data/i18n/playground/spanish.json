@@ -81,6 +81,8 @@
     "E019": "el argumento {index} de '{name}' lleva '<~' pero la función no lo declara como parámetro de salida",
     "E020": "'{variable}' se da a '{name}' dos veces como argumento de salida",
     "E020_help": "un parámetro de salida es la propia variable de quien llama mientras dura la llamada, así que una variable no puede ser dos de ellos — lo que escribiera uno lo perdería el otro; da a cada '<~' su propia variable",
+    "E021": "'##!' no toma un Char desde la v0.0.12: trunca un Float",
+    "E021_help": "un carácter pasa a su código con 0d|c|, y un código a su carácter con 0d|n|",
     "E_ARG_TYPE": "el argumento {index} es de tipo {got}, pero la función '{name}' espera {expected}",
     "E_TYPE": "el mensaje de un error es un String, y este es {type}",
     "E_TYPE_help": "construye antes el texto: ##{kind}(\"…\"), o ##{kind}(\"\" x) para convertir un valor en texto",
@@ -421,19 +423,19 @@
     },
     "to_int_tr": {
       "concept": "A entero, cortando",
-      "summary": "Convierte a entero descartando los decimales. Sobre un carácter, da su punto de código."
+      "summary": "Convierte un número a entero descartando los decimales. Un carácter no es un número: su código es 0d|c|."
     },
     "typed_str": {
       "concept": "Entrada de texto con límite",
       "summary": "Lee texto y rechaza lo que pase del largo indicado, volviendo a preguntar."
     },
     "typed_chr": {
-      "concept": "Carácter, desde un código o como entrada",
-      "summary": "En una expresión, convierte un punto de código (un Int) en su carácter: ##'65 es A. Tras <<, lee exactamente un carácter, y vuelve a preguntar si recibe más."
+      "concept": "Carácter, como entrada",
+      "summary": "Tras <<, lee exactamente un carácter, y vuelve a preguntar si recibe más. Un código pasa a su carácter con 0d|n|."
     },
     "base_lit": {
-      "concept": "Literal con base",
-      "summary": "Un número escrito en hexadecimal, binario, octal o decimal: 0x 0b 0o 0d."
+      "concept": "Carácter por su código",
+      "summary": "0x41, 0b01000001, 0o101 y 0d65 escriben el carácter A, por su código en cuatro bases. Con barras convierten: 0d|65| es A y 0d|'A'| es 65; 0x|'A'| escribe \"0x41\", y 0x|\"41\"| lo vuelve a leer."
     },
     "true": {
       "concept": "Cierto",

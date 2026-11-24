@@ -880,8 +880,8 @@ t = ##!3.7        // chuyển sang Số nguyên, cắt bỏ  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   an toàn: trả lại đầu vào không thay đổi
->> ##!'A' ¶        // → 65    điểm mã của một Ký tự
->> ##'65 ¶         // → A     Ký tự của một điểm mã nguyên
+>> 0d|'A'| ¶       // → 65    điểm mã của một Ký tự
+>> 0d|65| ¶        // → A     Ký tự của một điểm mã nguyên
 ```
 
 ```zymbol

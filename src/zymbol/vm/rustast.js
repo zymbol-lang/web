@@ -18,7 +18,7 @@ const BIN = {
   '&&': 'And', '||': 'Or', '|>': 'Pipe',
 };
 const UN = { '-': 'Neg', '!': 'Not', '+': 'Pos' };
-const CAST = { '##.': 'ToFloat', '###': 'ToIntRound', '##!': 'ToIntTrunc', "##'": 'ToChar' };
+const CAST = { '##.': 'ToFloat', '###': 'ToIntRound', '##!': 'ToIntTrunc' };
 
 class Unknown extends Error {}
 const fail = (what, node) => { throw new Unknown(`adapter: ${what} ${JSON.stringify(node)?.slice(0, 200)}`); };

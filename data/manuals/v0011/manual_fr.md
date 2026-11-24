@@ -880,8 +880,8 @@ t = ##!3.7        // en Entier, tronqué  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   sécurisé : renvoie l'entrée inchangée
->> ##!'A' ¶        // → 65    le point de code d'un caractère
->> ##'65 ¶         // → A     le caractère d'un point de code entier
+>> 0d|'A'| ¶       // → 65    le point de code d'un caractère
+>> 0d|65| ¶        // → A     le caractère d'un point de code entier
 ```
 
 ```zymbol

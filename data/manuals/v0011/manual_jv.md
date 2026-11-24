@@ -880,8 +880,8 @@ t = ##!3.7        // menyang Wilangan bulat, dipotong  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   aman-gagal: mbalèkaké input tanpa owah
->> ##!'A' ¶        // → 65    titik kode Aksara
->> ##'65 ¶         // → A     Aksara saka titik kode wilangan bulat
+>> 0d|'A'| ¶       // → 65    titik kode Aksara
+>> 0d|65| ¶        // → A     Aksara saka titik kode wilangan bulat
 ```
 
 ```zymbol

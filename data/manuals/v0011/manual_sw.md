@@ -880,8 +880,8 @@ t = ##!3.7        // kwa Nambari kamili, imekatwa  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   salama: inarudisha ingizo bila kubadilika
->> ##!'A' ¶        // → 65    nukta ya msimbo ya Herufi
->> ##'65 ¶         // → A     Herufi ya nukta ya msimbo kamili
+>> 0d|'A'| ¶       // → 65    nukta ya msimbo ya Herufi
+>> 0d|65| ¶        // → A     Herufi ya nukta ya msimbo kamili
 ```
 
 ```zymbol

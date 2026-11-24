@@ -4066,12 +4066,19 @@ export class Parser {
     if (t.type === 'MATCH') { return this.parseMatchExpr(); }
 
     // Cast operators: ##. ### ##!
-    if (t.type === 'CAST_FLOAT')     { this.adv(); return { type: 'CastOp', op: '##.', operand: this.parseUnary() }; }
-    if (t.type === 'CAST_INT_ROUND') { this.adv(); return { type: 'CastOp', op: '###', operand: this.parseUnary() }; }
-    if (t.type === 'CAST_INT_TRUNC') { this.adv(); return { type: 'CastOp', op: '##!', operand: this.parseUnary() }; }
-    // `##'` — an Int code point to its Char, the pair of `##!` on a Char
-    // (GLB-109). `<< ##' "msg" c` reads it as a typespec before any expression.
-    if (t.type === 'CAST_CHAR')      { this.adv(); return { type: 'CastOp', op: "##'", operand: this.parseUnary() }; }
+    if (t.type === 'CAST_FLOAT')     { this.adv(); return { type: 'CastOp', op: '##.', line: t.line, operand: this.parseUnary() }; }
+    if (t.type === 'CAST_INT_ROUND') { this.adv(); return { type: 'CastOp', op: '###', line: t.line, operand: this.parseUnary() }; }
+    if (t.type === 'CAST_INT_TRUNC') { this.adv(); return { type: 'CastOp', op: '##!', line: t.line, operand: this.parseUnary() }; }
+    // `##'expr` was the cast from a code to its character (GLB-109) and was
+    // removed in v0.0.12 (D-24): `0d|n|` and `0d|c|` are the one door, as in
+    // the Rust parser. `<< ##' "msg" c` reads it as a typespec before any
+    // expression, so it never reaches here.
+    if (t.type === 'CAST_CHAR') {
+      throw new ZyError(
+        "the cast '##'' does not exist: it was removed in v0.0.12\n" +
+        '= help: a code becomes its character with 0d|n|, and a character its code with 0d|c|',
+        t.line);
+    }
 
     // `#[…]` — an array whose mix of element types is DECLARED (decision 15).
     // Same collection and same type as `[…]`: `#?` answers `##]` for both. What
@@ -5259,7 +5266,19 @@ export class Checker {
       // answers it in Rust. Not knowing it here left every reassignment through
       // a cast without the type-change warning the CLI gives (GLB-109).
       case 'CastOp':
-        return { '##.': 'Float', '###': 'Int', '##!': 'Int', "##'": 'Char' }[e.op];
+        return { '##.': 'Float', '###': 'Int', '##!': 'Int' }[e.op];
+      // A character or a number in `0d` is the other one (D-24); in the other
+      // three bases it is its text, and a text in any base is the character —
+      // as `infer_expr` answers it in Rust.
+      case 'DataOp': {
+        if (e.kind !== 'base_conv') return null;
+        const t = this.inferType(e.arg, locals);
+        if (e.prec === 10 && t === 'Char') return 'Int';
+        if (e.prec === 10 && t === 'Int') return 'Char';
+        if (t === 'Char' || t === 'Int') return 'String';
+        if (t === 'String') return 'Char';
+        return null;
+      }
       case 'NavIndex': {
         // A navigation path is Any in Rust; only a single step is typed.
         if (e.spec?.kind !== 'simple') return null;
@@ -7337,7 +7356,14 @@ export class Checker {
       }
 
       case 'CastOp': {
-        this.checkExpr(expr.operand ?? expr.value ?? expr.obj);
+        const operand = expr.operand ?? expr.value ?? expr.obj;
+        this.checkExpr(operand);
+        // `##!` took a Char until v0.0.11; its code is `0d|c|` since D-24.
+        if (expr.op === '##!' && this.inferType(operand) === 'Char') {
+          this.error('E021', "'##!' does not take a Char since v0.0.12: it truncates a Float",
+            expr.line ?? operand?.line, null,
+            'a character becomes its code with 0d|c|, and a code its character with 0d|n|');
+        }
         return;
       }
 
@@ -11010,7 +11036,7 @@ export class Interpreter {
                 throw new ZyRuntimeError(`failed to parse '${digits}' as ${baseName} number`, '##Parse', expr.line);
               }
               // A code with no character — past 0x10FFFF, or a surrogate — is
-              // `##Range`, as `##'` raises it, without the value (GLB-113).
+              // `##Range`, as `0d|n|` raises it, without the value (GLB-113).
               if (code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) {
                 const pfx = { 2: '0b', 8: '0o', 10: '0d', 16: '0x' }[base];
                 throw new ZyRuntimeError(`character out of range: ${pfx}|…| cannot represent this code`, '##Range', expr.line);
@@ -11019,6 +11045,17 @@ export class Interpreter {
             }
             if (val.type !== 'char' && val.type !== 'int') {
               throw new ZyRuntimeError(`base conversion expressions work with char, int, or string, got ${typeIdent(val)}`, '##Type', expr.line);
+            }
+            // `0d` is the door between a character and its code (D-24): the
+            // element of a character in decimal is the number. A code with no
+            // character — below 0, past 0x10FFFF, a surrogate — is `##Range`.
+            if (base === 10 && val.type === 'char') return mkInt(val.v.codePointAt(0));
+            if (base === 10) {
+              const code = val.v;
+              if (code < 0 || code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) {
+                throw new ZyRuntimeError('character out of range: 0d|…| cannot represent this code', '##Range', expr.line);
+              }
+              return mkChar(String.fromCodePoint(code));
             }
             const n = val.type === 'char' ? val.v.codePointAt(0) : val.v;
             // A negative one carries its sign in front, and the digits are those
@@ -11038,30 +11075,15 @@ export class Interpreter {
 
       case 'CastOp': {
         const val = await this.eval(expr.operand, env);
-        // `##'` (GLB-109): only an Int is a code — a whole Float is not one,
-        // `##'###f` writes the rounding — and a code with no character (past
-        // 0x10FFFF, or a surrogate) is `##Range`, as in data_ops.rs.
-        if (expr.op === "##'") {
-          if (val.type === 'char') return val;
-          if (val.type !== 'int') {
-            const _names = { str:'String', float:'Float', bool:'Bool', arr:'Array', tuple:'Tuple', unit:'Unit' };
-            const typeName = _names[val.type] ?? (val.type.charAt(0).toUpperCase() + val.type.slice(1));
-            throw new ZyRuntimeError(`##' requires an Int or Char, got ${typeName}`, '##Type');
-          }
-          const code = val.v;
-          if (!Number.isInteger(code) || code < 0 || code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) {
-            throw new ZyRuntimeError("character out of range: ##' cannot represent this Int", '##Range');
-          }
-          return mkChar(String.fromCodePoint(code));
+        // A Char is not a number: its code is `0d|c|` (D-24). `##!` answered
+        // it from v0.0.8 to v0.0.11.
+        if (expr.op === '##!' && val.type === 'char') {
+          throw new ZyRuntimeError("##! requires a numeric value, got Char: a character's code is 0d|c|", '##Type');
         }
-        // ##! also accepts a Char, casting it to its Unicode code point —
-        // the only direct Char→Int route (mirrors data_ops.rs CastKind::ToIntTrunc).
-        if (expr.op === '##!' && val.type === 'char') return mkInt(val.v.codePointAt(0));
         if (val.type !== 'int' && val.type !== 'float') {
           const _typeNames = { str:'String', int:'Integer', float:'Float', bool:'Bool', char:'Char', arr:'Array', tuple:'Tuple', unit:'Unit' };
           const typeName = _typeNames[val.type] ?? (val.type.charAt(0).toUpperCase() + val.type.slice(1));
-          const reqSuffix = expr.op === '##!' ? ' or Char' : '';
-          throw new ZyRuntimeError(`${expr.op} requires a numeric value${reqSuffix}, got ${typeName}`, '##Type');
+          throw new ZyRuntimeError(`${expr.op} requires a numeric value, got ${typeName}`, '##Type');
         }
         if (expr.op === '##.') return mkFloat(val.v);
         // A float with no integer form in range is a ##Range error, not the

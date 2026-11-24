@@ -942,8 +942,8 @@ t = ##!3.7        // a Entero, truncado    → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   a prueba de fallos: devuelve la entrada intacta
->> ##!'A' ¶        // → 65    el punto de código de un carácter
->> ##'65 ¶         // → A     el carácter de un punto de código
+>> 0d|'A'| ¶       // → 65    el punto de código de un carácter
+>> 0d|65| ¶        // → A     el carácter de un punto de código
 ```
 
 ```zymbol

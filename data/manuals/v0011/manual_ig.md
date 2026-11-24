@@ -880,8 +880,8 @@ t = ##!3.7        // gaa Ọnụọgụ zuru ezu, bepụ  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   nchekwa-ọdịda: na-eweghachi ntinye n'ebughị mgbanwe
->> ##!'A' ¶        // → 65    koodu ntụpọ nke Akwụkwọ
->> ##'65 ¶         // → A     Akwụkwọ site na koodu ntụpọ ọnụọgụ zuru ezu
+>> 0d|'A'| ¶       // → 65    koodu ntụpọ nke Akwụkwọ
+>> 0d|65| ¶        // → A     Akwụkwọ site na koodu ntụpọ ọnụọgụ zuru ezu
 ```
 
 ```zymbol

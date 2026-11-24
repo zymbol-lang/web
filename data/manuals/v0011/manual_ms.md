@@ -880,8 +880,8 @@ t = ##!3.7        // ke Integer, dipotong  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   selamat-gagal: mengembalikan input tanpa perubahan
->> ##!'A' ¶        // → 65    titik kod Char
->> ##'65 ¶         // → A     Char daripada titik kod integer
+>> 0d|'A'| ¶       // → 65    titik kod Char
+>> 0d|65| ¶        // → A     Char daripada titik kod integer
 ```
 
 ```zymbol

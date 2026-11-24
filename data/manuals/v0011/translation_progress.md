@@ -42,7 +42,7 @@ Cada uno verificado en los tres motores (`zytw`, `zyvm`, `zyjs`) el 2026-10-28.
 | 10 | Errores | párrafo + bloque `##Parse("…")` / `##Parse(msj) =>` + nota | v0.0.10 |
 | 11 | Biblioteca | `semilla` en `std/random`, `timeout` en `std/net`, y dos líneas en la nota | G8, ZethyCLI G1 |
 | 12 | **nueva H2** «Running a Program», antes de Paquetes | bloque `bash` + nota de efectos | G1, G3, `--count` |
-| 13 | Operadores de datos | línea `>> ##'65 ¶ // → A` | v0.0.10 |
+| 13 | Operadores de datos | línea `>> 0d|65| ¶ // → A` | v0.0.10 |
 | 14 | Shell | `<\ date … \>` → `<\ "date +%Y-%m-%d" \>` + nota del valor como una palabra y del subguion con argumentos | el bloque **no se analizaba ni en v0.0.9**; G2 |
 | 15 | Símbolos y registro | fila `##'` / `##Kind("m")`; entradas v0.0.11 y v0.0.10 en el registro | — |
 

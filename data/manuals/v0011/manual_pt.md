@@ -880,8 +880,8 @@ t = ##!3.7        // para Inteiro, truncado  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   à prova de falhas: retorna a entrada inalterada
->> ##!'A' ¶        // → 65    o ponto de código de um Caractere
->> ##'65 ¶         // → A     o Caractere de um ponto de código inteiro
+>> 0d|'A'| ¶       // → 65    o ponto de código de um Caractere
+>> 0d|65| ¶        // → A     o Caractere de um ponto de código inteiro
 ```
 
 ```zymbol

@@ -880,8 +880,8 @@ t = ##!3.7        // naar Geheel getal, afgekapt  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   faalveilig: retourneert de invoer ongewijzigd
->> ##!'A' ¶        // → 65    codepunt van een Karakter
->> ##'65 ¶         // → A     Karakter uit een geheel codepunt
+>> 0d|'A'| ¶       // → 65    codepunt van een Karakter
+>> 0d|65| ¶        // → A     Karakter uit een geheel codepunt
 ```
 
 ```zymbol

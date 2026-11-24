@@ -880,8 +880,8 @@ t = ##!3.7        // sí Òdìdì, gé  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   ààbò-ìkùnà: ó ń dá ìwọlé padà láìyípadà
->> ##!'A' ¶        // → 65    kóòdù kókó Lẹ́tà kan
->> ##'65 ¶         // → A     Lẹ́tà láti kóòdù kókó odindi
+>> 0d|'A'| ¶       // → 65    kóòdù kókó Lẹ́tà kan
+>> 0d|65| ¶        // → A     Lẹ́tà láti kóòdù kókó odindi
 ```
 
 ```zymbol

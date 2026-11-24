@@ -44,7 +44,7 @@ try {
   rust = run(`<# std/text => tx
 @ cp:0..1114111 {
     ? cp >= 55296 && cp <= 57343 { @> }
-    c = ##'cp
+    c = 0d|cp|
     s = "" c
     u = tx::upper(c)
     l = tx::lower(c)

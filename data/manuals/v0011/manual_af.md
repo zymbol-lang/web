@@ -880,8 +880,8 @@ t = ##!3.7        // na Heelgetal, afgekap  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   mislukkingsveilig: gee inset onveranderd terug
->> ##!'A' ¶        // → 65    kode-punt van 'n Karakter
->> ##'65 ¶         // → A     Karakter uit 'n heelgetal-kodepunt
+>> 0d|'A'| ¶       // → 65    kode-punt van 'n Karakter
+>> 0d|65| ¶        // → A     Karakter uit 'n heelgetal-kodepunt
 ```
 
 ```zymbol
