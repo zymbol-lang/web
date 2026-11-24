@@ -11022,13 +11022,14 @@ export class Interpreter {
             }
             const n = val.type === 'char' ? val.v.codePointAt(0) : val.v;
             // A negative one carries its sign in front, and the digits are those
-            // of its absolute value: `-0x00FF` (GLB-136). It was put inside the
-            // padding, `0x0-FF`.
+            // of its absolute value: `-0xFF` (GLB-136). It was put inside the
+            // padding, `0x0-FF`. Never fewer digits than a byte takes in that
+            // base, the decimal as it is read (D-23): `0x41 0o101 0b01000001 0d65`.
             const sg = n < 0 ? '-' : '', m = Math.abs(n);
-            if (base === 16) return mkStr(sg + '0x' + m.toString(16).toUpperCase().padStart(4, '0'));
-            if (base === 2)  return mkStr(sg + '0b' + m.toString(2));
-            if (base === 8)  return mkStr(sg + '0o' + m.toString(8));
-            if (base === 10) return mkStr(sg + '0d' + m.toString(10).padStart(4, '0'));
+            if (base === 16) return mkStr(sg + '0x' + m.toString(16).toUpperCase().padStart(2, '0'));
+            if (base === 2)  return mkStr(sg + '0b' + m.toString(2).padStart(8, '0'));
+            if (base === 8)  return mkStr(sg + '0o' + m.toString(8).padStart(3, '0'));
+            if (base === 10) return mkStr(sg + '0d' + m.toString(10));
             return val;
           }
         }

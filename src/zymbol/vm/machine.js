@@ -326,8 +326,10 @@ function charAsNumber(c) {
 /** `0x|…|` and its siblings (BaseConvert). */
 function baseConvert(v, radix) {
   const prefix = radix === 2 ? '0b' : radix === 8 ? '0o' : radix === 10 ? '0d' : '0x';
-  const digits = n => (radix === 2 ? n.toString(2) : radix === 8 ? n.toString(8)
-    : radix === 10 ? String(n).padStart(4, '0') : n.toString(16).toUpperCase().padStart(4, '0'));
+  // Never fewer digits than a byte takes in that base; the decimal as it is
+  // read (D-23): `0x41 0o101 0b01000001 0d65`.
+  const digits = n => (radix === 2 ? n.toString(2).padStart(8, '0') : radix === 8 ? n.toString(8).padStart(3, '0')
+    : radix === 10 ? String(n) : n.toString(16).toUpperCase().padStart(2, '0'));
   switch (tagOf(v)) {
     case T_CHAR: return prefix + digits(v.cp);
     case T_INT: return (v < 0 ? '-' : '') + prefix + digits(Math.abs(v));
