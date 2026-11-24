@@ -8448,7 +8448,7 @@ export const STDLIB_ARITIES = new Map([
   ])],
   ['std/random', new Map([['entero',2],['rango',1],['peso_f64',0],['semilla',1]])],
   ['std/json',   new Map([['decode',1],['decode_map',2],['encode',1]])],
-  ['std/io',     new Map([['read',1],['write',2],['append',2],['exists',1],['delete',1],['list',1],['mkdir',1]])],
+  ['std/io',     new Map([['read',1],['write',2],['append',2],['exists',1],['delete',1],['list',1],['mkdir',1],['read_bytes',1],['write_bytes',2]])],
   ['std/net',    new Map([['get',-1],['post',-1],['post_json',-1],['head',-1],['timeout',1]])],
   ['std/term',   new Map([['width',1],['pad_left',2],['pad_right',2],['center',2],['truncate',2]])],
   ['std/text',   new Map([['upper',1],['lower',1],['fold',1],['graphemes',1]])],
@@ -8857,9 +8857,43 @@ export function buildStdlibModule(name, vfs = null) {
       if (a?.type !== 'str') throw new ZyError(msg);
       return norm(a.v);
     };
+    // A file holds a text, or — once io::write_bytes wrote it — its bytes, a
+    // Uint8Array (D-22). Reading bytes that are not UTF-8 as text fails as
+    // Rust's read_to_string does; a BOM stays, as it does there.
+    const utf8 = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
+    const asText = v => {
+      if (typeof v === 'string') return v;
+      try { return utf8.decode(v); } catch { return null; }
+    };
+    const asBytes = v => (typeof v === 'string' ? new TextEncoder().encode(v) : v);
     exports.set('read', { type: 'func', name: 'read', native: true, call: args => {
       const p = strArg(args[0], 'io::read: expected String path');
-      return files.has(p) ? mkStr(files.get(p)) : ioErr(NOENT);
+      if (!files.has(p)) return ioErr(NOENT);
+      const t = asText(files.get(p));
+      return t === null ? ioErr('stream did not contain valid UTF-8') : mkStr(t);
+    }});
+    // One Char 0x00–0xFF per byte: a byte is the character of its code, as
+    // `0x01` and `##'n` already write one (D-22).
+    exports.set('read_bytes', { type: 'func', name: 'read_bytes', native: true, call: args => {
+      const p = strArg(args[0], 'io::read_bytes: expected String path');
+      if (!files.has(p)) return ioErr(NOENT);
+      const b = asBytes(files.get(p));
+      let s = '';
+      for (let i = 0; i < b.length; i += 8192) s += String.fromCharCode(...b.subarray(i, i + 8192));
+      return mkStr(s);
+    }});
+    exports.set('write_bytes', { type: 'func', name: 'write_bytes', native: true, call: args => {
+      if (args[0]?.type !== 'str' || args[1]?.type !== 'str')
+        throw new ZyError('io::write_bytes: expected (String, String)');
+      const out = [];
+      for (const c of args[1].v) {
+        const cp = c.codePointAt(0);
+        // "out of range" makes it a ##Range, as in Rust (errorKindOfMessage).
+        if (cp > 0xFF) throw new ZyError(`io::write_bytes: '${c}' is U+${cp.toString(16).toUpperCase().padStart(4, '0')}, out of range for a byte: a byte is a Char from 0x00 to 0xFF`);
+        out.push(cp);
+      }
+      files.set(norm(args[0].v), Uint8Array.from(out));
+      return mkUnit();
     }});
     exports.set('write', { type: 'func', name: 'write', native: true, call: args => {
       if (args[0]?.type !== 'str' || args[1]?.type !== 'str')
@@ -8871,7 +8905,14 @@ export function buildStdlibModule(name, vfs = null) {
       if (args[0]?.type !== 'str' || args[1]?.type !== 'str')
         throw new ZyError('io::append: expected (String, String)');
       const p = norm(args[0].v);
-      files.set(p, (files.get(p) ?? '') + args[1].v);
+      const was = files.get(p) ?? '';
+      if (typeof was === 'string') files.set(p, was + args[1].v);
+      else {
+        const add = new TextEncoder().encode(args[1].v);
+        const both = new Uint8Array(was.length + add.length);
+        both.set(was); both.set(add, was.length);
+        files.set(p, both);
+      }
       return mkUnit();
     }});
     exports.set('exists', { type: 'func', name: 'exists', native: true, call: args => {

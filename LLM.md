@@ -52,7 +52,7 @@ this document shrinks with it.
 | `</ ./sub.zy />` | runs the sub-script | **not lexed at all** | `error: undefined variable 'sub'` — a misleading message, not a "not supported" one |
 | `<\ "cmd" \>` | real stdout+stderr | **stub** | `echo hola` → `"hola"`; `date +%Y` → the year; `%m %d %H %M %S %s` likewise; **anything else** → a 19-digit nanosecond-ish timestamp. `<\ "ls -la" \>` returns 19 characters where the CLI returns 1716 |
 | `<# std/db` | ODBC | **absent** | hard `Runtime error: standard library module 'std/db' is not available in the web playground (requires ODBC)` |
-| `<# std/io` | the real filesystem | **per-run in-memory VFS** | `read`/`write`/`append`/`exists`/`delete`/`list`/`mkdir` all work and agree with the CLI *within one run*; nothing reaches the disk, and the VFS dies with the run |
+| `<# std/io` | the real filesystem | **per-run in-memory VFS** | `read`/`write`/`append`/`exists`/`delete`/`list`/`mkdir`/`read_bytes`/`write_bytes` all work and agree with the CLI *within one run*; nothing reaches the disk, and the VFS dies with the run |
 | `<# std/net` | reqwest | `fetch` | works. In a browser **CORS applies**; in Node it does not, but you need Node ≥ 18 for the global `fetch` |
 | TUI operators | needs a real tty | **needs a `tuiContext` you supply** | see the paragraph below the table |
 | `>>?` | the real terminal size | `tui.getSize()`, else `(24, 80)` | the CLI also answers `(24, 80)` with no tty, so these agree by default |

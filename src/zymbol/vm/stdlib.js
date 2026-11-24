@@ -25,6 +25,7 @@ const IDS = new Map([
   [200, ['std/json', 'decode']], [201, ['std/json', 'encode']], [202, ['std/json', 'decode_map']],
   [300, ['std/io', 'read']], [301, ['std/io', 'write']], [302, ['std/io', 'append']], [303, ['std/io', 'exists']],
   [304, ['std/io', 'delete']], [305, ['std/io', 'list']], [306, ['std/io', 'mkdir']],
+  [307, ['std/io', 'read_bytes']], [308, ['std/io', 'write_bytes']],
   [400, ['std/net', 'get']], [401, ['std/net', 'post']], [402, ['std/net', 'post_json']], [403, ['std/net', 'head']],
   [404, ['std/net', 'timeout']],
   [600, ['std/term', 'width']], [601, ['std/term', 'pad_left']], [602, ['std/term', 'pad_right']],
