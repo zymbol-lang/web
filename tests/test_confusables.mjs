@@ -32,7 +32,23 @@ check('the Catalan middle dot does not', confusableHints('col·lecció = 1\n').l
 check('a string is not a name', confusableHints('>> "ºtotal" ¶\n').length === 0);
 
 const all = '＠a = 1\n？a = 2\n！a = 3\n＃a = 4\n¿a = 5\n¡a = 6\n§a = 7\n•a = 8\n¹a = 9\nⁿa = 10\nªa = 11\nᵒa = 12\nₒa = 13\n∘a = 14\n◦a = 15\n';
-check('each of the symbol look-alikes warns once', confusableHints(all).length === 15, confusableHints(all).length);
+const perChar = src => confusableHints(src).filter(d => d.code === 'W_CONFUSABLE');
+check('each of the symbol look-alikes warns once', perChar(all).length === 15, perChar(all).length);
+
+// Two whole names that look the same (D-21, decided 2026-11-24), as the
+// language server's `look_alike_names` says it.
+const names = src => confusableHints(src).filter(d => d.code === 'W_CONFUSABLE_NAME');
+const two = names('a = 1\n\u0430 = 2\n>> a " " \u0430 \u00b6\n');
+check('Latin a, then Cyrillic а: the later one is named with the earlier', two.length === 1 &&
+  two[0].message === "'\u0430' looks like 'a' (line 1), a different name: it has U+0430 where 'a' has U+0061" &&
+  two[0].line === 2 && two[0].severity === 'warning', JSON.stringify(two));
+check('a name after . or :: is left out — the Greek layer\'s mat.E => Ε',
+  names('# m {\n    <# std/math => mat\n    #> { mat.E => \u0395 }\n}\n').length === 0);
+check('the same name twice does not warn', names('x = 1\nx = 2\n').length === 0);
+check('a name typed decomposed is placed where it is typed (D-20)',
+  names('q\u0397\u0300 = 1\nq\u041d\u0300 = 2\n')[0]?.line === 2);
+check('checkSource gives no look-alike names either',
+  !checkSource('a = 1\n\u0430 = 2\n>> a \u0430 \u00b6\n').diagnostics.some(d => d.code === 'W_CONFUSABLE_NAME'));
 
 check('checkSource — what a terminal sees — gives no hint',
   !checkSource('ºtotal = 1\n>> ºtotal ¶\n').diagnostics.some(d => d.code === 'W_CONFUSABLE'));

@@ -45,7 +45,9 @@ const POOL = [
   0x61, 0x20,                          // Other
 ];
 let seed = 2026;
-const rand = n => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed % n; };
+// A 32-bit LCG in integer arithmetic, read from its high bits: the product in
+// doubles passed 2^53 and lost the low bits, so every draw was a multiple of 8.
+const rand = n => { seed = (Math.imul(seed, 1103515245) + 12345) >>> 0; return (seed >>> 8) % n; };
 const texts = [];
 for (let i = 0; i < 4000; i++) {
   const len = 1 + rand(7);

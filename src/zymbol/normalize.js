@@ -69,13 +69,8 @@ function composePair(a, b, compose) {
   return compose.get(a * 0x110000 + b);
 }
 
-/** A text in NFC. Below U+0300 nothing decomposes and nothing combines. */
-export function nfc(text) {
-  let plain = true;
-  for (let i = 0; i < text.length; i++) if (text.charCodeAt(i) >= 0x300) { plain = false; break; }
-  if (plain) return text;
-  const { full, ccc, compose } = t();
-  // Decompose, then put each run of marks in the order of their classes.
+// Decompose, then put each run of marks in the order of their classes.
+function decomposed(text, full, ccc) {
   const d = [];
   for (const c of text) decompose(c.codePointAt(0), d, full);
   for (let i = 1; i < d.length; i++) {
@@ -84,6 +79,27 @@ export function nfc(text) {
     let j = i;
     while (j > 0 && (ccc.get(d[j - 1]) ?? 0) > c) { [d[j - 1], d[j]] = [d[j], d[j - 1]]; j--; }
   }
+  return d;
+}
+// Below `limit` a text is already in the form: nothing below U+00C0
+// decomposes, and nothing below U+0300 combines with what comes before it.
+const plain = (text, limit) => {
+  for (let i = 0; i < text.length; i++) if (text.charCodeAt(i) >= limit) return false;
+  return true;
+};
+
+/** A text in NFD — what the confusable skeleton of UTS #39 starts from (D-21). */
+export function nfd(text) {
+  if (plain(text, 0xC0)) return text;
+  const { full, ccc } = t();
+  return String.fromCodePoint(...decomposed(text, full, ccc));
+}
+
+/** A text in NFC. */
+export function nfc(text) {
+  if (plain(text, 0x300)) return text;
+  const { full, ccc, compose } = t();
+  const d = decomposed(text, full, ccc);
   // Compose each character with the last starter, unless something between
   // them blocks it: a starter, or a mark whose class is not lower than its own.
   // `last` is the class of what was appended after the starter, -1 for nothing.

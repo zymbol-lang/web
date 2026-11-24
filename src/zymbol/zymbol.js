@@ -210,6 +210,8 @@ import * as casemap from './casemap.js';
 import { graphemes as segmentGraphemes } from './graphemes.js';
 // The NFC every name is read in (D-20), from the crate's Unicode version.
 import { nfc } from './normalize.js';
+// The confusable skeleton of UTS #39, for the look-alike names hint (D-21).
+import { skeleton } from './skeleton.js';
 
 // ─── Unicode digit blocks (mirrors DIGIT_BLOCKS in zymbol-lexer) ─────────────
 const DIGIT_BLOCKS = [
@@ -12856,7 +12858,9 @@ export function confusableHints(src) {
   const out = [];
   for (const t of tokens) {
     if (t.type !== 'IDENT' || !t.value) continue;
-    const chars = [...t.value];
+    // The characters as typed: the value is in NFC (D-20), and a column counted
+    // in it misses the place of a name typed decomposed.
+    const chars = [...(t.written ?? t.value)];
     chars.forEach((c, i) => {
       const want = CONFUSABLES.get(c);
       if (!want) return;
@@ -12871,6 +12875,47 @@ export function confusableHints(src) {
         params: { char: c, code: hex4(c), want, wantCode: hex4(want), meant },
         help: null,
       });
+    });
+  }
+  return out.concat(lookAlikeNames(tokens));
+}
+
+// Two whole names of one file that look the same and are not (D-21, decided
+// 2026-11-24): `a` and `а` — Latin and Cyrillic — are two valid names and two
+// variables. When two names have the same confusable skeleton (UTS #39) and are
+// not the same name, the later one is named with the earlier, in the editor
+// only, as `look_alike_names` in crates/zymbol-analyzer/src/confusables.rs does.
+// A name after `::` or `.` is left out: it names something of another module or
+// a field, like the `mat.E` a Greek layer re-exports as `Ε` on purpose. An error
+// kind is a name too; this lexer spells it with its `##`, Rust's does not.
+function lookAlikeNames(tokens) {
+  const first = [];
+  const seen = new Set();
+  let afterMember = false;
+  for (const t of tokens) {
+    if (t.type === 'IDENT' || t.type === 'ERRCON') {
+      const name = t.value.startsWith('##') ? t.value.slice(2) : t.value;
+      if (name && !afterMember && !seen.has(name)) { seen.add(name); first.push({ name, t }); }
+    }
+    afterMember = t.type === 'SCOPE' || t.type === 'DOT';
+  }
+  const bySkeleton = new Map();
+  const out = [];
+  for (const { name, t } of first) {
+    const k = skeleton(name);
+    const earlier = bySkeleton.get(k);
+    if (!earlier) { bySkeleton.set(k, { name, line: t.line }); continue; }
+    const a = [...name], b = [...earlier.name];
+    let i = 0;
+    while (i < Math.max(a.length, b.length) && a[i] === b[i]) i++;
+    const shown = c => (c === undefined ? 'nothing' : hex4(c));
+    out.push({
+      severity: 'warning', code: 'W_CONFUSABLE_NAME',
+      message: `'${name}' looks like '${earlier.name}' (line ${earlier.line}), a different name: ` +
+        `it has ${shown(a[i])} where '${earlier.name}' has ${shown(b[i])}`,
+      line: t.line, col: t.col ?? null,
+      params: { name, earlier: earlier.name, line: earlier.line },
+      help: null,
     });
   }
   return out;

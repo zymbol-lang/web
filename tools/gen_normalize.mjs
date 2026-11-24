@@ -142,13 +142,8 @@ function composePair(a, b, compose) {
   return compose.get(a * 0x110000 + b);
 }
 
-/** A text in NFC. Below U+0300 nothing decomposes and nothing combines. */
-export function nfc(text) {
-  let plain = true;
-  for (let i = 0; i < text.length; i++) if (text.charCodeAt(i) >= 0x300) { plain = false; break; }
-  if (plain) return text;
-  const { full, ccc, compose } = t();
-  // Decompose, then put each run of marks in the order of their classes.
+// Decompose, then put each run of marks in the order of their classes.
+function decomposed(text, full, ccc) {
   const d = [];
   for (const c of text) decompose(c.codePointAt(0), d, full);
   for (let i = 1; i < d.length; i++) {
@@ -157,6 +152,27 @@ export function nfc(text) {
     let j = i;
     while (j > 0 && (ccc.get(d[j - 1]) ?? 0) > c) { [d[j - 1], d[j]] = [d[j], d[j - 1]]; j--; }
   }
+  return d;
+}
+// Below \`limit\` a text is already in the form: nothing below U+00C0
+// decomposes, and nothing below U+0300 combines with what comes before it.
+const plain = (text, limit) => {
+  for (let i = 0; i < text.length; i++) if (text.charCodeAt(i) >= limit) return false;
+  return true;
+};
+
+/** A text in NFD — what the confusable skeleton of UTS #39 starts from (D-21). */
+export function nfd(text) {
+  if (plain(text, 0xC0)) return text;
+  const { full, ccc } = t();
+  return String.fromCodePoint(...decomposed(text, full, ccc));
+}
+
+/** A text in NFC. */
+export function nfc(text) {
+  if (plain(text, 0x300)) return text;
+  const { full, ccc, compose } = t();
+  const d = decomposed(text, full, ccc);
   // Compose each character with the last starter, unless something between
   // them blocks it: a starter, or a mark whose class is not lower than its own.
   // \`last\` is the class of what was appended after the starter, -1 for nothing.
@@ -182,7 +198,7 @@ if (flag === '--check') {
 } else if (flag === '--test') {
   const tmp = join(HERE, '..', 'src', 'zymbol', `.normalize_test_${process.pid}.mjs`);
   writeFileSync(tmp, src);
-  const { nfc } = await import(tmp);
+  const { nfc, nfd } = await import(tmp);
   unlinkSync(tmp);
   const str = f => String.fromCodePoint(...f.trim().split(' ').map(hex));
   let ok = 0, bad = 0;
@@ -195,7 +211,9 @@ if (flag === '--check') {
     const [c1, c2, c3, c4, c5] = body.split(';').slice(0, 5).map(str);
     if (part === '@Part1') listed.add(c1.codePointAt(0));
     // NFC conformance: c2 == NFC(c1) == NFC(c2) == NFC(c3), c4 == NFC(c4) == NFC(c5).
-    const pass = nfc(c1) === c2 && nfc(c2) === c2 && nfc(c3) === c2 && nfc(c4) === c4 && nfc(c5) === c4;
+    // NFD: c3 == NFD(c1) == NFD(c2) == NFD(c3), c5 == NFD(c4) == NFD(c5).
+    const pass = nfc(c1) === c2 && nfc(c2) === c2 && nfc(c3) === c2 && nfc(c4) === c4 && nfc(c5) === c4
+      && nfd(c1) === c3 && nfd(c2) === c3 && nfd(c3) === c3 && nfd(c4) === c5 && nfd(c5) === c5;
     if (pass) ok++; else { bad++; if (bad <= 5) console.log('FAIL', body); }
   }
   // Every code point Part 1 does not list is its own NFC.
@@ -203,7 +221,7 @@ if (flag === '--check') {
   for (let cp = 0; cp <= 0x10FFFF; cp++) {
     if ((cp >= 0xD800 && cp <= 0xDFFF) || listed.has(cp)) continue;
     const c = String.fromCodePoint(cp);
-    if (nfc(c) !== c) { bad++; if (bad <= 5) console.log('FAIL unlisted', cp.toString(16)); } else others++;
+    if (nfc(c) !== c || nfd(c) !== c) { bad++; if (bad <= 5) console.log('FAIL unlisted', cp.toString(16)); } else others++;
   }
   console.log(`NormalizationTest ${version}: ${ok} lines pass, ${others} unlisted code points unchanged, ${bad} fail`);
   process.exit(bad ? 1 : 0);
