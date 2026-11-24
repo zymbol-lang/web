@@ -208,6 +208,8 @@ import * as casemap from './casemap.js';
 // Extended grapheme clusters (D-19): UAX #29 from the Unicode version of the
 // Rust engines' `unicode-segmentation`, for `std/text` and `std/term` alike.
 import { graphemes as segmentGraphemes } from './graphemes.js';
+// The NFC every name is read in (D-20), from the crate's Unicode version.
+import { nfc } from './normalize.js';
 
 // ─── Unicode digit blocks (mirrors DIGIT_BLOCKS in zymbol-lexer) ─────────────
 const DIGIT_BLOCKS = [
@@ -740,6 +742,8 @@ export class Lexer {
           while (isIdentContinue(this.ch()) && this.ch() !== '°') { name += this.ch(); this.consume(); }
           // `##Kind(` written together builds an error value (GAP-GOL-003).
           // Decided here, where a blank is still visible.
+          // A kind is a name, in NFC like every other (D-20).
+          name = nfc(name);
           if (name.length > 2 && this.ch() === '(') { tok('ERRCON', name); continue; }
           tok('IDENT', name); continue;
         }
@@ -776,7 +780,7 @@ export class Lexer {
             let d = '', i = start;
             if (!isIdentStart(this.ch(i))) return { d, i };
             while (isIdentContinue(this.ch(i)) && this.ch(i) !== '°') { d += this.ch(i); i++; }
-            return { d, i };
+            return { d: nfc(d), i };
           };
           if (c1 === '|') {
             kind = 'eval'; advance = 2;
@@ -1000,6 +1004,7 @@ export class Lexer {
           this.consume();
           let label = '';
           while (isIdentContinue(this.ch()) && this.ch() !== '°') label += this.consume();
+          label = nfc(label);   // a label is a name (D-20)
           if (this.ch() === '!') { this.consume(); tok('AT_BREAK', label); }
           else if (this.ch() === '>') { this.consume(); tok('AT_CONT',  label); }
           else tok('AT_LABEL', label);
@@ -1007,7 +1012,7 @@ export class Lexer {
           // @label (legacy: label without colon)
           let label = '';
           while (isIdentContinue(this.ch()) && this.ch() !== '°') label += this.consume();
-          tok('AT_LABEL', label);
+          tok('AT_LABEL', nfc(label));
         } else {
           tok('AT', '@');
         }
@@ -1336,7 +1341,9 @@ export class Lexer {
             startLine,
             'interpolation must be {identifier} — use \\{ for a literal brace');
         }
-        parts.push({ t: 'expr', v: inner });
+        // The name read, in NFC like every other (D-20); the text around it
+        // is data and stays as written.
+        parts.push({ t: 'expr', v: nfc(inner) });
       } else if (this.ch() === '}') {
         // A `}` that closes nothing. The escape is symmetric: `\{` and `\}` are
         // the literal braces, and a bare one is an error on either side.
@@ -1473,7 +1480,13 @@ export class Lexer {
           prev, `write '${s}°' for a private value that lives through every iteration of the loop`);
       }
     }
-    toks.push({ type: 'IDENT', value: s, hot, line: this.tokLine, col: this.tokCol });
+    // The name in NFC (D-20): `й` typed as U+0439 and as U+0438 U+0306 is one
+    // name. The spelling is kept when it differs, for a module path — a path
+    // names a file, and a file is found by its bytes. Both as in Rust.
+    const name = nfc(s);
+    const t = { type: 'IDENT', value: name, hot, line: this.tokLine, col: this.tokCol };
+    if (name !== s) t.written = s;
+    toks.push(t);
   }
 }
 
@@ -1685,23 +1698,26 @@ export class Parser {
     const line = this.peek().line;
     this.adv(); // consume <#
     // Parse path: ./name, ../name, ./dir/name, or string literal
+    // A path names a file, found by its bytes: the spelling written, not the
+    // name's NFC (D-20), as in Rust.
+    const seg = t => t.written ?? t.value;
     let path = '';
     if (this.check('DOT')) {
       this.adv(); this.eat('DIV'); // consume . and /
-      path = './' + this.eat('IDENT').value;
-      while (this.check('DIV')) { this.adv(); path += '/' + this.eat('IDENT').value; }
+      path = './' + seg(this.eat('IDENT'));
+      while (this.check('DIV')) { this.adv(); path += '/' + seg(this.eat('IDENT')); }
     } else if (this.check('RANGE')) {
       this.adv(); this.eat('DIV'); // consume .. and /
       let ups = 1;
       while (this.check('RANGE')) { this.adv(); this.eat('DIV'); ups++; }
-      path = '../'.repeat(ups) + this.eat('IDENT').value;
-      while (this.check('DIV')) { this.adv(); path += '/' + this.eat('IDENT').value; }
+      path = '../'.repeat(ups) + seg(this.eat('IDENT'));
+      while (this.check('DIV')) { this.adv(); path += '/' + seg(this.eat('IDENT')); }
     } else if (this.check('STR')) {
       path = this.adv().value;
     } else {
-      path = this.eat('IDENT').value;
+      path = seg(this.eat('IDENT'));
       // Allow multi-segment bare paths: std/math, std/random, etc.
-      while (this.check('DIV')) { this.adv(); path += '/' + this.eat('IDENT').value; }
+      while (this.check('DIV')) { this.adv(); path += '/' + seg(this.eat('IDENT')); }
     }
     // The words of `parse_import_statement`. They used to be this engine's own
     // token names — `Expected FAT_ARROW, got 'mat'` — which no reader can act on.
@@ -12621,7 +12637,9 @@ export function moduleDeclErrorsFor(modParts, modSrc) {
   const parts = modParts.filter(Boolean);
   const stem  = (parts[parts.length - 1] ?? '').replace(/\.zy$/, '');
   const dir   = parts.length > 1 ? parts[parts.length - 2] : '';
-  const expected = block.name.startsWith('.') ? `${dir}_${stem}` : stem;
+  // The declared name is in NFC like every name (D-20), so the file's is
+  // compared in the same form, as `validate_module_name` does in Rust.
+  const expected = nfc(block.name.startsWith('.') ? `${dir}_${stem}` : stem);
   const declared = block.name.replace(/^\./, '');
   if (declared !== expected) {
     out.push({
