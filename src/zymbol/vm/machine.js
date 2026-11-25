@@ -1015,7 +1015,7 @@ export class Machine {
             let s;
             if (typeof sv === 'string') s = sv;
             else if (tagOf(sv) === T_CHAR) s = String.fromCodePoint(sv.cp);
-            else throw typeMsg(`$* requires a string, got ${typeLabel(sv)}`);
+            else throw typeMsg(`$* requires a string or char, got ${typeLabel(sv)}`);
             if (typeof nv !== 'number') throw typeMsg(`$* repetition count must be an integer, got ${typeLabel(nv)}`);
             if (nv < 0) throw indexMsg(`$* repetition count must be non-negative, got ${nv}`);
             put(R, base + ins.a, s.repeat(nv)); break;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Part of zymbol_vm.js (a port of crates/zymbol-vm; see values.js for the notice).
 //
-// std/json, std/io, std/net, std/time, std/term and std/text for the machine: zymbol.js's
+// std/json, std/io, std/net, std/time, std/term, std/text and std/bits for the machine: zymbol.js's
 // own implementations (`buildStdlibModule`), which the gate already holds to the
 // Rust engines' goldens, reached through a translation of values both ways. One
 // implementation of each module serves the old engine and the new one while
@@ -33,6 +33,9 @@ const IDS = new Map([
   [700, ['std/time', 'now']], [701, ['std/time', 'today']], [702, ['std/time', 'parts']], [703, ['std/time', 'of']],
   [704, ['std/time', 'format']], [705, ['std/time', 'add']], [706, ['std/time', 'diff']],
   [800, ['std/text', 'upper']], [801, ['std/text', 'lower']], [802, ['std/text', 'fold']], [803, ['std/text', 'graphemes']],
+  [900, ['std/bits', 'and']], [901, ['std/bits', 'or']], [902, ['std/bits', 'xor']], [903, ['std/bits', 'shl']],
+  [904, ['std/bits', 'shr']], [905, ['std/bits', 'not']], [906, ['std/bits', 'to_le']], [907, ['std/bits', 'to_be']],
+  [908, ['std/bits', 'from_le']], [909, ['std/bits', 'from_be']], [910, ['std/bits', 'signed']],
 ]);
 export const BRIDGED = new Set(IDS.keys());
 

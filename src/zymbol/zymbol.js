@@ -212,6 +212,8 @@ import { graphemes as segmentGraphemes } from './graphemes.js';
 import { nfc } from './normalize.js';
 // The three doors between a value and its spellings (D-25).
 import { baseString, parseBaseText, parsePrefixed, isCharCode } from './bases.js';
+// std/bits (D-28): the bits of an integer and words of bytes, as Rust has them.
+import * as bitsRules from './bits.js';
 // The confusable skeleton of UTS #39, for the look-alike names hint (D-21).
 import { skeleton } from './skeleton.js';
 
@@ -8496,6 +8498,7 @@ export const STDLIB_ARITIES = new Map([
   ['std/net',    new Map([['get',-1],['post',-1],['post_json',-1],['head',-1],['timeout',1]])],
   ['std/term',   new Map([['width',1],['pad_left',2],['pad_right',2],['center',2],['truncate',2]])],
   ['std/text',   new Map([['upper',1],['lower',1],['fold',1],['graphemes',1]])],
+  ['std/bits',   bitsRules.FUNCTIONS],
   // Everything but `now` takes an optional trailing zone, so everything but
   // `now` is variadic.
   ['std/time',   new Map([['now',0],['today',-1],['parts',-1],['of',-1],['format',-1],['add',-1],['diff',-1]])],
@@ -9093,6 +9096,25 @@ export function buildStdlibModule(name, vfs = null) {
       return soft(() => mkInt(timeDiff(a, b, parseUnit(unit), zoneOrUtc(zone))));
     }});
 
+    return { type: 'module', exports };
+  }
+
+  // std/bits — the bits of an integer and words of several bytes (D-28;
+  // mirrors stdlib/bits.rs). The rules and the messages are bits.js; a message
+  // carries no kind, so its words choose the family, as in both Rust engines.
+  if (name === 'std/bits') {
+    const exports = new Map();
+    const held = v => !v ? undefined
+      : { kind: v.type === 'int' ? 'int' : v.type === 'char' ? 'char' : v.type === 'str' ? 'text' : 'other',
+          v: v.v, label: typeLabel(v) };
+    for (const fname of bitsRules.FUNCTIONS.keys()) {
+      exports.set(fname, { type: 'func', name: fname, native: true, call: args => {
+        let r;
+        try { r = bitsRules.call(fname, args.map(held)); }
+        catch (e) { if (e && typeof e.message === 'string' && !(e instanceof Error)) throw new ZyError(e.message); throw e; }
+        return 'int' in r ? mkInt(r.int) : mkStr(r.bytes);
+      }});
+    }
     return { type: 'module', exports };
   }
 
@@ -11440,7 +11462,7 @@ export class Interpreter {
       '$^-':     L => `sort requires an array, got ${L}`,
       '$~~':     L => `$~~ requires a string, got ${L}`,
       '$/':      L => `$/ requires a string on the left, got ${L}`,
-      '$*':      L => `$* requires a string, got ${L}`,
+      '$*':      L => `$* requires a string or char, got ${L}`,
       '$++':     L => `$++ requires a string or array as base, got ${L}`,
     };
     const notSupported = op => {
@@ -11879,13 +11901,15 @@ export class Interpreter {
         // The count is a whole number that is not negative, as both Rust
         // engines require: a Float used to be truncated and a negative one
         // answered the empty string (ZYJS-028, decided 2026-09-18).
+        // A Char repeats as the one-character text it is (D-27): `0x00 $* n`
+        // is a buffer of n bytes, as the other three engines already built it.
         const nVal = await arg();
-        if (col.type !== 'str') notSupported('$*');
+        if (col.type !== 'str' && col.type !== 'char') notSupported('$*');
         if (nVal.type !== 'int')
           throw new ZyRuntimeError(`$* repetition count must be an integer, got ${typeLabel(nVal)}`, '##Type');
         if (nVal.v < 0)
           throw new ZyRuntimeError(`$* repetition count must be non-negative, got ${nVal.v}`, '##Index');
-        return mkStr(col.v.repeat(nVal.v));
+        return mkStr(String(col.v).repeat(nVal.v));
       }
 
       case '$++': {
