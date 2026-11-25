@@ -162,7 +162,10 @@ function indexGet(coll, index) {
   switch (tc) {
     case T_ARRAY: return coll.items[resolve(index, coll.items.length, 'array')];
     case T_TUPLE: return coll.items[resolve(index, coll.items.length, 'tuple')];
-    case T_STR: { const n = charLen(coll); return charAt(coll, resolve(index, n, 'string')); }
+    case T_STR: {
+      const e = textInfo(coll);
+      return mkChar(textCodePoint(e, resolve(index, e.n, 'string')));
+    }
   }
   throw typeMsg(`cannot index into ${typeLabel(coll)} — expected array, tuple, or string`);
 }
@@ -273,6 +276,124 @@ function cpOffset(s, n) {
   }
   return Math.min(i, s.length);
 }
+/**
+ * What is known about a text addressed by position (ZYJS-076). A string is a
+ * primitive in this engine, so nothing can be kept ON it, as the Rust engines
+ * keep a count and crumbs on theirs: the texts last addressed keep it here,
+ * and the same string — the same pointer, which `===` answers without reading
+ * it — finds it again. `wide` is whether a code point takes two UTF-16 units;
+ * without one, the n-th code point is the n-th unit. With one, `crumbs` holds
+ * the unit where every CRUMB-th code point starts, as GLB-139's do in Rust.
+ */
+const CRUMB = 64;
+const TEXT_SEEN = [];
+const TEXT_SEEN_MAX = 4;
+const TEXT_SEEN_MIN = 64;   // a short text is cheaper to walk than to remember
+function textInfo(s) {
+  for (let k = 0; k < TEXT_SEEN.length; k++) {
+    const e = TEXT_SEEN[k];
+    if (e.s.length === s.length && e.s === s) {
+      if (k > 0) { TEXT_SEEN.splice(k, 1); TEXT_SEEN.unshift(e); }
+      return e;
+    }
+  }
+  let wide = false;
+  for (let j = 0; j < s.length; j++) {
+    const c = s.charCodeAt(j);
+    if (c >= 0xD800 && c <= 0xDBFF) { wide = true; break; }
+  }
+  const e = { s, n: wide ? charLen(s) : s.length, wide, crumbs: null, tree: null };
+  if (s.length >= TEXT_SEEN_MIN) {
+    TEXT_SEEN.unshift(e);
+    if (TEXT_SEEN.length > TEXT_SEEN_MAX) TEXT_SEEN.pop();
+  }
+  return e;
+}
+/** The UTF-16 offset of code point i (0-based, i < e.n) of the text e knows. */
+function textOffset(e, i) {
+  if (!e.wide) return i;
+  if (!e.crumbs) {
+    const crumbs = [];
+    let k = 0;
+    for (let j = 0; j < e.s.length; j++) {
+      if (k % CRUMB === 0) crumbs.push(j);
+      const c = e.s.charCodeAt(j);
+      if (c >= 0xD800 && c <= 0xDBFF) j++;
+      k++;
+    }
+    e.crumbs = crumbs;
+  }
+  let j = e.crumbs[Math.floor(i / CRUMB)];
+  for (let k = i % CRUMB; k > 0; k--) {
+    const c = e.s.charCodeAt(j);
+    j += c >= 0xD800 && c <= 0xDBFF ? 2 : 1;
+  }
+  return j;
+}
+/**
+ * A text written into position by position is kept as a tree of pieces of
+ * CRUMB code points (ZYJS-076). A JavaScript string cannot be written into,
+ * and the register has to hold one, so a write cut the whole text and joined
+ * it again: n bytes written one by one copied n² units. Here a write rebuilds
+ * its piece — CRUMB code points — and the log n joins above it, each a `+`
+ * that V8 makes without copying (a cons string). The root IS the text, and is
+ * what the register holds; a read goes to its piece and never flattens it.
+ * The tree moves with the text it built: an old string that someone else
+ * still holds is never found with a tree that has changed since.
+ */
+function textTree(e) {
+  const leaves = [];
+  for (let k = 0; k < e.n; k += CRUMB) {
+    const a = textOffset(e, k);
+    const b = k + CRUMB < e.n ? textOffset(e, k + CRUMB) : e.s.length;
+    leaves.push(e.s.slice(a, b));
+  }
+  let size = 1;
+  while (size < leaves.length) size *= 2;
+  const nodes = new Array(2 * size).fill('');
+  for (let k = 0; k < leaves.length; k++) nodes[size + k] = leaves[k];
+  for (let j = size - 1; j >= 1; j--) nodes[j] = nodes[2 * j] + nodes[2 * j + 1];
+  return { size, nodes };
+}
+/** The unit, inside its piece, where code point i (0-based) starts. */
+function leafOffset(e, leaf, i) {
+  const r = i % CRUMB;
+  if (!e.wide) return r;
+  let j = 0;
+  for (let k = r; k > 0; k--) {
+    const c = leaf.charCodeAt(j);
+    j += c >= 0xD800 && c <= 0xDBFF ? 2 : 1;
+  }
+  return j;
+}
+/** Code point i of the text e knows, without reading the rest of it. */
+function textCodePoint(e, i) {
+  if (!e.tree) return e.s.codePointAt(textOffset(e, i));
+  const leaf = e.tree.nodes[e.tree.size + Math.floor(i / CRUMB)];
+  return leaf.codePointAt(leafOffset(e, leaf, i));
+}
+/**
+ * Code point i becomes `piece`, which has as many units as the old one, in the
+ * tree of e — built on the first write. The new text is known as e was.
+ */
+function textWrite(e, i, piece, width) {
+  if (!e.tree) e.tree = textTree(e);
+  const { size, nodes } = e.tree;
+  let j = size + Math.floor(i / CRUMB);
+  const leaf = nodes[j];
+  const o = leafOffset(e, leaf, i);
+  nodes[j] = leaf.slice(0, o) + piece + leaf.slice(o + width);
+  for (j >>= 1; j >= 1; j >>= 1) nodes[j] = nodes[2 * j] + nodes[2 * j + 1];
+  const out = nodes[1];
+  const k = TEXT_SEEN.indexOf(e);
+  if (k >= 0) TEXT_SEEN.splice(k, 1);
+  const next = { s: out, n: e.n, wide: e.wide, crumbs: null, tree: e.tree };
+  e.tree = null;
+  TEXT_SEEN.unshift(next);
+  if (TEXT_SEEN.length > TEXT_SEEN_MAX) TEXT_SEEN.pop();
+  return out;
+}
+
 function fromCps(cps) {
   let out = '';
   for (let i = 0; i < cps.length; i += 8192) out += String.fromCodePoint(...cps.slice(i, i + 8192));
@@ -2169,16 +2290,27 @@ export class Machine {
         return;
       }
       case T_STR: {
-        const cps = codePoints(col);
-        const i = resolve(intStepOf(step, single, 'string'), cps.length, 'string');
+        const e = textInfo(col);
+        const i = resolve(intStepOf(step, single, 'string'), e.n, 'string');
         if (k + 1 < path.length) throw typeMsg('cannot index into Char — expected array, tuple, or string');
         let piece;
         if (tagOf(val) === T_CHAR) piece = String.fromCodePoint(val.cp);
         else if (typeof val === 'string') piece = val;
         else throw typeMsg(`$~ on string requires char or string value, got ${typeLabel(val)}`);
-        let out = '';
-        for (let n = 0; n < cps.length; n++) out += n === i ? piece : String.fromCodePoint(cps[n]);
-        slotSet(holder, key, out);
+        // One unit for one, or a pair for a pair, in a text long enough to be
+        // remembered: written in its tree, where no other unit moves (ZYJS-076).
+        const width = textCodePoint(e, i) > 0xFFFF ? 2 : 1;
+        const p0 = piece.charCodeAt(0);
+        const pieceWidth = piece.length === 1 && !(p0 >= 0xD800 && p0 <= 0xDBFF) ? 1
+          : piece.length === 2 && p0 >= 0xD800 && p0 <= 0xDBFF ? 2 : 0;
+        if (pieceWidth === width && TEXT_SEEN.includes(e)) {
+          slotSet(holder, key, textWrite(e, i, piece, width));
+          return;
+        }
+        // Any other write cuts the text around the character: the two pieces
+        // and the join are V8's, not a loop over every code point.
+        const off = textOffset(e, i);
+        slotSet(holder, key, col.slice(0, off) + piece + col.slice(off + width));
         return;
       }
       case T_DICT: {

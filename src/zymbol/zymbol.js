@@ -7819,6 +7819,17 @@ const mkStr   = v => ({ type: 'str',   v: String(v) });
 // corrected 2026-10-21). Safe because a text value is never changed in place:
 // every edit builds a new one with `mkStr`, which starts without `cps`.
 const strChars = s => s.cps ?? (s.cps = [...s.v]);
+// A text its variable owns and is writing into, position by position (ZYJS-076,
+// with ZYJS-014's mark): the characters are the truth and the string is built
+// from them when someone reads it whole. `b[i]$~ v` changes one element of
+// `cps`, where it is, and forgets the string — a loop writing n bytes copied
+// the text n times. Only an owned text is written into: `Env.get` takes the
+// mark away the moment the text is handed to anyone, and from then on the
+// object is never changed again, which is what `strChars` relies on.
+class OwnedText {
+  constructor(cps) { this.type = 'str'; this.cps = cps; this._v = null; this.own = true; }
+  get v() { if (this._v === null) this._v = this.cps.join(''); return this._v; }
+}
 const mkChar  = v => ({ type: 'char',  v: String(v) });
 // A navigation path yields ONE value, unless one of its steps is a range — then
 // it yields one per position walked, and an extraction takes them all. Whether a
@@ -10486,16 +10497,25 @@ export class Interpreter {
           if (rest.length === 1) return await this.eval(inner, env);
           const parts = [];
           for (const item of rest) parts.push(await this.eval(item, env));
-          return mkStr(parts.map(v => this.displayOutput(v)).join(''));
+          let out = '';
+          for (const v of parts) out += this.displayOutput(v);   // `+`, not `join`: see below
+          return mkStr(out);
         }
         const vals = [];
         for (const item of items) vals.push(await this.eval(item, env));
         // displayOutput: implicit concatenation is display text -> numeral mode applies.
-        return mkStr(vals.map(v => this.displayOutput(v)).join(''));
+        // Joined with `+`, which V8 makes without copying either side: `join`
+        // copied the whole text, so `s = s x` in a loop was quadratic — 200 000
+        // appends took 9.3 s (found with ZYJS-076's cost case).
+        let out = '';
+        for (const v of vals) out += this.displayOutput(v);
+        return mkStr(out);
       }
       case 'CommaJoin': {
         const vals = await this.evalInOrder(expr.items, env);
-        return mkStr(vals.map(v => this.displayOutput(v)).join(''));
+        let out = '';
+        for (const v of vals) out += this.displayOutput(v);   // `+`, not `join`: see ImplicitConcat
+        return mkStr(out);
       }
 
       case 'BinOp': {
@@ -10598,7 +10618,7 @@ export class Interpreter {
         let obj = (expr.obj?.type === 'Ident' && !expr.obj.hot
                    && spec?.kind === 'simple' && plainOperand(spec.index))
           ? env.peek(expr.obj.name) : null;
-        if (obj?.type !== 'arr') obj = await this.eval(expr.obj, env);
+        if (obj?.type !== 'arr' && obj?.type !== 'str') obj = await this.eval(expr.obj, env);
 
         if (spec.kind === 'simple') {
           const iVal = await this.eval(spec.index, env);
@@ -10798,7 +10818,7 @@ export class Interpreter {
         let arr = (own && expr.obj?.type === 'Ident' && !expr.obj.hot
                    && plainOperand(expr.index) && plainOperand(expr.value))
           ? env.peek(expr.obj.name) : null;
-        if (arr?.type !== 'arr' && !isDict(arr)) arr = await this.eval(expr.obj, env);
+        if (arr?.type !== 'arr' && arr?.type !== 'str' && !isDict(arr)) arr = await this.eval(expr.obj, env);
         // `d.k$~ v` carries its key directly; `d[e]$~ v` evaluates one.
         const iVal = expr.key !== undefined ? mkStr(expr.key) : await this.eval(expr.index, env);
         const val  = await this.eval(expr.value, env);
@@ -10875,7 +10895,19 @@ export class Interpreter {
           if (val?.type !== 'char' && val?.type !== 'str')
             throw new ZyRuntimeError(
               `$~ on string requires char or string value, got ${typeLabel(val)}`, '##Type');
-          const r = [...arr.v]; r[idx] = this.display(val); return mkStr(r.join(''));
+          const piece = this.display(val);
+          const chars = strChars(arr);
+          // One character for one: written where the text is when the variable
+          // owns it, or into a copy it will own from now on (ZYJS-076).
+          const one = piece.length === 1 || (piece.length === 2 && piece.codePointAt(0) > 0xFFFF);
+          if (one && own && arr.own && arr instanceof OwnedText) {
+            chars[idx] = piece;
+            arr._v = null;
+            return arr;
+          }
+          const r = [...chars]; r[idx] = piece;
+          if (one && own) return new OwnedText(r);
+          return mkStr(r.join(''));
         }
         if (arr.type === 'tuple') { const r = [...arr.v]; r[idx] = val; return { type:'tuple', v:r, keys:arr.keys }; }
         throw new ZyRuntimeError(`$~ writes into a collection, and this is ${typeLabel(arr)}\nhelp: use a[1]$~ v on an array or tuple, d["key"]$~ v on a #(…)`, '##Type');
@@ -11377,7 +11409,7 @@ export class Interpreter {
         || (own && expr.op === '$-[i]' && plainOperand(expr.index))
         || (own && expr.op === '$++' && (expr.items ?? []).every(plainOperand)));
       col = keepsNothing ? env.peek(expr.obj.name) : null;
-      if (col?.type !== 'arr') col = await this.eval(expr.obj, env);
+      if (col?.type !== 'arr' && col?.type !== 'str') col = await this.eval(expr.obj, env);
     }
     const arg = () => this.eval(expr.arg, env);
 
