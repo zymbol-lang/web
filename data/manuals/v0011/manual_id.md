@@ -880,8 +880,8 @@ t = ##!3.7        // ke Bilangan bulat, dipotong  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   aman-gagal: mengembalikan masukan tanpa perubahan
->> 0d|'A'| ¶       // → 65    titik kode Karakter
->> 0d|65| ¶        // → A     Karakter dari sebuah titik kode bilangan bulat
+>> #|'A'| ¶       // → 65    titik kode Karakter
+>> |65| ¶        // → A     Karakter dari sebuah titik kode bilangan bulat
 ```
 
 ```zymbol

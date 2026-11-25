@@ -24,6 +24,7 @@ import {
   cmpDirect, cmpOrder, equals, naturalCmp, naturalUnordered, parseNum, parseF64, display, mapNumeralNumber,
 } from './values.js';
 import { asciiDigits, asciiNumber } from './digits.js';
+import { baseString, parseBaseText, parsePrefixed, isCharCode } from '../bases.js';
 import { powi, roundHalfAway, fmtThousands, fmtScientific } from './format.js';
 import { makeStdlib, BRIDGED } from './stdlib.js';
 import { caretOf, CARET_RANGE, CARET_SHAPE, CARET_OUTSIDE } from '../screen.js';
@@ -313,48 +314,32 @@ function strSlice(s, lo, hi) {
   return fromCps(codePoints(s.slice(cpOffset(s, sp.b - 1), cpOffset(s, sp.a))).reverse());
 }
 
-/** `vm_char_as_number`: `#|'७'|` is 7; a Char that is no number comes back as it is. */
-function charAsNumber(c) {
-  const s = String.fromCodePoint(c.cp);
-  let n = parseNum(s);
-  if (n === null) { const a = asciiNumber(s); if (a !== null) n = parseNum(a); }
-  if (n === null) return c;
-  return 'int' in n ? n.int : new ZFloat(n.float);
-}
-
-/** `0x|…|` and its siblings (BaseConvert). */
+/**
+ * `0x|…|` and its siblings, and the bare bars at radix 0 (BaseConvert, D-25):
+ * a base gives the text in that base, the bare bars the character. Each takes
+ * a Char, an Int, or a text in any base, read by the rule `bases.js` shares
+ * with zymbol.js.
+ */
 function baseConvert(v, radix) {
-  const prefix = radix === 2 ? '0b' : radix === 8 ? '0o' : radix === 10 ? '0d' : '0x';
-  // Never fewer digits than a byte takes in that base; the decimal as it is
-  // read (D-23): `0x41 0o101 0b01000001 0d65`.
-  const digits = n => (radix === 2 ? n.toString(2).padStart(8, '0') : radix === 8 ? n.toString(8).padStart(3, '0')
-    : radix === 10 ? String(n) : n.toString(16).toUpperCase().padStart(2, '0'));
+  let n;
   switch (tagOf(v)) {
-    // `0d` is the door between a character and its code (D-24): the element
-    // of a character in decimal is the number.
-    case T_CHAR: return radix === 10 ? v.cp : prefix + digits(v.cp);
-    case T_INT:
-      if (radix === 10) {
-        if (v < 0 || v > 0x10FFFF || (v >= 0xD800 && v <= 0xDFFF))
-          throw new VmErr('Range', 'character out of range: 0d|…| cannot represent this code');
-        return mkChar(v);
-      }
-      return (v < 0 ? '-' : '') + prefix + digits(Math.abs(v));
+    case T_CHAR: n = v.cp; break;
+    case T_INT: n = v; break;
     case T_STR: {
-      let s = v;
-      for (const p of ['0b', '0B', '0o', '0O', '0d', '0D', '0x', '0X']) while (s.startsWith(p)) s = s.slice(2);
-      const re = radix === 2 ? /^\+?[01]+$/ : radix === 8 ? /^\+?[0-7]+$/ : radix === 10 ? /^\+?[0-9]+$/ : /^\+?[0-9a-fA-F]+$/;
-      const code = re.test(s) ? parseInt(s.replace(/^\+/, ''), radix) : NaN;
-      if (!Number.isNaN(code) && code <= 0xFFFFFFFF) {
-        if (code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF))
-          throw new VmErr('Range', `character out of range: ${prefix}|…| cannot represent this code`);
-        return mkChar(code);
-      }
-      const name = radix === 2 ? 'binary' : radix === 8 ? 'octal' : radix === 16 ? 'hexadecimal' : 'decimal';
-      throw parseMsg(`failed to parse '${s}' as ${name} number`);
+      const r = parseBaseText(v, radix || 10);
+      if (!('n' in r)) throw r.family === 'Range' ? new VmErr('Range', r.message) : parseMsg(r.message);
+      n = r.n;
+      break;
     }
+    default:
+      throw typeMsg(radix
+        ? `base conversion expressions work with char, int, or string, got ${typeLabel(v)}`
+        : `|…| works with char, int, or string, got ${typeLabel(v)}`);
   }
-  throw typeMsg(`base conversion expressions work with char, int, or string, got ${typeLabel(v)}`);
+  if (radix) return baseString(n, radix);
+  // A code with no character is `##Range`, without the value (GLB-113).
+  if (!isCharCode(n)) throw new VmErr('Range', 'character out of range: |…| cannot represent this code');
+  return mkChar(n);
 }
 
 function intStepOf(step, single, container) {
@@ -982,13 +967,13 @@ export class Machine {
             const x = R[base + ins.b];
             if (isFloat(x)) { const n = fromF64(Math.trunc(x.v)); if (n === null) throw castOverflow('##!'); put(R, base + ins.a, n); }
             else if (typeof x === 'number') put(R, base + ins.a, x);
-            // A Char is not a number: its code is `0d|c|` (D-24).
-            else if (tagOf(x) === T_CHAR) throw typeMsg("##! requires a numeric value, got Char: a character's code is 0d|c|");
+            // `##!` does not take a Char: its code is `#|c|` (D-25).
+            else if (tagOf(x) === T_CHAR) throw typeMsg("##! requires a numeric value, got Char: a character's code is #|c|");
             else throw typeMsg(`##! requires a numeric value, got ${typeName(x)}`);
             break;
           }
           case 36: { // IntToChar — retired with `##'` (D-24), never emitted
-            throw typeMsg('IntToChar is retired: a code becomes its character with 0d|n|');
+            throw typeMsg('IntToChar is retired: a code becomes its character with |n|');
           }
 
           // ── Strings ─────────────────────────────────────────────────────
@@ -1736,13 +1721,15 @@ export class Machine {
           case 125: { // NumericEval
             const v = R[base + ins.b];
             let r;
-            if (typeof v === 'string') {
+            if (typeof v === 'string' && parsePrefixed(v) !== null) {
+              r = parsePrefixed(v); // a text that names its base (D-25)
+            } else if (typeof v === 'string') {
               const t = v.trim();
               let n = parseNum(t);
               if (n === null) { const a = asciiNumber(t); if (a !== null) n = parseNum(a); }
               r = n === null ? v : 'int' in n ? n.int : new ZFloat(n.float);
             } else if (typeof v === 'number' || isFloat(v)) r = v;
-            else if (tagOf(v) === T_CHAR) r = charAsNumber(v);
+            else if (tagOf(v) === T_CHAR) r = v.cp; // a character is its code (D-25)
             else r = retain(v);
             put(R, base + ins.a, r); break;
           }

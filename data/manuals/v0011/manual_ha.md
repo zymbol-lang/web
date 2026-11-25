@@ -880,8 +880,8 @@ t = ##!3.7        // zuwa Cikakkiyar lamba, an yanke  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   mai aminci: yana mayar da shigarwa ba ta canza ba
->> 0d|'A'| ¶       // → 65    lambar lambar Harafi
->> 0d|65| ¶        // → A     Harafi daga lambar Unicode ta cikakkiyar lamba
+>> #|'A'| ¶       // → 65    lambar lambar Harafi
+>> |65| ¶        // → A     Harafi daga lambar Unicode ta cikakkiyar lamba
 ```
 
 ```zymbol

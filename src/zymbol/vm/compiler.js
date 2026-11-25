@@ -1418,7 +1418,7 @@ export class Compiler {
       case 'BaseConversion': {
         const r = this.compileExpr(e.expr, ctx);
         const dst = ctx.allocTemp();
-        const radix = { Binary: 2, Octal: 8, Decimal: 10, Hex: 16 }[e.prefix];
+        const radix = { Char: 0, Binary: 2, Octal: 8, Decimal: 10, Hex: 16 }[e.prefix]; // 0: the bare bars (D-25)
         ctx.emit(['BaseConvert', dst, r, radix]);
         return dst;
       }

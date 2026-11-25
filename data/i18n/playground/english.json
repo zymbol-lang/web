@@ -83,7 +83,7 @@
     "E020": "'{variable}' is given to '{name}' as an output argument twice",
     "E020_help": "an output parameter is the caller's own variable while the call lasts, so one variable cannot be two of them — what one wrote would be lost to the other; give each '<~' a variable of its own",
     "E021": "'##!' does not take a Char since v0.0.12: it truncates a Float",
-    "E021_help": "a character becomes its code with 0d|c|, and a code its character with 0d|n|",
+    "E021_help": "a character becomes its code with #|c|, and a code its character with |n|",
     "E_ARG_TYPE": "argument {index} has type {got}, but function '{name}' expects {expected}",
     "E_TYPE": "an error's message is a String, got {type}",
     "E_TYPE_help": "build the text first: ##{kind}(\"…\"), or ##{kind}(\"\" x) to turn a value into it",
@@ -392,7 +392,7 @@
     },
     "num_eval": {
       "concept": "Text to number",
-      "summary": "Reads a number out of a text, in ASCII digits or any of 69 other scripts."
+      "summary": "Reads a number out of a text, in ASCII digits, any of 69 other scripts, or a base prefix (#|\"0x41\"| is 65). A character is its code: #|'A'| is 65."
     },
     "round": {
       "concept": "Round",
@@ -424,7 +424,7 @@
     },
     "to_int_tr": {
       "concept": "To whole number, cutting",
-      "summary": "Converts a number to a whole number by dropping the decimals. A character is not a number: its code is 0d|c|."
+      "summary": "Converts a number to a whole number by dropping the decimals. It does not take a character: a character's code is #|c|."
     },
     "typed_str": {
       "concept": "Checked text input",
@@ -432,11 +432,11 @@
     },
     "typed_chr": {
       "concept": "Character, as input",
-      "summary": "After <<, reads exactly one character, asking again if given more. A code becomes its character with 0d|n|."
+      "summary": "After <<, reads exactly one character, asking again if given more. A code becomes its character with |n|."
     },
     "base_lit": {
       "concept": "Character by its code",
-      "summary": "0x41, 0b01000001, 0o101 and 0d65 all write the character A, by its code in four bases. With bars they convert: 0d|65| is A and 0d|'A'| is 65; 0x|'A'| writes \"0x41\", and 0x|\"41\"| reads it back."
+      "summary": "0x41, 0b01000001, 0o101 and 0d65 all write the character A, by its code in four bases. With bars they convert, one door per result: 0x|'A'| writes \"0x41\" and 0d|'A'| writes \"0d65\"; the bare bars give the character, |65| and |\"0x41\"| are A; and #|'A'| is the number 65."
     },
     "true": {
       "concept": "True",

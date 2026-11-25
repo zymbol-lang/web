@@ -880,8 +880,8 @@ t = ##!3.7        // na Celé číslo, zkráceno  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   bezpečné při selhání: vrací vstup nezměněný
->> 0d|'A'| ¶       // → 65    kódový bod Znaku
->> 0d|65| ¶        // → A     Znak z celočíselného kódového bodu
+>> #|'A'| ¶       // → 65    kódový bod Znaku
+>> |65| ¶        // → A     Znak z celočíselného kódového bodu
 ```
 
 ```zymbol

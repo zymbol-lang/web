@@ -210,6 +210,8 @@ import * as casemap from './casemap.js';
 import { graphemes as segmentGraphemes } from './graphemes.js';
 // The NFC every name is read in (D-20), from the crate's Unicode version.
 import { nfc } from './normalize.js';
+// The three doors between a value and its spellings (D-25).
+import { baseString, parseBaseText, parsePrefixed, isCharCode } from './bases.js';
 // The confusable skeleton of UTS #39, for the look-alike names hint (D-21).
 import { skeleton } from './skeleton.js';
 
@@ -3146,7 +3148,9 @@ export class Parser {
     // Implicit string concatenation: collect multiple expressions on the same line
     const implicitExprStart = new Set(['STR','IDENT','NUM','FLOAT','CHAR','BOOL','LPAREN','LBRACKET','MINUS','NOT','CAST_FLOAT','CAST_INT_ROUND','CAST_INT_TRUNC','CAST_CHAR','DATA_OP','MATCH','ELSE']);
     const items = [first];
-    while (this.peek().line === this.prevEndLine() && implicitExprStart.has(this.peek().type)) {
+    // A `|` opens the bare bars `|n|` (D-25) unless it closes the bars it is in.
+    while (this.peek().line === this.prevEndLine()
+           && (implicitExprStart.has(this.peek().type) || (this.check('VBAR') && !this.barDepth))) {
       items.push(this.parseExpr());
     }
     if (items.length === 1) return first;
@@ -3844,7 +3848,8 @@ export class Parser {
         const canStart = () => {
           const t = this.peek().type;
           return ['NUM','FLOAT','BOOL','CHAR','STR','IDENT','LPAREN','ELSE',
-                  'CAST_FLOAT','CAST_INT_ROUND','CAST_INT_TRUNC','CAST_CHAR'].includes(t);
+                  'CAST_FLOAT','CAST_INT_ROUND','CAST_INT_TRUNC','CAST_CHAR'].includes(t)
+            || (t === 'VBAR' && !this.barDepth);
         };
         while (this.peek().line === opLine && !this.check('PILCROW') &&
                !this.check('RBRACE') && !this.check('EOF') && canStart()) {
@@ -4070,13 +4075,13 @@ export class Parser {
     if (t.type === 'CAST_INT_ROUND') { this.adv(); return { type: 'CastOp', op: '###', line: t.line, operand: this.parseUnary() }; }
     if (t.type === 'CAST_INT_TRUNC') { this.adv(); return { type: 'CastOp', op: '##!', line: t.line, operand: this.parseUnary() }; }
     // `##'expr` was the cast from a code to its character (GLB-109) and was
-    // removed in v0.0.12 (D-24): `0d|n|` and `0d|c|` are the one door, as in
+    // removed in v0.0.12 (D-24): `|n|` and `#|c|` are the doors (D-25), as in
     // the Rust parser. `<< ##' "msg" c` reads it as a typespec before any
     // expression, so it never reaches here.
     if (t.type === 'CAST_CHAR') {
       throw new ZyError(
         "the cast '##'' does not exist: it was removed in v0.0.12\n" +
-        '= help: a code becomes its character with 0d|n|, and a character its code with 0d|c|',
+        '= help: a code becomes its character with |n|, and a character its code with #|c|',
         t.line);
     }
 
@@ -4201,9 +4206,22 @@ export class Parser {
       return firstVal;
     }
 
+    // The bare bars: `|expr|` is the character (D-25). A base conversion with
+    // no base, as the Rust AST has it (`BasePrefix::Char`).
+    if (t.type === 'VBAR') {
+      this.adv();
+      this.barDepth = (this.barDepth ?? 0) + 1;
+      let arg;
+      try { arg = this.parseExpr(); } finally { this.barDepth--; }
+      this.eat('VBAR', "expected '|' to close character conversion", 'character conversion syntax: |expr|');
+      return { type: 'DataOp', kind: 'base_conv', prec: 0, precExpr: null, arg, line: t.line };
+    }
+
     if (t.type === 'DATA_OP') {
       this.adv();
-      const arg = this.parseExpr();
+      this.barDepth = (this.barDepth ?? 0) + 1;
+      let arg;
+      try { arg = this.parseExpr(); } finally { this.barDepth--; }
       // The operator as written, as the Rust parser fills its templates.
       const fmtPrefix = '#,';
       const baseOpPrefix = '0' + ({ 16: 'x', 2: 'b', 8: 'o', 10: 'd' }[t.value.prec] ?? 'x');
@@ -5267,17 +5285,17 @@ export class Checker {
       // a cast without the type-change warning the CLI gives (GLB-109).
       case 'CastOp':
         return { '##.': 'Float', '###': 'Int', '##!': 'Int' }[e.op];
-      // A character or a number in `0d` is the other one (D-24); in the other
-      // three bases it is its text, and a text in any base is the character —
-      // as `infer_expr` answers it in Rust.
+      // Three doors (D-25): a base gives its text, the bare bars (prec 0) the
+      // character, and `#|…|` of a Char or an Int the number — as `infer_expr`
+      // answers it in Rust.
       case 'DataOp': {
+        if (e.kind === 'eval') {
+          const t = this.inferType(e.arg, locals);
+          return t === 'Char' || t === 'Int' ? 'Int' : null;
+        }
         if (e.kind !== 'base_conv') return null;
-        const t = this.inferType(e.arg, locals);
-        if (e.prec === 10 && t === 'Char') return 'Int';
-        if (e.prec === 10 && t === 'Int') return 'Char';
-        if (t === 'Char' || t === 'Int') return 'String';
-        if (t === 'String') return 'Char';
-        return null;
+        this.inferType(e.arg, locals);
+        return e.prec ? 'String' : 'Char';
       }
       case 'NavIndex': {
         // A navigation path is Any in Rust; only a single step is typed.
@@ -7358,11 +7376,11 @@ export class Checker {
       case 'CastOp': {
         const operand = expr.operand ?? expr.value ?? expr.obj;
         this.checkExpr(operand);
-        // `##!` took a Char until v0.0.11; its code is `0d|c|` since D-24.
+        // `##!` took a Char until v0.0.11; its code is `#|c|` since D-25.
         if (expr.op === '##!' && this.inferType(operand) === 'Char') {
           this.error('E021', "'##!' does not take a Char since v0.0.12: it truncates a Float",
             expr.line ?? operand?.line, null,
-            'a character becomes its code with 0d|c|, and a code its character with 0d|n|');
+            'a character becomes its code with #|c|, and a code its character with |n|');
         }
         return;
       }
@@ -10966,16 +10984,14 @@ export class Interpreter {
         };
         switch (expr.kind) {
           case 'eval': {
-            // GAP-ZYB-012: a Char reads like the one-character string it is.
-            // `#|"७"|` gave 7 and `#|'७'|` gave back the glyph — the same
-            // operator, the same character, two answers depending on how it had
-            // been written. A Char that is not a digit comes back untouched,
-            // which is what "safe conversion" already meant for a string.
-            if (val.type === 'char') {
-              const a = asciiDigits(val.v);
-              const p = parseFloat(a);
-              if (!isNaN(p) && /^[0-9]+$/.test(a)) return mkInt(p);
-              return val;
+            // A character is a number: its code (D-25). `#|'7'|` is 55; the
+            // digit's value is the text's reading, `#|"{c}"|`. Until v0.0.12 a
+            // Char read like the one-character text (GAP-ZYB-012).
+            if (val.type === 'char') return mkInt(val.v.codePointAt(0));
+            // A text that names its base reads in it: `#|"0x41"|` is 65.
+            if (val.type === 'str') {
+              const pn = parsePrefixed(val.v);
+              if (pn !== null) return mkInt(pn);
             }
             if (val.type === 'str') {
               const s = val.v.trim();
@@ -11018,56 +11034,26 @@ export class Interpreter {
           case 'sci_round': return mkStr(mapNumeralNumber(fmtSci(toNum(val), expr.prec, 'round'), this.numeralMode));
           case 'sci_trunc': return mkStr(mapNumeralNumber(fmtSci(toNum(val), expr.prec, 'trunc'), this.numeralMode));
           case 'base_conv': {
+            // Three doors (D-25): a base gives the text in that base, the bare
+            // bars (prec 0) the character. Each takes a Char, an Int, or a
+            // text in any base, read by the rule `bases.js` shares with the VM.
             const base = expr.prec;
-            // A string is a code written in the operator's base and gives the
-            // character, as data_ops.rs reads it: `0x|"41"|` is 'A'. This
-            // engine read the string as a DECIMAL number and printed its hex
-            // (`0x0029`), and turned anything unreadable into 0 (GLB-013 A).
-            if (val.type === 'str') {
-              let digits = val.v;
-              for (const pre of ['0b', '0o', '0d', '0x', '0B', '0O', '0D', '0X']) {
-                while (digits.startsWith(pre)) digits = digits.slice(2);
-              }
-              const baseName = { 2: 'binary', 8: 'octal', 10: 'decimal', 16: 'hexadecimal' }[base];
-              const shape = { 2: /^\+?[01]+$/, 8: /^\+?[0-7]+$/, 10: /^\+?[0-9]+$/, 16: /^\+?[0-9a-fA-F]+$/ }[base];
-              const code = shape.test(digits) ? parseInt(digits, base) : NaN;
-              if (!Number.isFinite(code) || code > 0xFFFFFFFF) {
-                // `##Parse`, declared: the words of the text chose it (GLB-097).
-                throw new ZyRuntimeError(`failed to parse '${digits}' as ${baseName} number`, '##Parse', expr.line);
-              }
-              // A code with no character — past 0x10FFFF, or a surrogate — is
-              // `##Range`, as `0d|n|` raises it, without the value (GLB-113).
-              if (code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) {
-                const pfx = { 2: '0b', 8: '0o', 10: '0d', 16: '0x' }[base];
-                throw new ZyRuntimeError(`character out of range: ${pfx}|…| cannot represent this code`, '##Range', expr.line);
-              }
-              return mkChar(String.fromCodePoint(code));
+            let n;
+            if (val.type === 'char') n = val.v.codePointAt(0);
+            else if (val.type === 'int') n = val.v;
+            else if (val.type === 'str') {
+              const r = parseBaseText(val.v, base || 10);
+              if (!('n' in r)) throw new ZyRuntimeError(r.message, '##' + r.family, expr.line);
+              n = r.n;
+            } else {
+              throw new ZyRuntimeError(base
+                ? `base conversion expressions work with char, int, or string, got ${typeIdent(val)}`
+                : `|…| works with char, int, or string, got ${typeIdent(val)}`, '##Type', expr.line);
             }
-            if (val.type !== 'char' && val.type !== 'int') {
-              throw new ZyRuntimeError(`base conversion expressions work with char, int, or string, got ${typeIdent(val)}`, '##Type', expr.line);
-            }
-            // `0d` is the door between a character and its code (D-24): the
-            // element of a character in decimal is the number. A code with no
-            // character — below 0, past 0x10FFFF, a surrogate — is `##Range`.
-            if (base === 10 && val.type === 'char') return mkInt(val.v.codePointAt(0));
-            if (base === 10) {
-              const code = val.v;
-              if (code < 0 || code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) {
-                throw new ZyRuntimeError('character out of range: 0d|…| cannot represent this code', '##Range', expr.line);
-              }
-              return mkChar(String.fromCodePoint(code));
-            }
-            const n = val.type === 'char' ? val.v.codePointAt(0) : val.v;
-            // A negative one carries its sign in front, and the digits are those
-            // of its absolute value: `-0xFF` (GLB-136). It was put inside the
-            // padding, `0x0-FF`. Never fewer digits than a byte takes in that
-            // base, the decimal as it is read (D-23): `0x41 0o101 0b01000001 0d65`.
-            const sg = n < 0 ? '-' : '', m = Math.abs(n);
-            if (base === 16) return mkStr(sg + '0x' + m.toString(16).toUpperCase().padStart(2, '0'));
-            if (base === 2)  return mkStr(sg + '0b' + m.toString(2).padStart(8, '0'));
-            if (base === 8)  return mkStr(sg + '0o' + m.toString(8).padStart(3, '0'));
-            if (base === 10) return mkStr(sg + '0d' + m.toString(10));
-            return val;
+            if (base) return mkStr(baseString(n, base));
+            // A code with no character is `##Range`, without the value (GLB-113).
+            if (!isCharCode(n)) throw new ZyRuntimeError('character out of range: |…| cannot represent this code', '##Range', expr.line);
+            return mkChar(String.fromCodePoint(n));
           }
         }
         return val;
@@ -11075,10 +11061,10 @@ export class Interpreter {
 
       case 'CastOp': {
         const val = await this.eval(expr.operand, env);
-        // A Char is not a number: its code is `0d|c|` (D-24). `##!` answered
+        // `##!` does not take a Char: its code is `#|c|` (D-25). `##!` answered
         // it from v0.0.8 to v0.0.11.
         if (expr.op === '##!' && val.type === 'char') {
-          throw new ZyRuntimeError("##! requires a numeric value, got Char: a character's code is 0d|c|", '##Type');
+          throw new ZyRuntimeError("##! requires a numeric value, got Char: a character's code is #|c|", '##Type');
         }
         if (val.type !== 'int' && val.type !== 'float') {
           const _typeNames = { str:'String', int:'Integer', float:'Float', bool:'Bool', char:'Char', arr:'Array', tuple:'Tuple', unit:'Unit' };

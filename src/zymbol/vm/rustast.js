@@ -237,7 +237,8 @@ function collectionOp(n) {
   return fail('collection op', n);
 }
 
-const BASE = { 2: 'Binary', 8: 'Octal', 10: 'Decimal', 16: 'Hex' };
+// 0 is the bare bars `|…|`, the character (D-25), as `BasePrefix::Char`.
+const BASE = { 0: 'Char', 2: 'Binary', 8: 'Octal', 10: 'Decimal', 16: 'Hex' };
 function precisionOf(n) {
   return n.precExpr ? { k: 'Dynamic', _: [expr(n.precExpr)] } : { k: 'Literal', _: [n.prec] };
 }

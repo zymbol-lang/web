@@ -916,8 +916,8 @@ t = ##!3.7        // Yupayman tikray, kuchusqa  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   mana pantaq: yaykusqanta kikillanta kutichin
->> 0d|'A'| ¶       // → 65    huk Qillqap código puntonmi
->> 0d|65| ¶        // → A     Qillqa huk huntaq yupay código punto-manta
+>> #|'A'| ¶       // → 65    huk Qillqap código puntonmi
+>> |65| ¶        // → A     Qillqa huk huntaq yupay código punto-manta
 ```
 
 ```zymbol

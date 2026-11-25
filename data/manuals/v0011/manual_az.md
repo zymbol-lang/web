@@ -880,8 +880,8 @@ t = ##!3.7        // Tam ədədə, kəsilmiş  → 3
 ```zymbol
 >> #|"42"| ¶       // → 42
 >> #|"abc"| ¶      // → abc   uğursuzluq-təhlükəsiz: girişi dəyişmədən qaytarır
->> 0d|'A'| ¶       // → 65    Simvolun kod nöqtəsi
->> 0d|65| ¶        // → A     Tam ədəd kod nöqtəsindən Simvol
+>> #|'A'| ¶       // → 65    Simvolun kod nöqtəsi
+>> |65| ¶        // → A     Tam ədəd kod nöqtəsindən Simvol
 ```
 
 ```zymbol

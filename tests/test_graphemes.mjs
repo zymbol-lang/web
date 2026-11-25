@@ -62,9 +62,9 @@ const src = `<# std/text => tx
 textos = [${texts.map(t => `[${t.join(', ')}]`).join(',\n')}]
 @ t:textos {
     s = ""
-    @ cp:t { s = s 0d|cp| }
+    @ cp:t { s = s |cp| }
     @ g:tx::graphemes(s) {
-        @ c:g { >> 0d|c| "." }
+        @ c:g { >> #|c| "." }
         >> "|"
     }
     >> ¶

@@ -82,7 +82,7 @@
     "E020": "'{variable}' se da a '{name}' dos veces como argumento de salida",
     "E020_help": "un parámetro de salida es la propia variable de quien llama mientras dura la llamada, así que una variable no puede ser dos de ellos — lo que escribiera uno lo perdería el otro; da a cada '<~' su propia variable",
     "E021": "'##!' no toma un Char desde la v0.0.12: trunca un Float",
-    "E021_help": "un carácter pasa a su código con 0d|c|, y un código a su carácter con 0d|n|",
+    "E021_help": "un carácter pasa a su código con #|c|, y un código a su carácter con |n|",
     "E_ARG_TYPE": "el argumento {index} es de tipo {got}, pero la función '{name}' espera {expected}",
     "E_TYPE": "el mensaje de un error es un String, y este es {type}",
     "E_TYPE_help": "construye antes el texto: ##{kind}(\"…\"), o ##{kind}(\"\" x) para convertir un valor en texto",
@@ -391,7 +391,7 @@
     },
     "num_eval": {
       "concept": "De texto a número",
-      "summary": "Lee un número dentro de un texto, en dígitos ASCII o en cualquiera de otros 69 sistemas de escritura."
+      "summary": "Lee un número dentro de un texto, en dígitos ASCII, en cualquiera de otros 69 sistemas de escritura o con un prefijo de base (#|\"0x41\"| es 65). Un carácter es su código: #|'A'| es 65."
     },
     "round": {
       "concept": "Redondear",
@@ -423,7 +423,7 @@
     },
     "to_int_tr": {
       "concept": "A entero, cortando",
-      "summary": "Convierte un número a entero descartando los decimales. Un carácter no es un número: su código es 0d|c|."
+      "summary": "Convierte un número a entero descartando los decimales. No acepta un carácter: el código de un carácter es #|c|."
     },
     "typed_str": {
       "concept": "Entrada de texto con límite",
@@ -431,11 +431,11 @@
     },
     "typed_chr": {
       "concept": "Carácter, como entrada",
-      "summary": "Tras <<, lee exactamente un carácter, y vuelve a preguntar si recibe más. Un código pasa a su carácter con 0d|n|."
+      "summary": "Tras <<, lee exactamente un carácter, y vuelve a preguntar si recibe más. Un código pasa a su carácter con |n|."
     },
     "base_lit": {
       "concept": "Carácter por su código",
-      "summary": "0x41, 0b01000001, 0o101 y 0d65 escriben el carácter A, por su código en cuatro bases. Con barras convierten: 0d|65| es A y 0d|'A'| es 65; 0x|'A'| escribe \"0x41\", y 0x|\"41\"| lo vuelve a leer."
+      "summary": "0x41, 0b01000001, 0o101 y 0d65 escriben el carácter A, por su código en cuatro bases. Con barras convierten, una puerta por resultado: 0x|'A'| escribe \"0x41\" y 0d|'A'| escribe \"0d65\"; las barras solas dan el carácter, |65| y |\"0x41\"| son A; y #|'A'| es el número 65."
     },
     "true": {
       "concept": "Cierto",
